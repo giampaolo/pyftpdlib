@@ -1,0 +1,95 @@
+BODY {
+	BORDER-RIGHT: 0px; PADDING-RIGHT: 0px; BORDER-TOP: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN-LEFT: 2em; BORDER-LEFT: 0px; MARGIN-RIGHT: 2em; PADDING-TOP: 0px; BORDER-BOTTOM: 0px; FONT-FAMILY: Verdana, Arial, Helvetica, sans-serif; FONT-SIZE: 12pt
+}
+.done {
+	COLOR: #005500; BACKGROUND-COLOR: #99ff99
+}
+.notdone {
+	COLOR: #550000; BACKGROUND-COLOR: #ff9999
+}
+PRE {
+	BORDER-RIGHT: black thin solid; PADDING-RIGHT: 1em; BORDER-TOP: black thin solid; PADDING-LEFT: 1em; FONT-SIZE: 12pt; PADDING-BOTTOM: 1em; BORDER-LEFT: black thin solid; PADDING-TOP: 1em; BORDER-BOTTOM: black thin solid; FONT-FAMILY: Neep Alt, Courier New, Courier
+}
+.boxed {
+	BORDER-RIGHT: black thin solid; PADDING-RIGHT: 1em; BORDER-TOP: black thin solid; PADDING-LEFT: 1em; PADDING-BOTTOM: 1em; BORDER-LEFT: black thin solid; PADDING-TOP: 1em; BORDER-BOTTOM: black thin solid
+}
+.shell {
+	BACKGROUND-COLOR: #ffffdd
+}
+.python {
+	BACKGROUND-COLOR: #FFFFFF; font-family: Lucida,Courier New; FONT-SIZE: 10pt
+}
+
+}
+.doit {
+	BORDER-RIGHT: blue thin dashed; BORDER-TOP: blue thin dashed; BORDER-LEFT: blue thin dashed; BORDER-BOTTOM: blue thin dashed; BACKGROUND-COLOR: #0ef
+}
+.py-src-comment {
+	COLOR: #1111cc
+}
+.py-src-keyword {
+	FONT-WEIGHT: bold; COLOR: #3333cc
+}
+.py-src-parameter {
+	FONT-WEIGHT: bold; COLOR: #000066
+}
+.py-src-identifier {
+	COLOR: #cc0000
+}
+.py-src-string {
+	COLOR: #115511
+}
+.py-src-endmarker {
+	DISPLAY: block
+}
+.py-listing {
+	BORDER-RIGHT: black thin solid; BORDER-TOP: black thin solid; MARGIN: 1ex; BORDER-LEFT: black thin solid; BORDER-BOTTOM: black thin solid; BACKGROUND-COLOR: #eee
+}
+.html-listing {
+	BORDER-RIGHT: black thin solid; BORDER-TOP: black thin solid; MARGIN: 1ex; BORDER-LEFT: black thin solid; BORDER-BOTTOM: black thin solid; BACKGROUND-COLOR: #eee
+}
+.listing {
+	BORDER-RIGHT: black thin solid; BORDER-TOP: black thin solid; MARGIN: 1ex; BORDER-LEFT: black thin solid; BORDER-BOTTOM: black thin solid; BACKGROUND-COLOR: #eee
+}
+.py-listing PRE {
+	BORDER-RIGHT: medium none; BORDER-TOP: medium none; MARGIN: 0px; BORDER-LEFT: medium none; BORDER-BOTTOM: black thin solid
+}
+.html-listing PRE {
+	BORDER-RIGHT: medium none; BORDER-TOP: medium none; MARGIN: 0px; BORDER-LEFT: medium none; BORDER-BOTTOM: black thin solid
+}
+.listing PRE {
+	BORDER-RIGHT: medium none; BORDER-TOP: medium none; MARGIN: 0px; BORDER-LEFT: medium none; BORDER-BOTTOM: black thin solid
+}
+.py-listing .python {
+	BORDER-RIGHT: medium none; BORDER-TOP: medium none; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; BORDER-LEFT: medium none; BORDER-BOTTOM: black thin solid
+}
+.html-listing .htmlsource {
+	BORDER-RIGHT: medium none; BORDER-TOP: medium none; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; BORDER-LEFT: medium none; BORDER-BOTTOM: black thin solid
+}
+.caption {
+	PADDING-BOTTOM: 0.5em; PADDING-TOP: 0.5em; TEXT-ALIGN: center
+}
+.filename {
+	FONT-STYLE: italic
+}
+.manhole-output {
+	COLOR: blue
+}
+HR {
+	DISPLAY: inline
+}
+UL {
+	PADDING-RIGHT: 0px; PADDING-LEFT: 1em; PADDING-BOTTOM: 0px; MARGIN: 0px 0px 0px 1em; BORDER-LEFT: 1em; PADDING-TOP: 0px
+}
+LI {
+	PADDING-RIGHT: 2px; PADDING-LEFT: 2px; PADDING-BOTTOM: 2px; PADDING-TOP: 2px
+}
+DT {
+	FONT-WEIGHT: bold; MARGIN-LEFT: 1ex
+}
+DD {
+	MARGIN-BOTTOM: 1em
+}
+DIV.note {
+	BORDER-RIGHT: black thin solid; PADDING-RIGHT: 5%; BORDER-TOP: black thin solid; MARGIN-TOP: 1ex; PADDING-LEFT: 5%; MARGIN-LEFT: 5%; BORDER-LEFT: black thin solid; MARGIN-RIGHT: 5%; PADDING-TOP: 1ex; BORDER-BOTTOM: black thin solid; BACKGROUND-COLOR: #ffffcc
+}
