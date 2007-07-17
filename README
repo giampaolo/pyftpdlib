@@ -1,0 +1,18 @@
+Documentation
+=============
+
+ - Check doc/pyftpdlib.html.
+
+
+Requirements
+============
+
+ - Python 2.2 or higher.
+
+
+Install
+=======
+
+ - Just run:
+    > python setup.py install
+
