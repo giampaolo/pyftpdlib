@@ -4,9 +4,9 @@
 # FTPd using local unix account database to authenticate users and get
 # their home directories (users must be created previously).
 
-from pyftpdlib import FTPServer
 import os
 import pwd, spwd, crypt
+from pyftpdlib import FTPServer
 
 class unix_authorizer(FTPServer.dummy_authorizer):
 
@@ -29,6 +29,8 @@ class unix_authorizer(FTPServer.dummy_authorizer):
         if username == 'anonymous':
             if self.has_user('anonymous'):
                 return 1
+            else:
+                return 0
         else:
             pw1 = spwd.getspnam(username).sp_pwd
             pw2 = crypt.crypt(password, pw1)
@@ -37,6 +39,7 @@ class unix_authorizer(FTPServer.dummy_authorizer):
 if __name__ == "__main__":
     authorizer = unix_authorizer()
     authorizer.add_user('user', perm=('r', 'w'))
+    authorizer.add_anonymous(os.getcwd())
     ftp_handler = FTPServer.ftp_handler
     ftp_handler.authorizer = authorizer
     address = ('', 21)

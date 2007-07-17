@@ -1,9 +1,9 @@
 # winFTPserver.py
-# Basic authorizer for Windows NT accounts (users must be created previously)
+# Basic authorizer for Windows NT accounts (users must be created previously).
 
-from pyftpdlib import FTPServer
-import win32security, win32net, pywintypes
 import os
+import win32security, win32net, pywintypes
+from pyftpdlib import FTPServer
 
 class winNT_authorizer(FTPServer.dummy_authorizer):
 
@@ -11,22 +11,22 @@ class winNT_authorizer(FTPServer.dummy_authorizer):
         FTPServer.dummy_authorizer.__init__(self)
 
     def add_user(self, username, home, perm=('r')):
-        if username != 'anonymous':
-            # check if user exists
-            users = [elem['name'] for elem in win32net.NetUserEnum(None, 0)[0]]
-            assert username in users, 'No such user "%s".' %username
-
+        # check if user exists
+        users = [elem['name'] for elem in win32net.NetUserEnum(None, 0)[0]]
+        assert username in users, 'No such user "%s".' %username
         assert os.path.isdir(home), 'No such directory "%s".' %home
         dic = {'pwd'  : None,
                'home' : home,
                'perm' : perm
                }
-        self.user_table[username] = dic        
+        self.user_table[username] = dic
 
     def validate_authentication(self, username, password):
         if username == 'anonymous':
             if self.has_user('anonymous'):
                 return 1
+            else:
+                return 0
         else:
             try:
                 # check credentials
@@ -40,11 +40,6 @@ class winNT_authorizer(FTPServer.dummy_authorizer):
                 return 1
             except pywintypes.error, err:
                 return 0
-
-    def add_anonymous(self, homedir, perm=('r')):
-        if 'w' in perm:
-            raise error, "Anonymous aims to be a read-only user."
-        self.add_user('anonymous', homedir, perm)
 
 
 if __name__ == "__main__":

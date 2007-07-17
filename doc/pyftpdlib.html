@@ -1,10 +1,15 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><title>Python FTP server library (pyftpdlib)</title>
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
+  
 
-<link href="pyftpdlib.css" type="text/css" rel="stylesheet">
-<meta content="MSHTML 6.00.2900.2963" name="GENERATOR">
-<style type="text/css">
+  <title>Python FTP server library (pyftpdlib)</title><meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+
+
+  <link href="pyftpdlib.css" type="text/css" rel="stylesheet">
+
+  <meta content="MSHTML 6.00.2900.2963" name="GENERATOR">
+
+  <style type="text/css">
 <!--
 .style20 {
 	font-family: Verdana, Arial, Helvetica, sans-serif;
@@ -22,22 +27,40 @@
 	font-style: italic;
 }
 .style30 {color: #FF6600}
+.style32 {color: #009900}
 -->
-</style></head>
+  </style></head>
+
 <body bgcolor="white">
-<h1 class="title" style20="" style23=""><br>
-Python FTP server library (pyftpd) </h1>
-<table width="100%" border="0">
-  <tr>
-    <td><table width="98%" height="100" border="0" align="center">
-      <tr>
+
+<h1 class="title" style20="" style23="">
+Python FTP server library (pyftpdlib) </h1>
+
+<table border="0" width="100%">
+
+  <tbody>
+    <tr>
+
+    <td>
+      <table align="center" border="0" height="100" width="98%">
+
+      <tbody>
+          <tr>
+
         <td><span class="style27">Date: 2007-02-22<br>
+
 Name: Python FTP server library (pyftpdlib)<br>
-Current version: v0.1.0<br>
+
+Current version: v0.1.1<br>
+
 Status: experimental<br>
+
 Programming language: Python<br>
+
 License: GNU<br>
+
 Author: billiejoex (ITA)<br>
+
 Mail:
 <!-- 
 # ascii_converter.py
@@ -46,145 +69,208 @@ em = ''
 for i in s:
     em += "%s%.2x" %('%', ord(i))
 -->
-<script language="javascript" type="text/javascript">
+            <script language="javascript" type="text/javascript">
 em=			"%3c%61%20%68%72%65%66%3d%22%6d%61%69%6c%74%6f%3a%62%69%6c%6c%69%65%6a%6f%65%78%40%67%6d%61%69%6c%2e%63%6f%6d%22%3e%62%69%6c%6c%69%65%6a%6f%65%78%40%67%6d%61%69%6c%2e%63%6f%6d%3c%2f%61%3e";
 document.write (unescape(em + "<br>"));
-</script>
+            </script>
 Web: <a href="http://billiejoex.altervista.org">http://billiejoex.altervista.org</a></span></td>
+
       </tr>
-    </table>      </td>
+
+    
+        </tbody>
+      </table>
+      </td>
+
   </tr>
+
+  </tbody>
 </table>
+
 <div class="style27"></div>
+
 <div class="toc" style20="">
 <ol class="style20">
+
   <li><a href="#1">About</a></li>
+
   <li><a href="#2">Features</a></li>
+
   <li><a href="#3">Download</a></li>
+
   <li><a href="#4">Requirements</a></li>
+
   <li><a href="#5">Quick start</a></li>
+
   <li><a href="#6">Advanced usages </a>
-      <ul>
+      
+    <ul>
+
         <li><a href="#7">Logging management</a></li>
+
         <li><a href="#8">Storing passwords as hash digests </a></li>
+
         <li><a href="#9">UNIX FTP Server</a></li>
+
         <li><a href="#10">Windows NT  FTP Server </a></li>
-      </ul>
+
+      
+    </ul>
+
   </li>
-  </ol>
+
+  
+</ol>
+
 </div>
+
 <div class="content">
-  <p class="style20"><strong><a name="1" id="1"></a>About</strong> </p>
-  <p class="style20"> Python FTP server library provides an high-level portable interface to easily write asynchronous FTP servers with Python.<br>
+  
+<p class="style20"><strong><a name="1" id="1"></a>About</strong> </p>
+
+  
+<p class="style20"> Python FTP server library provides an high-level portable interface to easily write asynchronous FTP servers with Python.<br>
+
 Based on asyncore / asynchat frameworks pyftpdlib is actually the most
-complete RFC959 FTP server implementation available for Python language.<br>
+complete RFC959 FTP server implementation available for Python programming language.<br>
+
 <br>
+
   <strong><a name="2" id="2"></a></strong><strong>Features</strong> </p>
-  <ul class="style20">
+
+  
+<ul class="style20">
+
     <li>High portability:
-      <ul>
+      
+    <ul>
+
           <li>Entirely
 written in pure Python, no third party modules are used, it just works
 on any system where select( ) or poll( ) are available.</li>
+
         <li>Abstracted file system interface is provided. It makes no difference if you're using a DOS-like or a UNIX-like filesystem.</li>
-        <li>Extremely flexible system of &quot;authorizers&quot; able to interact with account and password database of different systems (Windows NT, Unix, OSx and so on...). </li>
-      </ul>
+
+        <li>Extremely flexible system of "authorizers" able to
+interact with account and password database of different systems
+(Windows NT, Unix, OSx and so on...). </li>
+    </ul>
     </li>
+
     <li>High performance:
-      <ul>
-          <li>
-based on asyncore / asynchat frameworks  it permits multiplexing I/O with
+      
+    <ul>
+
+          <li>thanks to asyncore / asynchat frameworks  it permits multiplexing I/O with
 various client connections within a single process / thread.</li>
       </ul>
     </li>
+
     <li>Extremely simple and highly customizable thanks to its simpler Object Oriented API.</li>
-  </ul>
-  <p class="style20"><strong><a name="3" id="3"></a>Download</strong></p>
-  <p class="style20"><a href="http://billiejoex.altervista.org/Downloads/pyftpdlib/pyftpdlib_0.1.tar.gz">pyftpdlib_v0.1.0.tar.gz</a></p>
-  <p class="style20"><strong><strong><a name="4" id="4"></a>Requirements</strong></strong></p>
-  <p class="style20">Python 2.2 or higher.</p>
-  <p class="style20"> <strong><a name="5" id="5"></a>Quick start</strong></p>
-  <pre class="python">Python 2.4.3 (#1, Oct 1 2006, 18:00:19)<br>[GCC 4.1.1 20060928 (Red Hat 4.1.1-28)] on linux2<br>Type "help", "copyright", "credits" or "license" for more information.<br>&gt;&gt;&gt; <strong><span style="color: rgb(255, 119, 0);">from </span>pyftpdlib<span style="color: rgb(255, 119, 0);"> import</span> FTPServer</strong><br>&gt;&gt;&gt; <strong>authorizer = FTPServer.dummy_authorizer()</strong><br>&gt;&gt;&gt; <strong>authorizer.add_user('user', <span style="color: rgb(0, 170, 0);">'12345'</span>, <span style="color: rgb(0, 170, 0);">'/home/user'</span>, perm=(<span style="color: rgb(0, 170, 0);">'r'</span>, <span style="color: rgb(0, 170, 0);">'w'</span>))</strong><br>&gt;&gt;&gt; <strong>authorizer.add_anonymous(<span style="color: rgb(0, 170, 0);">'/home/nobody'</span>)</strong><br>&gt;&gt;&gt; <strong>ftp_handler = FTPServer.ftp_handler</strong><br>&gt;&gt;&gt; <strong>ftp_handler.authorizer = authorizer<br>&gt;&gt;&gt; ftp_handler.msg_connect = "Hey there!"</strong><br>&gt;&gt;&gt; <strong>address = (<span style="color: rgb(0, 170, 0);">""</span>, 21)</strong><br>&gt;&gt;&gt; <strong>ftpd = FTPServer.ftp_server(address, ftp_handler)</strong><br>&gt;&gt;&gt; <strong>ftpd.serve_forever()</strong><br>Serving FTP on 0.0.0.0:21.<br>[]10.0.0.1:1089 connected.<br>10.0.0.1:1089 ==&gt; 220 Ready.<br>10.0.0.1:1089 &lt;== USER anonymous<br>10.0.0.1:1089 ==&gt; 331 Username ok, send passowrd.<br>10.0.0.1:1089 &lt;== PASS ******<br>10.0.0.1:1089 ==&gt; 230 User anonymous logged in.<br>[anonymous]@10.0.0.1:1089 User anonymous logged in.<br>10.0.0.1:1089 &lt;== CWD /<br>[anonymous]@10.0.0.1:1089 OK CWD "/"<br>10.0.0.1:1089 ==&gt; 250 "/" is the current directory.<br>10.0.0.1:1089 &lt;== TYPE A<br>10.0.0.1:1089 ==&gt; 200 Type set to: ASCII.<br>10.0.0.1:1089 &lt;== PASV<br>10.0.0.1:1089 ==&gt; 227 Entering passive mode (10,0,0,1,4,0)<br>10.0.0.1:1089 &lt;== LIST<br>10.0.0.1:1089 ==&gt; 125 Data connection already open; Transfer starting.<br>[anonymous]@10.0.0.1:1089 OK LIST. Transfer starting.<br>10.0.0.1:1089 ==&gt; 226 Transfer complete.<br>[anonymous]@10.0.0.1:1089 Trasfer complete. 548 bytes transmitted.<br>10.0.0.1:1089 &lt;== QUIT<br>10.0.0.1:1089 ==&gt; 221 Goodbye.<br>[anonymous]@10.0.0.1:1089 Disconnected.</pre>
+    <li>Compact: the entire library is distributed in a single file (FTPServer.py).</li>
+</ul>
+
+  
+<p class="style20"><strong><a name="3" id="3"></a>Download</strong></p>
+
+  
+<p class="style20"><a href="http://code.google.com/p/pyftpdlib/downloads/list">Google code download page</a></p>
+
+  
+<p class="style20"><strong><strong><a name="4" id="4"></a>Requirements</strong></strong></p>
+
+  
+<p class="style20">Python 2.3 or higher.</p>
+
+  
+<p class="style20"> <strong><a name="5" id="5"></a>Quick start</strong></p>
+
+  
+<pre class="python">Python 2.4.3 (#1, Oct 1 2006, 18:00:19)<br>[GCC 4.1.1 20060928 (Red Hat 4.1.1-28)] on linux2<br>Type "help", "copyright", "credits" or "license" for more information.<br>&gt;&gt;&gt; <strong><span style="color: rgb(255, 119, 0);">from </span>pyftpdlib<span style="color: rgb(255, 119, 0);"> import</span> FTPServer</strong><br>&gt;&gt;&gt; <strong>authorizer = FTPServer.dummy_authorizer()</strong><br>&gt;&gt;&gt; <strong>authorizer.add_user(<span class="style32">'user'</span>, <span style="color: rgb(0, 170, 0);">'12345'</span>, <span style="color: rgb(0, 170, 0);">'/home/user'</span>, perm=(<span style="color: rgb(0, 170, 0);">'r'</span>, <span style="color: rgb(0, 170, 0);">'w'</span>))</strong><br>&gt;&gt;&gt; <strong>authorizer.add_anonymous(<span style="color: rgb(0, 170, 0);">'/home/nobody'</span>)</strong><br>&gt;&gt;&gt; <strong>ftp_handler = FTPServer.ftp_handler</strong><br>&gt;&gt;&gt; <strong>ftp_handler.authorizer = authorizer<br>&gt;&gt;&gt; ftp_handler.msg_connect = <span class="style32">"Hey there!"</span></strong><br>&gt;&gt;&gt; <strong>address = (<span style="color: rgb(0, 170, 0);">"127.0.0.1"</span>, 21)</strong><br>&gt;&gt;&gt; <strong>ftpd = FTPServer.ftp_server(address, ftp_handler)</strong><br>&gt;&gt;&gt; <strong>ftpd.serve_forever()</strong><br>Serving FTP on 0.0.0.0:21.<br>[]10.0.0.1:1089 connected.<br>10.0.0.1:1089 ==&gt; 220 Ready.<br>10.0.0.1:1089 &lt;== USER anonymous<br>10.0.0.1:1089 ==&gt; 331 Username ok, send passowrd.<br>10.0.0.1:1089 &lt;== PASS ******<br>10.0.0.1:1089 ==&gt; 230 User anonymous logged in.<br>[anonymous]@10.0.0.1:1089 User anonymous logged in.<br>10.0.0.1:1089 &lt;== CWD /<br>[anonymous]@10.0.0.1:1089 OK CWD "/"<br>10.0.0.1:1089 ==&gt; 250 "/" is the current directory.<br>10.0.0.1:1089 &lt;== TYPE A<br>10.0.0.1:1089 ==&gt; 200 Type set to: ASCII.<br>10.0.0.1:1089 &lt;== PASV<br>10.0.0.1:1089 ==&gt; 227 Entering passive mode (10,0,0,1,4,0)<br>10.0.0.1:1089 &lt;== LIST<br>10.0.0.1:1089 ==&gt; 125 Data connection already open; Transfer starting.<br>[anonymous]@10.0.0.1:1089 OK LIST. Transfer starting.<br>10.0.0.1:1089 ==&gt; 226 Transfer complete.<br>[anonymous]@10.0.0.1:1089 Trasfer complete. 548 bytes transmitted.<br>10.0.0.1:1089 &lt;== QUIT<br>10.0.0.1:1089 ==&gt; 221 Goodbye.<br>[anonymous]@10.0.0.1:1089 Disconnected.</pre>
+
 <h2 class="style28"><strong><a name="6" id="6"></a></strong></h2>
+
 <h2 class="style28">  <br>
+
   Advanced usages</h2>
+
 <p class="style22"><strong><a name="7" id="7"></a><br>
+
   Logging management</strong></p>
+
 <p class="style22">FTP server library provides 3 different logging streams:</p>
+
 <ul class="style22">
+
   <li>ftpd logging that notifies the most important messages for the end-user regarding the FTPd.</li>
+
   <li>line-logging that notifies commands and responses passing through the control FTP channel.</li>
+
   <li>debug-logging
 used for debugging messages (function/method calls, traceback outputs,
 low-level informational messages and so on...).</li>
+
 </ul>
+
 <p class="style22">This last one is disabled by default, the first and the second one are printed to stdout through <em><strong>log()</strong></em> and <em><strong>linelog()</strong></em> functions of FTPserver library.<br>
+
   Let's suppose you don't want to print FTPd messages to screen but you
   want to write them into a file (for example <em>/var/log/ftpd.log</em>) and
   'line-logs' messages into a different one (<em>'/var/log/ftpd.lines.log'</em>).
   Here's how you can do that:</p>
+
 <pre class="python"><span class="python style16"><font color="#ff7700"><font color="#dd0000">#!/usr/bin/env python</font><font color="#ff7700">
 
 from </font></font>pyftpdlib<font color="#ff7700"> import</font> FTPServer<br><span class="style4 style30">import</span> os<br>         <br><font color="#ff7700">def</font> <font color="#0000ff">standard_logger</font>(msg):<br>    f = open(<font color="#00aa00">'/var/log/ftpd.log'</font>, <font color="#00aa00">'a'</font>)<br>    f.write(msg + <font color="#00aa00">'\n'</font>)<br>    f.close()<br> <br><font color="#ff7700">def</font> <font color="#0000ff">line_logger</font>(msg):<br>    f = open(<font color="#00aa00">'/var/log/ftpd.lines.log'</font>, <font color="#00aa00">'a'</font>)<br>    f.write(msg + <font color="#00aa00">'\n'</font>)<br>    f.close()<br> <br><font color="#ff7700">if</font> __name__ == <font color="#00aa00">"__main__"</font>:<br>    FTPServer.log = standard_logger<br>    FTPServer.logline = line_logger<br> <br>    authorizer = FTPServer.dummy_authorizer()<br>    authorizer.add_anonymous(os.getcwd())<br>    ftp_handler = FTPServer.ftp_handler<br>    ftp_handler.authorizer = authorizer<br>    address = (<font color="#00aa00">''</font>, 21)<br>    ftpd = FTPServer.ftp_server(address, ftp_handler)<br>    ftpd.serve_forever()</span></pre>
+
 <p class="style22"><strong><a name="8" id="8"></a><br>
+
   Storing passwords as hash digests </strong>  </p>
+
 <p class="style22">Using FTP server lib with the default <em><strong>dummy_authorizer</strong></em> means that password will be stored in clear-text. If you want to implement a basic
   encrypted account storage system you have to write your own authorizer. The
   example below shows how to easily store passwords as one-way hashes by
   using md5 algorithm and by sub-classing the original <em><strong>dummy_authorizer</strong></em> class overriding its <em><strong>validate_authentication</strong></em> method:</p>
-<pre class="python"><font color="#dd0000">#!/usr/bin/env python</font>
-<font color="#ff7700">
-from </font>pyftpdlib<font color="#ff7700"> import</font> FTPServer<br><font color="#ff7700">import</font> md5
-<font color="#ff7700">import</font> os
 
-<font color="#ff7700">class</font> <font color="#0000ff">dummy_encrypted_authorizer</font>(FTPServer.dummy_authorizer):<br>         <br>    <font color="#ff7700">def</font> <font color="#0000ff">__init__</font>(self):<br>        FTPServer.dummy_authorizer.__init__(self)<br> <br>    <font color="#ff7700">def</font> <font color="#0000ff">validate_authentication</font>(self, username, password):
-        <font color="#ff7700">if</font> username == <font color="#00aa00">'anonymous'</font>:<br>            <font color="#ff7700">if</font> self.has_user(<font color="#00aa00">'anonymous'</font>):<br>                <font color="#ff7700">return</font> 1<br>        hash = md5.new(password).hexdigest()<br>       <font color="#ff7700"> return</font> self.user_table[username][<font color="#00aa00">'pwd'</font>] == hash<br> <br><font color="#ff7700">if</font> __name__ == <font color="#00aa00">"__main__"</font>:<br>    hash = md5.new(<font color="#00aa00">'12345'</font>).hexdigest()<br>    authorizer = dummy_encrypted_authorizer()<br>    authorizer.add_user(<font color="#00aa00">'user'</font>, hash, os.getcwd(), perm=(<font color="#00aa00">'r'</font>, <font color="#00aa00">'w'</font>))<br> <br>    ftp_handler = FTPServer.ftp_handler<br>    ftp_handler.authorizer = authorizer<br>    address = (<font color="#00aa00">''</font>, 21)<br>    ftpd = FTPServer.ftp_server(address, ftp_handler)<br>    ftpd.serve_forever()</pre>
+<pre class="python"><font color="#dd0000">#!/usr/bin/env python<br># md5_ftpd.py<br><br># FTPd storing passwords as hash digest (platform independent).<br><br></font><font color="#ff7700">import</font> md5<br><font color="#ff7700">import</font> os<br><font color="#ff7700">from</font> pyftpdlib <font color="#ff7700">import</font> FTPServer<br><br><font color="#ff7700">class</font> <font color="#0000ff">dummy_encrypted_authorizer</font>(FTPServer.dummy_authorizer):<br><br>    <font color="#ff7700">def</font> <font color="#0000ff">__init__</font>(self):<br>        FTPServer.dummy_authorizer.__init__(self)<br><br>    <font color="#ff7700">def</font> <font color="#0000ff">validate_authentication</font>(self, username, password):<br>        <font color="#ff7700">if</font> username == <font color="#00aa00">'anonymous'</font>:<br>            <font color="#ff7700">if</font> self.has_user(<font color="#00aa00">'anonymous'</font>):<br>                <font color="#ff7700">return</font> 1<br>            <font color="#ff7700">else</font>:<br>                <font color="#ff7700">return</font> 0<br>        hash = md5.new(password).hexdigest()<br>        <font color="#ff7700">return</font> self.user_table[username][<font color="#00aa00">'pwd'</font>] == hash<br><br><font color="#ff7700">if</font> __name__ == <font color="#00aa00">"__main__"</font>:<br>    <font color="#dd0000"># get an hash digest from a clear-text password<br></font>    hash = md5.new(<font color="#00aa00">'12345'</font>).hexdigest()<br>    authorizer = dummy_encrypted_authorizer()<br>    authorizer.add_user(<font color="#00aa00">'user'</font>, hash, os.getcwd(), perm=(<font color="#00aa00">'r'</font>, <font color="#00aa00">'w'</font>))<br>    authorizer.add_anonymous(os.getcwd())<br>    ftp_handler = FTPServer.ftp_handler<br>    ftp_handler.authorizer = authorizer<br>    address = (<font color="#00aa00">''</font>, 21)<br>    ftpd = FTPServer.ftp_server(address, ftp_handler)<br>    ftpd.serve_forever()</pre>
+
 <p class="style20"><strong><a name="9" id="9"></a><br>
+
   Unix FTP Server </strong></p>
+
 <p class="style20">If you're running a Unix system you could want to configure
   pyftpd to include support for 'real' users existing on the system. The
   example below shows how to use <em><strong>pwd / spwd&nbsp;</strong></em>modules
 (available since Python 2.5) to interact with UNIX user account and
 password database (users must be created previously).<br>
+
 This basic authorizer also gets the user's home directory.</p>
-<pre class="python"><font color="#dd0000">#!/usr/bin/env python<br># unix_ftpd.py<br>
-</font><font color="#ff7700">from</font> pyftpdlib <font color="#ff7700">import</font> FTPServer<br><font color="#ff7700">import</font> os<br><font color="#ff7700">import</font> pwd, spwd, crypt<font color="#ff7700">
 
-class</font> <font color="#0000ff">unix_authorizer</font>(FTPServer.dummy_authorizer):
+<pre class="python"><font color="#dd0000">#!/usr/bin/env python<br># unix_ftpd.py<br><br># FTPd using local unix account database to authenticate users and get<br># their home directories (users must be created previously).</font><font color="#ff7700">
 
-    <font color="#ff7700">def</font> <font color="#0000ff">__init__</font>(self):<br>        FTPServer.dummy_authorizer.__init__(self)
+import</font> os<br><font color="#ff7700">import</font> pwd, spwd, crypt<br><font color="#ff7700">from</font> pyftpdlib <font color="#ff7700">import</font> FTPServer<br><br><font color="#ff7700">class</font> <font color="#0000ff">unix_authorizer</font>(FTPServer.dummy_authorizer):<br><br>    <font color="#ff7700">def</font> <font color="#0000ff">__init__</font>(self):<br>        FTPServer.dummy_authorizer.__init__(self)<br><br>    <font color="#ff7700">def</font> <font color="#0000ff">add_user</font>(self, username, home=<font color="#00aa00">''</font>, perm=(<font color="#00aa00">'r'</font>)):<br>        <font color="#ff7700">assert</font> username <font color="#ff7700">in</font> [i[0] <font color="#ff7700">for</font> i <font color="#ff7700">in</font> pwd.getpwall()], <font color="#00aa00">'No such user "%s".'</font> %username<br>        pw = spwd.getspnam(username).sp_pwd<br>        <font color="#ff7700">if</font> <font color="#ff7700">not</font> home:<br>            home = pwd.getpwnam(username).pw_dir<br>        <font color="#ff7700">assert</font> os.path.isdir(home), <font color="#00aa00">'No such directory "%s".'</font> %home<br>        dic = {<font color="#00aa00">'pwd'</font>  : pw,<br>               <font color="#00aa00">'home'</font> : home,<br>               <font color="#00aa00">'perm'</font> : perm<br>               }<br>        self.user_table[username] = dic<br><br>    <font color="#ff7700">def</font> <font color="#0000ff">validate_authentication</font>(self, username, password):<br>        <font color="#ff7700">if</font> username == <font color="#00aa00">'anonymous'</font>:<br>            <font color="#ff7700">if</font> self.has_user(<font color="#00aa00">'anonymous'</font>):<br>                <font color="#ff7700">return</font> 1<br>            <font color="#ff7700">else</font>:<br>                <font color="#ff7700">return</font> 0<br>        <font color="#ff7700">else</font>:<br>            pw1 = spwd.getspnam(username).sp_pwd<br>            pw2 = crypt.crypt(password, pw1)<br>            <font color="#ff7700">return</font> pw1 == pw2<br><br><font color="#ff7700">if</font> __name__ == <font color="#00aa00">"__main__"</font>:<br>    authorizer = unix_authorizer()<br>    authorizer.add_user(<font color="#00aa00">'user'</font>, perm=(<font color="#00aa00">'r'</font>, <font color="#00aa00">'w'</font>))<br>    authorizer.add_anonymous(os.getcwd())<br>    ftp_handler = FTPServer.ftp_handler<br>    ftp_handler.authorizer = authorizer<br>    address = (<font color="#00aa00">''</font>, 21)<br>    ftpd = FTPServer.ftp_server(address, ftp_handler)<br>    ftpd.serve_forever()<br></pre>
 
-    <font color="#ff7700">def</font> <font color="#0000ff">add_user</font>(self, username, home=<font color="#00aa00">''</font>, perm=(<font color="#00aa00">'r'</font>)):<br>        <font color="#ff7700">assert</font> username <font color="#ff7700">in</font> [i[0] <font color="#ff7700">for</font> i <font color="#ff7700">in</font> pwd.getpwall()], <font color="#00aa00">'No such user "%s".'</font> %username<br>        pw = spwd.getspnam(username).sp_pwd<br>        <font color="#ff7700">if</font> <font color="#ff7700">not</font> home:<br>            home = pwd.getpwnam(username).pw_dir<br>        <font color="#ff7700">assert</font> os.path.isdir(home), <font color="#00aa00">'No such directory "%s".'</font> %home<br>        dic = {<font color="#00aa00">'pwd'</font>  : pw,<br>               <font color="#00aa00">'home'</font> : home,<br>               <font color="#00aa00">'perm'</font> : perm<br>               }<br>        self.user_table[username] = dic
-
-    <font color="#ff7700">def</font> <font color="#0000ff">validate_authentication</font>(self, username, password):<br>        <font color="#ff7700">if</font> username == <font color="#00aa00">'anonymous'</font>:<br>            <font color="#ff7700">if</font> self.has_user(<font color="#00aa00">'anonymous'</font>):<br>                <font color="#ff7700">return</font> 1<br>        <font color="#ff7700">else</font>:<br>            pw1 = spwd.getspnam(username).sp_pwd<br>            pw2 = crypt.crypt(password, pw1)<br>            <font color="#ff7700">return</font> pw1 == pw2
-
-<font color="#ff7700">if</font> __name__ == <font color="#00aa00">"__main__"</font>:<br>    authorizer = unix_authorizer()<br>    authorizer.add_user(<font color="#00aa00">'user'</font>, perm=(<font color="#00aa00">'r'</font>, <font color="#00aa00">'w'</font>))<br>    ftp_handler = FTPServer.ftp_handler<br>    ftp_handler.authorizer = authorizer<br>    address = (<font color="#00aa00">''</font>, 21)<br>    ftpd = FTPServer.ftp_server(address, ftp_handler)<br>    ftpd.serve_forever()<br></pre>
 <p class="style20"><strong><br>
+
     <a name="10" id="10"></a><br>
+
     Windows NT FTP Server</strong><span style="font-weight: bold;"><br>
+
 </span><br>
-This next code shows how to implement a basic authorizer for a Windows NT workstation (windows NT, 2000, XP, 2003 server and so on...) by using pywin32 extension. </p>
-<pre class="python"><font color="#dd0000"># winNT_ftpd.py<br></font><font color="#dd0000"># Basic authorizer for Windows NT accounts database <br># (users must be created previously)
+This next code shows how to implement a basic authorizer for a Windows
+NT workstation (windows NT, 2000, XP, 2003 server and so on...) by
+using pywin32 extension. </p>
 
-</font><font color="#ff7700">from</font> pyftpdlib <font color="#ff7700">import</font> FTPServer<br><font color="#ff7700">import</font> win32security, win32net, pywintypes<br><font color="#ff7700">import</font> os
+<pre class="python"><font color="#dd0000"># winFTPserver.py<br># Basic authorizer for Windows NT accounts (users must be created previously).<br><br></font><font color="#ff7700">import</font> os<br><font color="#ff7700">import</font> win32security, win32net, pywintypes<br><font color="#ff7700">from</font> pyftpdlib <font color="#ff7700">import</font> FTPServer<br><br><font color="#ff7700">class</font> <font color="#0000ff">winNT_authorizer</font>(FTPServer.dummy_authorizer):<br><br>    <font color="#ff7700">def</font> <font color="#0000ff">__init__</font>(self):<br>        FTPServer.dummy_authorizer.__init__(self)<br><br>    <font color="#ff7700">def</font> <font color="#0000ff">add_user</font>(self, username, home, perm=(<font color="#00aa00">'r'</font>)):<br>        <font color="#dd0000"># check if user exists<br></font>        users = [elem[<font color="#00aa00">'name'</font>] <font color="#ff7700">for</font> elem <font color="#ff7700">in</font> win32net.NetUserEnum(None, 0)[0]]<br>        <font color="#ff7700">assert</font> username <font color="#ff7700">in</font> users, <font color="#00aa00">'No such user "%s".'</font> %username<br>        <font color="#ff7700">assert</font> os.path.isdir(home), <font color="#00aa00">'No such directory "%s".'</font> %home<br>        dic = {<font color="#00aa00">'pwd'</font>  : None,<br>               <font color="#00aa00">'home'</font> : home,<br>               <font color="#00aa00">'perm'</font> : perm<br>               }<br>        self.user_table[username] = dic<br><br>    <font color="#ff7700">def</font> <font color="#0000ff">validate_authentication</font>(self, username, password):<br>        <font color="#ff7700">if</font> username == <font color="#00aa00">'anonymous'</font>:<br>            <font color="#ff7700">if</font> self.has_user(<font color="#00aa00">'anonymous'</font>):<br>                <font color="#ff7700">return</font> 1<br>            <font color="#ff7700">else</font>:<br>                <font color="#ff7700">return</font> 0<br>        <font color="#ff7700">else</font>:<br>            <font color="#ff7700">try</font>:<br>                <font color="#dd0000"># check credentials<br></font>                win32security.LogonUser (<br>                    username,<br>                    None,<br>                    password,<br>                    win32security.LOGON32_LOGON_NETWORK,<br>                    win32security.LOGON32_PROVIDER_DEFAULT<br>                    )<br>                <font color="#ff7700">return</font> 1<br>            <font color="#ff7700">except</font> pywintypes.error, err:<br>                <font color="#ff7700">return</font> 0<br><br><font color="#ff7700">if</font> __name__ == <font color="#00aa00">"__main__"</font>:<br>    authorizer = winNT_authorizer()<br>    authorizer.add_user (<font color="#00aa00">'user'</font>, os.getcwd(),perm=(<font color="#00aa00">'r'</font>, <font color="#00aa00">'w'</font>))<br>    authorizer.add_anonymous (os.getcwd())<br>    ftp_handler = FTPServer.ftp_handler<br>    ftp_handler.authorizer = authorizer<br>    address = (<font color="#00aa00">''</font>, 21)<br>    ftpd = FTPServer.ftp_server(address, ftp_handler)<br>    ftpd.serve_forever()<br></pre>
 
-<font color="#ff7700">class</font> <font color="#0000ff">winNT_authorizer</font>(FTPServer.dummy_authorizer):
-
-    <font color="#ff7700">def</font> <font color="#0000ff">__init__</font>(self):<br>        FTPServer.dummy_authorizer.__init__(self)
-
-    <font color="#ff7700">def</font> <font color="#0000ff">add_user</font>(self, username, home, perm=(<font color="#00aa00">'r'</font>)):<br>        <font color="#ff7700">if</font> username != <font color="#00aa00">'anonymous'</font>:<br>            <font color="#dd0000"># check if user exists<br></font>            users = [elem[<font color="#00aa00">'name'</font>] <font color="#ff7700">for</font> elem <font color="#ff7700">in</font> win32net.NetUserEnum(None, 0)[0]]<br>            <font color="#ff7700">assert</font> username <font color="#ff7700">in</font> users, <font color="#00aa00">'No such user "%s".'</font> %username
-
-        <font color="#ff7700">assert</font> os.path.isdir(home), <font color="#00aa00">'No such directory "%s".'</font> %home<br>        dic = {<font color="#00aa00">'pwd'</font>  : None,<br>               <font color="#00aa00">'home'</font> : home,<br>               <font color="#00aa00">'perm'</font> : perm<br>               }<br>        self.user_table[username] = dic
-
-    <font color="#ff7700">def</font> <font color="#0000ff">validate_authentication</font>(self, username, password):<br>        <font color="#ff7700">if</font> username == <font color="#00aa00">'anonymous'</font>:<br>            <font color="#ff7700">if</font> self.has_user(<font color="#00aa00">'anonymous'</font>):<br>                <font color="#ff7700">return</font> 1<br>        <font color="#ff7700">else</font>:<br>            <font color="#ff7700">try</font>:<br>                <font color="#dd0000"># check credentials<br></font>                win32security.LogonUser (<br>                    username,<br>                    None,<br>                    password,<br>                    win32security.LOGON32_LOGON_NETWORK,<br>                    win32security.LOGON32_PROVIDER_DEFAULT<br>                    )<br>                <font color="#ff7700">return</font> 1<br>            <font color="#ff7700">except</font> pywintypes.error, err:<br>                <font color="#ff7700">return</font> 0
-
-    <font color="#ff7700">def</font> <font color="#0000ff">add_anonymous</font>(self, homedir, perm=(<font color="#00aa00">'r'</font>)):<br>        <font color="#ff7700">if</font> <font color="#00aa00">'w'</font> <font color="#ff7700">in</font> perm:<br>            <font color="#ff7700">raise</font> error, <font color="#00aa00">"Anonymous aims to be a read-only user."</font><br>        self.add_user(<font color="#00aa00">'anonymous'</font>, homedir, perm)
-
-<font color="#ff7700">if</font> __name__ == <font color="#00aa00">"__main__"</font>:<br>    authorizer = winNT_authorizer()<br>    authorizer.add_user(<font color="#00aa00">'user'</font>, <font color="#00aa00">'C:\\homes\\user'</font>,perm=(<font color="#00aa00">'r'</font>, <font color="#00aa00">'w'</font>))<br>    authorizer.add_anonymous(<font color="#00aa00">'C:\\homes\\anonymous'</font>)<br>    ftp_handler = FTPServer.ftp_handler<br>    ftp_handler.authorizer = authorizer<br>    address = (<font color="#00aa00">''</font>, 21)<br>    ftpd = FTPServer.ftp_server(address, ftp_handler)<br>    ftpd.serve_forever()<br></pre>
-<p></p>
 <p>&nbsp;</p>
+
 <p class="style29">EOF<br>
+
 billiejoex 2007-02-20 05:28PM </p>
+
 <p>&nbsp;</p>
+
 </div>
+
 </body></html>

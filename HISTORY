@@ -3,7 +3,18 @@ History
 =======
 
 
-Version: v0.1 - Date: 2007-02-22
---------------------------------
+Version: v0.1.1 - Date: 2007-02-22
+----------------------------------
+
+ - port selection on PASV command has been randomized (this to prevent a remote user 
+   to know how many data connections are in progress on the server).
+ - fixed bug in demo/unix_ftpd.py script (reported by Roger Erens).
+ - (little) modification to add_anonymous method of dummy_authorizer class.
+ - "ftp_server.serve_forever" automatically re-use address if current system is unix.
+ - license changed into a MIT style one.
+
+
+Version: v0.1.0 - Date: 2007-02-22
+----------------------------------
 
  - first proof of concept beta release.

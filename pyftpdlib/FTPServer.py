@@ -2,9 +2,9 @@
 # FTPServer.py
 
 #  ======================================================================
-#  Copyright 2007 by billiejoex
-# 
-#                          All Rights Reserved
+#  Copyright (C) 2007  billiejoex <billiejoex@gmail.com>
+#
+#                         All Rights Reserved
 # 
 #  Permission to use, copy, modify, and distribute this software and
 #  its documentation for any purpose and without fee is hereby
@@ -23,7 +23,7 @@
 #  NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 #  CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #  ======================================================================
-
+  
 
 """
 RFC959 asynchronous FTP server.
@@ -104,6 +104,7 @@ Serving FTP on 0.0.0.0:21.
 #       low-level informational messages and so on...). Disabled by default. 
 #
 #
+#
 # Tested under Windows XP sp2, Linux Fedora 6, Linux Debian Sarge, Linux Ubuntu Breezy.
 #
 # Author: billiejoex < billiejoex@gmail.com >
@@ -119,10 +120,7 @@ Serving FTP on 0.0.0.0:21.
 # - brute force protection: 'freeze'/'sleep' (without blocking the main loop)
 #   PI session for a certain amount of time if authentication fails.
 #
-# - randomize port number of DTP-server when PASV is received. This to prevent a remote
-#   user to know how many data connections are in progress on the server.
-# 
-# - check MDTM command's specifications (RFC959 doesn't talk about it). 
+# - check MDTM command's specifications (RFC959 doesn't talk about it).
 
 
 # -----------------
@@ -162,16 +160,17 @@ Serving FTP on 0.0.0.0:21.
 #                                                 \ directories
 
 
-# ------------------------
-# TIMELINE / CHANGELOG:
-# ------------------------
-# 0.1.0 : 2007-02-22 - first proof of concept beta release.
+# --------
+# TIMELINE
+# --------
+# 0.1.1 : 2007-03-07
+# 0.1.0 : 2007-02-22
 
 
-__pname__   = 'Python FTP server library'
-__ver__     = '0.1.0'
-__state__   = 'expermiental'
-__date__    = '2007-02-22'
+__pname__   = 'Python FTP server library (pyftpdlib)'
+__ver__     = '0.1.1'
+__state__   = 'beta'
+__date__    = '2007-03-07'
 __author__  = 'billiejoex (ITA)'
 __mail__    = 'billiejoex@gmail.com'
 __web__     = 'http://billiejoex.altervista.org'
@@ -237,8 +236,8 @@ deprecated_cmds = {
               
 proto_cmds.update(deprecated_cmds)              
 
-# Not implemented commands. I've not implemented (and a lot of other FTP server
-# did the same) ACCT, SITE and SMNT just because I find them useless.
+# Not implemented commands: I've not implemented (and a lot of other FTP server
+# did the same) ACCT, SITE and SMNT because I find them useless.
 not_implemented_cmds = {
               'ACCT' : 'account permissions',
               'SITE' : 'site specific server services',
@@ -283,15 +282,14 @@ def logline(msg):
 def debug(msg):
     "Debugger: log debugging messages (function/method calls, traceback outputs and so on...)."
     pass
-    print "\t%s" %msg
+    #print "\t%s" %msg
 
 
 # --- authorizers
 
 class basic_authorizer:
-    """
-    This class exists just for documentation.
-    If you want to write your own authorizer it must provide all
+    """This class exists just for documentation.
+    If you want to write your own authorizer you must provide all
     the following methods.
     """
     def __init__(self):
@@ -310,12 +308,10 @@ class basic_authorizer:
         ""
     def w_perm(self, username, obj):
         ""        
-
-
+   
 class dummy_authorizer:    
-    """
-    Dummy authorizer class providing a basic portable interface for
-    handling "virtual" users.
+    """Dummy authorizer base class providing a basic portable
+    interface for handling "virtual" users.
     """
     
     user_table = {}
@@ -324,22 +320,32 @@ class dummy_authorizer:
         pass
 
     def add_user(self, username, password, homedir, perm=('r')):
-        assert os.path.exists(homedir), 'No such directory: "%s".' %homedir
+        assert os.path.isdir(homedir), 'No such directory: "%s".' %homedir
         for i in perm:
             if i not in ('r', 'w'):
                 raise error, 'No such permission "%s".' %i
         if self.has_user(username):
             raise error, 'User "%s" already exists.' %username
         dic = {'pwd'  : str(password),
-               'home' : homedir,
+               'home' : str(homedir),
                'perm' : perm
                 }
         self.user_table[username] = dic
         
     def add_anonymous(self, homedir, perm=('r')):
-        if 'w' in perm:
-            raise error, "Anonymous aims to be a read-only user."
-        self.add_user('anonymous', '', homedir, perm)
+        if perm not in ('', 'r'):
+            if perm == 'w':
+                raise error, "Anonymous aims to be a read-only user."
+            else:
+                raise error, 'No such permission "%s".' %perm
+        assert os.path.isdir(homedir), 'No such directory: "%s".' %homedir        
+        if self.has_user('anonymous'):
+            raise error, 'User anonymous already exists.'
+        dic = {'pwd'  : '',
+               'home' : homedir,
+               'perm' : perm
+                }
+        self.user_table['anonymous'] = dic
 
     def validate_authentication(self, username, password):
         return self.user_table[username]['pwd'] == password   
@@ -354,12 +360,14 @@ class dummy_authorizer:
         return 'r' in self.user_table[username]['perm']
 
     def w_perm (self, username, obj):
-        return 'w' in self.user_table[username]['perm']        
+        return 'w' in self.user_table[username]['perm']
+    
+
+# system dependent authorizers
 
 ##    if os.name == 'posix':
 ##        class unix_authorizer:
-##            """
-##            Interface to UNIX user account and password database
+##            """Interface to UNIX user account and password database
 ##            (users must be created previously)."""
 ##
 ##            def __init__(self):
@@ -369,7 +377,8 @@ class dummy_authorizer:
 ##    if os.name == 'nt':
 ##        class winNT_authorizer:
 ##            """Interface to Windows NT user account and password
-##            database (users must be created previously)."""
+##            database (users must be created previously).
+##            """
 ##
 ##            def __init__(self):
 ##                raise NotImplementedError
@@ -873,7 +882,7 @@ class ftp_handler(asynchat.async_chat):
             self.data_channel = None
             
         self.log("ABOR received.")
-        self.respond ('226 ABOR command successful.')
+        self.respond('226 ABOR command successful.')
 
 
         # --- authentication
@@ -941,6 +950,7 @@ class ftp_handler(asynchat.async_chat):
         self.respond("230 Ready for new user.")
         self.log("REIN account information was flushed.")
 
+
         # --- filesystem operations
 
     def ftp_PWD(self, line):
@@ -977,7 +987,8 @@ class ftp_handler(asynchat.async_chat):
             self.respond("550 No such file.")
 
     def ftp_MDTM(self, line):
-        # get file's last modification time
+        # get file's last modification time (not documented inside RFC959
+        # but used in a lot of ftpd implementations)
         if not line:
             self.cmd_missing_arg()
             return
@@ -986,7 +997,7 @@ class ftp_handler(asynchat.async_chat):
             self.respond("550 No such file.")
         else:
             lmt = time.strftime("%Y%m%d%H%M%S", time.localtime(self.fs.get_lastm_time (path)))
-            self.respond("213 %s" % lmt)
+            self.respond("213 %s" %lmt)
     
     def ftp_MKD(self, line):
         if not line:
@@ -1106,7 +1117,7 @@ class ftp_handler(asynchat.async_chat):
             self.respond('550 Unknown / unsupported type "%s".' %line)
             
     def ftp_STRU(self, line):
-        # obsolete
+        # obsolete (backward compatibility with older ftp clients)
         if not line:
             self.cmd_missing_arg()
             return        
@@ -1116,7 +1127,7 @@ class ftp_handler(asynchat.async_chat):
             self.respond ('504 Unimplemented STRU type.')
     
     def ftp_MODE(self, line):
-        # obsolete
+        # obsolete (backward compatibility with older ftp clients)
         if not line:
             self.cmd_missing_arg()
             return        
@@ -1189,6 +1200,9 @@ class ftp_server(asynchat.async_chat):
         
     def serve_forever(self): 
         log("Serving FTP on %s:%s." %self.socket.getsockname())
+        if os.name == 'posix':
+            self.set_reuse_addr()
+        # here we try to use poll(), if it exists, else we'll use select()
         asyncore.loop(timeout=1, use_poll=True)          
             
     def handle_accept(self):
@@ -1219,23 +1233,19 @@ class passive_dtp(asynchat.async_chat):
         
         self.cmd_channel = cmd_channel
         self.debug = self.cmd_channel.debug     
-        
+
+        ip = self.cmd_channel.getsockname()[0]
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        ip_addr = self.cmd_channel.getsockname()[0]
-        
-        for port in range(1024, 65000):
-            try:
-                self.bind((ip_addr, port))
-                self.cmd_channel.dtp_ready = True
-                self.listen(5)                
-                self.cmd_channel.respond('227 Entering passive mode (%s,%d,%d)' %(
-                    ip_addr.replace('.', ','), 
-                    port/256, 
-                    port%256
-                    ))
-                break                
-            except socket.error, err:
-                pass
+        # by using 0 as port number value we let socket choose a free random port
+        self.bind((ip, 0))
+        self.listen(5)        
+        self.cmd_channel.dtp_ready = True      
+        port = self.socket.getsockname()[1]
+        self.cmd_channel.respond('227 Entering passive mode (%s,%d,%d)' %(
+                ip.replace('.', ','), 
+                port / 256, 
+                port % 256
+                ))
 
     def __del__(self):
         debug("passive_dtp.__del__()")
@@ -1246,13 +1256,13 @@ class passive_dtp(asynchat.async_chat):
     def handle_accept(self):        
         sock_obj, addr = self.accept()
         
-        # Security feature: check the origin of data connection.
-        # We have to drop the data connection if its IP address 
+        # PASV connection theft protection: check the origin of data connection.
+        # We have to drop the incoming data connection if remote IP address 
         # does not match the client's IP address.
         if self.cmd_channel.remote_ip != addr[0]:
             log("info: PASV connection theft attempt occurred from %s:%s." %(addr[0], addr[1]))
             try:
-                # sock_obj.send('Go hack someone else, dude.')
+                # sock_obj.send('500 Go hack someone else, dude.')
                 sock_obj.close()
             except:
                 pass        
@@ -1341,7 +1351,7 @@ class active_dtp(asynchat.async_chat):
 
 
 class dtp_handler(asynchat.async_chat):
-    """ class handling server-data-transfer-process (server-DTP, see RFC 959)
+    """class handling server-data-transfer-process (server-DTP, see RFC 959)
     managing data-transfer operations.
     """
    
@@ -1486,9 +1496,9 @@ class dtp_handler(asynchat.async_chat):
         tot_bytes = self.tot_bytes_sent + self.tot_bytes_received
 
         # If we used channel for receiving we assume that transfer is finished
-        # when client close connection.
-        # If we used channel for sending we have to check that all data has been
-        # sent (replying with 226) or not (replying with 426).
+        # when client close connection, if we used channel for sending we have
+        # to check that all data has been sent (responding with 226) or not
+        # (responding with 426).
         if self.enable_receive:
             self.cmd_channel.respond("226 Transfer complete.")
             self.cmd_channel.log("Trasfer complete. %d bytes transmitted." %tot_bytes)
@@ -1682,7 +1692,6 @@ class abstracted_fs:
             return 1
         except:
             return 0
-
     
     def get_nlst_dir(self, path):
         # ** warning: CPU-intensive blocking operation. You could want to override this method.
@@ -1694,7 +1703,6 @@ class abstracted_fs:
             f.write(elem + '\r\n')
         f.seek(0)
         return f
-
     
     def get_list_dir(self, path):
         'Emulates unix "ls" command'
@@ -1749,8 +1757,9 @@ class abstracted_fs:
 
 
 def test():
+    # cmd line usage (provide a read-only anonymous ftp server):
+    # python -m pyftpdlib.FTPServer
     authorizer = dummy_authorizer()   
-    authorizer.add_user('user', '12345', os.getcwd(), perm=('r','w'))
     authorizer.add_anonymous(os.getcwd())    
     ftp_handler.authorizer = authorizer
     address = ('', 21)    
