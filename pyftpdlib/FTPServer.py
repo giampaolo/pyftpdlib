@@ -1142,37 +1142,40 @@ class FTPHandler(asynchat.async_chat):
 
 
     def ftp_RNFR(self, line):
-        if self.fs.exists(self.fs.translate(line)):
-            self.fs.rnfr = self.fs.normalize(line)
+        "File renaming (source name)"
+        path = self.fs.translate(line)
+        if self.fs.exists(path):
+            self.fs.rnfr = line
             self.respond("350 Ready for destination name")
         else:
-            self.respond("550 No such file/directory.")
+            self.respond("550 No such file or directory.")
+
 
     def ftp_RNTO(self, line):
-        # TODO - actually RNFR/RNTO commands could also be used to *move* a file/directory
-        # instead of just renaming them. RFC959 doesn't tell if this must be allowed or not
-        # (I believe not). Check about it.
+        "File renaming (destination name)"
         if not self.fs.rnfr:
             self.respond("503 Bad sequence of commands: use RNFR first.")
-            return
-       
-        if not self.authorizer.w_perm(self.username, self.fs.translate(self.fs.rnfr)):
-            self.log('FAIL RNFR/RNTO "%s ==> %s". Not enough priviledges for renaming.'
-                     %(self.fs.rnfr, self.fs.normalize(line)))
-            self.respond("553 Can't RNTO: not enough priviledges.")
-            self.fs.rnfr = None
             return
 
         src = self.fs.translate(self.fs.rnfr)
         dst = self.fs.translate(line)
-     
-        if self.fs.rename(src, dst):
+       
+        if not self.authorizer.w_perm(self.username, self.fs.rnfr):
+            self.log('FAIL RNFR/RNTO "%s ==> %s". Not enough priviledges for renaming.'
+                     %(self.fs.rnfr, self.fs.normalize(line)))
+            self.respond ("550 Can't RNTO: not enough priviledges.")
+            self.fs.rnfr = None
+            return
+
+        try:
+            self.fs.rename(src, dst)
             self.log('OK RNFR/RNTO "%s ==> %s".' %(self.fs.rnfr, self.fs.normalize(line)))
             self.respond("250 Renaming ok.")
-        else:
-            self.log('FAIL RNFR/RNTO "%s ==> %s".' %(self.fs.rnfr, self.fs.normalize(line)))
-            self.respond("550 Renaming failed.")
-        self.fs.rnfr = None
+        except OSError, err:
+            self.log('FAIL RNTO "%s". %s.' %(line, os.strerror(err.errno)))
+            self.respond ('550 %s.' %os.strerror(err.errno))
+            self.fs.rnfr = None
+
 
         # --- others       
 
@@ -1819,11 +1822,7 @@ class AbstractedFS:
         return os.path.getmtime(path)
            
     def rename(self, src, dst):
-        try:
-            os.rename(src, dst)
-            return 1
-        except:
-            return 0
+        os.rename(src, dst)
     
     def get_nlst_dir(self, path):
         # ** warning: CPU-intensive blocking operation. You could want to override this method.
