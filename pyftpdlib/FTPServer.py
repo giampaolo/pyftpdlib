@@ -393,13 +393,34 @@ class FTPHandler(asynchat.async_chat):
     """
 
     authorizer = DummyAuthorizer()
+    
+    # messages
     msg_connect = "Pyftpd %s" %__ver__
     msg_login = ""
     msg_quit = ""
+    
     # maximum login attempts
     max_login_attempts = 3
 
-    def __init__(self):
+    # maximum login attempts
+    max_login_attempts = 3
+
+    # FTP proxying feature (see RFC 959 and security
+    # considerations described into RFC 2577).
+    permit_ftp_proxying = False
+
+    # Set to True if you want to permit PORTing over
+    # privileged ports (not rencommended).
+    permit_privileged_port = False
+
+
+    def __init__(self, conn, ftpd_instance):
+        asynchat.async_chat.__init__(self, conn=conn)
+        self.ftpd_instance = ftpd_instance
+        self.remote_ip, self.remote_port = self.socket.getpeername()
+        self.in_buffer = []
+        self.in_buffer_len = 0
+        self.set_terminator("\r\n")
 
         # session attributes
         self.fs = AbstractedFS()
@@ -425,18 +446,30 @@ class FTPHandler(asynchat.async_chat):
                                                             self.remote_port,
                                                             self._fileno)
 
-    def handle(self, socket_object):
-        asynchat.async_chat.__init__(self, conn=socket_object)  
-        self.remote_ip, self.remote_port = self.socket.getpeername()
-        self.in_buffer = []
-        self.in_buffer_len = 0
-        self.out_buffer = ""
-        self.ac_in_buffer_size = 4096
-        self.ac_out_buffer_size = 4096
-        self.set_terminator("\r\n")
-               
-        self.push('220-%s.\r\n' %self.msg_connect)        
+    def handle(self):
+        self.push('220-%s.\r\n' %self.msg_connect)
         self.respond("220 Ready.")
+
+    def handle_max_cons(self):
+        "Called when we're running out of maximum accepted connections limit"
+        msg = "Too many connections. Service temporary unavailable."
+        self.respond("421 %s" %msg)
+        self.log(msg)
+        # By using self.push, data could not be sent immediately in which case a
+        # new "loop" will occur exposing us to the risk of accepting new
+        # connections.  Since that this could cause asyncore to run out of fds
+        # (...and exposing the server to DoS attacks), we immediatly close the
+        # channel by using close() instead of close_when_done().
+        # If data has not been sent yet client will be silently disconnected.
+        #self.close_when_done()
+        self.close()
+
+    def handle_max_cons_per_ip(self):
+        "Called when too many clients are connected with same IP"
+        msg = "Too many connections from the same IP."
+        self.respond("421 %s" %msg)
+        self.log(msg)
+        self.close_when_done()
 
     # --- asynchat/asyncore overridden methods
 
@@ -652,40 +685,78 @@ class FTPHandler(asynchat.async_chat):
 
         # --- connection
 
-    def ftp_PORT(self, line):        
+    def ftp_PORT(self, line):
+        "Start an active data-channel"
+        # parse PORT request getting IP and PORT
         try:
             line = line.split(',')
             ip = ".".join(line[:4]).replace(',','.')
             port = (int(line[4]) * 256) + int(line[5])
-        except:
+        except (ValueError, OverflowError):
             self.respond("500 Invalid PORT format.")
             return
 
-        # FTP bouncing protection: drop if IP address does not match
-        # the client's IP address.            
-        if ip != self.remote_ip:
-            self.respond("500 No FTP bouncing allowed.")
-            return
-        
-        # if more than one PORT is received we create a new data
-        # channel instance closing the older one
+        # FTP bounce attacks protection: according to RFC 2577 it's
+        # rencommended rejecting PORT if IP address specified in it
+        # does not match client IP address.
+        if not self.permit_ftp_proxying:
+            if ip != self.remote_ip:
+                self.log("PORT %s refused (bounce attack protection)" %port)
+                self.respond("500 FTP proxying feature not allowed.")
+                return
+
+        # FIX #11
+        # ...another RFC 2577 rencommendation is rejecting connections to
+        # privileged ports (< 1024) for security reasons.  Moreover, binding to
+        # such ports could require root priviledges on some systems.
+        if not self.permit_privileged_port:
+            if port < 1024:
+                self.respond("500 Can't connect over a privileged port.")
+                return
+
+        # close existent DTP-server instance, if any.
+        if self.dtp_server:
+            self.dtp_server.close()
+            self.dtp_server = None
+
         if self.data_channel:
-            asynchat.async_chat.close(self.data_channel)
+            self.data_channel.close()
+            self.data_channel = None
+
+        # make sure we are not running out of maximum connections limit
+        if self.ftpd_instance.max_cons:
+            if self.ftpd_instance.max_cons >= len(self._map):
+                msg = "Too many connections. Can't open data channel."
+                self.respond("425 %s" %msg)
+                self.log(msg)
+                return
+
+        # finally, let's open DTP channel
         ActiveDTP(ip, port, self)
 
+
     def ftp_PASV(self, line):
-        # if more than one PASV is received we create a new data 
-        # channel instance closing the older one
+        "Start a passive data-channel"
+        # close existent DTP-server instance, if any.
+        if self.dtp_server:
+            self.dtp_server.close()
+            self.dtp_server = None
+
         if self.data_channel:
-            asynchat.async_chat.close(self.data_channel)
-            self.dtp_server = PassiveDTP(self)
-            return
-            
-        if not self.dtp_ready:
-            self.dtp_server = PassiveDTP(self)
-        else:
-            asynchat.async_chat.close(self.dtp_server)
-            self.dtp_server = PassiveDTP(self)
+            self.data_channel.close()
+            self.data_channel = None
+
+        # make sure we are not running out of maximum connections limit
+        if self.ftpd_instance.max_cons:
+            if self.ftpd_instance.max_cons >= len(self._map):
+                msg = "Too many connections. Can't open data channel."
+                self.respond("425 %s" %msg)
+                self.log(msg)
+                return
+
+        # let's open DTP channel
+        self.dtp_server = PassiveDTP(self)
+
 
     def ftp_QUIT(self, line):
         if not self.msg_quit:
@@ -1308,24 +1379,42 @@ class FTPHandler(asynchat.async_chat):
 
     
 
-class FTPServer(asynchat.async_chat):
-    """The base class for the backend."""
+class FTPServer(asyncore.dispatcher):
+    """This class is an asyncore.disptacher subclass.
+    It creates a FTP socket listening on <address>, dispatching the requests
+    to a <handler> (typically FTPHandler class).
+    """
+    # Overiddable defaults (overriding is strongly rencommended to avoid
+    # running out of file descritors (DoS) !).
+
+    # number of maximum simultaneous connections accepted
+    # (0 == unlimited)
+    max_cons = 0
+
+    # number of maximum connections accepted for the same IP address
+    # (0 == unlimited)
+    max_cons_per_ip = 0
 
     def __init__(self, address, handler):
-        asynchat.async_chat.__init__(self)
+        asyncore.dispatcher.__init__(self)
         self.address = address
         self.handler = handler
+        self.ip_map = []
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         if os.name == 'posix':
-            self.set_reuse_addr()
+            # FIX #4
+            self.set_reuse_addr()  
         self.bind(self.address)
         self.listen(5)
 
     def __del__(self):
         debug("FTPServer.__del__()")
         
-    def serve_forever(self): 
-        log("Serving FTP on %s:%s." %self.socket.getsockname())
+    def serve_forever(self):
+        """A wrap around asyncore.loop().
+        Starts the asyncore polling loop by calling asyncore.loop() function;
+        """
+        log("Serving FTP on %s:%s" %self.socket.getsockname())
         try:
             # FIX #16
             # by default we try to use poll(), if it is available,
@@ -1335,18 +1424,38 @@ class FTPServer(asynchat.async_chat):
             log("Shutting down FTPd.")
             # FIX #22
             self.close_all()
-            
+
     def handle_accept(self):
-        debug("handle_accept()")        
+        debug("handle_accept()")
         sock_obj, addr = self.accept()
         log("[]%s:%s connected." %addr)
-        handler = self.handler().handle(sock_obj)
+
+        handler = self.handler(sock_obj, self)
+        ip = addr[0]
+        self.ip_map.append(ip)
+
+        # FIX #5
+        # For performance and security reasons we should always set a limit for
+        # the number of file descriptors that socket_map should contain.
+        # When we're running out of such limit we'll use the last available
+        # channel for sending a 421 response to the client before disconnecting
+        # it.
+        if self.max_cons:
+            if len(self._map) > self.max_cons:
+                handler.handle_max_cons()
+                return
+
+        # accept only a limited number of connections from the same
+        # source address.
+        if self.max_cons_per_ip:
+            if self.ip_map.count(ip) > self.max_cons_per_ip:
+                handler.handle_max_cons_per_ip()
+                return
+
+        handler.handle()
 
     def writable(self):
         return 0
-
-    def readable(self):        
-        return self.accepting
 
     def handle_error(self):        
         debug("FTPServer.handle_error()")
