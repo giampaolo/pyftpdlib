@@ -1034,14 +1034,34 @@ class FTPHandler(asynchat.async_chat):
         self.ftp_CWD('..')
 
 
-    def ftp_SIZE(self, line):          
-        size = self.fs.getsize(self.fs.translate(line))
-        if size >= 0:
-            self.log('OK SIZE "%s"' %self.fs.normalize(line))
+    def ftp_SIZE(self, line):
+        """Return size of file in a format suitable for using with RESTart as
+        defined into RFC 3659.
+
+        Implementation note:
+        properly handling the SIZE command when TYPE ASCII is used would require
+        to scan the entire file to perform the ASCII translation logic
+        (file.read(int).replace(os.linesp, '\r\n')) and then calculating the len
+        of such data which may be different than the actual size of the file on
+        the server.  Considering that the calculating such result could be very
+        resource-intensive it could be easy for a malicious client to try a DoS
+        attack, thus we do not perform the ASCII translation.
+
+        However, clients in general should not be resuming downloads in ASCII
+        mode.  Resuming downloads in binary mode is the recommended way as
+        specified into RFC 3659.
+	    """
+        path = self.fs.translate(line)
+        # FIX #17
+        if self.fs.isdir(path):
+	        self.respond ("550 Could not get a directory size.")
+	        return
+        try:
+            size = self.fs.getsize(path)
             self.respond("213 %s" %size)
-        else:
-            self.log('FAIL SIZE "%s". No such file.' %self.fs.normalize(line))
-            self.respond("550 No such file.")
+        except OSError, err:
+            self.respond ('550 %s.' %os.strerror(err.errno))
+
 
     def ftp_MDTM(self, line):
         # get file's last modification time (not documented inside RFC959
@@ -1757,8 +1777,6 @@ class AbstractedFS:
         return os.path.isfile(file)
 
     def isdir(self, path):
-        if not self.exists(path):
-            return 0
         return os.path.isdir(path)
 
     def chdir(self, path):
@@ -1790,10 +1808,7 @@ class AbstractedFS:
             return 0
     
     def getsize(self, path):
-        try:
-            return os.path.getsize(path)            
-        except:
-            return -1
+        return os.path.getsize(path)
 
     def getmtime(self, path):
         try: 
