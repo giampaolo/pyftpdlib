@@ -673,13 +673,13 @@ class ftp_handler(asynchat.async_chat):
             # If this happens we LIST the current working directory.
            
             if line.lower() in ("-a", "-l", "-al", "-la"):
-                path = self.fs.normalize(self.fs.cwd)
+                path = self.fs.translate(self.fs.cwd)
                 line = self.fs.cwd
             else:
-                path = self.fs.normalize(line)
-                line = self.fs.translate(line)
+                path = self.fs.translate(line)
+                line = self.fs.normalize(line)
         else:            
-            path = self.fs.normalize(self.fs.cwd)
+            path = self.fs.translate(self.fs.cwd)
             line = self.fs.cwd
 
         if not self.fs.exists(path):
@@ -698,10 +698,10 @@ class ftp_handler(asynchat.async_chat):
 
     def ftp_NLST(self, line):       
         if line:
-            path = self.fs.normalize(line)
-            line = self.fs.translate(line)
+            path = self.fs.translate(line)
+            line = self.fs.normalize(line)
         else:            
-            path = self.fs.normalize(self.fs.cwd)
+            path = self.fs.translate(self.fs.cwd)
             line = self.fs.cwd
 
         if not self.fs.is_dir(path):
@@ -724,7 +724,7 @@ class ftp_handler(asynchat.async_chat):
             self.cmd_missing_arg()
             return
                    
-        file = self.fs.normalize(line)
+        file = self.fs.translate(line)
 
         if not self.fs.is_file(file):
             self.log('FAIL RETR "%s". No such file.' %line)
@@ -750,7 +750,7 @@ class ftp_handler(asynchat.async_chat):
                 pass
             self.restart_position = 0
                     
-        self.push_dtp_data(file_obj, 'OK RETR "%s". Download starting.' %self.fs.translate(line))        
+        self.push_dtp_data(file_obj, 'OK RETR "%s". Download starting.' %self.fs.normalize(line))
 
     def ftp_STOR(self, line, rwa='w', mode='b'):
         if not line:
@@ -763,7 +763,7 @@ class ftp_handler(asynchat.async_chat):
         # APPE: rwa = 'a'
         # REST: rwa = 'r+' (to permit seeking on file object)
         
-        file = self.fs.normalize(line)
+        file = self.fs.translate(line)
 
         if not self.authorizer.w_perm(self.username, os.path.split(file)[0]):
             self.log('FAIL STOR "%s". Not enough priviledges' %line)
@@ -789,13 +789,13 @@ class ftp_handler(asynchat.async_chat):
             
         if self.data_channel:
             self.respond("125 Data connection already open. Transfer starting.")
-            self.log('OK STOR "%s". Upload starting.' %self.fs.translate(line))
+            self.log('OK STOR "%s". Upload starting.' %self.fs.normalize(line))
             self.data_channel.file_obj = file_obj
             self.data_channel.enable_receiving()
         else:
             self.debug("info: new producer queue added.")
             self.respond("150 File status okay. About to open data connection.")
-            self.in_producer_queue = (file_obj, 'OK STOR "%s". Upload starting.' %self.fs.translate(line))
+            self.in_producer_queue = (file_obj, 'OK STOR "%s". Upload starting.' %self.fs.normalize(line))
 
     def ftp_STOU(self, line):
         "store a file with a unique name"
@@ -806,13 +806,13 @@ class ftp_handler(asynchat.async_chat):
         
         # create file with a suggested name
         if line:
-            file = (self.fs.normalize (line))
+            file = (self.fs.translate (line))
             if not self.fs.exists (file):
                 resp = line
             else:
                 x = 0
                 while 1:                    
-                    file = self.fs.normalize (line + '.' + str(x))
+                    file = self.fs.translate (line + '.' + str(x))
                     if not self.fs.exists(file):
                         resp = line + '.' + str(x)
                         break
@@ -823,7 +823,7 @@ class ftp_handler(asynchat.async_chat):
         else:
             x = 0
             while 1:                
-                file = self.fs.normalize (self.fs.cwd + '.' + str(x))
+                file = self.fs.translate (self.fs.cwd + '.' + str(x))
                 if not self.fs.exists(file):
                     resp = '.' + str(x)
                     break
@@ -844,13 +844,13 @@ class ftp_handler(asynchat.async_chat):
 
         if self.data_channel:
             self.respond("125 %s" %resp)
-            self.log('OK STOU "%s". Upload starting.' %self.fs.translate(line))
+            self.log('OK STOU "%s". Upload starting.' %self.fs.normalize(line))
             self.data_channel.file_obj = file_obj
             self.data_channel.enable_receiving()
         else:
             self.debug("info: new producer queue added.")
             self.respond("150 %s" %resp)
-            self.in_producer_queue = (file_obj, 'OK STOU "%s". Upload starting.' %self.fs.translate(line))
+            self.in_producer_queue = (file_obj, 'OK STOU "%s". Upload starting.' %self.fs.normalize(line))
 
             
     def ftp_APPE(self, line):
@@ -978,12 +978,12 @@ class ftp_handler(asynchat.async_chat):
             self.cmd_missing_arg()
             return
            
-        size = self.fs.get_size(self.fs.normalize(line))
+        size = self.fs.get_size(self.fs.translate(line))
         if size >= 0:
-            self.log('OK SIZE "%s"' %self.fs.translate(line))
+            self.log('OK SIZE "%s"' %self.fs.normalize(line))
             self.respond("213 %s" %size)
         else:
-            self.log('FAIL SIZE "%s". No such file.' %self.fs.translate(line))
+            self.log('FAIL SIZE "%s". No such file.' %self.fs.normalize(line))
             self.respond("550 No such file.")
 
     def ftp_MDTM(self, line):
@@ -992,7 +992,7 @@ class ftp_handler(asynchat.async_chat):
         if not line:
             self.cmd_missing_arg()
             return
-        path = self.fs.normalize(line)
+        path = self.fs.translate(line)
         if not self.fs.is_file(path):
             self.respond("550 No such file.")
         else:
@@ -1004,7 +1004,7 @@ class ftp_handler(asynchat.async_chat):
             self.cmd_missing_arg()
             return
 
-        path = self.fs.normalize(line)
+        path = self.fs.translate(line)
         
         if not self.authorizer.w_perm(self.username, os.path.split(path)[0]):
             self.log('FAIL MKD "%s". Not enough priviledges.' %line)
@@ -1012,10 +1012,10 @@ class ftp_handler(asynchat.async_chat):
             return
        
         if self.fs.create_dir(path):
-            self.log('OK MKD "%s".' %self.fs.translate(line))
+            self.log('OK MKD "%s".' %self.fs.normalize(line))
             self.respond("257 Directory created.")            
         else:
-            self.log('FAIL MKD "%s".' %self.fs.translate(line))
+            self.log('FAIL MKD "%s".' %self.fs.normalize(line))
             self.respond("550 Can't create directory.")
 
     def ftp_RMD(self, line):   
@@ -1023,7 +1023,7 @@ class ftp_handler(asynchat.async_chat):
             self.cmd_missing_arg()
             return
 
-        path = self.fs.normalize(line)
+        path = self.fs.translate(line)
 
         if path == self.fs.root:
             self.respond("550 Can't remove root directory.")
@@ -1035,10 +1035,10 @@ class ftp_handler(asynchat.async_chat):
             return
        
         if self.fs.remove_dir(path):
-            self.log('OK RMD "%s".' %self.fs.translate(line))
+            self.log('OK RMD "%s".' %self.fs.normalize(line))
             self.respond("250 Directory removed.")
         else:
-            self.log('FAIL RMD "%s".' %self.fs.translate(line))
+            self.log('FAIL RMD "%s".' %self.fs.normalize(line))
             self.respond("550 Can't remove directory.")
 
     def ftp_DELE(self, line):
@@ -1046,18 +1046,18 @@ class ftp_handler(asynchat.async_chat):
             self.cmd_missing_arg()
             return
 
-        path = self.fs.normalize(line)
+        path = self.fs.translate(line)
             
         if not self.authorizer.w_perm(self.username, path):
-            self.log('FAIL DELE "%s". Not enough priviledges.' % self.fs.translate(line))
+            self.log('FAIL DELE "%s". Not enough priviledges.' % self.fs.normalize(line))
             self.respond ("553 Can't DELE: not enough priviledges.")            
             return
            
         if self.fs.remove_file(path):
-            self.log('OK DELE "%s".' %self.fs.translate(line))
+            self.log('OK DELE "%s".' %self.fs.normalize(line))
             self.respond("250 File removed.")
         else:
-            self.log('FAIL DELE "%s".' %self.fs.translate(line))
+            self.log('FAIL DELE "%s".' %self.fs.normalize(line))
             self.respond("550 Can't remove file.")
 
     def ftp_RNFR(self, line):
@@ -1065,8 +1065,8 @@ class ftp_handler(asynchat.async_chat):
             self.cmd_missing_arg()
             return
 
-        if self.fs.exists(self.fs.normalize(line)):
-            self.fs.rnfr = self.fs.translate(line)
+        if self.fs.exists(self.fs.translate(line)):
+            self.fs.rnfr = self.fs.normalize(line)
             self.respond("350 Ready for destination name")
         else:
             self.respond("550 No such file/directory.")
@@ -1084,21 +1084,21 @@ class ftp_handler(asynchat.async_chat):
             self.respond("503 Bad sequence of commands: use RNFR first.")
             return
        
-        if not self.authorizer.w_perm(self.username, self.fs.normalize(self.fs.rnfr)):
+        if not self.authorizer.w_perm(self.username, self.fs.translate(self.fs.rnfr)):
             self.log('FAIL RNFR/RNTO "%s ==> %s". Not enough priviledges for renaming.'
-                     %(self.fs.rnfr, self.fs.translate(line)))
+                     %(self.fs.rnfr, self.fs.normalize(line)))
             self.respond ("553 Can't RNTO: not enough priviledges.")
             self.fs.rnfr = None
             return
 
-        src = self.fs.normalize(self.fs.rnfr)
-        dst = self.fs.normalize(line)
+        src = self.fs.translate(self.fs.rnfr)
+        dst = self.fs.translate(line)
      
         if self.fs.rename(src, dst):
-            self.log('OK RNFR/RNTO "%s ==> %s".' %(self.fs.rnfr, self.fs.translate(line)))
+            self.log('OK RNFR/RNTO "%s ==> %s".' %(self.fs.rnfr, self.fs.normalize(line)))
             self.respond("250 Renaming ok.")
         else:
-            self.log('FAIL RNFR/RNTO "%s ==> %s".' %(self.fs.rnfr, self.fs.translate(line)))
+            self.log('FAIL RNFR/RNTO "%s ==> %s".' %(self.fs.rnfr, self.fs.normalize(line)))
             self.respond("550 Renaming failed.")
         self.fs.rnfr = None
 
@@ -1624,7 +1624,7 @@ class abstracted_fs:
     # def __del__(self):
         # debug("abstracted_fs.__del__()")
 
-    def normalize(self, path):
+    def translate(self, path):
         if path == '':
             return ''
         # absolute pathname
@@ -1640,7 +1640,7 @@ class abstracted_fs:
             else:
                 return self.root + os.path.normpath(self.cwd) + os.path.normpath('/' + path)
             
-    def translate(self, path):
+    def normalize(self, path):
         if not path:
             return self.cwd       
         # absolute pathname

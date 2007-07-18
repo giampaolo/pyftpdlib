@@ -48,48 +48,48 @@ class test_classes(unittest.TestCase):
         ae = self.assertEquals
         fs = FTPServer.abstracted_fs()
 
-        # translate method
-        fs.cwd = '/'
-        ae(fs.translate(''), '/')
-        ae(fs.translate('/'), '/')
-        ae(fs.translate('a'), '/a')
-        ae(fs.translate('/a'), '/a')
-        ae(fs.translate('a/b'), '/a/b')
-        fs.cwd = '/sub'      
-        ae(fs.translate(''), '/sub')
-        ae(fs.translate('a'), '/sub/a')
-        ae(fs.translate('a/b'), '/sub/a/b')
-        ae(fs.translate('//'), '/')
-        ae(fs.translate('/a/'), '/a')
-
         # normalize method
+        fs.cwd = '/'
+        ae(fs.normalize(''), '/')
+        ae(fs.normalize('/'), '/')
+        ae(fs.normalize('a'), '/a')
+        ae(fs.normalize('/a'), '/a')
+        ae(fs.normalize('a/b'), '/a/b')
+        fs.cwd = '/sub'      
+        ae(fs.normalize(''), '/sub')
+        ae(fs.normalize('a'), '/sub/a')
+        ae(fs.normalize('a/b'), '/sub/a/b')
+        ae(fs.normalize('//'), '/')
+        ae(fs.normalize('/a/'), '/a')
+
+        # translate method
         if os.sep == '/':
             fs.root = '/home/user'
             fs.cwd = '/'
-            ae(fs.normalize('/'), '/home/user')
-            ae(fs.normalize('a'), '/home/user/a')
-            ae(fs.normalize('/a'), '/home/user/a')
-            ae(fs.normalize('a/b'), '/home/user/a/b')
-            ae(fs.normalize('/a/b'), '/home/user/a/b')
+            ae(fs.translate('/'), '/home/user')
+            ae(fs.translate('a'), '/home/user/a')
+            ae(fs.translate('/a'), '/home/user/a')
+            ae(fs.translate('a/b'), '/home/user/a/b')
+            ae(fs.translate('/a/b'), '/home/user/a/b')
             fs.cwd = '/sub'
-            ae(fs.normalize('a'), '/home/user/sub/a')
-            ae(fs.normalize('a/b'), '/home/user/sub/a/b')
-            ae(fs.normalize('/a'), '/home/user/a')
-            ae(fs.normalize('/'), '/home/user')            
+            ae(fs.translate('a'), '/home/user/sub/a')
+            ae(fs.translate('a/b'), '/home/user/sub/a/b')
+            ae(fs.translate('/a'), '/home/user/a')
+            ae(fs.translate('/'), '/home/user')
 
         elif os.sep == '\\':
             fs.root = r'C:\dir'
             fs.cwd = '/'
-            ae(fs.normalize('/'), r'C:\dir')
-            ae(fs.normalize('a'), r'C:\dir\a')
-            ae(fs.normalize('/a'), r'C:\dir\a')
-            ae(fs.normalize('a/b'), r'C:\dir\a\b')
-            ae(fs.normalize('/a/b'), r'C:\dir\a\b')    
+            ae(fs.translate('/'), r'C:\dir')
+            ae(fs.translate('a'), r'C:\dir\a')
+            ae(fs.translate('/a'), r'C:\dir\a')
+            ae(fs.translate('a/b'), r'C:\dir\a\b')
+            ae(fs.translate('/a/b'), r'C:\dir\a\b')
             fs.cwd = '/sub'
-            ae(fs.normalize('a'), r'C:\dir\sub\a')
-            ae(fs.normalize('a/b'), r'C:\dir\sub\a\b')
-            ae(fs.normalize('/a'), r'C:\dir\a')
-            ae(fs.normalize('/'), r'C:\dir')
+            ae(fs.translate('a'), r'C:\dir\sub\a')
+            ae(fs.translate('a/b'), r'C:\dir\sub\a\b')
+            ae(fs.translate('/a'), r'C:\dir\a')
+            ae(fs.translate('/'), r'C:\dir')
 
     def test_dummy_authorizer(self):
         auth = FTPServer.dummy_authorizer()
