@@ -46,7 +46,7 @@ class test_classes(unittest.TestCase):
 
     def test_abstracetd_fs(self):
         ae = self.assertEquals
-        fs = FTPServer.abstracted_fs()
+        fs = FTPServer.AbstractedFS()
 
         # normalize method
         fs.cwd = '/'
@@ -92,7 +92,7 @@ class test_classes(unittest.TestCase):
             ae(fs.translate('/'), r'C:\dir')
 
     def test_dummy_authorizer(self):
-        auth = FTPServer.dummy_authorizer()
+        auth = FTPServer.DummyAuthorizer()
         auth.user_table = {}
         if os.sep == '\\':
             home = 'C:\\'
@@ -105,19 +105,19 @@ class test_classes(unittest.TestCase):
         self.assertRaises(AssertionError, auth.add_anonymous, 'ox:\\?')
         # raise exc if user already exists
         auth.add_user('ftpuser', '12345', home, perm=('r', 'w'))
-        self.assertRaises(FTPServer.error, auth.add_user, 'ftpuser', '12345', home, perm=('r', 'w'))
+        self.assertRaises(FTPServer.Error, auth.add_user, 'ftpuser', '12345', home, perm=('r', 'w'))
         # ...even anonymous
         auth.add_anonymous(home)
-        self.assertRaises(FTPServer.error, auth.add_anonymous, home)
+        self.assertRaises(FTPServer.Error, auth.add_anonymous, home)
         # raise on wrong permission
-        self.assertRaises(FTPServer.error, auth.add_user, 'ftpuser2', '12345', home, perm=('x'))
+        self.assertRaises(FTPServer.Error, auth.add_user, 'ftpuser2', '12345', home, perm=('x'))
         del auth.user_table['anonymous']
-        self.assertRaises(FTPServer.error, auth.add_anonymous, home, perm=('w'))
-        self.assertRaises(FTPServer.error, auth.add_anonymous, home, perm=('%&'))
-        self.assertRaises(FTPServer.error, auth.add_anonymous, home, perm=(None))
+        self.assertRaises(FTPServer.Error, auth.add_anonymous, home, perm=('w'))
+        self.assertRaises(FTPServer.Error, auth.add_anonymous, home, perm=('%&'))
+        self.assertRaises(FTPServer.Error, auth.add_anonymous, home, perm=(None))
         auth.add_anonymous(home, perm=(''))
         # raise on 'w' permission given to anonymous user
-        self.assertRaises(FTPServer.error, auth.add_anonymous, home, perm=('w'))
+        self.assertRaises(FTPServer.Error, auth.add_anonymous, home, perm=('w'))
 
 
 class ftp_authentication(unittest.TestCase):
@@ -442,13 +442,13 @@ def run():
             FTPServer.log = logger
             FTPServer.logline = linelogger
             FTPServer.debug = debugger
-            authorizer = FTPServer.dummy_authorizer()
+            authorizer = FTPServer.DummyAuthorizer()
             authorizer.add_user(user, pwd, home, perm=('r', 'w'))
             authorizer.add_anonymous(home)
-            ftp_handler = FTPServer.ftp_handler    
+            ftp_handler = FTPServer.FTPHandler    
             ftp_handler.authorizer = authorizer   
             address = (host, port)    
-            ftpd = FTPServer.ftp_server(address, ftp_handler)
+            ftpd = FTPServer.FTPServer(address, ftp_handler)
             ftpd.serve_forever()
 
     def exit_fun():
