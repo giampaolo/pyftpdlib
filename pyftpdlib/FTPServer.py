@@ -993,21 +993,46 @@ class FTPHandler(asynchat.async_chat):
         self.respond('257 "%s" is the current directory.' %self.fs.cwd)
 
     def ftp_CWD(self, line):
+        "Change current working directory"
+        # TODO: a lot of FTP servers go back to root directory if no arg is
+        # provided but this is not specified into RFC959. Search for
+        # official references about this behaviour.
         if not line:
             line = '/'
-        if self.fs.chdir(line):
+
+        # When CWD is received we temporarily join the specified directory
+        # to see if we have permissions to do it.
+        # A more elegant way to do that would be using os.access instead but I'm
+        # not sure about its reliability on non-posix platforms (see, for
+        # example, Python bug #1513646) or when specified paths are network
+        # filesystems.
+        ftp_path = self.fs.normalize(line)
+        real_path = self.fs.translate(line)
+        old_dir = os.getcwd()
+        done = 0
+        try:
+            self.fs.chdir(real_path)
+            self.fs.cwd = ftp_path
+            done = 1
+        except OSError, err:
+            self.log('FAIL CWD "%s". %s.' \
+                %(self.fs.normalize(line), os.strerror(err.errno)))
+            self.respond ('550 %s.' %os.strerror(err.errno))
+        if done:
             self.log('OK CWD "%s"' %self.fs.cwd)
             self.respond('250 "%s" is the current directory.' %self.fs.cwd)
-        else:           
-            self.respond("550 No such directory.")            
+            # let's use os.chdir instead of self.fs.chdir: we don't want to
+            # go back to the original directory by using user's permissions.
+            os.chdir(old_dir)
+
 
     def ftp_CDUP(self, line):
-        if self.fs.cwd == '/':
-            self.respond('250 "/" is the current directory.')
-        else:
-            self.fs.cdup()
-            self.respond('257 "%s" is the current directory.' %self.fs.cwd)
-        self.log('OK CWD "%s"' %self.fs.cwd)
+        "Go to parent directory"
+        # Note: RFC 959 says that code 200 is required but it also says that
+        # CDUP uses the same codes as CWD.
+        # FIX #14
+        self.ftp_CWD('..')
+
 
     def ftp_SIZE(self, line):          
         size = self.fs.getsize(self.fs.translate(line))
@@ -1736,17 +1761,8 @@ class AbstractedFS:
             return 0
         return os.path.isdir(path)
 
-    def chdir(self, line):
-        if line == '/':
-            self.cwd = '/'
-            return 1
-        else:
-            path = self.normalize(line)
-            if self.isdir(path):
-                self.cwd = self.translate(line)
-                return 1
-            else:            
-                return 0
+    def chdir(self, path):
+        os.chdir(path)
             
     def cdup(self):
         parent = os.path.split(self.cwd)[0]
