@@ -1097,7 +1097,12 @@ class FTPHandler(asynchat.async_chat):
             self.respond ('550 %s.' %os.strerror(err.errno))
 
 
-    def ftp_RMD(self, line):   
+    def ftp_RMD(self, line):
+        "Remove directory"
+        if not line:
+            self.cmd_missing_arg()
+            return
+
         path = self.fs.translate(line)
 
         if path == self.fs.root:
@@ -1106,15 +1111,17 @@ class FTPHandler(asynchat.async_chat):
                     
         if not self.authorizer.w_perm(self.username, path):
             self.log('FAIL RMD "%s". Not enough priviledges.' %line)
-            self.respond("553 Can't RMD: not enough priviledges.")
+            self.respond ("550 Can't RMD: not enough priviledges.")
             return
-       
-        if self.fs.rmdir(path):
+
+        try:
+            self.fs.rmdir(path)
             self.log('OK RMD "%s".' %self.fs.normalize(line))
             self.respond("250 Directory removed.")
-        else:
-            self.log('FAIL RMD "%s".' %self.fs.normalize(line))
-            self.respond("550 Can't remove directory.")
+        except OSError, err:
+            self.log('FAIL RMD "%s". %s.' %(line, os.strerror(err.errno)))
+            self.respond ('550 %s.' %os.strerror(err.errno))
+
 
     def ftp_DELE(self, line):
         path = self.fs.translate(line)
@@ -1797,11 +1804,7 @@ class AbstractedFS:
         os.mkdir(path)
             
     def rmdir(self, path):
-        try:
-            os.rmdir(path)
-            return 1
-        except:
-            return 0
+        os.rmdir(path)
             
     def remove(self, path):
         try:
