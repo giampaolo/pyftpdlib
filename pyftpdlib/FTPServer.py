@@ -952,6 +952,12 @@ class FTPHandler(asynchat.async_chat):
         # note2: RFC 959 wants ftpd to respond with code 250 but I've seen a
         # lot of FTP servers responding with 125 or 150, and this is a better choice, imho,
         # because STOU works just like STOR.
+
+        # FIX #19
+        # watch for STOU preceded by REST, which makes no sense.
+        if self.restart_position:
+            self.respond("550 Can't STOU when REST is pending.")
+            return        
         
         # create file with a suggested name
         if line:
