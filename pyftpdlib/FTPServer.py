@@ -1064,14 +1064,20 @@ class FTPHandler(asynchat.async_chat):
 
 
     def ftp_MDTM(self, line):
-        # get file's last modification time (not documented inside RFC959
-        # but used in a lot of ftpd implementations)
+        """Return last modification time of file as an ISO 3307 style time
+        (YYYYMMDDHHMMSS) as defined into RFC 3659.
+        """
         path = self.fs.translate(line)
         if not self.fs.isfile(path):
             self.respond("550 No such file.")
-        else:
-            lmt = time.strftime("%Y%m%d%H%M%S", time.localtime(self.fs.getmtime (path)))
+            return
+        try:
+            lmt = self.fs.getmtime(path)
+            lmt = time.strftime("%Y%m%d%H%M%S", time.localtime(lmt))
             self.respond("213 %s" %lmt)
+        except OSError, err:
+            self.respond ('550 %s.' %os.strerror(err.errno))
+
     
     def ftp_MKD(self, line):
         path = self.fs.translate(line)
@@ -1772,8 +1778,6 @@ class AbstractedFS:
         return os.path.exists(path)
         
     def isfile(self, file):
-        if not self.exists(file):
-            return 0
         return os.path.isfile(file)
 
     def isdir(self, path):
@@ -1811,10 +1815,7 @@ class AbstractedFS:
         return os.path.getsize(path)
 
     def getmtime(self, path):
-        try: 
-            return os.path.getmtime(path)
-        except:
-            return 0
+        return os.path.getmtime(path)
            
     def rename(self, src, dst):
         try:
