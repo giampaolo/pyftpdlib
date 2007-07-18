@@ -426,7 +426,8 @@ class FTPHandler(asynchat.async_chat):
     def handle(self, socket_object):
         asynchat.async_chat.__init__(self, conn=socket_object)  
         self.remote_ip, self.remote_port = self.socket.getpeername()
-        self.in_buffer = ""
+        self.in_buffer = []
+        self.in_buffer_len = 0
         self.out_buffer = ""
         self.ac_in_buffer_size = 4096
         self.ac_out_buffer_size = 4096
@@ -443,12 +444,23 @@ class FTPHandler(asynchat.async_chat):
     def writable(self):
         return len(self.ac_out_buffer) or len(self.producer_fifo) or (not self.connected)   
 
-    def collect_incoming_data(self, data):        
-        self.in_buffer = self.in_buffer + data
+    def collect_incoming_data(self, data):
+        self.in_buffer.append(data)
+        self.in_buffer_len += len(data)
+        # FIX #3
+        # flush buffer if it gets too long (possible DoS attacks)
+        # RFC959 specifies that a 500 response could be given in such cases
+        buflimit = 2048
+        if self.in_buffer_len > buflimit:
+            self.respond('500 Command Too Long.')
+            self.log('Command received exceeded buffer limit of %s.' % (buflimit))
+            self.in_buffer = []
+            self.in_buffer_len = 0
 
     def found_terminator(self):        
-        line = self.in_buffer.strip()
-        self.in_buffer = ""
+        line = ''.join(self.in_buffer).strip()
+        self.in_buffer = []
+        self.in_buffer_len = 0
         
         cmd = line.split(' ')[0].upper()        
         space = line.find(' ')
