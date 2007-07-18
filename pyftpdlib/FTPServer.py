@@ -896,7 +896,7 @@ class ftp_handler(asynchat.async_chat):
             self.username = "anonymous"
         else:
             self.username = line
-        self.respond('331 Username ok, send passowrd.')        
+        self.respond('331 Username ok, send password.')        
 
     def ftp_PASS(self, line):
         # TODO - brute force protection: 'freeze'/'sleep' (without blocking the main loop)
