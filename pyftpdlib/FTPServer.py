@@ -1150,14 +1150,58 @@ class FTPHandler(asynchat.async_chat):
             self.respond('504 Unimplemented MODE type.')
 
     def ftp_STAT(self, line):
-        self.push('211-%s %s status:\r\n' %(__pname__, __ver__))
-        s = '\tConnected to: %s:%s\r\n' %(self.socket.getpeername()[0], self.socket.getpeername()[1])
-        s+= '\tLogged in as: %s\r\n' %self.username
-        s+= '\tCurrent type: %s\r\n' %type_map[self.current_type]
-        s+= '\tCurrent STRUcture: File\r\n' 
-        s+= '\tTransfer MODE: Stream\r\n'
-        self.push(s)
-        self.respond("211 End of status.")
+        """Return statistics about ftpd.  If argument is provided return
+        directory listing over command channel.
+        """
+        # return STATus information about ftpd
+        if not line:
+            s = []
+            s.append('211-%s %s status:\r\n' %(__pname__, __ver__))
+            s.append('\tConnected to: %s:%s\r\n' %self.socket.getsockname())
+            if self.authenticated:
+                s.append('\tLogged in as: %s\r\n' %self.username)
+            else:
+                if not self.username:
+                    s.append("\tWaiting for username\r\n")
+                else:
+                    s.append("\tWaiting for password\r\n")
+            if self.current_type == 'a':
+                type = 'ASCII'
+            else:
+                type = 'Binary'
+            s.append("\tTYPE: %s; STRUcture: File; MODE: Stream\r\n" %type)
+            if self.data_channel:
+                s.append('\tData connection open:\r\n')
+                s.append('\tTotal bytes sent: %s' %self.data_channel.tot_bytes_sent)
+                s.append('\tTotal bytes received: %s' %self.data_channel.tot_bytes_received)
+            else:
+                s.append('\tData connection closed\r\n')
+            self.push(''.join(s))
+            self.respond("211 End of status.")
+
+        else:
+
+            # TODO - see also FIX #15
+            # if arg is provided we should return directory LISTing over
+            # the command channel.
+            # Note: we also must support globbing (*, [], ?, and so on....)
+            # Still have to find a way to do that since that:
+            # - user could send a 'normal' path (e.g. "dir", "/dir") in which
+            #   case we should use os.listdir
+            # - user could send a Unix style pathname pattern expansion
+            #   (e.g. "*.txt", "/dir/*.txt") in which case we should use glob
+            #   module but it could return absolute or relative listing depending
+            #   on the input... :-\
+            pass
+##            pathname = self.fs.normalize(line)
+##            if not glob.has_magic(pathname):
+##                listing = self.fs.get_list_dir(pathname)
+##            else:
+##                dirname, basename = os.path.split(pathname)
+##                if not dirname:
+##                    listing = glob.glob1(self.fs.cwd, basename)
+##                else:
+##                    listing = glob.glob1(dirname, basename)
 
     def ftp_NOOP(self, line):
         self.respond("250 I succesfully done nothin'.")
