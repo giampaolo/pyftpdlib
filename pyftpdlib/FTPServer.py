@@ -1203,10 +1203,15 @@ class ftp_server(asynchat.async_chat):
         
     def serve_forever(self): 
         log("Serving FTP on %s:%s." %self.socket.getsockname())
-        # FIX #16
-        # by default we try to use poll(), if it is available,
-        # else we'll use select()
-        asyncore.loop(timeout=1, use_poll=hasattr(asyncore.select, 'poll'))
+        try:
+            # FIX #16
+            # by default we try to use poll(), if it is available,
+            # else we'll use select()
+            asyncore.loop(timeout=1, use_poll=hasattr(asyncore.select, 'poll'))
+        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
+            log("Shutting down FTPd.")
+            # FIX #22
+            self.close_all()
             
     def handle_accept(self):
         debug("handle_accept()")        
@@ -1226,6 +1231,30 @@ class ftp_server(asynchat.async_chat):
         traceback.print_exc(file=f)
         debug(f.getvalue())
         self.close()
+
+    def close_all(self, map=None, ignore_all=False):
+        """'clean' shutdown: instead of using the current asyncore.close_all()
+        function which only close sockets, we iterates over all existent
+        channels calling close() method for each one of them, avoiding memory
+        leaks.  This is how close_all function will appear in the fixed version
+        of asyncore that will be included into Python 2.6.
+        """
+        if map is None:
+            map = self._map
+        for x in map.values():
+            try:
+                x.close()
+            except OSError, x:
+                if x[0] == errno.EBADF:
+                    pass
+                elif not ignore_all:
+                    raise
+            except (asyncore.ExitNow, KeyboardInterrupt, SystemExit):
+                raise
+            except:
+                if not ignore_all:
+                    raise
+        map.clear()
 
 
 class passive_dtp(asynchat.async_chat):
