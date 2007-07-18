@@ -1124,19 +1124,22 @@ class FTPHandler(asynchat.async_chat):
 
 
     def ftp_DELE(self, line):
+        "Delete file"
         path = self.fs.translate(line)
             
         if not self.authorizer.w_perm(self.username, path):
             self.log('FAIL DELE "%s". Not enough priviledges.' % self.fs.normalize(line))
-            self.respond("553 Can't DELE: not enough priviledges.")            
+            self.respond ("550 Can't DELE: not enough priviledges.")
             return
-           
-        if self.fs.remove(path):
+
+        try:
+            self.fs.remove(path)
             self.log('OK DELE "%s".' %self.fs.normalize(line))
             self.respond("250 File removed.")
-        else:
-            self.log('FAIL DELE "%s".' %self.fs.normalize(line))
-            self.respond("550 Can't remove file.")
+        except OSError, err:
+            self.log('FAIL DELE "%s". %s.' %(line, os.strerror(err.errno)))
+            self.respond ('550 %s.' %os.strerror(err.errno))
+
 
     def ftp_RNFR(self, line):
         if self.fs.exists(self.fs.translate(line)):
@@ -1807,11 +1810,7 @@ class AbstractedFS:
         os.rmdir(path)
             
     def remove(self, path):
-        try:
-            os.remove(path)
-            return 1
-        except:
-            return 0
+        os.remove(path)
     
     def getsize(self, path):
         return os.path.getsize(path)
