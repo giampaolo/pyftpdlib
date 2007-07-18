@@ -459,12 +459,22 @@ class FTPHandler(asynchat.async_chat):
             self.in_buffer = []
             self.in_buffer_len = 0
 
-    def found_terminator(self):        
+    # commands accepted before authentication
+    unauth_cmds = ('USER','PASS','HELP','STAT','QUIT','NOOP','SYST')
+
+    # commands needing an argument
+    arg_cmds = ('APPE','DELE','MDTM','MODE','MKD','PORT','REST','RETR','RMD',
+                'RNFR','RNTO','SIZE','STOR','STRU','TYPE','USER','XMKD','XRMD')
+
+    # commands needing no argument
+    unarg_cmds = ('ABOR','CDUP','PASV','PWD','QUIT','REIN','SYST','XCUP','XPWD')
+
+    def found_terminator(self):
         line = ''.join(self.in_buffer).strip()
         self.in_buffer = []
         self.in_buffer_len = 0
-        
-        cmd = line.split(' ')[0].upper()        
+
+        cmd = line.split(' ')[0].upper()
         space = line.find(' ')
         if space != -1:
             arg = line[space + 1:]
@@ -474,19 +484,38 @@ class FTPHandler(asynchat.async_chat):
         if cmd != 'PASS':
             self.logline("<== %s" %line)
         else:
-            self.logline("<== %s %s" %(cmd, '*'*6))
+            self.logline("<== %s %s" %(line.split(' ')[0], '*' * 6))
 
+        # let's check if user provided an argument for those commands needing one
+        if not arg and cmd in self.arg_cmds:
+            self.cmd_missing_arg()
+            return
+
+        # let's do the same for those commands requiring no argument.
+        elif arg and cmd in self.unarg_cmds:
+            self.cmd_needs_no_arg()
+            return
+
+        # provide only a limited set of commands if user isn't authenticated yet
         if (not self.authenticated):
-            if cmd in ('USER', 'PASS', 'HELP', 'QUIT'):
-                method = getattr(self, 'ftp_'+cmd, None)          
-                method(arg) # callback                    
+            if cmd in self.unauth_cmds:
+                # FIX #21
+                # we permit STAT during this phase but we don't want STAT to
+                # return a directory LISTing if the user is not authenticated
+                # yet (this could happen if STAT is used with an argument)
+                if (cmd == 'STAT') and arg:
+                    self.respond("530 Log in with USER and PASS first.")
+                else:
+                    method = getattr(self, 'ftp_'+cmd, None)
+                    method(arg) # callback
             elif cmd in proto_cmds:
-                self.respond("530 Log in with USER and PASS first")            
+                self.respond("530 Log in with USER and PASS first.")
             else:
                 self.cmd_not_understood(line)
 
+        # provide full command set
         elif (self.authenticated) and (cmd in proto_cmds):
-            method = getattr(self, 'ftp_'+cmd, None)          
+            method = getattr(self, 'ftp_'+cmd, None)
             if not method:
                 self.log('warning: not implemented method "ftp_%s"' %cmd)
                 self.cmd_not_understood(line)
@@ -494,27 +523,25 @@ class FTPHandler(asynchat.async_chat):
                 method(arg) # callback
 
         else:
-            # recognize "abor" command:            
-            # ['\xff', '\xf4', '\xf2', 'A', 'B', 'O', 'R']                        
-            # if map(ord, line.upper()) == [255, 244, 242, 65, 66, 79, 82]:
-                # self.ftp_ABOR("")
-                # return
-            if line.upper().find('ABOR') != -1:
+            # TODO - add a detailed comment here
+            # recognize those commands having "special semantics"
+            if 'ABOR' in line.upper():
                 self.ftp_ABOR("")
+            if 'STAT' in line.upper():
+                self.ftp_STAT("")
+            # unknown command
             else:
                 self.cmd_not_understood(line)
 
     def handle_expt(self):
-        # I didn't well understood when and why it is called and I'm not sure what
-        # could I do here. asyncore documentation says:
-        # > Called when there is out of band (OOB) data for a socket connection.
-        # > This will almost never happen, as OOB is tenuously supported and rarely used.
-        # OOB? How do I have to manage that?
-        # I made a research but still can't know what to do. Even in SocketServer module
-        # OOB is an open unsolved problem.       
-        # Anyway, I assume this as a bad event, so I close the current session.
+        # TODO - add a detailed comment here
         self.debug("FTPHandler.handle_expt()")
-        self.close()
+        try:
+            data = self.socket.recv(1024, socket.MSG_OOB)
+            self.in_buffer.append(data)
+        except:
+            self.log("Can't handle OOB data.")
+            self.handle_close()
 
     def handle_error(self):
         self.debug("FTPHandler.handle_error()")
@@ -607,6 +634,9 @@ class FTPHandler(asynchat.async_chat):
 
     def cmd_missing_arg(self):
         self.respond("501 Syntax error: command needs an argument.")
+
+    def cmd_needs_no_arg(self):
+        self.respond("501 Syntax error: command needs no argument.")
       
     def log(self, msg):
         log("[%s]@%s:%s %s" %(self.username, self.remote_ip, self.remote_port, msg))
@@ -734,9 +764,6 @@ class FTPHandler(asynchat.async_chat):
         self.push_dtp_data(file_obj, 'OK NLST "%s". Transfer starting.' %line)
 
     def ftp_RETR(self, line):
-        if not line:
-            self.cmd_missing_arg()
-            return
                    
         file = self.fs.translate(line)
 
@@ -767,9 +794,6 @@ class FTPHandler(asynchat.async_chat):
         self.push_dtp_data(file_obj, 'OK RETR "%s". Download starting.' %self.fs.normalize(line))
 
     def ftp_STOR(self, line, rwa='w', mode='b'):
-        if not line:
-            self.cmd_missing_arg()
-            return
         
         # A resume could occur in case of APPE or REST commands.
         # In that case we have to open file object in different ways:
@@ -868,15 +892,9 @@ class FTPHandler(asynchat.async_chat):
 
             
     def ftp_APPE(self, line):
-        if not line:
-            self.cmd_missing_arg()
-            return        
         self.ftp_STOR(line, rwa='a')
         
     def ftp_REST(self, line):
-        if not line:
-            self.cmd_missing_arg()
-            return
         try:
             value = int(line)
             if value < 0:
@@ -902,9 +920,6 @@ class FTPHandler(asynchat.async_chat):
         # --- authentication
 
     def ftp_USER(self, line):
-        if not line:
-            self.cmd_missing_arg()
-            return
         # warning: we always treat anonymous user as lower-case string.
         if line.lower() == "anonymous":
             self.username = "anonymous"
@@ -994,11 +1009,7 @@ class FTPHandler(asynchat.async_chat):
             self.respond('257 "%s" is the current directory.' %self.fs.cwd)
         self.log('OK CWD "%s"' %self.fs.cwd)
 
-    def ftp_SIZE(self, line):
-        if not line:
-            self.cmd_missing_arg()
-            return
-           
+    def ftp_SIZE(self, line):          
         size = self.fs.getsize(self.fs.translate(line))
         if size >= 0:
             self.log('OK SIZE "%s"' %self.fs.normalize(line))
@@ -1010,9 +1021,6 @@ class FTPHandler(asynchat.async_chat):
     def ftp_MDTM(self, line):
         # get file's last modification time (not documented inside RFC959
         # but used in a lot of ftpd implementations)
-        if not line:
-            self.cmd_missing_arg()
-            return
         path = self.fs.translate(line)
         if not self.fs.isfile(path):
             self.respond("550 No such file.")
@@ -1021,10 +1029,6 @@ class FTPHandler(asynchat.async_chat):
             self.respond("213 %s" %lmt)
     
     def ftp_MKD(self, line):
-        if not line:
-            self.cmd_missing_arg()
-            return
-
         path = self.fs.translate(line)
         
         if not self.authorizer.w_perm(self.username, os.path.split(path)[0]):
@@ -1040,10 +1044,6 @@ class FTPHandler(asynchat.async_chat):
             self.respond("550 Can't create directory.")
 
     def ftp_RMD(self, line):   
-        if not line:
-            self.cmd_missing_arg()
-            return
-
         path = self.fs.translate(line)
 
         if path == self.fs.root:
@@ -1063,10 +1063,6 @@ class FTPHandler(asynchat.async_chat):
             self.respond("550 Can't remove directory.")
 
     def ftp_DELE(self, line):
-        if not line:
-            self.cmd_missing_arg()
-            return
-
         path = self.fs.translate(line)
             
         if not self.authorizer.w_perm(self.username, path):
@@ -1082,10 +1078,6 @@ class FTPHandler(asynchat.async_chat):
             self.respond("550 Can't remove file.")
 
     def ftp_RNFR(self, line):
-        if not line:
-            self.cmd_missing_arg()
-            return
-
         if self.fs.exists(self.fs.translate(line)):
             self.fs.rnfr = self.fs.normalize(line)
             self.respond("350 Ready for destination name")
@@ -1096,11 +1088,6 @@ class FTPHandler(asynchat.async_chat):
         # TODO - actually RNFR/RNTO commands could also be used to *move* a file/directory
         # instead of just renaming them. RFC959 doesn't tell if this must be allowed or not
         # (I believe not). Check about it.
-        
-        if not line:
-            self.cmd_missing_arg()
-            return
-
         if not self.fs.rnfr:
             self.respond("503 Bad sequence of commands: use RNFR first.")
             return
@@ -1140,9 +1127,6 @@ class FTPHandler(asynchat.async_chat):
             
     def ftp_STRU(self, line):
         # obsolete (backward compatibility with older ftp clients)
-        if not line:
-            self.cmd_missing_arg()
-            return        
         if line in ('f','F'):            
             self.respond('200 File transfer structure set to: F.')
         else:
@@ -1150,9 +1134,6 @@ class FTPHandler(asynchat.async_chat):
     
     def ftp_MODE(self, line):
         # obsolete (backward compatibility with older ftp clients)
-        if not line:
-            self.cmd_missing_arg()
-            return        
         if line in ('s', 'S'):
             self.respond('200 Trasfer mode set to: S')
         else:
