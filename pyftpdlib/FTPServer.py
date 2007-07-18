@@ -1624,37 +1624,48 @@ class abstracted_fs:
     # def __del__(self):
         # debug("abstracted_fs.__del__()")
 
-    def translate(self, path):
-        if path == '':
-            return ''
-        # absolute pathname
-        elif path.startswith('/'):
-            if path == '/':
-                return self.root
-            else:
-                return self.root + os.path.normpath(path)
-        # relative pathname
-        else:
-            if self.cwd == '/':
-                return self.root + os.path.normpath(self.cwd) + os.path.normpath(path)
-            else:
-                return self.root + os.path.normpath(self.cwd) + os.path.normpath('/' + path)
-            
+    # --- Conversion utilities
+
+    # FIX #9
     def normalize(self, path):
-        if not path:
-            return self.cwd       
-        # absolute pathname
-        elif path.startswith('/'):
-            if path.endswith('/') and len(path) > 1:
-                return path[:-1]
-            else:
-                return path            
-        # relative pathname
+        """Translate a "virtual" FTP path into an absolute "virtual" FTP path.
+        @param path: absolute or relative virtual path
+        @return: absolute virtual path
+        note: directory separators are system independent ("/")
+        """
+
+        # absolute path
+        if os.path.isabs(path):
+            p = os.path.normpath(path)
+        # relative path
         else:
-            if self.cwd == '/':
-                return self.cwd + path
-            else:
-                return self.cwd + '/' + path
+            p = os.path.normpath(os.path.join(self.cwd, path))
+
+        # normalize string in a standard web-path notation having '/' as separator.
+        p = p.replace("\\", "/")
+
+        # os.path.normpath supports UNC paths (e.g. "//a/b/c") but we don't need
+        # them.  In case we get an UNC path we collapse redundant separators
+        # appearing at the beginning of the string
+        while p[:2] == '//':
+            p = p[1:]
+
+        # Anti path traversal: don't trust user input nor programmer
+        # only in case of, for some particular reason, self.cwd is not
+        # absolute.  This is for extra protection, maybe not really necessary.
+        if not os.path.isabs(p):
+            p = "/"
+        return p
+
+    # FIX #9
+    def translate(self, path):
+        """Translate a 'virtual' FTP path into equivalent filesystem path.
+        @param path: absolute or relative virtual path.
+        @return: full absolute filesystem path.
+        note: directory separators are system dependent.
+        """
+        # as far as i know, it should always be path traversal safe...
+        return os.path.normpath(self.root + self.normalize(path))
 
     def exists(self, path):
         return os.path.exists(path)
