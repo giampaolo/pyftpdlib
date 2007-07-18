@@ -862,12 +862,26 @@ class FTPHandler(asynchat.async_chat):
             self.respond('553 I/O server side error: %s' %err.strerror)
             return
         
+        # FIX #12
         if self.restart_position:
+            # Make sure that the requested offset is valid (within the
+            # size of the file being resumed).
+            # According to RFC 1123 a 554 reply may result in case that the
+            # existing file cannot be repositioned as specified in the REST.
+            ok = 0
             try:
+                assert not self.restart_position > self.fs.getsize(file)
                 fd.seek(self.restart_position)
-            except:
-                pass
+                ok = 1
+            except AssertionError:
+                msg = "Invalid REST parameter."
+            except IOError, err:
+                msg = os.strerror(err.errno)
             self.restart_position = 0
+            if not ok:
+                respond('554 %s' %msg)
+                self.log('FAIL RETR "%s". %s.' %(line, msg))
+                return
                     
         producer = FileProducer(fd, self.current_type)
         self.push_dtp_data(producer, isproducer=1,
@@ -899,12 +913,26 @@ class FTPHandler(asynchat.async_chat):
             self.respond('553 I/O server side error: %s' %err.strerror)
             return
         
+        # FIX #12
         if self.restart_position:
+            # Make sure that the requested offset is valid (within the
+            # size of the file being resumed).
+            # According to RFC 1123 a 554 reply may result in case that the
+            # existing file cannot be repositioned as specified in the REST.
+            ok = 0
             try:
+                assert not self.restart_position > self.fs.getsize(file)
                 fd.seek(self.restart_position)
-            except:
-                pass
+                ok = 1
+            except AssertionError:
+                msg = "Invalid REST parameter."
+            except IOError, err:
+                msg = os.strerror(err.errno)
             self.restart_position = 0
+            if not ok:
+                respond('554 %s' %msg)
+                self.log('FAIL STOR "%s". %s.' %(line, msg))
+                return
             
         log = 'OK STOR "%s". Upload starting.' %self.fs.normalize(line)
         if self.data_channel:
@@ -977,16 +1005,19 @@ class FTPHandler(asynchat.async_chat):
             
     def ftp_APPE(self, line):
         self.ftp_STOR(line, rwa='a')
+
         
     def ftp_REST(self, line):
+        "Restart from marker"
         try:
-            value = int(line)
-            if value < 0:
-                raise
-            self.respond("350 Restarting at position %s. Now use RETR/STOR for resuming." %value)
-            self.restart_position = value
-        except:
+            marker = int(line)
+            if marker < 0:
+                raise ValueError
+            self.respond("350 Restarting at position %s. Now use RETR/STOR for resuming." %marker)
+            self.restart_position = marker
+        except (ValueError, OverflowError):
             self.respond("501 Invalid number of parameters.")
+
 
     def ftp_ABOR(self, line):
         if self.dtp_server:
