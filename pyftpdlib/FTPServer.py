@@ -716,7 +716,7 @@ class FTPHandler(asynchat.async_chat):
             path = self.fs.translate(self.fs.cwd)
             line = self.fs.cwd
 
-        if not self.fs.is_dir(path):
+        if not self.fs.isdir(path):
             self.log('FAIL NLST "%s". No such directory.' %line)
             self.respond('550 No such directory: "%s".' %line)
             return
@@ -738,7 +738,7 @@ class FTPHandler(asynchat.async_chat):
                    
         file = self.fs.translate(line)
 
-        if not self.fs.is_file(file):
+        if not self.fs.isfile(file):
             self.log('FAIL RETR "%s". No such file.' %line)
             self.respond('550 No such file: "%s".' %line)
             return
@@ -971,7 +971,7 @@ class FTPHandler(asynchat.async_chat):
     def ftp_CWD(self, line):
         if not line:
             line = '/'
-        if self.fs.change_dir(line):
+        if self.fs.chdir(line):
             self.log('OK CWD "%s"' %self.fs.cwd)
             self.respond('250 "%s" is the current directory.' %self.fs.cwd)
         else:           
@@ -990,7 +990,7 @@ class FTPHandler(asynchat.async_chat):
             self.cmd_missing_arg()
             return
            
-        size = self.fs.get_size(self.fs.translate(line))
+        size = self.fs.getsize(self.fs.translate(line))
         if size >= 0:
             self.log('OK SIZE "%s"' %self.fs.normalize(line))
             self.respond("213 %s" %size)
@@ -1005,10 +1005,10 @@ class FTPHandler(asynchat.async_chat):
             self.cmd_missing_arg()
             return
         path = self.fs.translate(line)
-        if not self.fs.is_file(path):
+        if not self.fs.isfile(path):
             self.respond("550 No such file.")
         else:
-            lmt = time.strftime("%Y%m%d%H%M%S", time.localtime(self.fs.get_lastm_time (path)))
+            lmt = time.strftime("%Y%m%d%H%M%S", time.localtime(self.fs.getmtime (path)))
             self.respond("213 %s" %lmt)
     
     def ftp_MKD(self, line):
@@ -1023,7 +1023,7 @@ class FTPHandler(asynchat.async_chat):
             self.respond("553 Can't MKD: not enough priviledges.")
             return
        
-        if self.fs.create_dir(path):
+        if self.fs.mkdir(path):
             self.log('OK MKD "%s".' %self.fs.normalize(line))
             self.respond("257 Directory created.")            
         else:
@@ -1046,7 +1046,7 @@ class FTPHandler(asynchat.async_chat):
             self.respond("553 Can't RMD: not enough priviledges.")
             return
        
-        if self.fs.remove_dir(path):
+        if self.fs.rmdir(path):
             self.log('OK RMD "%s".' %self.fs.normalize(line))
             self.respond("250 Directory removed.")
         else:
@@ -1065,7 +1065,7 @@ class FTPHandler(asynchat.async_chat):
             self.respond("553 Can't DELE: not enough priviledges.")            
             return
            
-        if self.fs.remove_file(path):
+        if self.fs.remove(path):
             self.log('OK DELE "%s".' %self.fs.normalize(line))
             self.respond("250 File removed.")
         else:
@@ -1736,23 +1736,23 @@ class AbstractedFS:
     def exists(self, path):
         return os.path.exists(path)
         
-    def is_file(self, file):
+    def isfile(self, file):
         if not self.exists(file):
             return 0
         return os.path.isfile(file)
 
-    def is_dir(self, path):
+    def isdir(self, path):
         if not self.exists(path):
             return 0
         return os.path.isdir(path)
 
-    def change_dir(self, line):
+    def chdir(self, line):
         if line == '/':
             self.cwd = '/'
             return 1
         else:
             path = self.normalize(line)
-            if self.is_dir(path):
+            if self.isdir(path):
                 self.cwd = self.translate(line)
                 return 1
             else:            
@@ -1762,34 +1762,34 @@ class AbstractedFS:
         parent = os.path.split(self.cwd)[0]
         self.cwd = parent
         
-    def create_dir(self, path):
+    def mkdir(self, path):
         try:
             os.mkdir(path)
             return 1
         except:
             return 0
             
-    def remove_dir(self, path):
+    def rmdir(self, path):
         try:
             os.rmdir(path)
             return 1
         except:
             return 0
             
-    def remove_file(self, path):
+    def remove(self, path):
         try:
             os.remove(path)
             return 1
         except:
             return 0
     
-    def get_size(self, path):
+    def getsize(self, path):
         try:
             return os.path.getsize(path)            
         except:
             return -1
 
-    def get_lastm_time(self, path):
+    def getmtime(self, path):
         try: 
             return os.path.getmtime(path)
         except:
@@ -1830,7 +1830,7 @@ class AbstractedFS:
         # -rwxrwxrwx   1 owner    group             380 Sep 02  3:40 module.py
 
         # if path is a file we return information about it
-        if not self.is_dir(path):
+        if not self.isdir(path):
             root, filename = os.path.split(path)
             path = root
             listing = [filename]
