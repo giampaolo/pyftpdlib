@@ -30,13 +30,13 @@ RFC959 asynchronous FTP server.
 
 Usage:
 >>> from pyftpdlib import FTPServer
->>> authorizer = FTPServer.dummy_authorizer()
+>>> authorizer = FTPServer.DummyAuthorizer()
 >>> authorizer.add_user('user', '12345', '/home/user', perm=('r', 'w', 'wd'))
 >>> authorizer.add_anonymous('/home/nobody')
->>> ftp_handler = FTPServer.ftp_handler
+>>> ftp_handler = FTPServer.FTPHandler
 >>> ftp_handler.authorizer = authorizer
 >>> address = ("", 21)
->>> ftpd = FTPServer.ftp_server(address, ftp_handler)
+>>> ftpd = FTPServer.FTPServer(address, ftp_handler)
 >>> ftpd.serve_forever()
 Serving FTP on 0.0.0.0:21.
 []10.0.0.1:1089 connected.
@@ -71,27 +71,27 @@ Serving FTP on 0.0.0.0:21.
 #
 # A number of classes are provided:
 #
-#   [ftp_server] - the base class for the backend. 
+#   [FTPServer] - the base class for the backend.
 # 
-#   [ftp_handler] - a class representing the server-protocol-interpreter (server-PI, see RFC 959).
-#       Every time a new connection occurs ftp_server class will create a new ftp_handler instance
+#   [FTPHandler] - a class representing the server-protocol-interpreter (server-PI, see RFC 959).
+#       Every time a new connection occurs FTPServer class will create a new FTPHandler instance
 #       that will handle the current PI session.
 #
-#   [active_dtp], [passive_dtp] - base classes for active/passive-DTP backend.
+#   [ActiveDTP], [PassiveDTP] - base classes for active/passive-DTP backend.
 #
-#   [dtp_handler] - class handling server-data-transfer-process (server-DTP, see RFC 959)
+#   [DTPHandler] - class handling server-data-transfer-process (server-DTP, see RFC 959)
 #       managing data-transfer operations.
 #
-#   [dummy_authorizer] - an "authorizer" is a class handling authentication and permissions of ftpd.
-#       It is used inside ftp_handler class to verify user passwords, to get user's home-directory
+#   [DummyAuthorizer] - an "authorizer" is a class handling authentication and permissions of ftpd.
+#       It is used inside FTPHandler class to verify user passwords, to get user's home-directory
 #       and to get permissions when a r/w I/O filesystem event occurs.
-#       "dummy_authorizer" is the base authorizer class providing a platform independent interface
+#       "DummyAuthorizer" is the base authorizer class providing a platform independent interface
 #       for managing "virtual-users".
 #
-#   [abstracted_fs] - class used to interact with file-system providing an high-level platform-independent
+#   [AbstractedFS] - class used to interact with file-system providing an high-level platform-independent
 #       interface able to work on both DOS/UNIX-like file systems.
 #
-#   [error] - base class for module exceptions.
+#   [Error] - base class for module exceptions.
 #
 #
 # Moreover, FTPServer provides 3 different logging streams trough 3 functions:
@@ -248,7 +248,7 @@ type_map = {'a':'ASCII',
             'i':'Binary'}
 
 
-class error(Exception):
+class Error(Exception):
     """Base class for module exceptions."""
     
     def __init__(self, msg=''):
@@ -287,7 +287,7 @@ def debug(msg):
 
 # --- authorizers
 
-class basic_authorizer:
+class BasicAuthorizer:
     """This class exists just for documentation.
     If you want to write your own authorizer you must provide all
     the following methods.
@@ -309,7 +309,7 @@ class basic_authorizer:
     def w_perm(self, username, obj):
         ""        
    
-class dummy_authorizer:    
+class DummyAuthorizer:
     """Dummy authorizer base class providing a basic portable
     interface for handling "virtual" users.
     """
@@ -323,9 +323,9 @@ class dummy_authorizer:
         assert os.path.isdir(homedir), 'No such directory: "%s".' %homedir
         for i in perm:
             if i not in ('r', 'w'):
-                raise error, 'No such permission "%s".' %i
+                raise Error('No such permission "%s".' %i)
         if self.has_user(username):
-            raise error, 'User "%s" already exists.' %username
+            raise Error('User "%s" already exists.' %username)
         dic = {'pwd'  : str(password),
                'home' : str(homedir),
                'perm' : perm
@@ -335,12 +335,12 @@ class dummy_authorizer:
     def add_anonymous(self, homedir, perm=('r')):
         if perm not in ('', 'r'):
             if perm == 'w':
-                raise error, "Anonymous aims to be a read-only user."
+                raise Error("Anonymous aims to be a read-only user.")
             else:
-                raise error, 'No such permission "%s".' %perm
+                raise Error, 'No such permission "%s".' %perm
         assert os.path.isdir(homedir), 'No such directory: "%s".' %homedir        
         if self.has_user('anonymous'):
-            raise error, 'User anonymous already exists.'
+            raise Error('User anonymous already exists.')
         dic = {'pwd'  : '',
                'home' : homedir,
                'perm' : perm
@@ -356,10 +356,10 @@ class dummy_authorizer:
     def get_home_dir(self, username):
         return self.user_table[username]['home']
 
-    def r_perm (self, username, obj):
+    def r_perm(self, username, obj):
         return 'r' in self.user_table[username]['perm']
 
-    def w_perm (self, username, obj):
+    def w_perm(self, username, obj):
         return 'w' in self.user_table[username]['perm']
     
 
@@ -386,13 +386,13 @@ class dummy_authorizer:
 
 # --- FTP
 
-class ftp_handler(asynchat.async_chat):
+class FTPHandler(asynchat.async_chat):
     """A class representing the server-protocol-interpreter (server-PI, see RFC 959).
-    Every time a new connection occurs ftp_server class will create a new  
+    Every time a new connection occurs FTPServer class will create a new
     instance of this class that will handle the current PI session.
     """
 
-    authorizer = dummy_authorizer()
+    authorizer = DummyAuthorizer()
     msg_connect = "Pyftpd %s" %__ver__
     msg_login = ""
     msg_quit = ""
@@ -400,7 +400,7 @@ class ftp_handler(asynchat.async_chat):
     def __init__(self):
 
         # session attributes
-        self.fs = abstracted_fs()        
+        self.fs = AbstractedFS()
         self.in_producer_queue = None
         self.out_producer_queue = None
         self.authenticated = False
@@ -416,10 +416,10 @@ class ftp_handler(asynchat.async_chat):
         self.data_channel = None  
 
     def __del__(self):
-        self.debug("ftp_handler.__del__()")
+        self.debug("FTPHandler.__del__()")
 
     def __str__(self):
-        return "<ftp_handler listening on %s:%s (fd=%d)>" %(self.remote_ip,
+        return "<FTPHandler listening on %s:%s (fd=%d)>" %(self.remote_ip,
                                                             self.remote_port,
                                                             self._fileno)
 
@@ -437,7 +437,7 @@ class ftp_handler(asynchat.async_chat):
 
     # --- asynchat/asyncore overridden methods
 
-    def readable (self):
+    def readable(self):
         return (len(self.ac_in_buffer) <= self.ac_in_buffer_size)
 
     def writable(self):
@@ -499,11 +499,11 @@ class ftp_handler(asynchat.async_chat):
         # I made a research but still can't know what to do. Even in SocketServer module
         # OOB is an open unsolved problem.       
         # Anyway, I assume this as a bad event, so I close the current session.
-        self.debug("ftp_handler.handle_expt()")        
+        self.debug("FTPHandler.handle_expt()")
         self.close()
 
     def handle_error(self):
-        self.debug("ftp_handler.handle_error()")        
+        self.debug("FTPHandler.handle_error()")
         f = StringIO.StringIO()
         traceback.print_exc(file=f)
         self.debug(f.getvalue())
@@ -511,11 +511,11 @@ class ftp_handler(asynchat.async_chat):
         asynchat.async_chat.close(self)
 
     def handle_close(self):
-        self.debug("ftp_handler.handle_close()")
+        self.debug("FTPHandler.handle_close()")
         self.close()
 
     def close(self):
-        self.debug("ftp_handler.close()")
+        self.debug("FTPHandler.close()")
        
         if self.dtp_server:
             self.dtp_server.close()
@@ -537,7 +537,7 @@ class ftp_handler(asynchat.async_chat):
         # If we got data to send we just push it into data channel.
         # If we got data to receive we enable data channel for receiving it.
         
-        self.debug("ftp_handler.on_dtp_connection()")
+        self.debug("FTPHandler.on_dtp_connection()")
         
         if self.dtp_server:
             self.dtp_server.close()
@@ -557,10 +557,10 @@ class ftp_handler(asynchat.async_chat):
             self.in_producer_queue = None
     
     def on_dtp_close(self):
-        # called every time close() method of dtp_handler() class
+        # called every time close() method of DTPHandler() class
         # is called.
         
-        self.debug("ftp_handler.on_dtp_close()")
+        self.debug("FTPHandler.on_dtp_close()")
         if self.data_channel:
             self.data_channel = None
         if self.quit_pending:
@@ -627,21 +627,21 @@ class ftp_handler(asynchat.async_chat):
         # channel instance closing the older one
         if self.data_channel:
             asynchat.async_chat.close(self.data_channel)
-        active_dtp(ip, port, self)        
+        ActiveDTP(ip, port, self)
 
     def ftp_PASV(self, line):
         # if more than one PASV is received we create a new data 
         # channel instance closing the older one
         if self.data_channel:
             asynchat.async_chat.close(self.data_channel)
-            self.dtp_server = passive_dtp(self)
+            self.dtp_server = PassiveDTP(self)
             return
             
         if not self.dtp_ready:
-            self.dtp_server = passive_dtp(self)
+            self.dtp_server = PassiveDTP(self)
         else:
             asynchat.async_chat.close(self.dtp_server)
-            self.dtp_server = passive_dtp(self)
+            self.dtp_server = PassiveDTP(self)
 
     def ftp_QUIT(self, line):
         if not self.msg_quit:
@@ -713,7 +713,7 @@ class ftp_handler(asynchat.async_chat):
             file_obj = self.fs.get_list_dir(path)
         except OSError, err:           
             self.log('FAIL NLST "%s". %s: "%s".' % (line, err.strerror, err.filename))
-            self.respond ('550 I/O server side error: %s' %err.strerror)
+            self.respond('550 I/O server side error: %s' %err.strerror)
             return                
 
         file_obj = self.fs.get_nlst_dir(path)
@@ -733,14 +733,14 @@ class ftp_handler(asynchat.async_chat):
 
         if not self.authorizer.r_perm(self.username, file):
             self.log('FAIL RETR "s". Not enough priviledges' %line)
-            self.respond ("553 Can't RETR: not enough priviledges.")
+            self.respond("553 Can't RETR: not enough priviledges.")
             return
         
         try:
             file_obj = open(file, 'rb')
         except IOError, err:
             self.log('FAIL RETR "%s". I/O error: %s' %(line, err.strerror))
-            self.respond ('553 I/O server side error: %s' %err.strerror)
+            self.respond('553 I/O server side error: %s' %err.strerror)
             return
         
         if self.restart_position:
@@ -767,7 +767,7 @@ class ftp_handler(asynchat.async_chat):
 
         if not self.authorizer.w_perm(self.username, os.path.split(file)[0]):
             self.log('FAIL STOR "%s". Not enough priviledges' %line)
-            self.respond ("553 Can't STOR: not enough priviledges.")
+            self.respond("553 Can't STOR: not enough priviledges.")
             return
 
         if self.restart_position:
@@ -777,7 +777,7 @@ class ftp_handler(asynchat.async_chat):
             file_obj = open(file, rwa + mode)
         except IOError, err:
             self.log('FAIL STOR "%s". I/O error: %s' %(line, err.strerror))
-            self.respond ('553 I/O server side error: %s' %err.strerror)
+            self.respond('553 I/O server side error: %s' %err.strerror)
             return
         
         if self.restart_position:
@@ -806,13 +806,13 @@ class ftp_handler(asynchat.async_chat):
         
         # create file with a suggested name
         if line:
-            file = (self.fs.translate (line))
-            if not self.fs.exists (file):
+            file = (self.fs.translate(line))
+            if not self.fs.exists(file):
                 resp = line
             else:
                 x = 0
                 while 1:                    
-                    file = self.fs.translate (line + '.' + str(x))
+                    file = self.fs.translate(line + '.' + str(x))
                     if not self.fs.exists(file):
                         resp = line + '.' + str(x)
                         break
@@ -823,7 +823,7 @@ class ftp_handler(asynchat.async_chat):
         else:
             x = 0
             while 1:                
-                file = self.fs.translate (self.fs.cwd + '.' + str(x))
+                file = self.fs.translate(self.fs.cwd + '.' + str(x))
                 if not self.fs.exists(file):
                     resp = '.' + str(x)
                     break
@@ -833,13 +833,13 @@ class ftp_handler(asynchat.async_chat):
         # now just acts like STOR excepting that restarting isn't allowed
         if not self.authorizer.w_perm(self.username, os.path.split(file)[0]):
             self.log('FAIL STOU "%s". Not enough priviledges' %line)
-            self.respond ("553 Can't STOU: not enough priviledges.")
+            self.respond("553 Can't STOU: not enough priviledges.")
             return
         try:            
             file_obj = open(file, 'wb')
         except IOError, err:
             self.log('FAIL STOU "%s". I/O error: %s' %(line, err.strerror))
-            self.respond ('553 I/O server side error: %s' %err.strerror)
+            self.respond('553 I/O server side error: %s' %err.strerror)
             return
 
         if self.data_channel:
@@ -1008,7 +1008,7 @@ class ftp_handler(asynchat.async_chat):
         
         if not self.authorizer.w_perm(self.username, os.path.split(path)[0]):
             self.log('FAIL MKD "%s". Not enough priviledges.' %line)
-            self.respond ("553 Can't MKD: not enough priviledges.")
+            self.respond("553 Can't MKD: not enough priviledges.")
             return
        
         if self.fs.create_dir(path):
@@ -1031,7 +1031,7 @@ class ftp_handler(asynchat.async_chat):
                     
         if not self.authorizer.w_perm(self.username, path):
             self.log('FAIL RMD "%s". Not enough priviledges.' %line)
-            self.respond ("553 Can't RMD: not enough priviledges.")
+            self.respond("553 Can't RMD: not enough priviledges.")
             return
        
         if self.fs.remove_dir(path):
@@ -1050,7 +1050,7 @@ class ftp_handler(asynchat.async_chat):
             
         if not self.authorizer.w_perm(self.username, path):
             self.log('FAIL DELE "%s". Not enough priviledges.' % self.fs.normalize(line))
-            self.respond ("553 Can't DELE: not enough priviledges.")            
+            self.respond("553 Can't DELE: not enough priviledges.")            
             return
            
         if self.fs.remove_file(path):
@@ -1087,7 +1087,7 @@ class ftp_handler(asynchat.async_chat):
         if not self.authorizer.w_perm(self.username, self.fs.translate(self.fs.rnfr)):
             self.log('FAIL RNFR/RNTO "%s ==> %s". Not enough priviledges for renaming.'
                      %(self.fs.rnfr, self.fs.normalize(line)))
-            self.respond ("553 Can't RNTO: not enough priviledges.")
+            self.respond("553 Can't RNTO: not enough priviledges.")
             self.fs.rnfr = None
             return
 
@@ -1123,9 +1123,9 @@ class ftp_handler(asynchat.async_chat):
             self.cmd_missing_arg()
             return        
         if line in ('f','F'):            
-            self.respond ('200 File transfer structure set to: F.')
+            self.respond('200 File transfer structure set to: F.')
         else:
-            self.respond ('504 Unimplemented STRU type.')
+            self.respond('504 Unimplemented STRU type.')
     
     def ftp_MODE(self, line):
         # obsolete (backward compatibility with older ftp clients)
@@ -1195,7 +1195,7 @@ class ftp_handler(asynchat.async_chat):
 
     
 
-class ftp_server(asynchat.async_chat):
+class FTPServer(asynchat.async_chat):
     """The base class for the backend."""
 
     def __init__(self, address, handler):
@@ -1209,7 +1209,7 @@ class ftp_server(asynchat.async_chat):
         self.listen(5)
 
     def __del__(self):
-        debug("ftp_server.__del__()")        
+        debug("FTPServer.__del__()")
         
     def serve_forever(self): 
         log("Serving FTP on %s:%s." %self.socket.getsockname())
@@ -1236,7 +1236,7 @@ class ftp_server(asynchat.async_chat):
         return self.accepting
 
     def handle_error(self):        
-        debug("ftp_server.handle_error()")
+        debug("FTPServer.handle_error()")
         f = StringIO.StringIO()
         traceback.print_exc(file=f)
         debug(f.getvalue())
@@ -1267,7 +1267,7 @@ class ftp_server(asynchat.async_chat):
         map.clear()
 
 
-class passive_dtp(asynchat.async_chat):
+class PassiveDTP(asynchat.async_chat):
     "Base class for passive-DTP backend"
 
     def __init__(self, cmd_channel):           
@@ -1290,7 +1290,7 @@ class passive_dtp(asynchat.async_chat):
                 ))
 
     def __del__(self):
-        debug("passive_dtp.__del__()")
+        debug("PassiveDTP.__del__()")
 
    
     # --- connection / overridden
@@ -1309,9 +1309,9 @@ class passive_dtp(asynchat.async_chat):
             except:
                 pass        
         else:
-            debug("passive_dtp.handle_accept()")
+            debug("PassiveDTP.handle_accept()")
             self.cmd_channel.dtp_ready = False
-            handler = dtp_handler(sock_obj, self.cmd_channel)
+            handler = DTPHandler(sock_obj, self.cmd_channel)
             self.cmd_channel.data_channel = handler
             self.cmd_channel.on_dtp_connection()
             # self.close()                    
@@ -1320,28 +1320,28 @@ class passive_dtp(asynchat.async_chat):
         return 0        
 
     def handle_expt(self):
-        debug("passive_dtp.handle_expt()")
+        debug("PassiveDTP.handle_expt()")
         self.close()
 
     def handle_error(self):
-        debug("passive_dtp.handle_error()")
+        debug("PassiveDTP.handle_error()")
         f = StringIO.StringIO()
         traceback.print_exc(file=f)
         debug(f.getvalue())
         self.close()
             
     def handle_close(self):
-        debug("passive_dtp.handle_close()")
+        debug("PassiveDTP.handle_close()")
         self.close()
 
     def close(self):
-        debug("passive_dtp.close()")
+        debug("PassiveDTP.close()")
         self.del_channel()
         self.socket.close()
 
 
 
-class active_dtp(asynchat.async_chat):
+class ActiveDTP(asynchat.async_chat):
     "Base class for active-DTP backend"    
    
     def __init__(self, ip, port, cmd_channel):        
@@ -1355,44 +1355,44 @@ class active_dtp(asynchat.async_chat):
             self.close()     
 
     def __del__(self):
-        debug("active_dtp.__del__()")
+        debug("ActiveDTP.__del__()")
 
     
     # --- connection / overridden            
         
     def handle_connect(self):        
-        debug("active_dtp.handle_connect()")
+        debug("ActiveDTP.handle_connect()")
         self.cmd_channel.respond('200 PORT command successful.')
-        handler = dtp_handler(self.socket, self.cmd_channel)        
+        handler = DTPHandler(self.socket, self.cmd_channel)
         self.cmd_channel.data_channel = handler        
         self.cmd_channel.on_dtp_connection()
         # self.close() --> (done automatically)
         
 
     def handle_expt(self):        
-        debug("active_dtp.handle_expt()")        
-        self.cmd_channel.respond ("425 Can't establish data connection.")
+        debug("ActiveDTP.handle_expt()")
+        self.cmd_channel.respond("425 Can't establish data connection.")
         self.close()
 
     def handle_error(self):        
-        debug("active_dtp.handle_error()")             
+        debug("ActiveDTP.handle_error()")
         f = StringIO.StringIO()
         traceback.print_exc(file=f)
         debug(f.getvalue())
         self.close()
             
     def handle_close(self):
-        debug("active_dtp.handle_close()")
+        debug("ActiveDTP.handle_close()")
         self.close()
 
     def close(self):
-        debug("active_dtp.close()")
+        debug("ActiveDTP.close()")
         self.del_channel()
         self.socket.close()
 
 
 
-class dtp_handler(asynchat.async_chat):
+class DTPHandler(asynchat.async_chat):
     """class handling server-data-transfer-process (server-DTP, see RFC 959)
     managing data-transfer operations.
     """
@@ -1419,7 +1419,7 @@ class dtp_handler(asynchat.async_chat):
         debug(msg)
 
     def __del__(self):
-        debug("dtp_handler.__del__()")       
+        debug("DTPHandler.__del__()")
 
 
     # --- utility methods
@@ -1439,20 +1439,20 @@ class dtp_handler(asynchat.async_chat):
 
     # --- connection / overridden
     
-    def readable (self):
+    def readable(self):
         return (len(self.ac_in_buffer) <= self.ac_in_buffer_size) and self.enable_receive
 
     def writable(self):
         return len(self.ac_out_buffer) or len(self.producer_fifo) or (not self.connected)
 
-    def push_with_producer (self, file_obj):
+    def push_with_producer(self, file_obj):
         self.file_obj = file_obj
-        producer = file_producer (self.file_obj, self.cmd_channel.current_type)
-        self.producer_fifo.push (producer)
+        producer = FileProducer(self.file_obj, self.cmd_channel.current_type)
+        self.producer_fifo.push(producer)
         self.close_when_done()
         self.initiate_send()
 
-    def initiate_send (self):
+    def initiate_send(self):
         obs = self.ac_out_buffer_size
         # try to refill the buffer
         if (len (self.ac_out_buffer) < obs):
@@ -1461,7 +1461,7 @@ class dtp_handler(asynchat.async_chat):
         if self.ac_out_buffer and self.connected:
             # try to send the buffer
             try:
-                num_sent = self.send (self.ac_out_buffer[:obs])
+                num_sent = self.send(self.ac_out_buffer[:obs])
                 if num_sent:
                     self.ac_out_buffer = self.ac_out_buffer[num_sent:]
                     
@@ -1473,7 +1473,7 @@ class dtp_handler(asynchat.async_chat):
                 self.handle_error()
                 return
 
-    def refill_buffer (self):
+    def refill_buffer(self):
         while 1:            
             if len(self.producer_fifo):
                 p = self.producer_fifo.first()                
@@ -1500,7 +1500,7 @@ class dtp_handler(asynchat.async_chat):
             else:
                 return     
        
-    def handle_read (self):    
+    def handle_read(self):    
         chunk = self.recv(self.in_buffer_size)  
         self.tot_bytes_received += len(chunk)
         if not chunk:
@@ -1518,23 +1518,23 @@ class dtp_handler(asynchat.async_chat):
         self.file_obj.write(self.data_wrapper(chunk))           
 
     def handle_expt(self):
-        debug("dtp_handler.handle_expt()")
+        debug("DTPHandler.handle_expt()")
         self.close()
 
     def handle_error(self):        
-        debug("dtp_handler.handle_error()")        
+        debug("DTPHandler.handle_error()")
         f = StringIO.StringIO()
         traceback.print_exc(file=f)
         debug(f.getvalue())
         self.close()
             
     def handle_close(self):
-        debug("dtp_handler.handle_close()")
+        debug("DTPHandler.handle_close()")
         self.transfer_finished = True
         self.close()
         
     def close(self):        
-        debug("dtp_handler.close()")
+        debug("DTPHandler.close()")
         tot_bytes = self.tot_bytes_sent + self.tot_bytes_received
 
         # If we used channel for receiving we assume that transfer is finished
@@ -1571,7 +1571,7 @@ class dtp_handler(asynchat.async_chat):
 # It's like asynchat.simple_producer class excepting that it works
 # with file(-like) objects instead of strings.
 
-class file_producer:
+class FileProducer:
     "Producer wrapper for file[-like] objects."
 
     out_buffer_size = 65536
@@ -1584,7 +1584,7 @@ class file_producer:
         else:
             self.data_wrapper = self.binary_data_wrapper
                        
-    def more (self):        
+    def more(self):        
         if self.done:
             return ''
         else:
@@ -1598,10 +1598,10 @@ class file_producer:
                 return data
                 
     def binary_data_wrapper(self):
-        return self.file.read (self.out_buffer_size)
+        return self.file.read(self.out_buffer_size)
 
     def ASCII_data_wrapper(self):        
-        return self.file.read (self.out_buffer_size).replace(os.linesep, '\r\n')
+        return self.file.read(self.out_buffer_size).replace(os.linesep, '\r\n')
         
 
 
@@ -1620,11 +1620,11 @@ def __test_compatibility():
         os.path.getsize
         os.path.getmtime
     except AttributeError:
-        raise error, "Incompatible Python release."    
+        raise Error, "Incompatible Python release."
 # __test_compatibility()
 
 
-class abstracted_fs:
+class AbstractedFS:
 
     def __init__(self):
         self.root = None
@@ -1632,7 +1632,7 @@ class abstracted_fs:
         self.rnfr = None
         
     # def __del__(self):
-        # debug("abstracted_fs.__del__()")
+        # debug("AbstractedFS.__del__()")
 
     # --- Conversion utilities
 
@@ -1750,7 +1750,7 @@ class abstracted_fs:
         # ** warning: CPU-intensive blocking operation. You could want to override this method.
 
         f = StringIO.StringIO()
-        # if this fails we handle exception in ftp_handler class
+        # if this fails we handle exception in FTPHandler class
         listing = os.listdir(path)
         for elem in listing:
             f.write(elem + '\r\n')
@@ -1779,7 +1779,7 @@ class abstracted_fs:
             path = root
             listing = [filename]
         else:
-            # if this fails we handle exception in ftp_handler class
+            # if this fails we handle exception in FTPHandler class
             listing = os.listdir(path)
 
         f = StringIO.StringIO()
@@ -1812,11 +1812,11 @@ class abstracted_fs:
 def test():
     # cmd line usage (provide a read-only anonymous ftp server):
     # python -m pyftpdlib.FTPServer
-    authorizer = dummy_authorizer()   
+    authorizer = DummyAuthorizer()
     authorizer.add_anonymous(os.getcwd())    
-    ftp_handler.authorizer = authorizer
+    FTPHandler.authorizer = authorizer
     address = ('', 21)    
-    ftpd = ftp_server(address, ftp_handler)
+    ftpd = FTPServer(address, FTPHandler)
     ftpd.serve_forever()
 
 
