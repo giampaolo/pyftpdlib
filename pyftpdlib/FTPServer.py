@@ -1161,10 +1161,20 @@ class ftp_handler(asynchat.async_chat):
         self.respond("202 ALLO command succesful.")
            
     def ftp_HELP(self, line):
-        self.push('214-The following commands are recognized:\r\n')
-        self.push(helper_string)
-        self.push("* argument required.\r\n")
-        self.respond("214 Help command succesful.")       
+        "Return help"
+        # TODO - A lot of FTP servers return command names only while we
+        # return cmd_name + description. I believe we should return the same.
+        if line:
+            # FIX #10
+            if line.upper() in proto_cmds:
+                self.respond("214 %s.\r\n" %proto_cmds[line.upper()])
+            else:
+                self.respond("500 Unrecognized command.")
+        else:
+            self.push("214-The following commands are recognized " + \
+                    "(* == argument required):\r\n" + \
+                    helper_string)
+            self.respond("214 Help command succesful.")
     
         # --- support for deprecated cmds
     
