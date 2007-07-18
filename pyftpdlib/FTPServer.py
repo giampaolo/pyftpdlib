@@ -1105,16 +1105,17 @@ class ftp_handler(asynchat.async_chat):
         # --- others       
 
     def ftp_TYPE(self, line):
-        if not line:
-            self.cmd_missing_arg()
-            return
-
-        line = line.lower()        
-        if line in type_map:
-            self.respond("200 Type set to: %s." %type_map[line])
-            self.current_type = line
+        "Set current type"
+        line = line.upper()
+        # FIX #6
+        if line in ("A", "AN", "A N"):
+            self.respond("200 Type set to: ASCII.")
+            self.current_type = 'a'
+        elif line in ("I", "L8", "L 8"):
+            self.respond("200 Type set to: Binary.")
+            self.current_type = 'i'
         else:
-            self.respond('550 Unknown / unsupported type "%s".' %line)
+            self.respond('504 Unsupported type "%s".' %line)
             
     def ftp_STRU(self, line):
         # obsolete (backward compatibility with older ftp clients)
