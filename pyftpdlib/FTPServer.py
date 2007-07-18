@@ -396,6 +396,8 @@ class FTPHandler(asynchat.async_chat):
     msg_connect = "Pyftpd %s" %__ver__
     msg_login = ""
     msg_quit = ""
+    # maximum login attempts
+    max_login_attempts = 3
 
     def __init__(self):
 
@@ -405,7 +407,7 @@ class FTPHandler(asynchat.async_chat):
         self.out_producer_queue = None
         self.authenticated = False
         self.username = "" 
-        self.max_login_attempts = [3, 0] # (value, counter)
+        self.attempted_logins = 0
         self.current_type = 'a'
         self.restart_position = 0
         self.quit_pending = False
@@ -911,43 +913,50 @@ class FTPHandler(asynchat.async_chat):
         self.respond('331 Username ok, send password.')        
 
     def ftp_PASS(self, line):
-        # TODO - brute force protection: 'freeze'/'sleep' (without blocking the main loop)
-        #   PI for a certain amount of time if authentication fails.
-        
+        "Check username's password"
+
+        # TODO - FIX #23 (PASS should be rejected if USER is authenticated yet)
         if not self.username:
-            self.respond("503 Login with USER first")
+            self.respond("503 Login with USER first.")
             return
-        
+
         if self.username == 'anonymous':
             line = ''
-            
+
+        # username ok
         if self.authorizer.has_user(self.username):
-            
+
             if self.authorizer.validate_authentication(self.username, line):
                 if not self.msg_login:
-                    self.respond("230 User %s logged in." %self.username)                    
+                    self.respond("230 User %s logged in." %self.username)
                 else:
                     self.push("230-%s\r\n" %self.msg_login)
                     self.respond("230 Welcome.")
-                    
+
                 self.authenticated = True
-                self.max_login_attempts[1] = 0
+                self.attempted_logins = 0
                 self.fs.root = self.authorizer.get_home_dir(self.username)
                 self.log("User %s logged in." %self.username)
-                
-            else:              
-                self.max_login_attempts[1] += 1
-                
-                if self.max_login_attempts[0] == self.max_login_attempts[1]:
+
+            else:
+                self.attempted_logins += 1
+                if self.attempted_logins >= self.max_login_attempts:
                     self.log("Maximum login attempts. Disconnecting.")
                     self.respond("530 Maximum login attempts. Disconnecting.")
                     self.close()
                 else:
                     self.respond("530 Authentication failed.")
                     self.username = ""
-                
+
+        # wrong username
         else:
-            if self.username.lower() == 'anonymous':
+            # FIX #20
+            self.attempted_logins += 1
+            if self.attempted_logins >= self.max_login_attempts:
+                self.log("Maximum login attempts. Disconnecting.")
+                self.respond("530 Maximum login attempts. Disconnecting.")
+                self.close()
+            elif self.username.lower() == 'anonymous':
                 self.respond("530 Anonymous access not allowed.")
                 self.log('Authentication failed: anonymous access not allowed.')
             else:
@@ -958,7 +967,7 @@ class FTPHandler(asynchat.async_chat):
     def ftp_REIN(self, line):
         self.authenticated = False
         self.username = ""
-        self.max_login_attempts[1] = 0
+        self.attempted_logins = 0
         self.respond("230 Ready for new user.")
         self.log("REIN account information was flushed.")
 
