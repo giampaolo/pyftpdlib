@@ -1203,8 +1203,10 @@ class ftp_server(asynchat.async_chat):
         
     def serve_forever(self): 
         log("Serving FTP on %s:%s." %self.socket.getsockname())
-        # here we try to use poll(), if it exists, else we'll use select()
-        asyncore.loop(timeout=1, use_poll=True)          
+        # FIX #16
+        # by default we try to use poll(), if it is available,
+        # else we'll use select()
+        asyncore.loop(timeout=1, use_poll=hasattr(asyncore.select, 'poll'))
             
     def handle_accept(self):
         debug("handle_accept()")        
