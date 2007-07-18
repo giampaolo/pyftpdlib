@@ -1191,7 +1191,9 @@ class ftp_server(asynchat.async_chat):
         asynchat.async_chat.__init__(self)
         self.address = address
         self.handler = handler
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)    
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        if os.name == 'posix':
+            self.set_reuse_addr()
         self.bind(self.address)
         self.listen(5)
 
@@ -1200,8 +1202,6 @@ class ftp_server(asynchat.async_chat):
         
     def serve_forever(self): 
         log("Serving FTP on %s:%s." %self.socket.getsockname())
-        if os.name == 'posix':
-            self.set_reuse_addr()
         # here we try to use poll(), if it exists, else we'll use select()
         asyncore.loop(timeout=1, use_poll=True)          
             
