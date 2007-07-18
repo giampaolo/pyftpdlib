@@ -947,66 +947,94 @@ class FTPHandler(asynchat.async_chat):
 
 
     def ftp_STOU(self, line):
-        "store a file with a unique name"
-        # note: RFC 959 prohibited STOU parameters, but this prohibition is obsolete.
-        # note2: RFC 959 wants ftpd to respond with code 250 but I've seen a
-        # lot of FTP servers responding with 125 or 150, and this is a better choice, imho,
-        # because STOU works just like STOR.
+        "Store a file with a unique name"
+        # - Note 1: RFC 959 prohibited STOU parameters, but this prohibition is
+        # obsolete.
+
+        # TODO - should we really accept arguments? RFC959 does not talk about such
+        # eventuality but Bernstein does: http://cr.yp.to/ftp/stor.html
+        # Try to find 'official' references declaring such obsolescence.
+        
+        # - Note 2: 250 response wanted by RFC 959 has been declared incorrect
+        # into RFC 1123 that wants 125/150 instead.
+        # - Note 3: RFC 1123 also provided an exact output format defined to be
+        # as follow:
+        # > 125 FILE: pppp
+        # ...where pppp represents the unique pathname of the file that will be
+        # written.
 
         # FIX #19
         # watch for STOU preceded by REST, which makes no sense.
         if self.restart_position:
             self.respond("550 Can't STOU when REST is pending.")
-            return        
-        
+            return
+
         # create file with a suggested name
         if line:
-            file = (self.fs.translate(line))
+            file = self.fs.translate(line)
             if not self.fs.exists(file):
                 resp = line
             else:
                 x = 0
-                while 1:                    
+                while 1:
                     file = self.fs.translate(line + '.' + str(x))
                     if not self.fs.exists(file):
                         resp = line + '.' + str(x)
                         break
                     else:
-                        x += 1
+                        # set a max of 99 on the number of tries to create a
+                        # unique filename, so that we decrease the chances of
+                        # a DoS situation
+                        if x > 99:
+                            self.respond("450 Can't STOU other files with such name.")
+                            self.log("Can't STOU other files with such name.")
+                            return
+                        else:
+                            x += 1
 
         # create file with a brand new name
         else:
             x = 0
-            while 1:                
+            while 1:
                 file = self.fs.translate(self.fs.cwd + '.' + str(x))
                 if not self.fs.exists(file):
                     resp = '.' + str(x)
                     break
                 else:
-                    x += 1            
+                    # set a max of 99 on the number of tries to create a unique
+                    # filename, so that we decrease the chances of a DoS situation
+                    if x > 99:
+                        self.respond("450 Can't STOU other files with brand new name.")
+                        self.log("Can't STOU other files with brand new name.")
+                        return
+                    else:
+                        x += 1
 
         # now just acts like STOR excepting that restarting isn't allowed
         if not self.authorizer.w_perm(self.username, os.path.split(file)[0]):
             self.log('FAIL STOU "%s". Not enough priviledges' %line)
-            self.respond("553 Can't STOU: not enough priviledges.")
+            self.respond ("550 Can't STOU: not enough priviledges.")
             return
-        try:            
+        
+        try:
             fd = self.fs.open(file, 'wb')
         except IOError, err:
-            self.log('FAIL STOU "%s". I/O error: %s' %(line, err.strerror))
-            self.respond('553 I/O server side error: %s' %err.strerror)
+            self.log('FAIL STOU "%s". %s.' %(line, os.strerror(err.errno)))
+            self.respond ('550 %s.' %os.strerror(err.errno))
             return
 
+        # FIX #8
         log = 'OK STOU "%s". Upload starting.' %resp
         if self.data_channel:
-            self.respond("125 %s" %resp)
+            self.respond("125 FILE: %s" %resp)
             self.log(log)
             self.data_channel.file_obj = fd
             self.data_channel.enable_receiving(self.current_type)
         else:
             self.debug("info: new producer queue added.")
-            self.respond("150 %s" %resp)
+            self.respond("150 FILE: %s" %resp)
             self.in_dtp_queue = (fd, log)
+
 
             
     def ftp_APPE(self, line):
