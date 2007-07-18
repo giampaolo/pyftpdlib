@@ -424,8 +424,9 @@ class FTPHandler(asynchat.async_chat):
 
         # session attributes
         self.fs = AbstractedFS()
-        self.in_producer_queue = None
-        self.out_producer_queue = None
+        self.in_dtp_queue = None
+        self.out_dtp_queue = None
+
         self.authenticated = False
         self.username = "" 
         self.attempted_logins = 0
@@ -434,7 +435,6 @@ class FTPHandler(asynchat.async_chat):
         self.quit_pending = False
 
         # dtp attributes
-        self.dtp_ready = False
         self.dtp_server = None
         self.data_channel = None  
 
@@ -599,6 +599,9 @@ class FTPHandler(asynchat.async_chat):
             self.data_channel.close()
             self.data_channel = None
 
+        del self.out_dtp_queue
+        del self.in_dtp_queue            
+
         self.log("Disconnected.")
         asynchat.async_chat.close(self)
 
@@ -606,39 +609,47 @@ class FTPHandler(asynchat.async_chat):
     # --- callbacks
     
     def on_dtp_connection(self):
-        # Called every time data channel connects (does not matter
-        # if active or passive). Here we check for data queues.
-        # If we got data to send we just push it into data channel.
-        # If we got data to receive we enable data channel for receiving it.
-        
+        """Called every time data channel connects (does not matter
+        if active or passive).  Here we check for data queues.
+        If we got data to send we just push it into data channel.
+        If we got data to receive we enable data channel for receiving it.
+        """
         self.debug("FTPHandler.on_dtp_connection()")
-        
         if self.dtp_server:
             self.dtp_server.close()
         self.dtp_server = None
-        
-        if self.out_producer_queue:
-            if self.out_producer_queue[1]:
-                self.log(self.out_producer_queue[1])                             
-            self.data_channel.push_with_producer(self.out_producer_queue[0])            
-            self.out_producer_queue = None
 
-        elif self.in_producer_queue:
-            if self.in_producer_queue[1]:
-                self.log(self.in_producer_queue[1])
-            self.data_channel.file_obj = self.in_producer_queue[0]
-            self.data_channel.enable_receiving()
-            self.in_producer_queue = None
+        # check for data to send
+        if self.out_dtp_queue:
+            data, isproducer, log = self.out_dtp_queue
+            if log:
+                self.log(log)
+            if not isproducer:
+                self.data_channel.push(data)
+            else:
+                self.data_channel.push_with_producer(data)
+            if self.data_channel:
+                self.data_channel.close_when_done()
+            self.out_dtp_queue = None
+
+        # check for data to receive
+        elif self.in_dtp_queue:
+            fd, log = self.in_dtp_queue
+            if log:
+                self.log(log)
+            self.data_channel.file_obj = fd
+            self.data_channel.enable_receiving(self.current_type)
+            self.in_dtp_queue = None
     
     def on_dtp_close(self):
-        # called every time close() method of DTPHandler() class
-        # is called.
-        
+        """Called every time close() method of DTPHandler() class
+        is called.
+        """
         self.debug("FTPHandler.on_dtp_close()")
-        if self.data_channel:
-            self.data_channel = None
+        self.data_channel = None
         if self.quit_pending:
             self.close_when_done()
+
     
     # --- utility
     
@@ -646,21 +657,28 @@ class FTPHandler(asynchat.async_chat):
         self.push(resp + '\r\n')
         self.logline('==> %s' % resp)
     
-    def push_dtp_data(self, file_obj, msg=''):
-        # Called every time a RETR, LIST or NLST is received, push data into
-        # data channel. If data channel does not exists yet we queue up data
-        # to send later. Data will then be pushed into data channel when 
-        # "on_dtp_connection()" method will be called. 
-        
-        if self.data_channel:            
+    def push_dtp_data(self, data, isproducer=False, log=''):
+        """Called every time a RETR, LIST or NLST is received, push data into
+        data channel.  If data channel does not exists yet we queue up data
+        to send later.  Data will then be pushed into data channel when
+        "on_dtp_connection()" method will be called.
+        When 'isproducer' is True we assume that data is not a string but a
+        producer so we'll use push_with_producer method instead of push
+        """
+        if self.data_channel:
             self.respond("125 Data connection already open. Transfer starting.")
-            if msg:
-                self.log(msg)
-            self.data_channel.push_with_producer(file_obj)
+            if log:
+                self.log(log)
+            if not isproducer:
+                self.data_channel.push(data)
+            else:
+                self.data_channel.push_with_producer(data)
+            if self.data_channel:
+                self.data_channel.close_when_done()
         else:
             self.respond("150 File status okay. About to open data connection.")
             self.debug("info: new producer queue added")
-            self.out_producer_queue = (file_obj, msg)
+            self.out_dtp_queue = (data, isproducer, log)
 
     def cmd_not_understood(self, line):
         self.respond('500 Command "%s" not understood.' %line)
@@ -779,14 +797,11 @@ class FTPHandler(asynchat.async_chat):
         # --- data transferring
         
     def ftp_LIST(self, line):
-        # TODO: LIST/NLST commands are currently the mostly CPU-intensive blocking operations.
-        # A sort of cache could be implemented (take a look at dircache module).
-        
+        "Return a list of files"
         if line:
             # some FTP clients (like Konqueror or Nautilus) erroneously use
             # /bin/ls-like LIST formats (e.g. "LIST -l", "LIST -al" and so on...).
             # If this happens we LIST the current working directory.
-           
             if line.lower() in ("-a", "-l", "-al", "-la"):
                 path = self.fs.translate(self.fs.cwd)
                 line = self.fs.cwd
@@ -797,21 +812,18 @@ class FTPHandler(asynchat.async_chat):
             path = self.fs.translate(self.fs.cwd)
             line = self.fs.cwd
 
-        if not self.fs.exists(path):
-            self.log('FAIL LIST "%s". No such directory.' %line)
-            self.respond('550 No such directory: "%s".' %line)
-            return
-        
         try:
-            file_obj = self.fs.get_list_dir(path)
-        except OSError, err:           
-            self.log('FAIL LIST "%s". %s: "%s".' % (line, err.strerror, err.filename))
-            self.respond ('550 I/O server side error: %s' %err.strerror)
+            data = self.fs.get_list_dir(path)
+        except OSError, err:
+            self.log('FAIL LIST "%s". %s.' %(line, os.strerror(err.errno)))
+            self.respond ('550 %s.' %os.strerror(err.errno))
             return
-            
-        self.push_dtp_data(file_obj, 'OK LIST "%s". Transfer starting.' %line)
 
-    def ftp_NLST(self, line):       
+        self.push_dtp_data(data, log='OK LIST "%s". Transfer starting.' %line)
+
+
+    def ftp_NLST(self, line):
+        "Return a list of files in a compact form"
         if line:
             path = self.fs.translate(line)
             line = self.fs.normalize(line)
@@ -819,20 +831,15 @@ class FTPHandler(asynchat.async_chat):
             path = self.fs.translate(self.fs.cwd)
             line = self.fs.cwd
 
-        if not self.fs.isdir(path):
-            self.log('FAIL NLST "%s". No such directory.' %line)
-            self.respond('550 No such directory: "%s".' %line)
+        try:
+            data = self.fs.get_nlst_dir(path)
+        except OSError, err:
+            self.log('FAIL NLST "%s". %s.' %(line, os.strerror(err.errno)))
+            self.respond ('550 %s.' %os.strerror(err.errno))
             return
 
-        try:
-            file_obj = self.fs.get_list_dir(path)
-        except OSError, err:           
-            self.log('FAIL NLST "%s". %s: "%s".' % (line, err.strerror, err.filename))
-            self.respond('550 I/O server side error: %s' %err.strerror)
-            return                
+        self.push_dtp_data(data, log='OK NLST "%s". Transfer starting.' %line)
 
-        file_obj = self.fs.get_nlst_dir(path)
-        self.push_dtp_data(file_obj, 'OK NLST "%s". Transfer starting.' %line)
 
     def ftp_RETR(self, line):
                    
@@ -849,7 +856,7 @@ class FTPHandler(asynchat.async_chat):
             return
         
         try:
-            file_obj = open(file, 'rb')
+            fd = self.fs.open(file, 'rb')
         except IOError, err:
             self.log('FAIL RETR "%s". I/O error: %s' %(line, err.strerror))
             self.respond('553 I/O server side error: %s' %err.strerror)
@@ -857,12 +864,15 @@ class FTPHandler(asynchat.async_chat):
         
         if self.restart_position:
             try:
-                file_obj.seek(self.restart_position)
+                fd.seek(self.restart_position)
             except:
                 pass
             self.restart_position = 0
                     
-        self.push_dtp_data(file_obj, 'OK RETR "%s". Download starting.' %self.fs.normalize(line))
+        producer = FileProducer(fd, self.current_type)
+        self.push_dtp_data(producer, isproducer=1,
+            log='OK RETR "%s". Download starting.' %self.fs.normalize(line))
+
 
     def ftp_STOR(self, line, rwa='w', mode='b'):
         
@@ -883,7 +893,7 @@ class FTPHandler(asynchat.async_chat):
             rwa = 'r+'
         
         try:            
-            file_obj = open(file, rwa + mode)
+            fd = self.fs.open(file, rwa + mode)
         except IOError, err:
             self.log('FAIL STOR "%s". I/O error: %s' %(line, err.strerror))
             self.respond('553 I/O server side error: %s' %err.strerror)
@@ -891,20 +901,22 @@ class FTPHandler(asynchat.async_chat):
         
         if self.restart_position:
             try:
-                file_obj.seek(self.restart_position)
+                fd.seek(self.restart_position)
             except:
                 pass
             self.restart_position = 0
             
+        log = 'OK STOR "%s". Upload starting.' %self.fs.normalize(line)
         if self.data_channel:
             self.respond("125 Data connection already open. Transfer starting.")
-            self.log('OK STOR "%s". Upload starting.' %self.fs.normalize(line))
-            self.data_channel.file_obj = file_obj
-            self.data_channel.enable_receiving()
+            self.log(log)
+            self.data_channel.file_obj = fd
+            self.data_channel.enable_receiving(self.current_type)
         else:
             self.debug("info: new producer queue added.")
             self.respond("150 File status okay. About to open data connection.")
-            self.in_producer_queue = (file_obj, 'OK STOR "%s". Upload starting.' %self.fs.normalize(line))
+            self.in_dtp_queue = (fd, log)
+
 
     def ftp_STOU(self, line):
         "store a file with a unique name"
@@ -945,21 +957,22 @@ class FTPHandler(asynchat.async_chat):
             self.respond("553 Can't STOU: not enough priviledges.")
             return
         try:            
-            file_obj = open(file, 'wb')
+            fd = self.fs.open(file, 'wb')
         except IOError, err:
             self.log('FAIL STOU "%s". I/O error: %s' %(line, err.strerror))
             self.respond('553 I/O server side error: %s' %err.strerror)
             return
 
+        log = 'OK STOU "%s". Upload starting.' %resp
         if self.data_channel:
             self.respond("125 %s" %resp)
-            self.log('OK STOU "%s". Upload starting.' %self.fs.normalize(line))
-            self.data_channel.file_obj = file_obj
-            self.data_channel.enable_receiving()
+            self.log(log)
+            self.data_channel.file_obj = fd
+            self.data_channel.enable_receiving(self.current_type)
         else:
             self.debug("info: new producer queue added.")
             self.respond("150 %s" %resp)
-            self.in_producer_queue = (file_obj, 'OK STOU "%s". Upload starting.' %self.fs.normalize(line))
+            self.in_dtp_queue = (fd, log)
 
             
     def ftp_APPE(self, line):
@@ -1617,175 +1630,208 @@ class ActiveDTP(asyncore.dispatcher):
 
 
 
-class DTPHandler(asynchat.async_chat):
-    """class handling server-data-transfer-process (server-DTP, see RFC 959)
+# TODO - improve this comment
+# DTPHandler implementation note
+# When a producer is consumed and "close_when_done" has been previously
+# used, "refill_buffer" erroneously calls "close" instead of "handle_cose"
+# method (see also: http://python.org/sf/1740572)
+# Having said that I decided to rewrite the entire class from scratch
+# subclassing asyncore.dispatcher. This brand new implementation follows the
+# same approach that asynchat module will use in Python 2.6.
+# The most important change in such implementation is related to producer_fifo
+# that will be a pure deque object instead of a "producer_fifo" instance.
+# Since we don't want to break backward compatibily with older python versions
+# (deque has been introduced in Python 2.4) if deque is not available we'll use
+# a list instead.
+# Event if this could seems somewhat tricky it's always better than having
+# something buggy under the hoods...
+
+try:
+    from collections import deque
+except ImportError:
+    # backward compatibility with Python < 2.4.x
+    class deque(list):
+        def appendleft(self, obj):
+            list.insert(self, 0, obj)
+
+
+class DTPHandler(asyncore.dispatcher):
+    # TODO - improve this docstring
+    """Class handling server-data-transfer-process (server-DTP, see RFC 959)
     managing data-transfer operations.
     """
-   
+
+    ac_in_buffer_size = 8192
+    ac_out_buffer_size  = 8192
+
     def __init__(self, sock_obj, cmd_channel):        
-        asynchat.async_chat.__init__(self, conn=sock_obj)
-       
+        asyncore.dispatcher.__init__(self, sock_obj)
+        # we toss the use of the asynchat's "simple producer" and replace it with
+        # a pure deque, which the original fifo was a wrapping of
+        self.producer_fifo = deque()
+
         self.cmd_channel = cmd_channel
-                
         self.file_obj = None
-        self.in_buffer_size = 8192
-        self.out_buffer_size  = 8192
-        
-        self.enable_receive = False       
+        self.receive = False
         self.transfer_finished = False
         self.tot_bytes_sent = 0
         self.tot_bytes_received = 0        
-        self.data_wrapper = self.binary_data_wrapper
-    
-    def log(self, msg):
-        log(msg)
-
-    def debug(self, msg):
-        debug(msg)
 
     def __del__(self):
         debug("DTPHandler.__del__()")
 
-
     # --- utility methods
     
-    def enable_receiving(self):          
-        if self.cmd_channel.current_type == 'a':
-            self.data_wrapper = self.ASCII_data_wrapper
+    def enable_receiving(self, type):
+        """Enable receiving data over the channel.
+        Depending on the TYPE currently in use it creates an appropriate
+        wrapper for the incoming data.
+        """
+        if type == 'a':
+            self.data_wrapper = lambda x: x.replace('\r\n', os.linesep)
         else:
-            self.data_wrapper = self.binary_data_wrapper
-        self.enable_receive = True
-            
-    def ASCII_data_wrapper(self, data):        
-        return data.replace('\r\n', os.linesep)
-    
-    def binary_data_wrapper(self, data):
-        return data
+            self.data_wrapper = lambda x: x
+        self.receive = True
 
-    # --- connection / overridden
-    
-    def readable(self):
-        return (len(self.ac_in_buffer) <= self.ac_in_buffer_size) and self.enable_receive
+    def get_transmitted_bytes(self):
+        "Return the number of transmitted bytes"
+        return self.tot_bytes_sent + self.tot_bytes_received
 
-    def writable(self):
-        return len(self.ac_out_buffer) or len(self.producer_fifo) or (not self.connected)
+    def transfer_in_progress(self):
+        "Return True if a transfer is in progress, else False"
+        return self.get_transmitted_bytes != 0
 
-    def push_with_producer(self, file_obj):
-        self.file_obj = file_obj
-        producer = FileProducer(self.file_obj, self.cmd_channel.current_type)
-        self.producer_fifo.push(producer)
-        self.close_when_done()
-        self.initiate_send()
+    # --- connection
 
-    def initiate_send(self):
-        obs = self.ac_out_buffer_size
-        # try to refill the buffer
-        if (len (self.ac_out_buffer) < obs):
-            self.refill_buffer()
-
-        if self.ac_out_buffer and self.connected:
-            # try to send the buffer
-            try:
-                num_sent = self.send(self.ac_out_buffer[:obs])
-                if num_sent:
-                    self.ac_out_buffer = self.ac_out_buffer[num_sent:]
-                    
-                    # --- edit
-                    self.tot_bytes_sent += num_sent
-                    # --- /edit
-
-            except socket.error, why:
-                self.handle_error()
-                return
-
-    def refill_buffer(self):
-        while 1:            
-            if len(self.producer_fifo):
-                p = self.producer_fifo.first()                
-                if p is None:
-                    if not self.ac_out_buffer:                        
-                        self.producer_fifo.pop()
-                        
-                        # --- edit                                              
-                        self.transfer_finished = True
-                        # --- /edit
-                        
-                        self.close()
-                    return
-                elif isinstance(p, str):
-                    self.producer_fifo.pop()
-                    self.ac_out_buffer = self.ac_out_buffer + p
-                    return
-                data = p.more()
-                if data:
-                    self.ac_out_buffer = self.ac_out_buffer + data
-                    return
-                else:
-                    self.producer_fifo.pop()
-            else:
-                return     
-       
-    def handle_read(self):    
-        chunk = self.recv(self.in_buffer_size)  
+    def handle_read (self):
+        try:
+            chunk = self.recv(self.ac_in_buffer_size)
+        except socket.error:
+            self.handle_error()
+            return
         self.tot_bytes_received += len(chunk)
         if not chunk:
-            self.transfer_finished = True                     
+            self.transfer_finished = True
             # self.close()  <-- asyncore.recv() already do that...
             return
-        
-        # --- Writing on file
-        # While we're writing on the file an exception could occur in case that
+
+        # Writing on file:
+        # while we're writing on the file an exception could occur in case that
         # filesystem gets full but this rarely happens and a "try/except"
         # statement seems wasted to me.
         # Anyway if this happens we let handle_error() method handle this exception.
         # Remote client will just receive a generic 426 response then it will be
         # disconnected.
-        self.file_obj.write(self.data_wrapper(chunk))           
+        self.file_obj.write(self.data_wrapper(chunk))
+
+    def handle_write(self):
+        self.initiate_send()
+
+    def push(self, data):
+        sabs = self.ac_out_buffer_size
+        if len(data) > sabs:
+            for i in xrange(0, len(data), sabs):
+                self.producer_fifo.append(data[i:i+sabs])
+        else:
+            self.producer_fifo.append(data)
+        self.initiate_send()
+
+    def push_with_producer(self, producer):
+        self.producer_fifo.append(producer)
+        self.initiate_send()
+
+    def readable(self):
+        "Predicate for inclusion in the readable for select()"
+        # cannot use the old predicate, it violates the claim of the
+        # set_terminator method.
+        #return (len(self.ac_in_buffer) <= self.ac_in_buffer_size)
+        return self.receive
+
+    def writable(self):
+        "Predicate for inclusion in the writable for select()"
+        return self.producer_fifo or (not self.connected)
+
+    def close_when_done(self):
+        "Automatically close this channel once the outgoing queue is empty"
+        self.producer_fifo.append(None)
+
+    def initiate_send (self):
+        while self.producer_fifo and self.connected:
+            first = self.producer_fifo[0]
+            # handle empty string/buffer or None entry
+            if not first:
+                del self.producer_fifo[0]
+                if first is None:
+                    self.transfer_finished = True
+                    self.handle_close()
+                    return
+
+            # handle classic producer behavior
+            try:
+                buffer(first)
+            except TypeError:
+                self.producer_fifo.appendleft(first.more())
+                continue
+
+            # send the data
+            try:
+                num_sent = self.send(first)
+                self.tot_bytes_sent += num_sent
+            except socket.error, why:
+                self.handle_error()
+                return
+
+            if num_sent:
+                if num_sent < len(first):
+                    self.producer_fifo[0] = first[num_sent:]
+                else:
+                    del self.producer_fifo[0]
+
+            # we tried to send some actual data
+            return
 
     def handle_expt(self):
         debug("DTPHandler.handle_expt()")
-        self.close()
+        self.handle_close()
 
     def handle_error(self):        
         debug("DTPHandler.handle_error()")
         f = StringIO.StringIO()
         traceback.print_exc(file=f)
         debug(f.getvalue())
-        self.close()
-            
+        self.handle_close()
+
     def handle_close(self):
         debug("DTPHandler.handle_close()")
-        self.transfer_finished = True
-        self.close()
-        
-    def close(self):        
-        debug("DTPHandler.close()")
-        tot_bytes = self.tot_bytes_sent + self.tot_bytes_received
+        tot_bytes = self.get_transmitted_bytes()
 
         # If we used channel for receiving we assume that transfer is finished
-        # when client close connection, if we used channel for sending we have
+        # when client close connection , if we used channel for sending we have
         # to check that all data has been sent (responding with 226) or not
         # (responding with 426).
-        if self.enable_receive:
+        if self.receive:
+            self.transfer_finished = True
+        if self.transfer_finished:
             self.cmd_channel.respond("226 Transfer complete.")
             self.cmd_channel.log("Trasfer complete. %d bytes transmitted." %tot_bytes)
-        else:            
-            if self.transfer_finished:
-                self.cmd_channel.respond("226 Transfer complete.")
-                self.cmd_channel.log("Trasfer complete. %d bytes transmitted." %tot_bytes)
-            else:
-                self.cmd_channel.respond("426 Connection closed, transfer aborted.")
-                self.cmd_channel.log("Trasfer aborted. %d bytes transmitted." %tot_bytes)
+        else:
+            self.cmd_channel.respond("426 Connection closed, transfer aborted.")
+            self.cmd_channel.log("Trasfer aborted. %d bytes transmitted." %tot_bytes)
+        self.close()
 
-        try: self.file_obj.close()
-        except: pass
-        
-        # to permit gc...
-        del self.data_wrapper
-        
-        asynchat.async_chat.close(self)
-        
-        self.cmd_channel.data_channel = None
+    def close(self):
+        debug("DTPHandler.close()")
+
+        if self.file_obj:
+            if not self.file_obj.closed:
+                self.file_obj.close()
+
+        while self.producer_fifo:
+            first = self.producer_fifo.pop()
+            if isinstance(first, FileProducer):
+                first.close()
+
+        asyncore.dispatcher.close(self)
         self.cmd_channel.on_dtp_close()
 
 
@@ -1801,33 +1847,29 @@ class FileProducer:
 
     out_buffer_size = 65536
 
-    def __init__ (self, file, type=''):
+    def __init__ (self, file, type):
         self.done = 0
         self.file = file
         if type == 'a':
-            self.data_wrapper = self.ASCII_data_wrapper
+            self.data_wrapper = lambda x: x.replace(os.linesep, '\r\n')
         else:
-            self.data_wrapper = self.binary_data_wrapper
-                       
-    def more(self):        
+            self.data_wrapper = lambda x: x
+
+    def more(self):
         if self.done:
             return ''
         else:
-            data = self.data_wrapper()
-            if not data:              
-                # to permit gc...
-                self.file = self.data_wrapper = None                
-                self.done = 1                
-                return ''
+            data = self.data_wrapper(
+                self.file.read(self.out_buffer_size))
+            if not data:
+                self.done = 1
+                self.close()
             else:
                 return data
-                
-    def binary_data_wrapper(self):
-        return self.file.read(self.out_buffer_size)
 
-    def ASCII_data_wrapper(self):        
-        return self.file.read(self.out_buffer_size).replace(os.linesep, '\r\n')
-        
+    def close(self):
+        if not self.file.closed:
+            self.file.close()        
 
 
 # --- filesystem
@@ -1902,6 +1944,9 @@ class AbstractedFS:
         # as far as i know, it should always be path traversal safe...
         return os.path.normpath(self.root + self.normalize(path))
 
+    def open(self, filename, mode):
+        return open(filename, mode)
+
     def exists(self, path):
         return os.path.exists(path)
         
@@ -1937,42 +1982,44 @@ class AbstractedFS:
         os.rename(src, dst)
     
     def get_nlst_dir(self, path):
-        # ** warning: CPU-intensive blocking operation. You could want to override this method.
+        """Return a directory listing in a compact form.
 
-        f = StringIO.StringIO()
-        # if this fails we handle exception in FTPHandler class
+        Note that this is resource-intensive blocking operation so you may want
+        to override it and move it into another process/thread in some way.
+        """
+        l = []
         listing = os.listdir(path)
         for elem in listing:
-            f.write(elem + '\r\n')
-        f.seek(0)
-        return f
-    
+            l.append(elem + '\r\n')
+        return ''.join(l)
+
     def get_list_dir(self, path):
-        'Emulates unix "ls" command'
+        """Return a directory listing emulating "/bin/ls -lgA" UNIX command
+        output.
 
-        # ** warning: CPU-intensive blocking operation. You could want to override this method.
-        
-        # For portability reasons permissions, hard links numbers, owners and groups listed
-        # by this method are static and unreliable but it shouldn't represent a problem for
-        # most ftp clients around.
-        # If you want reliable values on unix systems override this method and use other attributes
-        # provided by os.stat()
-        #
-        # How LIST appears to client:
-        # -rwxrwxrwx   1 owner    group         7045120 Sep 02  3:47 music.mp3
-        # drwxrwxrwx   1 owner    group               0 Aug 31 18:50 e-books
-        # -rwxrwxrwx   1 owner    group             380 Sep 02  3:40 module.py
+        For portability reasons permissions, hard links numbers, owners and
+        groups listed are static and unreliable but it shouldn't represent a
+        problem for most ftp clients around.
+        If you want reliable values on unix systems override this method and
+        use other attributes provided by os.stat().
+        This is how LIST appears to client:
 
+        -rwxrwxrwx   1 owner    group         7045120 Sep 02  3:47 music.mp3
+        drwxrwxrwx   1 owner    group               0 Aug 31 18:50 e-books
+        -rwxrwxrwx   1 owner    group             380 Sep 02  3:40 module.py
+
+        Note that this a resource-intensive blocking operation so you may want
+        to override it and move it into another process/thread in some way.
+        """
         # if path is a file we return information about it
-        if not self.isdir(path):
+        if self.isfile(path):
             root, filename = os.path.split(path)
             path = root
             listing = [filename]
         else:
-            # if this fails we handle exception in FTPHandler class
             listing = os.listdir(path)
 
-        f = StringIO.StringIO()
+        l = []
         for obj in listing:
             name = os.path.join(path, obj)
             stat = os.stat(name)
@@ -1986,17 +2033,16 @@ class AbstractedFS:
 
 
             if os.path.isfile(name) or os.path.islink(name):
-                f.write("-rw-rw-rw-   1 owner    group %15s %s %s\r\n" %(
+                l.append("-rw-rw-rw-   1 owner    group %15s %s %s\r\n" %(
                     stat.st_size,
                     mtime,
                     obj))
             else:
-                f.write("drwxrwxrwx   1 owner    group %15s %s %s\r\n" %(
+                l.append("drwxrwxrwx   1 owner    group %15s %s %s\r\n" %(
                     '0', # no size
                     mtime,
                     obj))
-        f.seek(0)
-        return f        
+        return ''.join(l)
 
 
 def test():
