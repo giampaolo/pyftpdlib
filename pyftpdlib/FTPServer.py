@@ -1489,27 +1489,31 @@ class FTPServer(asyncore.dispatcher):
         map.clear()
 
 
-class PassiveDTP(asynchat.async_chat):
-    "Base class for passive-DTP backend"
+class PassiveDTP(asyncore.dispatcher):
+    """This class is an asyncore.disptacher subclass.
+    It creates a socket listening on a local port, dispatching the resultant
+    connection DTPHandler.
+    """
+
+    # TODO - provide the possibility to define a certain range of ports
+    # on which DTP should bind on
 
     def __init__(self, cmd_channel):           
-        asynchat.async_chat.__init__(self)
-        
+        asyncore.dispatcher.__init__(self)
         self.cmd_channel = cmd_channel
-        self.debug = self.cmd_channel.debug     
 
         ip = self.cmd_channel.getsockname()[0]
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        # by using 0 as port number value we let socket choose a free random port
+        # by using 0 as port number value we let socket choose a free
+        # unprivileged random port.  This is also convenient on some systems
+        # where root is the only user able to bind a socket on such ports.
         self.bind((ip, 0))
         self.listen(5)        
-        self.cmd_channel.dtp_ready = True      
         port = self.socket.getsockname()[1]
-        self.cmd_channel.respond('227 Entering passive mode (%s,%d,%d)' %(
-                ip.replace('.', ','), 
-                port / 256, 
-                port % 256
-                ))
+        # The format of 227 response in not standardized.
+        # This is the most expected:
+        self.cmd_channel.respond('227 Entering passive mode (%s,%d,%d).' %(
+                ip.replace('.', ','), port / 256, port % 256))
 
     def __del__(self):
         debug("PassiveDTP.__del__()")
@@ -1524,26 +1528,25 @@ class PassiveDTP(asynchat.async_chat):
         # We have to drop the incoming data connection if remote IP address 
         # does not match the client's IP address.
         if self.cmd_channel.remote_ip != addr[0]:
-            log("info: PASV connection theft attempt occurred from %s:%s." %(addr[0], addr[1]))
+            self.cmd_chanel.log("PASV connection theft attempt occurred from %s:%s."
+                %(addr[0], addr[1]))
             try:
-                # sock_obj.send('500 Go hack someone else, dude.')
+                #sock_obj.send('500 Go hack someone else, dude.\r\n')
                 sock_obj.close()
-            except:
+            except socket.error:
                 pass        
         else:
             debug("PassiveDTP.handle_accept()")
-            self.cmd_channel.dtp_ready = False
+            # Immediately close the current channel (we accept only one
+            # connection at time) to avoid running out of max connections limit.
+            self.close()
+            # delegate such connection to DTP handler
             handler = DTPHandler(sock_obj, self.cmd_channel)
             self.cmd_channel.data_channel = handler
             self.cmd_channel.on_dtp_connection()
-            # self.close()                    
-        
-    def writable(self):
-        return 0        
 
-    def handle_expt(self):
-        debug("PassiveDTP.handle_expt()")
-        self.close()
+    def writable(self):
+        return 0
 
     def handle_error(self):
         debug("PassiveDTP.handle_error()")
@@ -1558,45 +1561,46 @@ class PassiveDTP(asynchat.async_chat):
 
     def close(self):
         debug("PassiveDTP.close()")
-        self.del_channel()
-        self.socket.close()
+        asyncore.dispatcher.close(self)
 
 
+class ActiveDTP(asyncore.dispatcher):
+    """This class is an asyncore.disptacher subclass.
+    It creates a socket resulting from the connection to a remote user-port,
+    dispatching it to DTPHandler.
+    """
 
-class ActiveDTP(asynchat.async_chat):
-    "Base class for active-DTP backend"    
-   
-    def __init__(self, ip, port, cmd_channel):        
-        asynchat.async_chat.__init__(self)        
+    def __init__(self, ip, port, cmd_channel):
+        asyncore.dispatcher.__init__(self)
         self.cmd_channel = cmd_channel       
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             self.connect((ip, port))
-        except:
+        except socket.error:
             self.cmd_channel.respond("500 Can't connect to %s:%s." %(ip, port))
             self.close()     
 
     def __del__(self):
         debug("ActiveDTP.__del__()")
 
-    
-    # --- connection / overridden            
-        
+
+    # --- connection / overridden
+
+    def handle_write(self):
+        # without overriding this we would get an "unhandled write event"
+        # message from asyncore once connection occurs.
+        pass
+
     def handle_connect(self):        
         debug("ActiveDTP.handle_connect()")
         self.cmd_channel.respond('200 PORT command successful.')
+        # delegate such connection to DTP handler
         handler = DTPHandler(self.socket, self.cmd_channel)
-        self.cmd_channel.data_channel = handler        
+        self.cmd_channel.data_channel = handler
         self.cmd_channel.on_dtp_connection()
         # self.close() --> (done automatically)
-        
 
-    def handle_expt(self):        
-        debug("ActiveDTP.handle_expt()")
-        self.cmd_channel.respond("425 Can't establish data connection.")
-        self.close()
-
-    def handle_error(self):        
+    def handle_error(self):
         debug("ActiveDTP.handle_error()")
         f = StringIO.StringIO()
         traceback.print_exc(file=f)
@@ -1609,8 +1613,7 @@ class ActiveDTP(asynchat.async_chat):
 
     def close(self):
         debug("ActiveDTP.close()")
-        self.del_channel()
-        self.socket.close()
+        asyncore.dispatcher.close(self)
 
 
 
