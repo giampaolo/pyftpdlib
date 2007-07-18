@@ -1080,19 +1080,22 @@ class FTPHandler(asynchat.async_chat):
 
     
     def ftp_MKD(self, line):
+        "Create directory"
         path = self.fs.translate(line)
-        
+
         if not self.authorizer.w_perm(self.username, os.path.split(path)[0]):
             self.log('FAIL MKD "%s". Not enough priviledges.' %line)
-            self.respond("553 Can't MKD: not enough priviledges.")
+            self.respond ("550 Can't MKD: not enough priviledges.")
             return
-       
-        if self.fs.mkdir(path):
+
+        try:
+            self.fs.mkdir(path)
             self.log('OK MKD "%s".' %self.fs.normalize(line))
-            self.respond("257 Directory created.")            
-        else:
-            self.log('FAIL MKD "%s".' %self.fs.normalize(line))
-            self.respond("550 Can't create directory.")
+            self.respond("257 Directory created.")
+        except OSError, err:
+            self.log('FAIL MKD "%s". %s.' %(line, os.strerror(err.errno)))
+            self.respond ('550 %s.' %os.strerror(err.errno))
+
 
     def ftp_RMD(self, line):   
         path = self.fs.translate(line)
@@ -1791,11 +1794,7 @@ class AbstractedFS:
         self.cwd = parent
         
     def mkdir(self, path):
-        try:
-            os.mkdir(path)
-            return 1
-        except:
-            return 0
+        os.mkdir(path)
             
     def rmdir(self, path):
         try:
