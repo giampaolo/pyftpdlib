@@ -124,90 +124,90 @@ class ftp_authentication(unittest.TestCase):
     "test: USER, PASS, REIN"
 
     def setUp(self):
-	global ftp
-	ftp = ftplib.FTP()
-	ftp.connect(host=host, port=port)
+        global ftp
+        ftp = ftplib.FTP()
+        ftp.connect(host=host, port=port)
 
     def tearDown(self):
-	ftp.close()
+        ftp.close()
 
     def test_auth_ok(self):
-	ftp.login(user=user, passwd=pwd)
+        ftp.login(user=user, passwd=pwd)
 
     def test_auth_failed(self):
-	self.failUnlessRaises(ftplib.error_perm, ftp.login, user=user, passwd='wrong')
+        self.failUnlessRaises(ftplib.error_perm, ftp.login, user=user, passwd='wrong')
 
     def test_anon_auth(self):
-	ftp.login(user='anonymous', passwd='anon@')
-	ftp.login(user='AnonYmoUs', passwd='anon@')
-	ftp.login(user='anonymous', passwd='')   
+        ftp.login(user='anonymous', passwd='anon@')
+        ftp.login(user='AnonYmoUs', passwd='anon@')
+        ftp.login(user='anonymous', passwd='')   
 
     def test_rein(self):
-	self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'pwd')
-	ftp.login(user='anonymous', passwd='anon@')
-	ftp.sendcmd('pwd')
-	ftp.sendcmd('rein')
-	self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'pwd')
+        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'pwd')
+        ftp.login(user='anonymous', passwd='anon@')
+        ftp.sendcmd('pwd')
+        ftp.sendcmd('rein')
+        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'pwd')
 
     def test_max_auth(self):
-	# if authentication fails for 3 times ftpd disconnect us.
-	# we can check if this happen by using ftp.sendcmd() on the 'dead' socket object.
-	# If socket object is really dead it should be raised
-	# socket.error exception (Windows) or EOFError exception (Linux).
-	self.failUnlessRaises(ftplib.error_perm, ftp.login, user=user, passwd='wrong')
-	self.failUnlessRaises(ftplib.error_perm, ftp.login, user=user, passwd='wrong')
-	self.failUnlessRaises(ftplib.error_perm, ftp.login, user=user, passwd='wrong')
-	self.failUnlessRaises((socket.error, EOFError), ftp.sendcmd, '')
+        # if authentication fails for 3 times ftpd disconnect us.
+        # we can check if this happen by using ftp.sendcmd() on the 'dead' socket object.
+        # If socket object is really dead it should be raised
+        # socket.error exception (Windows) or EOFError exception (Linux).
+        self.failUnlessRaises(ftplib.error_perm, ftp.login, user=user, passwd='wrong')
+        self.failUnlessRaises(ftplib.error_perm, ftp.login, user=user, passwd='wrong')
+        self.failUnlessRaises(ftplib.error_perm, ftp.login, user=user, passwd='wrong')
+        self.failUnlessRaises((socket.error, EOFError), ftp.sendcmd, '')
 
 
 class ftp_dummy_cmds(unittest.TestCase):
     "test: TYPE, STRU, MODE, STAT, NOOP, SYST, ALLO, HELP"
 
     def setUp(self):
-	global ftp
-	ftp = ftplib.FTP()
-	ftp.connect(host=host, port=port)
-	ftp.login(user=user, passwd=pwd)
+        global ftp
+        ftp = ftplib.FTP()
+        ftp.connect(host=host, port=port)
+        ftp.login(user=user, passwd=pwd)
 
     def tearDown(self):
-	ftp.close()
+        ftp.close()
 
     def test_type(self):
 ##	for _type in ('a', 'i'):
 ##	    ftp.sendcmd('type %s' %_type)
-##	    ftp.sendcmd('type %s' %_type.upper())             
-	self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'type')
-	self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'type x')
+##	    ftp.sendcmd('type %s' %_type.upper())
+        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'type')
+        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'type x')
 
     def test_stru(self):
-	ftp.sendcmd('stru f')
-	ftp.sendcmd('stru F')
-	self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'stru')
-	self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'stru x')
+        ftp.sendcmd('stru f')
+        ftp.sendcmd('stru F')
+        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'stru')
+        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'stru x')
 
     def test_mode(self):
-	ftp.sendcmd('mode s')
-	ftp.sendcmd('mode S')
-	self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'mode')
-	self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'mode x')
+        ftp.sendcmd('mode s')
+        ftp.sendcmd('mode S')
+        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'mode')
+        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'mode x')
 
     def test_stat(self):
-	ftp.sendcmd('stat')
+        ftp.sendcmd('stat')
 
     def test_noop(self):
-	ftp.sendcmd('noop')
+        ftp.sendcmd('noop')
 
     def test_syst(self):
-	ftp.sendcmd('syst')
+        ftp.sendcmd('syst')
 
     def test_allo(self):
-	ftp.sendcmd('allo')
+        ftp.sendcmd('allo')
 
     def test_help(self):
-	ftp.sendcmd('help')
+        ftp.sendcmd('help')
 
     def test_quit(self):
-	ftp.sendcmd('quit')
+        ftp.sendcmd('quit')
 
 
 class ftp_fs_operations(unittest.TestCase):
