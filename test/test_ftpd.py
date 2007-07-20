@@ -359,8 +359,8 @@ class ftp_store_data(unittest.TestCase):
         f1.seek(0)
 
         ftp.voidcmd('TYPE I')
-        #filename comes in as  150 FILE: $filename
-        filename = ftp.sendcmd('stou').replace('150 FILE: ', '')
+        # filename comes in as 1xx FILE: <filename>
+        filename = ftp.sendcmd('stou').split('FILE: ')[1]
         sock = ftp.makeport()
         conn, sockaddr = sock.accept()
         while 1:
