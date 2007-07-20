@@ -879,7 +879,7 @@ class FTPHandler(asynchat.async_chat):
                 msg = os.strerror(err.errno)
             self.restart_position = 0
             if not ok:
-                respond('554 %s' %msg)
+                self.respond('554 %s' %msg)
                 self.log('FAIL RETR "%s". %s.' %(line, msg))
                 return
                     
@@ -930,7 +930,7 @@ class FTPHandler(asynchat.async_chat):
                 msg = os.strerror(err.errno)
             self.restart_position = 0
             if not ok:
-                respond('554 %s' %msg)
+                self.respond('554 %s' %msg)
                 self.log('FAIL STOR "%s". %s.' %(line, msg))
                 return
             
