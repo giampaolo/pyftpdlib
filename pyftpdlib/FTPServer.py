@@ -1038,7 +1038,12 @@ class FTPHandler(asynchat.async_chat):
     def ftp_PASS(self, line):
         "Check username's password"
 
-        # TODO - FIX #23 (PASS should be rejected if USER is authenticated yet)
+        #FIX #23 (PASS should be rejected if user is already authenticated)
+        # http://code.google.com/p/pyftpdlib/issues/detail?id=23
+        if self.authenticated:
+            self.respond("503 User already authenticated.")
+            return
+
         if not self.username:
             self.respond("503 Login with USER first.")
             return
