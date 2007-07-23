@@ -1011,17 +1011,37 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_ABOR(self, line):
         "Abort data transfer"
-        if self.dtp_server:
-            self.dtp_server.close()
-            self.dtp_server = None
-            
-        if self.data_channel:
-            self.data_channel.close()
-            self.data_channel = None
-        # TODO - implement FIX #18
-        self.log("ABOR received.")
-        self.respond('226 ABOR command successful.')
 
+        # ABOR received while no data channel exists
+        if (self.dtp_server is None) and (self.data_channel is None):
+            resp = "225 No transfer to abort."
+        else:
+            # a PASV was received but connection wasn't made yet
+            if self.dtp_server:
+                self.dtp_server.close()
+                self.dtp_server = None
+                resp = "225 ABOR command successful; data channel closed."
+
+            # FIX #18
+            # If a data transfer is in progress the server must first close
+            # the data connection, returning a 426 reply to indicate that the
+            # transfer terminated abnormally, then it must send a 226 reply,
+            # indicating that the abort command was successfully processed.
+            # If no data has been transmitted we just respond with 225
+            # indicating that no transfer was in progress.
+            if self.data_channel:
+                if self.data_channel.transfer_in_progress():
+                    self.data_channel.close()
+                    self.data_channel = None
+                    self.respond("426 Connection closed; transfer aborted.")
+                    resp = "226 ABOR command successful."
+                else:
+                    self.data_channel.close()
+                    self.data_channel = None
+                    resp = "225 ABOR command successful; data channel closed."
+
+        self.respond(resp)
+        self.log("ABOR received.")
 
         # --- authentication
 
@@ -1033,12 +1053,17 @@ class FTPHandler(asynchat.async_chat):
             self.username = "anonymous"
         else:
             self.username = line
+        
+        # FIX #23 if we receive a USER command, un-authenticate the current 
+        # user session, otherwise PASS throws a 503 error because we're 
+        # already authenticated
+        self.authenticated = False
         self.respond('331 Username ok, send password.')
 
     def ftp_PASS(self, line):
         "Check username's password"
 
-        #FIX #23 (PASS should be rejected if user is already authenticated)
+        # FIX #23 (PASS should be rejected if user is already authenticated)
         # http://code.google.com/p/pyftpdlib/issues/detail?id=23
         if self.authenticated:
             self.respond("503 User already authenticated.")
@@ -1826,7 +1851,7 @@ class DTPHandler(asyncore.dispatcher):
 
     def transfer_in_progress(self):
         "Return True if a transfer is in progress, else False"
-        return self.get_transmitted_bytes != 0
+        return self.get_transmitted_bytes() != 0
 
     # --- connection
 

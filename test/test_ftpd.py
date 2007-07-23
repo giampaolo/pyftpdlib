@@ -325,9 +325,9 @@ class ftp_retrieve_data(unittest.TestCase):
         ftp.retrlines('NLST', l.append)
         self.failUnlessRaises(ftplib.error_perm, ftp.retrlines, 'NLST 1.tmp', l.append)
 
+class ftp_abor(unittest.TestCase):
+    "test: ABOR"
 
-class ftp_store_data(unittest.TestCase):
-    "test: STOR, STOU, APPE, REST"
     def setUp(self):
         global ftp
         ftp = ftplib.FTP()
@@ -336,7 +336,72 @@ class ftp_store_data(unittest.TestCase):
 
     def tearDown(self):        
         ftp.close()    
+        tmpfile = os.path.join(home, 'abor.tmp')
+        if os.path.exists(tmpfile):
+            os.remove(tmpfile)
+        
+    def test_abor_no_data(self):
+        # Case 1: ABOR while no data channel is opened: respond with 225.
+        respcode = ftp.sendcmd('ABOR')[:3]
+        self.failUnlessEqual('225', respcode, "ABOR while no data channel is open failed to return 225 response (returned %s)" % (respcode))
 
+    def test_abor_pasv(self):
+        # Case 2: user sends a PASV, a data-channel socket is listening but not
+        # connected, and ABOR is sent: close listening data socket, respond 
+        # with 225.
+        ftp.sendcmd('PASV')
+        respcode = ftp.sendcmd('ABOR')[:3]
+        self.failUnlessEqual('225', respcode, "ABOR immediately following PASV failed to return 225 response (returned %s)" % (respcode))
+        
+    def test_abor_port(self):
+        # Case 3: data channel opened with PASV or PORT, but ABOR sent before 
+        # a data transfer has been started: close data channel, respond with 225
+        ftp.makeport()
+        respcode = ftp.sendcmd('ABOR')[:3]
+        self.failUnlessEqual('225', respcode, "ABOR immediately following PORT failed to return 225 response (returned %s)" % (respcode))
+
+    def test_abor(self):
+        # Case 4: ABOR while a data transfer on DTP channel is in progress:
+        # close data channel, respond with 426, respond with 226.
+        data = 'abcde12345' * 100000
+        f1 = tempfile.TemporaryFile(mode='w+b')
+        f1.write(data)
+        f1.seek(0)
+
+        # this ugly loop construct is to simulate an interrupted transfer since
+        # ftplib doesn't like running storbinary() in a separate thread
+        conn = ftp.transfercmd('stor abor.tmp', rest=None)
+        bytes_sent = 0
+        while 1:
+            chunk = f1.read(8192)
+            conn.send(chunk)
+            bytes_sent += len(chunk)
+            # stop transfer while it isn't finished yet
+            if bytes_sent >= 524288: # 2^19
+                break
+            elif not chunk:
+                break
+        ftp.putcmd('ABOR')
+        conn.close()
+
+        # transfer isn't finished yet so ftpd should respond with 426
+        self.failUnlessRaises(ftplib.error_temp, ftp.voidresp)
+
+        # transfer successfully aborted, so should now respond with a 226
+        self.failUnlessEqual('226', ftp.voidresp()[:3])
+
+class ftp_store_data(unittest.TestCase):
+    "test: STOR, STOU, APPE, REST"
+
+    def setUp(self):
+        global ftp
+        ftp = ftplib.FTP()
+        ftp.connect(host=host, port=port)
+        ftp.login(user=user, passwd=pwd)
+
+    def tearDown(self):        
+        ftp.close()    
+        
     def test_stor(self):
         data = 'abcde12345' * 100000        
         f1 = tempfile.TemporaryFile(mode='w+b')
