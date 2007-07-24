@@ -1583,9 +1583,15 @@ class FTPServer(asyncore.dispatcher):
         log("Serving FTP on %s:%s" %self.socket.getsockname())
         try:
             # FIX #16
-            # by default we try to use poll(), if it is available,
-            # else we'll use select()
-            asyncore.loop(timeout=1, use_poll=hasattr(asyncore.select, 'poll'))
+            # use_poll specifies whether to use select module's poll()
+            # with ayncore or whether to use asyncore's own poll() method
+            # Python versions < 2.4 need use_poll set to False
+            # 
+            # FIX #26:
+            # this breaks on OS X systems if use_poll is set to Tru. All
+            # systems seem to work fine with it set to False (tested on
+            # Linux, Windows, and OS X platforms
+            asyncore.loop(timeout=1, use_poll=False)
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             log("Shutting down FTPd.")
             # FIX #22
