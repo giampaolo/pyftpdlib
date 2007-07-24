@@ -55,7 +55,7 @@ Serving FTP on 127.0.0.1:21
 127.0.0.1:2503 ==> 150 File status okay. About to open data connection.
 [anonymous]@127.0.0.1:2503 OK LIST "/". Transfer starting.
 127.0.0.1:2503 ==> 226 Transfer complete.
-[anonymous]@127.0.0.1:2503 Trasfer complete. 706 bytes transmitted.
+[anonymous]@127.0.0.1:2503 Transfer complete. 706 bytes transmitted.
 127.0.0.1:2503 <== QUIT
 127.0.0.1:2503 ==> 221 Goodbye.
 [anonymous]@127.0.0.1:2503 Disconnected.
@@ -1134,8 +1134,8 @@ class FTPHandler(asynchat.async_chat):
         # What exactly should I have to do if I receive REIN while a transfer
         # is in progress?
         # - Immediately respond with 331, reset account information and do not
-        #   accept further commands until trasfer is finished.
-        # - Do not accept further commands until data-trasfer is completed,
+        #   accept further commands until transfer is finished.
+        # - Do not accept further commands until data-transfer is completed,
         #   then REINinizialite the session responding with 331.
         # - Respond with 311, flush account information, do not accept further
         #   commands and respond with 311 again when the transfer is finished.
@@ -1425,7 +1425,7 @@ class FTPHandler(asynchat.async_chat):
         "Set data transfer mode (obsolete)"
         # obsolete (backward compatibility with older ftp clients)
         if line in ('s', 'S'):
-            self.respond('200 Trasfer mode set to: S')
+            self.respond('200 Transfer mode set to: S')
         else:
             self.respond('504 Unimplemented MODE type.')
 
@@ -1965,10 +1965,10 @@ class DTPHandler(asyncore.dispatcher):
             self.transfer_finished = True
         if self.transfer_finished:
             self.cmd_channel.respond("226 Transfer complete.")
-            self.cmd_channel.log("Trasfer complete. %d bytes transmitted." %tot_bytes)
+            self.cmd_channel.log("Transfer complete. %d bytes transmitted." %tot_bytes)
         else:
             self.cmd_channel.respond("426 Connection closed, transfer aborted.")
-            self.cmd_channel.log("Trasfer aborted. %d bytes transmitted." %tot_bytes)
+            self.cmd_channel.log("Transfer aborted. %d bytes transmitted." %tot_bytes)
         self.close()
 
     def close(self):
