@@ -374,8 +374,7 @@ class ftp_abor(unittest.TestCase):
         bytes_sent = 0
         while 1:
             chunk = f1.read(8192)
-            conn.send(chunk)
-            bytes_sent += len(chunk)
+            bytes_sent += conn.send(chunk)
             # stop transfer while it isn't finished yet
             if bytes_sent >= 524288: # 2^19
                 break
@@ -471,8 +470,7 @@ class ftp_store_data(unittest.TestCase):
         bytes_sent = 0
         while 1:
             chunk = f1.read(8192)
-            conn.send(chunk)
-            bytes_sent += len(chunk)
+            bytes_sent += conn.send(chunk)
             # stop transfer while it isn't finished yet
             if bytes_sent >= 524288: # 2^19
                 break            
