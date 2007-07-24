@@ -168,60 +168,56 @@ __license__ = 'see LICENSE file'
 
 
 proto_cmds = {
-            'ABOR' : "abort transfer",
-            'ALLO' : "allocate space for file about to be sent (obsolete)",
-            'APPE' : "* resume upload",
-            'CDUP' : "go to parent directory",
-            'CWD'  : "[*] change current directory",
-            'DELE' : "* remove file",
-            'HELP' : "print this help",
-            'LIST' : "return a list of files",
-            'MDTM' : "* get last modification time",
-            'MODE' : "* set data transfer mode (obsolete)",
-            'MKD'  : "* create directory",
-            'NLST' : "list file names",
-            'NOOP' : "just do nothing",            
-            'PASS' : "* user's password",
-            'PASV' : "start passive data channel",
-            'PORT' : "start active data channel",
-            'PWD'  : "get current dir",
-            'QUIT' : "quit current session",
-            'REIN' : "flush account informations",
-            'REST' : "* restart file position (transfer resuming)",
-            'RETR' : "* download file",
-            'RMD'  : "* remove directory",              
-            'RNFR' : "* file/directory renaming (source name)",
-            'RNTO' : "* file/directory renaming (destination name)", 
-            'SIZE' : "* get file size",
-            'STAT' : "status information",
-            'STOR' : "* upload file",
-            'STOU' : 'store a file with a unique name',            
-            'STRU' : "* set file transfer structure (obsolete)",
-            'SYST' : "get system type",          
-            'TYPE' : "* set transfer type (I=binary, A=ASCII)",
-            'USER' : "* set username",
-            # * argument required            
-              }
+    'ABOR' : 'Syntax: ABOR (abort transfer).',
+    'ALLO' : 'Syntax: ALLO <SP> bytes (obsolete; allocate storage).',
+    'APPE' : 'Syntax: APPE <SP> file-name (append data to an existent file).',
+    'CDUP' : 'Syntax: CDUP (go to parent directory).',
+    'CWD'  : 'Syntax: CWD <SP> dir-name (change current working directory).',
+    'DELE' : 'Syntax: DELE <SP> file-name (delete file).',
+    'HELP' : 'Syntax: HELP [<SP> cmd] (show help).',
+    'LIST' : 'Syntax: LIST [<SP> path-name] (list files).',
+    'MDTM' : 'Syntax: MDTM <SP> file-name (get last modification time).',
+    'MODE' : 'Syntax: MODE <SP> mode (obsolete; set data transfer mode).',
+    'MKD'  : 'Syntax: MDK <SP> dir-name (create directory).',
+    'NLST' : 'Syntax: NLST [<SP> path-name] (list files in a compact form).',
+    'NOOP' : 'Syntax: NOOP (just do nothing).',
+    'PASS' : 'Syntax: PASS <SP> user-name (set user password).',
+    'PASV' : 'Syntax: PASV (set server in passive mode).',
+    'PORT' : 'Syntax: PORT <sp> h1,h2,h3,h4,p1,p2 (set server in active mode).',
+    'PWD'  : 'Syntax: PWD (get current working directory).',
+    'QUIT' : 'Syntax: QUIT (quit current session).',
+    'REIN' : 'Syntax: REIN (reinitialize / flush account).',
+    'REST' : 'Syntax: REST <SP> marker (restart file position).',
+    'RETR' : 'Syntax: RETR <SP> file-name (retrieve a file).',
+    'RMD'  : 'Syntax: RMD <SP> dir-name (remove directory).',
+    'RNFR' : 'Syntax: RNFR <SP> file-name (file renaming (source name)).',
+    'RNTO' : 'Syntax: RNTO <SP> file-name (file renaming (destination name)).',
+    'SIZE' : 'Syntax: HELP <SP> file-name (get file size).',
+    'STAT' : 'Syntax: STAT [<SP> path name] (status information [list files]).',
+    'STOR' : 'Syntax: STOR <SP> file-name (store a file).',
+    'STOU' : 'Syntax: STOU [<SP> file-name] (store a file with a unique name).',
+    'STRU' : 'Syntax: STRU <SP> type (obsolete; set file structure).',
+    'SYST' : 'Syntax: SYST (get operating system type).',
+    'TYPE' : 'Syntax: TYPE <SP> [A | I] (set transfer type).',
+    'USER' : 'Syntax: USER <SP> user-name (set username).',
+    }
 
 deprecated_cmds = {
-            'XCUP' : '== CDUP (deprecated)',
-            'XCWD' : '== CWD (deprecated)',
-            'XMKD' : '== MKD (deprecated)',
-            'XPWD' : '== PWD (deprecated)',
-            'XRMD' : '== RMD (deprecated)'
-              }
+    'XCUP' : 'Syntax: XCUP (obsolete; go to parent directory).',
+    'XCWD' : 'Syntax: XCWD <SP> dir-name (obsolete; change current directory).',
+    'XMKD' : 'Syntax: XMDK <SP> dir-name (obsolete; create directory).',
+    'XPWD' : 'Syntax: XPWD (obsolete; get current dir).',
+    'XRMD' : 'Syntax: XRMD <SP> dir-name (obsolete; remove directory).',
+    }
 
 proto_cmds.update(deprecated_cmds)
 
-# TODO - modify this comment
-# Not implemented commands:
-# I've not implemented (and a lot of other FTP server
-# did the same) ACCT, SITE and SMNT.
+# TODO - add a detailed comment here
 not_implemented_cmds = {
-              'ACCT' : 'account permissions',
-              'SITE' : 'site specific server services',
-              'SMNT' : 'structure mount'
-              }
+    'ACCT' : 'Syntax: ACCT account-info (specify account information).',
+    'SITE' : 'Syntax: SITE [<SP> site-cmd] (site specific server services).',
+    'SMNT' : 'Syntax: SMNT <SP> path-name (mount file-system structure).'
+    }
 
 
 class Error(Exception):
@@ -1513,7 +1509,7 @@ class FTPHandler(asynchat.async_chat):
         if line:
             # FIX #10
             if line.upper() in proto_cmds:
-                self.respond("214 %s.\r\n" %proto_cmds[line.upper()])
+                self.respond("214 %s" %proto_cmds[line.upper()])
             else:
                 self.respond("500 Unrecognized command.")
         else:
