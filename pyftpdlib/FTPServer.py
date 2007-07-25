@@ -225,15 +225,6 @@ class Error(Exception):
 
 # TODO - provide other types of exception?
 
-def __get_hs():
-    x = []
-    l = proto_cmds.keys()
-    l.sort()
-    for cmd in l:
-        x.append('\t%-5s %s\r\n' %(cmd, proto_cmds[cmd]))
-    return ''.join(x)
-helper_string = __get_hs()
-
 
 # --- loggers
 
@@ -1504,8 +1495,6 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_HELP(self, line):
         "Return help"
-        # TODO - A lot of FTP servers return command names only while we
-        # return cmd_name + description. I believe we should return the same.
         if line:
             # FIX #10
             if line.upper() in proto_cmds:
@@ -1513,9 +1502,20 @@ class FTPHandler(asynchat.async_chat):
             else:
                 self.respond("500 Unrecognized command.")
         else:
-            self.push("214-The following commands are recognized " + \
-                    "(* == argument required):\r\n" + \
-                    helper_string)
+            # FIX #31
+            # provide a compact list of recognized commands
+            def formatted_help():
+                cmds = []
+                keys = proto_cmds.keys()
+                keys.sort()
+                while keys:
+                    elems = tuple((keys[0:8]))
+                    cmds.append('  %-6s' * len(elems) %elems + '\r\n')
+                    del keys[0:8]
+                return ''.join(cmds)
+
+            self.push("214-The following commands are recognized:\r\n")
+            self.push(formatted_help())
             self.respond("214 Help command succesful.")
 
 
