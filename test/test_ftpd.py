@@ -33,6 +33,8 @@ import atexit
 import time
 import tempfile
 import ftplib
+import random
+
 from pyftpdlib import FTPServer
 
 __revision__ = '2 (pyftpdlib 0.1.1)'
@@ -205,6 +207,9 @@ class ftp_dummy_cmds(unittest.TestCase):
 
     def test_help(self):
         ftp.sendcmd('help')
+        cmd = random.choice(FTPServer.proto_cmds.keys())
+        ftp.sendcmd('help %s' %cmd)
+        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'help ?!?')
 
     def test_quit(self):
         ftp.sendcmd('quit')
