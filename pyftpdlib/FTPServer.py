@@ -147,6 +147,7 @@ import socket
 import os
 import sys
 import traceback
+import errno
 import time
 import glob
 try:
@@ -1869,13 +1870,9 @@ class DTPHandler(asyncore.dispatcher):
             # self.close()  <-- asyncore.recv() already do that...
             return
 
-        # Writing on file:
         # while we're writing on the file an exception could occur in case that
-        # filesystem gets full but this rarely happens and a "try/except"
-        # statement seems wasted to me.
-        # Anyway if this happens we let handle_error() method handle this exception.
-        # Remote client will just receive a generic 426 response then it will be
-        # disconnected.
+        # filesystem gets full;  if this happens we let handle_error() method
+        # handle this exception, providing a detailed error message.
         self.file_obj.write(self.data_wrapper(chunk))
 
     def handle_write(self):
@@ -1946,16 +1943,38 @@ class DTPHandler(asyncore.dispatcher):
 
     def handle_expt(self):
         debug("DTPHandler.handle_expt()")
-        self.handle_close()
+        self.cmd_channel.respond("426 Connection error; transfer aborted.")
+        self.close()
 
-    def handle_error(self):        
+    def handle_error(self):
+        "Called when an exception is raised and not otherwise handled."
         debug("DTPHandler.handle_error()")
-        f = StringIO.StringIO()
-        traceback.print_exc(file=f)
-        debug(f.getvalue())
-        self.handle_close()
+        try:
+            raise
+        # if error is connection related we provide a detailed
+        # information about it
+        except socket.error, err:
+            if err[0] in errno.errorcode:
+                error = err[1]
+            else:
+                error = "Unknown connection error"
+        # an error could occur in case we fail reading / writing
+        # from / to file (e.g. file system gets full)
+        except EnvironmentError, err:
+            error = os.strerror(err.errno)
+        except:
+            # some other exception occurred; we don't want to provide
+            # confidential error messages to user so we return a generic
+            # "unknown error" response.
+            error = "Unknown error"
+            f = StringIO.StringIO()
+            traceback.print_exc(file=f)
+            debug(f.getvalue())
+        self.cmd_channel.respond("426 %s; transfer aborted." %error)
+        self.close()
 
     def handle_close(self):
+        "Called when the socket is closed."
         debug("DTPHandler.handle_close()")
         tot_bytes = self.get_transmitted_bytes()
 
@@ -1967,10 +1986,10 @@ class DTPHandler(asyncore.dispatcher):
             self.transfer_finished = True
         if self.transfer_finished:
             self.cmd_channel.respond("226 Transfer complete.")
-            self.cmd_channel.log("Transfer complete. %d bytes transmitted." %tot_bytes)
+            self.cmd_channel.log("Transfer complete; %d bytes transmitted." %tot_bytes)
         else:
-            self.cmd_channel.respond("426 Connection closed, transfer aborted.")
-            self.cmd_channel.log("Transfer aborted. %d bytes transmitted." %tot_bytes)
+            self.cmd_channel.respond("426 Connection closed; transfer aborted.")
+            self.cmd_channel.log("Transfer aborted; %d bytes transmitted." %tot_bytes)
         self.close()
 
     def close(self):
