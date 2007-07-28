@@ -304,79 +304,76 @@ class FtpFsOperations(unittest.TestCase):
         self.assertRaises(ftplib.error_perm, ftp.size, self.tempdir)
 
 
-class ftp_retrieve_data(unittest.TestCase):
+class FtpRetrieveData(unittest.TestCase):
     "test: RETR, REST, LIST, NLST"
+
     def setUp(self):
         global ftp
         ftp = ftplib.FTP()
         ftp.connect(host=host, port=port)
         ftp.login(user=user, passwd=pwd)
+        self.f1 = open(tempfile.mktemp(dir=home), 'w+b')
+        self.f2 = open(tempfile.mktemp(dir=home), 'w+b')
 
     def tearDown(self):        
-        ftp.close()    
+        ftp.close()
+        if not self.f1.closed:
+            self.f1.close()
+        if not self.f2.closed:
+            self.f2.close()
+        os.remove(self.f1.name)
+        os.remove(self.f2.name)
 
     def test_retr(self):
-        data = 'abcde12345' * 100000        
-        f1 = open(os.path.join(home, '1.tmp'), 'wb')
-        f1.write(data)
-        f1.close()       
-        f2 = open(os.path.join(home, '2.tmp'), "w+b")
-        ftp.retrbinary("retr 1.tmp", f2.write)
-        f2.seek(0)
-        self.assertEqual(hash(data), hash (f2.read()))
-        f2.close()
-        os.remove(os.path.join(home, '1.tmp'))
-        os.remove(os.path.join(home, '2.tmp'))
+        data = 'abcde12345' * 100000
+        self.f1.write(data)
+        self.f1.close()
+        remote_fname = os.path.split(self.f1.name)[1]
+        ftp.retrbinary("retr " + remote_fname, self.f2.write)
+        self.f2.seek(0)
+        self.assertEqual(hash(data), hash(self.f2.read()))
 
     def test_restore_on_retr(self):
         data = 'abcde12345' * 100000
-        f1 = open(os.path.join(home, '1.tmp'), 'wb')
-        f1.write(data)
-        f1.close()        
-        f2 = open(os.path.join(home, '2.tmp'), "wb")
+        fname_1 = os.path.split(self.f1.name)[1]
+        fname_2 = os.path.split(self.f2.name)[1]
+        self.f1.write(data)
+        self.f1.close()
 
         # look at ftplib.FTP.retrbinary method to understand this mess
         ftp.voidcmd('TYPE I')
-        conn = ftp.transfercmd('retr 1.tmp', rest=None)
+        conn = ftp.transfercmd('retr ' + fname_1)
         bytes_recv = 0
         while 1:
             chunk = conn.recv(8192)
             # stop transfer while it isn't finished yet
             if bytes_recv >= 524288: # 2^19
-                break            
+                break
             elif not chunk:
                 break
-            f2.write(chunk)
+            self.f2.write(chunk)
             bytes_recv += len(chunk)
         conn.close()
-        # trasnfer isn't finished yet so ftpd should respond with 426
+
+        # transfer wasn't finished yet so we expect a 426 response
         self.failUnlessRaises(ftplib.error_temp, ftp.voidresp)
-        f2.close()        
 
-        # resuming
+        # resuming transfer by using a marker value greater than the file
+        # size stored on the server should result in an error on retr
+        file_size = ftp.size(fname_1)
+        ftp.sendcmd('rest %s' %((file_size + 1)))
+        self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'retr ' + fname_1)
+
+        # test resume
         ftp.sendcmd('rest %s' %bytes_recv)
-        f2 = open(os.path.join(home, '2.tmp'), 'a+')
-        ftp.retrbinary("retr 1.tmp", f2.write)
-        f2.seek(0)
-        self.assertEqual(hash(data), hash (f2.read()))
-        f2.close()
-        os.remove(os.path.join(home, '1.tmp'))
-        os.remove(os.path.join(home, '2.tmp'))
-
-    def test_rest(self):
-        # just test rest's semantic without using data-transfer
-        ftp.sendcmd('rest 3123')
-        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'rest')        
-        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'rest str')       
-        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'rest -1')
+        ftp.retrbinary("retr " + fname_1, self.f2.write)
+        self.f2.seek(0)
+        self.assertEqual(hash(data), hash (self.f2.read()))
 
     def test_list(self):
         l = []
-        f = open(os.path.join(home, '1.tmp'), 'w')
-        f.close()
-        ftp.retrlines('LIST 1.tmp', l.append)
+        ftp.retrlines('LIST ' + os.path.split(self.f1.name)[1], l.append)
         self.assertEqual(len(l), 1)
-        os.remove(os.path.join(home, '1.tmp'))        
         l = []
         l1, l2, l3, l4 = [], [], [], []
         ftp.retrlines('LIST', l.append)
@@ -391,7 +388,8 @@ class ftp_retrieve_data(unittest.TestCase):
     def test_nlst(self):
         l = []
         ftp.retrlines('NLST', l.append)
-        self.failUnlessRaises(ftplib.error_perm, ftp.retrlines, 'NLST 1.tmp', l.append)
+        fname = os.path.split(self.f1.name)[1]
+        self.assertRaises(ftplib.error_perm, ftp.retrlines, 'NLST ' + fname, l.append)
 
 class ftp_abor(unittest.TestCase):
     "test: ABOR"
