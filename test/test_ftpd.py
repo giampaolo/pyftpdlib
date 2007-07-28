@@ -215,31 +215,94 @@ class ftp_dummy_cmds(unittest.TestCase):
         ftp.sendcmd('quit')
 
 
-class ftp_fs_operations(unittest.TestCase):
+class FtpFsOperations(unittest.TestCase):
     "test: PWD, CWD, CDUP, SIZE, RNFR, RNTO, DELE, MKD, RMD, MDTM"
-    
-    def test_it(self):
+
+    def setUp(self):
+        global ftp
         ftp = ftplib.FTP()
         ftp.connect(host=host, port=port)
-        ftp.login(user=user, passwd=pwd)        
-        ftp.sendcmd('pwd')
-        ftp.sendcmd('cwd')
-        ftp.sendcmd('cdup')
-        f = open(os.path.join(home, '1.tmp'), 'w+')
-        f.write('x' * 123)
-        f.close()
-        self.assertEqual (ftp.sendcmd('size 1.tmp')[4:], '123')
-        ftp.sendcmd('mdtm 1.tmp')
-        ftp.sendcmd('rnfr 1.tmp')
-        ftp.sendcmd('rnto 2.tmp')
-        ftp.sendcmd('dele 2.tmp')
-        ftp.sendcmd('mkd 1')
-        ftp.sendcmd('mkd 1/2')
-        self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'rmd a')
-        ftp.sendcmd('rmd 1/2')
-        ftp.sendcmd('rmd 1')
-        self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'rmd /')        
+        ftp.login(user=user, passwd=pwd)
+        self.tempfile = os.path.split(open(tempfile.mktemp(dir=home), 'w+b').name)[1]
+        self.tempdir = os.path.split(tempfile.mktemp(dir=home))[1]
+        os.mkdir(self.tempdir)
+
+    def tearDown(self):
         ftp.close()
+        if os.path.exists(self.tempfile):
+            os.remove(self.tempfile)
+        if os.path.exists(self.tempdir):
+            os.rmdir(self.tempdir)
+
+    def test_cwd(self):
+        ftp.cwd(self.tempdir)
+        self.assertRaises(ftplib.error_perm, ftp.cwd, 'subtempdir')
+
+    def test_pwd(self):
+        self.assertEqual(ftp.pwd(), '/')
+        ftp.cwd(self.tempdir)
+        self.assertEqual(ftp.pwd(), '/' + self.tempdir)
+
+    def test_cdup(self):
+        # ftplib.parse257 function is usually used for parsing the '257'
+        # response for a MKD or PWD request returning the directory name
+        # in the 257 reply.
+        # Even if CDUP response code is different (250) we could use parse257
+        # anyway for getting directory name.
+        ftp.cwd(self.tempdir)
+        path = ftplib.parse257(ftp.sendcmd('cdup').replace('250', '257'))
+        self.assertEqual(path, '/')
+        path = ftplib.parse257(ftp.sendcmd('cdup').replace('250', '257'))
+        self.assertEqual(path, '/')
+
+    def test_mkd(self):
+        tempdir = os.path.split(tempfile.mktemp(dir=home))[1]
+        ftp.mkd(tempdir)
+        try:
+            # make sure we can't create directories which exist yet;
+            # let's use a try/except statement so that in case assertRaises
+            # fails we remove tempdir before continuing with tests
+            self.assertRaises(ftplib.error_perm, ftp.mkd, tempdir)
+        except:
+            pass
+        os.rmdir(tempdir)
+
+    def test_rmd(self):
+        ftp.rmd(self.tempdir)
+        # make sure we can't use rmd against files
+        self.assertRaises(ftplib.error_perm, ftp.rmd, self.tempfile)
+        # make sure we can't remove root directory
+        self.assertRaises(ftplib.error_perm, ftp.rmd, '/')
+
+    def test_dele(self):
+        ftp.delete(self.tempfile)
+        # make sure we can't rename root directory, just to be safe,
+        # maybe not really necessary...
+        self.assertRaises(ftplib.error_perm, ftp.delete, self.tempdir)
+
+    def test_rnfr_rnto(self):
+        # rename file
+        tempname = os.path.split(tempfile.mktemp(dir=home))[1]
+        ftp.rename(self.tempfile, tempname)
+        ftp.rename(tempname, self.tempfile)
+        # rename dir
+        tempname = os.path.split(tempfile.mktemp(dir=home))[1]
+        ftp.rename(self.tempdir, tempname)
+        ftp.rename(tempname, self.tempdir)
+        # make sure we can't rename root directory, just to be safe,
+        # maybe not really necessary...
+        self.assertRaises(ftplib.error_perm, ftp.rename, '/', '/x')
+
+    def test_mdtm(self):
+        ftp.sendcmd('mdtm ' + self.tempfile)
+        # make sure we can't use mdtm against directories
+        self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'mdtm ' + self.tempdir)
+
+    def test_size(self):
+        ftp.size(self.tempfile)
+        # make sure we can't use size against directories
+        self.assertRaises(ftplib.error_perm, ftp.size, self.tempdir)
+
 
 class ftp_retrieve_data(unittest.TestCase):
     "test: RETR, REST, LIST, NLST"
