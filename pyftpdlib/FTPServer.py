@@ -427,11 +427,11 @@ class FTPHandler(asynchat.async_chat):
     unauth_cmds = ('USER','PASS','HELP','STAT','QUIT','NOOP','SYST')
 
     # commands needing an argument
-    arg_cmds = ('APPE','DELE','MDTM','MODE','MKD','PORT','REST','RETR','RMD',
-                'RNFR','RNTO','SIZE','STOR','STRU','TYPE','USER','XMKD','XRMD')
+    arg_cmds = ('ALLO','APPE','DELE','MDTM','MODE','MKD', 'PORT','REST','RETR','RMD',
+                'RNFR','RNTO','SIZE', 'STOR','STRU','TYPE','USER','XMKD','XRMD')
 
     # commands needing no argument
-    unarg_cmds = ('ABOR','CDUP','PASV','PWD','QUIT','REIN','SYST','XCUP','XPWD')
+    unarg_cmds = ('ABOR','CDUP','NOOP','PASV','PWD','QUIT','REIN','SYST','XCUP','XPWD')
 
     def found_terminator(self):
         """Called when the incoming data stream matches the \r\n terminator
@@ -509,14 +509,14 @@ class FTPHandler(asynchat.async_chat):
             self.in_buffer.append(data)
         except:
             self.log("Can't handle OOB data.")
-            self.handle_close()
+            self.close()
 
     def handle_error(self):
         self.debug("FTPHandler.handle_error()")
         f = StringIO.StringIO()
         traceback.print_exc(file=f)
         self.debug(f.getvalue())
-        asynchat.async_chat.close(self)
+        self.close()
 
     def handle_close(self):
         self.debug("FTPHandler.handle_close()")
