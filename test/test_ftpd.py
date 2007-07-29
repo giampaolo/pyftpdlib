@@ -391,6 +391,7 @@ class FtpRetrieveData(unittest.TestCase):
         fname = os.path.split(self.f1.name)[1]
         self.assertRaises(ftplib.error_perm, ftp.retrlines, 'NLST ' + fname, l.append)
 
+
 class ftp_abor(unittest.TestCase):
     "test: ABOR"
 
@@ -455,7 +456,8 @@ class ftp_abor(unittest.TestCase):
         # transfer successfully aborted, so should now respond with a 226
         self.failUnlessEqual('226', ftp.voidresp()[:3])
 
-class ftp_store_data(unittest.TestCase):
+
+class FtpStoreData(unittest.TestCase):
     "test: STOR, STOU, APPE, REST"
 
     def setUp(self):
@@ -463,30 +465,34 @@ class ftp_store_data(unittest.TestCase):
         ftp = ftplib.FTP()
         ftp.connect(host=host, port=port)
         ftp.login(user=user, passwd=pwd)
+        self.f1 = open(tempfile.mktemp(dir=home), 'w+b')
+        self.f2 = open(tempfile.mktemp(dir=home), 'w+b')
 
-    def tearDown(self):        
-        ftp.close()    
+    def tearDown(self):
+        ftp.close()
+        if not self.f1.closed:
+            self.f1.close()
+        if not self.f2.closed:
+            self.f2.close()
+        os.remove(self.f1.name)
+        os.remove(self.f2.name)
         
     def test_stor(self):
-        data = 'abcde12345' * 100000        
-        f1 = tempfile.TemporaryFile(mode='w+b')
-        f1.write(data)
-        f1.seek(0)
-        ftp.storbinary('stor 1.tmp', f1)
-        f1.close()
-        f2 = open(os.path.join(home, '2.tmp'), "w+b")
-        ftp.retrbinary("retr 1.tmp", f2.write)
-        f2.seek(0)
-        self.assertEqual(hash(data), hash (f2.read()))
-        f2.close()
-        os.remove(os.path.join(home, '1.tmp'))        
-        os.remove(os.path.join(home, '2.tmp'))
-
-    def test_stou(self):        
         data = 'abcde12345' * 100000
-        f1 = tempfile.TemporaryFile(mode='w+b')
-        f1.write(data)
-        f1.seek(0)
+        self.f1.write(data)
+        self.f1.seek(0)
+        remote_fname = os.path.split(tempfile.mktemp(dir=home))[1]
+        ftp.storbinary('stor ' + remote_fname, self.f1)
+        ftp.retrbinary('retr ' + remote_fname, self.f2.write)
+        self.f2.seek(0)
+        self.assertEqual(hash(data), hash (self.f2.read()))
+        # we do not use os.remove because file could be still locked by ftpd thread
+        ftp.delete(remote_fname)
+
+    def test_stou(self):
+        data = 'abcde12345' * 100000
+        self.f1.write(data)
+        self.f1.seek(0)
 
         ftp.voidcmd('TYPE I')
         # filename comes in as 1xx FILE: <filename>
@@ -494,67 +500,79 @@ class ftp_store_data(unittest.TestCase):
         sock = ftp.makeport()
         conn, sockaddr = sock.accept()
         while 1:
-            buf = f1.read(8192)
+            buf = self.f1.read(8192)
             if not buf:
                 break
             conn.sendall(buf)
         conn.close()
+        # transfer finished, a 226 response is expected
         ftp.voidresp()
-        f1.close()
-        os.remove (os.path.join(home, filename))
+        ftp.retrbinary('retr ' + filename, self.f2.write)
+        self.f2.seek(0)
+        self.assertEqual(hash(data), hash (self.f2.read()))
+        # we do not use os.remove because file could be still locked by ftpd thread
+        ftp.delete(filename)
 
     def test_appe(self):
-        data1 = 'abcde12345' * 100000     
-        f1 = tempfile.TemporaryFile(mode='w+b')
-        f1.write(data1)
-        f1.seek(0)
-        ftp.storbinary('stor 1.tmp', f1)
+        fname_1 = os.path.split(self.f1.name)[1]
+        fname_2 = os.path.split(self.f2.name)[1]
+        remote_fname = os.path.split(tempfile.mktemp(dir=home))[1]
+        
+        data1 = 'abcde12345' * 100000
+        self.f1.write(data1)
+        self.f1.seek(0)
+        ftp.storbinary('stor ' + remote_fname, self.f1)
 
         data2 = 'fghil67890' * 100000
-        f1.write(data2)
-        size = ftp.sendcmd('size 1.tmp')[4:]
-        f1.seek(int(size))
-        ftp.storbinary('appe 1.tmp', f1)
+        self.f1.write(data2)
+        self.f1.seek(ftp.size(remote_fname))
+        ftp.storbinary('appe ' + remote_fname, self.f1)
 
-        f2 = open(os.path.join(home, '2.tmp'), "w+b")
-        ftp.retrbinary("retr 1.tmp", f2.write)
-        f2.seek(0)
-        self.assertEqual(hash(data1 + data2), hash (f2.read()))
-        f1.close()
-        f2.close()
-        os.remove(os.path.join(home, '1.tmp'))        
-        os.remove(os.path.join(home, '2.tmp'))
+        ftp.retrbinary("retr " + remote_fname, self.f2.write)
+        self.f2.seek(0)
+        self.assertEqual(hash(data1 + data2), hash (self.f2.read()))
+        ftp.delete(remote_fname)
 
     def test_rest_on_stor(self):
+        fname_1 = os.path.split(self.f1.name)[1]
+        fname_2 = os.path.split(self.f2.name)[1]
+        remote_fname = os.path.split(tempfile.mktemp(dir=home))[1]
+        
         data = 'abcde12345' * 100000     
-        f1 = tempfile.TemporaryFile(mode='w+b')
-        f1.write(data)
-        f1.seek(0)
+        self.f1.write(data)
+        self.f1.seek(0)
 
         ftp.voidcmd('TYPE I')
-        conn = ftp.transfercmd('stor 1.tmp', rest=None)
+        conn = ftp.transfercmd('stor ' + remote_fname)
         bytes_sent = 0
         while 1:
-            chunk = f1.read(8192)
-            bytes_sent += conn.send(chunk)
+            chunk = self.f1.read(8192)
+            conn.sendall(chunk)
+            bytes_sent += len(chunk)
             # stop transfer while it isn't finished yet
             if bytes_sent >= 524288: # 2^19
                 break            
             elif not chunk:
                 break
         conn.close()
-        ftp.voidresp()        
+        # transfer wasn't finished yet so we expect a 426 response
+        ftp.voidresp()
+
+        # resuming transfer by using a marker value greater than the file
+        # size stored on the server should result in an error on stor
+        file_size = ftp.size(remote_fname)
+        self.assertEqual(file_size, bytes_sent)
+        ftp.sendcmd('rest %s' %((file_size + 1)))
+        self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'stor ' + remote_fname)
 
         ftp.sendcmd('rest %s' %bytes_sent)
-        ftp.storbinary('appe 1.tmp', f1)
-        f2 = open(os.path.join(home, '2.tmp'), "w+b")
-        ftp.retrbinary("retr 1.tmp", f2.write)
-        f1.seek(0)
-        f2.seek(0)
-        self.assertEqual(hash(data), hash (f2.read()))
-        f1.close()        
-        f2.close()
+        ftp.storbinary('stor ' + remote_fname, self.f1)
 
+        ftp.retrbinary('retr ' + remote_fname, self.f2.write)
+        self.f1.seek(0)
+        self.f2.seek(0)
+        self.assertEqual(hash(self.f1.read()), hash(self.f2.read()))
+        ftp.delete(remote_fname)
 
 def run():
     class ftpd(threading.Thread):
