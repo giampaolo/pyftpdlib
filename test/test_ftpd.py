@@ -40,11 +40,11 @@ from pyftpdlib import FTPServer
 __revision__ = '2 (pyftpdlib 0.1.1)'
 
 # TODO:
-# - test ABOR
 # - test QUIT while a transfer is in progress
 # - test data transfer in ASCII and binary MODE
 
-class test_classes(unittest.TestCase):
+
+class TestClasses(unittest.TestCase):
 
     def test_abstracetd_fs(self):
         ae = self.assertEquals
@@ -122,7 +122,7 @@ class test_classes(unittest.TestCase):
         self.assertRaises(FTPServer.Error, auth.add_anonymous, home, perm=('w'))
 
 
-class ftp_authentication(unittest.TestCase):
+class FtpAuthentication(unittest.TestCase):
     "test: USER, PASS, REIN"
 
     def setUp(self):
@@ -162,7 +162,7 @@ class ftp_authentication(unittest.TestCase):
         self.failUnlessRaises((socket.error, EOFError), ftp.sendcmd, '')
 
 
-class ftp_dummy_cmds(unittest.TestCase):
+class FtpDummyCmds(unittest.TestCase):
     "test: TYPE, STRU, MODE, STAT, NOOP, SYST, ALLO, HELP"
 
     def setUp(self):
@@ -175,25 +175,23 @@ class ftp_dummy_cmds(unittest.TestCase):
         ftp.close()
 
     def test_type(self):
-##	for _type in ('a', 'i'):
-##	    ftp.sendcmd('type %s' %_type)
-##	    ftp.sendcmd('type %s' %_type.upper())
+        ftp.sendcmd('type a')
+        ftp.sendcmd('type i')
         self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'type')
-        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'type x')
+        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'type ?!?')
 
     def test_stru(self):
         ftp.sendcmd('stru f')
-        ftp.sendcmd('stru F')
         self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'stru')
-        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'stru x')
+        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'stru ?!?')
 
     def test_mode(self):
         ftp.sendcmd('mode s')
-        ftp.sendcmd('mode S')
         self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'mode')
-        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'mode x')
+        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'mode ?!?')
 
     def test_stat(self):
+        # TODO - test stat with arg
         ftp.sendcmd('stat')
 
     def test_noop(self):
@@ -203,13 +201,19 @@ class ftp_dummy_cmds(unittest.TestCase):
         ftp.sendcmd('syst')
 
     def test_allo(self):
-        ftp.sendcmd('allo')
+        ftp.sendcmd('allo x')
 
     def test_help(self):
         ftp.sendcmd('help')
         cmd = random.choice(FTPServer.proto_cmds.keys())
         ftp.sendcmd('help %s' %cmd)
         self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'help ?!?')
+
+    def test_rest(self):
+        # just test rest's semantic without using data-transfer
+        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'rest')
+        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'rest str')
+        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'rest -1')
 
     def test_quit(self):
         ftp.sendcmd('quit')
@@ -392,7 +396,7 @@ class FtpRetrieveData(unittest.TestCase):
         self.assertRaises(ftplib.error_perm, ftp.retrlines, 'NLST ' + fname, l.append)
 
 
-class ftp_abor(unittest.TestCase):
+class FtpAbort(unittest.TestCase):
     "test: ABOR"
 
     def setUp(self):
@@ -400,55 +404,60 @@ class ftp_abor(unittest.TestCase):
         ftp = ftplib.FTP()
         ftp.connect(host=host, port=port)
         ftp.login(user=user, passwd=pwd)
+        self.f1 = open(tempfile.mktemp(dir=home), 'w+b')
+        self.f2 = open(tempfile.mktemp(dir=home), 'w+b')
 
-    def tearDown(self):        
-        ftp.close()    
-        tmpfile = os.path.join(home, 'abor.tmp')
-        if os.path.exists(tmpfile):
-            os.remove(tmpfile)
-        
+    def tearDown(self):
+        ftp.close()
+        if not self.f1.closed:
+            self.f1.close()
+        if not self.f2.closed:
+            self.f2.close()
+        os.remove(self.f1.name)
+        os.remove(self.f2.name)
+
     def test_abor_no_data(self):
         # Case 1: ABOR while no data channel is opened: respond with 225.
-        respcode = ftp.sendcmd('ABOR')[:3]
-        self.failUnlessEqual('225', respcode, "ABOR while no data channel is open failed to return 225 response (returned %s)" % (respcode))
+        resp = ftp.sendcmd('ABOR')
+        self.failUnlessEqual('225 No transfer to abort.', resp)
 
     def test_abor_pasv(self):
         # Case 2: user sends a PASV, a data-channel socket is listening but not
-        # connected, and ABOR is sent: close listening data socket, respond 
+        # connected, and ABOR is sent: close listening data socket, respond
         # with 225.
         ftp.sendcmd('PASV')
         respcode = ftp.sendcmd('ABOR')[:3]
-        self.failUnlessEqual('225', respcode, "ABOR immediately following PASV failed to return 225 response (returned %s)" % (respcode))
-        
+        self.failUnlessEqual('225', respcode)
+
     def test_abor_port(self):
-        # Case 3: data channel opened with PASV or PORT, but ABOR sent before 
+        # Case 3: data channel opened with PASV or PORT, but ABOR sent before
         # a data transfer has been started: close data channel, respond with 225
         ftp.makeport()
         respcode = ftp.sendcmd('ABOR')[:3]
-        self.failUnlessEqual('225', respcode, "ABOR immediately following PORT failed to return 225 response (returned %s)" % (respcode))
+        self.failUnlessEqual('225', respcode)
 
     def test_abor(self):
         # Case 4: ABOR while a data transfer on DTP channel is in progress:
         # close data channel, respond with 426, respond with 226.
         data = 'abcde12345' * 100000
-        f1 = tempfile.TemporaryFile(mode='w+b')
-        f1.write(data)
-        f1.seek(0)
+        self.f1.write(data)
+        self.f1.close()
 
         # this ugly loop construct is to simulate an interrupted transfer since
         # ftplib doesn't like running storbinary() in a separate thread
-        conn = ftp.transfercmd('stor abor.tmp', rest=None)
-        bytes_sent = 0
+        ftp.voidcmd('TYPE I')
+        conn = ftp.transfercmd('retr ' + os.path.split(self.f1.name)[1])
+        bytes_recv = 0
         while 1:
-            chunk = f1.read(8192)
-            bytes_sent += conn.send(chunk)
+            chunk = conn.recv(8192)
             # stop transfer while it isn't finished yet
-            if bytes_sent >= 524288: # 2^19
+            if bytes_recv >= 524288: # 2^19
                 break
             elif not chunk:
                 break
+            self.f2.write(chunk)
+            bytes_recv += len(chunk)
         ftp.putcmd('ABOR')
-        conn.close()
 
         # transfer isn't finished yet so ftpd should respond with 426
         self.failUnlessRaises(ftplib.error_temp, ftp.voidresp)
@@ -574,6 +583,7 @@ class FtpStoreData(unittest.TestCase):
         self.assertEqual(hash(self.f1.read()), hash(self.f2.read()))
         ftp.delete(remote_fname)
 
+
 def run():
     class ftpd(threading.Thread):
         def __init__(self):
@@ -586,15 +596,14 @@ def run():
                 pass
             def debugger(msg):
                 pass
-            
             FTPServer.log = logger
             FTPServer.logline = linelogger
             FTPServer.debug = debugger
             authorizer = FTPServer.DummyAuthorizer()
             authorizer.add_user(user, pwd, home, perm=('r', 'w'))
             authorizer.add_anonymous(home)
-            ftp_handler = FTPServer.FTPHandler    
-            ftp_handler.authorizer = authorizer   
+            ftp_handler = FTPServer.FTPHandler
+            ftp_handler.authorizer = authorizer
             address = (host, port)    
             ftpd = FTPServer.FTPServer(address, ftp_handler)
             ftpd.serve_forever()
