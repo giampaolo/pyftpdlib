@@ -102,7 +102,6 @@ Serving FTP on 127.0.0.1:21
 127.0.0.1:2503 <== QUIT
 127.0.0.1:2503 ==> 221 Goodbye.
 [anonymous]@127.0.0.1:2503 Disconnected.
-
 """
 
 import asyncore
@@ -124,12 +123,14 @@ __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'debug', 'DummyAuthorizer',
            'FTPHandler', 'FTPServer', 'PassiveDTP', 'ActiveDTP', 'DTPHandler',
            'FileProducer', 'AbstractedFS',]
 
+
 __pname__   = 'Python FTP server library (pyftpdlib)'
 __ver__     = '0.x.x' # TODO: set version to tag for SVN branch
-__state__   = 'beta'
 __date__    = '????-??-??' # TODO: set date
 __author__  = 'billiejoex <billiejoex@gmail.com>'
+__web__     = 'http://code.google.com/p/pyftpdlib/'
 __license__ = 'MIT license. See LICENSE file'
+
 
 proto_cmds = {
     'ABOR' : 'Syntax: ABOR (abort transfer).',
@@ -194,7 +195,7 @@ class Error(Exception):
 # --- loggers
 
 def log(msg):
-    """Log messages intended for the end user/client."""
+    """Log messages intended for the end user."""
     print msg
 
 def logline(msg):
@@ -203,7 +204,8 @@ def logline(msg):
 
 def debug(msg):
     """"Log debugging messages (function/method calls, traceback outputs)."""
-    print "\t%s" %msg
+    pass
+    #print "\t%s" %msg
 
 
 # --- authorizers
@@ -213,7 +215,7 @@ class DummyAuthorizer:
     own custom authorizers. 
     
     An "authorizer" is a class handling authentications and permissions of the
-    FTP server. It is used inside FTPHandler class for verifying user's
+    FTP server.  It is used inside FTPHandler class for verifying user's
     password, getting users home directory and checking user permissions when a
     file read/write event occurs. 
     
@@ -237,17 +239,14 @@ class DummyAuthorizer:
     r_perm(self, username, obj)
 
     w_perm(self, username, obj)
-    
     """
-    
+
     user_table = {}
 
     def add_user(self, username, password, homedir, perm=('r')):
-        """Add a user to the virtual users table. Exceptions raised on error
-        conditions such as insuffifient permissions or duplicate usernames.
-        
+        """Add a user to the virtual users table.  Exceptions raised on error
+        conditions such as insufficient permissions or duplicate usernames.
         """
-        
         assert os.path.isdir(homedir), 'No such directory: "%s".' %homedir
         for i in perm:
             if i not in ('r', 'w'):
@@ -261,12 +260,10 @@ class DummyAuthorizer:
         self.user_table[username] = dic
         
     def add_anonymous(self, homedir, perm=('r')):
-        """Add an anonymous user to the virtual users table. Exceptions raised
+        """Add an anonymous user to the virtual users table.  Exceptions raised
         on error conditions such as insufficient permissions, missing home
         directory, or duplicate usernames.
-        
         """
-    
         if perm not in ('', 'r'):
             if perm == 'w':
                 raise Error("Anonymous aims to be a read-only user.")
@@ -527,10 +524,9 @@ class FTPHandler(asynchat.async_chat):
     
     def on_dtp_connection(self):
         """Called every time data channel connects (either active or passive).
-        Incoming and outgoing ueues are checked for pending data. If outbound
+        Incoming and outgoing queues are checked for pending data. If outbound
         data is pending, it is pushed into the data channel. If awaiting
         inbound data, the data channel is enabled for receiving.
-
         """
         self.debug("FTPHandler.on_dtp_connection()")
         if self.dtp_server:
@@ -576,14 +572,13 @@ class FTPHandler(asynchat.async_chat):
 
     def push_dtp_data(self, data, isproducer=False, log=''):
         """Called every time a RETR, LIST or NLST is received. Pushes data into
-        thedata channel.  If data channel does not exist yet, we queue the data
+        the data channel.  If data channel does not exist yet, we queue the data
         to send later.  Data will then be pushed into data channel when
         on_dtp_connection() is called.
 
         "data" argument can be either a string or a producer of data to push.
         boolean argument isproducer; if True we assume that is a producer.
         log argument is a string to log this push event with.
-        
         """
         if self.data_channel:
             self.respond("125 Data connection already open. Transfer starting.")
@@ -682,7 +677,7 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_PASV(self, line):
         """Start a passive data-channel."""
-        # close existing DTP-server instance, if any.
+        # close existing DTP-server instance, if any
         if self.dtp_server:
             self.dtp_server.close()
             self.dtp_server = None
@@ -727,8 +722,8 @@ class FTPHandler(asynchat.async_chat):
         
     def ftp_LIST(self, line):
         """Return a list of files in the specified directory to the client.
-        Defaults to the current working directory."""
-        
+        Defaults to the current working directory.
+        """
         if line:
             # some FTP clients (like Konqueror or Nautilus) erroneously issue
             # /bin/ls-like LIST formats (e.g. "LIST -l", "LIST -al" and so
@@ -737,10 +732,12 @@ class FTPHandler(asynchat.async_chat):
             if line.lower() in ("-a", "-l", "-al", "-la"):
                 path = self.fs.translate(self.fs.cwd)
                 line = self.fs.cwd
-            else:  #otherwise we assume the arg is a directory name
+            # otherwise we assume the arg is a directory name
+            else:
                 path = self.fs.translate(line)
                 line = self.fs.normalize(line)
-        else:  #no argument, fall back on cwd as default
+        # no argument, fall back on cwd as default
+        else:  
             path = self.fs.translate(self.fs.cwd)
             line = self.fs.cwd
 
@@ -756,8 +753,8 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_NLST(self, line):
         """Return a list of files in the specified directory in a compact form to
-        the client. Default to the current directory."""
-
+        the client. Default to the current directory.
+        """
         if line:
             path = self.fs.translate(line)
             line = self.fs.normalize(line)
@@ -776,9 +773,8 @@ class FTPHandler(asynchat.async_chat):
 
 
     def ftp_RETR(self, line):
-        """Retrieve the specified file (transfer from the server to the
-        client)"""
-        
+        """Retrieve the specified file (transfer from the server to the client)
+        """
         file = self.fs.translate(line)
 
         if not self.fs.isfile(file):
@@ -898,7 +894,7 @@ class FTPHandler(asynchat.async_chat):
         # > 125 FILE: pppp
         # ...where pppp represents the unique pathname of the file that will be
         # written.
-        #
+
         # FIX #19
         # watch for STOU preceded by REST, which makes no sense.
         if self.restart_position:
@@ -1478,7 +1474,7 @@ class FTPHandler(asynchat.async_chat):
 
 
     def ftp_SYST(self, line):
-        """Return system type (always returns UNIX tyle L8)."""
+        """Return system type (always returns UNIX type L8)."""
         # This command is used to find out the type of operating system at the
         # server.  The reply shall have as its first word one of the system
         # names listed in RFC 943.
@@ -1521,6 +1517,7 @@ class FTPHandler(asynchat.async_chat):
 
 
         # --- support for deprecated cmds
+
     # RFC 1123 requires that the server treat XCUP, XCWD, XMKD, XPWD and
     # XRMD commands as synonyms for CDUP, CWD, MKD, LIST and RMD.
     # Such commands are obsoleted but some ftp clients (e.g. Windows ftp.exe)
@@ -1539,8 +1536,7 @@ class FTPHandler(asynchat.async_chat):
         self.ftp_MKD(line)
     
     def ftp_XPWD(self, line):
-        """Return the current working directory to the client. Synonym for PWD.
-        Deprecated."""
+        """Return the current working directory. Synonym for PWD. Deprecated."""
         self.ftp_PWD(line)
 
     def ftp_XRMD(self, line):
@@ -1549,10 +1545,9 @@ class FTPHandler(asynchat.async_chat):
 
 
 class FTPServer(asyncore.dispatcher):
-    """This class is an asyncore.disptacher subclass. It creates a FTP socket
+    """This class is an asyncore.disptacher subclass.  It creates a FTP socket
     listening on <address>, dispatching the requests to a <handler> (typically
     FTPHandler class).
-    
     """
 
     # Overiddable defaults (overriding is strongly rencommended to avoid
@@ -1582,7 +1577,7 @@ class FTPServer(asyncore.dispatcher):
         debug("FTPServer.__del__()")
         
     def serve_forever(self):
-        """A wrap around asyncore.loop(). Starts the asyncore polling loop."""
+        """A wrap around asyncore.loop(); starts the asyncore polling loop."""
 
         log("Serving FTP on %s:%s" %self.socket.getsockname())
         try:
@@ -1602,7 +1597,7 @@ class FTPServer(asyncore.dispatcher):
             self.close_all()
 
     def handle_accept(self):
-        """Called when accepting a connection from a client."""
+        """Called when remote client initiates a connection."""
         debug("handle_accept()")
         sock_obj, addr = self.accept()
         log("[]%s:%s connected." %addr)
@@ -1632,7 +1627,6 @@ class FTPServer(asyncore.dispatcher):
         handler.handle()
 
     def writable(self):
-        """Returns false."""
         return 0
 
     def handle_error(self):        
@@ -1669,10 +1663,9 @@ class FTPServer(asyncore.dispatcher):
 
 
 class PassiveDTP(asyncore.dispatcher):
-    """This class is an asyncore.disptacher subclass. It creates a socket
+    """This class is an asyncore.disptacher subclass.  It creates a socket
     listening on a local port, dispatching the resultant connection DTPHandler.
     """
-
     # TODO - provide the possibility to define a certain range of ports
     # on which DTP should bind on
 
@@ -1700,7 +1693,7 @@ class PassiveDTP(asyncore.dispatcher):
     # --- connection / overridden
     
     def handle_accept(self):
-        """Called to accept incoming connections."""
+        """Called when remote client initiates a connection."""
         sock_obj, addr = self.accept()
         
         # PASV connection theft protection: check the origin of data connection.
@@ -1775,7 +1768,7 @@ class ActiveDTP(asyncore.dispatcher):
         pass
 
     def handle_connect(self):
-        """Called to handle incoming connections."""
+        """Called when connection is established."""
         debug("ActiveDTP.handle_connect()")
         self.cmd_channel.respond('200 PORT command successful.')
         # delegate such connection to DTP handler
@@ -1802,6 +1795,7 @@ class ActiveDTP(asyncore.dispatcher):
         debug("ActiveDTP.close()")
         asyncore.dispatcher.close(self)
 
+
 try:
     from collections import deque
 except ImportError:
@@ -1812,7 +1806,6 @@ except ImportError:
 
 
 class DTPHandler(asyncore.dispatcher):
-    # TODO - improve this docstring
     """Class handling server-data-transfer-process (server-DTP, see RFC 959)
     managing data-transfer operations.
     
@@ -1820,19 +1813,18 @@ class DTPHandler(asyncore.dispatcher):
     When a producer is consumed and close_when_done() has been called
     previously, refill_buffer() erroneously calls close() instead of
     handle_close() - (see: http://python.org/sf/1740572) 
-    
+
     To avoid this problem, DTPHandler is implemented as a subclass of
     asyncore.dispatcher. This implementation follows the same approach that
     asynchat module will use in Python 2.6.
-    
+
     The most important change in the implementation is related to
     producer_fifo, which is a pure deque object instead of a producer_fifo
     instance.
-    
+
     Since we don't want to break backward compatibily with older python
     versions (deque has been introduced in Python 2.4), if deque is not
     available we use a list instead.
-    
     """
 
     ac_in_buffer_size = 8192
@@ -1842,7 +1834,6 @@ class DTPHandler(asyncore.dispatcher):
         """Intialize the DTPHandler instance, replacing asynchat's "simple
         producer" deque wrapper with a pure deque object.
         """
-        
         asyncore.dispatcher.__init__(self, sock_obj)
         # we toss the use of the asynchat's "simple producer" and replace it with
         # a pure deque, which the original fifo was a wrapping of
@@ -1864,9 +1855,7 @@ class DTPHandler(asyncore.dispatcher):
         """Enable receiving of data over the channel. Depending on the TYPE
         currently in use it creates an appropriate wrapper for the incoming
         data.
-        
         """
-
         if type == 'a':
             self.data_wrapper = lambda x: x.replace('\r\n', os.linesep)
         else:
@@ -1874,7 +1863,7 @@ class DTPHandler(asyncore.dispatcher):
         self.receive = True
 
     def get_transmitted_bytes(self):
-        "Returns the number of transmitted bytes."
+        "Return the number of transmitted bytes."
         return self.tot_bytes_sent + self.tot_bytes_received
 
     def transfer_in_progress(self):
@@ -2026,8 +2015,8 @@ class DTPHandler(asyncore.dispatcher):
         self.close()
 
     def close(self):
-        """Close the data channel, first attempting to send any remaining
-        data in the queue."""
+        """Close the data channel, first attempting to close any remaining
+        file handles."""
         
         debug("DTPHandler.close()")
 
@@ -2048,8 +2037,9 @@ class DTPHandler(asyncore.dispatcher):
 # --- file producer
 
 # Taken from Sam Rushing's Medusa-framework. Similar to
-# asynchat.simple_producer class, but operates on file(-like) objects instead
-# of strings.
+# asynchat.simple_producer class, but operates on file(-like)
+# objects instead of strings.
+
 class FileProducer:
     """Producer wrapper for file[-like] objects."""
 
@@ -2103,9 +2093,7 @@ class AbstractedFS:
         virtual path.
         
         Note: directory separators are system independent ("/").
-        
         """
-
         # absolute path
         if os.path.isabs(path):
             p = os.path.normpath(path)
@@ -2119,7 +2107,7 @@ class AbstractedFS:
         # os.path.normpath supports UNC paths (e.g. "//a/b/c") but we don't need
         # them.  In case we get an UNC path we collapse redundant separators
         # appearing at the beginning of the string
-        if p.startswith('//'):
+        while p[:2] == '//':
             p = p[1:]
 
         # Anti path traversal: don't trust user input, in the event that
@@ -2136,17 +2124,14 @@ class AbstractedFS:
         path.
         
         Note: directory separators are system dependent.
-
         """
-
         # as far as i know, it should always be path traversal safe...
         return os.path.normpath(self.root + self.normalize(path))
 
     # --- Wrapper methods around os.*
 
     def open(self, filename, mode):
-        """Open a file and return a file handle. See builtin open()
-        documentation for mode options."""
+        """Open a file returning its handler."""
         return open(filename, mode)
 
     def exists(self, path):
@@ -2201,12 +2186,8 @@ class AbstractedFS:
 
         Note that this is resource-intensive blocking operation so you may want
         to override it and move it into another process/thread in some way.
-
         """
-        
-        l = []
-        listing = os.listdir(path)
-        return '\r\n'.join(listing)
+        return '\r\n'.join(os.listdir(path))
 
     def get_list_dir(self, path):
         """Return a directory listing emulating "/bin/ls -lgA" UNIX command
