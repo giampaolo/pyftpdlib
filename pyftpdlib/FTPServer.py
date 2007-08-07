@@ -785,23 +785,6 @@ class FTPHandler(asynchat.async_chat):
             self.log('FAIL RETR "%s". No such file.' %line)
             self.respond('550 No such file: "%s".' %line)
             return
-        # - Note 1: RFC 959 prohibited STOU parameters, but this prohibition is
-        # obsolete.
-        #
-        # TODO - should we really accept arguments? RFC959 does not talk about such
-        # eventuality but Bernstein does: http://cr.yp.to/ftp/stor.html
-        # Try to find 'official' references declaring such obsolescence.
-        #
-        # - Note 2: 250 response wanted by RFC 959 has been declared incorrect
-        # into RFC 1123 that wants 125/150 instead.
-        # - Note 3: RFC 1123 also provided an exact output format defined to be
-        # as follow:
-        # > 125 FILE: pppp
-        # ...where pppp represents the unique pathname of the file that will be
-        # written.
-        #
-        # FIX #19
-        # watch for STOU preceded by REST, which makes no sense.
 
         if not self.authorizer.r_perm(self.username, file):
             self.log('FAIL RETR "s". Not enough priviledges' %line)
