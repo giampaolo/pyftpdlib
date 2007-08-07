@@ -26,10 +26,53 @@
 #  ======================================================================
   
 
-"""
-RFC 959 asynchronous FTP server.
+"""pyftpdlib: RFC 959 asynchronous FTP server.
 
-Usage:
+pyftpdlib implements a fully functioning asynchronous FTP server as defined in
+RFC 959.  A hierarchy of classes outlined below implement the backend
+functionality for the FTPd:
+
+    [FTPServer] - the base class for the backend.
+
+    [FTPHandler] - a class representing the server-protocol-interpreter
+    (server-PI, see RFC 959). Each time a new connection occurs FTPServer will
+    create a new FTPHandler instance to handle the current PI session.
+
+    [ActiveDTP], [PassiveDTP] - base classes for active/passive-DTP backends.
+
+    [DTPHandler] - this class handles processing of data transfer operations.
+    (server-DTP, see RFC 959).
+
+    [DummyAuthorizer] - an "authorizer" is a class handling FTPd
+    authentications and permissions. It is used inside FTPHandler class to
+    verify user passwords, to get user's home directory and to get permissions
+    when a filesystem read/write occurs. "DummyAuthorizer" is the base
+    authorizer class providing a platform independent interface for managing
+    virtual users.
+
+    [AbstractedFS] - class used to interact with the file system, providing a
+    high level, cross-platform interface compatible with both Windows and UNIX
+    style filesystems.
+
+    [Error] - base class for module exceptions.
+
+
+pyftpdlib also provides 3 different logging streams through 3 functions which
+can be overridden to allow for custom logging.
+
+    [log] - the main logger that logs the most important messages for the end
+    user regarding the FTPd.
+
+    [logline] - this function is used to log commands and responses passing
+    through the control FTP channel.
+
+    [debug] - used for debugging messages (function/method calls, traceback
+    outputs, low-level informational messages and so on...). Disabled by
+    default.
+
+
+Usage example:
+
 >>> from pyftpdlib import FTPServer
 >>> authorizer = FTPServer.DummyAuthorizer()
 >>> authorizer.add_user('user', '12345', '/home/user', perm=('r', 'w'))
@@ -59,51 +102,9 @@ Serving FTP on 127.0.0.1:21
 127.0.0.1:2503 <== QUIT
 127.0.0.1:2503 ==> 221 Goodbye.
 [anonymous]@127.0.0.1:2503 Disconnected.
+
 """
 
-# TODO - rewrite this better
-# Overview:
-#
-# This file implements a fully functioning asynchronous FTP server as defined in
-# RFC 959.  It has a hierarchy of classes which implement the backend
-# functionality for the ftpd.
-#
-# A number of classes are provided:
-#
-#   [FTPServer] - the base class for the backend.
-#
-#   [FTPHandler] - a class representing the server-protocol-interpreter (server-PI, see RFC 959).
-#       Every time a new connection occurs FTPServer class will create a new FTPHandler instance
-#       that will handle the current PI session.
-#
-#   [ActiveDTP], [PassiveDTP] - base classes for active/passive-DTP backend.
-#
-#   [DTPHandler] - class handling server-data-transfer-process (server-DTP, see RFC 959)
-#       managing data-transfer operations.
-#
-#   [DummyAuthorizer] - an "authorizer" is a class handling ftpd authentications and permissions.
-#       It is used inside FTPHandler class to verify user passwords, to get user's home-directory
-#       and to get permissions when a r/w I/O filesystem event occurs.
-#       DummyAuthorizer" is the base authorizer class providing a platform independent interface
-#       for managing "virtual-users".
-#
-#   [AbstractedFS] - class used to interact with file-system providing an high-level platform-independent
-#       interface able to work on both DOS/UNIX-like file systems.
-#
-#   [Error] - base class for module exceptions.
-#
-#
-# Moreover, FTPServer provides 3 different logging streams trough 3 functions:
-#
-#   [log] - the main logger that notifies the most important messages for the end-user regarding the FTPd.
-#
-#   [logline] - that notifies commands and responses passing through the control FTP channel.
-#
-#   [debug] - used for debugging messages (function/method calls, traceback outputs,
-#       low-level informational messages and so on...). Disabled by default.
-#
-#
-#
 # Tested under Windows XP sp2, Linux Fedora 6, Linux Debian Sarge, Linux Ubuntu Breezy.
 #
 # Author: billiejoex < billiejoex@gmail.com >
