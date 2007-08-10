@@ -1702,7 +1702,7 @@ class PassiveDTP(asyncore.dispatcher):
         # We have to drop the incoming data connection if remote IP address 
         # does not match the client's IP address.
         if self.cmd_channel.remote_ip != addr[0]:
-            self.cmd_chanel.log("PASV connection theft attempt occurred from %s:%s."
+            self.cmd_channel.log("PASV connection theft attempt occurred from %s:%s."
                 %(addr[0], addr[1]))
             try:
                 #sock_obj.send('500 Go hack someone else, dude.\r\n')
