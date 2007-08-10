@@ -1,20 +1,67 @@
+Issue tracker at http://code.google.com/p/pyftpdlib/issues/list
+
 
 History
 =======
 
-
-Version: v0.1.1 - Date: 2007-02-22
+Version: v0.2.0 - Date: 2007-??-??
 ----------------------------------
 
- - port selection on PASV command has been randomized (this to prevent a remote user 
-   to know how many data connections are in progress on the server).
- - fixed bug in demo/unix_ftpd.py script (reported by Roger Erens).
- - (little) modification to add_anonymous method of dummy_authorizer class.
- - "ftp_server.serve_forever" automatically re-use address if current system is unix.
- - license changed into a MIT style one.
+RFC-related enhancements:
+
+ * (see Issue #6) accept and process TYPE AN and TYPE L8 commands
+ * (see Issue #8) be compliant with STOU output format defined in RFC 1123
+ * (see Issue #10) HELP command arguments are now accepted
+ * (see Issue #12) 554 error response is now returned on RETR/STOR if REST fails
+
+Security enhancements:
+
+ * (see Issue #3) Stop buffering when extremely long lines are received
+ * (see Issue #5) Provided a way to configure / limit the number of maximum acceptable connections
+ * (see Issue #5) Provided a way to configure / limit the maximum number of clients which may be connected from the same IP
+ * (see Issue #11) Reject data connection when a privileged port is specified on PORT command
+ * (see Issue #25) Limit the number of attempts to find a unique filename for STOU command
+
+Usability enhancements:
+
+ * Provided an overridable attribute to easily set number of maximum login attempts before disconnecting
+ * Provided an overridable attribute to easily enable/disable FTP proxying feature
+ * Docstrings are now provided for almost every method and function
+ * (see Issue #30) Command help strings quality improved by adding command syntaxes
+ * (see Issue #31) A compact list of recognized commands is now provided on HELP
+ * (see Issue #32) We now provide a detailed error message on connection and file system errors
+
+Test suite enhancements:
+
+ * (see Issue #28) Added tests for ABOR command
+ * File creation/removal moved into setUp and tearDown methods to avoid leaving behind orphaned temporary files in the event of a test suite failure
+
+Bugfixes:
+
+ * Issue #4: socket's "reuse_address" feature was used after the socket's binding
+ * Issue #9: corrected path traversal vulnerability affecting file-system path translations
+ * Issue #14: wrong response code was returned on CDUP
+ * Issue #17: reject SIZE if pathname is a directory
+ * Issue #18: wrong ABOR response code type was returned
+ * Issue #19: watch for STOU preceded by REST which makes no sense
+ * Issue #20: "attempted login" counter wasn't incremented on wrong username
+ * Issue #21: STAT wasn't permitted if user wasn't authenticated yet
+ * Issue #22: corrected memory leaks occurring on KeyboardInterrupt/SIGTERM
+ * Issue #23: PASS wasn't rejected when user was already authenticated
+ * Issue #26: used select() by default instead of poll() because of an asyncore module's defect
 
 
-Version: v0.1.0 - Date: 2007-02-22
+Version: v0.1.1 - Date: 2007-03-27
 ----------------------------------
 
- - first proof of concept beta release.
+ * Port selection on PASV command has been randomized to prevent a remote user to know how many data connections are in progress on the server
+ * Fixed bug in demo/unix_ftpd.py script (reported by Roger Erens)
+ * Little modification to add_anonymous method of dummy_authorizer class
+ * ftp_server.serve_forever automatically re-use address if current system is unix.
+ * License changed into a MIT style one.
+
+
+Version: v0.1.0 - Date: 2007-02-26
+----------------------------------
+
+ * first proof of concept beta release.
