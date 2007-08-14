@@ -129,9 +129,17 @@ class FtpAuthentication(unittest.TestCase):
         global ftp
         ftp = ftplib.FTP()
         ftp.connect(host=host, port=port)
+        self.f1 = open(tempfile.mktemp(dir=home), 'w+b')
+        self.f2 = open(tempfile.mktemp(dir=home), 'w+b')
 
     def tearDown(self):
         ftp.close()
+        if not self.f1.closed:
+            self.f1.close()
+        if not self.f2.closed:
+            self.f2.close()
+        os.remove(self.f1.name)
+        os.remove(self.f2.name)
 
     def test_auth_ok(self):
         ftp.login(user=user, passwd=pwd)
@@ -144,22 +152,109 @@ class FtpAuthentication(unittest.TestCase):
         ftp.login(user='AnonYmoUs', passwd='anon@')
         ftp.login(user='anonymous', passwd='')   
 
-    def test_rein(self):
-        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'pwd')
-        ftp.login(user='anonymous', passwd='anon@')
-        ftp.sendcmd('pwd')
-        ftp.sendcmd('rein')
-        self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'pwd')
-
     def test_max_auth(self):
+        self.failUnlessRaises(ftplib.error_perm, ftp.login, user=user, passwd='wrong')
+        self.failUnlessRaises(ftplib.error_perm, ftp.login, user=user, passwd='wrong')
+        self.failUnlessRaises(ftplib.error_perm, ftp.login, user=user, passwd='wrong')
         # if authentication fails for 3 times ftpd disconnect us.
         # we can check if this happen by using ftp.sendcmd() on the 'dead' socket object.
         # If socket object is really dead it should be raised
         # socket.error exception (Windows) or EOFError exception (Linux).
-        self.failUnlessRaises(ftplib.error_perm, ftp.login, user=user, passwd='wrong')
-        self.failUnlessRaises(ftplib.error_perm, ftp.login, user=user, passwd='wrong')
-        self.failUnlessRaises(ftplib.error_perm, ftp.login, user=user, passwd='wrong')
         self.failUnlessRaises((socket.error, EOFError), ftp.sendcmd, '')
+
+    def test_rein(self):
+        """Test REIN while no transfer is in progress."""
+        ftp.login(user=user, passwd=pwd)
+        ftp.sendcmd('rein')
+        # user is not yet authenticated, a permission error response is expected
+        self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'pwd')
+        # by logging-in again we should be able to execute a file-system command
+        ftp.login(user=user, passwd=pwd)
+        ftp.sendcmd('pwd')
+
+    def test_rein_on_transfer(self):
+        """Test REIN while a transfer is in progress."""
+        ftp.login(user=user, passwd=pwd)
+        data = 'abcde12345' * 100000
+        fname_1 = os.path.split(self.f1.name)[1]
+        self.f1.write(data)
+        self.f1.close()
+
+        ftp.voidcmd('TYPE I')
+        conn = ftp.transfercmd('retr ' + fname_1)
+        bytes_recv = 0
+        rein_sent = 0
+        while 1:
+            chunk = conn.recv(8192)
+            # stop transfer while it isn't finished yet
+            if bytes_recv >= 524288: # 2^19
+                if not rein_sent:
+                    # flush account, expect an error response
+                    ftp.sendcmd('rein')
+                    self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'pwd')
+                    rein_sent = 1
+            if not chunk:
+                break
+            self.f2.write(chunk)
+            bytes_recv += len(chunk)
+
+        # a 226 response is expected once tranfer finishes
+        self.assertEqual(ftp.voidresp()[:3], '226')
+        # account is still flushed, error response is still expected
+        self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'size ' + fname_1)
+        # by logging-in again we should be able to execute a file-system command
+        ftp.login(user=user, passwd=pwd)
+        ftp.sendcmd('pwd')
+        self.f2.seek(0)
+        self.assertEqual(hash(data), hash (self.f2.read()))
+
+    def test_user(self):
+        """Test USER while already authenticated and no transfer is in progress.
+        """
+        ftp.login(user=user, passwd=pwd)
+        ftp.sendcmd('user ' + user)
+        # user is not yet authenticated, a permission error response is expected
+        self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'pwd')
+        # by logging-in again we should be able to execute a file-system command
+        ftp.sendcmd('pass ' + pwd)
+        ftp.sendcmd('pwd')
+
+    def test_user_on_transfer(self):
+        """Test USER while already authenticated and a transfer is in progress.
+        """
+        ftp.login(user=user, passwd=pwd)
+        data = 'abcde12345' * 100000
+        fname_1 = os.path.split(self.f1.name)[1]
+        self.f1.write(data)
+        self.f1.close()
+
+        ftp.voidcmd('TYPE I')
+        conn = ftp.transfercmd('retr ' + fname_1)
+        bytes_recv = 0
+        rein_sent = 0
+        while 1:
+            chunk = conn.recv(8192)
+            # stop transfer while it isn't finished yet
+            if bytes_recv >= 524288: # 2^19
+                if not rein_sent:
+                    # flush account, expect an error response
+                    ftp.sendcmd('user ' + user)
+                    self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'pwd')
+                    rein_sent = 1
+            if not chunk:
+                break
+            self.f2.write(chunk)
+            bytes_recv += len(chunk)
+
+        # a 226 response is expected once tranfer finishes
+        self.assertEqual(ftp.voidresp()[:3], '226')
+        # account is still flushed, error response is still expected
+        self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'pwd')
+        # by logging-in again we should be able to execute a file-system command
+        ftp.sendcmd('pass ' + pwd)
+        ftp.sendcmd('pwd')
+        self.f2.seek(0)
+        self.assertEqual(hash(data), hash (self.f2.read()))
 
 
 class FtpDummyCmds(unittest.TestCase):
@@ -582,6 +677,9 @@ class FtpStoreData(unittest.TestCase):
         self.f2.seek(0)
         self.assertEqual(hash(self.f1.read()), hash(self.f2.read()))
         ftp.delete(remote_fname)
+
+
+
 
 
 def run():

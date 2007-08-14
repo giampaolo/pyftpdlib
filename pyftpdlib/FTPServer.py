@@ -620,6 +620,27 @@ class FTPHandler(asynchat.async_chat):
         """Log a debug message."""
         debug(msg)
 
+    def flush_account(self):
+        """Flush account information by clearing attributes that need to be
+        reset on a REIN or new USER command.
+        """
+        if self.data_channel:
+            if not self.data_channel.transfer_in_progress():
+                self.data_channel.close()
+                self.data_channel = None
+        if self.dtp_server:
+            self.dtp_server.close()
+            self.dtp_server = None
+
+        self.fs.rnfr = None
+        self.authenticated = False
+        self.username = ""
+        self.attempted_logins = 0
+        self.current_type = 'a'
+        self.restart_position = 0
+        self.quit_pending = False
+        self.in_dtp_queue = None
+        self.out_dtp_queue = None
 
     # --- ftp
 
@@ -1029,17 +1050,22 @@ class FTPHandler(asynchat.async_chat):
     def ftp_USER(self, line):
         """Set the username for the current session."""
         # TODO - see bug #7 (Change account if USER is received twice)
+        
         # we always treat anonymous user as lower-case string.
         if line.lower() == "anonymous":
-            self.username = "anonymous"
+            line = "anonymous"
+
+        if not self.authenticated:
+            self.respond('331 Username ok, send password.')
         else:
-            self.username = line
-        
-        # FIX #23 if we receive a USER command, un-authenticate the current 
-        # user session, otherwise PASS throws a 503 error because we're 
-        # already authenticated
-        self.authenticated = False
-        self.respond('331 Username ok, send password.')
+            # FIX #7
+            # a new USER command could be entered at any point in order to
+            # change the access control flushing any user, password, and
+            # account information already supplied and beginning the login
+            # sequence again.
+            self.flush_account()
+            self.respond('331 Previous account information was flushed, send password.')
+        self.username = line
 
     def ftp_PASS(self, line):
         """Check username's password against the authorizer."""
@@ -1101,89 +1127,16 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_REIN(self, line):
         """Reinitialize user's current session."""
-        # TODO:
-
         # From RFC 959:
-        # > REIN command terminates a USER, flushing all I/O and account
-        # > information, except to allow any transfer in progress to be
-        # > completed.  All parameters are reset to the default settings
-        # > and the control connection is left open.  This is identical
-        # > to the state in which a user finds himself immediately after
-        # > the control connection is opened.
-
-        # This command appears nonsense to me and RFC959 really lacks of details!
-        # What exactly should I have to do if I receive REIN while a transfer
-        # is in progress?
-        # - Immediately respond with 331, reset account information and do not
-        #   accept further commands until transfer is finished.
-        # - Do not accept further commands until data-transfer is completed,
-        #   then REINinizialite the session responding with 331.
-        # - Respond with 311, flush account information, do not accept further
-        #   commands and respond with 311 again when the transfer is finished.
-        # - Other. (wtf!)
-        # Moreover I'm wondering a question: if user "james" starts a transfer
-        # and in the meanwhile he log-in again as "charles" by using REIN -> USER
-        # -> PASS he could be able to abort the transfer that still belongs to
-        # "james" by using PASV, PORT or ABOR.
-        # imho, a new user shouldn't have control over a transfer belonging
-        # to an older REINed one, but RFC959 just don't care about it!
-        # Note that the same problem occurs when an authenticated client use USER.
-        # Having said that I decided to accept REIN only if no data transfer is
-        # actually in progress.
-
-        if self.data_channel:
-            if not self.data_channel.get_transmitted_bytes():
-                self.data_channel.close()
-                self.data_channel = None
-            else:
-                pass
-        if self.dtp_server:
-            self.dtp_server.close()
-            self.dtp_server = None
-
-        self.authenticated = False
-        self.username = ""
-        self.attempted_logins = 0
-        self.current_type = 'a'
-        self.restart_position = 0
-        self.quit_pending = False
-        self.in_dtp_queue = None
-        self.out_dtp_queue = None
+        # REIN command terminates a USER, flushing all I/O and account
+        # information, except to allow any transfer in progress to be
+        # completed.  All parameters are reset to the default settings
+        # and the control connection is left open.  This is identical
+        # to the state in which a user finds himself immediately after
+        # the control connection is opened.
+        self.flush_account()
         self.respond("230 Ready for new user.")
         self.log("REIN account informations was flushed.")
-##        def do_rein():
-##            if self.dtp_server:
-##                self.dtp_server.close()
-##                self.dtp_server = None
-##                
-##            if self.data_channel:
-##                self.data_channel.close()
-##                self.data_channel = None
-##
-##            self.authenticated = False
-##            self.username = ""
-##            self.attempted_logins = 0
-##            self.current_type = 'a'
-##            self.restart_position = 0
-##            self.quit_pending = False
-##            self.in_dtp_queue = None
-##            self.out_dtp_queue = None
-##            self.respond("230 Ready for new user.")
-##            self.log("REIN account informations was flushed.")
-##
-##        if not self.data_channel:
-##            do_rein()
-##        else:
-##            # Let's check if a transfer is in progress or not.
-##            # If it is we'll REIN the client after the transfer is
-##            # finished.
-##            if self.data_channel.get_transmitted_bytes():
-##                # What should I have to do here? Do I have to respond
-##                # with something or not? RFC 959 really lacks of
-##                # specifications!
-##                self.rein_pending = True
-##            else:
-##                do_rein()
 
 
         # --- filesystem operations

@@ -10,6 +10,7 @@ Version: v0.2.0 - Date: 2007-??-??
 RFC-related enhancements:
 
  * (see Issue #6) accept and process TYPE AN and TYPE L8 commands
+ * (see Issue #7) a new USER command can now be entered at any point to begin the login sequence again.
  * (see Issue #8) be compliant with STOU output format defined in RFC 1123
  * (see Issue #10) HELP command arguments are now accepted
  * (see Issue #12) 554 error response is now returned on RETR/STOR if REST fails
@@ -33,8 +34,10 @@ Usability enhancements:
 
 Test suite enhancements:
 
- * (see Issue #28) Added tests for ABOR command
  * File creation/removal moved into setUp and tearDown methods to avoid leaving behind orphaned temporary files in the event of a test suite failure
+ * (see Issue #7) Added tests for a new USER provided while already authenticated
+ * (see Issue #7) Added tests for REIN while a transfer is in progress
+ * (see Issue #28) Added tests for ABOR command
 
 Bugfixes:
 
@@ -49,6 +52,7 @@ Bugfixes:
  * Issue #22: corrected memory leaks occurring on KeyboardInterrupt/SIGTERM
  * Issue #23: PASS wasn't rejected when user was already authenticated
  * Issue #26: used select() by default instead of poll() because of an asyncore module's defect
+ * Issue #33: some FTPHandler class attributes wasn't resetted on REIN
 
 
 Version: v0.1.1 - Date: 2007-03-27
@@ -64,4 +68,4 @@ Version: v0.1.1 - Date: 2007-03-27
 Version: v0.1.0 - Date: 2007-02-26
 ----------------------------------
 
- * first proof of concept beta release.
+ * First proof of concept beta release.
