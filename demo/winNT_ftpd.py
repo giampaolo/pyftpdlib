@@ -1,14 +1,19 @@
-# winFTPserver.py
-# Basic authorizer for Windows NT accounts (users must be created previously).
+#!/usr/bin/env python
+# winNT_ftpd.py
+
+"""FTPd using local Windows NT account database to authenticate users
+(users must be created previously).
+"""
 
 import os
 import win32security, win32net, pywintypes
 from pyftpdlib import FTPServer
 
-class winNT_authorizer(FTPServer.dummy_authorizer):
+
+class WinNtAuthorizer(FTPServer.DummyAuthorizer):
 
     def __init__(self):
-        FTPServer.dummy_authorizer.__init__(self)
+        FTPServer.DummyAuthorizer.__init__(self)
 
     def add_user(self, username, home, perm=('r')):
         # check if user exists
@@ -43,13 +48,12 @@ class winNT_authorizer(FTPServer.dummy_authorizer):
 
 
 if __name__ == "__main__":
-    authorizer = winNT_authorizer()
+    authorizer = WinNtAuthorizer()
+    # add a user (note: user must already exists)
     authorizer.add_user ('user', os.getcwd(),perm=('r', 'w'))
     authorizer.add_anonymous (os.getcwd())
-    ftp_handler = FTPServer.ftp_handler
+    ftp_handler = FTPServer.FTPHandler
     ftp_handler.authorizer = authorizer
     address = ('', 21)
-    ftpd = FTPServer.ftp_server(address, ftp_handler)
+    ftpd = FTPServer.FTPServer(address, ftp_handler)
     ftpd.serve_forever()
-
-

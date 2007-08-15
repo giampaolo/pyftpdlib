@@ -245,6 +245,9 @@ class DummyAuthorizer:
 
     user_table = {}
 
+    def __init__(self):
+        pass
+
     def add_user(self, username, password, homedir, perm=('r')):
         """Add a user to the virtual users table.  Exceptions raised on error
         conditions such as insufficient permissions or duplicate usernames.
@@ -310,7 +313,6 @@ class FTPHandler(asynchat.async_chat):
     command's corresponding method. e.g. for received command "MKD pathname",
     ftp_MKD() method is called with "pathname" as the argument. All relevant
     session information is stored in instance variables.
-    
     """
 
     # these are overridable defaults:
@@ -361,7 +363,7 @@ class FTPHandler(asynchat.async_chat):
 
     def handle(self):
         """Return a 220 'Ready' response to the client over the command channel."""
-        self.push('220-%s.\r\n' %self.msg_connect)
+        self.push('220-%s\r\n' %self.msg_connect)
         self.respond("220 Ready.")
 
     def handle_max_cons(self):

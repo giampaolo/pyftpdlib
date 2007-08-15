@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 # md5_ftpd.py
 
-# FTPd storing passwords as hash digest (platform independent).
+"""A basic FTPd storing passwords as hash digests (platform independent).
+"""
 
 import md5
 import os
 from pyftpdlib import FTPServer
 
-class dummy_encrypted_authorizer(FTPServer.dummy_authorizer):
-         
+class DummyMD5Authorizer(FTPServer.DummyAuthorizer):
+
     def __init__(self):
-        FTPServer.dummy_authorizer.__init__(self)
+        FTPServer.DummyAuthorizer.__init__(self)
  
     def validate_authentication(self, username, password):
         if username == 'anonymous':
@@ -22,13 +23,13 @@ class dummy_encrypted_authorizer(FTPServer.dummy_authorizer):
         return self.user_table[username]['pwd'] == hash
  
 if __name__ == "__main__":
-    # get an hash digest from a clear-text password
+    # get a hash digest from a clear-text password
     hash = md5.new('12345').hexdigest()
-    authorizer = dummy_encrypted_authorizer()
+    authorizer = DummyMD5Authorizer()
     authorizer.add_user('user', hash, os.getcwd(), perm=('r', 'w'))
     authorizer.add_anonymous(os.getcwd())    
-    ftp_handler = FTPServer.ftp_handler
+    ftp_handler = FTPServer.FTPHandler
     ftp_handler.authorizer = authorizer
     address = ('', 21)
-    ftpd = FTPServer.ftp_server(address, ftp_handler)
+    ftpd = FTPServer.FTPServer(address, ftp_handler)
     ftpd.serve_forever()
