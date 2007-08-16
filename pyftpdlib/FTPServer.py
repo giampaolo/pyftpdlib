@@ -690,7 +690,7 @@ class FTPHandler(asynchat.async_chat):
 
         # make sure we are not hitting the max connections limit
         if self.ftpd_instance.max_cons:
-            if self.ftpd_instance.max_cons >= len(self._map):
+            if len(self._map) >= self.ftpd_instance.max_cons:
                 msg = "Too many connections. Can't open data channel."
                 self.respond("425 %s" %msg)
                 self.log(msg)
@@ -713,7 +713,7 @@ class FTPHandler(asynchat.async_chat):
 
         # make sure we are not hitting the max connections limit
         if self.ftpd_instance.max_cons:
-            if self.ftpd_instance.max_cons >= len(self._map):
+            if len(self._map) >= self.ftpd_instance.max_cons:
                 msg = "Too many connections. Can't open data channel."
                 self.respond("425 %s" %msg)
                 self.log(msg)
