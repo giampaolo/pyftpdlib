@@ -1533,7 +1533,7 @@ class FTPServer(asyncore.dispatcher):
     def __del__(self):
         debug("FTPServer.__del__()")
         
-    def serve_forever(self):
+    def serve_forever(self, *args):
         """A wrap around asyncore.loop(); starts the asyncore polling loop."""
 
         log("Serving FTP on %s:%s" %self.socket.getsockname())
@@ -1542,12 +1542,15 @@ class FTPServer(asyncore.dispatcher):
             # use_poll specifies whether to use select module's poll()
             # with ayncore or whether to use asyncore's own poll() method
             # Python versions < 2.4 need use_poll set to False
-            # 
+            #
             # FIX #26:
             # this breaks on OS X systems if use_poll is set to Tru. All
             # systems seem to work fine with it set to False (tested on
             # Linux, Windows, and OS X platforms
-            asyncore.loop(timeout=1, use_poll=False)
+            if args:
+                asyncore.loop(*args)
+            else:
+                asyncore.loop(timeout=1, use_poll=False)
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             log("Shutting down FTPd.")
             # FIX #22
