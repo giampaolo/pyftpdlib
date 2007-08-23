@@ -1533,7 +1533,7 @@ class FTPServer(asyncore.dispatcher):
     def __del__(self):
         debug("FTPServer.__del__()")
         
-    def serve_forever(self, *args):
+    def serve_forever(self, *args, **kwargs):
         """A wrap around asyncore.loop(); starts the asyncore polling loop."""
 
         log("Serving FTP on %s:%s" %self.socket.getsockname())
@@ -1547,8 +1547,8 @@ class FTPServer(asyncore.dispatcher):
             # this breaks on OS X systems if use_poll is set to Tru. All
             # systems seem to work fine with it set to False (tested on
             # Linux, Windows, and OS X platforms
-            if args:
-                asyncore.loop(*args)
+            if args or kwargs:
+                asyncore.loop(*args, **kwargs)
             else:
                 asyncore.loop(timeout=1, use_poll=False)
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
