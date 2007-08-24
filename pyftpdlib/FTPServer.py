@@ -102,7 +102,6 @@ Serving FTP on 127.0.0.1:21
 127.0.0.1:2503 <== QUIT
 127.0.0.1:2503 ==> 221 Goodbye.
 [anonymous]@127.0.0.1:2503 Disconnected.
-
 """
 
 
@@ -303,1324 +302,10 @@ class DummyAuthorizer:
     def w_perm(self, username, obj):
         """Whether the user has write permission for obj."""
         return 'w' in self.user_table[username]['perm']
-    
 
-# --- FTP
 
-class FTPHandler(asynchat.async_chat):
-    """Implements the FTP server Protocol Interpreter (see RFC 959), handling
-    commands received from the client on the control channel by calling the
-    command's corresponding method. e.g. for received command "MKD pathname",
-    ftp_MKD() method is called with "pathname" as the argument. All relevant
-    session information is stored in instance variables.
-    """
 
-    # these are overridable defaults:
-    authorizer = DummyAuthorizer()
-
-    # messages
-    msg_connect = "pyftpdlib %s" %__ver__
-    msg_login = ""
-    msg_quit = ""
-
-    # maximum login attempts
-    max_login_attempts = 3
-
-    # FTP proxying feature (see RFC 959 describing such feature and RFC 2577
-    # which describes security considerations implied)
-    permit_ftp_proxying = False
-
-    # Set to True if you want to permit PORTing over
-    # privileged ports (not recommended)
-    permit_privileged_port = False
-
-
-    def __init__(self, conn, ftpd_instance):
-        asynchat.async_chat.__init__(self, conn=conn)
-        self.ftpd_instance = ftpd_instance
-        self.remote_ip, self.remote_port = self.socket.getpeername()
-        self.in_buffer = []
-        self.in_buffer_len = 0
-        self.set_terminator("\r\n")
-
-        # session attributes
-        self.fs = AbstractedFS()
-        self.in_dtp_queue = None
-        self.out_dtp_queue = None
-        self.authenticated = False
-        self.username = "" 
-        self.attempted_logins = 0
-        self.current_type = 'a'
-        self.restart_position = 0
-        self.quit_pending = False
-
-        # dtp attributes
-        self.dtp_server = None
-        self.data_channel = None  
-
-    def __del__(self):
-        debug("FTPHandler.__del__()")
-
-    def handle(self):
-        """Return a 220 'Ready' response to the client over the command channel."""
-        self.push('220-%s\r\n' %self.msg_connect)
-        self.respond("220 Ready.")
-
-    def handle_max_cons(self):
-        """Called when limit for maximum number of connections is reached."""
-        msg = "Too many connections. Service temporary unavailable."
-        self.respond("421 %s" %msg)
-        self.log(msg)
-        # If self.push is used, data could not be sent immediately in which
-        # case a new "loop" will occur exposing us to the risk of accepting new
-        # connections.  Since this could cause asyncore to run out of fds
-        # (...and exposes the server to DoS attacks), we immediatly close the
-        # channel by using close() instead of close_when_done(). If data has
-        # not been sent yet client will be silently disconnected.
-        self.close()
-
-    def handle_max_cons_per_ip(self):
-        """Called when too many clients are connected from the same IP."""
-        msg = "Too many connections from the same IP address."
-        self.respond("421 %s" %msg)
-        self.log(msg)
-        self.close_when_done()
-
-    # --- asyncore / asynchat overridden methods
-
-    def readable(self):
-        # if there's a quit pending we stop reading data from socket
-        return not self.quit_pending
-
-    def collect_incoming_data(self, data):
-        """Read incoming data and append to the input buffer."""
-        self.in_buffer.append(data)
-        self.in_buffer_len += len(data)
-        # FIX #3
-        # flush buffer if it gets too long (possible DoS attacks)
-        # RFC959 specifies that a 500 response could be given in such cases
-        buflimit = 2048
-        if self.in_buffer_len > buflimit:
-            self.respond('500 Command too long.')
-            self.log('Command received exceeded buffer limit of %s.' % (buflimit))
-            self.in_buffer = []
-            self.in_buffer_len = 0
-
-    # commands accepted before authentication
-    unauth_cmds = ('USER','PASS','HELP','STAT','QUIT','NOOP','SYST')
-
-    # commands needing an argument
-    arg_cmds = ('ALLO','APPE','DELE','MDTM','MODE','MKD', 'PORT','REST','RETR','RMD',
-                'RNFR','RNTO','SIZE', 'STOR','STRU','TYPE','USER','XMKD','XRMD')
-
-    # commands needing no argument
-    unarg_cmds = ('ABOR','CDUP','NOOP','PASV','PWD','QUIT','REIN','SYST','XCUP','XPWD')
-
-    def found_terminator(self):
-        r"""Called when the incoming data stream matches the \r\n terminator."""
-        line = ''.join(self.in_buffer).strip()
-        self.in_buffer = []
-        self.in_buffer_len = 0
-
-        cmd = line.split(' ')[0].upper()
-        space = line.find(' ')
-        if space != -1:
-            arg = line[space + 1:]
-        else:
-            arg = ""
-
-        if cmd != 'PASS':
-            self.logline("<== %s" %line)
-        else:
-            self.logline("<== %s %s" %(line.split(' ')[0], '*' * 6))
-
-        # let's check if user provided an argument for those commands needing one
-        if not arg and cmd in self.arg_cmds:
-            self.cmd_missing_arg()
-            return
-
-        # let's do the same for those commands requiring no argument.
-        elif arg and cmd in self.unarg_cmds:
-            self.cmd_needs_no_arg()
-            return
-
-        # provide a limited set of commands if user isn't authenticated yet
-        if (not self.authenticated):
-            if cmd in self.unauth_cmds:
-                # FIX #21
-                # we permit STAT during this phase but we don't want STAT to 
-                # return a directory LISTing if the user is not authenticated
-                # yet (this could happen if STAT is used with an argument)
-                if (cmd == 'STAT') and arg:
-                    self.respond("530 Log in with USER and PASS first.")
-                else:
-                    method = getattr(self, 'ftp_'+cmd, None)
-                    method(arg) # callback
-            elif cmd in proto_cmds:
-                self.respond("530 Log in with USER and PASS first.")
-            else:
-                self.cmd_not_understood(line)
-
-        # provide full command set
-        elif (self.authenticated) and (cmd in proto_cmds):
-            method = getattr(self, 'ftp_'+cmd, None)
-            method(arg) # callback
-
-        else:
-            # TODO - add a detailed comment here
-            # TODO - provisional
-            # recognize those commands having "special semantics"
-            if 'ABOR' in cmd:
-                self.ftp_ABOR("")
-            elif 'STAT' in cmd:
-                self.ftp_STAT("")
-            # unknown command
-            else:
-                self.cmd_not_understood(line)
-
-    def handle_expt(self):
-        # Called when there is out of band (OOB) data for the socket connection.
-        # This could happen in case of such commands needing "special action"
-        # (typically STAT and ABOR) in which case we append OOB data to incoming
-        # buffer.
-
-        self.debug("FTPHandler.handle_expt()")
-        # TODO - XXX provisional
-        try:
-            data = self.socket.recv(1024, socket.MSG_OOB)
-            self.in_buffer.append(data)
-        except:
-            self.log("Can't handle OOB data.")
-            self.close()
-
-    def handle_error(self):
-        self.debug("FTPHandler.handle_error()")
-        f = StringIO.StringIO()
-        traceback.print_exc(file=f)
-        self.debug(f.getvalue())
-        self.close()
-
-    def handle_close(self):
-        self.debug("FTPHandler.handle_close()")
-        self.close()
-
-    def close(self):
-        self.debug("FTPHandler.close()")
-       
-        if self.dtp_server:
-            self.dtp_server.close()
-            del self.dtp_server
-                
-        if self.data_channel:
-            self.data_channel.close()
-            del self.data_channel
-
-        del self.out_dtp_queue
-        del self.in_dtp_queue
-
-        # remove client IP address from ip map
-        self.ftpd_instance.ip_map.remove(self.remote_ip)
-        asynchat.async_chat.close(self)
-        self.log("Disconnected.")
-
-
-    # --- callbacks
-    
-    def on_dtp_connection(self):
-        """Called every time data channel connects (either active or passive).
-        Incoming and outgoing queues are checked for pending data. If outbound
-        data is pending, it is pushed into the data channel. If awaiting
-        inbound data, the data channel is enabled for receiving.
-        """
-        self.debug("FTPHandler.on_dtp_connection()")
-        if self.dtp_server:
-            self.dtp_server.close()
-        self.dtp_server = None
-
-        # check for data to send
-        if self.out_dtp_queue:
-            data, isproducer, log = self.out_dtp_queue
-            if log:
-                self.log(log)
-            if not isproducer:
-                self.data_channel.push(data)
-            else:
-                self.data_channel.push_with_producer(data)
-            if self.data_channel:
-                self.data_channel.close_when_done()
-            self.out_dtp_queue = None
-
-        # check for data to receive
-        elif self.in_dtp_queue:
-            fd, log = self.in_dtp_queue
-            if log:
-                self.log(log)
-            self.data_channel.file_obj = fd
-            self.data_channel.enable_receiving(self.current_type)
-            self.in_dtp_queue = None
-    
-    def on_dtp_close(self):
-        """Called on DTPHandler.close()."""
-
-        self.debug("FTPHandler.on_dtp_close()")
-        self.data_channel = None
-        if self.quit_pending:
-            self.close_when_done()
-    
-    # --- utility
-    
-    def respond(self, resp):
-        """Send a response to the client using the command channel."""
-        self.push(resp + '\r\n')
-        self.logline('==> %s' % resp)
-
-    def push_dtp_data(self, data, isproducer=False, log=''):
-        """Called every time a RETR, LIST or NLST is received. Pushes data into
-        the data channel.  If data channel does not exist yet, we queue the data
-        to send later.  Data will then be pushed into data channel when
-        on_dtp_connection() is called.
-
-        "data" argument can be either a string or a producer of data to push.
-        boolean argument isproducer; if True we assume that is a producer.
-        log argument is a string to log this push event with.
-        """
-        if self.data_channel:
-            self.respond("125 Data connection already open. Transfer starting.")
-            if log:
-                self.log(log)
-            if not isproducer:
-                self.data_channel.push(data)
-            else:
-                self.data_channel.push_with_producer(data)
-            if self.data_channel:
-                self.data_channel.close_when_done()
-        else:
-            self.respond("150 File status okay. About to open data connection.")
-            self.out_dtp_queue = (data, isproducer, log)
-
-    def cmd_not_understood(self, line):
-        """Return a 'command not understood' message to the client."""
-        self.respond('500 Command "%s" not understood.' %line)
-
-    def cmd_missing_arg(self):
-        """Return a 'missing argument' message to the client."""
-        self.respond("501 Syntax error: command needs an argument.")
-        
-    def cmd_needs_no_arg(self):
-        """Return a 'command does not accept arguments' message to the client."""
-        self.respond("501 Syntax error: command does not accept arguments.")
-      
-    def log(self, msg):
-        """Log a message, including additional identifying session data."""
-        log("[%s]@%s:%s %s" %(self.username, self.remote_ip, self.remote_port, msg))
-    
-    def logline(self, msg):
-        """Log a line including additional indentifying session data."""
-        logline("%s:%s %s" %(self.remote_ip, self.remote_port, msg))
-    
-    def debug(self, msg):
-        """Log a debug message."""
-        debug(msg)
-
-    def flush_account(self):
-        """Flush account information by clearing attributes that need to be
-        reset on a REIN or new USER command.
-        """
-        if self.data_channel:
-            if not self.data_channel.transfer_in_progress():
-                self.data_channel.close()
-                self.data_channel = None
-        if self.dtp_server:
-            self.dtp_server.close()
-            self.dtp_server = None
-
-        self.fs.rnfr = None
-        self.authenticated = False
-        self.username = ""
-        self.attempted_logins = 0
-        self.current_type = 'a'
-        self.restart_position = 0
-        self.quit_pending = False
-        self.in_dtp_queue = None
-        self.out_dtp_queue = None
-
-    # --- ftp
-
-    # --- connection
-
-    def ftp_PORT(self, line):
-        """Start an active data-channel."""
-        # parse PORT request getting IP and PORT
-        # TODO - add a comment describing how the algorithm used to get such
-        # values works (reference http://cr.yp.to/ftp/retr.html).
-        try:
-            line = line.split(',')
-            ip = ".".join(line[:4]).replace(',','.')
-            port = (int(line[4]) * 256) + int(line[5])
-        except (ValueError, OverflowError):
-            self.respond("500 Invalid PORT format.")
-            return
-
-        # FTP bounce attacks protection: according to RFC 2577 it's
-        # recommended to reject PORT if IP address specified in it
-        # does not match client IP address.
-        if not self.permit_ftp_proxying:
-            if ip != self.remote_ip:
-                self.log("PORT %s refused (bounce attack protection)" %port)
-                self.respond("500 FTP proxying feature not allowed.")
-                return
-
-        # FIX #11
-        # ...another RFC 2577 rencommendation is rejecting connections to
-        # privileged ports (< 1024) for security reasons.  Moreover, binding to
-        # such ports could require root priviledges on some systems.
-        if not self.permit_privileged_port:
-            if port < 1024:
-                self.respond("500 Can't connect over a privileged port.")
-                return
-
-        # close existent DTP-server instance, if any.
-        if self.dtp_server:
-            self.dtp_server.close()
-            self.dtp_server = None
-
-        if self.data_channel:
-            self.data_channel.close()
-            self.data_channel = None
-
-        # make sure we are not hitting the max connections limit
-        if self.ftpd_instance.max_cons:
-            if len(self._map) >= self.ftpd_instance.max_cons:
-                msg = "Too many connections. Can't open data channel."
-                self.respond("425 %s" %msg)
-                self.log(msg)
-                return
-
-        # open DTP channel
-        ActiveDTP(ip, port, self)
-
-
-    def ftp_PASV(self, line):
-        """Start a passive data-channel."""
-        # close existing DTP-server instance, if any
-        if self.dtp_server:
-            self.dtp_server.close()
-            self.dtp_server = None
-
-        if self.data_channel:
-            self.data_channel.close()
-            self.data_channel = None
-
-        # make sure we are not hitting the max connections limit
-        if self.ftpd_instance.max_cons:
-            if len(self._map) >= self.ftpd_instance.max_cons:
-                msg = "Too many connections. Can't open data channel."
-                self.respond("425 %s" %msg)
-                self.log(msg)
-                return
-
-        # open DTP channel
-        self.dtp_server = PassiveDTP(self)
-
-
-    def ftp_QUIT(self, line):
-        """Quit the current session."""
-        # From RFC 959:
-        # This command terminates a USER and if file transfer is not
-        # in progress, the server closes the control connection.
-        # If file transfer is in progress, the connection will remain
-        # open for result response and the server will then close it.
-        if not self.msg_quit:
-            self.respond("221 Goodbye.")
-        else:
-            self.push("221-%s\r\n" %self.msg_quit)
-            self.respond("221 Goodbye.")
-
-        if not self.data_channel:
-            self.close_when_done()
-        else:
-            # tell the cmd channel to stop responding to commands.
-            self.quit_pending = True
-
-
-        # --- data transferring
-        
-    def ftp_LIST(self, line):
-        """Return a list of files in the specified directory to the client.
-        Defaults to the current working directory.
-        """
-        if line:
-            # some FTP clients (like Konqueror or Nautilus) erroneously issue
-            # /bin/ls-like LIST formats (e.g. "LIST -l", "LIST -al" and so
-            # on...) instead of passing a directory as the argument. If we
-            # receive such a command, just LIST the current working directory.
-            if line.lower() in ("-a", "-l", "-al", "-la"):
-                path = self.fs.translate(self.fs.cwd)
-                line = self.fs.cwd
-            # otherwise we assume the arg is a directory name
-            else:
-                path = self.fs.translate(line)
-                line = self.fs.normalize(line)
-        # no argument, fall back on cwd as default
-        else:  
-            path = self.fs.translate(self.fs.cwd)
-            line = self.fs.cwd
-
-        try:
-            data = self.fs.get_list_dir(path)
-        except OSError, err:
-            self.log('FAIL LIST "%s". %s.' %(line, os.strerror(err.errno)))
-            self.respond ('550 %s.' %os.strerror(err.errno))
-            return
-
-        self.push_dtp_data(data, log='OK LIST "%s". Transfer starting.' %line)
-
-
-    def ftp_NLST(self, line):
-        """Return a list of files in the specified directory in a compact form to
-        the client. Default to the current directory.
-        """
-        if line:
-            path = self.fs.translate(line)
-            line = self.fs.normalize(line)
-        else:            
-            path = self.fs.translate(self.fs.cwd)
-            line = self.fs.cwd
-
-        try:
-            data = self.fs.get_nlst_dir(path)
-        except OSError, err:
-            self.log('FAIL NLST "%s". %s.' %(line, os.strerror(err.errno)))
-            self.respond ('550 %s.' %os.strerror(err.errno))
-            return
-
-        self.push_dtp_data(data, log='OK NLST "%s". Transfer starting.' %line)
-
-
-    def ftp_RETR(self, line):
-        """Retrieve the specified file (transfer from the server to the client)
-        """
-        file = self.fs.translate(line)
-
-        if not self.fs.isfile(file):
-            self.log('FAIL RETR "%s". No such file.' %line)
-            self.respond('550 No such file: "%s".' %line)
-            return
-
-        if not self.authorizer.r_perm(self.username, file):
-            self.log('FAIL RETR "s". Not enough priviledges' %line)
-            self.respond ("550 Can't RETR: not enough priviledges.")
-            return
-
-        try:
-            fd = self.fs.open(file, 'rb')
-        except IOError, err:
-            self.log('FAIL RETR "%s". %s.' %(line, os.strerror(err.errno)))
-            self.respond ('550 %s.' %os.strerror(err.errno))
-            return
-
-        # FIX #12
-        if self.restart_position:
-            # Make sure that the requested offset is valid (within the
-            # size of the file being resumed).
-            # According to RFC 1123 a 554 reply may result in case that the
-            # existing file cannot be repositioned as specified in the REST.
-            ok = 0
-            try:
-                assert not self.restart_position > self.fs.getsize(file)
-                fd.seek(self.restart_position)
-                ok = 1
-            except AssertionError:
-                msg = "Invalid REST parameter."
-            except IOError, err:
-                msg = os.strerror(err.errno)
-            self.restart_position = 0
-            if not ok:
-                self.respond('554 %s' %msg)
-                self.log('FAIL RETR "%s". %s.' %(line, msg))
-                return
-
-        producer = FileProducer(fd, self.current_type)
-        self.push_dtp_data(producer, isproducer=1,
-            log='OK RETR "%s". Download starting.' %self.fs.normalize(line))
-
-
-    def ftp_STOR(self, line, mode='w'):
-        """Store a file (transfer from the client to the server)."""
-        # A resume could occur in case of APPE or REST commands.
-        # In that case we have to open file object in different ways:
-        # STOR: mode = 'w'
-        # APPE: mode = 'a'
-        # REST: mode = 'r+' (to permit seeking on file object)
-        file = self.fs.translate(line)
-
-        if not self.authorizer.w_perm(self.username, os.path.split(file)[0]):
-            self.log('FAIL STOR "%s". Not enough priviledges.' %line)
-            self.respond ("550 Can't STOR: not enough priviledges.")
-            return
-
-        if self.restart_position:
-            mode = 'r+'
-
-        try:            
-            fd = self.fs.open(file, mode + 'b')
-        except IOError, err:
-            self.log('FAIL STOR "%s". %s.' %(line, os.strerror(err.errno)))
-            self.respond ('550 %s.' %os.strerror(err.errno))
-            return
-
-        # FIX #12
-        if self.restart_position:
-            # Make sure that the requested offset is valid (within the
-            # size of the file being resumed).
-            # According to RFC 1123 a 554 reply may result in case that the
-            # existing file cannot be repositioned as specified in the REST.
-            ok = 0
-            try:
-                assert not self.restart_position > self.fs.getsize(file)
-                fd.seek(self.restart_position)
-                ok = 1
-            except AssertionError:
-                msg = "Invalid REST parameter."
-            except IOError, err:
-                msg = os.strerror(err.errno)
-            self.restart_position = 0
-            if not ok:
-                self.respond('554 %s' %msg)
-                self.log('FAIL STOR "%s". %s.' %(line, msg))
-                return
-
-        log = 'OK STOR "%s". Upload starting.' %self.fs.normalize(line)
-        if self.data_channel:
-            self.respond("125 Data connection already open. Transfer starting.")
-            self.log(log)
-            self.data_channel.file_obj = fd
-            self.data_channel.enable_receiving(self.current_type)
-        else:
-            self.debug("info: new producer queue added.")
-            self.respond("150 File status okay. About to open data connection.")
-            self.in_dtp_queue = (fd, log)
-
-
-    def ftp_STOU(self, line):
-        """Store a file on the server with a unique name."""
-
-        # - Note 1: RFC 959 prohibited STOU parameters, but this prohibition is
-        # obsolete.
-        #
-        # TODO - should we really accept arguments? RFC959 does not talk about such
-        # eventuality but Bernstein does: http://cr.yp.to/ftp/stor.html
-        # Try to find 'official' references declaring such obsolescence.
-        #
-        # - Note 2: 250 response wanted by RFC 959 has been declared incorrect
-        # into RFC 1123 that wants 125/150 instead.
-        # - Note 3: RFC 1123 also provided an exact output format defined to be
-        # as follow:
-        # > 125 FILE: pppp
-        # ...where pppp represents the unique pathname of the file that will be
-        # written.
-
-        # FIX #19
-        # watch for STOU preceded by REST, which makes no sense.
-        if self.restart_position:
-            self.respond("550 Can't STOU while REST request is pending.")
-            return
-
-        # create file with an incremented unique name based off of the argument
-        if line:
-            file = self.fs.translate(line)
-            if not self.fs.exists(file):
-                resp = line
-            else:
-                x = 0
-                while 1:
-                    file = self.fs.translate(line + '.' + str(x))
-                    if not self.fs.exists(file):
-                        resp = line + '.' + str(x)
-                        break
-                    else:
-                        # FIX #25
-                        # set a max of 99 on the number of tries to create a
-                        # unique filename, so that we decrease the chances of
-                        # a DoS situation
-                        if x > 99:
-                            self.respond("450 Can't STOU other files with such name.")
-                            self.log("Can't STOU other files with such name.")
-                            return
-                        else:
-                            x += 1
-
-        # if no arg, create file with an incremented unique name starting at 0
-        else:
-            x = 0
-            while 1:
-                file = self.fs.translate(self.fs.cwd + '.' + str(x))
-                if not self.fs.exists(file):
-                    resp = '.' + str(x)
-                    break
-                else:
-                    # FIX #25
-                    # set a max of 99 on the number of tries to create a unique
-                    # filename, so that we decrease the chances of a DoS situation
-                    if x > 99:
-                        self.respond("450 Can't STOU other files with brand new name.")
-                        self.log("Can't STOU other files with brand new name.")
-                        return
-                    else:
-                        x += 1
-
-        # now just acts like STOR excepting that restarting isn't allowed
-        if not self.authorizer.w_perm(self.username, os.path.split(file)[0]):
-            self.log('FAIL STOU "%s". Not enough priviledges' %line)
-            self.respond ("550 Can't STOU: not enough priviledges.")
-            return
-        
-        try:
-            fd = self.fs.open(file, 'wb')
-        except IOError, err:
-            self.log('FAIL STOU "%s". %s.' %(line, os.strerror(err.errno)))
-            self.respond ('550 %s.' %os.strerror(err.errno))
-            return
-
-        # FIX #8
-        log = 'OK STOU "%s". Upload starting.' %resp
-        if self.data_channel:
-            self.respond("125 FILE: %s" %resp)
-            self.log(log)
-            self.data_channel.file_obj = fd
-            self.data_channel.enable_receiving(self.current_type)
-        else:
-            self.debug("info: new producer queue added.")
-            self.respond("150 FILE: %s" %resp)
-            self.in_dtp_queue = (fd, log)
-
-
-    def ftp_APPE(self, line):
-        """Append data to an existing file on the server."""
-        # TODO - Should we watch for REST like we already did in STOU?
-        self.ftp_STOR(line, mode='a')
-
-
-    def ftp_REST(self, line):
-        """Restart a file transfer from a previous mark."""
-        try:
-            marker = int(line)
-            if marker < 0:
-                raise ValueError
-            self.respond("350 Restarting at position %s. Now use RETR/STOR for resuming." %marker)
-            self.restart_position = marker
-        except (ValueError, OverflowError):
-            self.respond("501 Invalid number of parameters.")
-
-
-    def ftp_ABOR(self, line):
-        """Abort the current data transfer."""
-
-        # ABOR received while no data channel exists
-        if (self.dtp_server is None) and (self.data_channel is None):
-            resp = "225 No transfer to abort."
-        else:
-            # a PASV was received but connection wasn't made yet
-            if self.dtp_server:
-                self.dtp_server.close()
-                self.dtp_server = None
-                resp = "225 ABOR command successful; data channel closed."
-
-            # FIX #18
-            # If a data transfer is in progress the server must first close
-            # the data connection, returning a 426 reply to indicate that the
-            # transfer terminated abnormally, then it must send a 226 reply,
-            # indicating that the abort command was successfully processed.
-            # If no data has been transmitted we just respond with 225
-            # indicating that no transfer was in progress.
-            if self.data_channel:
-                if self.data_channel.transfer_in_progress():
-                    self.data_channel.close()
-                    self.data_channel = None
-                    self.respond("426 Connection closed; transfer aborted.")
-                    resp = "226 ABOR command successful."
-                else:
-                    self.data_channel.close()
-                    self.data_channel = None
-                    resp = "225 ABOR command successful; data channel closed."
-
-        self.respond(resp)
-        self.log("ABOR received.")
-
-        # --- authentication
-
-    def ftp_USER(self, line):
-        """Set the username for the current session."""
-        # TODO - see bug #7 (Change account if USER is received twice)
-        
-        # we always treat anonymous user as lower-case string.
-        if line.lower() == "anonymous":
-            line = "anonymous"
-
-        if not self.authenticated:
-            self.respond('331 Username ok, send password.')
-        else:
-            # FIX #7
-            # a new USER command could be entered at any point in order to
-            # change the access control flushing any user, password, and
-            # account information already supplied and beginning the login
-            # sequence again.
-            self.flush_account()
-            self.respond('331 Previous account information was flushed, send password.')
-        self.username = line
-
-    def ftp_PASS(self, line):
-        """Check username's password against the authorizer."""
-
-        # FIX #23 (PASS should be rejected if user is already authenticated)
-        # http://code.google.com/p/pyftpdlib/issues/detail?id=23
-        if self.authenticated:
-            self.respond("503 User already authenticated.")
-            return
-
-        if not self.username:
-            self.respond("503 Login with USER first.")
-            return
-
-        if self.username == 'anonymous':
-            line = ''
-
-        # username ok
-        if self.authorizer.has_user(self.username):
-
-            if self.authorizer.validate_authentication(self.username, line):
-                if not self.msg_login:
-                    self.respond("230 User %s logged in." %self.username)
-                else:
-                    self.push("230-%s\r\n" %self.msg_login)
-                    self.respond("230 Welcome.")
-
-                self.authenticated = True
-                self.attempted_logins = 0
-                self.fs.root = self.authorizer.get_home_dir(self.username)
-                self.log("User %s logged in." %self.username)
-
-            else:              
-                self.attempted_logins += 1
-                if self.attempted_logins >= self.max_login_attempts:
-                    self.log("Maximum login attempts. Disconnecting.")
-                    self.respond("530 Maximum login attempts. Disconnecting.")
-                    self.close()                   
-                else:                    
-                    self.respond("530 Authentication failed.")
-                    self.username = ""
-
-        # wrong username
-        else:
-            # FIX #20
-            self.attempted_logins += 1
-            if self.attempted_logins >= self.max_login_attempts:
-                self.log("Maximum login attempts. Disconnecting.")
-                self.respond("530 Maximum login attempts. Disconnecting.")
-                self.close()               
-            elif self.username.lower() == 'anonymous':
-                self.respond("530 Anonymous access not allowed.")
-                self.log('Authentication failed: anonymous access not allowed.')
-            else:
-                self.respond("530 Authentication failed.")
-                self.log('Authentication failed: unknown username "%s".' %self.username)
-                self.username = ""
-
-
-    def ftp_REIN(self, line):
-        """Reinitialize user's current session."""
-        # From RFC 959:
-        # REIN command terminates a USER, flushing all I/O and account
-        # information, except to allow any transfer in progress to be
-        # completed.  All parameters are reset to the default settings
-        # and the control connection is left open.  This is identical
-        # to the state in which a user finds himself immediately after
-        # the control connection is opened.
-        self.flush_account()
-        self.respond("230 Ready for new user.")
-        self.log("REIN account informations was flushed.")
-
-
-        # --- filesystem operations
-
-    def ftp_PWD(self, line):
-        """Return the name of the current working directory to the client."""
-        self.respond('257 "%s" is the current directory.' %self.fs.cwd)
-
-    def ftp_CWD(self, line):
-        """Change the current working directory."""
-        # TODO: a lot of FTP servers go back to root directory if no arg is
-        # provided but this is not specified into RFC959. Search for
-        # official references about this behaviour.
-        if not line:
-            line = '/'
-
-        # When CWD is received we temporarily join the specified directory
-        # to see if we have permissions to do it.
-        # A more elegant way to do that would be using os.access instead but I'm
-        # not sure about its reliability on non-posix platforms (see, for
-        # example, Python bug #1513646) or when specified paths are network
-        # filesystems.
-        ftp_path = self.fs.normalize(line)
-        real_path = self.fs.translate(line)
-        old_dir = os.getcwd()
-        done = 0
-        try:
-            self.fs.chdir(real_path)
-            self.fs.cwd = ftp_path
-            done = 1
-        except OSError, err:
-            self.log('FAIL CWD "%s". %s.' \
-                %(self.fs.normalize(line), os.strerror(err.errno)))
-            self.respond ('550 %s.' %os.strerror(err.errno))
-        if done:
-            self.log('OK CWD "%s"' %self.fs.cwd)
-            self.respond('250 "%s" is the current directory.' %self.fs.cwd)
-            # let's use os.chdir instead of self.fs.chdir: we don't want to
-            # go back to the original directory by using user's permissions.
-            os.chdir(old_dir)
-
-
-    def ftp_CDUP(self, line):
-        """Change into the parent directory."""
-        # Note: RFC 959 says that code 200 is required but it also says that
-        # CDUP uses the same codes as CWD.
-        # FIX #14
-        self.ftp_CWD('..')
-
-
-    def ftp_SIZE(self, line):
-        """Return size of file in a format suitable for using with RESTart as
-        defined into RFC 3659.
-
-        Implementation note:
-        properly handling the SIZE command when TYPE ASCII is used would require
-        to scan the entire file to perform the ASCII translation logic
-        (file.read(int).replace(os.linesp, '\r\n')) and then calculating the len
-        of such data which may be different than the actual size of the file on
-        the server.  Considering that the calculating such result could be very
-        resource-intensive it could be easy for a malicious client to try a DoS
-        attack, thus we do not perform the ASCII translation.
-
-        However, clients in general should not be resuming downloads in ASCII
-        mode.  Resuming downloads in binary mode is the recommended way as
-        specified into RFC 3659.
-        """
-        
-        path = self.fs.translate(line)
-        # FIX #17
-        if self.fs.isdir(path):
-            self.respond ("550 Could not get a directory size.")
-            return
-        try:
-            size = self.fs.getsize(path)
-            self.respond("213 %s" %size)
-        except OSError, err:
-            self.respond ('550 %s.' %os.strerror(err.errno))
-
-
-    def ftp_MDTM(self, line):
-        """Return last modification time of file to the client as an ISO 3307
-        style timestamp (YYYYMMDDHHMMSS) as defined into RFC 3659.
-        """
-        
-        path = self.fs.translate(line)
-        if not self.fs.isfile(path):
-            self.respond("550 No such file.")
-            return
-        try:
-            lmt = self.fs.getmtime(path)
-            lmt = time.strftime("%Y%m%d%H%M%S", time.localtime(lmt))
-            self.respond("213 %s" %lmt)
-        except OSError, err:
-            self.respond ('550 %s.' %os.strerror(err.errno))
-
-
-    def ftp_MKD(self, line):
-        """Create the specified directory."""
-        path = self.fs.translate(line)
-
-        if not self.authorizer.w_perm(self.username, os.path.split(path)[0]):
-            self.log('FAIL MKD "%s". Not enough priviledges.' %line)
-            self.respond ("550 Can't MKD: not enough priviledges.")
-            return
-
-        try:
-            self.fs.mkdir(path)
-            self.log('OK MKD "%s".' %self.fs.normalize(line))
-            self.respond("257 Directory created.")
-        except OSError, err:
-            self.log('FAIL MKD "%s". %s.' %(line, os.strerror(err.errno)))
-            self.respond ('550 %s.' %os.strerror(err.errno))
-
-
-    def ftp_RMD(self, line):
-        """Remove the specified directory."""
-        if not line:
-            self.cmd_missing_arg()
-            return
-
-        path = self.fs.translate(line)
-
-        if path == self.fs.root:
-            self.respond("550 Can't remove root directory.")
-            return
-                    
-        if not self.authorizer.w_perm(self.username, path):
-            self.log('FAIL RMD "%s". Not enough priviledges.' %line)
-            self.respond ("550 Can't RMD: not enough priviledges.")
-            return
-
-        try:
-            self.fs.rmdir(path)
-            self.log('OK RMD "%s".' %self.fs.normalize(line))
-            self.respond("250 Directory removed.")
-        except OSError, err:
-            self.log('FAIL RMD "%s". %s.' %(line, os.strerror(err.errno)))
-            self.respond ('550 %s.' %os.strerror(err.errno))
-
-
-    def ftp_DELE(self, line):
-        """Delete the specified file."""
-        path = self.fs.translate(line)
-            
-        if not self.authorizer.w_perm(self.username, path):
-            self.log('FAIL DELE "%s". Not enough priviledges.' % self.fs.normalize(line))
-            self.respond ("550 Can't DELE: not enough priviledges.")
-            return
-
-        try:
-            self.fs.remove(path)
-            self.log('OK DELE "%s".' %self.fs.normalize(line))
-            self.respond("250 File removed.")
-        except OSError, err:
-            self.log('FAIL DELE "%s". %s.' %(line, os.strerror(err.errno)))
-            self.respond ('550 %s.' %os.strerror(err.errno))
-
-
-    def ftp_RNFR(self, line):
-        """Rename the specified (only the source name is specified here. See
-        RNTO command)"""
-        path = self.fs.translate(line)
-        if self.fs.exists(path):
-            self.fs.rnfr = line
-            self.respond("350 Ready for destination name")
-        else:
-            self.respond("550 No such file or directory.")
-
-
-    def ftp_RNTO(self, line):
-        """Rename file (destination name only, source is specified with RNFR)."""
-        if not self.fs.rnfr:
-            self.respond("503 Bad sequence of commands: use RNFR first.")
-            return
-
-        src = self.fs.translate(self.fs.rnfr)
-        dst = self.fs.translate(line)
-       
-        if not self.authorizer.w_perm(self.username, self.fs.rnfr):
-            self.log('FAIL RNFR/RNTO "%s ==> %s". Not enough priviledges for renaming.'
-                     %(self.fs.rnfr, self.fs.normalize(line)))
-            self.respond ("550 Can't RNTO: not enough priviledges.")
-            self.fs.rnfr = None
-            return
-
-        try:
-            self.fs.rename(src, dst)
-            self.log('OK RNFR/RNTO "%s ==> %s".' %(self.fs.rnfr, self.fs.normalize(line)))
-            self.respond("250 Renaming ok.")
-        except OSError, err:
-            self.log('FAIL RNTO "%s". %s.' %(line, os.strerror(err.errno)))
-            self.respond ('550 %s.' %os.strerror(err.errno))
-            self.fs.rnfr = None
-
-
-        # --- others       
-
-    def ftp_TYPE(self, line):
-        """Set current type data type to binary/ascii"""
-        line = line.upper()
-        # FIX #6
-        if line in ("A", "AN", "A N"):
-            self.respond("200 Type set to: ASCII.")
-            self.current_type = 'a'
-        elif line in ("I", "L8", "L 8"):
-            self.respond("200 Type set to: Binary.")
-            self.current_type = 'i'
-        else:
-            self.respond('504 Unsupported type "%s".' %line)
-
-
-    def ftp_STRU(self, line):
-        """Set file structure (obsolete)."""
-        # obsolete (backward compatibility with older ftp clients)
-        if line in ('f','F'):            
-            self.respond ('200 File transfer structure set to: F.')
-        else:
-            self.respond ('504 Unimplemented STRU type.')
-
-
-    def ftp_MODE(self, line):
-        """Set data transfer mode (obsolete)"""
-        # obsolete (backward compatibility with older ftp clients)
-        if line in ('s', 'S'):
-            self.respond('200 Transfer mode set to: S')
-        else:
-            self.respond('504 Unimplemented MODE type.')
-
-
-    def ftp_STAT(self, line):
-        """Return statistics about current ftp session. If an argument is
-        provided return directory listing over command channel.
-        """
-        
-        # return STATus information about ftpd
-        if not line:
-            s = []
-            s.append('211-%s %s status:\r\n' %(__pname__, __ver__))
-            s.append('\tConnected to: %s:%s\r\n' %self.socket.getsockname())
-            if self.authenticated:
-                s.append('\tLogged in as: %s\r\n' %self.username)
-            else:
-                if not self.username:
-                    s.append("\tWaiting for username\r\n")
-                else:
-                    s.append("\tWaiting for password\r\n")
-            if self.current_type == 'a':
-                type = 'ASCII'
-            else:
-                type = 'Binary'
-            s.append("\tTYPE: %s; STRUcture: File; MODE: Stream\r\n" %type)
-            if self.data_channel:
-                s.append('\tData connection open:\r\n')
-                s.append('\tTotal bytes sent: %s' %self.data_channel.tot_bytes_sent)
-                s.append('\tTotal bytes received: %s' %self.data_channel.tot_bytes_received)
-            else:
-                s.append('\tData connection closed\r\n')
-            self.push(''.join(s))
-            self.respond("211 End of status.")
-
-        else:
-            
-            # TODO - see also FIX #15
-            # if arg is provided we should return directory LISTing over
-            # the command channel. 
-            # Note: we also must support globbing (*, [], ?, and so on....)
-            # Still have to find a way to do that since that:
-            # - user could send a 'normal' path (e.g. "dir", "/dir") in which
-            #   case we should use os.listdir
-            # - user could send a Unix style pathname pattern expansion
-            #   (e.g. "*.txt", "/dir/*.txt") in which case we should use glob
-            #   module but it could return absolute or relative listing depending
-            #   on the input... :-\
-            pass
-##            pathname = self.fs.normalize(line)
-##            if not glob.has_magic(pathname):
-##                listing = self.fs.get_list_dir(pathname)
-##            else:
-##                dirname, basename = os.path.split(pathname)
-##                if not dirname:
-##                    listing = glob.glob1(self.fs.cwd, basename)
-##                else:
-##                    listing = glob.glob1(dirname, basename)
-
-
-    def ftp_NOOP(self, line):
-        """Do nothing."""
-        self.respond("250 I succesfully done nothin'.")
-
-
-    def ftp_SYST(self, line):
-        """Return system type (always returns UNIX type L8)."""
-        # This command is used to find out the type of operating system at the
-        # server.  The reply shall have as its first word one of the system
-        # names listed in RFC 943.
-        # Since that we always return a "/bin/ls -lgA"-like output on LIST we
-        # prefer to respond as if we would on Unix in any case.
-        self.respond("215 UNIX Type: L8")
-
-
-    def ftp_ALLO(self, line):
-        """Allocate bytes for storage (obsolete)."""
-        # obsolete (always respond with 202)
-        self.respond("202 No storage allocation necessary.")
-
-
-    def ftp_HELP(self, line):
-        """Return help text to the client."""
-
-        if line:
-            # FIX #10
-            if line.upper() in proto_cmds:
-                self.respond("214 %s." %proto_cmds[line.upper()])
-            else:
-                self.respond("500 Unrecognized command.")
-        else:
-            # FIX #31
-            # provide a compact list of recognized commands
-            def formatted_help():
-                cmds = []
-                keys = proto_cmds.keys()
-                keys.sort()
-                while keys:
-                    elems = tuple((keys[0:8]))
-                    cmds.append('  %-6s' * len(elems) %elems + '\r\n')
-                    del keys[0:8]
-                return ''.join(cmds)
-
-            self.push("214-The following commands are recognized:\r\n")
-            self.push(formatted_help())
-            self.respond("214 Help command succesful.")
-
-
-        # --- support for deprecated cmds
-
-    # RFC 1123 requires that the server treat XCUP, XCWD, XMKD, XPWD and
-    # XRMD commands as synonyms for CDUP, CWD, MKD, LIST and RMD.
-    # Such commands are obsoleted but some ftp clients (e.g. Windows ftp.exe)
-    # still use them.
-
-    def ftp_XCUP(self, line):
-        """Change to the parent directory. Synonym for CDUP. Deprecated."""
-        self.ftp_CDUP(line)
-
-    def ftp_XCWD(self, line):
-        """Change the current working directory. Synonym for CWD. Deprecated."""
-        self.ftp_CWD(line)
-
-    def ftp_XMKD(self, line):
-        """Create the specified directory. Synonym for MKD. Deprecated."""
-        self.ftp_MKD(line)
-    
-    def ftp_XPWD(self, line):
-        """Return the current working directory. Synonym for PWD. Deprecated."""
-        self.ftp_PWD(line)
-
-    def ftp_XRMD(self, line):
-        """Remove the specified directory. Synonym for RMD. Deprecated."""
-        self.ftp_RMD(line)
-
-
-class FTPServer(asyncore.dispatcher):
-    """This class is an asyncore.disptacher subclass.  It creates a FTP socket
-    listening on <address>, dispatching the requests to a <handler> (typically
-    FTPHandler class).
-    """
-
-    # Overiddable defaults (overriding is strongly rencommended to avoid
-    # running out of file descritors (DoS) !).
-
-    # number of maximum simultaneous connections accepted
-    # (0 == unlimited)
-    max_cons = 0
-
-    # number of maximum connections accepted for the same IP address
-    # (0 == unlimited)
-    max_cons_per_ip = 0
-
-    def __init__(self, address, handler):
-        asyncore.dispatcher.__init__(self)
-        self.address = address
-        self.handler = handler
-        self.ip_map = []
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        if os.name == 'posix':
-            # FIX #4
-            self.set_reuse_addr()  
-        self.bind(self.address)
-        self.listen(5)
-
-    def __del__(self):
-        debug("FTPServer.__del__()")
-        
-    def serve_forever(self, *args, **kwargs):
-        """A wrap around asyncore.loop(); starts the asyncore polling loop."""
-
-        log("Serving FTP on %s:%s" %self.socket.getsockname())
-        try:
-            # FIX #16
-            # use_poll specifies whether to use select module's poll()
-            # with ayncore or whether to use asyncore's own poll() method
-            # Python versions < 2.4 need use_poll set to False
-            #
-            # FIX #26:
-            # this breaks on OS X systems if use_poll is set to Tru. All
-            # systems seem to work fine with it set to False (tested on
-            # Linux, Windows, and OS X platforms
-            if args or kwargs:
-                asyncore.loop(*args, **kwargs)
-            else:
-                asyncore.loop(timeout=1, use_poll=False)
-        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
-            log("Shutting down FTPd.")
-            # FIX #22
-            self.close_all()
-
-    def handle_accept(self):
-        """Called when remote client initiates a connection."""
-        debug("handle_accept()")
-        sock_obj, addr = self.accept()
-        log("[]%s:%s connected." %addr)
-
-        handler = self.handler(sock_obj, self)
-        ip = addr[0]
-        self.ip_map.append(ip)
-
-        # FIX #5
-        # For performance and security reasons we should always set a limit for
-        # the number of file descriptors that socket_map should contain.
-        # When we're running out of such limit we'll use the last available
-        # channel for sending a 421 response to the client before disconnecting
-        # it.
-        if self.max_cons:
-            if len(self._map) > self.max_cons:
-                handler.handle_max_cons()
-                return
-
-        # accept only a limited number of connections from the same
-        # source address.
-        if self.max_cons_per_ip:
-            if self.ip_map.count(ip) > self.max_cons_per_ip:
-                handler.handle_max_cons_per_ip()
-                return
-
-        handler.handle()
-
-    def writable(self):
-        return 0
-
-    def handle_error(self):        
-        """Called to handle any uncaught exceptions."""
-        debug("FTPServer.handle_error()")
-        f = StringIO.StringIO()
-        traceback.print_exc(file=f)
-        debug(f.getvalue())
-        self.close()
-
-    def close_all(self, map=None, ignore_all=False):
-        """'clean' shutdown: instead of using the current asyncore.close_all()
-        function which only close sockets, we iterate over all existent
-        channels calling close() method for each one of them, avoiding memory
-        leaks. This is how close_all function will appear in the fixed version
-        of asyncore that will be included into Python 2.6.
-        """
-        if map is None:
-            map = self._map
-        for x in map.values():
-            try:
-                x.close()
-            except OSError, x:
-                if x[0] == errno.EBADF:
-                    pass
-                elif not ignore_all:
-                    raise
-            except (asyncore.ExitNow, KeyboardInterrupt, SystemExit):
-                raise
-            except:
-                if not ignore_all:
-                    raise
-        map.clear()
-
+# --- DTP classes
 
 class PassiveDTP(asyncore.dispatcher):
     """This class is an asyncore.disptacher subclass.  It creates a socket
@@ -1673,7 +358,7 @@ class PassiveDTP(asyncore.dispatcher):
             # connection at time) to avoid running out of max connections limit.
             self.close()
             # delegate such connection to DTP handler
-            handler = DTPHandler(sock_obj, self.cmd_channel)
+            handler = self.cmd_channel.dtp_handler(sock_obj, self.cmd_channel)
             self.cmd_channel.data_channel = handler
             self.cmd_channel.on_dtp_connection()
 
@@ -1732,7 +417,7 @@ class ActiveDTP(asyncore.dispatcher):
         debug("ActiveDTP.handle_connect()")
         self.cmd_channel.respond('200 PORT command successful.')
         # delegate such connection to DTP handler
-        handler = DTPHandler(self.socket, self.cmd_channel)
+        handler = self.cmd_channel.dtp_handler(self.socket, self.cmd_channel)
         self.cmd_channel.data_channel = handler
         self.cmd_channel.on_dtp_connection()
         # self.close() --> (done automatically)
@@ -2035,7 +720,6 @@ class FileProducer:
 
 # --- filesystem
 
-
 class AbstractedFS:
     """A cross-platform, abstract wrapper for filesystem operations."""
 
@@ -2199,6 +883,1328 @@ class AbstractedFS:
                     mtime,
                     obj))
         return ''.join(l)
+
+
+# --- FTP
+
+class FTPHandler(asynchat.async_chat):
+    """Implements the FTP server Protocol Interpreter (see RFC 959), handling
+    commands received from the client on the control channel by calling the
+    command's corresponding method. e.g. for received command "MKD pathname",
+    ftp_MKD() method is called with "pathname" as the argument. All relevant
+    session information is stored in instance variables.
+    """
+
+    # these are overridable defaults:
+
+    # default classes
+    authorizer = DummyAuthorizer()
+    active_dtp = ActiveDTP
+    passive_dtp = PassiveDTP
+    dtp_handler = DTPHandler
+    abstracted_fs = AbstractedFS
+
+    # messages
+    msg_connect = "pyftpdlib %s" %__ver__
+    msg_login = ""
+    msg_quit = ""
+
+    # maximum login attempts
+    max_login_attempts = 3
+
+    # FTP proxying feature (see RFC 959 describing such feature and RFC 2577
+    # which describes security considerations implied)
+    permit_ftp_proxying = False
+
+    # Set to True if you want to permit PORTing over
+    # privileged ports (not recommended)
+    permit_privileged_port = False
+
+
+    def __init__(self, conn, ftpd_instance):
+        asynchat.async_chat.__init__(self, conn=conn)
+        self.ftpd_instance = ftpd_instance
+        self.remote_ip, self.remote_port = self.socket.getpeername()
+        self.in_buffer = []
+        self.in_buffer_len = 0
+        self.set_terminator("\r\n")
+
+        # session attributes
+        self.fs = self.abstracted_fs()
+        self.in_dtp_queue = None
+        self.out_dtp_queue = None
+        self.authenticated = False
+        self.username = ""
+        self.attempted_logins = 0
+        self.current_type = 'a'
+        self.restart_position = 0
+        self.quit_pending = False
+
+        # dtp attributes
+        self.dtp_server = None
+        self.data_channel = None
+
+    def __del__(self):
+        debug("FTPHandler.__del__()")
+
+    def handle(self):
+        """Return a 220 'Ready' response to the client over the command channel."""
+        self.push('220-%s\r\n' %self.msg_connect)
+        self.respond("220 Ready.")
+
+    def handle_max_cons(self):
+        """Called when limit for maximum number of connections is reached."""
+        msg = "Too many connections. Service temporary unavailable."
+        self.respond("421 %s" %msg)
+        self.log(msg)
+        # If self.push is used, data could not be sent immediately in which
+        # case a new "loop" will occur exposing us to the risk of accepting new
+        # connections.  Since this could cause asyncore to run out of fds
+        # (...and exposes the server to DoS attacks), we immediatly close the
+        # channel by using close() instead of close_when_done(). If data has
+        # not been sent yet client will be silently disconnected.
+        self.close()
+
+    def handle_max_cons_per_ip(self):
+        """Called when too many clients are connected from the same IP."""
+        msg = "Too many connections from the same IP address."
+        self.respond("421 %s" %msg)
+        self.log(msg)
+        self.close_when_done()
+
+    # --- asyncore / asynchat overridden methods
+
+    def readable(self):
+        # if there's a quit pending we stop reading data from socket
+        return not self.quit_pending
+
+    def collect_incoming_data(self, data):
+        """Read incoming data and append to the input buffer."""
+        self.in_buffer.append(data)
+        self.in_buffer_len += len(data)
+        # FIX #3
+        # flush buffer if it gets too long (possible DoS attacks)
+        # RFC959 specifies that a 500 response could be given in such cases
+        buflimit = 2048
+        if self.in_buffer_len > buflimit:
+            self.respond('500 Command too long.')
+            self.log('Command received exceeded buffer limit of %s.' % (buflimit))
+            self.in_buffer = []
+            self.in_buffer_len = 0
+
+    # commands accepted before authentication
+    unauth_cmds = ('USER','PASS','HELP','STAT','QUIT','NOOP','SYST')
+
+    # commands needing an argument
+    arg_cmds = ('ALLO','APPE','DELE','MDTM','MODE','MKD', 'PORT','REST','RETR','RMD',
+                'RNFR','RNTO','SIZE', 'STOR','STRU','TYPE','USER','XMKD','XRMD')
+
+    # commands needing no argument
+    unarg_cmds = ('ABOR','CDUP','NOOP','PASV','PWD','QUIT','REIN','SYST','XCUP','XPWD')
+
+    def found_terminator(self):
+        r"""Called when the incoming data stream matches the \r\n terminator."""
+        line = ''.join(self.in_buffer).strip()
+        self.in_buffer = []
+        self.in_buffer_len = 0
+
+        cmd = line.split(' ')[0].upper()
+        space = line.find(' ')
+        if space != -1:
+            arg = line[space + 1:]
+        else:
+            arg = ""
+
+        if cmd != 'PASS':
+            self.logline("<== %s" %line)
+        else:
+            self.logline("<== %s %s" %(line.split(' ')[0], '*' * 6))
+
+        # let's check if user provided an argument for those commands needing one
+        if not arg and cmd in self.arg_cmds:
+            self.cmd_missing_arg()
+            return
+
+        # let's do the same for those commands requiring no argument.
+        elif arg and cmd in self.unarg_cmds:
+            self.cmd_needs_no_arg()
+            return
+
+        # provide a limited set of commands if user isn't authenticated yet
+        if (not self.authenticated):
+            if cmd in self.unauth_cmds:
+                # FIX #21
+                # we permit STAT during this phase but we don't want STAT to
+                # return a directory LISTing if the user is not authenticated
+                # yet (this could happen if STAT is used with an argument)
+                if (cmd == 'STAT') and arg:
+                    self.respond("530 Log in with USER and PASS first.")
+                else:
+                    method = getattr(self, 'ftp_'+cmd, None)
+                    method(arg) # callback
+            elif cmd in proto_cmds:
+                self.respond("530 Log in with USER and PASS first.")
+            else:
+                self.cmd_not_understood(line)
+
+        # provide full command set
+        elif (self.authenticated) and (cmd in proto_cmds):
+            method = getattr(self, 'ftp_'+cmd, None)
+            method(arg) # callback
+
+        else:
+            # TODO - add a detailed comment here
+            # TODO - provisional
+            # recognize those commands having "special semantics"
+            if 'ABOR' in cmd:
+                self.ftp_ABOR("")
+            elif 'STAT' in cmd:
+                self.ftp_STAT("")
+            # unknown command
+            else:
+                self.cmd_not_understood(line)
+
+    def handle_expt(self):
+        # Called when there is out of band (OOB) data for the socket connection.
+        # This could happen in case of such commands needing "special action"
+        # (typically STAT and ABOR) in which case we append OOB data to incoming
+        # buffer.
+
+        self.debug("FTPHandler.handle_expt()")
+        # TODO - XXX provisional
+        try:
+            data = self.socket.recv(1024, socket.MSG_OOB)
+            self.in_buffer.append(data)
+        except:
+            self.log("Can't handle OOB data.")
+            self.close()
+
+    def handle_error(self):
+        self.debug("FTPHandler.handle_error()")
+        f = StringIO.StringIO()
+        traceback.print_exc(file=f)
+        self.debug(f.getvalue())
+        self.close()
+
+    def handle_close(self):
+        self.debug("FTPHandler.handle_close()")
+        self.close()
+
+    def close(self):
+        self.debug("FTPHandler.close()")
+
+        if self.dtp_server:
+            self.dtp_server.close()
+            del self.dtp_server
+
+        if self.data_channel:
+            self.data_channel.close()
+            del self.data_channel
+
+        del self.out_dtp_queue
+        del self.in_dtp_queue
+
+        # remove client IP address from ip map
+        self.ftpd_instance.ip_map.remove(self.remote_ip)
+        asynchat.async_chat.close(self)
+        self.log("Disconnected.")
+
+
+    # --- callbacks
+
+    def on_dtp_connection(self):
+        """Called every time data channel connects (either active or passive).
+        Incoming and outgoing queues are checked for pending data. If outbound
+        data is pending, it is pushed into the data channel. If awaiting
+        inbound data, the data channel is enabled for receiving.
+        """
+        self.debug("FTPHandler.on_dtp_connection()")
+        if self.dtp_server:
+            self.dtp_server.close()
+        self.dtp_server = None
+
+        # check for data to send
+        if self.out_dtp_queue:
+            data, isproducer, log = self.out_dtp_queue
+            if log:
+                self.log(log)
+            if not isproducer:
+                self.data_channel.push(data)
+            else:
+                self.data_channel.push_with_producer(data)
+            if self.data_channel:
+                self.data_channel.close_when_done()
+            self.out_dtp_queue = None
+
+        # check for data to receive
+        elif self.in_dtp_queue:
+            fd, log = self.in_dtp_queue
+            if log:
+                self.log(log)
+            self.data_channel.file_obj = fd
+            self.data_channel.enable_receiving(self.current_type)
+            self.in_dtp_queue = None
+
+    def on_dtp_close(self):
+        """Called on DTPHandler.close()."""
+
+        self.debug("FTPHandler.on_dtp_close()")
+        self.data_channel = None
+        if self.quit_pending:
+            self.close_when_done()
+
+    # --- utility
+
+    def respond(self, resp):
+        """Send a response to the client using the command channel."""
+        self.push(resp + '\r\n')
+        self.logline('==> %s' % resp)
+
+    def push_dtp_data(self, data, isproducer=False, log=''):
+        """Called every time a RETR, LIST or NLST is received. Pushes data into
+        the data channel.  If data channel does not exist yet, we queue the data
+        to send later.  Data will then be pushed into data channel when
+        on_dtp_connection() is called.
+
+        "data" argument can be either a string or a producer of data to push.
+        boolean argument isproducer; if True we assume that is a producer.
+        log argument is a string to log this push event with.
+        """
+        if self.data_channel:
+            self.respond("125 Data connection already open. Transfer starting.")
+            if log:
+                self.log(log)
+            if not isproducer:
+                self.data_channel.push(data)
+            else:
+                self.data_channel.push_with_producer(data)
+            if self.data_channel:
+                self.data_channel.close_when_done()
+        else:
+            self.respond("150 File status okay. About to open data connection.")
+            self.out_dtp_queue = (data, isproducer, log)
+
+    def cmd_not_understood(self, line):
+        """Return a 'command not understood' message to the client."""
+        self.respond('500 Command "%s" not understood.' %line)
+
+    def cmd_missing_arg(self):
+        """Return a 'missing argument' message to the client."""
+        self.respond("501 Syntax error: command needs an argument.")
+
+    def cmd_needs_no_arg(self):
+        """Return a 'command does not accept arguments' message to the client."""
+        self.respond("501 Syntax error: command does not accept arguments.")
+
+    def log(self, msg):
+        """Log a message, including additional identifying session data."""
+        log("[%s]@%s:%s %s" %(self.username, self.remote_ip, self.remote_port, msg))
+
+    def logline(self, msg):
+        """Log a line including additional indentifying session data."""
+        logline("%s:%s %s" %(self.remote_ip, self.remote_port, msg))
+
+    def debug(self, msg):
+        """Log a debug message."""
+        debug(msg)
+
+    def flush_account(self):
+        """Flush account information by clearing attributes that need to be
+        reset on a REIN or new USER command.
+        """
+        if self.data_channel:
+            if not self.data_channel.transfer_in_progress():
+                self.data_channel.close()
+                self.data_channel = None
+        if self.dtp_server:
+            self.dtp_server.close()
+            self.dtp_server = None
+
+        self.fs.rnfr = None
+        self.authenticated = False
+        self.username = ""
+        self.attempted_logins = 0
+        self.current_type = 'a'
+        self.restart_position = 0
+        self.quit_pending = False
+        self.in_dtp_queue = None
+        self.out_dtp_queue = None
+
+
+        # --- connection
+
+    def ftp_PORT(self, line):
+        """Start an active data-channel."""
+        # parse PORT request getting IP and PORT
+        # TODO - add a comment describing how the algorithm used to get such
+        # values works (reference http://cr.yp.to/ftp/retr.html).
+        try:
+            line = line.split(',')
+            ip = ".".join(line[:4]).replace(',','.')
+            port = (int(line[4]) * 256) + int(line[5])
+        except (ValueError, OverflowError):
+            self.respond("500 Invalid PORT format.")
+            return
+
+        # FTP bounce attacks protection: according to RFC 2577 it's
+        # recommended to reject PORT if IP address specified in it
+        # does not match client IP address.
+        if not self.permit_ftp_proxying:
+            if ip != self.remote_ip:
+                self.log("PORT %s refused (bounce attack protection)" %port)
+                self.respond("500 FTP proxying feature not allowed.")
+                return
+
+        # FIX #11
+        # ...another RFC 2577 rencommendation is rejecting connections to
+        # privileged ports (< 1024) for security reasons.  Moreover, binding to
+        # such ports could require root priviledges on some systems.
+        if not self.permit_privileged_port:
+            if port < 1024:
+                self.respond("500 Can't connect over a privileged port.")
+                return
+
+        # close existent DTP-server instance, if any.
+        if self.dtp_server:
+            self.dtp_server.close()
+            self.dtp_server = None
+
+        if self.data_channel:
+            self.data_channel.close()
+            self.data_channel = None
+
+        # make sure we are not hitting the max connections limit
+        if self.ftpd_instance.max_cons:
+            if len(self._map) >= self.ftpd_instance.max_cons:
+                msg = "Too many connections. Can't open data channel."
+                self.respond("425 %s" %msg)
+                self.log(msg)
+                return
+
+        # open DTP channel
+        self.active_dtp(ip, port, self)
+
+
+    def ftp_PASV(self, line):
+        """Start a passive data-channel."""
+        # close existing DTP-server instance, if any
+        if self.dtp_server:
+            self.dtp_server.close()
+            self.dtp_server = None
+
+        if self.data_channel:
+            self.data_channel.close()
+            self.data_channel = None
+
+        # make sure we are not hitting the max connections limit
+        if self.ftpd_instance.max_cons:
+            if len(self._map) >= self.ftpd_instance.max_cons:
+                msg = "Too many connections. Can't open data channel."
+                self.respond("425 %s" %msg)
+                self.log(msg)
+                return
+
+        # open DTP channel
+        self.dtp_server = self.passive_dtp(self)
+
+
+    def ftp_QUIT(self, line):
+        """Quit the current session."""
+        # From RFC 959:
+        # This command terminates a USER and if file transfer is not
+        # in progress, the server closes the control connection.
+        # If file transfer is in progress, the connection will remain
+        # open for result response and the server will then close it.
+        if not self.msg_quit:
+            self.respond("221 Goodbye.")
+        else:
+            self.push("221-%s\r\n" %self.msg_quit)
+            self.respond("221 Goodbye.")
+
+        if not self.data_channel:
+            self.close_when_done()
+        else:
+            # tell the cmd channel to stop responding to commands.
+            self.quit_pending = True
+
+
+        # --- data transferring
+
+    def ftp_LIST(self, line):
+        """Return a list of files in the specified directory to the client.
+        Defaults to the current working directory.
+        """
+        if line:
+            # some FTP clients (like Konqueror or Nautilus) erroneously issue
+            # /bin/ls-like LIST formats (e.g. "LIST -l", "LIST -al" and so
+            # on...) instead of passing a directory as the argument. If we
+            # receive such a command, just LIST the current working directory.
+            if line.lower() in ("-a", "-l", "-al", "-la"):
+                path = self.fs.translate(self.fs.cwd)
+                line = self.fs.cwd
+            # otherwise we assume the arg is a directory name
+            else:
+                path = self.fs.translate(line)
+                line = self.fs.normalize(line)
+        # no argument, fall back on cwd as default
+        else:
+            path = self.fs.translate(self.fs.cwd)
+            line = self.fs.cwd
+
+        try:
+            data = self.fs.get_list_dir(path)
+        except OSError, err:
+            self.log('FAIL LIST "%s". %s.' %(line, os.strerror(err.errno)))
+            self.respond ('550 %s.' %os.strerror(err.errno))
+            return
+
+        self.push_dtp_data(data, log='OK LIST "%s". Transfer starting.' %line)
+
+
+    def ftp_NLST(self, line):
+        """Return a list of files in the specified directory in a compact form to
+        the client. Default to the current directory.
+        """
+        if line:
+            path = self.fs.translate(line)
+            line = self.fs.normalize(line)
+        else:
+            path = self.fs.translate(self.fs.cwd)
+            line = self.fs.cwd
+
+        try:
+            data = self.fs.get_nlst_dir(path)
+        except OSError, err:
+            self.log('FAIL NLST "%s". %s.' %(line, os.strerror(err.errno)))
+            self.respond ('550 %s.' %os.strerror(err.errno))
+            return
+
+        self.push_dtp_data(data, log='OK NLST "%s". Transfer starting.' %line)
+
+
+    def ftp_RETR(self, line):
+        """Retrieve the specified file (transfer from the server to the client)
+        """
+        file = self.fs.translate(line)
+
+        if not self.fs.isfile(file):
+            self.log('FAIL RETR "%s". No such file.' %line)
+            self.respond('550 No such file: "%s".' %line)
+            return
+
+        if not self.authorizer.r_perm(self.username, file):
+            self.log('FAIL RETR "s". Not enough priviledges' %line)
+            self.respond ("550 Can't RETR: not enough priviledges.")
+            return
+
+        try:
+            fd = self.fs.open(file, 'rb')
+        except IOError, err:
+            self.log('FAIL RETR "%s". %s.' %(line, os.strerror(err.errno)))
+            self.respond ('550 %s.' %os.strerror(err.errno))
+            return
+
+        # FIX #12
+        if self.restart_position:
+            # Make sure that the requested offset is valid (within the
+            # size of the file being resumed).
+            # According to RFC 1123 a 554 reply may result in case that the
+            # existing file cannot be repositioned as specified in the REST.
+            ok = 0
+            try:
+                assert not self.restart_position > self.fs.getsize(file)
+                fd.seek(self.restart_position)
+                ok = 1
+            except AssertionError:
+                msg = "Invalid REST parameter."
+            except IOError, err:
+                msg = os.strerror(err.errno)
+            self.restart_position = 0
+            if not ok:
+                self.respond('554 %s' %msg)
+                self.log('FAIL RETR "%s". %s.' %(line, msg))
+                return
+
+        producer = FileProducer(fd, self.current_type)
+        self.push_dtp_data(producer, isproducer=1,
+            log='OK RETR "%s". Download starting.' %self.fs.normalize(line))
+
+
+    def ftp_STOR(self, line, mode='w'):
+        """Store a file (transfer from the client to the server)."""
+        # A resume could occur in case of APPE or REST commands.
+        # In that case we have to open file object in different ways:
+        # STOR: mode = 'w'
+        # APPE: mode = 'a'
+        # REST: mode = 'r+' (to permit seeking on file object)
+        file = self.fs.translate(line)
+
+        if not self.authorizer.w_perm(self.username, os.path.split(file)[0]):
+            self.log('FAIL STOR "%s". Not enough priviledges.' %line)
+            self.respond ("550 Can't STOR: not enough priviledges.")
+            return
+
+        if self.restart_position:
+            mode = 'r+'
+
+        try:
+            fd = self.fs.open(file, mode + 'b')
+        except IOError, err:
+            self.log('FAIL STOR "%s". %s.' %(line, os.strerror(err.errno)))
+            self.respond ('550 %s.' %os.strerror(err.errno))
+            return
+
+        # FIX #12
+        if self.restart_position:
+            # Make sure that the requested offset is valid (within the
+            # size of the file being resumed).
+            # According to RFC 1123 a 554 reply may result in case that the
+            # existing file cannot be repositioned as specified in the REST.
+            ok = 0
+            try:
+                assert not self.restart_position > self.fs.getsize(file)
+                fd.seek(self.restart_position)
+                ok = 1
+            except AssertionError:
+                msg = "Invalid REST parameter."
+            except IOError, err:
+                msg = os.strerror(err.errno)
+            self.restart_position = 0
+            if not ok:
+                self.respond('554 %s' %msg)
+                self.log('FAIL STOR "%s". %s.' %(line, msg))
+                return
+
+        log = 'OK STOR "%s". Upload starting.' %self.fs.normalize(line)
+        if self.data_channel:
+            self.respond("125 Data connection already open. Transfer starting.")
+            self.log(log)
+            self.data_channel.file_obj = fd
+            self.data_channel.enable_receiving(self.current_type)
+        else:
+            self.debug("info: new producer queue added.")
+            self.respond("150 File status okay. About to open data connection.")
+            self.in_dtp_queue = (fd, log)
+
+
+    def ftp_STOU(self, line):
+        """Store a file on the server with a unique name."""
+
+        # - Note 1: RFC 959 prohibited STOU parameters, but this prohibition is
+        # obsolete.
+        #
+        # TODO - should we really accept arguments? RFC959 does not talk about such
+        # eventuality but Bernstein does: http://cr.yp.to/ftp/stor.html
+        # Try to find 'official' references declaring such obsolescence.
+        #
+        # - Note 2: 250 response wanted by RFC 959 has been declared incorrect
+        # into RFC 1123 that wants 125/150 instead.
+        # - Note 3: RFC 1123 also provided an exact output format defined to be
+        # as follow:
+        # > 125 FILE: pppp
+        # ...where pppp represents the unique pathname of the file that will be
+        # written.
+
+        # FIX #19
+        # watch for STOU preceded by REST, which makes no sense.
+        if self.restart_position:
+            self.respond("550 Can't STOU while REST request is pending.")
+            return
+
+        # create file with an incremented unique name based off of the argument
+        if line:
+            file = self.fs.translate(line)
+            if not self.fs.exists(file):
+                resp = line
+            else:
+                x = 0
+                while 1:
+                    file = self.fs.translate(line + '.' + str(x))
+                    if not self.fs.exists(file):
+                        resp = line + '.' + str(x)
+                        break
+                    else:
+                        # FIX #25
+                        # set a max of 99 on the number of tries to create a
+                        # unique filename, so that we decrease the chances of
+                        # a DoS situation
+                        if x > 99:
+                            self.respond("450 Can't STOU other files with such name.")
+                            self.log("Can't STOU other files with such name.")
+                            return
+                        else:
+                            x += 1
+
+        # if no arg, create file with an incremented unique name starting at 0
+        else:
+            x = 0
+            while 1:
+                file = self.fs.translate(self.fs.cwd + '.' + str(x))
+                if not self.fs.exists(file):
+                    resp = '.' + str(x)
+                    break
+                else:
+                    # FIX #25
+                    # set a max of 99 on the number of tries to create a unique
+                    # filename, so that we decrease the chances of a DoS situation
+                    if x > 99:
+                        self.respond("450 Can't STOU other files with brand new name.")
+                        self.log("Can't STOU other files with brand new name.")
+                        return
+                    else:
+                        x += 1
+
+        # now just acts like STOR excepting that restarting isn't allowed
+        if not self.authorizer.w_perm(self.username, os.path.split(file)[0]):
+            self.log('FAIL STOU "%s". Not enough priviledges' %line)
+            self.respond ("550 Can't STOU: not enough priviledges.")
+            return
+
+        try:
+            fd = self.fs.open(file, 'wb')
+        except IOError, err:
+            self.log('FAIL STOU "%s". %s.' %(line, os.strerror(err.errno)))
+            self.respond ('550 %s.' %os.strerror(err.errno))
+            return
+
+        # FIX #8
+        log = 'OK STOU "%s". Upload starting.' %resp
+        if self.data_channel:
+            self.respond("125 FILE: %s" %resp)
+            self.log(log)
+            self.data_channel.file_obj = fd
+            self.data_channel.enable_receiving(self.current_type)
+        else:
+            self.debug("info: new producer queue added.")
+            self.respond("150 FILE: %s" %resp)
+            self.in_dtp_queue = (fd, log)
+
+
+    def ftp_APPE(self, line):
+        """Append data to an existing file on the server."""
+        # TODO - Should we watch for REST like we already did in STOU?
+        self.ftp_STOR(line, mode='a')
+
+
+    def ftp_REST(self, line):
+        """Restart a file transfer from a previous mark."""
+        try:
+            marker = int(line)
+            if marker < 0:
+                raise ValueError
+            self.respond("350 Restarting at position %s. Now use RETR/STOR for resuming." %marker)
+            self.restart_position = marker
+        except (ValueError, OverflowError):
+            self.respond("501 Invalid number of parameters.")
+
+
+    def ftp_ABOR(self, line):
+        """Abort the current data transfer."""
+
+        # ABOR received while no data channel exists
+        if (self.dtp_server is None) and (self.data_channel is None):
+            resp = "225 No transfer to abort."
+        else:
+            # a PASV was received but connection wasn't made yet
+            if self.dtp_server:
+                self.dtp_server.close()
+                self.dtp_server = None
+                resp = "225 ABOR command successful; data channel closed."
+
+            # FIX #18
+            # If a data transfer is in progress the server must first close
+            # the data connection, returning a 426 reply to indicate that the
+            # transfer terminated abnormally, then it must send a 226 reply,
+            # indicating that the abort command was successfully processed.
+            # If no data has been transmitted we just respond with 225
+            # indicating that no transfer was in progress.
+            if self.data_channel:
+                if self.data_channel.transfer_in_progress():
+                    self.data_channel.close()
+                    self.data_channel = None
+                    self.respond("426 Connection closed; transfer aborted.")
+                    resp = "226 ABOR command successful."
+                else:
+                    self.data_channel.close()
+                    self.data_channel = None
+                    resp = "225 ABOR command successful; data channel closed."
+
+        self.respond(resp)
+        self.log("ABOR received.")
+
+        # --- authentication
+
+    def ftp_USER(self, line):
+        """Set the username for the current session."""
+        # TODO - see bug #7 (Change account if USER is received twice)
+
+        # we always treat anonymous user as lower-case string.
+        if line.lower() == "anonymous":
+            line = "anonymous"
+
+        if not self.authenticated:
+            self.respond('331 Username ok, send password.')
+        else:
+            # FIX #7
+            # a new USER command could be entered at any point in order to
+            # change the access control flushing any user, password, and
+            # account information already supplied and beginning the login
+            # sequence again.
+            self.flush_account()
+            self.respond('331 Previous account information was flushed, send password.')
+        self.username = line
+
+    def ftp_PASS(self, line):
+        """Check username's password against the authorizer."""
+
+        # FIX #23 (PASS should be rejected if user is already authenticated)
+        # http://code.google.com/p/pyftpdlib/issues/detail?id=23
+        if self.authenticated:
+            self.respond("503 User already authenticated.")
+            return
+
+        if not self.username:
+            self.respond("503 Login with USER first.")
+            return
+
+        if self.username == 'anonymous':
+            line = ''
+
+        # username ok
+        if self.authorizer.has_user(self.username):
+
+            if self.authorizer.validate_authentication(self.username, line):
+                if not self.msg_login:
+                    self.respond("230 User %s logged in." %self.username)
+                else:
+                    self.push("230-%s\r\n" %self.msg_login)
+                    self.respond("230 Welcome.")
+
+                self.authenticated = True
+                self.attempted_logins = 0
+                self.fs.root = self.authorizer.get_home_dir(self.username)
+                self.log("User %s logged in." %self.username)
+
+            else:
+                self.attempted_logins += 1
+                if self.attempted_logins >= self.max_login_attempts:
+                    self.log("Maximum login attempts. Disconnecting.")
+                    self.respond("530 Maximum login attempts. Disconnecting.")
+                    self.close()
+                else:
+                    self.respond("530 Authentication failed.")
+                    self.username = ""
+
+        # wrong username
+        else:
+            # FIX #20
+            self.attempted_logins += 1
+            if self.attempted_logins >= self.max_login_attempts:
+                self.log("Maximum login attempts. Disconnecting.")
+                self.respond("530 Maximum login attempts. Disconnecting.")
+                self.close()
+            elif self.username.lower() == 'anonymous':
+                self.respond("530 Anonymous access not allowed.")
+                self.log('Authentication failed: anonymous access not allowed.')
+            else:
+                self.respond("530 Authentication failed.")
+                self.log('Authentication failed: unknown username "%s".' %self.username)
+                self.username = ""
+
+
+    def ftp_REIN(self, line):
+        """Reinitialize user's current session."""
+        # From RFC 959:
+        # REIN command terminates a USER, flushing all I/O and account
+        # information, except to allow any transfer in progress to be
+        # completed.  All parameters are reset to the default settings
+        # and the control connection is left open.  This is identical
+        # to the state in which a user finds himself immediately after
+        # the control connection is opened.
+        self.flush_account()
+        self.respond("230 Ready for new user.")
+        self.log("REIN account informations was flushed.")
+
+
+        # --- filesystem operations
+
+    def ftp_PWD(self, line):
+        """Return the name of the current working directory to the client."""
+        self.respond('257 "%s" is the current directory.' %self.fs.cwd)
+
+    def ftp_CWD(self, line):
+        """Change the current working directory."""
+        # TODO: a lot of FTP servers go back to root directory if no arg is
+        # provided but this is not specified into RFC959. Search for
+        # official references about this behaviour.
+        if not line:
+            line = '/'
+
+        # When CWD is received we temporarily join the specified directory
+        # to see if we have permissions to do it.
+        # A more elegant way to do that would be using os.access instead but I'm
+        # not sure about its reliability on non-posix platforms (see, for
+        # example, Python bug #1513646) or when specified paths are network
+        # filesystems.
+        ftp_path = self.fs.normalize(line)
+        real_path = self.fs.translate(line)
+        old_dir = os.getcwd()
+        done = 0
+        try:
+            self.fs.chdir(real_path)
+            self.fs.cwd = ftp_path
+            done = 1
+        except OSError, err:
+            self.log('FAIL CWD "%s". %s.' \
+                %(self.fs.normalize(line), os.strerror(err.errno)))
+            self.respond ('550 %s.' %os.strerror(err.errno))
+        if done:
+            self.log('OK CWD "%s"' %self.fs.cwd)
+            self.respond('250 "%s" is the current directory.' %self.fs.cwd)
+            # let's use os.chdir instead of self.fs.chdir: we don't want to
+            # go back to the original directory by using user's permissions.
+            os.chdir(old_dir)
+
+
+    def ftp_CDUP(self, line):
+        """Change into the parent directory."""
+        # Note: RFC 959 says that code 200 is required but it also says that
+        # CDUP uses the same codes as CWD.
+        # FIX #14
+        self.ftp_CWD('..')
+
+
+    def ftp_SIZE(self, line):
+        """Return size of file in a format suitable for using with RESTart as
+        defined into RFC 3659.
+
+        Implementation note:
+        properly handling the SIZE command when TYPE ASCII is used would require
+        to scan the entire file to perform the ASCII translation logic
+        (file.read(int).replace(os.linesp, '\r\n')) and then calculating the len
+        of such data which may be different than the actual size of the file on
+        the server.  Considering that the calculating such result could be very
+        resource-intensive it could be easy for a malicious client to try a DoS
+        attack, thus we do not perform the ASCII translation.
+
+        However, clients in general should not be resuming downloads in ASCII
+        mode.  Resuming downloads in binary mode is the recommended way as
+        specified into RFC 3659.
+        """
+
+        path = self.fs.translate(line)
+        # FIX #17
+        if self.fs.isdir(path):
+            self.respond ("550 Could not get a directory size.")
+            return
+        try:
+            size = self.fs.getsize(path)
+            self.respond("213 %s" %size)
+        except OSError, err:
+            self.respond ('550 %s.' %os.strerror(err.errno))
+
+
+    def ftp_MDTM(self, line):
+        """Return last modification time of file to the client as an ISO 3307
+        style timestamp (YYYYMMDDHHMMSS) as defined into RFC 3659.
+        """
+
+        path = self.fs.translate(line)
+        if not self.fs.isfile(path):
+            self.respond("550 No such file.")
+            return
+        try:
+            lmt = self.fs.getmtime(path)
+            lmt = time.strftime("%Y%m%d%H%M%S", time.localtime(lmt))
+            self.respond("213 %s" %lmt)
+        except OSError, err:
+            self.respond ('550 %s.' %os.strerror(err.errno))
+
+
+    def ftp_MKD(self, line):
+        """Create the specified directory."""
+        path = self.fs.translate(line)
+
+        if not self.authorizer.w_perm(self.username, os.path.split(path)[0]):
+            self.log('FAIL MKD "%s". Not enough priviledges.' %line)
+            self.respond ("550 Can't MKD: not enough priviledges.")
+            return
+
+        try:
+            self.fs.mkdir(path)
+            self.log('OK MKD "%s".' %self.fs.normalize(line))
+            self.respond("257 Directory created.")
+        except OSError, err:
+            self.log('FAIL MKD "%s". %s.' %(line, os.strerror(err.errno)))
+            self.respond ('550 %s.' %os.strerror(err.errno))
+
+
+    def ftp_RMD(self, line):
+        """Remove the specified directory."""
+        if not line:
+            self.cmd_missing_arg()
+            return
+
+        path = self.fs.translate(line)
+
+        if path == self.fs.root:
+            self.respond("550 Can't remove root directory.")
+            return
+
+        if not self.authorizer.w_perm(self.username, path):
+            self.log('FAIL RMD "%s". Not enough priviledges.' %line)
+            self.respond ("550 Can't RMD: not enough priviledges.")
+            return
+
+        try:
+            self.fs.rmdir(path)
+            self.log('OK RMD "%s".' %self.fs.normalize(line))
+            self.respond("250 Directory removed.")
+        except OSError, err:
+            self.log('FAIL RMD "%s". %s.' %(line, os.strerror(err.errno)))
+            self.respond ('550 %s.' %os.strerror(err.errno))
+
+
+    def ftp_DELE(self, line):
+        """Delete the specified file."""
+        path = self.fs.translate(line)
+
+        if not self.authorizer.w_perm(self.username, path):
+            self.log('FAIL DELE "%s". Not enough priviledges.' % self.fs.normalize(line))
+            self.respond ("550 Can't DELE: not enough priviledges.")
+            return
+
+        try:
+            self.fs.remove(path)
+            self.log('OK DELE "%s".' %self.fs.normalize(line))
+            self.respond("250 File removed.")
+        except OSError, err:
+            self.log('FAIL DELE "%s". %s.' %(line, os.strerror(err.errno)))
+            self.respond ('550 %s.' %os.strerror(err.errno))
+
+
+    def ftp_RNFR(self, line):
+        """Rename the specified (only the source name is specified here. See
+        RNTO command)"""
+        path = self.fs.translate(line)
+        if self.fs.exists(path):
+            self.fs.rnfr = line
+            self.respond("350 Ready for destination name")
+        else:
+            self.respond("550 No such file or directory.")
+
+
+    def ftp_RNTO(self, line):
+        """Rename file (destination name only, source is specified with RNFR)."""
+        if not self.fs.rnfr:
+            self.respond("503 Bad sequence of commands: use RNFR first.")
+            return
+
+        src = self.fs.translate(self.fs.rnfr)
+        dst = self.fs.translate(line)
+
+        if not self.authorizer.w_perm(self.username, self.fs.rnfr):
+            self.log('FAIL RNFR/RNTO "%s ==> %s". Not enough priviledges for renaming.'
+                     %(self.fs.rnfr, self.fs.normalize(line)))
+            self.respond ("550 Can't RNTO: not enough priviledges.")
+            self.fs.rnfr = None
+            return
+
+        try:
+            self.fs.rename(src, dst)
+            self.log('OK RNFR/RNTO "%s ==> %s".' %(self.fs.rnfr, self.fs.normalize(line)))
+            self.respond("250 Renaming ok.")
+        except OSError, err:
+            self.log('FAIL RNTO "%s". %s.' %(line, os.strerror(err.errno)))
+            self.respond ('550 %s.' %os.strerror(err.errno))
+            self.fs.rnfr = None
+
+
+        # --- others
+
+    def ftp_TYPE(self, line):
+        """Set current type data type to binary/ascii"""
+        line = line.upper()
+        # FIX #6
+        if line in ("A", "AN", "A N"):
+            self.respond("200 Type set to: ASCII.")
+            self.current_type = 'a'
+        elif line in ("I", "L8", "L 8"):
+            self.respond("200 Type set to: Binary.")
+            self.current_type = 'i'
+        else:
+            self.respond('504 Unsupported type "%s".' %line)
+
+
+    def ftp_STRU(self, line):
+        """Set file structure (obsolete)."""
+        # obsolete (backward compatibility with older ftp clients)
+        if line in ('f','F'):
+            self.respond ('200 File transfer structure set to: F.')
+        else:
+            self.respond ('504 Unimplemented STRU type.')
+
+
+    def ftp_MODE(self, line):
+        """Set data transfer mode (obsolete)"""
+        # obsolete (backward compatibility with older ftp clients)
+        if line in ('s', 'S'):
+            self.respond('200 Transfer mode set to: S')
+        else:
+            self.respond('504 Unimplemented MODE type.')
+
+
+    def ftp_STAT(self, line):
+        """Return statistics about current ftp session. If an argument is
+        provided return directory listing over command channel.
+        """
+
+        # return STATus information about ftpd
+        if not line:
+            s = []
+            s.append('211-%s %s status:\r\n' %(__pname__, __ver__))
+            s.append('\tConnected to: %s:%s\r\n' %self.socket.getsockname())
+            if self.authenticated:
+                s.append('\tLogged in as: %s\r\n' %self.username)
+            else:
+                if not self.username:
+                    s.append("\tWaiting for username\r\n")
+                else:
+                    s.append("\tWaiting for password\r\n")
+            if self.current_type == 'a':
+                type = 'ASCII'
+            else:
+                type = 'Binary'
+            s.append("\tTYPE: %s; STRUcture: File; MODE: Stream\r\n" %type)
+            if self.data_channel:
+                s.append('\tData connection open:\r\n')
+                s.append('\tTotal bytes sent: %s' %self.data_channel.tot_bytes_sent)
+                s.append('\tTotal bytes received: %s' %self.data_channel.tot_bytes_received)
+            else:
+                s.append('\tData connection closed\r\n')
+            self.push(''.join(s))
+            self.respond("211 End of status.")
+
+        else:
+
+            # TODO - see also FIX #15
+            # if arg is provided we should return directory LISTing over
+            # the command channel.
+            # Note: we also must support globbing (*, [], ?, and so on....)
+            # Still have to find a way to do that since that:
+            # - user could send a 'normal' path (e.g. "dir", "/dir") in which
+            #   case we should use os.listdir
+            # - user could send a Unix style pathname pattern expansion
+            #   (e.g. "*.txt", "/dir/*.txt") in which case we should use glob
+            #   module but it could return absolute or relative listing depending
+            #   on the input... :-\
+            pass
+##            pathname = self.fs.normalize(line)
+##            if not glob.has_magic(pathname):
+##                listing = self.fs.get_list_dir(pathname)
+##            else:
+##                dirname, basename = os.path.split(pathname)
+##                if not dirname:
+##                    listing = glob.glob1(self.fs.cwd, basename)
+##                else:
+##                    listing = glob.glob1(dirname, basename)
+
+
+    def ftp_NOOP(self, line):
+        """Do nothing."""
+        self.respond("250 I succesfully done nothin'.")
+
+
+    def ftp_SYST(self, line):
+        """Return system type (always returns UNIX type L8)."""
+        # This command is used to find out the type of operating system at the
+        # server.  The reply shall have as its first word one of the system
+        # names listed in RFC 943.
+        # Since that we always return a "/bin/ls -lgA"-like output on LIST we
+        # prefer to respond as if we would on Unix in any case.
+        self.respond("215 UNIX Type: L8")
+
+
+    def ftp_ALLO(self, line):
+        """Allocate bytes for storage (obsolete)."""
+        # obsolete (always respond with 202)
+        self.respond("202 No storage allocation necessary.")
+
+
+    def ftp_HELP(self, line):
+        """Return help text to the client."""
+
+        if line:
+            # FIX #10
+            if line.upper() in proto_cmds:
+                self.respond("214 %s." %proto_cmds[line.upper()])
+            else:
+                self.respond("500 Unrecognized command.")
+        else:
+            # FIX #31
+            # provide a compact list of recognized commands
+            def formatted_help():
+                cmds = []
+                keys = proto_cmds.keys()
+                keys.sort()
+                while keys:
+                    elems = tuple((keys[0:8]))
+                    cmds.append('  %-6s' * len(elems) %elems + '\r\n')
+                    del keys[0:8]
+                return ''.join(cmds)
+
+            self.push("214-The following commands are recognized:\r\n")
+            self.push(formatted_help())
+            self.respond("214 Help command succesful.")
+
+
+        # --- support for deprecated cmds
+
+    # RFC 1123 requires that the server treat XCUP, XCWD, XMKD, XPWD and
+    # XRMD commands as synonyms for CDUP, CWD, MKD, LIST and RMD.
+    # Such commands are obsoleted but some ftp clients (e.g. Windows ftp.exe)
+    # still use them.
+
+    def ftp_XCUP(self, line):
+        """Change to the parent directory. Synonym for CDUP. Deprecated."""
+        self.ftp_CDUP(line)
+
+    def ftp_XCWD(self, line):
+        """Change the current working directory. Synonym for CWD. Deprecated."""
+        self.ftp_CWD(line)
+
+    def ftp_XMKD(self, line):
+        """Create the specified directory. Synonym for MKD. Deprecated."""
+        self.ftp_MKD(line)
+
+    def ftp_XPWD(self, line):
+        """Return the current working directory. Synonym for PWD. Deprecated."""
+        self.ftp_PWD(line)
+
+    def ftp_XRMD(self, line):
+        """Remove the specified directory. Synonym for RMD. Deprecated."""
+        self.ftp_RMD(line)
+
+
+class FTPServer(asyncore.dispatcher):
+    """This class is an asyncore.disptacher subclass.  It creates a FTP socket
+    listening on <address>, dispatching the requests to a <handler> (typically
+    FTPHandler class).
+    """
+
+    # Overiddable defaults (overriding is strongly rencommended to avoid
+    # running out of file descritors (DoS) !).
+
+    # number of maximum simultaneous connections accepted
+    # (0 == unlimited)
+    max_cons = 0
+
+    # number of maximum connections accepted for the same IP address
+    # (0 == unlimited)
+    max_cons_per_ip = 0
+
+    def __init__(self, address, handler):
+        asyncore.dispatcher.__init__(self)
+        self.address = address
+        self.handler = handler
+        self.ip_map = []
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        if os.name == 'posix':
+            # FIX #4
+            self.set_reuse_addr()
+        self.bind(self.address)
+        self.listen(5)
+
+    def __del__(self):
+        debug("FTPServer.__del__()")
+
+    def serve_forever(self, *args, **kwargs):
+        """A wrap around asyncore.loop(); starts the asyncore polling loop."""
+
+        log("Serving FTP on %s:%s" %self.socket.getsockname())
+        try:
+            # FIX #16
+            # use_poll specifies whether to use select module's poll()
+            # with ayncore or whether to use asyncore's own poll() method
+            # Python versions < 2.4 need use_poll set to False
+            #
+            # FIX #26:
+            # this breaks on OS X systems if use_poll is set to Tru. All
+            # systems seem to work fine with it set to False (tested on
+            # Linux, Windows, and OS X platforms
+            if args or kwargs:
+                asyncore.loop(*args, **kwargs)
+            else:
+                asyncore.loop(timeout=1, use_poll=False)
+        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
+            log("Shutting down FTPd.")
+            # FIX #22
+            self.close_all()
+
+    def handle_accept(self):
+        """Called when remote client initiates a connection."""
+        debug("handle_accept()")
+        sock_obj, addr = self.accept()
+        log("[]%s:%s connected." %addr)
+
+        handler = self.handler(sock_obj, self)
+        ip = addr[0]
+        self.ip_map.append(ip)
+
+        # FIX #5
+        # For performance and security reasons we should always set a limit for
+        # the number of file descriptors that socket_map should contain.
+        # When we're running out of such limit we'll use the last available
+        # channel for sending a 421 response to the client before disconnecting
+        # it.
+        if self.max_cons:
+            if len(self._map) > self.max_cons:
+                handler.handle_max_cons()
+                return
+
+        # accept only a limited number of connections from the same
+        # source address.
+        if self.max_cons_per_ip:
+            if self.ip_map.count(ip) > self.max_cons_per_ip:
+                handler.handle_max_cons_per_ip()
+                return
+
+        handler.handle()
+
+    def writable(self):
+        return 0
+
+    def handle_error(self):
+        """Called to handle any uncaught exceptions."""
+        debug("FTPServer.handle_error()")
+        f = StringIO.StringIO()
+        traceback.print_exc(file=f)
+        debug(f.getvalue())
+        self.close()
+
+    def close_all(self, map=None, ignore_all=False):
+        """'clean' shutdown: instead of using the current asyncore.close_all()
+        function which only close sockets, we iterate over all existent
+        channels calling close() method for each one of them, avoiding memory
+        leaks. This is how close_all function will appear in the fixed version
+        of asyncore that will be included into Python 2.6.
+        """
+        if map is None:
+            map = self._map
+        for x in map.values():
+            try:
+                x.close()
+            except OSError, x:
+                if x[0] == errno.EBADF:
+                    pass
+                elif not ignore_all:
+                    raise
+            except (asyncore.ExitNow, KeyboardInterrupt, SystemExit):
+                raise
+            except:
+                if not ignore_all:
+                    raise
+        map.clear()
 
 
 def test():
