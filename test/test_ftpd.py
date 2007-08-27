@@ -176,7 +176,7 @@ class FtpAuthentication(unittest.TestCase):
         """Test REIN while a transfer is in progress."""
         ftp.login(user=user, passwd=pwd)
         data = 'abcde12345' * 100000
-        fname_1 = os.path.split(self.f1.name)[1]
+        fname_1 = os.path.basename(self.f1.name)
         self.f1.write(data)
         self.f1.close()
 
@@ -224,7 +224,7 @@ class FtpAuthentication(unittest.TestCase):
         """
         ftp.login(user=user, passwd=pwd)
         data = 'abcde12345' * 100000
-        fname_1 = os.path.split(self.f1.name)[1]
+        fname_1 = os.path.basename(self.f1.name)
         self.f1.write(data)
         self.f1.close()
 
@@ -322,8 +322,8 @@ class FtpFsOperations(unittest.TestCase):
         ftp = ftplib.FTP()
         ftp.connect(host=host, port=port)
         ftp.login(user=user, passwd=pwd)
-        self.tempfile = os.path.split(open(tempfile.mktemp(dir=home), 'w+b').name)[1]
-        self.tempdir = os.path.split(tempfile.mktemp(dir=home))[1]
+        self.tempfile = os.path.basename(open(tempfile.mktemp(dir=home), 'w+b').name)
+        self.tempdir = os.path.basename(tempfile.mktemp(dir=home))
         os.mkdir(self.tempdir)
 
     def tearDown(self):
@@ -355,7 +355,7 @@ class FtpFsOperations(unittest.TestCase):
         self.assertEqual(path, '/')
 
     def test_mkd(self):
-        tempdir = os.path.split(tempfile.mktemp(dir=home))[1]
+        tempdir = os.path.basename(tempfile.mktemp(dir=home))
         ftp.mkd(tempdir)
         try:
             # make sure we can't create directories which exist yet;
@@ -381,13 +381,17 @@ class FtpFsOperations(unittest.TestCase):
 
     def test_rnfr_rnto(self):
         # rename file
-        tempname = os.path.split(tempfile.mktemp(dir=home))[1]
+        tempname = os.path.basename(tempfile.mktemp(dir=home))
         ftp.rename(self.tempfile, tempname)
         ftp.rename(tempname, self.tempfile)
         # rename dir
-        tempname = os.path.split(tempfile.mktemp(dir=home))[1]
+        tempname = os.path.basename(tempfile.mktemp(dir=home))
         ftp.rename(self.tempdir, tempname)
         ftp.rename(tempname, self.tempdir)
+        # rnfr/rnto over non-existing paths
+        bogus = os.path.basename(tempfile.mktemp(dir=home))
+        self.assertRaises(ftplib.error_perm, ftp.rename, bogus, '/x')
+        self.assertRaises(ftplib.error_perm, ftp.rename, self.tempfile, '/')
         # make sure we can't rename root directory, just to be safe,
         # maybe not really necessary...
         self.assertRaises(ftplib.error_perm, ftp.rename, '/', '/x')
@@ -427,15 +431,15 @@ class FtpRetrieveData(unittest.TestCase):
         data = 'abcde12345' * 100000
         self.f1.write(data)
         self.f1.close()
-        remote_fname = os.path.split(self.f1.name)[1]
+        remote_fname = os.path.basename(self.f1.name)
         ftp.retrbinary("retr " + remote_fname, self.f2.write)
         self.f2.seek(0)
         self.assertEqual(hash(data), hash(self.f2.read()))
 
     def test_restore_on_retr(self):
         data = 'abcde12345' * 100000
-        fname_1 = os.path.split(self.f1.name)[1]
-        fname_2 = os.path.split(self.f2.name)[1]
+        fname_1 = os.path.basename(self.f1.name)
+        fname_2 = os.path.basename(self.f2.name)
         self.f1.write(data)
         self.f1.close()
 
@@ -471,7 +475,7 @@ class FtpRetrieveData(unittest.TestCase):
 
     def test_list(self):
         l = []
-        ftp.retrlines('LIST ' + os.path.split(self.f1.name)[1], l.append)
+        ftp.retrlines('LIST ' + os.path.basename(self.f1.name), l.append)
         self.assertEqual(len(l), 1)
         l = []
         l1, l2, l3, l4 = [], [], [], []
@@ -487,7 +491,7 @@ class FtpRetrieveData(unittest.TestCase):
     def test_nlst(self):
         l = []
         ftp.retrlines('NLST', l.append)
-        fname = os.path.split(self.f1.name)[1]
+        fname = os.path.basename(self.f1.name)
         self.assertRaises(ftplib.error_perm, ftp.retrlines, 'NLST ' + fname, l.append)
 
 
@@ -541,7 +545,7 @@ class FtpAbort(unittest.TestCase):
         # this ugly loop construct is to simulate an interrupted transfer since
         # ftplib doesn't like running storbinary() in a separate thread
         ftp.voidcmd('TYPE I')
-        conn = ftp.transfercmd('retr ' + os.path.split(self.f1.name)[1])
+        conn = ftp.transfercmd('retr ' + os.path.basename(self.f1.name))
         bytes_recv = 0
         while 1:
             chunk = conn.recv(8192)
@@ -585,7 +589,7 @@ class FtpStoreData(unittest.TestCase):
         data = 'abcde12345' * 100000
         self.f1.write(data)
         self.f1.seek(0)
-        remote_fname = os.path.split(tempfile.mktemp(dir=home))[1]
+        remote_fname = os.path.basename(tempfile.mktemp(dir=home))
         ftp.storbinary('stor ' + remote_fname, self.f1)
         ftp.retrbinary('retr ' + remote_fname, self.f2.write)
         self.f2.seek(0)
@@ -618,9 +622,9 @@ class FtpStoreData(unittest.TestCase):
         ftp.delete(filename)
 
     def test_appe(self):
-        fname_1 = os.path.split(self.f1.name)[1]
-        fname_2 = os.path.split(self.f2.name)[1]
-        remote_fname = os.path.split(tempfile.mktemp(dir=home))[1]
+        fname_1 = os.path.basename(self.f1.name)
+        fname_2 = os.path.basename(self.f2.name)
+        remote_fname = os.path.basename(tempfile.mktemp(dir=home))
         
         data1 = 'abcde12345' * 100000
         self.f1.write(data1)
@@ -638,9 +642,9 @@ class FtpStoreData(unittest.TestCase):
         ftp.delete(remote_fname)
 
     def test_rest_on_stor(self):
-        fname_1 = os.path.split(self.f1.name)[1]
-        fname_2 = os.path.split(self.f2.name)[1]
-        remote_fname = os.path.split(tempfile.mktemp(dir=home))[1]
+        fname_1 = os.path.basename(self.f1.name)
+        fname_2 = os.path.basename(self.f2.name)
+        remote_fname = os.path.basename(tempfile.mktemp(dir=home))
         
         data = 'abcde12345' * 100000     
         self.f1.write(data)
