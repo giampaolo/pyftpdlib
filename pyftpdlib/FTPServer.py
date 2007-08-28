@@ -522,17 +522,16 @@ class DTPHandler(asyncore.dispatcher):
             chunk = self.recv(self.ac_in_buffer_size)
         except socket.error:
             self.handle_error()
-            return
-        self.tot_bytes_received += len(chunk)
-        if not chunk:
-            self.transfer_finished = True
-            # self.close()  <-- asyncore.recv() already do that...
-            return
-
-        # while we're writing on the file an exception could occur in case that
-        # filesystem gets full;  if this happens we let handle_error() method
-        # handle this exception, providing a detailed error message.
-        self.file_obj.write(self.data_wrapper(chunk))
+        else:
+            self.tot_bytes_received += len(chunk)
+            if not chunk:
+                self.transfer_finished = True
+                # self.close()  <-- asyncore.recv() already do that...
+                return
+            # while we're writing on the file an exception could occur in case
+            # that filesystem gets full;  if this happens we let handle_error()
+            # method handle this exception, providing a detailed error message.
+            self.file_obj.write(self.data_wrapper(chunk))
 
     def handle_write(self):
         """Called when data is ready to be written, initiates send."""
@@ -1358,9 +1357,8 @@ class FTPHandler(asynchat.async_chat):
             why = os.strerror(err.errno)
             self.log('FAIL LIST "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
-            return
-
-        self.push_dtp_data(data, log='OK LIST "%s". Transfer starting.' %line)
+        else:
+            self.push_dtp_data(data, log='OK LIST "%s". Transfer starting.' %line)
 
 
     def ftp_NLST(self, line):
@@ -1380,9 +1378,8 @@ class FTPHandler(asynchat.async_chat):
             why = os.strerror(err.errno)
             self.log('FAIL NLST "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
-            return
-
-        self.push_dtp_data(data, log='OK NLST "%s". Transfer starting.' %line)
+        else:
+            self.push_dtp_data(data, log='OK NLST "%s". Transfer starting.' %line)
 
 
     def ftp_RETR(self, line):
@@ -1602,11 +1599,12 @@ class FTPHandler(asynchat.async_chat):
             marker = int(line)
             if marker < 0:
                 raise ValueError
+        except (ValueError, OverflowError):
+            self.respond("501 Invalid parameter.")
+        else:
             self.respond("350 Restarting at position %s. Now use RETR/STOR for resuming." %marker)
             self.log("OK REST %s." %marker)
             self.restart_position = marker
-        except (ValueError, OverflowError):
-            self.respond("501 Invalid parameter.")
 
 
     def ftp_ABOR(self, line):
@@ -1764,16 +1762,14 @@ class FTPHandler(asynchat.async_chat):
         ftp_path = self.fs.normalize(line)
         real_path = self.fs.translate(line)
         old_dir = os.getcwd()
-        done = 0
         try:
             self.fs.chdir(real_path)
-            self.fs.cwd = ftp_path
-            done = 1
         except OSError, err:
             why = os.strerror(err.errno)
             self.log('FAIL CWD "%s". %s.' %(self.fs.normalize(line), why))
             self.respond('550 %s.' %why)
-        if done:
+        else:
+            self.fs.cwd = ftp_path
             self.log('OK CWD "%s".' %self.fs.cwd)
             self.respond('250 "%s" is the current directory.' %self.fs.cwd)
             # let's use os.chdir instead of self.fs.chdir: we don't want to
@@ -1814,12 +1810,13 @@ class FTPHandler(asynchat.async_chat):
             return
         try:
             size = self.fs.getsize(path)
-            self.respond("213 %s" %size)
-            self.log('OK SIZE "%s".' %self.fs.normalize(line))
         except OSError, err:
             why = os.strerror(err.errno)
             self.log('FAIL SIZE "%s". %s' %(self.fs.normalize(line), why))
             self.respond('550 %s.' %why)
+        else:
+            self.respond("213 %s" %size)
+            self.log('OK SIZE "%s".' %self.fs.normalize(line))
 
 
     def ftp_MDTM(self, line):
@@ -1833,14 +1830,15 @@ class FTPHandler(asynchat.async_chat):
             return
         try:
             lmt = self.fs.getmtime(path)
-            lmt = time.strftime("%Y%m%d%H%M%S", time.localtime(lmt))
-            self.respond("213 %s" %lmt)
-            self.log('OK MDTM "%s".' %self.fs.normalize(line))
         except OSError, err:
             why = os.strerror(err.errno)
             self.log('FAIL MDTM "%s". %s' %(self.fs.normalize(line), why))
             self.respond('550 %s.' %why)
-
+        else:
+            lmt = time.strftime("%Y%m%d%H%M%S", time.localtime(lmt))
+            self.respond("213 %s" %lmt)
+            self.log('OK MDTM "%s".' %self.fs.normalize(line))
+            
 
     def ftp_MKD(self, line):
         """Create the specified directory."""
@@ -1854,12 +1852,13 @@ class FTPHandler(asynchat.async_chat):
 
         try:
             self.fs.mkdir(path)
-            self.log('OK MKD "%s".' %self.fs.normalize(line))
-            self.respond("257 Directory created.")
         except OSError, err:
             why = os.strerror(err.errno)
             self.log('FAIL MKD "%s". %s.' %(self.fs.normalize(line), why))
             self.respond('550 %s.' %why)
+        else:
+            self.log('OK MKD "%s".' %self.fs.normalize(line))
+            self.respond("257 Directory created.")
 
 
     def ftp_RMD(self, line):
@@ -1879,12 +1878,13 @@ class FTPHandler(asynchat.async_chat):
 
         try:
             self.fs.rmdir(path)
-            self.log('OK RMD "%s".' %self.fs.normalize(line))
-            self.respond("250 Directory removed.")
         except OSError, err:
             why = os.strerror(err.errno)
             self.log('FAIL RMD "%s". %s.' %(self.fs.normalize(line), why))
             self.respond('550 %s.' %why)
+        else:
+            self.log('OK RMD "%s".' %self.fs.normalize(line))
+            self.respond("250 Directory removed.")
 
 
     def ftp_DELE(self, line):
@@ -1899,12 +1899,13 @@ class FTPHandler(asynchat.async_chat):
 
         try:
             self.fs.remove(path)
-            self.log('OK DELE "%s".' %self.fs.normalize(line))
-            self.respond("250 File removed.")
         except OSError, err:
             why = os.strerror(err.errno)
             self.log('FAIL DELE "%s". %s.' %(self.fs.normalize(line), why))
             self.respond('550 %s.' %why)
+        else:
+            self.log('OK DELE "%s".' %self.fs.normalize(line))
+            self.respond("250 File removed.")
 
 
     def ftp_RNFR(self, line):
@@ -1942,15 +1943,18 @@ class FTPHandler(asynchat.async_chat):
             return
 
         try:
-            self.fs.rename(src, dst)
-            self.log('OK RNFR/RNTO "%s ==> %s".'
-                %(self.fs.normalize(self.fs.rnfr), self.fs.normalize(line)))
-            self.respond("250 Renaming ok.")
-        except OSError, err:
-            why = os.strerror(err.errno)
-            self.log('FAIL RNFR/RNTO "%s ==> %s". %s.'
-                %(self.fs.normalize(self.fs.rnfr), self.fs.normalize(line), why))
-            self.respond('550 %s.' %why)
+            try:
+                self.fs.rename(src, dst)
+            except OSError, err:
+                why = os.strerror(err.errno)
+                self.log('FAIL RNFR/RNTO "%s ==> %s". %s.'
+                    %(self.fs.normalize(self.fs.rnfr), self.fs.normalize(line), why))
+                self.respond('550 %s.' %why)
+            else:
+                self.log('OK RNFR/RNTO "%s ==> %s".'
+                    %(self.fs.normalize(self.fs.rnfr), self.fs.normalize(line)))
+                self.respond("250 Renaming ok.")
+        finally:
             self.fs.rnfr = None
 
 
@@ -2176,7 +2180,7 @@ class FTPServer(asyncore.dispatcher):
 
     def handle_accept(self):
         """Called when remote client initiates a connection."""
-        debug("handle_accept()")
+        debug("FTPServer.handle_accept()")
         sock_obj, addr = self.accept()
         log("[]%s:%s Connected." %addr)
 
