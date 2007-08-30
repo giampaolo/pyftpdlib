@@ -114,6 +114,7 @@ import traceback
 import errno
 import time
 import glob
+import tempfile
 try:
     import cStringIO as StringIO
 except ImportError:
@@ -205,7 +206,6 @@ def logline(msg):
 
 def debug(msg):
     """"Log debugging messages (function/method calls, traceback outputs)."""
-    pass
     #print "\t%s" %msg
 
 
@@ -767,14 +767,32 @@ class AbstractedFS:
         
         Note: directory separators are system dependent.
         """
-        # as far as i know, it should always be path traversal safe...
+        # as far as I know, it should always be path traversal safe...
         return os.path.normpath(self.root + self.normalize(path))
 
-    # --- Wrapper methods around os.*
+    # --- Wrapper methods around os.*, open() and tempfile
 
     def open(self, filename, mode):
         """Open a file returning its handler."""
         return open(filename, mode)
+
+    def mkstemp(self, suffix='', prefix='', dir=None, mode='wb'):
+        """A wrap around tempfile.mkstemp creating a file with a unique name.
+        Unlike mkstemp it returns an object with a file-like interface.
+        The 'name' attribute contains the absolute file name.
+        """
+        class FileWrapper:
+            def __init__(self, fd, name):
+                self.file = fd
+                self.name = name
+            def __getattr__(self, attr):
+                return getattr(self.file, attr)
+
+        text = not 'b' in mode
+        tempfile.TMP_MAX = 50 # max number of tries to find out a unique file name
+        fd, name = tempfile.mkstemp(suffix, prefix, dir, text=text)
+        file = os.fdopen(fd, mode)
+        return FileWrapper(file, name)
 
     def exists(self, path):
         """Return True if the path exists."""
@@ -1492,20 +1510,14 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_STOU(self, line):
         """Store a file on the server with a unique name."""
-
-        # - Note 1: RFC 959 prohibited STOU parameters, but this prohibition is
+        # Note 1: RFC 959 prohibited STOU parameters, but this prohibition is
         # obsolete.
-        #
-        # TODO - should we really accept arguments? RFC959 does not talk about such
-        # eventuality but Bernstein does: http://cr.yp.to/ftp/stor.html
-        # Try to find 'official' references declaring such obsolescence.
-        #
-        # - Note 2: 250 response wanted by RFC 959 has been declared incorrect
-        # into RFC 1123 that wants 125/150 instead.
-        # - Note 3: RFC 1123 also provided an exact output format defined to be
+        # Note 2: 250 response wanted by RFC 959 has been declared incorrect
+        # in RFC 1123 that wants 125/150 instead.
+        # Note 3: RFC 1123 also provided an exact output format defined to be
         # as follow:
         # > 125 FILE: pppp
-        # ...where pppp represents the unique pathname of the file that will be
+        # ...where pppp represents the unique path name of the file that will be
         # written.
 
         # FIX #19
@@ -1514,76 +1526,44 @@ class FTPHandler(asynchat.async_chat):
             self.respond("550 Can't STOU while REST request is pending.")
             return
 
-        # create file with an incremented unique name based off of the argument
         if line:
-            file = self.fs.translate(line)
-            if not self.fs.exists(file):
-                resp = line
-            else:
-                x = 0
-                while 1:
-                    file = self.fs.translate(line + '.' + str(x))
-                    if not self.fs.exists(file):
-                        resp = line + '.' + str(x)
-                        break
-                    else:
-                        # FIX #25
-                        # set a max of 99 on the number of tries to create a
-                        # unique filename, so that we decrease the chances of
-                        # a DoS situation
-                        if x > 99:
-                            msg = "Can't store other unique files with such name"
-                            self.respond("450 %s." %msg)
-                            self.log('FAIL STOU "%s". %s.'
-                                %self.fs.normalize(line), msg)
-                            return
-                        else:
-                            x += 1
-
-        # if no arg, create file with an incremented unique name starting at 0
+            basedir, prefix = os.path.split(self.fs.translate(line))
+            prefix = prefix + '.'
         else:
-            x = 0
-            while 1:
-                file = self.fs.translate(self.fs.cwd + '.' + str(x))
-                if not self.fs.exists(file):
-                    resp = '.' + str(x)
-                    break
-                else:
-                    # FIX #25
-                    # set a max of 99 on the number of tries to create a unique
-                    # filename, so that we decrease the chances of a DoS situation
-                    if x > 99:
-                        msg = "Can't store other unique files with brand new name"
-                        self.respond("450 %s." %msg)
-                        self.log("FAIL STOU %s." %msg)
-                        return
-                    else:
-                        x += 1
+            basedir = self.fs.translate(self.fs.cwd)
+            prefix = 'ftpd.'
 
-        # now just acts like STOR excepting that restarting isn't allowed
-        if not self.authorizer.w_perm(self.username, os.path.dirname(file)):
+        if not self.authorizer.w_perm(self.username, basedir):
             self.log('FAIL STOU "%s". Not enough priviledges' %resp)
             self.respond("550 Can't STOU: not enough priviledges.")
             return
 
         try:
-            fd = self.fs.open(file, 'wb')
+            fd = self.fs.mkstemp(prefix=prefix, dir=basedir)
         except IOError, err:
-            why = os.strerror(err.errno)
-            self.log('FAIL STOU "%s". %s.' %(resp, why))
-            self.respond('550 %s.' %why)
+            # hitted the max number of tries to find out file with unique name
+            if err.errno == errno.EEXIST:
+                why = 'No usable unique file name found.'
+            # something else happened
+            else:
+                why = os.strerror(err.errno)
+            self.respond("450 %s." %why)
+            self.log('FAIL STOU "%s". %s.' %(self.fs.normalize(line), why))
             return
 
+        filename = os.path.basename(fd.name)
+
+        # now just acts like STOR excepting that restarting isn't allowed
         # FIX #8
-        log = 'OK STOU "%s". Upload starting.' %resp
+        log = 'OK STOU "%s". Upload starting.' %filename
         if self.data_channel:
-            self.respond("125 FILE: %s" %resp)
+            self.respond("125 FILE: %s" %filename)
             self.log(log)
             self.data_channel.file_obj = fd
             self.data_channel.enable_receiving(self.current_type)
         else:
             self.debug("info: new producer queue added.")
-            self.respond("150 FILE: %s" %resp)
+            self.respond("150 FILE: %s" %filename)
             self.in_dtp_queue = (fd, log)
 
 
@@ -2266,4 +2246,3 @@ gc.set_debug(gc.DEBUG_LEAK)
 
 if __name__ == '__main__':
     test()
-
