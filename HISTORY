@@ -4,16 +4,17 @@ Issue tracker at http://code.google.com/p/pyftpdlib/issues/list
 History
 =======
 
-Version: v0.2.0 - Date: 2007-??-??
+Version: 0.2.0 - Date: 2007-??-??
 ----------------------------------
 
 RFC-related enhancements:
 
  * (see Issue #6) accept and process TYPE AN and TYPE L8 commands
- * (see Issue #7) a new USER command can now be entered at any point to begin the login sequence again.
+ * (see Issue #7) a new USER command can now be entered at any point to begin the login sequence again
  * (see Issue #8) be compliant with STOU output format defined in RFC 1123
  * (see Issue #10) HELP command arguments are now accepted
  * (see Issue #12) 554 error response is now returned on RETR/STOR if REST fails
+ * (see Issue #15) STAT used with an argument return directory LISTing over the command channel
 
 Security enhancements:
 
@@ -55,7 +56,7 @@ Bugfixes:
  * Issue #33: some FTPHandler class attributes wasn't resetted on REIN
 
 
-Version: v0.1.1 - Date: 2007-03-27
+Version: 0.1.1 - Date: 2007-03-27
 ----------------------------------
 
  * Port selection on PASV command has been randomized to prevent a remote user to know how many data connections are in progress on the server
@@ -65,7 +66,7 @@ Version: v0.1.1 - Date: 2007-03-27
  * License changed into a MIT style one.
 
 
-Version: v0.1.0 - Date: 2007-02-26
+Version: 0.1.0 - Date: 2007-02-26
 ----------------------------------
 
  * First proof of concept beta release.

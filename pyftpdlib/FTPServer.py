@@ -114,6 +114,7 @@ import traceback
 import errno
 import time
 import glob
+import fnmatch
 import tempfile
 try:
     import cStringIO as StringIO
@@ -810,12 +811,6 @@ class AbstractedFS:
         """Change the current directory."""
         os.chdir(path)
 
-    # never used
-    def cdup(self):
-        """Change to the parent directory."""
-        parent = os.path.split(self.cwd)[0]
-        self.cwd = parent
-        
     def mkdir(self, path):
         """Create the specified directory."""
         os.mkdir(path)
@@ -841,47 +836,83 @@ class AbstractedFS:
         """Rename the specified src file to the dest filename."""
         os.rename(src, dst)
 
-    def get_nlst_dir(self, path):
-        """Return a directory listing in a compact form.
-
-        Note that this is resource-intensive blocking operation so you may want
-        to override it and move it into another process/thread in some way.
+    def glob1(self, dirname, pattern):
+        """Return a list of files matching a dirname pattern non-recursively.
+        Unlike glob.glob1 raises an exception if os.listdir() fails.
         """
+        names = os.listdir(dirname)
+        if pattern[0] != '.':
+            names = filter(lambda x: x[0] != '.',names)
+        return fnmatch.filter(names, pattern)
+
+    # --- utility methods
+    
+    # Note that these are resource-intensive blocking operations so you may want
+    # to override and move them into another process/thread in some way.
+
+    def get_nlst_dir(self, path):
+        """Return a directory listing in a form suitable for NLST command."""
         listing = '\r\n'.join(os.listdir(path))
         if listing:
             return listing + '\r\n'
         return ''
 
     def get_list_dir(self, path):
+        """Return a directory listing in a form suitable for LIST command."""
+        # if path is a file we return information about it
+        if os.path.isfile(path):
+            basedir, filename = os.path.split(path)
+            listing = [filename]
+        else:
+            basedir = path
+            listing = os.listdir(path)
+        return self.format_list(basedir, listing)
+
+    def get_stat_dir(self, rawline):
+        """Return a list of files matching a dirname pattern non-recursively
+        in a form suitable for STAT command.
+        """
+        path = self.normalize(rawline)
+        basedir, basename = os.path.split(path)
+        if not glob.has_magic(path):
+            data = self.get_list_dir(self.translate(rawline))
+        else:
+            if not basedir:
+                basedir = self.translate(self.cwd)
+                listing = self.glob1(basedir, basename)
+                data = self.format_list(basedir, listing)
+            elif glob.has_magic(basedir):
+                return 'Directory recursion not supported.\r\n'
+            else:
+                basedir = self.translate(basedir)
+                listing = self.glob1(basedir, basename)
+                data = self.format_list(basedir, listing)
+        if not data:
+            return "Directory is empty.\r\n"
+        return data
+
+    def format_list(self, basedir, listing):
         """Return a directory listing emulating "/bin/ls -lgA" UNIX command
         output.
+
+        <basedir> is the absolute dirname, <listing> is a list of files
+        contained in that directory.
 
         For portability reasons permissions, hard links numbers, owners and
         groups listed are static and unreliable but it shouldn't represent a
         problem for most ftp clients around.
         If you want reliable values on unix systems override this method and
         use other attributes provided by os.stat().
-        This is how LIST appears to client:
+        This is how output appears to client:
 
         -rwxrwxrwx   1 owner    group         7045120 Sep 02  3:47 music.mp3
         drwxrwxrwx   1 owner    group               0 Aug 31 18:50 e-books
         -rwxrwxrwx   1 owner    group             380 Sep 02  3:40 module.py
-
-        Note that this a resource-intensive blocking operation so you may want
-        to override it and move it into another process/thread in some way.
         """
-        # if path is a file we return information about it
-        if os.path.isfile(path):
-            root, filename = os.path.split(path)
-            path = root
-            listing = [filename]
-        else:
-            listing = os.listdir(path)
-
-        l = []
-        for obj in listing:
-            name = os.path.join(path, obj)
-            stat = os.stat(name)
+        result = []
+        for basename in listing:
+            file = os.path.join(basedir, basename)
+            stat = os.stat(file)
 
             # stat.st_mtime could fail (-1) if file's last modification time is
             # too old, in that case we return local time as last modification time.
@@ -890,17 +921,17 @@ class AbstractedFS:
             except ValueError:
                 mtime = time.strftime("%b %d %H:%M")
 
-            if os.path.isfile(name) or os.path.islink(name):
-                l.append("-rw-rw-rw-   1 owner    group %15s %s %s\r\n" %(
+            if os.path.isfile(file) or os.path.islink(file):
+                result.append("-rw-rw-rw-   1 owner    group %15s %s %s\r\n" %(
                     stat.st_size,
                     mtime,
-                    obj))
+                    basename))
             else:
-                l.append("drwxrwxrwx   1 owner    group %15s %s %s\r\n" %(
+                result.append("drwxrwxrwx   1 owner    group %15s %s %s\r\n" %(
                     '0', # no size
                     mtime,
-                    obj))
-        return ''.join(l)
+                    basename))
+        return ''.join(result)
 
 
 # --- FTP
@@ -1981,50 +2012,50 @@ class FTPHandler(asynchat.async_chat):
         if not line:
             s = []
             s.append('211-%s %s status:\r\n' %(__pname__, __ver__))
-            s.append('\tConnected to: %s:%s\r\n' %self.socket.getsockname())
+            s.append('Connected to: %s:%s\r\n' %self.socket.getsockname())
             if self.authenticated:
-                s.append('\tLogged in as: %s\r\n' %self.username)
+                s.append('Logged in as: %s\r\n' %self.username)
             else:
                 if not self.username:
-                    s.append("\tWaiting for username\r\n")
+                    s.append("Waiting for username.\r\n")
                 else:
-                    s.append("\tWaiting for password\r\n")
+                    s.append("Waiting for password.\r\n")
             if self.current_type == 'a':
                 type = 'ASCII'
             else:
                 type = 'Binary'
-            s.append("\tTYPE: %s; STRUcture: File; MODE: Stream\r\n" %type)
+            s.append("TYPE: %s; STRUcture: File; MODE: Stream\r\n" %type)
             if self.data_channel:
-                s.append('\tData connection open:\r\n')
-                s.append('\tTotal bytes sent: %s' %self.data_channel.tot_bytes_sent)
-                s.append('\tTotal bytes received: %s' %self.data_channel.tot_bytes_received)
+                s.append('Data connection open:\r\n')
+                s.append('Total bytes sent: %s' %self.data_channel.tot_bytes_sent)
+                s.append('Total bytes received: %s' %self.data_channel.tot_bytes_received)
             else:
-                s.append('\tData connection closed\r\n')
-            self.push(''.join(s))
+                s.append('Data connection closed.\r\n')
+            self.push('  '.join(s))
             self.respond("211 End of status.")
 
+        # return directory LISTing over the command channel
         else:
-            # TODO - see also FIX #15
-            # if arg is provided we should return directory LISTing over
-            # the command channel.
-            # Note: we also must support globbing (*, [], ?, and so on....)
-            # Still have to find a way to do that since that:
-            # - user could send a 'normal' path (e.g. "dir", "/dir") in which
-            #   case we should use os.listdir
-            # - user could send a Unix style pathname pattern expansion
-            #   (e.g. "*.txt", "/dir/*.txt") in which case we should use glob
-            #   module but it could return absolute or relative listing depending
-            #   on the input... :-\
-            pass
-##            pathname = self.fs.normalize(line)
-##            if not glob.has_magic(pathname):
-##                listing = self.fs.get_list_dir(pathname)
-##            else:
-##                dirname, basename = os.path.split(pathname)
-##                if not dirname:
-##                    listing = glob.glob1(self.fs.cwd, basename)
-##                else:
-##                    listing = glob.glob1(dirname, basename)
+            # When argument is provided along STAT we should return directory
+            # LISTing over the command channel.
+            # RFC 959 do not explicitly mention globbing; this means that FTP
+            # servers are not required to support globbing in order to be
+            # compliant.  However, many FTP servers do support globbing as a
+            # measure of convenience for FTP clients and users.
+
+            # In order to search for and match the given globbing expression,
+            # the code has to search (possibly) many directories, examine each
+            # contained filename, and build a list of matching files in memory.
+            # Since this operation can be quite intensive, both CPU- and
+            # memory-wise, we limit the search to only one directory
+            # non-recursively, as LIST does.
+            try:
+                data = self.fs.get_stat_dir(line)
+            except OSError, err:
+                data = os.strerror(err.errno) + '.\r\n'
+            self.push('213-Status of "%s":\r\n' %self.fs.normalize(line))
+            self.push(data)
+            self.respond('213 End of status.')
 
 
     def ftp_NOOP(self, line):

@@ -101,7 +101,7 @@ class TestClasses(unittest.TestCase):
         elif os.sep == '/':
             home = '/tmp'
         else:
-            raise Exception, 'Not supported system'
+            raise(Exception, 'Not supported system')
         # raise exc if path does not exist
         self.assertRaises(AssertionError, auth.add_user, 'ftpuser', '12345', 'ox:\\?', perm=('r', 'w'))
         self.assertRaises(AssertionError, auth.add_anonymous, 'ox:\\?')
@@ -258,7 +258,7 @@ class FtpAuthentication(unittest.TestCase):
 
 
 class FtpDummyCmds(unittest.TestCase):
-    "test: TYPE, STRU, MODE, STAT, NOOP, SYST, ALLO, HELP"
+    "test: TYPE, STRU, MODE, NOOP, SYST, ALLO, HELP"
 
     def setUp(self):
         global ftp
@@ -284,10 +284,6 @@ class FtpDummyCmds(unittest.TestCase):
         ftp.sendcmd('mode s')
         self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'mode')
         self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'mode ?!?')
-
-    def test_stat(self):
-        # TODO - test stat with arg
-        ftp.sendcmd('stat')
 
     def test_noop(self):
         ftp.sendcmd('noop')
@@ -315,7 +311,7 @@ class FtpDummyCmds(unittest.TestCase):
 
 
 class FtpFsOperations(unittest.TestCase):
-    "test: PWD, CWD, CDUP, SIZE, RNFR, RNTO, DELE, MKD, RMD, MDTM"
+    "test: PWD, CWD, CDUP, SIZE, RNFR, RNTO, DELE, MKD, RMD, MDTM, STAT"
 
     def setUp(self):
         global ftp
@@ -405,6 +401,14 @@ class FtpFsOperations(unittest.TestCase):
         ftp.size(self.tempfile)
         # make sure we can't use size against directories
         self.assertRaises(ftplib.error_perm, ftp.size, self.tempdir)
+
+    def test_stat(self):
+        ftp.sendcmd('STAT')
+        ftp.sendcmd('STAT *')
+        ftp.sendcmd('STAT ' + self.tempfile)
+        ftp.sendcmd('STAT ' + self.tempdir)
+        self.failUnless('Directory is empty' in ftp.sendcmd('STAT '+ self.tempdir))
+        self.failUnless('recursion not supported' in ftp.sendcmd('STAT /*/*'))
 
 
 class FtpRetrieveData(unittest.TestCase):
