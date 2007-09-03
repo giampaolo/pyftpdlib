@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# FTPServer.py
+# ftpserver.py
 #
 #  pyftpdlib is released under the MIT license, reproduced below:
 #  ======================================================================
-#  Copyright (C) 2007 billiejoex <billiejoex@gmail.com>
+#  Copyright (C) 2007 Giampaolo Rodola' <billiejoex@gmail.com>
 #
 #                         All Rights Reserved
 # 
@@ -12,13 +12,13 @@
 #  granted, provided that the above copyright notice appear in all
 #  copies and that both that copyright notice and this permission
 #  notice appear in supporting documentation, and that the name of 
-#  billiejoex not be used in advertising or publicity pertaining to
+#  Giampaolo Rodola' not be used in advertising or publicity pertaining to
 #  distribution of the software without specific, written prior
 #  permission.
 # 
-#  billiejoex DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+#  Giampaolo Rodola' DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
 #  INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN
-#  NO EVENT billiejoex BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+#  NO EVENT Giampaolo Rodola' BE LIABLE FOR ANY SPECIAL, INDIRECT OR
 #  CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
 #  OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
 #  NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
@@ -116,10 +116,6 @@ import time
 import glob
 import fnmatch
 import tempfile
-try:
-    import cStringIO as StringIO
-except ImportError:
-    import StringIO
 
 
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'debug', 'DummyAuthorizer',
@@ -128,11 +124,26 @@ __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'debug', 'DummyAuthorizer',
 
 
 __pname__   = 'Python FTP server library (pyftpdlib)'
-__ver__     = '0.x.x' # TODO: set version to tag for SVN branch
+__ver__     = '0.2.0' 
 __date__    = '????-??-??' # TODO: set date
-__author__  = 'billiejoex <billiejoex@gmail.com>'
+__author__  = "Giampaolo Rodola' <billiejoex@gmail.com>"
 __web__     = 'http://code.google.com/p/pyftpdlib/'
-__license__ = 'MIT license. See LICENSE file'
+
+
+# hack around format_exc funtion of traceback module to grant
+# backward compatibility with python < 2.4
+if not hasattr(traceback, 'format_exc'):
+    try:
+        import cStringIO as StringIO
+    except ImportError:
+        import StringIO
+
+    def format_exc():
+        f = StringIO.StringIO()
+        traceback.print_exc(file=f)
+        return f.getvalue()
+
+    traceback.format_exc = format_exc
 
 
 proto_cmds = {
@@ -205,9 +216,13 @@ def logline(msg):
     """Log commands and responses passing through the command channel."""
     print msg
 
+def logerror(msg):
+    """"Log traceback outputs occurring in case of errors."""
+    sys.stderr.write(str(msg) + '\n')
+    sys.stderr.flush()
+
 def debug(msg):
-    """"Log debugging messages (function/method calls, traceback outputs)."""
-    #print "\t%s" %msg
+    """"Log function/method calls (disabled by default)."""
 
 
 # --- authorizers
@@ -369,9 +384,7 @@ class PassiveDTP(asyncore.dispatcher):
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
         debug("PassiveDTP.handle_error()")
-        f = StringIO.StringIO()
-        traceback.print_exc(file=f)
-        debug(f.getvalue())
+        logerror(traceback.format_exc())
         self.close()
             
     def handle_close(self):
@@ -425,9 +438,7 @@ class ActiveDTP(asyncore.dispatcher):
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
         debug("ActiveDTP.handle_error()")
-        f = StringIO.StringIO()
-        traceback.print_exc(file=f)
-        debug(f.getvalue())
+        logerror(traceback.format_exc())
         self.close()
             
     def handle_close(self):
@@ -631,10 +642,8 @@ class DTPHandler(asyncore.dispatcher):
             # some other exception occurred; we don't want to provide
             # confidential error messages to user so we return a generic
             # "unknown error" response.
+            logerror(traceback.format_exc())            
             error = "Unknown error"
-            f = StringIO.StringIO()
-            traceback.print_exc(file=f)
-            debug(f.getvalue())
         self.cmd_channel.respond("426 %s; transfer aborted." %error)
         self.close()
 
@@ -1130,9 +1139,7 @@ class FTPHandler(asynchat.async_chat):
 
     def handle_error(self):
         self.debug("FTPHandler.handle_error()")
-        f = StringIO.StringIO()
-        traceback.print_exc(file=f)
-        self.debug(f.getvalue())
+        logerror(traceback.format_exc())
         self.close()
 
     def handle_close(self):
@@ -2225,9 +2232,7 @@ class FTPServer(asyncore.dispatcher):
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
         debug("FTPServer.handle_error()")
-        f = StringIO.StringIO()
-        traceback.print_exc(file=f)
-        debug(f.getvalue())
+        logerror(traceback.format_exc())
         self.close()
 
     def close_all(self, map=None, ignore_all=False):
