@@ -6,12 +6,12 @@
 
 import md5
 import os
-from pyftpdlib import FTPServer
+from pyftpdlib import ftpserver
 
-class DummyMD5Authorizer(FTPServer.DummyAuthorizer):
+class DummyMD5Authorizer(ftpserver.DummyAuthorizer):
 
     def __init__(self):
-        FTPServer.DummyAuthorizer.__init__(self)
+        ftpserver.DummyAuthorizer.__init__(self)
  
     def validate_authentication(self, username, password):
         if username == 'anonymous':
@@ -28,8 +28,8 @@ if __name__ == "__main__":
     authorizer = DummyMD5Authorizer()
     authorizer.add_user('user', hash, os.getcwd(), perm=('r', 'w'))
     authorizer.add_anonymous(os.getcwd())    
-    ftp_handler = FTPServer.FTPHandler
+    ftp_handler = ftpserver.FTPHandler
     ftp_handler.authorizer = authorizer
     address = ('', 21)
-    ftpd = FTPServer.FTPServer(address, ftp_handler)
+    ftpd = ftpserver.FTPServer(address, ftp_handler)
     ftpd.serve_forever()

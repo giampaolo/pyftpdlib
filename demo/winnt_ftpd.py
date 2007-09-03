@@ -7,13 +7,13 @@
 
 import os
 import win32security, win32net, pywintypes
-from pyftpdlib import FTPServer
+from pyftpdlib import ftpserver
 
 
-class WinNtAuthorizer(FTPServer.DummyAuthorizer):
+class WinNtAuthorizer(ftpserver.DummyAuthorizer):
 
     def __init__(self):
-        FTPServer.DummyAuthorizer.__init__(self)
+        ftpserver.DummyAuthorizer.__init__(self)
 
     def add_user(self, username, home, perm=('r')):
         # check if user exists
@@ -52,8 +52,8 @@ if __name__ == "__main__":
     # add a user (note: user must already exists)
     authorizer.add_user ('user', os.getcwd(),perm=('r', 'w'))
     authorizer.add_anonymous (os.getcwd())
-    ftp_handler = FTPServer.FTPHandler
+    ftp_handler = ftpserver.FTPHandler
     ftp_handler.authorizer = authorizer
     address = ('', 21)
-    ftpd = FTPServer.FTPServer(address, ftp_handler)
+    ftpd = ftpserver.FTPServer(address, ftp_handler)
     ftpd.serve_forever()

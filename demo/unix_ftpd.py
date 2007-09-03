@@ -7,13 +7,13 @@ their home directories (users must be created previously).
 
 import os
 import pwd, spwd, crypt
-from pyftpdlib import FTPServer
+from pyftpdlib import ftpserver
 
 
-class UnixAuthorizer(FTPServer.DummyAuthorizer):
+class UnixAuthorizer(ftpserver.DummyAuthorizer):
 
     def __init__(self):
-        FTPServer.DummyAuthorizer.__init__(self)
+        ftpserver.DummyAuthorizer.__init__(self)
 
     def add_user(self, username, home='', perm=('r')):
         assert username in [i[0] for i in pwd.getpwall()], 'No such user "%s".' %username
@@ -44,8 +44,8 @@ if __name__ == "__main__":
     # add a user (note: user must already exists)
     authorizer.add_user('user', perm=('r', 'w'))
     authorizer.add_anonymous(os.getcwd())
-    ftp_handler = FTPServer.FTPHandler
+    ftp_handler = ftpserver.FTPHandler
     ftp_handler.authorizer = authorizer
     address = ('', 21)
-    ftpd = FTPServer.FTPServer(address, ftp_handler)
+    ftpd = ftpserver.FTPServer(address, ftp_handler)
     ftpd.serve_forever()

@@ -7,27 +7,27 @@ and setting a limit for incoming connections.
 """
 
 import os
-from pyftpdlib import FTPServer
+from pyftpdlib import ftpserver
 
 if __name__ == "__main__":
 
     # Import a dummy authorizer for managing 'virtual users' 
-    authorizer = FTPServer.DummyAuthorizer()
+    authorizer = ftpserver.DummyAuthorizer()
     authorizer.add_user('user', '12345', os.getcwd(), perm=('r', 'w'))
     authorizer.add_anonymous(os.getcwd())
 
     # Instantiate FTP handler class
-    ftp_handler = FTPServer.FTPHandler
+    ftp_handler = ftpserver.FTPHandler
     ftp_handler.authorizer = authorizer
 
     # Define a customized set of messages to provide to client
-    ftp_handler.msg_connect = "This is pyftpdlib %s." %FTPServer.__ver__
+    ftp_handler.msg_connect = "This is pyftpdlib %s." %ftpserver.__ver__
     ftp_handler.msg_login = "Welcome in."
     ftp_handler.msg_quit = "Goodbye."
 
     # Instantiate FTP server class and listen to localhost:21
     address = ('127.0.0.1', 21)
-    ftpd = FTPServer.FTPServer(address, ftp_handler)
+    ftpd = ftpserver.FTPServer(address, ftp_handler)
 
     # set a limit for connections
     ftpd.max_cons = 256
