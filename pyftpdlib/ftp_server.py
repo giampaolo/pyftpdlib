@@ -457,7 +457,7 @@ class DTPHandler(asyncore.dispatcher):
     DTPHandler implementation note:
     When a producer is consumed and close_when_done() has been called
     previously, refill_buffer() erroneously calls close() instead of
-    handle_close() - (see: http://python.org/sf/1740572) 
+    handle_close() - (see: http://bugs.python.org/issue1740572)
 
     To avoid this problem, DTPHandler is implemented as a subclass of
     asyncore.dispatcher. This implementation follows the same approach that
