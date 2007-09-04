@@ -1607,7 +1607,11 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_APPE(self, line):
         """Append data to an existing file on the server."""
-        # TODO - Should we watch for REST like we already did in STOU?
+        # FIX #35
+        # watch for STOU preceded by REST, which makes no sense.
+        if self.restart_position:
+            self.respond("550 Can't APPE while REST request is pending.")
+            return
         self.ftp_STOR(line, mode='a')
 
 

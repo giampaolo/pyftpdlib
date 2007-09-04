@@ -2,22 +2,22 @@
 # test_ftpd.py
 
 #  ======================================================================
-#  Copyright (C) 2007  billiejoex <billiejoex@gmail.com>
+#  Copyright (C) 2007 Giampaolo Rodola' <billiejoex@gmail.com>
 #
 #                         All Rights Reserved
-# 
+#
 #  Permission to use, copy, modify, and distribute this software and
 #  its documentation for any purpose and without fee is hereby
 #  granted, provided that the above copyright notice appear in all
 #  copies and that both that copyright notice and this permission
-#  notice appear in supporting documentation, and that the name of 
-#  billiejoex not be used in advertising or publicity pertaining to
+#  notice appear in supporting documentation, and that the name of
+#  Giampaolo Rodola' not be used in advertising or publicity pertaining to
 #  distribution of the software without specific, written prior
 #  permission.
-# 
-#  billiejoex DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+#
+#  Giampaolo Rodola' DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
 #  INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN
-#  NO EVENT billiejoex BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+#  NO EVENT Giampaolo Rodola' BE LIABLE FOR ANY SPECIAL, INDIRECT OR
 #  CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
 #  OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
 #  NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
@@ -35,7 +35,7 @@ import tempfile
 import ftplib
 import random
 
-from pyftpdlib import FTPServer
+from pyftpdlib import ftpserver
 
 __revision__ = '2 (pyftpdlib 0.1.1)'
 
@@ -48,7 +48,7 @@ class TestClasses(unittest.TestCase):
 
     def test_abstracetd_fs(self):
         ae = self.assertEquals
-        fs = FTPServer.AbstractedFS()
+        fs = ftpserver.AbstractedFS()
 
         # normalize method
         fs.cwd = '/'
@@ -94,7 +94,7 @@ class TestClasses(unittest.TestCase):
             ae(fs.translate('/'), r'C:\dir')
 
     def test_dummy_authorizer(self):
-        auth = FTPServer.DummyAuthorizer()
+        auth = ftpserver.DummyAuthorizer()
         auth.user_table = {}
         if os.sep == '\\':
             home = 'C:\\'
@@ -107,19 +107,19 @@ class TestClasses(unittest.TestCase):
         self.assertRaises(AssertionError, auth.add_anonymous, 'ox:\\?')
         # raise exc if user already exists
         auth.add_user('ftpuser', '12345', home, perm=('r', 'w'))
-        self.assertRaises(FTPServer.Error, auth.add_user, 'ftpuser', '12345', home, perm=('r', 'w'))
+        self.assertRaises(ftpserver.Error, auth.add_user, 'ftpuser', '12345', home, perm=('r', 'w'))
         # ...even anonymous
         auth.add_anonymous(home)
-        self.assertRaises(FTPServer.Error, auth.add_anonymous, home)
+        self.assertRaises(ftpserver.Error, auth.add_anonymous, home)
         # raise on wrong permission
-        self.assertRaises(FTPServer.Error, auth.add_user, 'ftpuser2', '12345', home, perm=('x'))
+        self.assertRaises(ftpserver.Error, auth.add_user, 'ftpuser2', '12345', home, perm=('x'))
         del auth.user_table['anonymous']
-        self.assertRaises(FTPServer.Error, auth.add_anonymous, home, perm=('w'))
-        self.assertRaises(FTPServer.Error, auth.add_anonymous, home, perm=('%&'))
-        self.assertRaises(FTPServer.Error, auth.add_anonymous, home, perm=(None))
+        self.assertRaises(ftpserver.Error, auth.add_anonymous, home, perm=('w'))
+        self.assertRaises(ftpserver.Error, auth.add_anonymous, home, perm=('%&'))
+        self.assertRaises(ftpserver.Error, auth.add_anonymous, home, perm=(None))
         auth.add_anonymous(home, perm=(''))
         # raise on 'w' permission given to anonymous user
-        self.assertRaises(FTPServer.Error, auth.add_anonymous, home, perm=('w'))
+        self.assertRaises(ftpserver.Error, auth.add_anonymous, home, perm=('w'))
 
 
 class FtpAuthentication(unittest.TestCase):
@@ -296,7 +296,7 @@ class FtpDummyCmds(unittest.TestCase):
 
     def test_help(self):
         ftp.sendcmd('help')
-        cmd = random.choice(FTPServer.proto_cmds.keys())
+        cmd = random.choice(ftpserver.proto_cmds.keys())
         ftp.sendcmd('help %s' %cmd)
         self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'help ?!?')
 
@@ -403,12 +403,12 @@ class FtpFsOperations(unittest.TestCase):
         self.assertRaises(ftplib.error_perm, ftp.size, self.tempdir)
 
     def test_stat(self):
-        ftp.sendcmd('STAT')
-        ftp.sendcmd('STAT *')
-        ftp.sendcmd('STAT ' + self.tempfile)
-        ftp.sendcmd('STAT ' + self.tempdir)
-        self.failUnless('Directory is empty' in ftp.sendcmd('STAT '+ self.tempdir))
-        self.failUnless('recursion not supported' in ftp.sendcmd('STAT /*/*'))
+        ftp.sendcmd('stat')
+        ftp.sendcmd('stat *')
+        ftp.sendcmd('stat ' + self.tempfile)
+        ftp.sendcmd('stat ' + self.tempdir)
+        self.failUnless('Directory is empty' in ftp.sendcmd('stat '+ self.tempdir))
+        self.failUnless('recursion not supported' in ftp.sendcmd('stat /*/*'))
 
 
 class FtpRetrieveData(unittest.TestCase):
@@ -625,6 +625,11 @@ class FtpStoreData(unittest.TestCase):
         # we do not use os.remove because file could be still locked by ftpd thread
         ftp.delete(filename)
 
+    def test_stou_rest(self):
+        # watch for STOU preceded by REST, which makes no sense.
+        ftp.sendcmd('rest 10')
+        self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'stou')
+
     def test_appe(self):
         fname_1 = os.path.basename(self.f1.name)
         fname_2 = os.path.basename(self.f2.name)
@@ -644,6 +649,11 @@ class FtpStoreData(unittest.TestCase):
         self.f2.seek(0)
         self.assertEqual(hash(data1 + data2), hash (self.f2.read()))
         ftp.delete(remote_fname)
+
+    def test_appe_rest(self):
+        # watch for APPE preceded by REST, which makes no sense.
+        ftp.sendcmd('rest 10')
+        self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'appe x')
 
     def test_rest_on_stor(self):
         fname_1 = os.path.basename(self.f1.name)
@@ -702,16 +712,16 @@ def run():
                 pass
             def debugger(msg):
                 pass
-            FTPServer.log = logger
-            FTPServer.logline = linelogger
-            FTPServer.debug = debugger
-            authorizer = FTPServer.DummyAuthorizer()
+            ftpserver.log = logger
+            ftpserver.logline = linelogger
+            ftpserver.debug = debugger
+            authorizer = ftpserver.DummyAuthorizer()
             authorizer.add_user(user, pwd, home, perm=('r', 'w'))
             authorizer.add_anonymous(home)
-            ftp_handler = FTPServer.FTPHandler
+            ftp_handler = ftpserver.FTPHandler
             ftp_handler.authorizer = authorizer
             address = (host, port)    
-            ftpd = FTPServer.FTPServer(address, ftp_handler)
+            ftpd = ftpserver.FTPServer(address, ftp_handler)
             ftpd.serve_forever()
 
     def exit_fun():
