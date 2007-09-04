@@ -2243,7 +2243,11 @@ class FTPServer(asyncore.dispatcher):
         of asyncore that will be included into Python 2.6.
         """
         if map is None:
-            map = self._map
+            # backward compatibility for python < 2.4
+            if not hasattr(self, '_map'):
+                map = asyncore.socket_map
+            else:
+                map = self._map
         for x in map.values():
             try:
                 x.close()
