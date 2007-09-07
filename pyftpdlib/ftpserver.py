@@ -3,7 +3,7 @@
 #
 #  pyftpdlib is released under the MIT license, reproduced below:
 #  ======================================================================
-#  Copyright (C) 2007 Giampaolo Rodola' <billiejoex@gmail.com>
+#  Copyright (C) 2007 Giampaolo Rodola' <g.rodola@gmail.com>
 #
 #                         All Rights Reserved
 # 
@@ -73,14 +73,14 @@ can be overridden to allow for custom logging.
 
 Usage example:
 
->>> from pyftpdlib import FTPServer
->>> authorizer = FTPServer.DummyAuthorizer()
+>>> from pyftpdlib import ftpserver
+>>> authorizer = ftpserver.DummyAuthorizer()
 >>> authorizer.add_user('user', '12345', '/home/user', perm=('r', 'w'))
 >>> authorizer.add_anonymous('/home/nobody')
->>> ftp_handler = FTPServer.FTPHandler
+>>> ftp_handler = ftpserver.FTPHandler
 >>> ftp_handler.authorizer = authorizer
 >>> address = ("127.0.0.1", 21)
->>> ftpd = FTPServer.FTPServer(address, ftp_handler)
+>>> ftpd = ftpserver.FTPServer(address, ftp_handler)
 >>> ftpd.serve_forever()
 Serving FTP on 127.0.0.1:21
 []127.0.0.1:2503 connected.
@@ -126,24 +126,8 @@ __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'debug', 'DummyAuthorizer',
 __pname__   = 'Python FTP server library (pyftpdlib)'
 __ver__     = '0.2.0' 
 __date__    = '????-??-??' # TODO: set date
-__author__  = "Giampaolo Rodola' <billiejoex@gmail.com>"
+__author__  = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__     = 'http://code.google.com/p/pyftpdlib/'
-
-
-# hack around format_exc funtion of traceback module to grant
-# backward compatibility with python < 2.4
-if not hasattr(traceback, 'format_exc'):
-    try:
-        import cStringIO as StringIO
-    except ImportError:
-        import StringIO
-
-    def format_exc():
-        f = StringIO.StringIO()
-        traceback.print_exc(file=f)
-        return f.getvalue()
-
-    traceback.format_exc = format_exc
 
 
 proto_cmds = {
@@ -200,10 +184,24 @@ not_implemented_cmds = {
     }
 
 
+# hack around format_exc funtion of traceback module to grant
+# backward compatibility with python < 2.4
+if not hasattr(traceback, 'format_exc'):
+    try:
+        import cStringIO as StringIO
+    except ImportError:
+        import StringIO
+
+    def _format_exc():
+        f = StringIO.StringIO()
+        traceback.print_exc(file=f)
+        return f.getvalue()
+
+    traceback.format_exc = _format_exc
+
+
 class Error(Exception):
     """Base class for module exceptions."""
-
-# TODO - provide other types of exceptions?
 
 
 # --- loggers
@@ -747,7 +745,6 @@ class AbstractedFS:
 
     # --- Conversion utilities
 
-    # FIX #9
     def normalize(self, path):
         """Translate a "virtual" FTP path into an absolute "virtual" FTP path.
         Takes an absolute or relative virtual path and returns an absolute
@@ -778,7 +775,6 @@ class AbstractedFS:
             p = "/"
         return p
 
-    # FIX #9
     def translate(self, path):
         """Translate a 'virtual' FTP path into equivalent filesystem path. Take
         an absolute or relative path as input and return a full absolute file
@@ -979,7 +975,7 @@ class FTPHandler(asynchat.async_chat):
     # maximum login attempts
     max_login_attempts = 3
 
-    # FTP site-to-site feature: also referenced as "FXP" it permits for
+    # FTP site-to-site transfer feature: also referenced as "FXP" it permits for
     # transferring a file between two remote FTP servers without the transfer
     # going through the client's host (not rencommended for security reasons
     # as described in RFC 2577).  Having this attribute set to False means that
@@ -1053,7 +1049,6 @@ class FTPHandler(asynchat.async_chat):
         """Read incoming data and append to the input buffer."""
         self.in_buffer.append(data)
         self.in_buffer_len += len(data)
-        # FIX #3
         # flush buffer if it gets too long (possible DoS attacks)
         # RFC959 specifies that a 500 response could be given in such cases
         buflimit = 2048
@@ -1104,7 +1099,6 @@ class FTPHandler(asynchat.async_chat):
         # provide a limited set of commands if user isn't authenticated yet
         if (not self.authenticated):
             if cmd in self.unauth_cmds:
-                # FIX #21
                 # we permit STAT during this phase but we don't want STAT to
                 # return a directory LISTing if the user is not authenticated
                 # yet (this could happen if STAT is used with an argument)
@@ -1124,8 +1118,6 @@ class FTPHandler(asynchat.async_chat):
             method(arg) # callback
 
         else:
-            # TODO - add a detailed comment here
-            # TODO - provisional
             # recognize those commands having "special semantics"
             if 'ABOR' in cmd:
                 self.ftp_ABOR("")
@@ -1136,19 +1128,22 @@ class FTPHandler(asynchat.async_chat):
                 self.cmd_not_understood(line)
 
     def handle_expt(self):
-        # Called when there is out of band (OOB) data for the socket connection.
-        # This could happen in case of such commands needing "special action"
-        # (typically STAT and ABOR) in which case we append OOB data to incoming
-        # buffer.
-
+        """Called when there is out of band (OOB) data for the socket connection.
+        This could happen in case of such commands needing "special action"
+        (typically STAT and ABOR) in which case we append OOB data to incoming
+        buffer.
+        """
         self.debug("FTPHandler.handle_expt()")
-        # TODO - XXX provisional
-        try:
-            data = self.socket.recv(1024, socket.MSG_OOB)
-            self.in_buffer.append(data)
-        except:
-            self.log("Can't handle OOB data.")
-            self.close()
+        if hasattr(socket, 'MSG_OOB'):
+            try:
+                data = self.socket.recv(1024, socket.MSG_OOB)
+            except socket.error:
+                pass
+            else:
+                self.in_buffer.append(data)
+                return
+        self.log("Can't handle OOB data.")
+        self.close()
 
     def handle_error(self):
         self.debug("FTPHandler.handle_error()")
@@ -1303,9 +1298,10 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_PORT(self, line):
         """Start an active data-channel."""
-        # parse PORT request getting IP and PORT
-        # TODO - add a comment describing how the algorithm used to get such
-        # values works (reference http://cr.yp.to/ftp/retr.html).
+        # Parse PORT request for getting IP and PORT.  Request comes in as:
+        # > h1,h2,h3,h4,p1,p2
+        # ...where the client's IP address is h1.h2.h3.h4 and the TCP port
+        # number is (p1 * 256) + p2.
         try:
             line = line.split(',')
             ip = ".".join(line[:4]).replace(',','.')
@@ -1323,7 +1319,6 @@ class FTPHandler(asynchat.async_chat):
                 self.respond("504 Can't connect to a foreign address.")
                 return
 
-        # FIX #11
         # ...another RFC 2577 rencommendation is rejecting connections to
         # privileged ports (< 1024) for security reasons.  Moreover, binding to
         # such ports could require root priviledges on some systems.
@@ -1470,7 +1465,6 @@ class FTPHandler(asynchat.async_chat):
             self.respond('550 %s.' %why)
             return
 
-        # FIX #12
         if self.restart_position:
             # Make sure that the requested offset is valid (within the
             # size of the file being resumed).
@@ -1526,7 +1520,6 @@ class FTPHandler(asynchat.async_chat):
             self.respond('550 %s.' %why)
             return
 
-        # FIX #12
         if self.restart_position:
             # Make sure that the requested offset is valid (within the
             # size of the file being resumed).
@@ -1570,7 +1563,6 @@ class FTPHandler(asynchat.async_chat):
         # ...where pppp represents the unique path name of the file that will be
         # written.
 
-        # FIX #19
         # watch for STOU preceded by REST, which makes no sense.
         if self.restart_position:
             self.respond("550 Can't STOU while REST request is pending.")
@@ -1604,7 +1596,6 @@ class FTPHandler(asynchat.async_chat):
         filename = os.path.basename(fd.name)
 
         # now just acts like STOR excepting that restarting isn't allowed
-        # FIX #8
         log = 'OK STOU "%s". Upload starting.' %filename
         if self.data_channel:
             self.respond("125 FILE: %s" %filename)
@@ -1618,7 +1609,6 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_APPE(self, line):
         """Append data to an existing file on the server."""
-        # FIX #35
         # watch for APPE preceded by REST, which makes no sense.
         if self.restart_position:
             self.respond("550 Can't APPE while REST request is pending.")
@@ -1653,7 +1643,6 @@ class FTPHandler(asynchat.async_chat):
                 self.dtp_server = None
                 resp = "225 ABOR command successful; data channel closed."
 
-            # FIX #18
             # If a data transfer is in progress the server must first close
             # the data connection, returning a 426 reply to indicate that the
             # transfer terminated abnormally, then it must send a 226 reply,
@@ -1680,8 +1669,6 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_USER(self, line):
         """Set the username for the current session."""
-        # TODO - see bug #7 (Change account if USER is received twice)
-
         # we always treat anonymous user as lower-case string.
         if line.lower() == "anonymous":
             line = "anonymous"
@@ -1696,7 +1683,6 @@ class FTPHandler(asynchat.async_chat):
         if not self.authenticated:
             self.respond('331 Username ok, send password.')
         else:
-            # FIX #7
             # a new USER command could be entered at any point in order to
             # change the access control flushing any user, password, and
             # account information already supplied and beginning the login
@@ -1710,8 +1696,6 @@ class FTPHandler(asynchat.async_chat):
     def ftp_PASS(self, line):
         """Check username's password against the authorizer."""
 
-        # FIX #23 (PASS should be rejected if user is already authenticated)
-        # http://code.google.com/p/pyftpdlib/issues/detail?id=23
         if self.authenticated:
             self.respond("503 User already authenticated.")
             return
@@ -1750,7 +1734,6 @@ class FTPHandler(asynchat.async_chat):
 
         # wrong username
         else:
-            # FIX #20
             self.attempted_logins += 1
             if self.attempted_logins >= self.max_login_attempts:
                 self.log('Authentication failed: unknown username "%s".' %self.username)
@@ -1823,7 +1806,6 @@ class FTPHandler(asynchat.async_chat):
         """Change into the parent directory."""
         # Note: RFC 959 says that code 200 is required but it also says that
         # CDUP uses the same codes as CWD.
-        # FIX #14
         self.ftp_CWD('..')
 
 
@@ -1834,7 +1816,7 @@ class FTPHandler(asynchat.async_chat):
         Implementation note:
         properly handling the SIZE command when TYPE ASCII is used would require
         to scan the entire file to perform the ASCII translation logic
-        (file.read(int).replace(os.linesp, '\r\n')) and then calculating the len
+        (file.read(int).replace(os.linesep, '\r\n')) and then calculating the len
         of such data which may be different than the actual size of the file on
         the server.  Considering that the calculating such result could be very
         resource-intensive it could be easy for a malicious client to try a DoS
@@ -1846,7 +1828,6 @@ class FTPHandler(asynchat.async_chat):
         """
 
         path = self.fs.translate(line)
-        # FIX #17
         if self.fs.isdir(path):
             self.respond("550 Could not get a directory size.")
             return
@@ -2005,7 +1986,6 @@ class FTPHandler(asynchat.async_chat):
     def ftp_TYPE(self, line):
         """Set current type data type to binary/ascii"""
         line = line.upper()
-        # FIX #6
         if line in ("A", "AN", "A N"):
             self.respond("200 Type set to: ASCII.")
             self.current_type = 'a'
@@ -2114,13 +2094,11 @@ class FTPHandler(asynchat.async_chat):
         """Return help text to the client."""
 
         if line:
-            # FIX #10
             if line.upper() in proto_cmds:
                 self.respond("214 %s." %proto_cmds[line.upper()])
             else:
                 self.respond("500 Unrecognized command.")
         else:
-            # FIX #31
             # provide a compact list of recognized commands
             def formatted_help():
                 cmds = []
@@ -2189,7 +2167,6 @@ class FTPServer(asyncore.dispatcher):
         self.ip_map = []
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         if os.name == 'posix':
-            # FIX #4
             self.set_reuse_addr()
         self.bind(self.address)
         self.listen(5)
@@ -2202,22 +2179,19 @@ class FTPServer(asyncore.dispatcher):
 
         log("Serving FTP on %s:%s" %self.socket.getsockname())
         try:
-            # FIX #16
+            # FIX #16, #26
             # use_poll specifies whether to use select module's poll()
-            # with ayncore or whether to use asyncore's own poll() method
+            # with asyncore or whether to use asyncore's own poll() method
             # Python versions < 2.4 need use_poll set to False
-            #
-            # FIX #26:
-            # this breaks on OS X systems if use_poll is set to Tru. All
+            # This breaks on OS X systems if use_poll is set to True. All
             # systems seem to work fine with it set to False (tested on
-            # Linux, Windows, and OS X platforms
+            # Linux, Windows, and OS X platforms)
             if args or kwargs:
                 asyncore.loop(*args, **kwargs)
             else:
                 asyncore.loop(timeout=1, use_poll=False)
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             log("Shutting down FTPd.")
-            # FIX #22
             self.close_all()
 
     def handle_accept(self):
@@ -2230,12 +2204,10 @@ class FTPServer(asyncore.dispatcher):
         ip = addr[0]
         self.ip_map.append(ip)
 
-        # FIX #5
         # For performance and security reasons we should always set a limit for
-        # the number of file descriptors that socket_map should contain.
-        # When we're running out of such limit we'll use the last available
-        # channel for sending a 421 response to the client before disconnecting
-        # it.
+        # the number of file descriptors that socket_map should contain.  When
+        # we're running out of such limit we'll use the last available channel
+        # for sending a 421 response to the client before disconnecting it.
         if self.max_cons:
             if len(self._map) > self.max_cons:
                 handler.handle_max_cons()
@@ -2293,20 +2265,11 @@ def test():
     # python -m pyftpdlib.FTPServer
     authorizer = DummyAuthorizer()
     authorizer.add_anonymous(os.getcwd())
-
-    # TODO - Delete me (used for doing tests)
-    authorizer.add_user('user', '12345', os.getcwd(), ('r','w'))
-    # TODO - /Delete me (used for doing tests)
-
     FTPHandler.authorizer = authorizer
     address = ('', 21)
     ftpd = FTPServer(address, FTPHandler)
     ftpd.serve_forever()
 
-# TODO - Delete me (used for doing tests)
-import gc
-gc.set_debug(gc.DEBUG_LEAK)
-# TODO - /Delete me (used for doing tests)
 
 if __name__ == '__main__':
     test()
