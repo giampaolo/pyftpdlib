@@ -27,7 +27,7 @@ Security enhancements:
 Usability enhancements:
 
  * Provided an overridable attribute to easily set number of maximum login attempts before disconnecting
- * Provided an overridable attribute to easily enable/disable FTP proxying feature
+ * Provided an overridable attribute to easily enable/disable site-to-site transfers
  * Docstrings are now provided for almost every method and function
  * (see Issue #30) Command help strings quality improved by adding command syntaxes
  * (see Issue #31) A compact list of recognized commands is now provided on HELP

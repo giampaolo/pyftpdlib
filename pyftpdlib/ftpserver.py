@@ -355,28 +355,37 @@ class PassiveDTP(asyncore.dispatcher):
     
     def handle_accept(self):
         """Called when remote client initiates a connection."""
-        sock_obj, addr = self.accept()
-        
-        # PASV connection theft protection: check the origin of data connection.
-        # We have to drop the incoming data connection if remote IP address 
-        # does not match the client's IP address.
-        if self.cmd_channel.remote_ip != addr[0]:
-            self.cmd_channel.log("PASV connection theft attempt occurred from %s:%s."
-                %(addr[0], addr[1]))
-            try:
-                #sock_obj.send('500 Go hack someone else, dude.\r\n')
-                sock_obj.close()
-            except socket.error:
-                pass        
-        else:
-            debug("PassiveDTP.handle_accept()")
-            # Immediately close the current channel (we accept only one
-            # connection at time) to avoid running out of max connections limit.
-            self.close()
-            # delegate such connection to DTP handler
-            handler = self.cmd_channel.dtp_handler(sock_obj, self.cmd_channel)
-            self.cmd_channel.data_channel = handler
-            self.cmd_channel.on_dtp_connection()
+        debug("PassiveDTP.handle_accept()")
+        sock, addr = self.accept()
+
+        # Check the origin of data connection.  If not expressively configured
+        # we drop the incoming data connection if remote IP address does not
+        # match the client's IP address.
+        if (self.cmd_channel.remote_ip != addr[0]):
+            if not self.cmd_channel.permit_foreign_addresses:
+                try:
+                    sock.close()
+                except socket.error:
+                    pass
+                msg = 'Rejected data connection from foreign address %s:%s.' \
+                        %(addr[0], addr[1])
+                self.cmd_channel.respond("421 %s" %msg)
+                self.cmd_channel.log()
+                # do not close listening socket: it couldn't be client's blame
+                return
+            else:
+                # site-to-site FTP allowed
+                msg = 'Established data connection with foreign address %s:%s.' \
+                        %(addr[0], addr[1])
+                self.cmd_channel.log(msg)
+
+        # Immediately close the current channel (we accept only one connection
+        # at time) and avoid running out of max connections limit.
+        self.close()
+        # delegate such connection to DTP handler
+        handler = self.cmd_channel.dtp_handler(sock, self.cmd_channel)
+        self.cmd_channel.data_channel = handler
+        self.cmd_channel.on_dtp_connection()
 
     def writable(self):
         return 0
@@ -970,12 +979,16 @@ class FTPHandler(asynchat.async_chat):
     # maximum login attempts
     max_login_attempts = 3
 
-    # FTP proxying feature (see RFC 959 describing such feature and RFC 2577
-    # which describes security considerations implied)
-    permit_ftp_proxying = False
+    # FTP site-to-site feature: also referenced as "FXP" it permits for
+    # transferring a file between two remote FTP servers without the transfer
+    # going through the client's host (not rencommended for security reasons
+    # as described in RFC 2577).  Having this attribute set to False means that
+    # all data connections from/to remote IP addresses which do not match
+    # the client's IP address will be dropped.
+    permit_foreign_addresses = False
 
-    # Set to True if you want to permit PORTing over
-    # privileged ports (not recommended)
+    # Set to True if you want to permit PORTing over privileged ports
+    # (not recommended)
     permit_privileged_port = False
 
 
@@ -1298,16 +1311,16 @@ class FTPHandler(asynchat.async_chat):
             ip = ".".join(line[:4]).replace(',','.')
             port = (int(line[4]) * 256) + int(line[5])
         except (ValueError, OverflowError):
-            self.respond("500 Invalid PORT format.")
+            self.respond("504 Invalid PORT format.")
             return
 
         # FTP bounce attacks protection: according to RFC 2577 it's
         # recommended to reject PORT if IP address specified in it
         # does not match client IP address.
-        if not self.permit_ftp_proxying:
+        if not self.permit_foreign_addresses:
             if ip != self.remote_ip:
-                self.log("PORT %s refused (bounce attack protection)" %line)
-                self.respond("500 FTP proxying feature not allowed.")
+                self.log("Rejected data connection to foreign address %s:%s." %(ip, port))
+                self.respond("504 Can't connect to a foreign address.")
                 return
 
         # FIX #11
@@ -1317,7 +1330,7 @@ class FTPHandler(asynchat.async_chat):
         if not self.permit_privileged_port:
             if port < 1024:
                 self.log('PORT against the privileged port "%s" refused.' %port)
-                self.respond("500 Can't connect over a privileged port.")
+                self.respond("504 Can't connect over a privileged port.")
                 return
 
         # close existent DTP-server instance, if any.
@@ -1541,7 +1554,6 @@ class FTPHandler(asynchat.async_chat):
             self.data_channel.file_obj = fd
             self.data_channel.enable_receiving(self.current_type)
         else:
-            self.debug("info: new producer queue added.")
             self.respond("150 File status okay. About to open data connection.")
             self.in_dtp_queue = (fd, log)
 
@@ -1600,7 +1612,6 @@ class FTPHandler(asynchat.async_chat):
             self.data_channel.file_obj = fd
             self.data_channel.enable_receiving(self.current_type)
         else:
-            self.debug("info: new producer queue added.")
             self.respond("150 FILE: %s" %filename)
             self.in_dtp_queue = (fd, log)
 
@@ -1608,7 +1619,7 @@ class FTPHandler(asynchat.async_chat):
     def ftp_APPE(self, line):
         """Append data to an existing file on the server."""
         # FIX #35
-        # watch for STOU preceded by REST, which makes no sense.
+        # watch for APPE preceded by REST, which makes no sense.
         if self.restart_position:
             self.respond("550 Can't APPE while REST request is pending.")
             return
@@ -1675,6 +1686,13 @@ class FTPHandler(asynchat.async_chat):
         if line.lower() == "anonymous":
             line = "anonymous"
 
+        # RFC 959 specifies a 530 response to the USER command if the username
+        # is not valid.  If the username is valid is required ftpd returns a 331
+        # response instead.  In order to prevent a malicious client from
+        # determining valid usernames on a server, it is suggested by RFC 2577
+        # that a server always return 331 to the USER command and then reject
+        # the combination of username and password for an invalid username when
+        # PASS is provided later.
         if not self.authenticated:
             self.respond('331 Username ok, send password.')
         else:
@@ -1758,6 +1776,8 @@ class FTPHandler(asynchat.async_chat):
         # the control connection is opened.
         self.log("OK REIN. Flushing account information.")
         self.flush_account()
+        # Note: RFC 959 erroneously mention "220" as the correct response
+        # code to be given in this case, but this is wrong...
         self.respond("230 Ready for new user.")
 
 
