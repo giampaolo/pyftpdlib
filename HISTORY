@@ -52,6 +52,7 @@ Bugfixes:
  * Issue #21: STAT wasn't permitted if user wasn't authenticated yet
  * Issue #22: corrected memory leaks occurring on KeyboardInterrupt/SIGTERM
  * Issue #23: PASS wasn't rejected when user was already authenticated
+ * Issue #24: can't use os.strerror() on pythonCE
  * Issue #26: used select() by default instead of poll() because of an asyncore module's defect
  * Issue #33: some FTPHandler class attributes wasn't resetted on REIN
  * Issue #35: watch for APPE preceded by REST which makes no sense

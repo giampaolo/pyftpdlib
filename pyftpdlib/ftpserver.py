@@ -200,6 +200,17 @@ if not hasattr(traceback, 'format_exc'):
     traceback.format_exc = _format_exc
 
 
+def _strerror(err):
+    """A wrap around os.strerror() which may be not available on all platforms
+    (e.g. pythonCE).  err argument expected must be an EnvironmentError
+    class instance.
+    """
+    if hasattr(os, 'strerror'):
+        return os.strerror(err.errno)
+    else:
+        return err.strerror
+
+
 class Error(Exception):
     """Base class for module exceptions."""
 
@@ -644,7 +655,7 @@ class DTPHandler(asyncore.dispatcher):
         # an error could occur in case we fail reading / writing
         # from / to file (e.g. file system gets full)
         except EnvironmentError, err:
-            error = os.strerror(err.errno)
+            error = _strerror(err)
         except:
             # some other exception occurred; we don't want to provide
             # confidential error messages to user so we return a generic
@@ -1418,7 +1429,7 @@ class FTPHandler(asynchat.async_chat):
         try:
             data = self.fs.get_list_dir(path)
         except OSError, err:
-            why = os.strerror(err.errno)
+            why = _strerror(err)
             self.log('FAIL LIST "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
         else:
@@ -1439,7 +1450,7 @@ class FTPHandler(asynchat.async_chat):
         try:
             data = self.fs.get_nlst_dir(path)
         except OSError, err:
-            why = os.strerror(err.errno)
+            why = _strerror(err)
             self.log('FAIL NLST "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
         else:
@@ -1460,7 +1471,7 @@ class FTPHandler(asynchat.async_chat):
         try:
             fd = self.fs.open(file, 'rb')
         except IOError, err:
-            why = os.strerror(err.errno)
+            why = _strerror(err)
             self.log('FAIL RETR "%s". %s.' %(self.fs.normalize(line), why))
             self.respond('550 %s.' %why)
             return
@@ -1478,7 +1489,7 @@ class FTPHandler(asynchat.async_chat):
             except AssertionError:
                 why = "Invalid REST parameter"
             except IOError, err:
-                why = os.strerror(err.errno)
+                why = _strerror(err)
             self.restart_position = 0
             if not ok:
                 self.respond('554 %s' %why)
@@ -1515,7 +1526,7 @@ class FTPHandler(asynchat.async_chat):
         try:
             fd = self.fs.open(file, mode + 'b')
         except IOError, err:
-            why = os.strerror(err.errno)
+            why = _strerror(err)
             self.log('FAIL %s "%s". %s.' %(cmd, self.fs.normalize(line), why))
             self.respond('550 %s.' %why)
             return
@@ -1533,7 +1544,7 @@ class FTPHandler(asynchat.async_chat):
             except AssertionError:
                 why = "Invalid REST parameter"
             except IOError, err:
-                why = os.strerror(err.errno)
+                why = _strerror(err)
             self.restart_position = 0
             if not ok:
                 self.respond('554 %s' %why)
@@ -1588,7 +1599,7 @@ class FTPHandler(asynchat.async_chat):
                 why = 'No usable unique file name found.'
             # something else happened
             else:
-                why = os.strerror(err.errno)
+                why = _strerror(err)
             self.respond("450 %s." %why)
             self.log('FAIL STOU "%s". %s.' %(self.fs.normalize(line), why))
             return
@@ -1790,7 +1801,7 @@ class FTPHandler(asynchat.async_chat):
         try:
             self.fs.chdir(real_path)
         except OSError, err:
-            why = os.strerror(err.errno)
+            why = _strerror(err)
             self.log('FAIL CWD "%s". %s.' %(self.fs.normalize(line), why))
             self.respond('550 %s.' %why)
         else:
@@ -1834,7 +1845,7 @@ class FTPHandler(asynchat.async_chat):
         try:
             size = self.fs.getsize(path)
         except OSError, err:
-            why = os.strerror(err.errno)
+            why = _strerror(err)
             self.log('FAIL SIZE "%s". %s' %(self.fs.normalize(line), why))
             self.respond('550 %s.' %why)
         else:
@@ -1854,7 +1865,7 @@ class FTPHandler(asynchat.async_chat):
         try:
             lmt = self.fs.getmtime(path)
         except OSError, err:
-            why = os.strerror(err.errno)
+            why = _strerror(err)
             self.log('FAIL MDTM "%s". %s' %(self.fs.normalize(line), why))
             self.respond('550 %s.' %why)
         else:
@@ -1876,7 +1887,7 @@ class FTPHandler(asynchat.async_chat):
         try:
             self.fs.mkdir(path)
         except OSError, err:
-            why = os.strerror(err.errno)
+            why = _strerror(err)
             self.log('FAIL MKD "%s". %s.' %(self.fs.normalize(line), why))
             self.respond('550 %s.' %why)
         else:
@@ -1902,7 +1913,7 @@ class FTPHandler(asynchat.async_chat):
         try:
             self.fs.rmdir(path)
         except OSError, err:
-            why = os.strerror(err.errno)
+            why = _strerror(err)
             self.log('FAIL RMD "%s". %s.' %(self.fs.normalize(line), why))
             self.respond('550 %s.' %why)
         else:
@@ -1923,7 +1934,7 @@ class FTPHandler(asynchat.async_chat):
         try:
             self.fs.remove(path)
         except OSError, err:
-            why = os.strerror(err.errno)
+            why = _strerror(err)
             self.log('FAIL DELE "%s". %s.' %(self.fs.normalize(line), why))
             self.respond('550 %s.' %why)
         else:
@@ -1969,7 +1980,7 @@ class FTPHandler(asynchat.async_chat):
             try:
                 self.fs.rename(src, dst)
             except OSError, err:
-                why = os.strerror(err.errno)
+                why = _strerror(err)
                 self.log('FAIL RNFR/RNTO "%s ==> %s". %s.'
                     %(self.fs.normalize(self.fs.rnfr), self.fs.normalize(line), why))
                 self.respond('550 %s.' %why)
@@ -2063,7 +2074,7 @@ class FTPHandler(asynchat.async_chat):
             try:
                 data = self.fs.get_stat_dir(line)
             except OSError, err:
-                data = os.strerror(err.errno) + '.\r\n'
+                data = _strerror(err) + '.\r\n'
             self.push('213-Status of "%s":\r\n' %self.fs.normalize(line))
             self.push(data)
             self.respond('213 End of status.')
