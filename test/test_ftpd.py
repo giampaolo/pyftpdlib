@@ -2,7 +2,7 @@
 # test_ftpd.py
 
 #  ======================================================================
-#  Copyright (C) 2007 Giampaolo Rodola' <billiejoex@gmail.com>
+#  Copyright (C) 2007 Giampaolo Rodola' <g.rodola@gmail.com>
 #
 #                         All Rights Reserved
 #
@@ -37,63 +37,191 @@ import random
 
 from pyftpdlib import ftpserver
 
-__revision__ = '2 (pyftpdlib 0.1.1)'
+__release__ = 'pyftpdlib 0.2.0'
+
+
+# This test suite has been run successfully on the following systems:
+
+# --------------------------------------------------
+#  System                          | Python version
+# --------------------------------------------------
+#  Windows XP prof sp2             | 2.3, 2.4, 2.5
+#  Linux CentOS 2.6.20.15          | 2.4
+#  Linux Ubuntu 2.6.20-15          | 2.4, 2.5
+#  Linux Debian 2.4.27-2-386       | 2.3.5
+#  OS X 10.4.10                    | 2.3, 2.4, 2.5
+# --------------------------------------------------
+
 
 # TODO:
-# - test QUIT while a transfer is in progress
-# - test data transfer in ASCII and binary MODE
+# - Test QUIT while a transfer is in progress.
+# - Test data transfer in ASCII mode.
+# - Test AbstractedFS.translate() on systems having os.sep == ':'.
 
 
 class TestClasses(unittest.TestCase):
 
-    def test_abstracetd_fs(self):
+    def test_AbstractedFS_normalize(self):
         ae = self.assertEquals
         fs = ftpserver.AbstractedFS()
 
-        # normalize method
         fs.cwd = '/'
         ae(fs.normalize(''), '/')
         ae(fs.normalize('/'), '/')
+        ae(fs.normalize('.'), '/')
+        ae(fs.normalize('..'), '/')
         ae(fs.normalize('a'), '/a')
         ae(fs.normalize('/a'), '/a')
-        ae(fs.normalize('a/b'), '/a/b')
-        fs.cwd = '/sub'      
-        ae(fs.normalize(''), '/sub')
-        ae(fs.normalize('a'), '/sub/a')
-        ae(fs.normalize('a/b'), '/sub/a/b')
-        ae(fs.normalize('//'), '/')
         ae(fs.normalize('/a/'), '/a')
+        ae(fs.normalize('a/..'), '/')
+        ae(fs.normalize('a/b'), '/a/b')
+        ae(fs.normalize('a/b/..'), '/a')
+        ae(fs.normalize('a/b/../..'), '/')
+        fs.cwd = '/sub'
+        ae(fs.normalize(''), '/sub')
+        ae(fs.normalize('/'), '/')
+        ae(fs.normalize('.'), '/sub')
+        ae(fs.normalize('..'), '/')
+        ae(fs.normalize('a'), '/sub/a')
+        ae(fs.normalize('a/'), '/sub/a')
+        ae(fs.normalize('a/..'), '/sub')
+        ae(fs.normalize('a/b'), '/sub/a/b')
+        ae(fs.normalize('a/b/'), '/sub/a/b')
+        ae(fs.normalize('a/b/..'), '/sub/a')
+        ae(fs.normalize('a/b/../..'), '/sub')
+        ae(fs.normalize('a/b/../../..'), '/')
+        ae(fs.normalize('//'), '/') # UNC paths must be collapsed
 
-        # translate method
+    def test_AbstractedFS_normalize(self):
+        ae = self.assertEquals
+        fs = ftpserver.AbstractedFS()
+
+        # Unix
         if os.sep == '/':
             fs.root = '/home/user'
             fs.cwd = '/'
+            ae(fs.translate(''), '/home/user')
             ae(fs.translate('/'), '/home/user')
+            ae(fs.translate('.'), '/home/user')
+            ae(fs.translate('..'), '/home/user')
             ae(fs.translate('a'), '/home/user/a')
             ae(fs.translate('/a'), '/home/user/a')
+            ae(fs.translate('/a/'), '/home/user/a')
+            ae(fs.translate('a/..'), '/home/user')
             ae(fs.translate('a/b'), '/home/user/a/b')
             ae(fs.translate('/a/b'), '/home/user/a/b')
+            ae(fs.translate('/a/b/..'), '/home/user/a')
+            ae(fs.translate('/a/b/../..'), '/home/user')
             fs.cwd = '/sub'
-            ae(fs.translate('a'), '/home/user/sub/a')
-            ae(fs.translate('a/b'), '/home/user/sub/a/b')
-            ae(fs.translate('/a'), '/home/user/a')
+            ae(fs.translate(''), '/home/user/sub')
             ae(fs.translate('/'), '/home/user')
+            ae(fs.translate('.'), '/home/user/sub')
+            ae(fs.translate('..'), '/home/user')
+            ae(fs.translate('a'), '/home/user/sub/a')
+            ae(fs.translate('a/'), '/home/user/sub/a')
+            ae(fs.translate('a/..'), '/home/user/sub')
+            ae(fs.translate('a/b'), '/home/user/sub/a/b')
+            ae(fs.translate('a/b/..'), '/home/user/sub/a')
+            ae(fs.translate('a/b/../..'), '/home/user/sub')
+            ae(fs.translate('a/b/../../..'), '/home/user')
+            ae(fs.translate('//a'), '/home/user/a') # UNC paths must be collapsed
 
+            # the same as above but using the root directory /
+            fs.root = '/'
+            fs.cwd = '/'
+            ae(fs.translate(''), '/')
+            ae(fs.translate('/'), '/')
+            ae(fs.translate('.'), '/')
+            ae(fs.translate('..'), '/')
+            ae(fs.translate('a'), '/a')
+            ae(fs.translate('/a'), '/a')
+            ae(fs.translate('/a/'), '/a')
+            ae(fs.translate('a/..'), '/')
+            ae(fs.translate('a/b'), '/a/b')
+            ae(fs.translate('/a/b'), '/a/b')
+            ae(fs.translate('/a/b/..'), '/a')
+            ae(fs.translate('/a/b/../..'), '/')
+            fs.cwd = '/sub'
+            ae(fs.translate(''), '/sub')
+            ae(fs.translate('/'), '/')
+            ae(fs.translate('.'), '/sub')
+            ae(fs.translate('..'), '/')
+            ae(fs.translate('a'), '/sub/a')
+            ae(fs.translate('a/'), '/sub/a')
+            ae(fs.translate('a/..'), '/sub')
+            ae(fs.translate('a/b'), '/sub/a/b')
+            ae(fs.translate('a/b/..'), '/sub/a')
+            ae(fs.translate('a/b/../..'), '/sub')
+            ae(fs.translate('a/b/../../..'), '/')
+            ae(fs.translate('//a'), '/a') # UNC paths must be collapsed
+
+        # Windows
         elif os.sep == '\\':
             fs.root = r'C:\dir'
             fs.cwd = '/'
+            ae(fs.translate(''), r'C:\dir')
             ae(fs.translate('/'), r'C:\dir')
+            ae(fs.translate('.'), r'C:\dir')
+            ae(fs.translate('..'), r'C:\dir')
             ae(fs.translate('a'), r'C:\dir\a')
             ae(fs.translate('/a'), r'C:\dir\a')
+            ae(fs.translate('/a/'), r'C:\dir\a')
+            ae(fs.translate('a/..'), r'C:\dir')
             ae(fs.translate('a/b'), r'C:\dir\a\b')
             ae(fs.translate('/a/b'), r'C:\dir\a\b')
+            ae(fs.translate('/a/b/..'), r'C:\dir\a')
+            ae(fs.translate('/a/b/../..'), r'C:\dir')
             fs.cwd = '/sub'
-            ae(fs.translate('a'), r'C:\dir\sub\a')
-            ae(fs.translate('a/b'), r'C:\dir\sub\a\b')
-            ae(fs.translate('/a'), r'C:\dir\a')
+            ae(fs.translate(''), r'C:\dir\sub')
             ae(fs.translate('/'), r'C:\dir')
+            ae(fs.translate('.'), r'C:\dir\sub')
+            ae(fs.translate('..'), r'C:\dir')
+            ae(fs.translate('a'), r'C:\dir\sub\a')
+            ae(fs.translate('a/'), r'C:\dir\sub\a')
+            ae(fs.translate('a/..'), r'C:\dir\sub')
+            ae(fs.translate('a/b'), r'C:\dir\sub\a\b')
+            ae(fs.translate('a/b/..'), r'C:\dir\sub\a')
+            ae(fs.translate('a/b/../..'), r'C:\dir\sub')
+            ae(fs.translate('a/b/../../..'), r'C:\dir')
+            ae(fs.translate('//a'), r'C:\dir\a') # UNC paths must be collapsed
 
-    def test_dummy_authorizer(self):
+            # the same as above but using the drive root C:\
+            fs.root = 'C:\\'
+            fs.cwd = '/'
+            ae(fs.translate(''), 'C:\\')
+            ae(fs.translate('/'), 'C:\\')
+            ae(fs.translate('.'), 'C:\\')
+            ae(fs.translate('..'), 'C:\\')
+            ae(fs.translate('a'), r'C:\a')
+            ae(fs.translate('/a'), r'C:\a')
+            ae(fs.translate('/a/'), r'C:\a')
+            ae(fs.translate('a/..'), 'C:\\')
+            ae(fs.translate('a/b'), r'C:\a\b')
+            ae(fs.translate('/a/b'), r'C:\a\b')
+            ae(fs.translate('/a/b/..'), r'C:\a')
+            ae(fs.translate('/a/b/../..'), 'C:\\')
+            fs.cwd = '/sub'
+            ae(fs.translate(''), r'C:\sub')
+            ae(fs.translate('/'), 'C:\\')
+            ae(fs.translate('.'), 'C:\\sub')
+            ae(fs.translate('..'), 'C:\\')
+            ae(fs.translate('a'), r'C:\sub\a')
+            ae(fs.translate('a/'), r'C:\sub\a')
+            ae(fs.translate('a/..'), r'C:\sub')
+            ae(fs.translate('a/b'), r'C:\sub\a\b')
+            ae(fs.translate('a/b/..'), r'C:\sub\a')
+            ae(fs.translate('a/b/../..'), r'C:\sub')
+            ae(fs.translate('a/b/../../..'), 'C:\\')
+            ae(fs.translate('//a'), r'C:\a') # UNC paths must be collapsed
+
+        # On Mac OS 8 & 9, the folder delimiter is colon (":"), and the path
+        # separator is a semi-colon (";").  Not enough hardware (...and money
+        # ;-)) for creating tests.
+        else:
+            self.fail('Test not available for such system (os.sep == "%s").'
+                        %os.sep)
+
+    def test_DummyAuthorizer(self):
         auth = ftpserver.DummyAuthorizer()
         auth.user_table = {}
         if os.sep == '\\':
@@ -101,7 +229,10 @@ class TestClasses(unittest.TestCase):
         elif os.sep == '/':
             home = '/tmp'
         else:
-            raise(Exception, 'Not supported system')
+            # Mac OS 8 & 9
+            self.fail('Test not available for such system (os.sep == "%s").'
+                        %os.sep)
+        self.failUnless(os.path.isdir(home))
         # raise exc if path does not exist
         self.assertRaises(AssertionError, auth.add_user, 'ftpuser', '12345', 'ox:\\?', perm=('r', 'w'))
         self.assertRaises(AssertionError, auth.add_anonymous, 'ox:\\?')
@@ -150,7 +281,7 @@ class FtpAuthentication(unittest.TestCase):
     def test_anon_auth(self):
         ftp.login(user='anonymous', passwd='anon@')
         ftp.login(user='AnonYmoUs', passwd='anon@')
-        ftp.login(user='anonymous', passwd='')   
+        ftp.login(user='anonymous', passwd='')
 
     def test_max_auth(self):
         self.failUnlessRaises(ftplib.error_perm, ftp.login, user=user, passwd='wrong')
@@ -422,7 +553,7 @@ class FtpRetrieveData(unittest.TestCase):
         self.f1 = open(tempfile.mktemp(dir=home), 'w+b')
         self.f2 = open(tempfile.mktemp(dir=home), 'w+b')
 
-    def tearDown(self):        
+    def tearDown(self):
         ftp.close()
         if not self.f1.closed:
             self.f1.close()
@@ -588,7 +719,7 @@ class FtpStoreData(unittest.TestCase):
             self.f2.close()
         os.remove(self.f1.name)
         os.remove(self.f2.name)
-        
+
     def test_stor(self):
         data = 'abcde12345' * 100000
         self.f1.write(data)
@@ -634,7 +765,7 @@ class FtpStoreData(unittest.TestCase):
         fname_1 = os.path.basename(self.f1.name)
         fname_2 = os.path.basename(self.f2.name)
         remote_fname = os.path.basename(tempfile.mktemp(dir=home))
-        
+
         data1 = 'abcde12345' * 100000
         self.f1.write(data1)
         self.f1.seek(0)
@@ -659,8 +790,8 @@ class FtpStoreData(unittest.TestCase):
         fname_1 = os.path.basename(self.f1.name)
         fname_2 = os.path.basename(self.f2.name)
         remote_fname = os.path.basename(tempfile.mktemp(dir=home))
-        
-        data = 'abcde12345' * 100000     
+
+        data = 'abcde12345' * 100000
         self.f1.write(data)
         self.f1.seek(0)
 
@@ -673,7 +804,7 @@ class FtpStoreData(unittest.TestCase):
             bytes_sent += len(chunk)
             # stop transfer while it isn't finished yet
             if bytes_sent >= 524288: # 2^19
-                break            
+                break
             elif not chunk:
                 break
         conn.close()
@@ -697,37 +828,30 @@ class FtpStoreData(unittest.TestCase):
         ftp.delete(remote_fname)
 
 
-
-
-
 def run():
     class ftpd(threading.Thread):
         def __init__(self):
             threading.Thread.__init__(self)
 
         def run(self):
-            def logger(msg):
+            def devnull(msg):
                 pass
-            def linelogger(msg):
-                pass
-            def debugger(msg):
-                pass
-            ftpserver.log = logger
-            ftpserver.logline = linelogger
-            ftpserver.debug = debugger
+            ftpserver.log = devnull
+            ftpserver.logline = devnull
+            ftpserver.debug = devnull
             authorizer = ftpserver.DummyAuthorizer()
             authorizer.add_user(user, pwd, home, perm=('r', 'w'))
             authorizer.add_anonymous(home)
             ftp_handler = ftpserver.FTPHandler
             ftp_handler.authorizer = authorizer
-            address = (host, port)    
+            address = (host, port)
             ftpd = ftpserver.FTPServer(address, ftp_handler)
             ftpd.serve_forever()
 
     def exit_fun():
         os._exit(0)
     atexit.register(exit_fun)
-    
+
     f = ftpd()
     f.start()
     time.sleep(0.3)
@@ -741,4 +865,4 @@ pwd = '12345'
 home = os.getcwd()
 
 if __name__ == '__main__':
-    run()    
+    run()

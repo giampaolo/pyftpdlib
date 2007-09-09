@@ -794,9 +794,12 @@ class AbstractedFS:
         Note: directory separators are system dependent.
         """
         # as far as I know, it should always be path traversal safe...
-        return os.path.normpath(self.root + self.normalize(path))
+        if os.path.normpath(self.root) == os.sep:
+            return os.path.normpath(self.normalize(path))
+        else:
+            return os.path.normpath(self.root + self.normalize(path))
 
-    # --- Wrapper methods around os.*, open() and tempfile
+    # --- Wrapper methods around os.*, open(), glob and tempfile
 
     def open(self, filename, mode):
         """Open a file returning its handler."""
@@ -858,7 +861,7 @@ class AbstractedFS:
         return os.path.getmtime(path)
            
     def rename(self, src, dst):
-        """Rename the specified src file to the dest filename."""
+        """Rename the specified src file to the dst filename."""
         os.rename(src, dst)
 
     def glob1(self, dirname, pattern):
