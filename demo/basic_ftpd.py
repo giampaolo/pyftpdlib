@@ -7,7 +7,9 @@ and setting a limit for incoming connections.
 """
 
 import os
+
 from pyftpdlib import ftpserver
+
 
 if __name__ == "__main__":
 
@@ -25,8 +27,8 @@ if __name__ == "__main__":
     ftp_handler.msg_login = "Welcome in."
     ftp_handler.msg_quit = "Goodbye."
 
-    # Instantiate FTP server class and listen to localhost:21
-    address = ('127.0.0.1', 21)
+    # Instantiate FTP server class and listen to 0.0.0.0:21
+    address = ('', 21)
     ftpd = ftpserver.FTPServer(address, ftp_handler)
 
     # set a limit for connections

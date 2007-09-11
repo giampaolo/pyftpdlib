@@ -116,6 +116,7 @@ import time
 import glob
 import fnmatch
 import tempfile
+import warnings
 
 
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'debug', 'DummyAuthorizer',
@@ -214,6 +215,9 @@ def _strerror(err):
 class Error(Exception):
     """Base class for module exceptions."""
 
+class AuthorizerError(Error):
+    """Base class for authorizer exceptions."""
+
 
 # --- loggers
 
@@ -274,38 +278,37 @@ class DummyAuthorizer:
 
     def add_user(self, username, password, homedir, perm=('r')):
         """Add a user to the virtual users table.  Exceptions raised on error
-        conditions such as insufficient permissions or duplicate usernames.
+        conditions such as invalid permissions, missing home directory or
+        duplicate usernames.
         """
-        assert os.path.isdir(homedir), 'No such directory: "%s".' %homedir
-        for i in perm:
-            if i not in ('r', 'w'):
-                raise Error('No such permission "%s".' %i)
         if self.has_user(username):
-            raise Error('User "%s" already exists.' %username)
+            raise AuthorizerError('User "%s" already exists.' %username)
+        if not os.path.isdir(homedir):
+            raise AuthorizerError('No such directory: "%s".' %homedir)
+        if (username.lower() == 'anonymous') and password:
+            raise AuthorizerError("Can't assign password to anonymous user.")
+        for p in perm:
+            if p not in ('', 'r', 'w'):
+                raise AuthorizerError('No such permission "%s".' %p)
+            if (p in 'w') and (username == 'anonymous'):
+                warnings.warn("write permissions assigned to anonymous user.",
+                                RuntimeWarning)
         dic = {'pwd'  : str(password),
                'home' : str(homedir),
                'perm' : perm
-                }
+               }
         self.user_table[username] = dic
         
     def add_anonymous(self, homedir, perm=('r')):
         """Add an anonymous user to the virtual users table.  Exceptions raised
         on error conditions such as insufficient permissions, missing home
-        directory, or duplicate usernames.
+        directory, or duplicate anonymous users.
         """
-        if perm not in ('', 'r'):
-            if perm == 'w':
-                raise Error("Anonymous aims to be a read-only user.")
-            else:
-                raise Error('No such permission "%s".' %perm)
-        assert os.path.isdir(homedir), 'No such directory: "%s".' %homedir        
-        if self.has_user('anonymous'):
-            raise Error('User anonymous already exists.')
-        dic = {'pwd'  : '',
-               'home' : homedir,
-               'perm' : perm
-                }
-        self.user_table['anonymous'] = dic
+        DummyAuthorizer.add_user(self, 'anonymous', '', homedir, perm)
+
+    def remove_user(self, username):
+        """Remove a user from the virtual users table."""
+        del self.user_table[username]
 
     def validate_authentication(self, username, password):
         """Whether the supplied username and password match the stored
@@ -1718,13 +1721,11 @@ class FTPHandler(asynchat.async_chat):
             self.respond("503 Login with USER first.")
             return
 
-        if self.username == 'anonymous':
-            line = ''
-
         # username ok
         if self.authorizer.has_user(self.username):
 
-            if self.authorizer.validate_authentication(self.username, line):
+            if self.authorizer.validate_authentication(self.username, line) \
+            or self.username == 'anonymous':
                 if not self.msg_login:
                     self.respond('230 User "%s" logged in.' %self.username)
                 else:

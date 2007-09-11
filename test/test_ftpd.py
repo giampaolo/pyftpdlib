@@ -34,6 +34,7 @@ import time
 import tempfile
 import ftplib
 import random
+import warnings
 
 from pyftpdlib import ftpserver
 
@@ -59,9 +60,9 @@ __release__ = 'pyftpdlib 0.2.0'
 # - Test AbstractedFS.translate() on systems having os.sep == ':'.
 
 
-class TestClasses(unittest.TestCase):
+class AbstractedFSClass(unittest.TestCase):
 
-    def test_AbstractedFS_normalize(self):
+    def test_normalize(self):
         ae = self.assertEquals
         fs = ftpserver.AbstractedFS()
 
@@ -92,7 +93,7 @@ class TestClasses(unittest.TestCase):
         ae(fs.normalize('a/b/../../..'), '/')
         ae(fs.normalize('//'), '/') # UNC paths must be collapsed
 
-    def test_AbstractedFS_normalize(self):
+    def test_translate(self):
         ae = self.assertEquals
         fs = ftpserver.AbstractedFS()
 
@@ -221,36 +222,52 @@ class TestClasses(unittest.TestCase):
             self.fail('Test not available for such system (os.sep == "%s").'
                         %os.sep)
 
-    def test_DummyAuthorizer(self):
+
+class DummyAuthorizerClass(unittest.TestCase):
+
+    # temporarily change warnings to exceptions for the purposes of testing
+    def setUp(self):
+        warnings.filterwarnings("error")
+
+    def tearDown(self):
+        warnings.resetwarnings()
+
+    def test_dummy_authorizer(self):
         auth = ftpserver.DummyAuthorizer()
         auth.user_table = {}
-        if os.sep == '\\':
-            home = 'C:\\'
-        elif os.sep == '/':
-            home = '/tmp'
-        else:
-            # Mac OS 8 & 9
-            self.fail('Test not available for such system (os.sep == "%s").'
-                        %os.sep)
-        self.failUnless(os.path.isdir(home))
-        # raise exc if path does not exist
-        self.assertRaises(AssertionError, auth.add_user, 'ftpuser', '12345', 'ox:\\?', perm=('r', 'w'))
-        self.assertRaises(AssertionError, auth.add_anonymous, 'ox:\\?')
-        # raise exc if user already exists
-        auth.add_user('ftpuser', '12345', home, perm=('r', 'w'))
-        self.assertRaises(ftpserver.Error, auth.add_user, 'ftpuser', '12345', home, perm=('r', 'w'))
-        # ...even anonymous
+
+        # create user
+        auth.add_user(user, pwd, home, perm=('r', 'w'))
         auth.add_anonymous(home)
-        self.assertRaises(ftpserver.Error, auth.add_anonymous, home)
+        # check credentials
+        self.failUnless(auth.validate_authentication(user, pwd))
+        self.failIf(auth.validate_authentication(user, 'wrongpwd'))
+        # remove them
+        auth.remove_user(user)
+        auth.remove_user('anonymous')
+        
+        # raise exc if user does not exists
+        self.assertRaises(KeyError, auth.remove_user, user)
+        # raise exc if path does not exist
+        self.assertRaises(ftpserver.AuthorizerError, auth.add_user, user,
+                            pwd, '?:\\')
+        self.assertRaises(ftpserver.AuthorizerError, auth.add_anonymous, '?:\\')
+        # raise exc if user already exists
+        auth.add_user(user, pwd, home)
+        auth.add_anonymous(home)
+        self.assertRaises(ftpserver.AuthorizerError, auth.add_user, user,
+                            pwd, home)
+        self.assertRaises(ftpserver.AuthorizerError, auth.add_anonymous, home)
+        auth.remove_user(user)
+        auth.remove_user('anonymous')
+
         # raise on wrong permission
-        self.assertRaises(ftpserver.Error, auth.add_user, 'ftpuser2', '12345', home, perm=('x'))
-        del auth.user_table['anonymous']
-        self.assertRaises(ftpserver.Error, auth.add_anonymous, home, perm=('w'))
-        self.assertRaises(ftpserver.Error, auth.add_anonymous, home, perm=('%&'))
-        self.assertRaises(ftpserver.Error, auth.add_anonymous, home, perm=(None))
-        auth.add_anonymous(home, perm=(''))
-        # raise on 'w' permission given to anonymous user
-        self.assertRaises(ftpserver.Error, auth.add_anonymous, home, perm=('w'))
+        self.assertRaises(ftpserver.AuthorizerError, auth.add_user, user, pwd,
+                            home, perm=('?'))
+        self.assertRaises(ftpserver.AuthorizerError, auth.add_anonymous, home,
+                            perm=('?'))
+        # expect warning on 'w' permission assigned to anonymous user
+        self.assertRaises(RuntimeWarning, auth.add_anonymous, home, perm=('w'))
 
 
 class FtpAuthentication(unittest.TestCase):
@@ -276,7 +293,7 @@ class FtpAuthentication(unittest.TestCase):
         ftp.login(user=user, passwd=pwd)
 
     def test_auth_failed(self):
-        self.failUnlessRaises(ftplib.error_perm, ftp.login, user=user, passwd='wrong')
+        self.failUnlessRaises(ftplib.error_perm, ftp.login, user, passwd='wrong')
 
     def test_anon_auth(self):
         ftp.login(user='anonymous', passwd='anon@')
@@ -284,12 +301,12 @@ class FtpAuthentication(unittest.TestCase):
         ftp.login(user='anonymous', passwd='')
 
     def test_max_auth(self):
-        self.failUnlessRaises(ftplib.error_perm, ftp.login, user=user, passwd='wrong')
-        self.failUnlessRaises(ftplib.error_perm, ftp.login, user=user, passwd='wrong')
-        self.failUnlessRaises(ftplib.error_perm, ftp.login, user=user, passwd='wrong')
-        # if authentication fails for 3 times ftpd disconnect us.
-        # we can check if this happen by using ftp.sendcmd() on the 'dead' socket object.
-        # If socket object is really dead it should be raised
+        self.failUnlessRaises(ftplib.error_perm, ftp.login, user, passwd='wrong')
+        self.failUnlessRaises(ftplib.error_perm, ftp.login, user, passwd='wrong')
+        self.failUnlessRaises(ftplib.error_perm, ftp.login, user, passwd='wrong')
+        # If authentication fails for 3 times ftpd disconnect us.
+        # We can check if this happen by using ftp.sendcmd() on the 'dead'
+        # socket object.  If socket object is really dead it should be raised
         # socket.error exception (Windows) or EOFError exception (Linux).
         self.failUnlessRaises((socket.error, EOFError), ftp.sendcmd, '')
 
@@ -476,22 +493,24 @@ class FtpFsOperations(unittest.TestCase):
         # Even if CDUP response code is different (250) we could use parse257
         # anyway for getting directory name.
         ftp.cwd(self.tempdir)
-        path = ftplib.parse257(ftp.sendcmd('cdup').replace('250', '257'))
-        self.assertEqual(path, '/')
-        path = ftplib.parse257(ftp.sendcmd('cdup').replace('250', '257'))
-        self.assertEqual(path, '/')
+        dir = ftplib.parse257(ftp.sendcmd('cdup').replace('250', '257'))
+        self.assertEqual(dir, '/')
+        dir = ftplib.parse257(ftp.sendcmd('cdup').replace('250', '257'))
+        self.assertEqual(dir, '/')
 
     def test_mkd(self):
         tempdir = os.path.basename(tempfile.mktemp(dir=home))
         ftp.mkd(tempdir)
+        # make sure we can't create directories which already exist (probably
+        # not really necessary);
+        # let's use a try/except statement to avoid leaving behind orphaned
+        # temporary directory in the event of a test failure.
         try:
-            # make sure we can't create directories which exist yet;
-            # let's use a try/except statement so that in case assertRaises
-            # fails we remove tempdir before continuing with tests
-            self.assertRaises(ftplib.error_perm, ftp.mkd, tempdir)
-        except:
-            pass
-        os.rmdir(tempdir)
+            ftp.mkd(tempdir)
+        except ftplib.error_perm, err:
+            os.rmdir(tempdir) # ok
+        else:
+            self.fail('ftplib.error_perm not raised.')
 
     def test_rmd(self):
         ftp.rmd(self.tempdir)
@@ -753,7 +772,8 @@ class FtpStoreData(unittest.TestCase):
         ftp.retrbinary('retr ' + filename, self.f2.write)
         self.f2.seek(0)
         self.assertEqual(hash(data), hash (self.f2.read()))
-        # we do not use os.remove because file could be still locked by ftpd thread
+        # we do not use os.remove because file could be
+        # still locked by ftpd thread
         ftp.delete(filename)
 
     def test_stou_rest(self):

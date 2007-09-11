@@ -42,6 +42,7 @@ Usability enhancements:
  * Issue #31: a compact list of recognized commands is now provided on HELP.
  * Issue #32: we now provide a detailed error message on connection and file
    system errors.
+ * Issue #37: anonymous user write access can now be optionally granted
 
 Test suite enhancements:
 
