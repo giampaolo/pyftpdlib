@@ -54,7 +54,7 @@ functionality for the FTPd:
     high level, cross-platform interface compatible with both Windows and UNIX
     style filesystems.
 
-    [Error] - base class for module exceptions.
+    [AuthorizerError] - base class for authorizers exceptions.
 
 
 pyftpdlib also provides 3 different logging streams through 3 functions which
@@ -66,9 +66,9 @@ can be overridden to allow for custom logging.
     [logline] - this function is used to log commands and responses passing
     through the control FTP channel.
 
-    [debug] - used for debugging messages (function/method calls, traceback
-    outputs, low-level informational messages and so on...). Disabled by
-    default.
+    [logerror] - log traceback outputs occurring in case of errors.
+
+    [debug] - used for logging function/method calls (disabled by default).
 
 
 Usage example:
@@ -132,46 +132,46 @@ __web__     = 'http://code.google.com/p/pyftpdlib/'
 
 
 proto_cmds = {
-    'ABOR' : 'Syntax: ABOR (abort transfer).',
-    'ALLO' : 'Syntax: ALLO <SP> bytes (obsolete; allocate storage).',
-    'APPE' : 'Syntax: APPE <SP> file-name (append data to an existent file).',
-    'CDUP' : 'Syntax: CDUP (go to parent directory).',
-    'CWD'  : 'Syntax: CWD <SP> dir-name (change current working directory).',
-    'DELE' : 'Syntax: DELE <SP> file-name (delete file).',
-    'HELP' : 'Syntax: HELP [<SP> cmd] (show help).',
-    'LIST' : 'Syntax: LIST [<SP> path-name] (list files).',
-    'MDTM' : 'Syntax: MDTM <SP> file-name (get last modification time).',
-    'MODE' : 'Syntax: MODE <SP> mode (obsolete; set data transfer mode).',
-    'MKD'  : 'Syntax: MDK <SP> dir-name (create directory).',
-    'NLST' : 'Syntax: NLST [<SP> path-name] (list files in a compact form).',
-    'NOOP' : 'Syntax: NOOP (just do nothing).',
-    'PASS' : 'Syntax: PASS <SP> user-name (set user password).',
-    'PASV' : 'Syntax: PASV (set server in passive mode).',
-    'PORT' : 'Syntax: PORT <sp> h1,h2,h3,h4,p1,p2 (set server in active mode).',
-    'PWD'  : 'Syntax: PWD (get current working directory).',
-    'QUIT' : 'Syntax: QUIT (quit current session).',
-    'REIN' : 'Syntax: REIN (reinitialize / flush account).',
-    'REST' : 'Syntax: REST <SP> marker (restart file position).',
-    'RETR' : 'Syntax: RETR <SP> file-name (retrieve a file).',
-    'RMD'  : 'Syntax: RMD <SP> dir-name (remove directory).',
-    'RNFR' : 'Syntax: RNFR <SP> file-name (file renaming (source name)).',
-    'RNTO' : 'Syntax: RNTO <SP> file-name (file renaming (destination name)).',
-    'SIZE' : 'Syntax: HELP <SP> file-name (get file size).',
-    'STAT' : 'Syntax: STAT [<SP> path name] (status information [list files]).',
-    'STOR' : 'Syntax: STOR <SP> file-name (store a file).',
-    'STOU' : 'Syntax: STOU [<SP> file-name] (store a file with a unique name).',
-    'STRU' : 'Syntax: STRU <SP> type (obsolete; set file structure).',
-    'SYST' : 'Syntax: SYST (get operating system type).',
-    'TYPE' : 'Syntax: TYPE <SP> [A | I] (set transfer type).',
-    'USER' : 'Syntax: USER <SP> user-name (set username).',
+    'ABOR': 'Syntax: ABOR (abort transfer).',
+    'ALLO': 'Syntax: ALLO <SP> bytes (obsolete; allocate storage).',
+    'APPE': 'Syntax: APPE <SP> file-name (append data to an existent file).',
+    'CDUP': 'Syntax: CDUP (go to parent directory).',
+    'CWD' : 'Syntax: CWD <SP> dir-name (change current working directory).',
+    'DELE': 'Syntax: DELE <SP> file-name (delete file).',
+    'HELP': 'Syntax: HELP [<SP> cmd] (show help).',
+    'LIST': 'Syntax: LIST [<SP> path-name] (list files).',
+    'MDTM': 'Syntax: MDTM <SP> file-name (get last modification time).',
+    'MODE': 'Syntax: MODE <SP> mode (obsolete; set data transfer mode).',
+    'MKD' : 'Syntax: MDK <SP> dir-name (create directory).',
+    'NLST': 'Syntax: NLST [<SP> path-name] (list files in a compact form).',
+    'NOOP': 'Syntax: NOOP (just do nothing).',
+    'PASS': 'Syntax: PASS <SP> user-name (set user password).',
+    'PASV': 'Syntax: PASV (set server in passive mode).',
+    'PORT': 'Syntax: PORT <sp> h1,h2,h3,h4,p1,p2 (set server in active mode).',
+    'PWD' : 'Syntax: PWD (get current working directory).',
+    'QUIT': 'Syntax: QUIT (quit current session).',
+    'REIN': 'Syntax: REIN (reinitialize / flush account).',
+    'REST': 'Syntax: REST <SP> marker (restart file position).',
+    'RETR': 'Syntax: RETR <SP> file-name (retrieve a file).',
+    'RMD' : 'Syntax: RMD <SP> dir-name (remove directory).',
+    'RNFR': 'Syntax: RNFR <SP> file-name (file renaming (source name)).',
+    'RNTO': 'Syntax: RNTO <SP> file-name (file renaming (destination name)).',
+    'SIZE': 'Syntax: HELP <SP> file-name (get file size).',
+    'STAT': 'Syntax: STAT [<SP> path name] (status information [list files]).',
+    'STOR': 'Syntax: STOR <SP> file-name (store a file).',
+    'STOU': 'Syntax: STOU [<SP> file-name] (store a file with a unique name).',
+    'STRU': 'Syntax: STRU <SP> type (obsolete; set file structure).',
+    'SYST': 'Syntax: SYST (get operating system type).',
+    'TYPE': 'Syntax: TYPE <SP> [A | I] (set transfer type).',
+    'USER': 'Syntax: USER <SP> user-name (set username).',
     }
 
 deprecated_cmds = {
-    'XCUP' : 'Syntax: XCUP (obsolete; go to parent directory).',
-    'XCWD' : 'Syntax: XCWD <SP> dir-name (obsolete; change current directory).',
-    'XMKD' : 'Syntax: XMDK <SP> dir-name (obsolete; create directory).',
-    'XPWD' : 'Syntax: XPWD (obsolete; get current dir).',
-    'XRMD' : 'Syntax: XRMD <SP> dir-name (obsolete; remove directory).',
+    'XCUP': 'Syntax: XCUP (obsolete; go to parent directory).',
+    'XCWD': 'Syntax: XCWD <SP> dir-name (obsolete; change current directory).',
+    'XMKD': 'Syntax: XMDK <SP> dir-name (obsolete; create directory).',
+    'XPWD': 'Syntax: XPWD (obsolete; get current dir).',
+    'XRMD': 'Syntax: XRMD <SP> dir-name (obsolete; remove directory).',
     }
 
 proto_cmds.update(deprecated_cmds)
@@ -179,9 +179,9 @@ proto_cmds.update(deprecated_cmds)
 # The following commands are not implemented. These commands are also not
 # implemented by many other FTP servers
 not_implemented_cmds = {
-    'ACCT' : 'Syntax: ACCT account-info (specify account information).',
-    'SITE' : 'Syntax: SITE [<SP> site-cmd] (site specific server services).',
-    'SMNT' : 'Syntax: SMNT <SP> path-name (mount file-system structure).'
+    'ACCT': 'Syntax: ACCT account-info (specify account information).',
+    'SITE': 'Syntax: SITE [<SP> site-cmd] (site specific server services).',
+    'SMNT': 'Syntax: SMNT <SP> path-name (mount file-system structure).'
     }
 
 
@@ -253,22 +253,6 @@ class DummyAuthorizer:
     interface for managing "virtual" FTP users. System-dependent authorizers
     can by written by subclassing this base class and overriding appropriate
     methods as necessary.
-
-    To create your own authorizer you must provide the following methods:
-
-    add_user(self, username, password, homedir, perm=('r'))
-    
-    add_anonymous(self, homedir, perm=('r'))
-
-    validate_authentication(self, username, password)
-
-    has_user(self, username)
-
-    get_home_dir(self, username)
- 
-    r_perm(self, username, file=None)
-
-    w_perm(self, username, file=None)
     """
 
     user_table = {}
@@ -277,9 +261,13 @@ class DummyAuthorizer:
         pass
 
     def add_user(self, username, password, homedir, perm=('r')):
-        """Add a user to the virtual users table.  Exceptions raised on error
-        conditions such as invalid permissions, missing home directory or
-        duplicate usernames.
+        """Add a user to the virtual users table.  AuthorizerError exceptions
+        raised on error conditions such as invalid permissions, missing home
+        directory or duplicate usernames.
+
+        Optional perm argument is a tuple defaulting to ("r") referencing
+        user's permissions.  Valid values are "r" (read access), "w" (write
+        access) or none at all (no access).
         """
         if self.has_user(username):
             raise AuthorizerError('User "%s" already exists.' %username)
@@ -293,16 +281,20 @@ class DummyAuthorizer:
             if (p in 'w') and (username == 'anonymous'):
                 warnings.warn("write permissions assigned to anonymous user.",
                                 RuntimeWarning)
-        dic = {'pwd'  : str(password),
-               'home' : str(homedir),
-               'perm' : perm
+        dic = {'pwd' : str(password),
+               'home': str(homedir),
+               'perm': perm
                }
         self.user_table[username] = dic
         
     def add_anonymous(self, homedir, perm=('r')):
-        """Add an anonymous user to the virtual users table.  Exceptions raised
-        on error conditions such as insufficient permissions, missing home
-        directory, or duplicate anonymous users.
+        """Add an anonymous user to the virtual users table.  AuthorizerError
+        exception raised on error conditions such as insufficient permissions,
+        missing home directory, or duplicate anonymous users.
+
+        Optional perm argument is a tuple defaulting to ("r") referencing
+        'read-only' anonymous user's permission.  Using a "w" (write access)
+        values results in a warning message printed to stderr.
         """
         DummyAuthorizer.add_user(self, 'anonymous', '', homedir, perm)
 
@@ -311,7 +303,7 @@ class DummyAuthorizer:
         del self.user_table[username]
 
     def validate_authentication(self, username, password):
-        """Whether the supplied username and password match the stored
+        """Return True if the supplied username and password match the stored
         credentials."""
         return self.user_table[username]['pwd'] == password
 
@@ -323,12 +315,14 @@ class DummyAuthorizer:
         """Return the user's home directory."""
         return self.user_table[username]['home']
 
-    def r_perm(self, username, file=None):
-        """Whether the user has read permissions for obj."""
+    def r_perm(self, username, obj=None):
+        """Whether the user has read permissions for obj (an absolute pathname
+        of a file or a directory)"""
         return 'r' in self.user_table[username]['perm']
 
-    def w_perm(self, username, file=None):
-        """Whether the user has write permission for obj."""
+    def w_perm(self, username, obj=None):
+        """Whether the user has write permission for obj (an absolute pathname
+        of a file or a directory)"""
         return 'w' in self.user_table[username]['perm']
 
 
@@ -360,14 +354,14 @@ class PassiveDTP(asyncore.dispatcher):
                 ip.replace('.', ','), port / 256, port % 256))
 
     def __del__(self):
-        debug("PassiveDTP.__del__()")
+        self.cmd_channel.debug("PassiveDTP.__del__()")
 
 
     # --- connection / overridden
     
     def handle_accept(self):
         """Called when remote client initiates a connection."""
-        debug("PassiveDTP.handle_accept()")
+        self.cmd_channel.debug("PassiveDTP.handle_accept()")
         sock, addr = self.accept()
 
         # Check the origin of data connection.  If not expressively configured
@@ -387,7 +381,7 @@ class PassiveDTP(asyncore.dispatcher):
                 return
             else:
                 # site-to-site FTP allowed
-                msg = 'Established data connection with foreign address %s:%s.' \
+                msg = 'Established data connection with foreign address %s:%s.'\
                         %(addr[0], addr[1])
                 self.cmd_channel.log(msg)
 
@@ -404,18 +398,18 @@ class PassiveDTP(asyncore.dispatcher):
 
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
-        debug("PassiveDTP.handle_error()")
+        self.cmd_channel.debug("PassiveDTP.handle_error()")
         logerror(traceback.format_exc())
         self.close()
             
     def handle_close(self):
         """Called on closing the data connection."""
-        debug("PassiveDTP.handle_close()")
+        self.cmd_channel.debug("PassiveDTP.handle_close()")
         self.close()
 
     def close(self):
         """Close the dispatcher socket."""
-        debug("PassiveDTP.close()")
+        self.cmd_channel.debug("PassiveDTP.close()")
         asyncore.dispatcher.close(self)
 
 
@@ -436,7 +430,7 @@ class ActiveDTP(asyncore.dispatcher):
             self.close()     
 
     def __del__(self):
-        debug("ActiveDTP.__del__()")
+        self.cmd_channel.debug("ActiveDTP.__del__()")
 
 
     # --- connection / overridden
@@ -448,7 +442,7 @@ class ActiveDTP(asyncore.dispatcher):
 
     def handle_connect(self):
         """Called when connection is established."""
-        debug("ActiveDTP.handle_connect()")
+        self.cmd_channel.debug("ActiveDTP.handle_connect()")
         self.cmd_channel.respond('200 PORT command successful.')
         # delegate such connection to DTP handler
         handler = self.cmd_channel.dtp_handler(self.socket, self.cmd_channel)
@@ -458,18 +452,18 @@ class ActiveDTP(asyncore.dispatcher):
 
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
-        debug("ActiveDTP.handle_error()")
+        self.cmd_channel.debug("ActiveDTP.handle_error()")
         logerror(traceback.format_exc())
         self.close()
             
     def handle_close(self):
         """Called on closing the data channel."""
-        debug("ActiveDTP.handle_close()")
+        self.cmd_channel.debug("ActiveDTP.handle_close()")
         self.close()
 
     def close(self):
         """Close the dispatcher socket."""
-        debug("ActiveDTP.close()")
+        self.cmd_channel.debug("ActiveDTP.close()")
         asyncore.dispatcher.close(self)
 
 
@@ -512,8 +506,8 @@ class DTPHandler(asyncore.dispatcher):
         producer" deque wrapper with a pure deque object.
         """
         asyncore.dispatcher.__init__(self, sock_obj)
-        # we toss the use of the asynchat's "simple producer" and replace it with
-        # a pure deque, which the original fifo was a wrapping of
+        # we toss the use of the asynchat's "simple producer" and replace it
+        # with a pure deque, which the original fifo was a wrapping of
         self.producer_fifo = deque()
 
         self.cmd_channel = cmd_channel
@@ -524,7 +518,7 @@ class DTPHandler(asyncore.dispatcher):
         self.tot_bytes_received = 0        
 
     def __del__(self):
-        debug("DTPHandler.__del__()")
+        self.cmd_channel.debug("DTPHandler.__del__()")
 
     # --- utility methods
     
@@ -581,7 +575,7 @@ class DTPHandler(asyncore.dispatcher):
         self.initiate_send()
 
     def push_with_producer(self, producer):
-        """Push data using a producer."""
+        """Push data using a producer and initiate send."""
         self.producer_fifo.append(producer)
         self.initiate_send()
 
@@ -638,14 +632,14 @@ class DTPHandler(asyncore.dispatcher):
 
     def handle_expt(self):
         """Called on "exceptional" data events."""
-        debug("DTPHandler.handle_expt()")
+        self.cmd_channel.debug("DTPHandler.handle_expt()")
         self.cmd_channel.respond("426 Connection error; transfer aborted.")
         self.close()
 
     def handle_error(self):
         """Called when an exception is raised and not otherwise handled."""
 
-        debug("DTPHandler.handle_error()")
+        self.cmd_channel.debug("DTPHandler.handle_error()")
         try:
             raise
         # if error is connection related we provide a detailed
@@ -671,7 +665,7 @@ class DTPHandler(asyncore.dispatcher):
     def handle_close(self):
         """Called when the socket is closed."""
 
-        debug("DTPHandler.handle_close()")
+        self.cmd_channel.debug("DTPHandler.handle_close()")
         tot_bytes = self.get_transmitted_bytes()
 
         # If we used channel for receiving we assume that transfer is finished
@@ -691,8 +685,7 @@ class DTPHandler(asyncore.dispatcher):
     def close(self):
         """Close the data channel, first attempting to close any remaining
         file handles."""
-        
-        debug("DTPHandler.close()")
+        self.cmd_channel.debug("DTPHandler.close()")
 
         if self.file_obj:
             if not self.file_obj.closed:
@@ -989,7 +982,7 @@ class FTPHandler(asynchat.async_chat):
     msg_login = ""
     msg_quit = ""
 
-    # maximum login attempts
+    # maximum login attempts before disconnecting client
     max_login_attempts = 3
 
     # FTP site-to-site transfer feature: also referenced as "FXP" it permits for
@@ -1123,7 +1116,7 @@ class FTPHandler(asynchat.async_chat):
                     self.respond("530 Log in with USER and PASS first.")
                 else:
                     method = getattr(self, 'ftp_'+cmd, None)
-                    method(arg) # callback
+                    method(arg) # call
             elif cmd in proto_cmds:
                 self.respond("530 Log in with USER and PASS first.")
             else:
@@ -1132,7 +1125,7 @@ class FTPHandler(asynchat.async_chat):
         # provide full command set
         elif (self.authenticated) and (cmd in proto_cmds):
             method = getattr(self, 'ftp_'+cmd, None)
-            method(arg) # callback
+            method(arg) # call
 
         else:
             # recognize those commands having "special semantics"
@@ -1172,6 +1165,7 @@ class FTPHandler(asynchat.async_chat):
         self.close()
 
     def close(self):
+        """Close the current channel disconnecting the client."""
         self.debug("FTPHandler.close()")
 
         if self.dtp_server:
@@ -1332,7 +1326,8 @@ class FTPHandler(asynchat.async_chat):
         # does not match client IP address.
         if not self.permit_foreign_addresses:
             if ip != self.remote_ip:
-                self.log("Rejected data connection to foreign address %s:%s." %(ip, port))
+                self.log("Rejected data connection to foreign address %s:%s."
+                        %(ip, port))
                 self.respond("504 Can't connect to a foreign address.")
                 return
 
@@ -1443,8 +1438,8 @@ class FTPHandler(asynchat.async_chat):
 
 
     def ftp_NLST(self, line):
-        """Return a list of files in the specified directory in a compact form to
-        the client. Default to the current directory.
+        """Return a list of files in the specified directory in a compact form
+        to the client. Default to the current directory.
         """
         if line:
             path = self.fs.translate(line)
@@ -1642,7 +1637,8 @@ class FTPHandler(asynchat.async_chat):
         except (ValueError, OverflowError):
             self.respond("501 Invalid parameter.")
         else:
-            self.respond("350 Restarting at position %s. Now use RETR/STOR for resuming." %marker)
+            self.respond("350 Restarting at position %s. "
+                        "Now use RETR/STOR for resuming." %marker)
             self.log("OK REST %s." %marker)
             self.restart_position = marker
 
@@ -1751,7 +1747,8 @@ class FTPHandler(asynchat.async_chat):
         else:
             self.attempted_logins += 1
             if self.attempted_logins >= self.max_login_attempts:
-                self.log('Authentication failed: unknown username "%s".' %self.username)
+                self.log('Authentication failed: unknown username "%s".'
+                            %self.username)
                 self.respond("530 Maximum login attempts. Disconnecting.")
                 self.close()
             elif self.username.lower() == 'anonymous':
@@ -1759,7 +1756,8 @@ class FTPHandler(asynchat.async_chat):
                 self.log('Authentication failed: anonymous access not allowed.')
             else:
                 self.respond("530 Authentication failed.")
-                self.log('Authentication failed: unknown username "%s".' %self.username)
+                self.log('Authentication failed: unknown username "%s".'
+                            %self.username)
                 self.username = ""
 
 
@@ -1831,11 +1829,11 @@ class FTPHandler(asynchat.async_chat):
         Implementation note:
         properly handling the SIZE command when TYPE ASCII is used would require
         to scan the entire file to perform the ASCII translation logic
-        (file.read(int).replace(os.linesep, '\r\n')) and then calculating the len
-        of such data which may be different than the actual size of the file on
-        the server.  Considering that the calculating such result could be very
-        resource-intensive it could be easy for a malicious client to try a DoS
-        attack, thus we do not perform the ASCII translation.
+        (file.read(int).replace(os.linesep, '\r\n')) and then calculating the
+        len of such data which may be different than the actual size of the file
+        on the server.  Considering that the calculating such result could be
+        very resource-intensive it could be easy for a malicious client to try
+        a DoS attack, thus we do not perform the ASCII translation.
 
         However, clients in general should not be resuming downloads in ASCII
         mode.  Resuming downloads in binary mode is the recommended way as
