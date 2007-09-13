@@ -260,7 +260,8 @@ class DummyAuthorizer:
     def __init__(self):
         pass
 
-    def add_user(self, username, password, homedir, perm=('r')):
+    def add_user(self, username, password, homedir, perm=('r'),
+                    msg_login="Login successful.", msg_quit="Goodbye."):
         """Add a user to the virtual users table.  AuthorizerError exceptions
         raised on error conditions such as invalid permissions, missing home
         directory or duplicate usernames.
@@ -268,13 +269,14 @@ class DummyAuthorizer:
         Optional perm argument is a tuple defaulting to ("r") referencing
         user's permissions.  Valid values are "r" (read access), "w" (write
         access) or none at all (no access).
+
+        Optional msg_login and msg_quit arguments can be specified to provide
+        customized response strings when user log-in and quit.
         """
         if self.has_user(username):
             raise AuthorizerError('User "%s" already exists.' %username)
         if not os.path.isdir(homedir):
             raise AuthorizerError('No such directory: "%s".' %homedir)
-        if (username.lower() == 'anonymous') and password:
-            raise AuthorizerError("Can't assign password to anonymous user.")
         for p in perm:
             if p not in ('', 'r', 'w'):
                 raise AuthorizerError('No such permission "%s".' %p)
@@ -283,11 +285,14 @@ class DummyAuthorizer:
                                 RuntimeWarning)
         dic = {'pwd' : str(password),
                'home': str(homedir),
-               'perm': perm
+               'perm': perm,
+               'msg_login': str(msg_login),
+               'msg_quit' : str(msg_quit)
                }
         self.user_table[username] = dic
         
-    def add_anonymous(self, homedir, perm=('r')):
+    def add_anonymous(self, homedir, perm=('r'), msg_login="Login successful.",
+                        msg_quit="Goodbye."):
         """Add an anonymous user to the virtual users table.  AuthorizerError
         exception raised on error conditions such as insufficient permissions,
         missing home directory, or duplicate anonymous users.
@@ -295,8 +300,12 @@ class DummyAuthorizer:
         Optional perm argument is a tuple defaulting to ("r") referencing
         'read-only' anonymous user's permission.  Using a "w" (write access)
         values results in a warning message printed to stderr.
+
+        Optional msg_login and msg_quit argument can be specified to provide
+        customized response strings when anonymous user logs-in and quit.
         """
-        DummyAuthorizer.add_user(self, 'anonymous', '', homedir, perm)
+        DummyAuthorizer.add_user(self, 'anonymous', '', homedir, perm,
+                                    msg_login, msg_quit)
 
     def remove_user(self, username):
         """Remove a user from the virtual users table."""
@@ -314,6 +323,14 @@ class DummyAuthorizer:
     def get_home_dir(self, username):
         """Return the user's home directory."""
         return self.user_table[username]['home']
+
+    def get_msg_login(self, username):
+        """Return the user's login message."""
+        return self.user_table[username]['msg_login']
+
+    def get_msg_quit(self, username):
+        """Return the user's quitting message."""
+        return self.user_table[username]['msg_quit']
 
     def r_perm(self, username, obj=None):
         """Whether the user has read permissions for obj (an absolute pathname
@@ -977,10 +994,8 @@ class FTPHandler(asynchat.async_chat):
     dtp_handler = DTPHandler
     abstracted_fs = AbstractedFS
 
-    # messages
-    msg_connect = "pyftpdlib %s" %__ver__
-    msg_login = ""
-    msg_quit = ""
+    # string returned when client connects
+    banner = "pyftpdlib %s ready." %__ver__
 
     # maximum login attempts before disconnecting client
     max_login_attempts = 3
@@ -1026,8 +1041,11 @@ class FTPHandler(asynchat.async_chat):
 
     def handle(self):
         """Return a 220 'Ready' response to the client over the command channel."""
-        self.push('220-%s\r\n' %self.msg_connect)
-        self.respond("220 Ready.")
+        if len(self.banner) <= 75:
+            self.respond("220 %s" %str(self.banner))
+        else:
+            self.push('220-%s\r\n' %str(self.banner))
+            self.respond('220 ')
 
     def handle_max_cons(self):
         """Called when limit for maximum number of connections is reached."""
@@ -1391,11 +1409,12 @@ class FTPHandler(asynchat.async_chat):
         # in progress, the server closes the control connection.
         # If file transfer is in progress, the connection will remain
         # open for result response and the server will then close it.
-        if not self.msg_quit:
-            self.respond("221 Goodbye.")
+        msg_quit = self.authorizer.get_msg_quit(self.username)
+        if len(msg_quit) <= 75:
+            self.respond("221 %s" %msg_quit)
         else:
-            self.push("221-%s\r\n" %self.msg_quit)
-            self.respond("221 Goodbye.")
+            self.push("221-%s\r\n" %msg_quit)
+            self.respond("221 ")
 
         if not self.data_channel:
             self.close_when_done()
@@ -1722,11 +1741,12 @@ class FTPHandler(asynchat.async_chat):
 
             if self.authorizer.validate_authentication(self.username, line) \
             or self.username == 'anonymous':
-                if not self.msg_login:
-                    self.respond('230 User "%s" logged in.' %self.username)
+                msg_login = self.authorizer.get_msg_login(self.username)
+                if len(msg_login) <= 75:
+                    self.respond('230 %s' %msg_login)
                 else:
-                    self.push("230-%s\r\n" %self.msg_login)
-                    self.respond("230 Welcome.")
+                    self.push("230-%s\r\n" %msg_login)
+                    self.respond("230 ")
 
                 self.authenticated = True
                 self.attempted_logins = 0

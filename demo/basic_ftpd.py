@@ -2,8 +2,7 @@
 # basic_ftpd.py
 
 """A basic FTP server which uses a DummyAuthorizer for managing 'virtual
-users', defining a customized set of messages to provide to client
-and setting a limit for incoming connections.
+users', setting a limit for incoming connections.
 """
 
 import os
@@ -22,10 +21,8 @@ if __name__ == "__main__":
     ftp_handler = ftpserver.FTPHandler
     ftp_handler.authorizer = authorizer
 
-    # Define a customized set of messages to provide to client
-    ftp_handler.msg_connect = "This is pyftpdlib %s." %ftpserver.__ver__
-    ftp_handler.msg_login = "Welcome in."
-    ftp_handler.msg_quit = "Goodbye."
+    # Define a customized banner (string returned when client connects)
+    ftp_handler.banner = "pyftpdlib %s based ftpd ready." %ftpserver.__ver__
 
     # Instantiate FTP server class and listen to 0.0.0.0:21
     address = ('', 21)
