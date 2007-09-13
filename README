@@ -1,18 +1,31 @@
-Documentation
-=============
 
- - Check doc/pyftpdlib.html.
+About
+=====
+
+Python FTP server library provides an high-level portable interface to easily
+write asynchronous FTP servers with Python.  Based on asyncore frameworks
+pyftpdlib is actually the most complete RFC959 FTP server implementation
+available for Python programming language.
+
+
+Learn more
+==========
+
+Home: http://code.google.com/p/pyftpdlib/
+Tutorial: http://code.google.com/p/pyftpdlib/wiki/Tutorial
+FAQ: http://code.google.com/p/pyftpdlib/wiki/FAQ
+Roadmap: http://code.google.com/p/pyftpdlib/wiki/RoadMaps
 
 
 Requirements
 ============
 
- - Python 2.2 or higher.
+Python 2.3 or higher.
 
 
 Install
 =======
 
- - Just run:
-    > python setup.py install
+Just run:
+> python setup.py install
 
