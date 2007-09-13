@@ -1,0 +1,55 @@
+
+Intro
+=====
+
+I would like to recognize some of the people who have been 
+instrumental in the development of pyftpdlib. 
+I'm sure I am  forgetting some people (feel free to email 
+me), but here is a short list.
+It's modeled after the Linux CREDITS file where the fields
+are:
+name (N), e-mail (E), web-address (W), description (D).
+Really thanks to all of you.
+
+
+Maintainers
+===========
+
+N: Giampaolo Rodola' (Italy)
+E: g.rodola@gmail.com
+D: Original pyftpdlib author and maintainer
+
+N: Jay Loden (New Jersey, USA)
+E: jloden@gmail.com
+W: http://www.jayloden.com
+D: OS X and Linux platform development/testing
+
+N: Li-Wen Hsu (Taiwan)
+E: lwhsu@FreeBSD.org
+W: http://blog.lwhsu.org/
+D: FreeBSD port maintainer
+
+
+Contributors
+============
+
+N: Yan Raber (Italy)
+E: yanraber@gmail.com
+D: Fix of Issue #9 (Path traversal vulnerability)
+
+N: Alex Martelli
+E: aleax@gmail.com
+D: Various useful suggestions
+
+N: Knic
+E: oneeyedelf1@googlemail.com
+D: Bug report #24 (some troubles on PythonCE)
+
+N: Greg Copeland
+E: gcopeland@efjohnson.com
+D: Bug report #16 (Extending compatibility with older python versions)
+
+N: Roger Erens
+E: rogererens@gmail.com
+D: Bug report affecting unix_ftpd.py's authorizer
+
