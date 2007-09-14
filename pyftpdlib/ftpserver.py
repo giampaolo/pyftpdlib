@@ -291,21 +291,18 @@ class DummyAuthorizer:
                }
         self.user_table[username] = dic
         
-    def add_anonymous(self, homedir, perm=('r'), msg_login="Login successful.",
-                        msg_quit="Goodbye."):
+    def add_anonymous(self, homedir, **kwargs):
         """Add an anonymous user to the virtual users table.  AuthorizerError
         exception raised on error conditions such as insufficient permissions,
         missing home directory, or duplicate anonymous users.
 
-        Optional perm argument is a tuple defaulting to ("r") referencing
-        'read-only' anonymous user's permission.  Using a "w" (write access)
-        values results in a warning message printed to stderr.
-
-        Optional msg_login and msg_quit argument can be specified to provide
-        customized response strings when anonymous user logs-in and quit.
+        The keyword arguments in kwargs are the same expected by add_user
+        method: "perm", "msg_login" and "msg_quit".
+        The optional "perm" keyword argument is a tuple defaulting to ("r")
+        referencing "read-only" anonymous user's permission.  Using a "w"
+        (write access) value results in a warning message printed to stderr.
         """
-        DummyAuthorizer.add_user(self, 'anonymous', '', homedir, perm,
-                                    msg_login, msg_quit)
+        DummyAuthorizer.add_user(self, 'anonymous', '', homedir, **kwargs)
 
     def remove_user(self, username):
         """Remove a user from the virtual users table."""

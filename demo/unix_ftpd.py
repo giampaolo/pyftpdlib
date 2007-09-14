@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # unix_ftpd.py
 
-"""A ftpd using local unix account database to authenticate users and get
-their home directories (users must already exist).
+"""A ftpd using local unix account database to authenticate users
+(users must already exist).
 """
 
 import os
@@ -13,13 +13,20 @@ from pyftpdlib import ftpserver
 
 class UnixAuthorizer(ftpserver.DummyAuthorizer):
 
-    def add_user(self, username, home='', perm=('r')):
+    def add_user(self, username, home=None, **kwargs):
+        """Add a "real" system user to the virtual users table.
+        If no home argument is specified the user's home directory will be used.
+        The keyword arguments in kwargs are the same expected by add_user
+        method: "perm", "msg_login" and "msg_quit".
+        """
         # get the list of all available users on the system and check if
         # username provided exists
         users = [entry.pw_name for entry in pwd.getpwall()]
         if not username in users:
-             raise ftpserver.AuthorizerError('No such user "%s".' %username)
-        ftpserver.DummyAuthorizer.add_user(self, username, '', home, perm)
+            raise ftpserver.AuthorizerError('No such user "%s".' %username)
+        if not home:
+            home = pwd.getpwnam(username).pw_dir
+        ftpserver.DummyAuthorizer.add_user(self, username, '', home, **kwargs)
 
     def validate_authentication(self, username, password):
         pw1 = spwd.getspnam(username).sp_pwd
