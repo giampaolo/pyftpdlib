@@ -117,6 +117,7 @@ import glob
 import fnmatch
 import tempfile
 import warnings
+import random
 
 
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'debug', 'DummyAuthorizer',
@@ -350,18 +351,49 @@ class PassiveDTP(asyncore.dispatcher):
     # TODO - provide the possibility to define a certain range of ports
     # on which DTP should bind on
 
-    def __init__(self, cmd_channel):           
+    def __init__(self, cmd_channel):
         asyncore.dispatcher.__init__(self)
         self.cmd_channel = cmd_channel
 
         ip = self.cmd_channel.getsockname()[0]
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        # by using 0 as port number value we let socket choose a free
-        # unprivileged random port.  This is also convenient on some systems
-        # where root is the only user able to bind a socket on such ports.
-        self.bind((ip, 0))
-        self.listen(5)        
+
+        if not self.cmd_channel.passive_ports:
+        # By using 0 as port number value we let kernel choose a free
+        # unprivileged random port.
+            self.bind((ip, 0))
+        else:
+            ports = list(self.cmd_channel.passive_ports)
+            while ports:
+                port = ports.pop(random.randint(0, len(ports) -1))
+                try:
+                    self.bind((ip, port))
+                except socket.error, why:
+                    if why[0] == errno.EADDRINUSE: # port already in use
+                        if ports:
+                            continue
+                        # If cannot use one of the ports in the configured range
+                        # we'll use a kernel-assigned port, and log a message
+                        # reporting the issue.
+                        # By using 0 as port number value we let kernel choose a
+                        # free unprivileged random port.
+                        else:
+                            self.bind((ip, 0))
+                            self.cmd_channel.log(
+                                "Can't find a valid passive port in the "
+                                "configured range. A random kernel-assigned "
+                                "port will be used."
+                                )
+                    else:
+                        raise
+                else:
+                    break
+
+        self.listen(5)
+        if self.cmd_channel.masquerade_address:
+            ip = self.cmd_channel.masquerade_address
         port = self.socket.getsockname()[1]
+
         # The format of 227 response in not standardized.
         # This is the most expected:
         self.cmd_channel.respond('227 Entering passive mode (%s,%d,%d).' %(
@@ -991,10 +1023,10 @@ class FTPHandler(asynchat.async_chat):
     dtp_handler = DTPHandler
     abstracted_fs = AbstractedFS
 
-    # string returned when client connects
+    # String returned when client connects
     banner = "pyftpdlib %s ready." %__ver__
 
-    # maximum login attempts before disconnecting client
+    # Maximum number of wrong authentications before disconnecting
     max_login_attempts = 3
 
     # FTP site-to-site transfer feature: also referenced as "FXP" it permits for
@@ -1006,8 +1038,19 @@ class FTPHandler(asynchat.async_chat):
     permit_foreign_addresses = False
 
     # Set to True if you want to permit PORTing over privileged ports
-    # (not recommended)
+    # (not recommended).
     permit_privileged_port = False
+
+    # The "masqueraded" IP address to provide along PASV reply when pyftpdlib
+    # is running behind a NAT or other types of gateways.
+    # When configured pyftpdlib will hide its local address and instead use the
+    # public address of your NAT.
+    masquerade_address = None
+
+    # What ports ftpd will use for its passive data transfers.  Value expected
+    # is a list of integers (e.g. range(60000, 65535)).
+    # When configured pyftpdlib will no longer use kernel-assigned random ports.
+    passive_ports = None
 
 
     def __init__(self, conn, ftpd_instance):

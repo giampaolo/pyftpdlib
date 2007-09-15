@@ -43,6 +43,10 @@ Usability enhancements:
  * Issue #32: we now provide a detailed error message on connection and file
    system errors.
  * Issue #38: anonymous user write access can now be optionally granted
+ * Issue #39: added support for FTP servers behind NAT through the new
+   FTPHandler.masquerade_address attribute.
+ * Issue #40: provided new FTPHandler.passive_ports attribute to control what
+   ports to use for passive data-transfers.
 
 Test suite enhancements:
 
