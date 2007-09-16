@@ -422,7 +422,7 @@ class PassiveDTP(asyncore.dispatcher):
                 msg = 'Rejected data connection from foreign address %s:%s.' \
                         %(addr[0], addr[1])
                 self.cmd_channel.respond("421 %s" %msg)
-                self.cmd_channel.log()
+                self.cmd_channel.log(msg)
                 # do not close listening socket: it couldn't be client's blame
                 return
             else:
@@ -525,6 +525,9 @@ except ImportError:
 class DTPHandler(asyncore.dispatcher):
     """Class handling server-data-transfer-process (server-DTP, see RFC 959)
     managing data-transfer operations.
+
+    sock_obj is the underlying socket used for the connection, cmd_channel
+    is the FTPHandler class instance.
     
     DTPHandler implementation note:
     When a producer is consumed and close_when_done() has been called
@@ -533,7 +536,7 @@ class DTPHandler(asyncore.dispatcher):
 
     To avoid this problem, DTPHandler is implemented as a subclass of
     asyncore.dispatcher. This implementation follows the same approach that
-    asynchat module will use in Python 2.6.
+    asynchat module should use in Python 2.6.
 
     The most important change in the implementation is related to
     producer_fifo, which is a pure deque object instead of a producer_fifo
@@ -663,7 +666,7 @@ class DTPHandler(asyncore.dispatcher):
             try:
                 num_sent = self.send(first)
                 self.tot_bytes_sent += num_sent
-            except socket.error, why:
+            except socket.error:
                 self.handle_error()
                 return
 
@@ -754,7 +757,11 @@ class DTPHandler(asyncore.dispatcher):
 # objects instead of strings.
 
 class FileProducer:
-    """Producer wrapper for file[-like] objects."""
+    """Producer wrapper for file[-like] objects.
+
+    Depending on the type it creates an appropriate wrapper for the outgoing
+    data.
+    """
 
     out_buffer_size = 65536
 
@@ -789,7 +796,14 @@ class FileProducer:
 # --- filesystem
 
 class AbstractedFS:
-    """A cross-platform, abstract wrapper for filesystem operations."""
+    """A class used to interact with the file system, providing a high level,
+    cross-platform interface compatible with both Windows and UNIX style
+    filesystems.
+
+    It provides some utility methods and some wraps around operations involved
+    in file object creation and file system operations like moving files or
+    removing directories.
+    """
 
     def __init__(self):
         self.root = None
@@ -1010,8 +1024,12 @@ class FTPHandler(asynchat.async_chat):
     """Implements the FTP server Protocol Interpreter (see RFC 959), handling
     commands received from the client on the control channel by calling the
     command's corresponding method. e.g. for received command "MKD pathname",
-    ftp_MKD() method is called with "pathname" as the argument. All relevant
-    session information is stored in instance variables.
+    ftp_MKD() method is called with "pathname" as the argument.
+
+    conn and ftpd_instance parameters are automatically passed by FTPServer
+    class instance.
+
+    All relevant session information is stored in instance variables.
     """
 
     # these are overridable defaults:
@@ -1647,7 +1665,8 @@ class FTPHandler(asynchat.async_chat):
             prefix = 'ftpd.'
 
         if not self.authorizer.w_perm(self.username, basedir):
-            self.log('FAIL STOU "%s". Not enough priviledges' %resp)
+            self.log('FAIL STOU "%s". Not enough priviledges' \
+                        %self.fs.normalize(line))
             self.respond("550 Can't STOU: not enough priviledges.")
             return
 
@@ -2011,7 +2030,7 @@ class FTPHandler(asynchat.async_chat):
 
         if not self.authorizer.w_perm(self.username, path):
             self.log('FAIL RNFR "%s". Not enough priviledges for renaming.'
-                     %(path, self.fs.normalize(line)))
+                     %(self.fs.normalize(line)))
             self.respond("550 Can't RNRF: not enough priviledges.")
             return
         
@@ -2247,10 +2266,11 @@ class FTPServer(asyncore.dispatcher):
     def __del__(self):
         debug("FTPServer.__del__()")
 
-    def serve_forever(self, *args, **kwargs):
+    def serve_forever(self, **kwargs):
         """A wrap around asyncore.loop(); starts the asyncore polling loop."""
 
-        log("Serving FTP on %s:%s" %self.socket.getsockname())
+        if not 'count' in kwargs:
+            log("Serving FTP on %s:%s" %self.socket.getsockname())
         try:
             # FIX #16, #26
             # use_poll specifies whether to use select module's poll()
@@ -2259,8 +2279,8 @@ class FTPServer(asyncore.dispatcher):
             # This breaks on OS X systems if use_poll is set to True. All
             # systems seem to work fine with it set to False (tested on
             # Linux, Windows, and OS X platforms)
-            if args or kwargs:
-                asyncore.loop(*args, **kwargs)
+            if kwargs:
+                asyncore.loop(**kwargs)
             else:
                 asyncore.loop(timeout=1, use_poll=False)
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
@@ -2305,12 +2325,19 @@ class FTPServer(asyncore.dispatcher):
         self.close()
 
     def close_all(self, map=None, ignore_all=False):
-        """'clean' shutdown: instead of using the current asyncore.close_all()
-        function which only close sockets, we iterate over all existent
-        channels calling close() method for each one of them, avoiding memory
-        leaks. This is how close_all function will appear in the fixed version
-        of asyncore that will be included into Python 2.6.
+        """Stop serving; close all existent connections disconnecting clients
+
+        The map parameter is a dictionary whose items are the channels to close.
+        If map is omitted, the default asyncore.socket_map is used.
+        Having ignore_all parameter set to False results in raising error in
+        case of unexpected exceptions.
         """
+        # Implementation note:
+        # instead of using the current asyncore.close_all() function which only
+        # close sockets, we iterate over all existent channels calling close()
+        # method for each one of them, avoiding memory leaks.
+        # This is how close_all() function should appear in the fixed version
+        # of asyncore that will be included in Python 2.6.
         if map is None:
             # backward compatibility for python < 2.4
             if not hasattr(self, '_map'):
