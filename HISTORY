@@ -7,6 +7,19 @@ History
 Version: 0.2.0 - Date: 2007-??-??
 ----------------------------------
 
+Major enhancements:
+
+ * Issue #5: provided a way to configure / limit the number of maximum
+   acceptable connections.
+ * Issue #5: provided a way to configure / limit the maximum number of clients
+   which may be connected from the same IP address.
+ * Issue #36: added support for FXP site-to-site transfer to allow transfers 
+   between FTP servers.
+ * Issue #39: added NAT/Firewall support with PASV (passive) mode connections
+   for FTP servers behind NAT.
+ * Issue #40: provided new FTPHandler.passive_ports attribute to control what
+   ports to use for passive data-transfers.
+
 RFC-related enhancements:
 
  * Issue #6: accept and process TYPE AN and TYPE L8 commands.
@@ -17,19 +30,13 @@ RFC-related enhancements:
  * Issue #12: 554 error response is now returned on RETR/STOR if REST fails.
  * Issue #15: STAT used with an argument return directory LISTing over the
    command channel.
- * Issue #36: implemented site-to-site FXP to allow transfers between FTP
-   servers.
 
 Security enhancements:
 
  * Issue #3: stop buffering when extremely long lines are received.
- * Issue #5: provided a way to configure / limit the number of maximum
-   acceptable connections.
- * Issue #5: provided a way to configure / limit the maximum number of clients
-   which may be connected from the same IP.
- * Issue #11 - reject data connection when a privileged port is specified on
+ * Issue #11: reject data connection when a privileged port is specified on
    PORT command.
- * see Issue #25: limit the number of attempts to find a unique filename for
+ * Issue #25: limit the number of attempts to find a unique filename for
    STOU command.
 
 Usability enhancements:
@@ -42,11 +49,7 @@ Usability enhancements:
  * Issue #31: a compact list of recognized commands is now provided on HELP.
  * Issue #32: we now provide a detailed error message on connection and file
    system errors.
- * Issue #38: anonymous user write access can now be optionally granted
- * Issue #39: added support for FTP servers behind NAT through the new
-   FTPHandler.masquerade_address attribute.
- * Issue #40: provided new FTPHandler.passive_ports attribute to control what
-   ports to use for passive data-transfers.
+ * Issue #38: anonymous user write access can now be optionally granted.
 
 Test suite enhancements:
 
@@ -63,16 +66,16 @@ Bugfixes:
    binding.
  * Issue #9: corrected path traversal vulnerability affecting file-system path
    translations.
- * Issue #14: wrong response code was returned on CDUP.
+ * Issue #14: a wrong response code was returned on CDUP.
  * Issue #17: reject SIZE if pathname is a directory.
- * Issue #18: wrong ABOR response code type was returned.
+ * Issue #18: a wrong ABOR response code type was returned.
  * Issue #19: watch for STOU preceded by REST which makes no sense.
  * Issue #20: "attempted login" counter wasn't incremented on wrong username.
  * Issue #21: STAT wasn't permitted if user wasn't authenticated yet.
  * Issue #22: corrected memory leaks occurring on KeyboardInterrupt/SIGTERM.
  * Issue #23: PASS wasn't rejected when user was already authenticated.
  * Issue #24: can't use os.strerror() on pythonCE.
- * Issue #24: problem occuring on windows when using '\\' as user's home
+ * Issue #24: problem occured on Windows when using '\\' as user's home
    directory.
  * Issue #26: used select() by default instead of poll() because of an asyncore
    module's defect.
