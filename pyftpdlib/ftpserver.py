@@ -2264,7 +2264,9 @@ class FTPServer(asyncore.dispatcher):
         debug("FTPServer.__del__()")
 
     def serve_forever(self, **kwargs):
-        """A wrap around asyncore.loop(); starts the asyncore polling loop."""
+        """A wrap around asyncore.loop(); starts the asyncore polling loop.
+        The keyword arguments in kwargs are the same expected by asyncore.loop()
+        function: timeout, use_poll, map and count."""
 
         if not 'count' in kwargs:
             log("Serving FTP on %s:%s" %self.socket.getsockname())
