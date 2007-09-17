@@ -43,22 +43,23 @@ __release__ = 'pyftpdlib 0.2.0'
 
 # This test suite has been run successfully on the following systems:
 
-# --------------------------------------------------
+# -------------------------------------------------------
 #  System                          | Python version
-# --------------------------------------------------
-#  Windows XP prof sp2             | 2.3, 2.4, 2.5
+# -------------------------------------------------------
+#  Windows XP prof sp2             | 2.3, 2.4, 2.5, 2.6a
 #  Linux CentOS 2.6.20.15          | 2.4
 #  Linux Ubuntu 2.6.20-15          | 2.4, 2.5
 #  Linux Debian 2.4.27-2-386       | 2.3.5
 #  OS X 10.4.10                    | 2.3, 2.4, 2.5
 #  FreeBSD 6.0, 7.0                | 2.4, 2.5
-# --------------------------------------------------
+# -------------------------------------------------------
 
 
 # TODO:
 # - Test QUIT while a transfer is in progress.
 # - Test data transfer in ASCII mode.
 # - Test AbstractedFS.translate() on systems having os.sep == ':'.
+# - Test FTPHandler.masquearade_address and FTPHandler.passive_ports behaviours
 
 
 class AbstractedFSClass(unittest.TestCase):

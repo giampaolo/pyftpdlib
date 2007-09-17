@@ -88,7 +88,7 @@ Serving FTP on 127.0.0.1:21
 127.0.0.1:2503 <== USER anonymous
 127.0.0.1:2503 ==> 331 Username ok, send password.
 127.0.0.1:2503 <== PASS ******
-127.0.0.1:2503 ==> 230 User anonymous logged in.
+127.0.0.1:2503 ==> 230 Login successful.
 [anonymous]@127.0.0.1:2503 User anonymous logged in.
 127.0.0.1:2503 <== TYPE A
 127.0.0.1:2503 ==> 200 Type set to: ASCII.
@@ -127,7 +127,7 @@ __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'debug', 'DummyAuthorizer',
 
 __pname__   = 'Python FTP server library (pyftpdlib)'
 __ver__     = '0.2.0' 
-__date__    = '????-??-??' # TODO: set date
+__date__    = '2007-17-09'
 __author__  = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__     = 'http://code.google.com/p/pyftpdlib/'
 
@@ -186,7 +186,7 @@ not_implemented_cmds = {
     }
 
 
-# hack around format_exc funtion of traceback module to grant
+# hack around format_exc function of traceback module to grant
 # backward compatibility with python < 2.4
 if not hasattr(traceback, 'format_exc'):
     try:
@@ -348,8 +348,6 @@ class PassiveDTP(asyncore.dispatcher):
     """This class is an asyncore.disptacher subclass.  It creates a socket
     listening on a local port, dispatching the resultant connection DTPHandler.
     """
-    # TODO - provide the possibility to define a certain range of ports
-    # on which DTP should bind on
 
     def __init__(self, cmd_channel):
         asyncore.dispatcher.__init__(self)
@@ -494,7 +492,7 @@ class ActiveDTP(asyncore.dispatcher):
         handler = self.cmd_channel.dtp_handler(self.socket, self.cmd_channel)
         self.cmd_channel.data_channel = handler
         self.cmd_channel.on_dtp_connection()
-        # self.close() --> (done automatically)
+        #self.close() --> (done automatically)
 
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
@@ -551,7 +549,7 @@ class DTPHandler(asyncore.dispatcher):
     ac_out_buffer_size  = 8192
 
     def __init__(self, sock_obj, cmd_channel):        
-        """Intialize the DTPHandler instance, replacing asynchat's "simple
+        """Initialize the DTPHandler instance, replacing asynchat's "simple
         producer" deque wrapper with a pure deque object.
         """
         asyncore.dispatcher.__init__(self, sock_obj)
@@ -602,7 +600,7 @@ class DTPHandler(asyncore.dispatcher):
             self.tot_bytes_received += len(chunk)
             if not chunk:
                 self.transfer_finished = True
-                # self.close()  <-- asyncore.recv() already do that...
+                #self.close()  <-- asyncore.recv() already do that...
                 return
             # while we're writing on the file an exception could occur in case
             # that filesystem gets full;  if this happens we let handle_error()
@@ -687,7 +685,6 @@ class DTPHandler(asyncore.dispatcher):
 
     def handle_error(self):
         """Called when an exception is raised and not otherwise handled."""
-
         self.cmd_channel.debug("DTPHandler.handle_error()")
         try:
             raise
@@ -713,7 +710,6 @@ class DTPHandler(asyncore.dispatcher):
 
     def handle_close(self):
         """Called when the socket is closed."""
-
         self.cmd_channel.debug("DTPHandler.handle_close()")
         tot_bytes = self.get_transmitted_bytes()
 
@@ -879,42 +875,42 @@ class AbstractedFS:
         file = os.fdopen(fd, mode)
         return FileWrapper(file, name)
 
-    def exists(self, path):
+    def exists(self, abspath):
         """Return True if the path exists."""
-        return os.path.exists(path)
+        return os.path.exists(abspath)
         
-    def isfile(self, path):
+    def isfile(self, abspath):
         """Return True if path is a file."""
-        return os.path.isfile(path)
+        return os.path.isfile(abspath)
 
-    def isdir(self, path):
+    def isdir(self, abspath):
         """Return True if path is a directory."""
-        return os.path.isdir(path)
+        return os.path.isdir(abspath)
 
-    def chdir(self, path):
+    def chdir(self, abspath):
         """Change the current directory."""
-        os.chdir(path)
+        os.chdir(abspath)
 
-    def mkdir(self, path):
+    def mkdir(self, abspath):
         """Create the specified directory."""
-        os.mkdir(path)
+        os.mkdir(abspath)
 
-    def rmdir(self, path):
+    def rmdir(self, abspath):
         """Remove the specified directory."""
-        os.rmdir(path)
+        os.rmdir(abspath)
             
-    def remove(self, path):
+    def remove(self, abspath):
         """Remove the specified file."""
-        os.remove(path)
+        os.remove(abspath)
     
-    def getsize(self, path):
+    def getsize(self, abspath):
         """Return the size of the specified file in bytes."""
-        return os.path.getsize(path)
+        return os.path.getsize(abspath)
 
-    def getmtime(self, path):
+    def getmtime(self, abspath):
         """Return the last modified time as a number of seconds since the
         epoch."""
-        return os.path.getmtime(path)
+        return os.path.getmtime(abspath)
            
     def rename(self, src, dst):
         """Rename the specified src file to the dst filename."""
@@ -934,22 +930,22 @@ class AbstractedFS:
     # Note that these are resource-intensive blocking operations so you may want
     # to override and move them into another process/thread in some way.
 
-    def get_nlst_dir(self, path):
+    def get_nlst_dir(self, abspath):
         """Return a directory listing in a form suitable for NLST command."""
-        listing = '\r\n'.join(os.listdir(path))
+        listing = '\r\n'.join(os.listdir(abspath))
         if listing:
             return listing + '\r\n'
         return ''
 
-    def get_list_dir(self, path):
+    def get_list_dir(self, abspath):
         """Return a directory listing in a form suitable for LIST command."""
         # if path is a file we return information about it
-        if os.path.isfile(path):
-            basedir, filename = os.path.split(path)
+        if os.path.isfile(abspath):
+            basedir, filename = os.path.split(abspath)
             listing = [filename]
         else:
-            basedir = path
-            listing = os.listdir(path)
+            basedir = abspath
+            listing = os.listdir(abspath)
         return self.format_list(basedir, listing)
 
     def get_stat_dir(self, rawline):
@@ -1049,7 +1045,7 @@ class FTPHandler(asynchat.async_chat):
 
     # FTP site-to-site transfer feature: also referenced as "FXP" it permits for
     # transferring a file between two remote FTP servers without the transfer
-    # going through the client's host (not rencommended for security reasons
+    # going through the client's host (not recommended for security reasons
     # as described in RFC 2577).  Having this attribute set to False means that
     # all data connections from/to remote IP addresses which do not match
     # the client's IP address will be dropped.
@@ -1113,7 +1109,7 @@ class FTPHandler(asynchat.async_chat):
         # If self.push is used, data could not be sent immediately in which
         # case a new "loop" will occur exposing us to the risk of accepting new
         # connections.  Since this could cause asyncore to run out of fds
-        # (...and exposes the server to DoS attacks), we immediatly close the
+        # (...and exposes the server to DoS attacks), we immediately close the
         # channel by using close() instead of close_when_done(). If data has
         # not been sent yet client will be silently disconnected.
         self.close()
@@ -1407,9 +1403,9 @@ class FTPHandler(asynchat.async_chat):
                 self.respond("504 Can't connect to a foreign address.")
                 return
 
-        # ...another RFC 2577 rencommendation is rejecting connections to
+        # ...another RFC 2577 recommendation is rejecting connections to
         # privileged ports (< 1024) for security reasons.  Moreover, binding to
-        # such ports could require root priviledges on some systems.
+        # such ports could require root privileges on some systems.
         if not self.permit_privileged_port:
             if port < 1024:
                 self.log('PORT against the privileged port "%s" refused.' %port)
@@ -1488,10 +1484,11 @@ class FTPHandler(asynchat.async_chat):
         Defaults to the current working directory.
         """
         if line:
-            # some FTP clients (like Konqueror or Nautilus) erroneously issue
-            # /bin/ls-like LIST formats (e.g. "LIST -l", "LIST -al" and so
-            # on...) instead of passing a directory as the argument. If we
-            # receive such a command, just LIST the current working directory.
+            # some FTP clients like older versions of Konqueror or Nautilus
+            # erroneously issue /bin/ls-like LIST formats (e.g. "LIST -l",
+            # "LIST -al" and so on...) instead of passing a directory as the
+            # argument. If we  receive such a command, just LIST the current
+            # working directory.
             if line.lower() in ("-a", "-l", "-al", "-la"):
                 path = self.fs.translate(self.fs.cwd)
                 line = self.fs.cwd
@@ -1541,9 +1538,9 @@ class FTPHandler(asynchat.async_chat):
         file = self.fs.translate(line)
 
         if not self.authorizer.r_perm(self.username, file):
-            self.log('FAIL RETR "s". Not enough priviledges.'
+            self.log('FAIL RETR "s". Not enough privileges.'
                         %self.fs.normalize(line))
-            self.respond("550 Can't RETR: not enough priviledges.")
+            self.respond("550 Can't RETR: not enough privileges.")
             return
 
         try:
@@ -1593,9 +1590,9 @@ class FTPHandler(asynchat.async_chat):
         file = self.fs.translate(line)
 
         if not self.authorizer.w_perm(self.username, os.path.dirname(file)):
-            self.log('FAIL %s "%s". Not enough priviledges.'
+            self.log('FAIL %s "%s". Not enough privileges.'
                         %(cmd, self.fs.normalize(line)))
-            self.respond("550 Can't STOR: not enough priviledges.")
+            self.respond("550 Can't STOR: not enough privileges.")
             return
 
         if self.restart_position:
@@ -1665,9 +1662,9 @@ class FTPHandler(asynchat.async_chat):
             prefix = 'ftpd.'
 
         if not self.authorizer.w_perm(self.username, basedir):
-            self.log('FAIL STOU "%s". Not enough priviledges' \
+            self.log('FAIL STOU "%s". Not enough privileges' \
                         %self.fs.normalize(line))
-            self.respond("550 Can't STOU: not enough priviledges.")
+            self.respond("550 Can't STOU: not enough privileges.")
             return
 
         try:
@@ -1908,15 +1905,15 @@ class FTPHandler(asynchat.async_chat):
         Implementation note:
         properly handling the SIZE command when TYPE ASCII is used would require
         to scan the entire file to perform the ASCII translation logic
-        (file.read(int).replace(os.linesep, '\r\n')) and then calculating the
+        (file.read().replace(os.linesep, '\r\n')) and then calculating the
         len of such data which may be different than the actual size of the file
-        on the server.  Considering that the calculating such result could be
-        very resource-intensive it could be easy for a malicious client to try
-        a DoS attack, thus we do not perform the ASCII translation.
+        on the server.  Considering that calculating such result could be very
+        resource-intensive it could be easy for a malicious client to try a DoS
+        attack, thus we do not perform the ASCII translation.
 
         However, clients in general should not be resuming downloads in ASCII
         mode.  Resuming downloads in binary mode is the recommended way as
-        specified into RFC 3659.
+        specified in RFC 3659.
         """
 
         path = self.fs.translate(line)
@@ -1960,9 +1957,9 @@ class FTPHandler(asynchat.async_chat):
         path = self.fs.translate(line)
 
         if not self.authorizer.w_perm(self.username, os.path.dirname(path)):
-            self.log('FAIL MKD "%s". Not enough priviledges.'
+            self.log('FAIL MKD "%s". Not enough privileges.'
                         %self.fs.normalize(line))
-            self.respond("550 Can't MKD: not enough priviledges.")
+            self.respond("550 Can't MKD: not enough privileges.")
             return
 
         try:
@@ -1987,8 +1984,8 @@ class FTPHandler(asynchat.async_chat):
             return
 
         if not self.authorizer.w_perm(self.username, path):
-            self.log('FAIL RMD "%s". Not enough priviledges.' %self.fs.normalize(line))
-            self.respond("550 Can't RMD: not enough priviledges.")
+            self.log('FAIL RMD "%s". Not enough privileges.' %self.fs.normalize(line))
+            self.respond("550 Can't RMD: not enough privileges.")
             return
 
         try:
@@ -2007,9 +2004,9 @@ class FTPHandler(asynchat.async_chat):
         path = self.fs.translate(line)
 
         if not self.authorizer.w_perm(self.username, path):
-            self.log('FAIL DELE "%s". Not enough priviledges.'
+            self.log('FAIL DELE "%s". Not enough privileges.'
                         %self.fs.normalize(line))
-            self.respond("550 Can't DELE: not enough priviledges.")
+            self.respond("550 Can't DELE: not enough privileges.")
             return
 
         try:
@@ -2029,9 +2026,9 @@ class FTPHandler(asynchat.async_chat):
         path = self.fs.translate(line)
 
         if not self.authorizer.w_perm(self.username, path):
-            self.log('FAIL RNFR "%s". Not enough priviledges for renaming.'
+            self.log('FAIL RNFR "%s". Not enough privileges for renaming.'
                      %(self.fs.normalize(line)))
-            self.respond("550 Can't RNRF: not enough priviledges.")
+            self.respond("550 Can't RNRF: not enough privileges.")
             return
         
         if self.fs.exists(path):
@@ -2051,9 +2048,9 @@ class FTPHandler(asynchat.async_chat):
         dst = self.fs.translate(line)
 
         if not self.authorizer.w_perm(self.username, self.fs.rnfr):
-            self.log('FAIL RNFR/RNTO "%s ==> %s". Not enough priviledges for renaming.'
+            self.log('FAIL RNFR/RNTO "%s ==> %s". Not enough privileges for renaming.'
                 %(self.fs.normalize(self.fs.rnfr), self.fs.normalize(line)))
-            self.respond("550 Can't RNTO: not enough priviledges.")
+            self.respond("550 Can't RNTO: not enough privileges.")
             self.fs.rnfr = None
             return
 
@@ -2163,7 +2160,7 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_NOOP(self, line):
         """Do nothing."""
-        self.respond("250 I succesfully done nothin'.")
+        self.respond("250 I successfully done nothin'.")
 
 
     def ftp_SYST(self, line):
@@ -2204,7 +2201,7 @@ class FTPHandler(asynchat.async_chat):
 
             self.push("214-The following commands are recognized:\r\n")
             self.push(formatted_help())
-            self.respond("214 Help command succesful.")
+            self.respond("214 Help command successful.")
 
 
         # --- support for deprecated cmds
@@ -2241,8 +2238,8 @@ class FTPServer(asyncore.dispatcher):
     FTPHandler class).
     """
 
-    # Overiddable defaults (overriding is strongly rencommended to avoid
-    # running out of file descritors (DoS) !).
+    # Overiddable defaults (overriding is strongly recommended to avoid
+    # running out of file descriptors (DoS) !).
 
     # number of maximum simultaneous connections accepted
     # (0 == unlimited)
@@ -2329,8 +2326,8 @@ class FTPServer(asyncore.dispatcher):
 
         The map parameter is a dictionary whose items are the channels to close.
         If map is omitted, the default asyncore.socket_map is used.
-        Having ignore_all parameter set to False results in raising error in
-        case of unexpected exceptions.
+        Having ignore_all parameter set to False results in raising exception
+        in case of unexpected errors.
         """
         # Implementation note:
         # instead of using the current asyncore.close_all() function which only
