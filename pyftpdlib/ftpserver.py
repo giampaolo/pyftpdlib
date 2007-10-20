@@ -118,6 +118,7 @@ import fnmatch
 import tempfile
 import warnings
 import random
+import inspect
 
 
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'debug', 'DummyAuthorizer',
@@ -1463,7 +1464,10 @@ class FTPHandler(asynchat.async_chat):
         # in progress, the server closes the control connection.
         # If file transfer is in progress, the connection will remain
         # open for result response and the server will then close it.
-        msg_quit = self.authorizer.get_msg_quit(self.username)
+        if self.username:
+            msg_quit = self.authorizer.get_msg_quit(self.username)
+        else:
+            msg_quit = inspect.getargspec(self.authorizer.add_user)[3][2]
         if len(msg_quit) <= 75:
             self.respond("221 %s" %msg_quit)
         else:
