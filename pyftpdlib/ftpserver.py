@@ -140,6 +140,7 @@ proto_cmds = {
     'CDUP': 'Syntax: CDUP (go to parent directory).',
     'CWD' : 'Syntax: CWD <SP> dir-name (change current working directory).',
     'DELE': 'Syntax: DELE <SP> file-name (delete file).',
+    'FEAT': 'Syntax: FEAT (list all new features supported).',
     'HELP': 'Syntax: HELP [<SP> cmd] (show help).',
     'LIST': 'Syntax: LIST [<SP> path-name] (list files).',
     'MDTM': 'Syntax: MDTM <SP> file-name (get last modification time).',
@@ -1142,14 +1143,15 @@ class FTPHandler(asynchat.async_chat):
             self.in_buffer_len = 0
 
     # commands accepted before authentication
-    unauth_cmds = ('USER','PASS','HELP','STAT','QUIT','NOOP','SYST')
+    unauth_cmds = ('USER','PASS','HELP','STAT','QUIT','NOOP','SYST','FEAT')
 
     # commands needing an argument
     arg_cmds = ('ALLO','APPE','DELE','MDTM','MODE','MKD', 'PORT','REST','RETR','RMD',
                 'RNFR','RNTO','SIZE', 'STOR','STRU','TYPE','USER','XMKD','XRMD')
 
     # commands needing no argument
-    unarg_cmds = ('ABOR','CDUP','NOOP','PASV','PWD','QUIT','REIN','SYST','XCUP','XPWD')
+    unarg_cmds = ('ABOR','CDUP','FEAT','NOOP','PASV','PWD','QUIT','REIN','SYST',
+                  'XCUP','XPWD')
 
     def found_terminator(self):
         r"""Called when the incoming data stream matches the \r\n terminator."""
@@ -2160,6 +2162,14 @@ class FTPHandler(asynchat.async_chat):
             self.push('213-Status of "%s":\r\n' %self.fs.normalize(line))
             self.push(data)
             self.respond('213 End of status.')
+
+            
+    def ftp_FEAT(self, line):
+        """List all new features supported as defined in RFC 2398."""
+        cmds = [' MDTM', ' REST STREAM', ' SIZE', '']
+        self.push("211-Extensions supported:\r\n")
+        self.push('\r\n'.join(cmds))
+        self.respond('211 End FEAT.')
 
 
     def ftp_NOOP(self, line):

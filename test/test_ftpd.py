@@ -456,6 +456,9 @@ class FtpDummyCmds(unittest.TestCase):
         self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'rest str')
         self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'rest -1')
 
+    def test_feat(self):
+        ftp.sendcmd('feat')
+
     def test_quit(self):
         ftp.sendcmd('quit')
 
