@@ -4,6 +4,18 @@ Issue tracker at http://code.google.com/p/pyftpdlib/issues/list
 History
 =======
 
+Version: 0.2.1 - Date: ****-**-**
+----------------------------------
+
+RFC-related enhancements:
+
+* Implemented FEAT command.
+
+Bugfixes:
+
+* Issue #41: error occurred on quit if user was not yet authenticated.
+
+
 Version: 0.2.0 - Date: 2007-09-17
 ----------------------------------
 
