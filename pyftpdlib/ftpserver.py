@@ -421,7 +421,7 @@ class PassiveDTP(asyncore.dispatcher):
                     pass
                 msg = 'Rejected data connection from foreign address %s:%s.' \
                         %(addr[0], addr[1])
-                self.cmd_channel.respond("421 %s" %msg)
+                self.cmd_channel.respond("425 %s" %msg)
                 self.cmd_channel.log(msg)
                 # do not close listening socket: it couldn't be client's blame
                 return
@@ -472,7 +472,7 @@ class ActiveDTP(asyncore.dispatcher):
         try:
             self.connect((ip, port))
         except socket.error:
-            self.cmd_channel.respond("500 Can't connect to %s:%s." %(ip, port))
+            self.cmd_channel.respond("425 Can't connect to %s:%s." %(ip, port))
             self.close()     
 
     def __del__(self):
@@ -1393,7 +1393,7 @@ class FTPHandler(asynchat.async_chat):
             ip = ".".join(line[:4]).replace(',','.')
             port = (int(line[4]) * 256) + int(line[5])
         except (ValueError, OverflowError):
-            self.respond("504 Invalid PORT format.")
+            self.respond("501 Invalid PORT format.")
             return
 
         # FTP bounce attacks protection: according to RFC 2577 it's
@@ -1403,7 +1403,7 @@ class FTPHandler(asynchat.async_chat):
             if ip != self.remote_ip:
                 self.log("Rejected data connection to foreign address %s:%s."
                         %(ip, port))
-                self.respond("504 Can't connect to a foreign address.")
+                self.respond("501 Can't connect to a foreign address.")
                 return
 
         # ...another RFC 2577 recommendation is rejecting connections to
@@ -1412,7 +1412,7 @@ class FTPHandler(asynchat.async_chat):
         if not self.permit_privileged_port:
             if port < 1024:
                 self.log('PORT against the privileged port "%s" refused.' %port)
-                self.respond("504 Can't connect over a privileged port.")
+                self.respond("501 Can't connect over a privileged port.")
                 return
 
         # close existent DTP-server instance, if any.
@@ -2200,7 +2200,7 @@ class FTPHandler(asynchat.async_chat):
             if line.upper() in proto_cmds:
                 self.respond("214 %s." %proto_cmds[line.upper()])
             else:
-                self.respond("500 Unrecognized command.")
+                self.respond("501 Unrecognized command.")
         else:
             # provide a compact list of recognized commands
             def formatted_help():
