@@ -2284,6 +2284,15 @@ class FTPServer(asyncore.dispatcher):
 
         if not 'count' in kwargs:
             log("Serving FTP on %s:%s" %self.socket.getsockname())
+
+        # backward compatibility for python < 2.4
+        if not hasattr(self, '_map'):
+            if not 'map' in kwargs:
+                map = asyncore.socket_map
+            else:
+                map = kwargs['map']
+            self._map = self.handler._map = map
+            
         try:
             # FIX #16, #26
             # use_poll specifies whether to use select module's poll()
@@ -2352,11 +2361,7 @@ class FTPServer(asyncore.dispatcher):
         # This is how close_all() function should appear in the fixed version
         # of asyncore that will be included in Python 2.6.
         if map is None:
-            # backward compatibility for python < 2.4
-            if not hasattr(self, '_map'):
-                map = asyncore.socket_map
-            else:
-                map = self._map
+            map = self._map
         for x in map.values():
             try:
                 x.close()
