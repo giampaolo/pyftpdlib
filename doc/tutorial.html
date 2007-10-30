@@ -1,0 +1,242 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>pyftpdlib Tutorial</title>
+</head>
+
+<body>
+<h1>pyftpdlib Tutorial</h1>
+<h1>1.0 - Introduction</h1>
+<p>pyftpdlib implements the server side of the FTP protocol as defined in <a href="http://www.faqs.org/rfcs/rfc959.html" rel="nofollow">RFC 959</a>.  pyftpdlib consist of a single file, <strong>ftpserver.py</strong>,  which contains a hierarchy of classes, functions and variables which  implement the backend functionality for the ftpd. This document is  intended to serve as a simple <strong>API reference</strong> of most important classes and functions.  Also included is an introduction to <strong>customization</strong> through the use of some example scripts. </p>
+<p>If  you have written a customized configuration you think could be useful  to the community feel free to share it by adding a comment at the end  of this document. </p>
+<h1>2.0 - API reference</h1>
+<h3>2.1 - class AuthorizerError</h3>
+<p><strong>AuthorizerError</strong>() </p>
+<blockquote>Base class for authorizers exceptions. </blockquote>
+<h1></h1>
+<h3>2.2 - class DummyAuthorizer</h3>
+<p><strong>DummyAuthorizer</strong>() </p>
+<blockquote>Basic  &quot;dummy&quot; authorizer class, suitable for subclassing to create your own  custom authorizers. An &quot;authorizer&quot; is a class handling authentications  and permissions of the FTP server. It is used inside FTPHandler  class for verifying user's password, getting users home directory and  checking user permissions when a filesystem read/write event occurs. DummyAuthorizer  is the base authorizer, providing a platform independent interface for  managing &quot;virtual&quot; FTP users. Typically the first thing you have to do  is create an instance of this class and start adding ftp users: </blockquote>
+<pre>&gt;&gt;&gt; from pyftpdlib import ftpserver<br />&gt;&gt;&gt; authorizer = ftpserver.DummyAuthorizer()<br />&gt;&gt;&gt; authorizer.add_user('username', 'password', 'home/directory', perm=('r', 'w'))<br />&gt;&gt;&gt; authorizer.add_anonymous('/home/nobody')</pre>
+<p>Relevant methods defined in this class: </p>
+<table border="1" cellpadding="1" cellspacing="1">
+  <tbody>
+    <tr>
+      <td><strong>add_user</strong>(<em>username</em>, <em>password</em>, <em>homedir</em>[, <em>perm=(&quot;r&quot;)</em>[, <em>msg_login=&quot;Login successful.&quot;</em>[, <em>msg_quit=&quot;Goodbye.&quot;</em>]]]) </td>
+      <td> Add a user to the virtual users table.  AuthorizerError exceptions raised on error conditions such as insufficient permissions or duplicate usernames.  Optional <em>perm</em> argument is a tuple defaulting to (&quot;r&quot;) referencing user's permissions.  Valid values are &quot;r&quot; (read access), &quot;w&quot; (write access) or an empty  string &quot;&quot; (no access). Optional <em>msg_login</em> and <em>msg_quit</em> arguments can be specified to provide customized response strings when user log-in and quit. </td>
+    </tr>
+    <tr>
+      <td><strong>add_anonymous</strong>(<em>homedir</em>[, **<em>kwargs</em>]) </td>
+      <td> Add an anonymous user to the virtual users table.  AuthorizerError  exception raised on error conditions such as insufficient permissions,  missing home directory, or duplicate anonymous users. The keyword  arguments in <em>kwargs</em> are the same expected by add_user method: <em>perm</em>, <em>msg_login</em> and <em>msg_quit</em>.  The optional <em>perm</em> keyword argument is a tuple defaulting to (&quot;r&quot;) referencing &quot;read-only&quot;  anonymous user's permission. Using a &quot;w&quot; (write access) value results  in a warning message printed to stderr. </td>
+    </tr>
+    <tr>
+      <td><strong>remove_user</strong>(<em>username</em>) </td>
+      <td> Remove a user from the virtual user table. </td>
+    </tr>
+    <tr>
+      <td><strong>validate_authentication</strong>(<em>username</em>, <em>password</em>) </td>
+      <td> Return True if the supplied <em>username</em> and <em>password</em> match the stored credentials. </td>
+    </tr>
+    <tr>
+      <td><strong>has_user</strong>(<em>username</em>) </td>
+      <td> Whether the <em>username</em> exists in the virtual users table. </td>
+    </tr>
+    <tr>
+      <td><strong>get_home_dir</strong>(<em>username</em>) </td>
+      <td> Return the user's home directory. </td>
+    </tr>
+    <tr>
+      <td><strong>r_perm</strong>(<em>username</em>[, <em>obj=None</em>]) </td>
+      <td> Whether the user has read permissions for <em>obj</em> (an absolute pathname of a file or a directory). </td>
+    </tr>
+    <tr>
+      <td><strong>w_perm</strong>(<em>username</em>, [<em>obj=None</em>]) </td>
+      <td> Whether the user has write permissions for <em>obj</em> (an absolute pathname of a file or a directory). </td>
+    </tr>
+  </tbody>
+</table>
+<h1></h1>
+<h3>2.3 - class FTPHandler</h3>
+<p><strong>FTPHandler</strong>(<em>conn, ftpd_instance</em>) </p>
+<blockquote>This class implements the FTP server Protocol Interpreter (see <a href="http://www.faqs.org/rfcs/rfc959.html" rel="nofollow">RFC 959</a>),  handling commands received from the client on the control channel by  calling the command's corresponding method (e.g. for received command  &quot;MKD pathname&quot;, ftp_MKD() method is called with &quot;pathname&quot; as the argument).  All relevant session information are stored in instance variables. <em>conn</em> and <em>ftpd_instance</em> parameters are automatically passed by FTPServer class instance.  Basic usage simply requires creating an instance of FTPHandler class and specify which authorizer it will going to use: </blockquote>
+<pre>&gt;&gt;&gt; ftp_handler = ftpserver.FTPHandler<br />&gt;&gt;&gt; ftp_handler.authorizer = authorizer</pre>
+<p>Relevant methods and attributes defined in this class: </p>
+<table border="1" cellpadding="1" cellspacing="1">
+  <tbody>
+    <tr>
+      <td><strong>banner</strong> </td>
+      <td> String returned when client connects. </td>
+    </tr>
+    <tr>
+      <td><strong>max_login_attempts</strong> </td>
+      <td> Maximum number of wrong authentications before disconnecting (defaulting to <em>3</em>). </td>
+    </tr>
+    <tr>
+      <td><strong>permit_foreign_addresses</strong> </td>
+      <td> Wether enable <a href="http://www.proftpd.org/docs/howto/FXP.html" rel="nofollow">FXP</a> feature (defaulting to <em>False</em>). </td>
+    </tr>
+    <tr>
+      <td><strong>permit_privileged_ports</strong> </td>
+      <td> Set to True if you want to permit PORTing over privileged ports (not recommended, defaulting to <em>False</em>). </td>
+    </tr>
+    <tr>
+      <td><strong>masquerade_address</strong> </td>
+      <td> The &quot;masqueraded&quot; IP address to provide along PASV reply when pyftpdlib  is running behind a NAT or other types of gateways. When configured  pyftpdlib will hide its local address and instead use the public  address of your NAT (defaulting to <em>None</em>). </td>
+    </tr>
+    <tr>
+      <td><strong>passive_ports</strong> </td>
+      <td> What ports ftpd will use for its passive data transfers. Value expected  is a list of integers (e.g. range(60000, 65535)). When configured  pyftpdlib will no longer use kernel-assigned random ports (defaulting  to <em>None</em>). </td>
+    </tr>
+    <tr>
+      <td><strong>close</strong>() </td>
+      <td> Close the current channel disconnecting the client. </td>
+    </tr>
+  </tbody>
+</table>
+<h1></h1>
+<h3>2.4 - class FTPServer</h3>
+<p><strong>FTPServer</strong>(<em>address, handler</em>) </p>
+<blockquote>This class is an asyncore.dispatcher subclass.  It creates a FTP socket listening on <em>address</em>, dispatching the requests to a <em>handler</em> (typically FTPHandler class).  It is typically used for starting <strong>asyncore</strong> polling loop: </blockquote>
+<pre>&gt;&gt;&gt; address = ('127.0.0.1', 21)<br />&gt;&gt;&gt; ftpd = ftpserver.FTPServer(address, ftp_handler)<br />&gt;&gt;&gt; ftpd.serve_forever()</pre>
+<p>Relevant methods and attributes defined in this class: </p>
+<table border="1" cellpadding="1" cellspacing="1">
+  <tbody>
+    <tr>
+      <td><strong>max_cons</strong> </td>
+      <td> Number of maximum simultaneous connections accepted (defaulting to <em>0</em> == <em>no limit</em>). </td>
+    </tr>
+    <tr>
+      <td><strong>max_cons_per_ip</strong> </td>
+      <td> Number of maximum connections accepted for the same IP address (defaulting to <em>0</em> == <em>no limit</em>). </td>
+    </tr>
+    <tr>
+      <td><strong>serve_forever</strong>([, **<em>kwargs</em>]) </td>
+      <td> Starts the asyncore polling loop. The keyword arguments in <em>kwargs</em> are the same expected by asyncore.loop() function: <em>timeout</em>, <em>use_poll</em>, <em>map</em> and <em>count</em>. </td>
+    </tr>
+    <tr>
+      <td><strong>close_all</strong>([<em>map=None</em>[, <em>ignore_all=False</em>]]) </td>
+      <td> Stop serving; close all existent connections disconnecting clients.  The <em>map</em> parameter is a dictionary whose items are the channels to close.  If <em>map</em> is omitted, the default asyncore.socket_map is used.  Having <em>ignore_all</em> parameter set to False results in raising exception in case of unexpected errors. </td>
+    </tr>
+  </tbody>
+</table>
+<h1></h1>
+<h3>2.5 - class DTPHandler</h3>
+<p><strong>DTPHandler</strong>(<em>sock_obj, cmd_channel</em>) </p>
+<blockquote>This class handles the server-data-transfer-process (server-DTP, see <a href="http://www.faqs.org/rfcs/rfc959.html" rel="nofollow">RFC 959</a>) managing all transfer operations regarding the data channel. <em>sock_obj</em> is the underlying socket used for the connection, <em>cmd_channel</em> is the FTPHandler  class instance. Unless you want to add extra functionalities like  bandwidth throttling you shouldn't be interested in putting hands on  this class. </blockquote>
+<p>Relevant methods defined in this class: </p>
+<table border="1" cellpadding="1" cellspacing="1">
+  <tbody>
+    <tr>
+      <td><strong>get_transmitted_bytes</strong>() </td>
+      <td> Return the number of transmitted bytes. </td>
+    </tr>
+    <tr>
+      <td><strong>transfer_in_progress</strong>() </td>
+      <td> Return True if a transfer is in progress, else False. </td>
+    </tr>
+    <tr>
+      <td><strong>enable_receiving</strong>(<em>type</em>) </td>
+      <td> Enable receiving of data over the channel.  Depending on the <em>type</em> currently in use it creates an appropriate wrapper for the incoming data. </td>
+    </tr>
+    <tr>
+      <td><strong>push</strong>(<em>data</em>) </td>
+      <td> Push a bufferable <em>data</em> object (e.g. a string) onto the deque and initiate send. </td>
+    </tr>
+    <tr>
+      <td><strong>push_with_producer</strong>(<em>producer</em>) </td>
+      <td> Push data using a <em>producer</em> and initiate send. </td>
+    </tr>
+    <tr>
+      <td><strong>close</strong>() </td>
+      <td> Close the data channel, first attempting to close any remaining file handles. </td>
+    </tr>
+  </tbody>
+</table>
+<h1></h1>
+<h3>2.6 - class AbstractedFS</h3>
+<p><strong>AbstractedFS</strong>() </p>
+<blockquote>A  class used to interact with the file system, providing a high level,  cross-platform interface compatible with both Windows and UNIX style  filesystems. It provides some utility methods and some wraps around  operations involved in file object creation and file system operations  like moving files or removing directories. </blockquote>
+<p>Relevant methods and attributes defined in this class: </p>
+<table border="1" cellpadding="1" cellspacing="1">
+  <tbody>
+    <tr>
+      <td><strong>root</strong> </td>
+      <td> User's absolute home directory. </td>
+    </tr>
+    <tr>
+      <td><strong>cwd</strong> </td>
+      <td> User's relative current working directory. </td>
+    </tr>
+    <tr>
+      <td><strong>normalize</strong>(<em>path</em>) </td>
+      <td> Translate a relative FTP <em>path</em> into an absolute virtual FTP path. </td>
+    </tr>
+    <tr>
+      <td><strong>translate</strong>(<em>path</em>) </td>
+      <td> Translate a FTP <em>path</em> into equivalent filesystem absolute path. </td>
+    </tr>
+    <tr>
+      <td><strong>format_list</strong>(<em>basedir</em>, <em>listing</em>) </td>
+      <td> Return a directory listing emulating &quot;/bin/ls -lgA&quot; UNIX command output. <em>basedir</em> is the absolute dirname, <em>listing</em> is a list of files contained in that directory. For portability reasons  permissions, hard links numbers, owners and groups listed are static  and unreliable but it shouldn't represent a problem for most ftp  clients around. If you want reliable values on unix systems override  this method and use other attributes provided by os.stat(). </td>
+    </tr>
+  </tbody>
+</table>
+<h1></h1>
+<h3>2.7 - class FileProducer</h3>
+<p><strong>FileProducer</strong>(<em>file</em>, <em>type</em>) </p>
+<blockquote>Producer wrapper for <em>file</em>[-like] objects. Depending on the <em>type</em> it creates an appropriate wrapper for the outgoing data. </blockquote>
+<p>Relevant methods and attributes defined in this class: </p>
+<table border="1" cellpadding="1" cellspacing="1">
+  <tbody>
+    <tr>
+      <td><strong>out_buffer_size</strong> </td>
+      <td> Number of bytes to read from file (defaulting to 65536). </td>
+    </tr>
+  </tbody>
+</table>
+<h1></h1>
+<h3>2.8 - Functions</h3>
+<p><strong>log</strong>(<em>msg</em>) </p>
+<blockquote>Log messages intended for the end user. </blockquote>
+<p><strong>logline</strong>(<em>msg</em>) </p>
+<blockquote>Log commands and responses passing through the command channel. </blockquote>
+<p><strong>logerror</strong>(<em>msg</em>) </p>
+<blockquote>Log traceback outputs occurring in case of errors. </blockquote>
+<p><strong>debug</strong>(<em>msg</em>) </p>
+<blockquote>Log function/method calls (disabled by default). </blockquote>
+<h1>3.0 - Customizing your FTP server</h1>
+<p>Below is a  set of example scripts showing some of the possible customizations that  can be done with pyftpdlib. Some of them are included in demo directory  of pyftpdlib source distribution. </p>
+<h3>3.1 - Building a Base FTP server</h3>
+<p>The  script below is a basic configuration, and it's probably the best  starting point for understanding how things work. It uses the base DummyAuthorizer for adding a bunch of &quot;virtual&quot; users. </p>
+<p>It also sets a limit for connections by overriding FTPServer max_cons and max_cons_per_ip  attributes which are intended to set limits for maximum connections to  handle simultaneously and maximum connections from the same IP address.  Overriding these variables is always a good idea (they default to 0, or  &quot;no limit&quot;) since they are a good workaround for avoiding <strong>DoS attacks</strong>. </p>
+<pre>#!/usr/bin/env python<br /># basic_ftpd.py<br /><br />&quot;&quot;&quot;A basic FTP server which uses a DummyAuthorizer for managing 'virtual<br />users', setting a limit for incoming connections.<br />&quot;&quot;&quot;<br /><br />import os<br /><br />from pyftpdlib import ftpserver<br /><br /><br />if __name__ == &quot;__main__&quot;:<br /><br />    # Import a dummy authorizer for managing 'virtual users' <br />    authorizer = ftpserver.DummyAuthorizer()<br />    authorizer.add_user('user', '12345', os.getcwd(), perm=('r', 'w'))<br />    authorizer.add_anonymous(os.getcwd())<br /><br />    # Instantiate FTP handler class<br />    ftp_handler = ftpserver.FTPHandler<br />    ftp_handler.authorizer = authorizer<br /><br />    # Define a customized banner (string returned when client connects)<br />    ftp_handler.banner = &quot;pyftpdlib %s based ftpd ready.&quot; %ftpserver.__ver__<br /><br />    # Instantiate FTP server class and listen to 0.0.0.0:21<br />    address = ('', 21)<br />    ftpd = ftpserver.FTPServer(address, ftp_handler)<br /><br />    # set a limit for connections<br />    ftpd.max_cons = 256<br />    ftpd.max_cons_per_ip = 5<br /><br />    # start ftp server<br />    ftpd.serve_forever()</pre>
+<h3>3.2 - Logging management</h3>
+<p>As mentioned, ftpserver.py comes with 4 different functions intended for a separate logging system: log(), logline(), logerror() and debug(). Let's suppose you don't want to print FTPd messages on screen but you want to write them into different files: <em>&quot;/var/log/ftpd.log&quot;</em> will be main log file, <em>&quot;/var/log/ftpd.lines.log&quot;</em> the one where you'll want to store commands and responses passing through the control connection. </p>
+<p>Here's one method this could be implemented: </p>
+<pre>#!/usr/bin/env python<br /># logging_management.py<br /><br />import os<br />import time<br /><br />from pyftpdlib import ftpserver<br /><br /><br />def get_time():<br />    return time.strftime(&quot;[%Y-%b-%d %H:%M:%S] &quot;)<br /><br />def standard_logger(msg):<br />    f = open('/var/log/ftpd.log', 'a')<br />    f.write(get_time() + msg + '\n')<br />    f.close()<br /><br />def line_logger(msg):<br />    f = open('/var/log/ftpd.lines.log', 'a')<br />    f.write(get_time() + msg + '\n')<br />    f.close()<br /><br />if __name__ == &quot;__main__&quot;:<br />    ftpserver.log = standard_logger<br />    ftpserver.logline = line_logger<br /><br />    authorizer = ftpserver.DummyAuthorizer()<br />    authorizer.add_anonymous(os.getcwd())<br />    ftp_handler = ftpserver.FTPHandler<br />    ftp_handler.authorizer = authorizer<br />    address = ('', 21)<br />    ftpd = ftpserver.FTPServer(address, ftp_handler)<br />    ftpd.serve_forever()</pre>
+<h3>3.3 - Storing passwords as hash digests</h3>
+<p>Using FTP server library with the default DummyAuthorizer  means that password will be stored in clear-text. An end-user ftpd  using the default dummy authorizer would typically require a  configuration file for authenticating users and their passwords but  storing clear-text passwords is of course undesirable. </p>
+<p>The most  common way to do things in such case would be first creating new users  and then storing their usernames + passwords as hash digests into a  file or wherever you find it convenient. </p>
+<p>The example below  shows how to easily create an encrypted account storage system by  storing passwords as one-way hashes by using md5 algorithm. This could  be easily done by using the <strong>md5</strong> module included with Python stdlib and by sub-classing the original DummyAuthorizer class overriding its validate_authentication method: </p>
+<pre>#!/usr/bin/env python<br /># md5_ftpd.py<br /><br />&quot;&quot;&quot;A basic ftpd storing passwords as hash digests (platform independent).<br />&quot;&quot;&quot;<br /><br />import md5<br />import os<br /><br />from pyftpdlib import ftpserver<br /><br /><br />class DummyMD5Authorizer(ftpserver.DummyAuthorizer):<br /><br />    def validate_authentication(self, username, password):<br />        hash = md5.new(password).hexdigest()<br />        return self.user_table[username]['pwd'] == hash<br /><br />if __name__ == &quot;__main__&quot;:<br />    # get a hash digest from a clear-text password<br />    hash = md5.new('12345').hexdigest()<br />    authorizer = DummyMD5Authorizer()<br />    authorizer.add_user('user', hash, os.getcwd(), perm=('r', 'w'))<br />    authorizer.add_anonymous(os.getcwd())    <br />    ftp_handler = ftpserver.FTPHandler<br />    ftp_handler.authorizer = authorizer<br />    address = ('', 21)<br />    ftpd = ftpserver.FTPServer(address, ftp_handler)<br />    ftpd.serve_forever()</pre>
+<h3>3.4 - Unix FTP Server</h3>
+<p>If  you're running a Unix system you may want to configure your ftpd to  include support for 'real' users existing on the system. </p>
+<p>The example below shows how to use <strong>pwd</strong> and <strong>spwd</strong> modules available in <em>Python 2.5</em> or greater (UNIX systems only) to interact with UNIX user account and  shadow password database. This basic authorizer also gets the user's  home directory. </p>
+<p>Note that users must already exist on the system. </p>
+<pre>#!/usr/bin/env python<br /># unix_ftpd.py<br /><br />&quot;&quot;&quot;A ftpd using local unix account database to authenticate users<br />(users must already exist).<br />&quot;&quot;&quot;<br /><br />import os<br />import pwd, spwd, crypt<br /><br />from pyftpdlib import ftpserver<br /><br /><br />class UnixAuthorizer(ftpserver.DummyAuthorizer):<br /><br />    def add_user(self, username, home=None, **kwargs):<br />        &quot;&quot;&quot;Add a 'real' system user to the virtual users table.<br />        If no home argument is specified the user's home directory will be used.<br />        The keyword arguments in kwargs are the same expected by add_user<br />        method: 'perm', 'msg_login' and 'msg_quit'.<br />        &quot;&quot;&quot;<br />        # get the list of all available users on the system and check if<br />        # username provided exists<br />        users = [entry.pw_name for entry in pwd.getpwall()]<br />        if not username in users:<br />            raise ftpserver.AuthorizerError('No such user &quot;%s&quot;.' %username)<br />        if not home:<br />            home = pwd.getpwnam(username).pw_dir<br />        ftpserver.DummyAuthorizer.add_user(self, username, '', home, **kwargs)<br /><br />    def validate_authentication(self, username, password):<br />        pw1 = spwd.getspnam(username).sp_pwd<br />        pw2 = crypt.crypt(password, pw1)<br />        return pw1 == pw2<br /><br />if __name__ == &quot;__main__&quot;:<br />    authorizer = UnixAuthorizer()<br />    # add a user (note: user must already exists)<br />    authorizer.add_user('user', perm=('r', 'w'))<br />    authorizer.add_anonymous(os.getcwd())<br />    ftp_handler = ftpserver.FTPHandler<br />    ftp_handler.authorizer = authorizer<br />    address = ('', 21)<br />    ftpd = ftpserver.FTPServer(address, ftp_handler)<br />    ftpd.serve_forever()</pre>
+<h3>3.5 - Windows NT FTP Server</h3>
+<p>This next code shows how to implement a basic authorizer for a <strong>Windows NT</strong> workstation (windows NT, 2000, XP, 2003 server and so on...) to  authenticate against existing Windows user accounts. This code uses  Mark Hammond's <a href="http://starship.python.net/crew/mhammond/win32/" rel="nofollow">pywin32</a> extension so the PyWin32 extensions must also be installed. </p>
+<p>Note that, as for unix authorizer, users must be already created on the system. </p>
+<pre>#!/usr/bin/env python<br /># winnt_ftpd.py<br /><br />&quot;&quot;&quot;A ftpd using local Windows NT account database to authenticate users<br />(users must already exist).<br />&quot;&quot;&quot;<br /><br />import os<br />import win32security, win32net, pywintypes<br /><br />from pyftpdlib import ftpserver<br /><br /><br />class WinNtAuthorizer(ftpserver.DummyAuthorizer):<br /><br />    def add_user(self, username, home=None, **kwargs):<br />        &quot;&quot;&quot;Add a 'real' system user to the virtual users table.<br />        If no home argument is specified the user's home directory will be used.<br />        The keyword arguments in kwargs are the same expected by add_user<br />        method: 'perm', 'msg_login' and 'msg_quit'.<br />        &quot;&quot;&quot;<br />        # get the list of all available users on the system and check if<br />        # username provided exists<br />        users = [entry['name'] for entry in win32net.NetUserEnum(None, 0)[0]]<br />        if not username in users:<br />            raise ftpserver.AuthorizerError('No such user &quot;%s&quot;.' %username)<br />        if not home:<br />            home = os.environ['USERPROFILE']<br />        ftpserver.DummyAuthorizer.add_user(self, username, '', home, **kwargs)<br /><br />    def validate_authentication(self, username, password):<br />        try:<br />            win32security.LogonUser(username, None, password,<br />                win32security.LOGON32_LOGON_NETWORK,<br />                win32security.LOGON32_PROVIDER_DEFAULT)<br />            return 1<br />        except pywintypes.error:<br />            return 0<br /><br />if __name__ == &quot;__main__&quot;:<br />    authorizer = WinNtAuthorizer()<br />    # add a user (note: user must already exists)<br />    authorizer.add_user('user', perm=('r', 'w'))<br />    authorizer.add_anonymous(os.getcwd())<br />    ftp_handler = ftpserver.FTPHandler<br />    ftp_handler.authorizer = authorizer<br />    address = ('', 21)<br />    ftpd = ftpserver.FTPServer(address, ftp_handler)<br />    ftpd.serve_forever()</pre>
+<h1>4.0 - Advanced usages</h1>
+<p>Here is a list of &quot;hacks&quot; / advanced features which could be useful to include in your own FTP server. </p>
+<h3>4.1 - Adding bandwidth throttling capabilities to asyncore</h3>
+<p>An important feature for an ftpd is <strong>limiting the speed</strong> for downloads and uploads affecting the data channel. </p>
+<p>The  basic idea behind this script is to wrap sending and receiving in a  data counter and sleep loop so that you burst to no more than x Kb/sec  average. Such sleep must be &quot;asynchronous&quot; since we want to avoid the  polling loop from blocking. </p>
+<p>To accomplish such behaviour I used a brand new socket_map for <em>asyncore</em> and I've overrided the original DTPHandler class. When the overrided DTPHandler  realizes that more than x Kb in a second are being transmitted it  temporary blocks the transfer by calling sleep method which removes the  channel from the socket_map for a certain number of seconds.  When such seconds have passed the channel is re-added in the socket_map. </p>
+<pre>#!/usr/bin/env python<br /># throttled_ftpd.py<br /><br />&quot;&quot;&quot;ftpd supporting bandwidth throttling capabilities for data channel.<br />&quot;&quot;&quot;<br /><br />import os<br />import asyncore<br />import time<br /><br />from pyftpdlib import ftpserver<br /><br /><br />class socket_map_w_sleep(dict):<br />    &quot;&quot;&quot;A modified socket_map for asyncore supporting asynchronous 'sleeps' for<br />    connected channels.<br />    &quot;&quot;&quot;<br />    sleep_map = {}<br /><br />    def items(self):<br />        for fd, params in self.sleep_map.items():<br />            obj, wakeup = params<br />            if time.time() &gt;= wakeup:<br />                dict.update(self, {fd : obj})<br />                del self.sleep_map[fd]<br />        return dict.items(self)<br /><br />    def __len__(self):<br />        return len(dict(self)) + len(self.sleep_map)<br /><br />class ThrottledDTPHandler(ftpserver.DTPHandler):<br />    &quot;&quot;&quot;A DTPHandler which wraps sending and receiving in a data counter and<br />    sleep loop so that you burst to no more than x Kb/sec average.<br /><br />    It is an DTPHandler subclass which overrides some methods of<br />    asyncore.disptacher class (del_channel, recv and send), using a modified<br />    socket_map.<br />    &quot;&quot;&quot;<br /><br />    # smaller the buffers, the less bursty and smoother the throughput<br />    in_buffer_size = 2024<br />    out_buffer_size  = 2024<br /><br />    # maximum number of bytes to transmit in a second (0 == no limit)<br />    max_send_speed = 0<br />    max_recv_speed = 0<br /><br />    def __init__(self, sock_obj, cmd_channel):<br />        ftpserver.DTPHandler.__init__(self, sock_obj, cmd_channel)<br /><br />    # --- overridden asyncore methods<br /><br />    def del_channel(self, map=None):<br />        fd = self._fileno<br />        if map is None:<br />            map = self._map<br />        if map.has_key(fd):<br />            del map[fd]<br />        self._fileno = None<br />        # include sleep_map for key removing<br />        if map.sleep_map.has_key(fd):<br />            del map.sleep_map[fd]<br /><br />    def recv(self, buffer_size):<br />        chunk = asyncore.dispatcher.recv(self, buffer_size)<br />        if self.max_recv_speed:<br />            self.throttle_bandwidth(len(chunk), self.max_recv_speed)<br />        return chunk<br /><br />    def send(self, data):<br />        num_sent = asyncore.dispatcher.send(self, data)<br />        if self.max_send_speed:<br />            self.throttle_bandwidth(num_sent, self.max_send_speed)<br />        return num_sent<br /><br />    # --- new methods<br /><br />    def sleep(self, secs):<br />        &quot;&quot;&quot;Remove current channel from the asyncore socket_map for the given<br />        number of seconds.<br />        &quot;&quot;&quot;<br />        # remove channel from the &quot;main_map&quot; and put it into &quot;sleep_map&quot;<br />        obj = self._map.pop(self._fileno)<br />        self._map.sleep_map[self._fileno] = (self, (time.time() + secs))<br /><br />    time_next = 0<br />    data_count = 0<br /><br />    def throttle_bandwidth(self, len_chunk, max_speed):<br />        &quot;&quot;&quot;A method which count data transmitted and call self.sleep(secs)<br />        so that you burst to no more than x Kb/sec average.&quot;&quot;&quot;<br />        self.data_count += len_chunk<br />        if self.data_count &gt;= max_speed:<br />            self.data_count = 0<br />            sleep_for = self.time_next - time.time()<br />            if sleep_for &gt; 0:<br />                self.sleep(sleep_for * 2)<br />            self.time_next = time.time() + 1<br /><br /><br />if __name__ == '__main__':<br />    # set a modified socket_map for asyncore<br />    asyncore.socket_map = socket_map_w_sleep()<br /><br />    authorizer = ftpserver.DummyAuthorizer()<br />    authorizer.add_user('user', '12345', os.getcwd(), perm=('r', 'w'))<br /><br />    # use the modified DTPHandler class<br />    dtp_handler = ThrottledDTPHandler<br />    dtp_handler.max_send_speed = 51200  # 50 Kb/sec (50 * 1024)<br />    dtp_handler.max_recv_speed = 51200  # 50 Kb/sec (50 * 1024)<br /><br />    ftp_handler = ftpserver.FTPHandler<br />    ftp_handler.authorizer = authorizer<br />    ftp_handler.dtp_handler = dtp_handler<br /><br />    ftpd = ftpserver.FTPServer(('127.0.0.1', 21), ftp_handler)<br />    # Start asyncore loop by using the modified socket_map and set a small<br />    # timeout value to get a more precise throughput.<br />    ftpd.serve_forever(timeout=0.001, map=asyncore.socket_map)</pre>
+<h3>&nbsp;</h3>
+<p>&nbsp;</p>
+</body>
+</html>

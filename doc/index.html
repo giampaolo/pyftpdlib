@@ -1,0 +1,100 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>pyftpdlib Home Page</title>
+</head>
+
+<body>
+<div id="wikicontent">
+  <h1>Python FTP server library (pyftpdlib)</h1>
+  <h2>About</h2>
+  <p>Python  FTP server library provides an high-level portable interface to easily  write asynchronous FTP servers with Python. Based on <strong>asyncore</strong> framework pyftpdlib is actually the most complete <a href="http://www.faqs.org/rfcs/rfc959.html" rel="nofollow">RFC959</a> FTP server implementation available for <a href="http://www.python.org/" rel="nofollow">Python</a> programming language. </p>
+  <h2>Features</h2>
+  <ul>
+    <li>High portability: </li>
+    <ul>
+      <li>Entirely written in pure Python, no third party modules are used. It just should work on any system where <em>select( )</em> or <em>poll( )</em> are available. </li>
+      <li>Extremely flexible system of &quot;authorizers&quot; able to interact with account and password database of different systems (<strong>Windows NT</strong>, <strong>Unix/Linux</strong>, <strong>OSx</strong> and so on...). </li>
+    </ul>
+    <li>High  performance: thanks to asyncore framework it permits multiplexing I/O  with various client connections within a single process / thread. </li>
+    <li>Extremely simple and highly customizable thanks to its simpler Object Oriented API. </li>
+    <li>Compact: the entire library is distributed in a single file <em>(ftpserver.py).</em> </li>
+    <li>Support for <a href="http://www.proftpd.org/docs/howto/FXP.html" rel="nofollow">FXP</a>, site-to-site transfers. </li>
+    <li>NAT/Firewall support with PASV (passive) mode connections. </li>
+    <li>Support for resumed transfers. </li>
+    <li>Per-user messages configurability. </li>
+    <li>Maximum connections limit. </li>
+    <li>Per-source-IP limits. </li>
+  </ul>
+  <h2>Quick start</h2>
+  <pre>&gt;&gt;&gt; from pyftpdlib import ftpserver<br />&gt;&gt;&gt; authorizer = ftpserver.DummyAuthorizer()<br />&gt;&gt;&gt; authorizer.add_user('user', '12345', '/home/user', perm=('r', 'w'))<br />&gt;&gt;&gt; authorizer.add_anonymous('/home/nobody')<br />&gt;&gt;&gt; ftp_handler = ftpserver.FTPHandler<br />&gt;&gt;&gt; ftp_handler.authorizer = authorizer<br />&gt;&gt;&gt; address = (&quot;127.0.0.1&quot;, 21)<br />&gt;&gt;&gt; ftpd = ftpserver.FTPServer(address, ftp_handler)<br />&gt;&gt;&gt; ftpd.serve_forever()<br />Serving FTP on 127.0.0.1:21<br />[]127.0.0.1:2503 connected.<br />127.0.0.1:2503 ==&gt; 220 Ready.<br />127.0.0.1:2503 &lt;== USER anonymous<br />127.0.0.1:2503 ==&gt; 331 Username ok, send password.<br />127.0.0.1:2503 &lt;== PASS ******<br />127.0.0.1:2503 ==&gt; 230 Login successful.<br />[anonymous]@127.0.0.1:2503 User anonymous logged in.<br />127.0.0.1:2503 &lt;== TYPE A<br />127.0.0.1:2503 ==&gt; 200 Type set to: ASCII.<br />127.0.0.1:2503 &lt;== PASV<br />127.0.0.1:2503 ==&gt; 227 Entering passive mode (127,0,0,1,9,201).<br />127.0.0.1:2503 &lt;== LIST<br />127.0.0.1:2503 ==&gt; 150 File status okay. About to open data connection.<br />[anonymous]@127.0.0.1:2503 OK LIST &quot;/&quot;. Transfer starting.<br />127.0.0.1:2503 ==&gt; 226 Transfer complete.<br />[anonymous]@127.0.0.1:2503 Transfer complete. 706 bytes transmitted.<br />127.0.0.1:2503 &lt;== QUIT<br />127.0.0.1:2503 ==&gt; 221 Goodbye.<br />[anonymous]@127.0.0.1:2503 Disconnected.</pre>
+  <h2>Documentation and related links</h2>
+  <p>Primary documentation and related links include the following: </p>
+  <table border="1" cellpadding="1" cellspacing="1">
+    <tbody>
+      <tr>
+        <td><a href="http://code.google.com/p/pyftpdlib/wiki/Tutorial" rel="nofollow">Tutorial</a> </td>
+        <td> Tutorial containing API reference and example usages. </td>
+      </tr>
+      <tr>
+        <td><a href="http://code.google.com/p/pyftpdlib/wiki/FAQ" rel="nofollow">FAQ</a> </td>
+        <td> Frequently Asked Questions about pyftpdlib. </td>
+      </tr>
+      <tr>
+        <td><a href="http://code.google.com/p/pyftpdlib/wiki/Roadmap" rel="nofollow">Roadmap</a> </td>
+        <td> A &quot;roadmap&quot; describing current and future project's changes. </td>
+      </tr>
+      <tr>
+        <td><a href="http://code.google.com/p/pyftpdlib/wiki/ReleaseNotes02" rel="nofollow">Release Notes</a> </td>
+        <td> Release notes of the current pyftpdlib release. </td>
+      </tr>
+      <tr>
+        <td><a href="http://code.google.com/p/pyftpdlib/wiki/Adoptions" rel="nofollow">Adoptions List</a> </td>
+        <td> A list of softwares and systems using pyftpdlib. </td>
+      </tr>
+      <tr>
+        <td><a href="http://www.freshports.org/ftp/py-pyftpdlib/" rel="nofollow">FreeBSD port</a> </td>
+        <td> Porting of pyftpdlib on FreeBSD system (<strong>Note:</strong> it is a separate project maintained by a different team). </td>
+      </tr>
+    </tbody>
+  </table>
+  <h2>Contribute</h2>
+  <p>If you want to help or just give us suggestions about the project and other related things,  subscribe to the <a href="http://groups.google.com/group/pyftpdlib" rel="nofollow">discussion mailing list</a>.  If you want to talk with project team members about pyftpdlib and other  related things, feel free to contact us at the following addresses: </p>
+  <table border="1" cellpadding="1" cellspacing="1">
+    <tbody>
+      <tr>
+        <td><strong>Name</strong> </td>
+        <td><strong>Country</strong> </td>
+        <td><strong>E-mail</strong> </td>
+        <td><strong>Description</strong> </td>
+      </tr>
+      <tr>
+        <td> Giampaolo Rodola' </td>
+        <td> Italy </td>
+        <td> g.rodola at gmail dot com </td>
+        <td> Original pyftpdlib author and maintainer. </td>
+      </tr>
+      <tr>
+        <td> Jay Loden </td>
+        <td> New Jersey (USA) </td>
+        <td> jloden at gmail dot com </td>
+        <td> OS X and Linux platform development/testing. </td>
+      </tr>
+      <tr>
+        <td> Li-Wen Hsu </td>
+        <td> Taiwan </td>
+        <td> lwhsu at freebsd dot org </td>
+        <td><a href="http://www.freshports.org/ftp/py-pyftpdlib/" rel="nofollow">FreeBSD port</a> maintainer. </td>
+      </tr>
+    </tbody>
+  </table>
+  <p>Feedbacks and suggestions are greatly appreciated and new testers and coders joining the team are well accepted.<br />
+  For any bug report, patch proposal or feature request, add an entry into the <a href="http://code.google.com/p/pyftpdlib/issues/list" rel="nofollow">Issue Tracker</a>.<br />
+  In case you're using pyftpdlib into a software of yours, please update pyftpdlib's <a href="http://code.google.com/p/pyftpdlib/wiki/Adoptions" rel="nofollow">Adoptions List</a>. </p>
+  <p>Thank you. </p>
+  <p>&nbsp;</p>
+  <p>&nbsp;</p>
+</div>
+</body>
+</html>
