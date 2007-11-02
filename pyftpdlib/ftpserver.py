@@ -119,6 +119,15 @@ import tempfile
 import warnings
 import random
 import inspect
+import stat
+from tarfile import filemode
+
+try: #pwd and grp not available on some platforms
+    import pwd
+    import grp
+except ImportError:
+    pwd = grp = None
+
 
 
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'debug', 'DummyAuthorizer',
@@ -974,74 +983,79 @@ class AbstractedFS:
         return data
 
     def format_list(self, basedir, listing):
-        """Return a directory listing emulating "/bin/ls -lgA" UNIX command
-        output.
-
-        <basedir> is the absolute dirname, <listing> is a list of files
-        contained in that directory.
-
-        For portability reasons permissions, hard links numbers, owners and
-        groups listed are static and unreliable but it shouldn't represent a
-        problem for most ftp clients around.
-        If you want reliable values on unix systems override this method and
-        use other attributes provided by os.stat().
-        This is how output appears to client:
-
-        -rwxrwxrwx   1 owner    group         7045120 Sep 02  3:47 music.mp3
-        drwxrwxrwx   1 owner    group               0 Aug 31 18:50 e-books
-        -rwxrwxrwx   1 owner    group             380 Sep 02  3:40 module.py
-        """
-        
-        hasPwd = False
-        try:
-            import pwd #not available for Windows platforms
-            import grp #not available for Windows platforms
-            from tarfile import filemode
-            hasPwd = True
-        except (ImportError):
-             hasPwd = False
+        """Return a directory listing emulating "/bin/ls -lA" UNIX command output.
     
-        result = []
+        <basedir> is the absolute dirname, <listing> is a list of files contained
+        in that directory.
+    
+        On platforms which do not support the pwd and grp modules (such as
+        Windows), ownership is printed as "owner" and "group" as a default, and
+        number of hard links is always "1". On UNIX systems, the actual owner,
+        group, and number of links are printed.
+    
+        This is how output appears to client:
+    
+        -rw-rw-rw-   1 owner   group    7045120 Sep 02  3:47 music.mp3
+        drwxrwxrwx   1 owner   group          0 Aug 31 18:50 e-books
+        -rw-rw-rw-   1 owner   group        380 Sep 02  3:40 module.py
+        """
+    
+        result = [] 
         for basename in listing:
             file = os.path.join(basedir, basename)
-            stat = os.stat(file)
+            mtime = None
+            
+            # if the file is a broken symlink, use lstat to get stat for the link
+            try:
+                stat_result = os.stat(file)
+            except (OSError,AttributeError):
+                stat_result = os.lstat(file)
+                
+            perms = filemode(stat_result.st_mode) # permissions
+            
+            nlinks = stat_result.st_nlink # number of links to inode
+            if not nlinks: # non-posix system, let's use a bogus value
+                nlinks = 1
     
+            if pwd and grp:
+                # get user and group name, else just use the raw uid/gid from stat
+                try:
+                    uname = pwd.getpwuid(stat_result.st_uid).pw_name
+                except KeyError:
+                    uname = stat_result.st_uid
+                try:
+                    gname = grp.getgrgid(stat_result.st_gid).gr_name
+                except KeyError:
+                    uname = stat_result.st_gid
+            else:
+                # on non-posix systems the only chance we use default bogus values
+                # for owner and group
+                uname = "owner"
+                gname = "group"
+        
+            size = stat_result.st_size # file size
+           
             # stat.st_mtime could fail (-1) if file's last modification time is
             # too old, in that case we return local time as last modification time.
             try:
-                mtime = time.strftime("%b %d %H:%M", time.localtime(stat.st_mtime))
+                mtime = time.strftime("%b %d %H:%M", time.localtime(stat_result.st_mtime))
             except ValueError:
                 mtime = time.strftime("%b %d %H:%M")
+            
+            # if the file is a symlink, resolve it, e.g. "symlink -> real_file"
+            if stat.S_ISLNK(stat_result.st_mode):
+                basename = basename + " -> " + os.readlink(file)
+                
+            # formatting is matched with proftpd ls output
+            result.append("%s %3s %-8s %-8s %8s %s %s\r\n" %(
+                perms,
+                nlinks,
+                uname,
+                gname,
+                size,
+                mtime,
+                basename))
     
-            file_perms = "-rw-rw-rw"
-            dir_perms  = "drwxrwxrwx"
-            uname  = "owner"
-            gname  = "group"
-            if hasPwd:
-                try:
-                    uname = pwd.getpwuid(stat[4])[0] #4 is uid, 5 is gid
-                    gname = grp.getgrgid(stat[5])[0]
-                    file_perms = filemode(stat[0])
-                    dir_perms = filemode(stat[0])
-                except:
-                    pass #just fall back on our defaults already set above
-    
-            if os.path.isfile(file) or os.path.islink(file):
-                result.append("%s   1 %s    %s %15s %s %s\r\n" %(
-                    file_perms,
-                    uname,
-                    gname,
-                    stat.st_size,
-                    mtime,
-                    basename))
-            else:
-                result.append("%s   1 %s    %s %15s %s %s\r\n" %(
-                    dir_perms,
-                    uname,
-                    gname,
-                    '0', # no size
-                    mtime,
-                    basename))
         return ''.join(result)
 
 # --- FTP
