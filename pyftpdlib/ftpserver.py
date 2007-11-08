@@ -1523,9 +1523,10 @@ class FTPHandler(asynchat.async_chat):
         # in progress, the server closes the control connection.
         # If file transfer is in progress, the connection will remain
         # open for result response and the server will then close it.
-        if self.username:
+        if self.authenticated:
             msg_quit = self.authorizer.get_msg_quit(self.username)
         else:
+            # get default quitting message directly from the authorizer
             msg_quit = inspect.getargspec(self.authorizer.add_user)[3][2]
         if len(msg_quit) <= 75:
             self.respond("221 %s" %msg_quit)
