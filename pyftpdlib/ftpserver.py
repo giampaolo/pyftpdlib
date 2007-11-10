@@ -668,26 +668,27 @@ class DTPHandler(asyncore.dispatcher):
                     return
 
             # handle classic producer behavior
+            obs = self.ac_out_buffer_size
             try:
-                buffer(first)
+                data = buffer(first, 0, obs)
             except TypeError:
                 self.producer_fifo.appendleft(first.more())
                 continue
 
             # send the data
             try:
-                num_sent = self.send(first)
-                self.tot_bytes_sent += num_sent
+               num_sent = self.send(data)
             except socket.error:
-                self.handle_error()
-                return
+               self.handle_error()
+               return
 
             if num_sent:
-                if num_sent < len(first):
+                self.tot_bytes_sent += num_sent
+                if num_sent < len(data) or obs < len(first):
                     self.producer_fifo[0] = first[num_sent:]
                 else:
                     del self.producer_fifo[0]
-
+                    
             # we tried to send some actual data
             return
 
@@ -1065,6 +1066,7 @@ class AbstractedFS:
                 basename))
     
         return ''.join(result)
+
 
 # --- FTP
 
