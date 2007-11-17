@@ -2215,9 +2215,9 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
-        cmds = [' MDTM', ' REST STREAM', ' SIZE', '']
+        features = [' MDTM', ' REST STREAM', ' SIZE', ' TVFS', '']
         self.push("211-Extensions supported:\r\n")
-        self.push('\r\n'.join(cmds))
+        self.push('\r\n'.join(features))
         self.respond('211 End FEAT.')
 
     def ftp_NOOP(self, line):
