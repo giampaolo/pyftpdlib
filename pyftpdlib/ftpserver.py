@@ -119,7 +119,6 @@ import fnmatch
 import tempfile
 import warnings
 import random
-import inspect
 import stat
 from tarfile import filemode
 
@@ -1528,8 +1527,7 @@ class FTPHandler(asynchat.async_chat):
         if self.authenticated:
             msg_quit = self.authorizer.get_msg_quit(self.username)
         else:
-            # get default quitting message directly from the authorizer
-            msg_quit = inspect.getargspec(self.authorizer.add_user)[3][2]
+            msg_quit = "Goodbye."
         if len(msg_quit) <= 75:
             self.respond("221 %s" %msg_quit)
         else:
