@@ -1033,7 +1033,7 @@ class AbstractedFS:
                 try:
                     gname = grp.getgrgid(stat_result.st_gid).gr_name
                 except KeyError:
-                    uname = stat_result.st_gid
+                    gname = stat_result.st_gid
             else:
                 # on non-posix systems the only chance we use default
                 # bogus values for owner and group
