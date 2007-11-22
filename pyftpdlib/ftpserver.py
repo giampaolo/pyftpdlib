@@ -207,7 +207,9 @@ if not hasattr(traceback, 'format_exc'):
     def _format_exc():
         f = StringIO.StringIO()
         traceback.print_exc(file=f)
-        return f.getvalue()
+        data = f.getvalue()
+        f.close()
+        return data
 
     traceback.format_exc = _format_exc
 
@@ -1106,9 +1108,9 @@ class FTPHandler(asynchat.async_chat):
     # address will be dropped.
     permit_foreign_addresses = False
 
-    # Set to True if you want to permit PORTing over privileged ports
-    # (not recommended).
-    permit_privileged_port = False
+    # Set to True if you want to permit active data connections (PORT)
+    # over privileged ports (not recommended).
+    permit_privileged_ports = False
 
     # The "masqueraded" IP address to provide along PASV reply when
     # pyftpdlib is running behind a NAT or other types of gateways.
@@ -1143,7 +1145,7 @@ class FTPHandler(asynchat.async_chat):
         self.quit_pending = False
 
         # dtp attributes
-        self.dtp_server = None
+        self.data_server = None
         self.data_channel = None
 
     def __del__(self):
@@ -1200,7 +1202,7 @@ class FTPHandler(asynchat.async_chat):
             self.in_buffer_len = 0
 
     # commands accepted before authentication
-    unauth_cmds = ('USER','PASS','HELP','STAT','QUIT','NOOP','SYST','FEAT')
+    unauth_cmds = ('FEAT','HELP','NOOP','PASS','QUIT','STAT','SYST','USER')
 
     # commands needing an argument
     arg_cmds = ('ALLO','APPE','DELE','MDTM','MODE','MKD', 'PORT','REST','RETR','RMD',
@@ -1248,7 +1250,7 @@ class FTPHandler(asynchat.async_chat):
                 if (cmd == 'STAT') and arg:
                     self.respond("530 Log in with USER and PASS first.")
                 else:
-                    method = getattr(self, 'ftp_'+cmd, None)
+                    method = getattr(self, 'ftp_' + cmd)
                     method(arg) # call
             elif cmd in proto_cmds:
                 self.respond("530 Log in with USER and PASS first.")
@@ -1257,7 +1259,7 @@ class FTPHandler(asynchat.async_chat):
 
         # provide full command set
         elif (self.authenticated) and (cmd in proto_cmds):
-            method = getattr(self, 'ftp_'+cmd, None)
+            method = getattr(self, 'ftp_' + cmd)
             method(arg) # call
 
         else:
@@ -1301,9 +1303,9 @@ class FTPHandler(asynchat.async_chat):
         """Close the current channel disconnecting the client."""
         self.debug("FTPHandler.close()")
 
-        if self.dtp_server:
-            self.dtp_server.close()
-            del self.dtp_server
+        if self.data_server:
+            self.data_server.close()
+            del self.data_server
 
         if self.data_channel:
             self.data_channel.close()
@@ -1328,9 +1330,9 @@ class FTPHandler(asynchat.async_chat):
         for receiving.
         """
         self.debug("FTPHandler.on_dtp_connection()")
-        if self.dtp_server:
-            self.dtp_server.close()
-        self.dtp_server = None
+        if self.data_server:
+            self.data_server.close()
+        self.data_server = None
 
         # check for data to send
         if self.out_dtp_queue:
@@ -1424,9 +1426,9 @@ class FTPHandler(asynchat.async_chat):
             if not self.data_channel.transfer_in_progress():
                 self.data_channel.close()
                 self.data_channel = None
-        if self.dtp_server:
-            self.dtp_server.close()
-            self.dtp_server = None
+        if self.data_server:
+            self.data_server.close()
+            self.data_server = None
 
         self.fs.rnfr = None
         self.authenticated = False
@@ -1467,16 +1469,16 @@ class FTPHandler(asynchat.async_chat):
 
         # ...another RFC-2577 recommendation is rejecting connections to
         # privileged ports (< 1024) for security reasons.
-        if not self.permit_privileged_port:
+        if not self.permit_privileged_ports:
             if port < 1024:
                 self.log('PORT against the privileged port "%s" refused.' %port)
                 self.respond("501 Can't connect over a privileged port.")
                 return
 
         # close existent DTP-server instance, if any.
-        if self.dtp_server:
-            self.dtp_server.close()
-            self.dtp_server = None
+        if self.data_server:
+            self.data_server.close()
+            self.data_server = None
 
         if self.data_channel:
             self.data_channel.close()
@@ -1497,9 +1499,9 @@ class FTPHandler(asynchat.async_chat):
     def ftp_PASV(self, line):
         """Start a passive data-channel."""
         # close existing DTP-server instance, if any
-        if self.dtp_server:
-            self.dtp_server.close()
-            self.dtp_server = None
+        if self.data_server:
+            self.data_server.close()
+            self.data_server = None
 
         if self.data_channel:
             self.data_channel.close()
@@ -1514,7 +1516,7 @@ class FTPHandler(asynchat.async_chat):
                 return
 
         # open DTP channel
-        self.dtp_server = self.passive_dtp(self)
+        self.data_server = self.passive_dtp(self)
 
 
     def ftp_QUIT(self, line):
@@ -1747,7 +1749,7 @@ class FTPHandler(asynchat.async_chat):
 
         filename = os.path.basename(fd.name)
 
-        # now just acts like STOR excepting that restarting isn't allowed
+        # now just acts like STOR except that restarting isn't allowed
         log = 'OK STOU "%s". Upload starting.' %filename
         if self.data_channel:
             self.respond("125 FILE: %s" %filename)
@@ -1785,13 +1787,13 @@ class FTPHandler(asynchat.async_chat):
         """Abort the current data transfer."""
 
         # ABOR received while no data channel exists
-        if (self.dtp_server is None) and (self.data_channel is None):
+        if (self.data_server is None) and (self.data_channel is None):
             resp = "225 No transfer to abort."
         else:
             # a PASV was received but connection wasn't made yet
-            if self.dtp_server:
-                self.dtp_server.close()
-                self.dtp_server = None
+            if self.data_server:
+                self.data_server.close()
+                self.data_server = None
                 resp = "225 ABOR command successful; data channel closed."
 
             # If a data transfer is in progress the server must first
@@ -1924,7 +1926,7 @@ class FTPHandler(asynchat.async_chat):
     def ftp_CWD(self, line):
         """Change the current working directory."""
         # TODO: a lot of FTP servers go back to root directory if no arg is
-        # provided but this is not specified into RFC-959. Search for
+        # provided but this is not specified in RFC-959. Search for
         # official references about this behaviour.
         if not line:
             line = '/'
