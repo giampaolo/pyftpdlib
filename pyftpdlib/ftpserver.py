@@ -1214,7 +1214,7 @@ class FTPHandler(asynchat.async_chat):
 
     def found_terminator(self):
         r"""Called when the incoming data stream matches the \r\n terminator."""
-        line = ''.join(self.in_buffer).strip()
+        line = ''.join(self.in_buffer)
         self.in_buffer = []
         self.in_buffer_len = 0
 
@@ -1251,7 +1251,7 @@ class FTPHandler(asynchat.async_chat):
                     self.respond("530 Log in with USER and PASS first.")
                 else:
                     method = getattr(self, 'ftp_' + cmd)
-                    method(arg) # call
+                    method(arg)  # call the proper ftp_* method
             elif cmd in proto_cmds:
                 self.respond("530 Log in with USER and PASS first.")
             else:
@@ -1260,7 +1260,7 @@ class FTPHandler(asynchat.async_chat):
         # provide full command set
         elif (self.authenticated) and (cmd in proto_cmds):
             method = getattr(self, 'ftp_' + cmd)
-            method(arg) # call
+            method(arg)  # call the proper ftp_* method
 
         else:
             # recognize those commands having "special semantics"
