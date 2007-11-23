@@ -135,8 +135,8 @@ __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'debug', 'DummyAuthorizer',
 
 
 __pname__   = 'Python FTP server library (pyftpdlib)'
-__ver__     = '0.2.0' 
-__date__    = '2007-17-09'
+__ver__     = '0.2.0' # XXX change ver
+__date__    = '2007-17-09' # XXX change date
 __author__  = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__     = 'http://code.google.com/p/pyftpdlib/'
 
@@ -217,7 +217,7 @@ if not hasattr(traceback, 'format_exc'):
 def _strerror(err):
     """A wrap around os.strerror() which may be not available on all
     platforms (e.g. pythonCE).  err argument expected must be an
-    EnvironmentError class instance.
+    EnvironmentError (or derived) class instance.
     """
     if hasattr(os, 'strerror'):
         return os.strerror(err.errno)
@@ -243,12 +243,12 @@ def logline(msg):
     print msg
 
 def logerror(msg):
-    """"Log traceback outputs occurring in case of errors."""
+    """Log traceback outputs occurring in case of errors."""
     sys.stderr.write(str(msg) + '\n')
     sys.stderr.flush()
 
 def debug(msg):
-    """"Log function/method calls (disabled by default)."""
+    """Log function/method calls (disabled by default)."""
 
 
 # --- authorizers
@@ -287,20 +287,20 @@ class DummyAuthorizer:
         provide customized response strings when user log-in and quit.
         """
         if self.has_user(username):
-            raise AuthorizerError('User "%s" already exists.' %username)
+            raise AuthorizerError('User "%s" already exists' %username)
         if not os.path.isdir(homedir):
-            raise AuthorizerError('No such directory: "%s".' %homedir)
+            raise AuthorizerError('No such directory: "%s"' %homedir)
         for p in perm:
             if p not in ('', 'r', 'w'):
-                raise AuthorizerError('No such permission "%s".' %p)
+                raise AuthorizerError('No such permission "%s"' %p)
             if (p in 'w') and (username == 'anonymous'):
                 warnings.warn("write permissions assigned to anonymous user.",
                                 RuntimeWarning)
-        dic = {'pwd' : str(password),
+        dic = {'pwd': str(password),
                'home': str(homedir),
                'perm': perm,
                'msg_login': str(msg_login),
-               'msg_quit' : str(msg_quit)
+               'msg_quit': str(msg_quit)
                }
         self.user_table[username] = dic
         
@@ -1962,7 +1962,7 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_SIZE(self, line):
         """Return size of file in a format suitable for using with RESTart
-        as defined into RFC-3659.
+        as defined in RFC-3659.
 
         Implementation note:
         properly handling the SIZE command when TYPE ASCII is used would
@@ -1995,7 +1995,7 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_MDTM(self, line):
         """Return last modification time of file to the client as an ISO
-        3307 style timestamp (YYYYMMDDHHMMSS) as defined into RFC-3659.
+        3307 style timestamp (YYYYMMDDHHMMSS) as defined in RFC-3659.
         """
 
         path = self.fs.translate(line)
@@ -2187,7 +2187,7 @@ class FTPHandler(asynchat.async_chat):
                 s.append('Total bytes received: %s' %self.data_channel.tot_bytes_received)
             else:
                 s.append('Data connection closed.\r\n')
-            self.push('  '.join(s))
+            self.push(' '.join(s))
             self.respond("211 End of status.")
 
         # return directory LISTing over the command channel
@@ -2231,7 +2231,7 @@ class FTPHandler(asynchat.async_chat):
         # This command is used to find out the type of operating system
         # at the server.  The reply shall have as its first word one of
         # the system names listed in RFC-943.
-        # Since that we always return a "/bin/ls -lgA"-like output on
+        # Since that we always return a "/bin/ls -lA"-like output on
         # LIST we  prefer to respond as if we would on Unix in any case.
         self.respond("215 UNIX Type: L8")
 
@@ -2242,10 +2242,9 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_HELP(self, line):
         """Return help text to the client."""
-
         if line:
             if line.upper() in proto_cmds:
-                self.respond("214 %s." %proto_cmds[line.upper()])
+                self.respond("214 %s" %proto_cmds[line.upper()])
             else:
                 self.respond("501 Unrecognized command.")
         else:
@@ -2256,7 +2255,7 @@ class FTPHandler(asynchat.async_chat):
                 keys.sort()
                 while keys:
                     elems = tuple((keys[0:8]))
-                    cmds.append('  %-6s' * len(elems) %elems + '\r\n')
+                    cmds.append(' %-6s' * len(elems) %elems + '\r\n')
                     del keys[0:8]
                 return ''.join(cmds)
 
