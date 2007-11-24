@@ -2167,28 +2167,32 @@ class FTPHandler(asynchat.async_chat):
         # return STATus information about ftpd
         if not line:
             s = []
-            s.append('211-%s %s status:\r\n' %(__pname__, __ver__))
-            s.append('Connected to: %s:%s\r\n' %self.socket.getsockname())
+            s.append('Connected to: %s:%s' %self.socket.getsockname())
             if self.authenticated:
-                s.append('Logged in as: %s\r\n' %self.username)
+                s.append('Logged in as: %s' %self.username)
             else:
                 if not self.username:
-                    s.append("Waiting for username.\r\n")
+                    s.append("Waiting for username.")
                 else:
-                    s.append("Waiting for password.\r\n")
+                    s.append("Waiting for password.")
             if self.current_type == 'a':
                 type = 'ASCII'
             else:
                 type = 'Binary'
-            s.append("TYPE: %s; STRUcture: File; MODE: Stream\r\n" %type)
-            if self.data_channel:
-                s.append('Data connection open:\r\n')
-                s.append('Total bytes sent: %s' %self.data_channel.tot_bytes_sent)
-                s.append('Total bytes received: %s' %self.data_channel.tot_bytes_received)
+            s.append("TYPE: %s; STRUcture: File; MODE: Stream" %type)
+            if self.data_server:
+                s.append('Passive data channel waiting for connection.')
+            elif self.data_channel:
+                dc = self.data_channel
+                s.append('Data connection open:')
+                s.append('Total bytes sent: %s' %dc.tot_bytes_sent)
+                s.append('Total bytes received: %s' %dc.tot_bytes_received)
             else:
-                s.append('Data connection closed.\r\n')
-            self.push(' '.join(s))
-            self.respond("211 End of status.")
+                s.append('Data connection closed.')
+
+            self.push('211-%s %s status:\r\n' %(__pname__, __ver__))
+            self.push(''.join([' %s\r\n' %item for item in s]))
+            self.respond('211 End of status.')
 
         # return directory LISTing over the command channel
         else:
@@ -2217,9 +2221,10 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
-        features = [' MDTM', ' REST STREAM', ' SIZE', ' TVFS', '']
-        self.push("211-Extensions supported:\r\n")
-        self.push('\r\n'.join(features))
+        features = ['MDTM','REST STREAM','SIZE','TVFS']
+        features.sort()
+        self.push("211-Features supported:\r\n")
+        self.push("".join([" %s\r\n" %x for x in features]))
         self.respond('211 End FEAT.')
 
     def ftp_NOOP(self, line):
