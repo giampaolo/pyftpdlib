@@ -939,6 +939,7 @@ class AbstractedFS:
         Unlike glob.glob1 raises an exception if os.listdir() fails.
         """
         names = os.listdir(dirname)
+        names.sort()
         if pattern[0] != '.':
             names = filter(lambda x: x[0] != '.',names)
         return fnmatch.filter(names, pattern)
@@ -950,9 +951,10 @@ class AbstractedFS:
 
     def get_nlst_dir(self, abspath):
         """Return a directory listing in a form suitable for NLST command."""
-        listing = '\r\n'.join(os.listdir(abspath))
+        listing = (os.listdir(abspath))
         if listing:
-            return listing + '\r\n'
+            listing.sort()
+            return '\r\n'.join(listing) + '\r\n'
         return ''
 
     def get_list_dir(self, abspath):
@@ -964,6 +966,7 @@ class AbstractedFS:
         else:
             basedir = abspath
             listing = os.listdir(abspath)
+            listing.sort()
         return self.format_list(basedir, listing)
 
     def get_stat_dir(self, rawline):
