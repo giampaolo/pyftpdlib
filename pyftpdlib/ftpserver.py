@@ -893,9 +893,22 @@ class AbstractedFS:
         file = os.fdopen(fd, mode)
         return FileWrapper(file, name)
 
-    def exists(self, abspath):
-        """Return True if the path exists."""
-        return os.path.exists(abspath)
+    def exists(self, path):
+        """Return True if path refers to an existing path, including
+        a broken symbolic link.
+        """
+        if hasattr(os.path, 'lexists'):
+            return os.path.lexists(path)
+        # grant backward compatibility with python 2.3
+        elif hasattr(os, 'lstat'):
+            try:
+                st = os.lstat(path)
+            except os.error:
+                return False
+            return True
+        # fallback 
+        else:
+            return os.path.exists(path)
         
     def isfile(self, abspath):
         """Return True if path is a file."""
@@ -2092,7 +2105,7 @@ class FTPHandler(asynchat.async_chat):
                      %(self.fs.normalize(line)))
             self.respond("550 Can't RNRF: not enough privileges.")
             return
-        
+
         if self.fs.exists(path):
             self.fs.rnfr = line
             self.respond("350 Ready for destination name.")
