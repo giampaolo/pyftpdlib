@@ -223,7 +223,7 @@ def _strerror(err):
         return os.strerror(err.errno)
     else:
         return err.strerror
-
+    
 
 class Error(Exception):
     """Base class for module exceptions."""
@@ -1010,17 +1010,18 @@ class AbstractedFS:
         drwxrwxrwx   1 owner   group          0 Aug 31 18:50 e-books
         -rw-rw-rw-   1 owner   group        380 Sep 02  3:40 module.py
         """
-    
-        result = [] 
+        result = []
+        if not hasattr(os, 'lstat'):
+            _stat = os.stat
+        else:
+            _stat = os.lstat
+
         for basename in listing:
             file = os.path.join(basedir, basename)
-            
-            # if the file is a broken symlink, use lstat to get stat for
-            # the link
             try:
-                stat_result = os.stat(file)
-            except (OSError,AttributeError):
-                stat_result = os.lstat(file)
+                stat_result = _stat(file)
+            except OSError:
+                continue
                 
             perms = filemode(stat_result.st_mode)  # permissions
             
