@@ -910,38 +910,42 @@ class AbstractedFS:
         else:
             return os.path.exists(path)
         
-    def isfile(self, abspath):
+    def isfile(self, path):
         """Return True if path is a file."""
-        return os.path.isfile(abspath)
+        return os.path.isfile(path)
 
-    def isdir(self, abspath):
+    def isdir(self, path):
         """Return True if path is a directory."""
-        return os.path.isdir(abspath)
+        return os.path.isdir(path)
 
-    def chdir(self, abspath):
+    def chdir(self, path):
         """Change the current directory."""
-        os.chdir(abspath)
+        os.chdir(path)
 
-    def mkdir(self, abspath):
+    def mkdir(self, path):
         """Create the specified directory."""
-        os.mkdir(abspath)
+        os.mkdir(path)
+        
+    def listdir(self, path):
+        """List the content of a directory."""
+        return os.listdir(path)
 
-    def rmdir(self, abspath):
+    def rmdir(self, path):
         """Remove the specified directory."""
-        os.rmdir(abspath)
+        os.rmdir(path)
             
-    def remove(self, abspath):
+    def remove(self, path):
         """Remove the specified file."""
-        os.remove(abspath)
+        os.remove(path)
     
-    def getsize(self, abspath):
+    def getsize(self, path):
         """Return the size of the specified file in bytes."""
-        return os.path.getsize(abspath)
+        return os.path.getsize(path)
 
-    def getmtime(self, abspath):
+    def getmtime(self, path):
         """Return the last modified time as a number of seconds since the
         epoch."""
-        return os.path.getmtime(abspath)
+        return os.path.getmtime(path)
            
     def rename(self, src, dst):
         """Rename the specified src file to the dst filename."""
@@ -961,15 +965,7 @@ class AbstractedFS:
     
     # Note that these are resource-intensive blocking operations so you may
     # want to override and move them into another process/thread in some way.
-
-    def get_nlst_dir(self, abspath):
-        """Return a directory listing in a form suitable for NLST command."""
-        listing = (os.listdir(abspath))
-        if listing:
-            listing.sort()
-            return '\r\n'.join(listing) + '\r\n'
-        return ''
-
+    
     def get_list_dir(self, abspath):
         """Return a directory listing in a form suitable for LIST command."""
         # if path is a file we return information about it
@@ -1032,57 +1028,49 @@ class AbstractedFS:
         for basename in listing:
             file = os.path.join(basedir, basename)
             try:
-                stat_result = _stat(file)
+                st = _stat(file)
             except OSError:
                 continue
                 
-            perms = filemode(stat_result.st_mode)  # permissions
-            
-            nlinks = stat_result.st_nlink  # number of links to inode
+            perms = filemode(st.st_mode)  # permissions
+            nlinks = st.st_nlink  # number of links to inode
             if not nlinks:  # non-posix system, let's use a bogus value
                 nlinks = 1
+            size = st.st_size  # file size
     
             if pwd and grp:
                 # get user and group name, else just use the raw uid/gid
                 # from stat
                 try:
-                    uname = pwd.getpwuid(stat_result.st_uid).pw_name
+                    uname = pwd.getpwuid(st.st_uid).pw_name
                 except KeyError:
-                    uname = stat_result.st_uid
+                    uname = st.st_uid
                 try:
-                    gname = grp.getgrgid(stat_result.st_gid).gr_name
+                    gname = grp.getgrgid(st.st_gid).gr_name
                 except KeyError:
-                    gname = stat_result.st_gid
+                    gname = st.st_gid
             else:
                 # on non-posix systems the only chance we use default
                 # bogus values for owner and group
                 uname = "owner"
                 gname = "group"
-        
-            size = stat_result.st_size # file size
            
             # stat.st_mtime could fail (-1) if file's last modification
             # time is too old, in that case we return local time as last
             # modification time.
             try:
-                mtime = time.strftime("%b %d %H:%M", time.localtime(stat_result.st_mtime))
+                mtime = time.strftime("%b %d %H:%M", time.localtime(st.st_mtime))
             except ValueError:
                 mtime = time.strftime("%b %d %H:%M")
             
             # if the file is a symlink, resolve it, e.g. "symlink -> real_file"
-            if stat.S_ISLNK(stat_result.st_mode):
+            if stat.S_ISLNK(st.st_mode):
                 basename = basename + " -> " + os.readlink(file)
                 
             # formatting is matched with proftpd ls output
-            result.append("%s %3s %-8s %-8s %8s %s %s\r\n" %(
-                perms,
-                nlinks,
-                uname,
-                gname,
-                size,
-                mtime,
-                basename))
-    
+            result.append("%s %3s %-8s %-8s %8s %s %s\r\n" %(perms, nlinks,
+                                                             uname, gname, size,
+                                                             mtime, basename))
         return ''.join(result)
 
 
@@ -1583,7 +1571,7 @@ class FTPHandler(asynchat.async_chat):
         else:
             path = self.fs.translate(self.fs.cwd)
             line = self.fs.cwd
-
+            
         try:
             data = self.fs.get_list_dir(path)
         except OSError, err:
@@ -1606,12 +1594,16 @@ class FTPHandler(asynchat.async_chat):
             line = self.fs.cwd
 
         try:
-            data = self.fs.get_nlst_dir(path)
+            listing = self.fs.listdir(path)
         except OSError, err:
             why = _strerror(err)
             self.log('FAIL NLST "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
         else:
+            data = ''
+            if listing:
+                listing.sort()
+                data = '\r\n'.join(listing) + '\r\n'
             self.push_dtp_data(data, log='OK NLST "%s". Transfer starting.' %line)
 
 
