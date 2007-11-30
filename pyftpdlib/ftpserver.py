@@ -914,6 +914,10 @@ class AbstractedFS:
         """Return True if path is a file."""
         return os.path.isfile(path)
 
+    def islink(self, path):
+        """Return True if path is a symbolic link."""
+        return os.path.islink(path)
+
     def isdir(self, path):
         """Return True if path is a directory."""
         return os.path.isdir(path)
@@ -966,15 +970,15 @@ class AbstractedFS:
     # Note that these are resource-intensive blocking operations so you may
     # want to override and move them into another process/thread in some way.
     
-    def get_list_dir(self, abspath):
+    def get_list_dir(self, path):
         """Return a directory listing in a form suitable for LIST command."""
-        # if path is a file we return information about it
-        if os.path.isfile(abspath):
-            basedir, filename = os.path.split(abspath)
+        # if path is a file or a symlink we return information about it
+        if self.isfile(path)or self.islink(path):
+            basedir, filename = os.path.split(path)
             listing = [filename]
         else:
-            basedir = abspath
-            listing = os.listdir(abspath)
+            basedir = path
+            listing = self.listdir(path)
             listing.sort()
         return self.format_list(basedir, listing)
 
