@@ -270,9 +270,6 @@ class DummyAuthorizer:
 
     user_table = {}
 
-    def __init__(self):
-        pass
-
     def add_user(self, username, password, homedir, perm=('r'),
                     msg_login="Login successful.", msg_quit="Goodbye."):
         """Add a user to the virtual users table.  AuthorizerError
@@ -399,7 +396,6 @@ class PassiveDTP(asyncore.dispatcher):
                         raise
                 else:
                     break
-
         self.listen(5)
         if self.cmd_channel.masquerade_address:
             ip = self.cmd_channel.masquerade_address
@@ -412,7 +408,6 @@ class PassiveDTP(asyncore.dispatcher):
 
     def __del__(self):
         self.cmd_channel.debug("PassiveDTP.__del__()")
-
 
     # --- connection / overridden
     
@@ -441,7 +436,6 @@ class PassiveDTP(asyncore.dispatcher):
                 msg = 'Established data connection with foreign address %s:%s.'\
                         %(addr[0], addr[1])
                 self.cmd_channel.log(msg)
-
         # Immediately close the current channel (we accept only one
         # connection at time) and avoid running out of max connections
         # limit.
@@ -489,7 +483,6 @@ class ActiveDTP(asyncore.dispatcher):
 
     def __del__(self):
         self.cmd_channel.debug("ActiveDTP.__del__()")
-
 
     # --- connection / overridden
 
@@ -689,7 +682,6 @@ class DTPHandler(asyncore.dispatcher):
                     self.producer_fifo[0] = first[num_sent:]
                 else:
                     del self.producer_fifo[0]
-                    
             # we tried to send some actual data
             return
 
@@ -728,7 +720,6 @@ class DTPHandler(asyncore.dispatcher):
         """Called when the socket is closed."""
         self.cmd_channel.debug("DTPHandler.handle_close()")
         tot_bytes = self.get_transmitted_bytes()
-
         # If we used channel for receiving we assume that transfer is
         # finished when client close connection , if we used channel for
         # sending we have to check that all data has been sent (responding
@@ -747,16 +738,13 @@ class DTPHandler(asyncore.dispatcher):
         """Close the data channel, first attempting to close any remaining
         file handles."""
         self.cmd_channel.debug("DTPHandler.close()")
-
         if self.file_obj:
             if not self.file_obj.closed:
                 self.file_obj.close()
-
         while self.producer_fifo:
             first = self.producer_fifo.pop()
-            if isinstance(first, FileProducer):
+            if hasattr(first, 'close'):
                 first.close()
-
         asyncore.dispatcher.close(self)
         self.cmd_channel.on_dtp_close()
 
@@ -893,9 +881,9 @@ class AbstractedFS:
         file = os.fdopen(fd, mode)
         return FileWrapper(file, name)
 
-    def exists(self, path):
+    def lexists(self, path):
         """Return True if path refers to an existing path, including
-        a broken symbolic link.
+        a broken or circular symbolic link.
         """
         if hasattr(os.path, 'lexists'):
             return os.path.lexists(path)
@@ -909,6 +897,8 @@ class AbstractedFS:
         # fallback 
         else:
             return os.path.exists(path)
+
+    exists = lexists  # alias for backward compatibility with 0.2.0
         
     def isfile(self, path):
         """Return True if path is a file."""
@@ -959,8 +949,7 @@ class AbstractedFS:
         """Return a list of files matching a dirname pattern non-recursively.
         Unlike glob.glob1 raises an exception if os.listdir() fails.
         """
-        names = os.listdir(dirname)
-        names.sort()
+        names = self.listdir(dirname)
         if pattern[0] != '.':
             names = filter(lambda x: x[0] != '.',names)
         return fnmatch.filter(names, pattern)
@@ -994,12 +983,14 @@ class AbstractedFS:
             if not basedir:
                 basedir = self.translate(self.cwd)
                 listing = self.glob1(basedir, basename)
+                listing.sort()
                 data = self.format_list(basedir, listing)
             elif glob.has_magic(basedir):
                 return 'Directory recursion not supported.\r\n'
             else:
                 basedir = self.translate(basedir)
                 listing = self.glob1(basedir, basename)
+                listing.sort()
                 data = self.format_list(basedir, listing)
         if not data:
             return "Directory is empty.\r\n"
@@ -1092,7 +1083,6 @@ class FTPHandler(asynchat.async_chat):
 
     All relevant session information is stored in instance variables.
     """
-
     # these are overridable defaults:
 
     # default classes
@@ -1132,7 +1122,6 @@ class FTPHandler(asynchat.async_chat):
     # When configured pyftpdlib will no longer use kernel-assigned random
     # ports.
     passive_ports = None
-
 
     def __init__(self, conn, ftpd_instance):
         asynchat.async_chat.__init__(self, conn=conn)
@@ -1504,7 +1493,6 @@ class FTPHandler(asynchat.async_chat):
         # open DTP channel
         self.active_dtp(ip, port, self)
 
-
     def ftp_PASV(self, line):
         """Start a passive data-channel."""
         # close existing DTP-server instance, if any
@@ -1526,7 +1514,6 @@ class FTPHandler(asynchat.async_chat):
 
         # open DTP channel
         self.data_server = self.passive_dtp(self)
-
 
     def ftp_QUIT(self, line):
         """Quit the current session."""
@@ -1650,7 +1637,6 @@ class FTPHandler(asynchat.async_chat):
                 self.respond('554 %s' %why)
                 self.log('FAIL RETR "%s". %s.' %(self.fs.normalize(line), why))
                 return
-
         producer = FileProducer(fd, self.current_type)
         self.push_dtp_data(producer, isproducer=1,
             log='OK RETR "%s". Download starting.' %self.fs.normalize(line))
@@ -1828,7 +1814,6 @@ class FTPHandler(asynchat.async_chat):
                     self.data_channel = None
                     self.log("OK ABOR. Data channel closed.")
                     resp = "225 ABOR command successful; data channel closed."
-
         self.respond(resp)
 
 
@@ -1865,14 +1850,12 @@ class FTPHandler(asynchat.async_chat):
         if self.authenticated:
             self.respond("503 User already authenticated.")
             return
-
         if not self.username:
             self.respond("503 Login with USER first.")
             return
 
         # username ok
         if self.authorizer.has_user(self.username):
-
             if self.authorizer.validate_authentication(self.username, line) \
             or self.username == 'anonymous':
                 msg_login = self.authorizer.get_msg_login(self.username)
@@ -1886,7 +1869,6 @@ class FTPHandler(asynchat.async_chat):
                 self.attempted_logins = 0
                 self.fs.root = self.authorizer.get_home_dir(self.username)
                 self.log("User %s logged in." %self.username)
-
             else:
                 self.attempted_logins += 1
                 if self.attempted_logins >= self.max_login_attempts:
@@ -1991,7 +1973,6 @@ class FTPHandler(asynchat.async_chat):
         ASCII mode.  Resuming downloads in binary mode is the recommended
         way as specified in RFC-3659.
         """
-
         path = self.fs.translate(line)
         if self.fs.isdir(path):
             self.respond("550 Could not get a directory size.")
@@ -2010,7 +1991,6 @@ class FTPHandler(asynchat.async_chat):
         """Return last modification time of file to the client as an ISO
         3307 style timestamp (YYYYMMDDHHMMSS) as defined in RFC-3659.
         """
-
         path = self.fs.translate(line)
         if not self.fs.isfile(path):
             self.respond("550 No such file.")
@@ -2102,7 +2082,7 @@ class FTPHandler(asynchat.async_chat):
             self.respond("550 Can't RNRF: not enough privileges.")
             return
 
-        if self.fs.exists(path):
+        if self.fs.lexists(path):
             self.fs.rnfr = line
             self.respond("350 Ready for destination name.")
         else:
@@ -2176,7 +2156,6 @@ class FTPHandler(asynchat.async_chat):
         """Return statistics about current ftp session. If an argument is
         provided return directory listing over command channel.
         """
-
         # return STATus information about ftpd
         if not line:
             s = []
@@ -2202,7 +2181,6 @@ class FTPHandler(asynchat.async_chat):
                 s.append('Total bytes received: %s' %dc.tot_bytes_received)
             else:
                 s.append('Data connection closed.')
-
             self.push('211-%s %s status:\r\n' %(__pname__, __ver__))
             self.push(''.join([' %s\r\n' %item for item in s]))
             self.respond('211 End of status.')
@@ -2329,13 +2307,12 @@ class FTPServer(asyncore.dispatcher):
 
     def __init__(self, address, handler):
         asyncore.dispatcher.__init__(self)
-        self.address = address
         self.handler = handler
         self.ip_map = []
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         if os.name == 'posix':
             self.set_reuse_addr()
-        self.bind(self.address)
+        self.bind(address)
         self.listen(5)
 
     def __del__(self):
@@ -2347,7 +2324,6 @@ class FTPServer(asyncore.dispatcher):
         The keyword arguments in kwargs are the same expected by
         asyncore.loop() function: timeout, use_poll, map and count.
         """
-
         if not 'count' in kwargs:
             log("Serving FTP on %s:%s" %self.socket.getsockname())
 
