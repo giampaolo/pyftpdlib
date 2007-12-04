@@ -225,6 +225,94 @@ class AbstractedFSClass(unittest.TestCase):
                         %os.sep)
 
 
+
+# --- Tests for AbstractedFS.checksymlink() method.
+
+if hasattr(os, 'symlink'):
+    class TestValidSymlink(unittest.TestCase):
+        """Test whether the symlink is considered to be valid."""
+        def setUp(self):
+            self.tf = tempfile.NamedTemporaryFile(dir=home)
+            self.linkname = os.path.basename(tempfile.mktemp(dir=home))
+            os.symlink(self.tf.name, self.linkname)
+        def tearDown(self):
+            self.tf.close()
+            os.remove(self.linkname)
+
+        def test_it(self):
+            fs = ftpserver.AbstractedFS()
+            fs.root = home
+            fs.checksymlink(self.linkname)
+
+    class TestBrokenSymlink(unittest.TestCase):
+        """Test whether the symlink is considered to be broken
+        (pointing to a non-existent path)."""
+        def setUp(self):
+            filename = os.path.basename(tempfile.mktemp(dir=home))
+            self.linkname = os.path.basename(tempfile.mktemp(dir=home))
+            os.symlink(filename, self.linkname)
+        def tearDown(self):
+            os.remove(self.linkname)
+
+        def test_it(self):
+            fs = ftpserver.AbstractedFS()
+            fs.root = home
+            try:
+                fs.checksymlink(self.linkname)
+            except ftpserver.BadSymlink, err:
+                self.assertTrue('broken' in str(err))
+            else:
+                self.fail('BadSymlink exception not raised.')
+
+    class TestCircularSymlink(unittest.TestCase):
+        """Test whether two symlinks are considered to be pointing
+        to each other."""
+        def setUp(self):
+            self.l1 = os.path.basename(tempfile.mktemp(dir=home))
+            self.l2 = os.path.basename(tempfile.mktemp(dir=home))
+            os.symlink(self.l1, self.l2)
+            os.symlink(self.l2, self.l1)
+        def tearDown(self):
+            os.remove(self.l1)
+            os.remove(self.l2)            
+
+        def test_it(self):
+            fs = ftpserver.AbstractedFS()
+            fs.root = home
+            try:
+                fs.checksymlink(self.l1)
+            except ftpserver.BadSymlink, err:
+                self.assertTrue('circular' in str(err))
+            else:
+                self.fail('BadSymlink exception not raised.')
+
+    class TestExternalSymlink(unittest.TestCase):
+        """Test whether a symlink is considered to be pointing to a
+        path which is outside the user's root."""
+        def setUp(self):
+            # note: by not specifying a directory we should have our
+            # tempfile created in /tmp directory, which should be
+            # outside the user root
+            self.tf = tempfile.NamedTemporaryFile()
+            self.linkname = os.path.basename(tempfile.mktemp(dir=home))
+            os.symlink(self.tf.name, self.linkname)
+        def tearDown(self):
+            self.tf.close()
+            os.remove(self.linkname)
+
+        def test_it(self):
+            if os.getcwd() == os.path.dirname(self.tf.name):
+                return
+            fs = ftpserver.AbstractedFS()
+            fs.root = home
+            try:
+                fs.checksymlink(self.linkname)
+            except ftpserver.BadSymlink, err:
+                self.assertTrue('path outside the user root' in str(err))
+            else:
+                self.fail('BadSymlink exception not raised.')
+
+
 class DummyAuthorizerClass(unittest.TestCase):
 
     # temporarily change warnings to exceptions for the purposes of testing
@@ -247,7 +335,7 @@ class DummyAuthorizerClass(unittest.TestCase):
         # remove them
         auth.remove_user(user)
         auth.remove_user('anonymous')
-        
+
         # raise exc if user does not exists
         self.assertRaises(KeyError, auth.remove_user, user)
         # raise exc if path does not exist

@@ -225,13 +225,19 @@ def _strerror(err):
         return os.strerror(err.errno)
     else:
         return err.strerror
-    
+
+
+# --- library defined exceptions
 
 class Error(Exception):
     """Base class for module exceptions."""
 
 class AuthorizerError(Error):
     """Base class for authorizer exceptions."""
+    
+class BadSymlink(Error):
+    """Raised by AbstractedFS.checksymlink when processing an invalid
+    symbolic link."""
 
 
 # --- loggers
@@ -862,6 +868,41 @@ class AbstractedFS:
             return os.path.normpath(self.normalize(path))
         else:
             return os.path.normpath(self.root + self.normalize(path))
+        
+    def checksymlink(self, path):
+        """Check whether a symbolic link is valid.
+
+        Accepts a "real" filesystem path as argument.
+        Return 1 if symlink is valid or if the current system does
+        not support symlinks.
+        Raises BadSymlink exception in case of invalid symbolic link.
+        """
+        # check if it is a symlink
+        if not os.path.islink(path):
+            return 1
+        # check if it can be opened (broken or circular link)
+        try:
+            os.stat(path)
+        except os.error, err:
+            if err.errno == errno.ENOENT:
+                raise BadSymlink, "Path refers to a broken symlink"
+            elif err.errno == errno.ELOOP:  # circular
+                raise BadSymlink, "Path refers to a circular symlink"
+            else:
+                raise BadSymlink, _strerror(err)
+
+        # resolve link chain
+        path = os.readlink(path)
+        while os.path.islink(path):
+            path = os.readlink(path)
+
+        # check whether the final destination belongs to home dir
+        root = os.path.normpath(self.root) + os.sep
+        path = os.path.normpath(path) + os.sep
+        if path[0:len(root)] == root:
+            return 1
+        else:
+            raise BadSymlink, "Link points to a path outside the user root"
 
     # --- Wrapper methods around os.*, open(), glob and tempfile
 
@@ -1271,6 +1312,16 @@ class FTPHandler(asynchat.async_chat):
 
         # provide full command set
         elif (self.authenticated) and (cmd in proto_cmds):
+            # let's check if provided argument points to an invalid
+            # symbolic link in case of the following commands:
+            if cmd in ('APPE','CWD','MDTM','RETR','SIZE','STOR','XCWD'):
+                try:
+                    self.fs.checksymlink(self.fs.translate(arg))
+                except BadSymlink, err:
+                    self.respond("550 %s." %err)
+                    self.log('FAIL %s "%s". %s.' %
+                            (cmd, self.fs.normalize(arg), err))
+                    return
             method = getattr(self, 'ftp_' + cmd)
             method(arg)  # call the proper ftp_* method
 
