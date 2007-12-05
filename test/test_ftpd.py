@@ -224,6 +224,12 @@ class AbstractedFSClass(unittest.TestCase):
             self.fail('Test not available for such system (os.sep == "%s").'
                         %os.sep)
 
+    def test_checkpath(self):
+        fs = ftpserver.AbstractedFS()
+        fs.root = home
+        self.assertEqual(fs.checkpath(home), True)
+        self.assertEqual(fs.checkpath(home + '/'), True)
+        self.assertEqual(fs.checkpath(home + 'xxx'), False)
 
 
 # --- Tests for AbstractedFS.checksymlink() method.
@@ -242,49 +248,7 @@ if hasattr(os, 'symlink'):
         def test_it(self):
             fs = ftpserver.AbstractedFS()
             fs.root = home
-            fs.checksymlink(self.linkname)
-
-    class TestBrokenSymlink(unittest.TestCase):
-        """Test whether the symlink is considered to be broken
-        (pointing to a non-existent path)."""
-        def setUp(self):
-            filename = os.path.basename(tempfile.mktemp(dir=home))
-            self.linkname = os.path.basename(tempfile.mktemp(dir=home))
-            os.symlink(filename, self.linkname)
-        def tearDown(self):
-            os.remove(self.linkname)
-
-        def test_it(self):
-            fs = ftpserver.AbstractedFS()
-            fs.root = home
-            try:
-                fs.checksymlink(self.linkname)
-            except ftpserver.BadSymlink, err:
-                self.assertTrue('broken' in str(err))
-            else:
-                self.fail('BadSymlink exception not raised.')
-
-    class TestCircularSymlink(unittest.TestCase):
-        """Test whether two symlinks are considered to be pointing
-        to each other."""
-        def setUp(self):
-            self.l1 = os.path.basename(tempfile.mktemp(dir=home))
-            self.l2 = os.path.basename(tempfile.mktemp(dir=home))
-            os.symlink(self.l1, self.l2)
-            os.symlink(self.l2, self.l1)
-        def tearDown(self):
-            os.remove(self.l1)
-            os.remove(self.l2)            
-
-        def test_it(self):
-            fs = ftpserver.AbstractedFS()
-            fs.root = home
-            try:
-                fs.checksymlink(self.l1)
-            except ftpserver.BadSymlink, err:
-                self.assertTrue('circular' in str(err))
-            else:
-                self.fail('BadSymlink exception not raised.')
+            fs.checkpath(self.linkname)
 
     class TestExternalSymlink(unittest.TestCase):
         """Test whether a symlink is considered to be pointing to a
@@ -305,12 +269,7 @@ if hasattr(os, 'symlink'):
                 return
             fs = ftpserver.AbstractedFS()
             fs.root = home
-            try:
-                fs.checksymlink(self.linkname)
-            except ftpserver.BadSymlink, err:
-                self.assertTrue('path outside the user root' in str(err))
-            else:
-                self.fail('BadSymlink exception not raised.')
+            self.assertEqual(fs.checkpath(self.linkname), False)
 
 
 class DummyAuthorizerClass(unittest.TestCase):

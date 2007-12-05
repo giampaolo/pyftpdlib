@@ -235,10 +235,6 @@ class Error(Exception):
 class AuthorizerError(Error):
     """Base class for authorizer exceptions."""
     
-class BadSymlink(Error):
-    """Raised by AbstractedFS.checksymlink when processing an invalid
-    symbolic link."""
-
 
 # --- loggers
 
@@ -869,40 +865,19 @@ class AbstractedFS:
         else:
             return os.path.normpath(self.root + self.normalize(path))
         
-    def checksymlink(self, path):
-        """Check whether a symbolic link is valid.
-
-        Accepts a "real" filesystem path as argument.
-        Return 1 if symlink is valid or if the current system does
-        not support symlinks.
-        Raises BadSymlink exception in case of invalid symbolic link.
+    def checkpath(self, abspath):
+        """Check whether the real abspath destination belongs to
+        home directory.  If abspath is a symbolic link we follow its
+        final destination to do so.
         """
-        # check if it is a symlink
-        if not os.path.islink(path):
-            return 1
-        # check if it can be opened (broken or circular link)
-        try:
-            os.stat(path)
-        except os.error, err:
-            if err.errno == errno.ENOENT:
-                raise BadSymlink, "Path refers to a broken symlink"
-            elif err.errno == errno.ELOOP:  # circular
-                raise BadSymlink, "Path refers to a circular symlink"
-            else:
-                raise BadSymlink, _strerror(err)
-
-        # resolve link chain
-        path = os.readlink(path)
-        while os.path.islink(path):
-            path = os.readlink(path)
-
-        # check whether the final destination belongs to home dir
-        root = os.path.normpath(self.root) + os.sep
-        path = os.path.normpath(path) + os.sep
-        if path[0:len(root)] == root:
-            return 1
+        if not self.root.endswith(os.sep):
+            root = self.root + os.sep
+        if not abspath.endswith(os.sep):
+            abspath = os.path.realpath(abspath) + os.sep
+        if abspath[0:len(root)] == root:
+            return True
         else:
-            raise BadSymlink, "Link points to a path outside the user root"
+            return False
 
     # --- Wrapper methods around os.*, open(), glob and tempfile
 
@@ -1312,15 +1287,17 @@ class FTPHandler(asynchat.async_chat):
 
         # provide full command set
         elif (self.authenticated) and (cmd in proto_cmds):
-            # let's check if provided argument points to an invalid
-            # symbolic link in case of the following commands:
+            # For the following commands we have to make sure that the
+            # real path destination belongs to the user's root
+            # directory.  If provided path is a symlink we follow its
+            # final destination to do so.
             if cmd in ('APPE','CWD','MDTM','RETR','SIZE','STOR','XCWD'):
-                try:
-                    self.fs.checksymlink(self.fs.translate(arg))
-                except BadSymlink, err:
+                if not self.fs.checkpath(self.fs.translate(arg)):
+                    vpath = self.fs.normalize(arg)
+                    err = '"%s" points to a path which is outside ' \
+                          "the user's root directory" %vpath
                     self.respond("550 %s." %err)
-                    self.log('FAIL %s "%s". %s.' %
-                            (cmd, self.fs.normalize(arg), err))
+                    self.log('FAIL %s "%s". %s.' %(cmd, vpath, err))
                     return
             method = getattr(self, 'ftp_' + cmd)
             method(arg)  # call the proper ftp_* method
