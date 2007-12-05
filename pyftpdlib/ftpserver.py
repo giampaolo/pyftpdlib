@@ -1291,7 +1291,7 @@ class FTPHandler(asynchat.async_chat):
             # real path destination belongs to the user's root
             # directory.  If provided path is a symlink we follow its
             # final destination to do so.
-            if cmd in ('APPE','CWD','MDTM','RETR','SIZE','STOR','XCWD'):
+            if cmd in ('APPE','CWD','MDTM','NLST','RETR','SIZE','STOR','XCWD'):
                 if not self.fs.checkpath(self.fs.translate(arg)):
                     vpath = self.fs.normalize(arg)
                     err = '"%s" points to a path which is outside ' \
@@ -1627,18 +1627,22 @@ class FTPHandler(asynchat.async_chat):
             path = self.fs.translate(self.fs.cwd)
             line = self.fs.cwd
 
-        try:
-            listing = self.fs.listdir(path)
-        except OSError, err:
-            why = _strerror(err)
-            self.log('FAIL NLST "%s". %s.' %(line, why))
-            self.respond('550 %s.' %why)
+        if self.fs.isfile(path) or self.fs.islink(path):
+            basedir, filename = os.path.split(path)
+            listing = [filename]
         else:
-            data = ''
-            if listing:
-                listing.sort()
-                data = '\r\n'.join(listing) + '\r\n'
-            self.push_dtp_data(data, log='OK NLST "%s". Transfer starting.' %line)
+            try:
+                listing = self.fs.listdir(path)
+            except OSError, err:
+                why = _strerror(err)
+                self.log('FAIL NLST "%s". %s.' %(line, why))
+                self.respond('550 %s.' %why)
+                return
+        data = ''
+        if listing:
+            listing.sort()
+            data = '\r\n'.join(listing) + '\r\n'
+        self.push_dtp_data(data, log='OK NLST "%s". Transfer starting.' %line)
 
 
     def ftp_RETR(self, line):

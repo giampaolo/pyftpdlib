@@ -695,10 +695,9 @@ class FtpRetrieveData(unittest.TestCase):
             self.assertEqual(x[i], x[i+1])
 
     def test_nlst(self):
-        l = []
-        ftp.retrlines('NLST', l.append)
-        fname = os.path.basename(self.f1.name)
-        self.assertRaises(ftplib.error_perm, ftp.retrlines, 'NLST ' + fname, l.append)
+        noop = lambda x: x
+        ftp.retrlines('NLST', noop)
+        ftp.retrlines('NLST ' + os.path.basename(self.f1.name), noop)
 
 
 class FtpAbort(unittest.TestCase):
