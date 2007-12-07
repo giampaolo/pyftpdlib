@@ -878,14 +878,13 @@ class AbstractedFS:
         if not self.root.endswith(os.sep):
             root = self.root + os.sep
         if not path.endswith(os.sep):
-            path = os.path.realpath(path) + os.sep
+            path = self.realpath(path) + os.sep
         if path[0:len(root)] == root:
             return True
-        else:
-            return False
+        return False
 
-    # --- Wrapper methods around os.*, open(), glob and tempfile
-
+    # --- Wrapper methods around os.*, os.path.*, open(), glob and tempfile
+    
     def open(self, filename, mode):
         """Open a file returning its handler."""
         return open(filename, mode)
@@ -939,6 +938,13 @@ class AbstractedFS:
     def isdir(self, path):
         """Return True if path is a directory."""
         return os.path.isdir(path)
+    
+    def realpath(self, path):
+        """Return the canonical path of the specified filename,
+        eliminating any symbolic links encountered in the path
+        (if they are supported by the operating system).
+        """
+        return os.path.realpath(path)
 
     def chdir(self, path):
         """Change the current directory."""
@@ -959,6 +965,15 @@ class AbstractedFS:
     def remove(self, path):
         """Remove the specified file."""
         os.remove(path)
+        
+    def stat(self, path):
+        return os.stat(path)
+    
+    def lstat(self, path):
+        return os.lstat(path)
+
+    if not hasattr(os, 'lstat'):
+        lstat = stat
     
     def getsize(self, path):
         """Return the size of the specified file in bytes."""
@@ -1046,15 +1061,10 @@ class AbstractedFS:
         -rw-rw-rw-   1 owner   group        380 Sep 02  3:40 module.py
         """
         result = []
-        if not hasattr(os, 'lstat'):
-            _stat = os.stat
-        else:
-            _stat = os.lstat
-
         for basename in listing:
             file = os.path.join(basedir, basename)
             try:
-                st = _stat(file)
+                st = self.lstat(file)
             except OSError:
                 continue
                 
