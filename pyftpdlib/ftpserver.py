@@ -870,20 +870,7 @@ class AbstractedFS:
         else:
             return os.path.normpath(self.root + self.normalize(rawpath))
         
-    def checkpath(self, path):
-        """Check whether the real abspath destination belongs to
-        home directory.  If abspath is a symbolic link we follow its
-        final destination to do so.
-        """
-        if not self.root.endswith(os.sep):
-            root = self.root + os.sep
-        if not path.endswith(os.sep):
-            path = self.realpath(path) + os.sep
-        if path[0:len(root)] == root:
-            return True
-        return False
-
-    # --- Wrapper methods around os.*, os.path.*, open(), glob and tempfile
+    # --- Wrapper methods around open() and tempfile.mkstemp
     
     def open(self, filename, mode):
         """Open a file returning its handler."""
@@ -907,7 +894,72 @@ class AbstractedFS:
         fd, name = tempfile.mkstemp(suffix, prefix, dir, text=text)
         file = os.fdopen(fd, mode)
         return FileWrapper(file, name)
+    
+    # --- Wrapper methods around os.*
+    
+    def chdir(self, path):
+        """Change the current directory."""
+        os.chdir(path)
 
+    def mkdir(self, path):
+        """Create the specified directory."""
+        os.mkdir(path)
+
+    def listdir(self, path):
+        """List the content of a directory."""
+        return os.listdir(path)
+
+    def rmdir(self, path):
+        """Remove the specified directory."""
+        os.rmdir(path)
+
+    def remove(self, path):
+        """Remove the specified file."""
+        os.remove(path)
+        
+    def rename(self, src, dst):
+        """Rename the specified src file to the dst filename."""
+        os.rename(src, dst)
+
+    def stat(self, path):
+        return os.stat(path)
+
+    def lstat(self, path):
+        return os.lstat(path)
+
+    if not hasattr(os, 'lstat'):
+        lstat = stat
+        
+    # --- Wrapper methods around os.path.*
+
+    def isfile(self, path):
+        """Return True if path is a file."""
+        return os.path.isfile(path)
+
+    def islink(self, path):
+        """Return True if path is a symbolic link."""
+        return os.path.islink(path)
+
+    def isdir(self, path):
+        """Return True if path is a directory."""
+        return os.path.isdir(path)
+    
+    def getsize(self, path):
+        """Return the size of the specified file in bytes."""
+        return os.path.getsize(path)
+
+    def getmtime(self, path):
+        """Return the last modified time as a number of seconds since
+        the epoch."""
+        return os.path.getmtime(path)
+    
+    def realpath(self, path):
+        """Return the canonical version of path eliminating any
+        symbolic links encountered in the path (if they are
+        supported by the operating system).
+        """
+        return os.path.realpath(path)
+    
     def lexists(self, path):
         """Return True if path refers to an existing path, including
         a broken or circular symbolic link.
@@ -921,84 +973,38 @@ class AbstractedFS:
             except os.error:
                 return False
             return True
-        # fallback 
+        # fallback
         else:
             return os.path.exists(path)
 
     exists = lexists  # alias for backward compatibility with 0.2.0
-        
-    def isfile(self, path):
-        """Return True if path is a file."""
-        return os.path.isfile(path)
 
-    def islink(self, path):
-        """Return True if path is a symbolic link."""
-        return os.path.islink(path)
-
-    def isdir(self, path):
-        """Return True if path is a directory."""
-        return os.path.isdir(path)
+    # --- Utility methods
     
-    def realpath(self, path):
-        """Return the canonical path of the specified filename,
-        eliminating any symbolic links encountered in the path
-        (if they are supported by the operating system).
+    def validpath(self, path):
+        """Check whether the path belongs to user's home directory.
+        Expected argument is a "real" filesystem path. If path is a
+        symbolic link it is resolved to check its real destination.
         """
-        return os.path.realpath(path)
-
-    def chdir(self, path):
-        """Change the current directory."""
-        os.chdir(path)
-
-    def mkdir(self, path):
-        """Create the specified directory."""
-        os.mkdir(path)
-        
-    def listdir(self, path):
-        """List the content of a directory."""
-        return os.listdir(path)
-
-    def rmdir(self, path):
-        """Remove the specified directory."""
-        os.rmdir(path)
-            
-    def remove(self, path):
-        """Remove the specified file."""
-        os.remove(path)
-        
-    def stat(self, path):
-        return os.stat(path)
+        if not self.root.endswith(os.sep):
+            root = self.root + os.sep
+        if not path.endswith(os.sep):
+            path = self.realpath(path) + os.sep
+        if path[0:len(root)] == root:
+            return True
+        return False
     
-    def lstat(self, path):
-        return os.lstat(path)
-
-    if not hasattr(os, 'lstat'):
-        lstat = stat
-    
-    def getsize(self, path):
-        """Return the size of the specified file in bytes."""
-        return os.path.getsize(path)
-
-    def getmtime(self, path):
-        """Return the last modified time as a number of seconds since
-        the epoch."""
-        return os.path.getmtime(path)
-           
-    def rename(self, src, dst):
-        """Rename the specified src file to the dst filename."""
-        os.rename(src, dst)
-
     def glob1(self, dirname, pattern):
         """Return a list of files matching a dirname pattern
         non-recursively.
-        Unlike glob.glob1 raises an exception if os.listdir() fails.
+        Unlike glob.glob1 raises exception if os.listdir() fails.
         """
         names = self.listdir(dirname)
         if pattern[0] != '.':
             names = filter(lambda x: x[0] != '.',names)
         return fnmatch.filter(names, pattern)
-
-    # --- utility methods
+    
+    # --- Listing utilities
     
     # Note that these are resource-intensive blocking operations so
     # you may want to override and move them into another
@@ -1019,6 +1025,7 @@ class AbstractedFS:
     def get_stat_dir(self, rawline):
         """Return a list of files matching a dirname pattern
         non-recursively in a form suitable for STAT command.
+        rawline is the argument passed by client.
         """
         path = self.normalize(rawline)
         basedir, basename = os.path.split(path)
@@ -1067,13 +1074,13 @@ class AbstractedFS:
                 st = self.lstat(file)
             except OSError:
                 continue
-                
+
             perms = filemode(st.st_mode)  # permissions
             nlinks = st.st_nlink  # number of links to inode
             if not nlinks:  # non-posix system, let's use a bogus value
                 nlinks = 1
             size = st.st_size  # file size
-    
+
             if pwd and grp:
                 # get user and group name, else just use the raw
                 # uid/gid from stat
@@ -1090,7 +1097,7 @@ class AbstractedFS:
                 # bogus values for owner and group
                 uname = "owner"
                 gname = "group"
-           
+
             # stat.st_mtime could fail (-1) if file's last modification
             # time is too old, in that case we return local time as
             # last modification time.
@@ -1098,7 +1105,7 @@ class AbstractedFS:
                 mtime = time.strftime("%b %d %H:%M", time.localtime(st.st_mtime))
             except ValueError:
                 mtime = time.strftime("%b %d %H:%M")
-            
+
             # if the file is a symlink, resolve it,
             # e.g. "symlink -> real_file"
             if stat.S_ISLNK(st.st_mode):
@@ -1307,7 +1314,7 @@ class FTPHandler(asynchat.async_chat):
             # directory.  If provided path is a symlink we follow its
             # final destination to do so.
             if cmd in ('APPE','CWD','MDTM','NLST','RETR','SIZE','STOR','XCWD'):
-                if not self.fs.checkpath(self.fs.translate(arg)):
+                if not self.fs.validpath(self.fs.translate(arg)):
                     vpath = self.fs.normalize(arg)
                     err = '"%s" points to a path which is outside ' \
                           "the user's root directory" %vpath
