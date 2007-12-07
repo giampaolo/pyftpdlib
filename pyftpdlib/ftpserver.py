@@ -821,19 +821,21 @@ class AbstractedFS:
 
     # --- Conversion utilities
 
-    def normalize(self, path):
-        """Translate a "virtual" FTP path into an absolute "virtual"
-        FTP path. Takes an absolute or relative virtual path and
-        returns an absolute virtual path.
+    def normalize(self, rawpath):
+        """Translate an absolute or relative raw FTP path (the one
+        received by client) into an absolute "virtual" FTP path.
         
+        Example (having "/foo" as current working directory):
+        'x' -> '/foo/x'
+
         Note: directory separators are system independent ("/").
         """
         # absolute path
-        if os.path.isabs(path):
-            p = os.path.normpath(path)
+        if os.path.isabs(rawpath):
+            p = os.path.normpath(rawpath)
         # relative path
         else:
-            p = os.path.normpath(os.path.join(self.cwd, path))
+            p = os.path.normpath(os.path.join(self.cwd, rawpath))
 
         # normalize string in a standard web-path notation having '/'
         # as separator.
@@ -852,29 +854,32 @@ class AbstractedFS:
             p = "/"
         return p
 
-    def translate(self, path):
-        """Translate a 'virtual' FTP path into equivalent filesystem
-        path. Take an absolute or relative path as input and return a
-        full absolute file path.
+    def translate(self, rawpath):
+        """Translate an absolute or relative raw FTP path (the one
+        received by client) into equivalent absolute "real" filesystem
+        path.
+        
+        Example (having "/home/user" as root directory):
+        'x' -> '/home/user/x'
         
         Note: directory separators are system dependent.
         """
         # as far as I know, it should always be path traversal safe...
         if os.path.normpath(self.root) == os.sep:
-            return os.path.normpath(self.normalize(path))
+            return os.path.normpath(self.normalize(rawpath))
         else:
-            return os.path.normpath(self.root + self.normalize(path))
+            return os.path.normpath(self.root + self.normalize(rawpath))
         
-    def checkpath(self, abspath):
+    def checkpath(self, path):
         """Check whether the real abspath destination belongs to
         home directory.  If abspath is a symbolic link we follow its
         final destination to do so.
         """
         if not self.root.endswith(os.sep):
             root = self.root + os.sep
-        if not abspath.endswith(os.sep):
-            abspath = os.path.realpath(abspath) + os.sep
-        if abspath[0:len(root)] == root:
+        if not path.endswith(os.sep):
+            path = os.path.realpath(path) + os.sep
+        if path[0:len(root)] == root:
             return True
         else:
             return False
