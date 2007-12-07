@@ -29,14 +29,15 @@
 """pyftpdlib: RFC-959 asynchronous FTP server.
 
 pyftpdlib implements a fully functioning asynchronous FTP server as
-defined in RFC-959.  A hierarchy of classes outlined below implement the
-backend functionality for the FTPd:
+defined in RFC-959.  A hierarchy of classes outlined below implement
+the backend functionality for the FTPd:
 
     [FTPServer] - the base class for the backend.
 
     [FTPHandler] - a class representing the server-protocol-interpreter
-    (server-PI, see RFC-959). Each time a new connection occurs FTPServer
-    will create a new FTPHandler instance to handle the current PI session.
+    (server-PI, see RFC-959). Each time a new connection occurs
+    FTPServer will create a new FTPHandler instance to handle the
+    current PI session.
 
     [ActiveDTP], [PassiveDTP] - base classes for active/passive-DTP
     backends.
@@ -45,15 +46,15 @@ backend functionality for the FTPd:
     operations (server-DTP, see RFC-959).
 
     [DummyAuthorizer] - an "authorizer" is a class handling FTPd
-    authentications and permissions. It is used inside FTPHandler class to
-    verify user passwords, to get user's home directory and to get
-    permissions when a filesystem read/write occurs. "DummyAuthorizer" is
-    the base authorizer class providing a platform independent interface
-    for managing virtual users.
+    authentications and permissions. It is used inside FTPHandler class
+    to verify user passwords, to get user's home directory and to get
+    permissions when a filesystem read/write occurs. "DummyAuthorizer"
+    is the base authorizer class providing a platform independent
+    interface for managing virtual users.
 
-    [AbstractedFS] - class used to interact with the file system, providing
-    a high level, cross-platform interface compatible with both Windows
-    and UNIX style filesystems.
+    [AbstractedFS] - class used to interact with the file system,
+    providing a high level, cross-platform interface compatible
+    with both Windows and UNIX style filesystems.
 
     [AuthorizerError] - base class for authorizers exceptions.
 
@@ -61,15 +62,16 @@ backend functionality for the FTPd:
 pyftpdlib also provides 3 different logging streams through 3 functions
 which can be overridden to allow for custom logging.
 
-    [log] - the main logger that logs the most important messages for the
-    end user regarding the FTPd.
+    [log] - the main logger that logs the most important messages for
+    the end user regarding the FTPd.
 
     [logline] - this function is used to log commands and responses
     passing through the control FTP channel.
 
     [logerror] - log traceback outputs occurring in case of errors.
 
-    [debug] - used for logging function/method calls (disabled by default).
+    [debug] - used for logging function/method calls (disabled by
+    default).
 
 
 Usage example:
@@ -135,8 +137,8 @@ __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'debug', 'DummyAuthorizer',
 
 
 __pname__   = 'Python FTP server library (pyftpdlib)'
-__ver__     = '0.2.0' # XXX change ver
-__date__    = '2007-17-09' # XXX change date
+__ver__     = '0.2.0'  # XXX change ver
+__date__    = '2007-17-09'  # XXX change date
 __author__  = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__     = 'http://code.google.com/p/pyftpdlib/'
 
@@ -152,6 +154,8 @@ proto_cmds = {
     'HELP': 'Syntax: HELP [<SP> cmd] (show help).',
     'LIST': 'Syntax: LIST [<SP> path-name] (list files).',
     'MDTM': 'Syntax: MDTM <SP> file-name (get last modification time).',
+    'MLSD': 'Syntax: MLSD [<SP> dir-name] (list files in a machine-processable form)',
+    'MLST': 'Syntax: MLST [<SP> path-name] (show a path in a machine-processable form)',
     'MODE': 'Syntax: MODE <SP> mode (obsolete; set data transfer mode).',
     'MKD' : 'Syntax: MDK <SP> dir-name (create directory).',
     'NLST': 'Syntax: NLST [<SP> path-name] (list files in a compact form).',
@@ -177,6 +181,7 @@ proto_cmds = {
     'USER': 'Syntax: USER <SP> user-name (set username).',
     }
 
+
 deprecated_cmds = {
     'XCUP': 'Syntax: XCUP (obsolete; go to parent directory).',
     'XCWD': 'Syntax: XCWD <SP> dir-name (obsolete; change current directory).',
@@ -187,8 +192,8 @@ deprecated_cmds = {
 
 proto_cmds.update(deprecated_cmds)
 
-# The following RFC-959 commands are not implemented. These commands are
-# also not implemented by many other FTP servers
+# The following RFC-959 commands are not implemented. These commands
+# are also not implemented by many other FTP servers
 not_implemented_cmds = {
     'ACCT': 'Syntax: ACCT account-info (specify account information).',
     'SITE': 'Syntax: SITE [<SP> site-cmd] (site specific server services).',
@@ -225,12 +230,14 @@ def _strerror(err):
         return err.strerror
 
 
+# --- library defined exceptions
+
 class Error(Exception):
     """Base class for module exceptions."""
 
 class AuthorizerError(Error):
     """Base class for authorizer exceptions."""
-
+    
 
 # --- loggers
 
@@ -254,8 +261,8 @@ def debug(msg):
 # --- authorizers
 
 class DummyAuthorizer:
-    """Basic "dummy" authorizer class, suitable for subclassing to create
-    your own custom authorizers.
+    """Basic "dummy" authorizer class, suitable for subclassing to
+    create your own custom authorizers.
     
     An "authorizer" is a class handling authentications and permissions
     of the FTP server.  It is used inside FTPHandler class for verifying
@@ -264,24 +271,21 @@ class DummyAuthorizer:
     
     DummyAuthorizer is the base authorizer, providing a platform
     independent interface for managing "virtual" FTP users. System
-    dependent authorizers can by written by subclassing this base class
-    and overriding appropriate methods as necessary.
+    dependent authorizers can by written by subclassing this base
+    class and overriding appropriate methods as necessary.
     """
 
     user_table = {}
 
-    def __init__(self):
-        pass
-
     def add_user(self, username, password, homedir, perm=('r'),
                     msg_login="Login successful.", msg_quit="Goodbye."):
         """Add a user to the virtual users table.  AuthorizerError
-        exceptions raised on error conditions such as invalid permissions,
-        missing home directory or duplicate usernames.
+        exceptions raised on error conditions such as invalid
+        permissions, missing home directory or duplicate usernames.
 
-        Optional perm argument is a tuple defaulting to ("r") referencing
-        user's permissions.  Valid values are "r" (read access), "w"
-        (write access) or none at all (no access).
+        Optional perm argument is a tuple defaulting to ("r")
+        referencing user's permissions.  Valid values are "r"
+        (read access), "w" (write access) or none at all (no access).
 
         Optional msg_login and msg_quit arguments can be specified to
         provide customized response strings when user log-in and quit.
@@ -310,11 +314,12 @@ class DummyAuthorizer:
         insufficient permissions, missing home directory, or duplicate
         anonymous users.
 
-        The keyword arguments in kwargs are the same expected by add_user
-        method: "perm", "msg_login" and "msg_quit".
-        The optional "perm" keyword argument is a tuple defaulting to ("r")
-        referencing "read-only" anonymous user's permission.  Using a "w"
-        (write access) value results in a warning message printed to stderr.
+        The keyword arguments in kwargs are the same expected by
+        add_user method: "perm", "msg_login" and "msg_quit".
+        The optional "perm" keyword argument is a tuple defaulting to
+        ("r") referencing "read-only" anonymous user's permission.
+        Using a "w" (write access) value results in a warning message
+        printed to stderr.
         """
         DummyAuthorizer.add_user(self, 'anonymous', '', homedir, **kwargs)
 
@@ -358,8 +363,9 @@ class DummyAuthorizer:
 # --- DTP classes
 
 class PassiveDTP(asyncore.dispatcher):
-    """This class is an asyncore.disptacher subclass.  It creates a socket
-    listening on a local port, dispatching the resultant connection DTPHandler.
+    """This class is an asyncore.disptacher subclass.  It creates a
+    socket listening on a local port, dispatching the resultant
+    connection DTPHandler.
     """
 
     def __init__(self, cmd_channel):
@@ -399,7 +405,6 @@ class PassiveDTP(asyncore.dispatcher):
                         raise
                 else:
                     break
-
         self.listen(5)
         if self.cmd_channel.masquerade_address:
             ip = self.cmd_channel.masquerade_address
@@ -413,7 +418,6 @@ class PassiveDTP(asyncore.dispatcher):
     def __del__(self):
         self.cmd_channel.debug("PassiveDTP.__del__()")
 
-
     # --- connection / overridden
     
     def handle_accept(self):
@@ -422,8 +426,8 @@ class PassiveDTP(asyncore.dispatcher):
         sock, addr = self.accept()
 
         # Check the origin of data connection.  If not expressively
-        # configured we drop the incoming data connection if remote IP
-        # address does not match the client's IP address.
+        # configured we drop the incoming data connection if remote
+        # IP address does not match the client's IP address.
         if (self.cmd_channel.remote_ip != addr[0]):
             if not self.cmd_channel.permit_foreign_addresses:
                 try:
@@ -441,7 +445,6 @@ class PassiveDTP(asyncore.dispatcher):
                 msg = 'Established data connection with foreign address %s:%s.'\
                         %(addr[0], addr[1])
                 self.cmd_channel.log(msg)
-
         # Immediately close the current channel (we accept only one
         # connection at time) and avoid running out of max connections
         # limit.
@@ -472,9 +475,9 @@ class PassiveDTP(asyncore.dispatcher):
 
 
 class ActiveDTP(asyncore.dispatcher):
-    """This class is an asyncore.disptacher subclass. It creates a socket
-    resulting from the connection to a remote user-port, dispatching it to
-    DTPHandler.
+    """This class is an asyncore.disptacher subclass. It creates a
+    socket resulting from the connection to a remote user-port,
+    dispatching it to DTPHandler.
     """
 
     def __init__(self, ip, port, cmd_channel):
@@ -489,7 +492,6 @@ class ActiveDTP(asyncore.dispatcher):
 
     def __del__(self):
         self.cmd_channel.debug("ActiveDTP.__del__()")
-
 
     # --- connection / overridden
 
@@ -538,8 +540,8 @@ class DTPHandler(asyncore.dispatcher):
     """Class handling server-data-transfer-process (server-DTP, see
     RFC-959) managing data-transfer operations.
 
-    sock_obj is the underlying socket used for the connection, cmd_channel
-    is the FTPHandler class instance.
+    sock_obj is the underlying socket used for the connection,
+    cmd_channel is the FTPHandler class instance.
     
     DTPHandler implementation note:
     When a producer is consumed and close_when_done() has been called
@@ -551,8 +553,8 @@ class DTPHandler(asyncore.dispatcher):
     that asynchat module should use in Python 2.6.
 
     The most important change in the implementation is related to
-    producer_fifo, which is a pure deque object instead of a producer_fifo
-    instance.
+    producer_fifo, which is a pure deque object instead of a
+    producer_fifo instance.
 
     Since we don't want to break backward compatibily with older python
     versions (deque has been introduced in Python 2.4), if deque is not
@@ -567,8 +569,9 @@ class DTPHandler(asyncore.dispatcher):
         "simple producer" deque wrapper with a pure deque object.
         """
         asyncore.dispatcher.__init__(self, sock_obj)
-        # we toss the use of the asynchat's "simple producer" and replace it
-        # with a pure deque, which the original fifo was a wrapping of
+        # we toss the use of the asynchat's "simple producer" and
+        # replace it  with a pure deque, which the original fifo
+        # was a wrapping of
         self.producer_fifo = deque()
 
         self.cmd_channel = cmd_channel
@@ -616,10 +619,10 @@ class DTPHandler(asyncore.dispatcher):
                 self.transfer_finished = True
                 #self.close()  # <-- asyncore.recv() already do that...
                 return
-            # while we're writing on the file an exception could occur in
-            # case  that filesystem gets full;  if this happens we let
-            # handle_error() method handle this exception, providing a
-            # detailed error message.
+            # while we're writing on the file an exception could occur
+            # in case  that filesystem gets full;  if this happens we
+            # let handle_error() method handle this exception, providing
+            # a detailed error message.
             self.file_obj.write(self.data_wrapper(chunk))
 
     def handle_write(self):
@@ -689,7 +692,6 @@ class DTPHandler(asyncore.dispatcher):
                     self.producer_fifo[0] = first[num_sent:]
                 else:
                     del self.producer_fifo[0]
-                    
             # we tried to send some actual data
             return
 
@@ -717,8 +719,8 @@ class DTPHandler(asyncore.dispatcher):
             error = _strerror(err)
         except:
             # some other exception occurred; we don't want to provide
-            # confidential error messages to user so we return a generic
-            # "unknown error" response.
+            # confidential error messages to user so we return a
+            # generic "unknown error" response.
             logerror(traceback.format_exc())            
             error = "Unknown error"
         self.cmd_channel.respond("426 %s; transfer aborted." %error)
@@ -728,35 +730,33 @@ class DTPHandler(asyncore.dispatcher):
         """Called when the socket is closed."""
         self.cmd_channel.debug("DTPHandler.handle_close()")
         tot_bytes = self.get_transmitted_bytes()
-
         # If we used channel for receiving we assume that transfer is
-        # finished when client close connection , if we used channel for
-        # sending we have to check that all data has been sent (responding
-        # with 226) or not (responding with 426).
+        # finished when client close connection , if we used channel
+        # for sending we have to check that all data has been sent
+        # (responding with 226) or not (responding with 426).
         if self.receive:
             self.transfer_finished = True
         if self.transfer_finished:
             self.cmd_channel.respond("226 Transfer complete.")
-            self.cmd_channel.log("Transfer complete; %d bytes transmitted." %tot_bytes)
+            self.cmd_channel.log("Transfer complete; "
+                                 "%d bytes transmitted." %tot_bytes)
         else:
             self.cmd_channel.respond("426 Connection closed; transfer aborted.")
-            self.cmd_channel.log("Transfer aborted; %d bytes transmitted." %tot_bytes)
+            self.cmd_channel.log("Transfer aborted; "
+                                 "%d bytes transmitted." %tot_bytes)
         self.close()
 
     def close(self):
         """Close the data channel, first attempting to close any remaining
         file handles."""
         self.cmd_channel.debug("DTPHandler.close()")
-
         if self.file_obj:
             if not self.file_obj.closed:
                 self.file_obj.close()
-
         while self.producer_fifo:
             first = self.producer_fifo.pop()
-            if isinstance(first, FileProducer):
+            if hasattr(first, 'close'):
                 first.close()
-
         asyncore.dispatcher.close(self)
         self.cmd_channel.on_dtp_close()
 
@@ -809,8 +809,8 @@ class FileProducer:
 
 class AbstractedFS:
     """A class used to interact with the file system, providing a high
-    level, cross-platform interface compatible with both Windows and UNIX
-    style filesystems.
+    level, cross-platform interface compatible with both Windows and
+    UNIX style filesystems.
 
     It provides some utility methods and some wraps around operations
     involved in file object creation and file system operations like
@@ -825,9 +825,9 @@ class AbstractedFS:
     # --- Conversion utilities
 
     def normalize(self, path):
-        """Translate a "virtual" FTP path into an absolute "virtual" FTP
-        path. Takes an absolute or relative virtual path and returns an
-        absolute virtual path.
+        """Translate a "virtual" FTP path into an absolute "virtual"
+        FTP path. Takes an absolute or relative virtual path and
+        returns an absolute virtual path.
         
         Note: directory separators are system independent ("/").
         """
@@ -838,8 +838,8 @@ class AbstractedFS:
         else:
             p = os.path.normpath(os.path.join(self.cwd, path))
 
-        # normalize string in a standard web-path notation having '/' as
-        # separator.
+        # normalize string in a standard web-path notation having '/'
+        # as separator.
         p = p.replace("\\", "/")
 
         # os.path.normpath supports UNC paths (e.g. "//a/b/c") but we
@@ -848,17 +848,17 @@ class AbstractedFS:
         while p[:2] == '//':
             p = p[1:]
 
-        # Anti path traversal: don't trust user input, in the event that
-        # self.cwd is not absolute, return "/" as a safety measure. This
-        # is for extra protection, maybe not really necessary.
+        # Anti path traversal: don't trust user input, in the event
+        # that self.cwd is not absolute, return "/" as a safety measure.
+        # This is for extra protection, maybe not really necessary.
         if not os.path.isabs(p):
             p = "/"
         return p
 
     def translate(self, path):
-        """Translate a 'virtual' FTP path into equivalent filesystem path.
-        Take an absolute or relative path as input and return a full
-        absolute file path.
+        """Translate a 'virtual' FTP path into equivalent filesystem
+        path. Take an absolute or relative path as input and return a
+        full absolute file path.
         
         Note: directory separators are system dependent.
         """
@@ -867,6 +867,20 @@ class AbstractedFS:
             return os.path.normpath(self.normalize(path))
         else:
             return os.path.normpath(self.root + self.normalize(path))
+        
+    def checkpath(self, path):
+        """Check whether the real abspath destination belongs to
+        home directory.  If abspath is a symbolic link we follow its
+        final destination to do so.
+        """
+        if not self.root.endswith(os.sep):
+            root = self.root + os.sep
+        if not path.endswith(os.sep):
+            path = os.path.realpath(path) + os.sep
+        if path[0:len(root)] == root:
+            return True
+        else:
+            return False
 
     # --- Wrapper methods around os.*, open(), glob and tempfile
 
@@ -893,85 +907,101 @@ class AbstractedFS:
         file = os.fdopen(fd, mode)
         return FileWrapper(file, name)
 
-    def exists(self, abspath):
-        """Return True if the path exists."""
-        return os.path.exists(abspath)
+    def lexists(self, path):
+        """Return True if path refers to an existing path, including
+        a broken or circular symbolic link.
+        """
+        if hasattr(os.path, 'lexists'):
+            return os.path.lexists(path)
+        # grant backward compatibility with python 2.3
+        elif hasattr(os, 'lstat'):
+            try:
+                st = os.lstat(path)
+            except os.error:
+                return False
+            return True
+        # fallback 
+        else:
+            return os.path.exists(path)
+
+    exists = lexists  # alias for backward compatibility with 0.2.0
         
-    def isfile(self, abspath):
+    def isfile(self, path):
         """Return True if path is a file."""
-        return os.path.isfile(abspath)
+        return os.path.isfile(path)
 
-    def isdir(self, abspath):
+    def islink(self, path):
+        """Return True if path is a symbolic link."""
+        return os.path.islink(path)
+
+    def isdir(self, path):
         """Return True if path is a directory."""
-        return os.path.isdir(abspath)
+        return os.path.isdir(path)
 
-    def chdir(self, abspath):
+    def chdir(self, path):
         """Change the current directory."""
-        os.chdir(abspath)
+        os.chdir(path)
 
-    def mkdir(self, abspath):
+    def mkdir(self, path):
         """Create the specified directory."""
-        os.mkdir(abspath)
+        os.mkdir(path)
+        
+    def listdir(self, path):
+        """List the content of a directory."""
+        return os.listdir(path)
 
-    def rmdir(self, abspath):
+    def rmdir(self, path):
         """Remove the specified directory."""
-        os.rmdir(abspath)
+        os.rmdir(path)
             
-    def remove(self, abspath):
+    def remove(self, path):
         """Remove the specified file."""
-        os.remove(abspath)
+        os.remove(path)
     
-    def getsize(self, abspath):
+    def getsize(self, path):
         """Return the size of the specified file in bytes."""
-        return os.path.getsize(abspath)
+        return os.path.getsize(path)
 
-    def getmtime(self, abspath):
-        """Return the last modified time as a number of seconds since the
-        epoch."""
-        return os.path.getmtime(abspath)
+    def getmtime(self, path):
+        """Return the last modified time as a number of seconds since
+        the epoch."""
+        return os.path.getmtime(path)
            
     def rename(self, src, dst):
         """Rename the specified src file to the dst filename."""
         os.rename(src, dst)
 
     def glob1(self, dirname, pattern):
-        """Return a list of files matching a dirname pattern non-recursively.
+        """Return a list of files matching a dirname pattern
+        non-recursively.
         Unlike glob.glob1 raises an exception if os.listdir() fails.
         """
-        names = os.listdir(dirname)
-        names.sort()
+        names = self.listdir(dirname)
         if pattern[0] != '.':
             names = filter(lambda x: x[0] != '.',names)
         return fnmatch.filter(names, pattern)
 
     # --- utility methods
     
-    # Note that these are resource-intensive blocking operations so you may
-    # want to override and move them into another process/thread in some way.
-
-    def get_nlst_dir(self, abspath):
-        """Return a directory listing in a form suitable for NLST command."""
-        listing = (os.listdir(abspath))
-        if listing:
-            listing.sort()
-            return '\r\n'.join(listing) + '\r\n'
-        return ''
-
-    def get_list_dir(self, abspath):
+    # Note that these are resource-intensive blocking operations so
+    # you may want to override and move them into another
+    # process/thread in some way.
+    
+    def get_list_dir(self, path):
         """Return a directory listing in a form suitable for LIST command."""
-        # if path is a file we return information about it
-        if os.path.isfile(abspath):
-            basedir, filename = os.path.split(abspath)
+        # if path is a file or a symlink we return information about it
+        if self.isfile(path)or self.islink(path):
+            basedir, filename = os.path.split(path)
             listing = [filename]
         else:
-            basedir = abspath
-            listing = os.listdir(abspath)
+            basedir = path
+            listing = self.listdir(path)
             listing.sort()
         return self.format_list(basedir, listing)
 
     def get_stat_dir(self, rawline):
-        """Return a list of files matching a dirname pattern non-recursively
-        in a form suitable for STAT command.
+        """Return a list of files matching a dirname pattern
+        non-recursively in a form suitable for STAT command.
         """
         path = self.normalize(rawline)
         basedir, basename = os.path.split(path)
@@ -981,12 +1011,14 @@ class AbstractedFS:
             if not basedir:
                 basedir = self.translate(self.cwd)
                 listing = self.glob1(basedir, basename)
+                listing.sort()
                 data = self.format_list(basedir, listing)
             elif glob.has_magic(basedir):
                 return 'Directory recursion not supported.\r\n'
             else:
                 basedir = self.translate(basedir)
                 listing = self.glob1(basedir, basename)
+                listing.sort()
                 data = self.format_list(basedir, listing)
         if not data:
             return "Directory is empty.\r\n"
@@ -1001,8 +1033,9 @@ class AbstractedFS:
     
         On platforms which do not support the pwd and grp modules (such
         as Windows), ownership is printed as "owner" and "group" as a
-        default, and number of hard links is always "1". On UNIX systems,
-        the actual owner, group, and number of links are printed.
+        default, and number of hard links is always "1". On UNIX
+        systems, the actual owner, group, and number of links are
+        printed.
     
         This is how output appears to client:
     
@@ -1010,65 +1043,136 @@ class AbstractedFS:
         drwxrwxrwx   1 owner   group          0 Aug 31 18:50 e-books
         -rw-rw-rw-   1 owner   group        380 Sep 02  3:40 module.py
         """
-    
-        result = [] 
+        result = []
+        if not hasattr(os, 'lstat'):
+            _stat = os.stat
+        else:
+            _stat = os.lstat
+
         for basename in listing:
             file = os.path.join(basedir, basename)
-            
-            # if the file is a broken symlink, use lstat to get stat for
-            # the link
             try:
-                stat_result = os.stat(file)
-            except (OSError,AttributeError):
-                stat_result = os.lstat(file)
+                st = _stat(file)
+            except OSError:
+                continue
                 
-            perms = filemode(stat_result.st_mode)  # permissions
-            
-            nlinks = stat_result.st_nlink  # number of links to inode
+            perms = filemode(st.st_mode)  # permissions
+            nlinks = st.st_nlink  # number of links to inode
             if not nlinks:  # non-posix system, let's use a bogus value
                 nlinks = 1
-    
+            size = st.st_size  # file size
+
             if pwd and grp:
-                # get user and group name, else just use the raw uid/gid
-                # from stat
+                # get user and group name, else just use the raw
+                # uid/gid from stat
                 try:
-                    uname = pwd.getpwuid(stat_result.st_uid).pw_name
+                    uname = pwd.getpwuid(st.st_uid).pw_name
                 except KeyError:
-                    uname = stat_result.st_uid
+                    uname = st.st_uid
                 try:
-                    gname = grp.getgrgid(stat_result.st_gid).gr_name
+                    gname = grp.getgrgid(st.st_gid).gr_name
                 except KeyError:
-                    gname = stat_result.st_gid
+                    gname = st.st_gid
             else:
                 # on non-posix systems the only chance we use default
                 # bogus values for owner and group
                 uname = "owner"
                 gname = "group"
-        
-            size = stat_result.st_size # file size
            
             # stat.st_mtime could fail (-1) if file's last modification
-            # time is too old, in that case we return local time as last
-            # modification time.
+            # time is too old, in that case we return local time as
+            # last modification time.
             try:
-                mtime = time.strftime("%b %d %H:%M", time.localtime(stat_result.st_mtime))
+                mtime = time.strftime("%b %d %H:%M", time.localtime(st.st_mtime))
             except ValueError:
                 mtime = time.strftime("%b %d %H:%M")
             
-            # if the file is a symlink, resolve it, e.g. "symlink -> real_file"
-            if stat.S_ISLNK(stat_result.st_mode):
+            # if the file is a symlink, resolve it,
+            # e.g. "symlink -> real_file"
+            if stat.S_ISLNK(st.st_mode):
                 basename = basename + " -> " + os.readlink(file)
                 
             # formatting is matched with proftpd ls output
-            result.append("%s %3s %-8s %-8s %8s %s %s\r\n" %(
-                perms,
-                nlinks,
-                uname,
-                gname,
-                size,
-                mtime,
-                basename))
-    
+            result.append("%s %3s %-8s %-8s %8s %s %s\r\n" %(perms, nlinks,
+                                                             uname, gname, size,
+                                                             mtime, basename))
+        return ''.join(result)
+
+    def format_mlsx(self, basedir, listing):
+        """Return a directory listing in a form suitable with MLSD and
+        MLST commands including a list of "facts" referring the listed
+        elements.
+
+        See RFC-3659, chapter 7, to see what every single fact
+        stands for.
+
+        <basedir> is the absolute dirname, <listing> is a list of files
+        contained in that directory.
+
+        "facts" returned may change depending on the platform and on
+        what user specified by using the OPTS command.
+
+        This is how output could appear to the client issuing a MLSD
+        request:
+
+        type=file;size=156;modify=20071029155301;unique=801cd012; music.mp3
+        type=dir;size=4096;modify=20071127230206;unique=801e38e3; ebooks
+        type=file;size=211;modify=20071103093626;unique=801e38e2; module.py
+        """
+        result = []
+        ftype = size = modify = create = mode = uid = gid = unique = ""
+        for basename in listing:
+            file = os.path.join(basedir, basename)
+            try:
+                st = os.stat(file)
+            except OSError:
+                continue
+
+            # type + size
+            if stat.S_ISDIR(st.st_mode):
+                ftype = 'type=dir;'
+            else:
+                ftype = 'type=file;'
+            size = 'size=%s;' %st.st_size  # file size
+
+            try:
+                modify = 'modify=%s;' %time.strftime("%Y%m%d%H%M%S",
+                                       time.localtime(st.st_mtime))
+            except ValueError:
+                # stat.st_mtime could fail (-1) if file's last
+                # modification time is too old
+                modify = ""
+
+            # on Windows we can provide also the file's creation time
+            if os.name == 'nt':
+                try:
+                    create = 'create=%s;' %time.strftime("%Y%m%d%H%M%S",
+                                           time.localtime(st.st_ctime))
+                except ValueError:
+                    # stat.st_ctime could fail (-1) if file's last
+                    # modification time is too old
+                    create = ""
+
+            # Let's provide uid, gid and mode facts if pwd and grp
+            # modules are available; this let use infer that we're
+            # on a UNIX system.
+            # Theorically we could provide mode also on Windows
+            # platforms but I'm not sure about its reliability.
+            if pwd and grp:
+                mode = 'UNIX.mode=%s;' %oct(st.st_mode & 0777)
+                uid = 'UNIX.uid=%s;' %st.st_uid
+                gid = 'UNIX.gid=%s;' %st.st_gid
+
+            # Provide unique fact on posix platforms.  We get it by
+            # mixing st_dev and st_ino values which should be enough
+            # for granting an unique value referencing the file
+            # listed.  The same approach is used by pure-ftpd.
+            if os.name == 'posix':
+                unique = "unique=%x%x;" %(st.st_dev, st.st_ino)
+
+            result.append("%s%s%s%s%s%s%s%s %s\r\n" %(ftype, size, modify,
+                                                      create, mode, uid, gid,
+                                                      unique, basename))
         return ''.join(result)
 
 
@@ -1076,17 +1180,16 @@ class AbstractedFS:
 
 class FTPHandler(asynchat.async_chat):
     """Implements the FTP server Protocol Interpreter (see RFC-959),
-    handling commands received from the client on the control channel by
-    calling the command's corresponding method. e.g. for received command
-    "MKD pathname", ftp_MKD() method is called with "pathname" as the
-    argument.
+    handling commands received from the client on the control channel
+    by calling the command's corresponding method. e.g. for received
+    command "MKD pathname", ftp_MKD() method is called with "pathname"
+    as the argument.
 
     conn and ftpd_instance parameters are automatically passed by
     FTPServer class instance.
 
     All relevant session information is stored in instance variables.
     """
-
     # these are overridable defaults:
 
     # default classes
@@ -1106,9 +1209,9 @@ class FTPHandler(asynchat.async_chat):
     # permits for transferring a file between two remote FTP servers
     # without the transfer going through the client's host (not
     # recommended for security reasons as described in RFC-2577).
-    # Having this attribute set to False means that all data connections
-    # from/to remote IP addresses which do not match the client's IP
-    # address will be dropped.
+    # Having this attribute set to False means that all data
+    # connections from/to remote IP addresses which do not match the
+    # client's IP address will be dropped.
     permit_foreign_addresses = False
 
     # Set to True if you want to permit active data connections (PORT)
@@ -1123,10 +1226,9 @@ class FTPHandler(asynchat.async_chat):
 
     # What ports ftpd will use for its passive data transfers.
     # Value expected is a list of integers (e.g. range(60000, 65535)).
-    # When configured pyftpdlib will no longer use kernel-assigned random
-    # ports.
+    # When configured pyftpdlib will no longer use kernel-assigned
+    # random ports.
     passive_ports = None
-
 
     def __init__(self, conn, ftpd_instance):
         asynchat.async_chat.__init__(self, conn=conn)
@@ -1196,7 +1298,8 @@ class FTPHandler(asynchat.async_chat):
         self.in_buffer.append(data)
         self.in_buffer_len += len(data)
         # Flush buffer if it gets too long (possible DoS attacks).
-        # RFC-959 specifies that a 500 response could be given in such cases
+        # RFC-959 specifies that a 500 response could be given in
+        # such cases
         buflimit = 2048
         if self.in_buffer_len > buflimit:
             self.respond('500 Command too long.')
@@ -1244,12 +1347,14 @@ class FTPHandler(asynchat.async_chat):
             self.cmd_needs_no_arg()
             return
 
-        # provide a limited set of commands if user isn't authenticated yet
+        # provide a limited set of commands if user isn't
+        # authenticated yet
         if (not self.authenticated):
             if cmd in self.unauth_cmds:
-                # we permit STAT during this phase but we don't want STAT to
-                # return a directory LISTing if the user is not authenticated
-                # yet (this could happen if STAT is used with an argument)
+                # we permit STAT during this phase but we don't want
+                # STAT to return a directory LISTing if the user is
+                # not authenticated yet (this could happen if STAT
+                # is used with an argument)
                 if (cmd == 'STAT') and arg:
                     self.respond("530 Log in with USER and PASS first.")
                 else:
@@ -1262,6 +1367,19 @@ class FTPHandler(asynchat.async_chat):
 
         # provide full command set
         elif (self.authenticated) and (cmd in proto_cmds):
+            # For the following commands we have to make sure that the
+            # real path destination belongs to the user's root
+            # directory.  If provided path is a symlink we follow its
+            # final destination to do so.
+            if cmd in ('APPE','CWD','MDTM','MLSD','NLST','RETR','SIZE','STOR',
+                        'XCWD'):
+                if not self.fs.checkpath(self.fs.translate(arg)):
+                    vpath = self.fs.normalize(arg)
+                    err = '"%s" points to a path which is outside ' \
+                          "the user's root directory" %vpath
+                    self.respond("550 %s." %err)
+                    self.log('FAIL %s "%s". %s.' %(cmd, vpath, err))
+                    return
             method = getattr(self, 'ftp_' + cmd)
             method(arg)  # call the proper ftp_* method
 
@@ -1422,8 +1540,8 @@ class FTPHandler(asynchat.async_chat):
         debug(msg)
 
     def flush_account(self):
-        """Flush account information by clearing attributes that need to
-        be reset on a REIN or new USER command.
+        """Flush account information by clearing attributes that need
+        to be reset on a REIN or new USER command.
         """
         if self.data_channel:
             if not self.data_channel.transfer_in_progress():
@@ -1448,10 +1566,11 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_PORT(self, line):
         """Start an active data-channel."""
-        # Parse PORT request for getting IP and PORT.  Request comes in as:
+        # Parse PORT request for getting IP and PORT.
+        # Request comes in as:
         # > h1,h2,h3,h4,p1,p2
-        # ...where the client's IP address is h1.h2.h3.h4 and the TCP port
-        # number is (p1 * 256) + p2.
+        # ...where the client's IP address is h1.h2.h3.h4 and the TCP
+        # port number is (p1 * 256) + p2.
         try:
             line = line.split(',')
             ip = ".".join(line[:4]).replace(',','.')
@@ -1470,8 +1589,8 @@ class FTPHandler(asynchat.async_chat):
                 self.respond("501 Can't connect to a foreign address.")
                 return
 
-        # ...another RFC-2577 recommendation is rejecting connections to
-        # privileged ports (< 1024) for security reasons.
+        # ...another RFC-2577 recommendation is rejecting connections
+        # to privileged ports (< 1024) for security reasons.
         if not self.permit_privileged_ports:
             if port < 1024:
                 self.log('PORT against the privileged port "%s" refused.' %port)
@@ -1498,7 +1617,6 @@ class FTPHandler(asynchat.async_chat):
         # open DTP channel
         self.active_dtp(ip, port, self)
 
-
     def ftp_PASV(self, line):
         """Start a passive data-channel."""
         # close existing DTP-server instance, if any
@@ -1520,7 +1638,6 @@ class FTPHandler(asynchat.async_chat):
 
         # open DTP channel
         self.data_server = self.passive_dtp(self)
-
 
     def ftp_QUIT(self, line):
         """Quit the current session."""
@@ -1553,11 +1670,11 @@ class FTPHandler(asynchat.async_chat):
         Defaults to the current working directory.
         """
         if line:
-            # some FTP clients like older versions of Konqueror or Nautilus
-            # erroneously issue /bin/ls-like LIST formats (e.g. "LIST -l",
-            # "LIST -al" and so on...) instead of passing a directory as
-            # the argument. If we  receive such a command, just LIST the
-            # current working directory.
+            # some FTP clients like older versions of Konqueror or
+            # Nautilus erroneously issue /bin/ls-like LIST formats
+            # (e.g. "LIST -l", "LIST -al" and so on...) instead of
+            # passing a directory as the argument.  If we receive
+            # such a command, just LIST the current working directory.
             if line.lower() in ("-a", "-l", "-al", "-la"):
                 path = self.fs.translate(self.fs.cwd)
                 line = self.fs.cwd
@@ -1569,7 +1686,7 @@ class FTPHandler(asynchat.async_chat):
         else:
             path = self.fs.translate(self.fs.cwd)
             line = self.fs.cwd
-
+            
         try:
             data = self.fs.get_list_dir(path)
         except OSError, err:
@@ -1581,8 +1698,8 @@ class FTPHandler(asynchat.async_chat):
 
 
     def ftp_NLST(self, line):
-        """Return a list of files in the specified directory in a compact
-        form to the client. Default to the current directory.
+        """Return a list of files in the specified directory in a
+        compact form to the client. Default to the current directory.
         """
         if line:
             path = self.fs.translate(line)
@@ -1591,14 +1708,89 @@ class FTPHandler(asynchat.async_chat):
             path = self.fs.translate(self.fs.cwd)
             line = self.fs.cwd
 
+        if self.fs.isfile(path) or self.fs.islink(path):
+            basedir, filename = os.path.split(path)
+            listing = [filename]
+        else:
+            try:
+                listing = self.fs.listdir(path)
+            except OSError, err:
+                why = _strerror(err)
+                self.log('FAIL NLST "%s". %s.' %(line, why))
+                self.respond('550 %s.' %why)
+                return
+        data = ''
+        if listing:
+            listing.sort()
+            data = '\r\n'.join(listing) + '\r\n'
+        self.push_dtp_data(data, log='OK NLST "%s". Transfer starting.' %line)
+        
+
+        # --- MLST and MLSD commands
+
+    # The MLST and MLSD commands are intended to standardize the file and
+    # directory information returned by the server-FTP process.  These
+    # commands differ from the LIST command in that the format of the
+    # replies is strictly defined although extensible.
+
+    def ftp_MLST(self, line):
+        """Return information about a pathname in a machine-processable
+        form as defined in RFC-3659.
+        """
+        if line:
+            path = self.fs.translate(line)
+            line = self.fs.normalize(line)
+        else:
+            # if no path is specified we assume the current working dir
+            path = self.fs.translate(self.fs.cwd)
+            line = self.fs.cwd
+        if not self.fs.lexists(path):
+            why = "No such file or directory"
+            self.log('FAIL MLST "%s". %s.' %(line, why))
+            self.respond('550 %s.' %why)
+            return
+        basedir, basename = os.path.split(path)
+        basename = [basename]
         try:
-            data = self.fs.get_nlst_dir(path)
+            data = self.fs.format_mlsx(basedir, basename)
         except OSError, err:
             why = _strerror(err)
-            self.log('FAIL NLST "%s". %s.' %(line, why))
+            self.log('FAIL MLST "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
         else:
-            self.push_dtp_data(data, log='OK NLST "%s". Transfer starting.' %line)
+            # response is expected on the command channel
+            self.push('250-Listing %s:\r\n' %line)
+            self.push(' ' + data)
+            self.respond('250 End MLST.')
+
+
+    def ftp_MLSD(self, line):
+        """Return contents of a directory in a machine-processable form
+        as defined in RFC-3659.
+        """
+        if line:
+            path = self.fs.translate(line)
+            line = self.fs.normalize(line)
+        else:
+            # if no path is specified we assume the current working
+            # directory
+            path = self.fs.translate(self.fs.cwd)
+            line = self.fs.cwd
+        if not self.fs.lexists(path):
+            why = "No such directory"
+            self.log('FAIL MLSD "%s". %s.' %(line, why))
+            self.respond('550 %s.' %why)
+            return
+        try:
+            listing = self.fs.listdir(path)
+        except OSError, err:
+            why = _strerror(err)
+            self.log('FAIL MLSD "%s". %s.' %(line, why))
+            self.respond('501 %s.' %why)
+        else:
+            listing.sort()
+            data = self.fs.format_mlsx(path, listing)
+            self.push_dtp_data(data, log='OK MLSD "%s". Transfer starting.' %line)
 
 
     def ftp_RETR(self, line):
@@ -1624,8 +1816,9 @@ class FTPHandler(asynchat.async_chat):
         if self.restart_position:
             # Make sure that the requested offset is valid (within the
             # size of the file being resumed).
-            # According to RFC-1123 a 554 reply may result in case that the
-            # existing file cannot be repositioned as specified in the REST.
+            # According to RFC-1123 a 554 reply may result in case that
+            # the existing file cannot be repositioned as specified in
+            # the REST.
             ok = 0
             try:
                 assert not self.restart_position > self.fs.getsize(file)
@@ -1640,7 +1833,6 @@ class FTPHandler(asynchat.async_chat):
                 self.respond('554 %s' %why)
                 self.log('FAIL RETR "%s". %s.' %(self.fs.normalize(line), why))
                 return
-
         producer = FileProducer(fd, self.current_type)
         self.push_dtp_data(producer, isproducer=1,
             log='OK RETR "%s". Download starting.' %self.fs.normalize(line))
@@ -1679,8 +1871,9 @@ class FTPHandler(asynchat.async_chat):
         if self.restart_position:
             # Make sure that the requested offset is valid (within the
             # size of the file being resumed).
-            # According to RFC-1123 a 554 reply may result in case that the
-            # existing file cannot be repositioned as specified in the REST.
+            # According to RFC-1123 a 554 reply may result in case
+            # that the existing file cannot be repositioned as
+            # specified in the REST.
             ok = 0
             try:
                 assert not self.restart_position > self.fs.getsize(file)
@@ -1709,15 +1902,15 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_STOU(self, line):
         """Store a file on the server with a unique name."""
-        # Note 1: RFC-959 prohibited STOU parameters, but this prohibition
-        # is obsolete.
+        # Note 1: RFC-959 prohibited STOU parameters, but this
+        # prohibition is obsolete.
         # Note 2: 250 response wanted by RFC-959 has been declared
         # incorrect in RFC-1123 that wants 125/150 instead.
-        # Note 3: RFC-1123 also provided an exact output format defined
-        # to be as follow:
+        # Note 3: RFC-1123 also provided an exact output format
+        # defined to be as follow:
         # > 125 FILE: pppp
-        # ...where pppp represents the unique path name of the file that
-        # will be written.
+        # ...where pppp represents the unique path name of the
+        # file that will be written.
 
         # watch for STOU preceded by REST, which makes no sense.
         if self.restart_position:
@@ -1740,7 +1933,8 @@ class FTPHandler(asynchat.async_chat):
         try:
             fd = self.fs.mkstemp(prefix=prefix, dir=basedir)
         except IOError, err:
-            # hitted the max number of tries to find out file with unique name
+            # hitted the max number of tries to find out file with
+            # unique name
             if err.errno == errno.EEXIST:
                 why = 'No usable unique file name found.'
             # something else happened
@@ -1800,10 +1994,10 @@ class FTPHandler(asynchat.async_chat):
                 resp = "225 ABOR command successful; data channel closed."
 
             # If a data transfer is in progress the server must first
-            # close the data connection, returning a 426 reply to indicate
-            # that the transfer terminated abnormally, then it must send
-            # a 226 reply, indicating that the abort command was
-            # successfully processed.
+            # close the data connection, returning a 426 reply to
+            # indicate that the transfer terminated abnormally, then it
+            # must send a 226 reply, indicating that the abort command
+            # was successfully processed.
             # If no data has been transmitted we just respond with 225
             # indicating that no transfer was in progress.
             if self.data_channel:
@@ -1818,7 +2012,6 @@ class FTPHandler(asynchat.async_chat):
                     self.data_channel = None
                     self.log("OK ABOR. Data channel closed.")
                     resp = "225 ABOR command successful; data channel closed."
-
         self.respond(resp)
 
 
@@ -1840,10 +2033,10 @@ class FTPHandler(asynchat.async_chat):
         if not self.authenticated:
             self.respond('331 Username ok, send password.')
         else:
-            # a new USER command could be entered at any point in order to
-            # change the access control flushing any user, password, and
-            # account information already supplied and beginning the login
-            # sequence again.
+            # a new USER command could be entered at any point in order
+            # to change the access control flushing any user, password,
+            # and account information already supplied and beginning the
+            # login sequence again.
             self.flush_account()
             self.log('OK USER "%s". Previous account information was flushed.' %line)
             self.respond('331 Previous account information was flushed, send password.')
@@ -1855,14 +2048,12 @@ class FTPHandler(asynchat.async_chat):
         if self.authenticated:
             self.respond("503 User already authenticated.")
             return
-
         if not self.username:
             self.respond("503 Login with USER first.")
             return
 
         # username ok
         if self.authorizer.has_user(self.username):
-
             if self.authorizer.validate_authentication(self.username, line) \
             or self.username == 'anonymous':
                 msg_login = self.authorizer.get_msg_login(self.username)
@@ -1876,7 +2067,6 @@ class FTPHandler(asynchat.async_chat):
                 self.attempted_logins = 0
                 self.fs.root = self.authorizer.get_home_dir(self.username)
                 self.log("User %s logged in." %self.username)
-
             else:
                 self.attempted_logins += 1
                 if self.attempted_logins >= self.max_login_attempts:
@@ -1934,12 +2124,12 @@ class FTPHandler(asynchat.async_chat):
         if not line:
             line = '/'
 
-        # When CWD is received we temporarily join the specified directory
-        # to see if we have permissions to do so.
-        # A more elegant way to do that would be using os.access instead
-        # but we can't be sure about its reliability on non-posix
-        # platforms (see, for example, Python bug #1513646) or when
-        # specified paths are network filesystems.
+        # When CWD is received we temporarily join the specified
+        # directory to see if we have permissions to do so.
+        # A more elegant way to do that would be using os.access
+        # instead but we can't be sure about its reliability on
+        # non-posix platforms (see, for example, Python bug #1513646)
+        # or when specified paths are network filesystems.
         ftp_path = self.fs.normalize(line)
         real_path = self.fs.translate(line)
         old_dir = os.getcwd()
@@ -1953,8 +2143,9 @@ class FTPHandler(asynchat.async_chat):
             self.fs.cwd = ftp_path
             self.log('OK CWD "%s".' %self.fs.cwd)
             self.respond('250 "%s" is the current directory.' %self.fs.cwd)
-            # let's use os.chdir instead of self.fs.chdir: we don't want to
-            # go back to the original directory by using user's permissions.
+            # let's use os.chdir instead of self.fs.chdir: we don't
+            # want to  go back to the original directory by using
+            # user's permissions.
             os.chdir(old_dir)
 
     def ftp_CDUP(self, line):
@@ -1964,24 +2155,23 @@ class FTPHandler(asynchat.async_chat):
         self.ftp_CWD('..')
 
     def ftp_SIZE(self, line):
-        """Return size of file in a format suitable for using with RESTart
-        as defined in RFC-3659.
+        """Return size of file in a format suitable for using with
+        RESTart as defined in RFC-3659.
 
         Implementation note:
         properly handling the SIZE command when TYPE ASCII is used would
         require to scan the entire file to perform the ASCII translation
         logic (file.read().replace(os.linesep, '\r\n')) and then
-        calculating the len of such data which may be different than the
-        actual size of the file on the server.  Considering that
-        calculating such result could be very resource-intensive it could
-        be easy for a malicious client to try a DoS attack, thus we do not
-        perform the ASCII translation.
+        calculating the len of such data which may be different than
+        the actual size of the file on the server.  Considering that
+        calculating such result could be very resource-intensive it
+        could be easy for a malicious client to try a DoS attack, thus
+        we do not perform the ASCII translation.
 
         However, clients in general should not be resuming downloads in
         ASCII mode.  Resuming downloads in binary mode is the recommended
         way as specified in RFC-3659.
         """
-
         path = self.fs.translate(line)
         if self.fs.isdir(path):
             self.respond("550 Could not get a directory size.")
@@ -2000,7 +2190,6 @@ class FTPHandler(asynchat.async_chat):
         """Return last modification time of file to the client as an ISO
         3307 style timestamp (YYYYMMDDHHMMSS) as defined in RFC-3659.
         """
-
         path = self.fs.translate(line)
         if not self.fs.isfile(path):
             self.respond("550 No such file.")
@@ -2082,8 +2271,8 @@ class FTPHandler(asynchat.async_chat):
             self.respond("250 File removed.")
 
     def ftp_RNFR(self, line):
-        """Rename the specified (only the source name is specified here,
-        see RNTO command)"""
+        """Rename the specified (only the source name is specified
+        here, see RNTO command)"""
         path = self.fs.translate(line)
 
         if not self.authorizer.w_perm(self.username, path):
@@ -2091,8 +2280,8 @@ class FTPHandler(asynchat.async_chat):
                      %(self.fs.normalize(line)))
             self.respond("550 Can't RNRF: not enough privileges.")
             return
-        
-        if self.fs.exists(path):
+
+        if self.fs.lexists(path):
             self.fs.rnfr = line
             self.respond("350 Ready for destination name.")
         else:
@@ -2110,8 +2299,9 @@ class FTPHandler(asynchat.async_chat):
         dst = self.fs.translate(line)
 
         if not self.authorizer.w_perm(self.username, self.fs.rnfr):
-            self.log('FAIL RNFR/RNTO "%s ==> %s". Not enough privileges for renaming.'
-                %(self.fs.normalize(self.fs.rnfr), self.fs.normalize(line)))
+            self.log('FAIL RNFR/RNTO "%s ==> %s". ' 'Not enough privileges for '
+                     'renaming.' %(self.fs.normalize(self.fs.rnfr),
+                                   self.fs.normalize(line)))
             self.respond("550 Can't RNTO: not enough privileges.")
             self.fs.rnfr = None
             return
@@ -2163,10 +2353,9 @@ class FTPHandler(asynchat.async_chat):
             self.respond('504 Unimplemented MODE type.')
 
     def ftp_STAT(self, line):
-        """Return statistics about current ftp session. If an argument is
-        provided return directory listing over command channel.
+        """Return statistics about current ftp session. If an argument
+        is provided return directory listing over command channel.
         """
-
         # return STATus information about ftpd
         if not line:
             s = []
@@ -2192,7 +2381,6 @@ class FTPHandler(asynchat.async_chat):
                 s.append('Total bytes received: %s' %dc.tot_bytes_received)
             else:
                 s.append('Data connection closed.')
-
             self.push('211-%s %s status:\r\n' %(__pname__, __ver__))
             self.push(''.join([' %s\r\n' %item for item in s]))
             self.respond('211 End of status.')
@@ -2201,19 +2389,19 @@ class FTPHandler(asynchat.async_chat):
         else:
             # When argument is provided along STAT we should return
             # directory LISTing over the command channel.
-            # RFC-959 do not explicitly mention globbing; this means that
-            # FTP servers are not required to support globbing in order
-            # to be compliant.  However, many FTP servers do support
-            # globbing as a measure of convenience for FTP clients and
-            # users.
+            # RFC-959 do not explicitly mention globbing; this means
+            # that FTP servers are not required to support globbing
+            # in order to be compliant.  However, many FTP servers do
+            # support globbing as a measure of convenience for FTP
+            # clients and users.
 
             # In order to search for and match the given globbing
             # expression, the code has to search (possibly) many
             # directories, examine each contained filename, and
             # build a list of matching files in memory.
-            # Since this operation can be quite intensive, both CPU- and
-            # memory-wise, we limit the search to only one directory
-            # non-recursively, as LIST does.
+            # Since this operation can be quite intensive, both CPU-
+            # and memory-wise, we limit the search to only one
+            # directory non-recursively, as LIST does.
             try:
                 data = self.fs.get_stat_dir(line)
             except OSError, err:
@@ -2274,8 +2462,8 @@ class FTPHandler(asynchat.async_chat):
 
         # --- support for deprecated cmds
 
-    # RFC-1123 requires that the server treat XCUP, XCWD, XMKD, XPWD and
-    # XRMD commands as synonyms for CDUP, CWD, MKD, LIST and RMD.
+    # RFC-1123 requires that the server treat XCUP, XCWD, XMKD, XPWD
+    # and XRMD commands as synonyms for CDUP, CWD, MKD, LIST and RMD.
     # Such commands are obsoleted but some ftp clients (e.g. Windows
     # ftp.exe) still use them.
 
@@ -2319,25 +2507,24 @@ class FTPServer(asyncore.dispatcher):
 
     def __init__(self, address, handler):
         asyncore.dispatcher.__init__(self)
-        self.address = address
         self.handler = handler
         self.ip_map = []
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         if os.name == 'posix':
             self.set_reuse_addr()
-        self.bind(self.address)
+        self.bind(address)
         self.listen(5)
 
     def __del__(self):
         debug("FTPServer.__del__()")
 
     def serve_forever(self, **kwargs):
-        """A wrap around asyncore.loop(); starts the asyncore polling loop.
+        """A wrap around asyncore.loop(); starts the asyncore polling
+        loop.
 
         The keyword arguments in kwargs are the same expected by
         asyncore.loop() function: timeout, use_poll, map and count.
         """
-
         if not 'count' in kwargs:
             log("Serving FTP on %s:%s" %self.socket.getsockname())
 
@@ -2352,11 +2539,11 @@ class FTPServer(asyncore.dispatcher):
         try:
             # FIX #16, #26
             # use_poll specifies whether to use select module's poll()
-            # with asyncore or whether to use asyncore's own poll() method
-            # Python versions < 2.4 need use_poll set to False
-            # This breaks on OS X systems if use_poll is set to True. All
-            # systems seem to work fine with it set to False (tested on
-            # Linux, Windows, and OS X platforms)
+            # with asyncore or whether to use asyncore's own poll()
+            # method Python versions < 2.4 need use_poll set to False
+            # This breaks on OS X systems if use_poll is set to True.
+            # All systems seem to work fine with it set to False
+            # (tested on Linux, Windows, and OS X platforms)
             if kwargs:
                 asyncore.loop(**kwargs)
             else:
@@ -2376,10 +2563,10 @@ class FTPServer(asyncore.dispatcher):
         self.ip_map.append(ip)
 
         # For performance and security reasons we should always set a
-        # limit for the number of file descriptors that socket_map should
-        # contain.  When we're running out of such limit we'll use the
-        # last available channel for sending a 421 response to the client
-        # before disconnecting it.
+        # limit for the number of file descriptors that socket_map
+        # should contain.  When we're running out of such limit we'll
+        # use the last available channel for sending a 421 response
+        # to the client before disconnecting it.
         if self.max_cons:
             if len(self._map) > self.max_cons:
                 handler.handle_max_cons()
@@ -2415,9 +2602,9 @@ class FTPServer(asyncore.dispatcher):
         """
         # Implementation note:
         # instead of using the current asyncore.close_all() function
-        # which only close sockets, we iterate over all existent channels
-        # calling close() method for each one of them, avoiding memory
-        # leaks.
+        # which only close sockets, we iterate over all existent
+        # channels calling close() method for each one of them,
+        # avoiding memory leaks.
         # This is how close_all() function should appear in the fixed
         # version of asyncore that will be included in Python 2.6.
         if map is None:

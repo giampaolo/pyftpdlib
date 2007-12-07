@@ -224,6 +224,53 @@ class AbstractedFSClass(unittest.TestCase):
             self.fail('Test not available for such system (os.sep == "%s").'
                         %os.sep)
 
+    def test_checkpath(self):
+        fs = ftpserver.AbstractedFS()
+        fs.root = home
+        self.assertEqual(fs.checkpath(home), True)
+        self.assertEqual(fs.checkpath(home + '/'), True)
+        self.assertEqual(fs.checkpath(home + 'xxx'), False)
+
+
+# --- Tests for AbstractedFS.checksymlink() method.
+
+if hasattr(os, 'symlink'):
+    class TestValidSymlink(unittest.TestCase):
+        """Test whether the symlink is considered to be valid."""
+        def setUp(self):
+            self.tf = tempfile.NamedTemporaryFile(dir=home)
+            self.linkname = os.path.basename(tempfile.mktemp(dir=home))
+            os.symlink(self.tf.name, self.linkname)
+        def tearDown(self):
+            self.tf.close()
+            os.remove(self.linkname)
+
+        def test_it(self):
+            fs = ftpserver.AbstractedFS()
+            fs.root = home
+            fs.checkpath(self.linkname)
+
+    class TestExternalSymlink(unittest.TestCase):
+        """Test whether a symlink is considered to be pointing to a
+        path which is outside the user's root."""
+        def setUp(self):
+            # note: by not specifying a directory we should have our
+            # tempfile created in /tmp directory, which should be
+            # outside the user root
+            self.tf = tempfile.NamedTemporaryFile()
+            self.linkname = os.path.basename(tempfile.mktemp(dir=home))
+            os.symlink(self.tf.name, self.linkname)
+        def tearDown(self):
+            self.tf.close()
+            os.remove(self.linkname)
+
+        def test_it(self):
+            if os.getcwd() == os.path.dirname(self.tf.name):
+                return
+            fs = ftpserver.AbstractedFS()
+            fs.root = home
+            self.assertEqual(fs.checkpath(self.linkname), False)
+
 
 class DummyAuthorizerClass(unittest.TestCase):
 
@@ -247,7 +294,7 @@ class DummyAuthorizerClass(unittest.TestCase):
         # remove them
         auth.remove_user(user)
         auth.remove_user('anonymous')
-        
+
         # raise exc if user does not exists
         self.assertRaises(KeyError, auth.remove_user, user)
         # raise exc if path does not exist
@@ -631,10 +678,27 @@ class FtpRetrieveData(unittest.TestCase):
         ftp.retrbinary("retr " + fname_1, self.f2.write)
         self.f2.seek(0)
         self.assertEqual(hash(data), hash (self.f2.read()))
+        
+
+class FtpRetrieveListings(unittest.TestCase):
+    """Test: LIST, NLST, MLST, MLDS"""
+
+    def setUp(self):
+        global ftp
+        ftp = ftplib.FTP()
+        ftp.connect(host=host, port=port)
+        ftp.login(user=user, passwd=pwd)
+        self.file = tempfile.NamedTemporaryFile(dir=home)
+        self.dir = tempfile.mkdtemp(dir=home)
+
+    def tearDown(self):
+        ftp.close()
+        self.file.close()
+        os.rmdir(self.dir)
 
     def test_list(self):
         l = []
-        ftp.retrlines('LIST ' + os.path.basename(self.f1.name), l.append)
+        ftp.retrlines('LIST ' + os.path.basename(self.file.name), l.append)
         self.assertEqual(len(l), 1)
         l = []
         l1, l2, l3, l4 = [], [], [], []
@@ -648,10 +712,34 @@ class FtpRetrieveData(unittest.TestCase):
             self.assertEqual(x[i], x[i+1])
 
     def test_nlst(self):
-        l = []
-        ftp.retrlines('NLST', l.append)
-        fname = os.path.basename(self.f1.name)
-        self.assertRaises(ftplib.error_perm, ftp.retrlines, 'NLST ' + fname, l.append)
+        noop = lambda x: x
+        ftp.retrlines('NLST', noop)
+        ftp.retrlines('NLST ' + os.path.basename(self.file.name), noop)
+
+    def test_mlst(self):
+        # when no arg the current working directory must be assumed
+        fn = os.path.basename(self.file.name)
+        x = ftp.sendcmd('MLST')
+        self.assertEqual(x, ftp.sendcmd('MLST /'))
+        ftp.sendcmd('MLST ' + fn)
+        bogus = os.path.basename(tempfile.mktemp(dir=home))
+        self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'MLST ' + bogus)
+
+    def test_mlsd(self):
+        noop = lambda x: x
+        # when no arg the current working directory must be assumed
+        x = y = []
+        ftp.retrlines('MLSD', x.append)
+        ftp.retrlines('MLSD /', y.append)
+        self.assertEqual(x, y)
+        # if arg is a file a 501 response is expected
+        fn = os.path.basename(self.file.name)
+        try:
+            ftp.retrlines('MLSD '+ fn, noop)
+        except ftplib.error_perm, resp:
+            self.assertEqual(str(resp).startswith('501'), True)
+        else:
+            self.fail('ftplib.error_perm not raised.')
 
 
 class FtpAbort(unittest.TestCase):
