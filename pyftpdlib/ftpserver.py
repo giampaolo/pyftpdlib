@@ -868,7 +868,8 @@ class AbstractedFS:
         if os.path.normpath(self.root) == os.sep:
             return os.path.normpath(self.normalize(rawpath))
         else:
-            return os.path.normpath(self.root + self.normalize(rawpath))
+            p = self.normalize(rawpath)[1:]
+            return os.path.normpath(os.path.join(self.root, p))
         
     # --- Wrapper methods around open() and tempfile.mkstemp
     

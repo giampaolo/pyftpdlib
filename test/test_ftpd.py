@@ -58,7 +58,6 @@ __release__ = 'pyftpdlib 0.2.0'
 # TODO:
 # - Test QUIT while a transfer is in progress.
 # - Test data transfer in ASCII mode.
-# - Test AbstractedFS.translate() on systems having os.sep == ':'.
 # - Test FTPHandler.masquearade_address and FTPHandler.passive_ports behaviours
 
 
@@ -98,138 +97,56 @@ class AbstractedFSClass(unittest.TestCase):
     def test_translate(self):
         ae = self.assertEquals
         fs = ftpserver.AbstractedFS()
+        join = lambda x,y: os.path.join(x, y.replace('/', os.sep))
 
-        # Unix
-        if os.sep == '/':
-            fs.root = '/home/user'
+        def goforit(root):
+            fs.root = root
             fs.cwd = '/'
-            ae(fs.translate(''), '/home/user')
-            ae(fs.translate('/'), '/home/user')
-            ae(fs.translate('.'), '/home/user')
-            ae(fs.translate('..'), '/home/user')
-            ae(fs.translate('a'), '/home/user/a')
-            ae(fs.translate('/a'), '/home/user/a')
-            ae(fs.translate('/a/'), '/home/user/a')
-            ae(fs.translate('a/..'), '/home/user')
-            ae(fs.translate('a/b'), '/home/user/a/b')
-            ae(fs.translate('/a/b'), '/home/user/a/b')
-            ae(fs.translate('/a/b/..'), '/home/user/a')
-            ae(fs.translate('/a/b/../..'), '/home/user')
+            ae(fs.translate(''), root)
+            ae(fs.translate('/'), root)
+            ae(fs.translate('.'), root)
+            ae(fs.translate('..'), root)
+            ae(fs.translate('a'), join(root, 'a'))
+            ae(fs.translate('/a'), join(root, 'a'))
+            ae(fs.translate('/a/'), join(root, 'a'))
+            ae(fs.translate('a/..'), root)
+            ae(fs.translate('a/b'), join(root, r'a/b'))
+            ae(fs.translate('/a/b'), join(root, r'a/b'))
+            ae(fs.translate('/a/b/..'), join(root, 'a'))
+            ae(fs.translate('/a/b/../..'), root)
             fs.cwd = '/sub'
-            ae(fs.translate(''), '/home/user/sub')
-            ae(fs.translate('/'), '/home/user')
-            ae(fs.translate('.'), '/home/user/sub')
-            ae(fs.translate('..'), '/home/user')
-            ae(fs.translate('a'), '/home/user/sub/a')
-            ae(fs.translate('a/'), '/home/user/sub/a')
-            ae(fs.translate('a/..'), '/home/user/sub')
-            ae(fs.translate('a/b'), '/home/user/sub/a/b')
-            ae(fs.translate('a/b/..'), '/home/user/sub/a')
-            ae(fs.translate('a/b/../..'), '/home/user/sub')
-            ae(fs.translate('a/b/../../..'), '/home/user')
-            ae(fs.translate('//a'), '/home/user/a') # UNC paths must be collapsed
+            ae(fs.translate(''), join(root, 'sub'))
+            ae(fs.translate('/'), root)
+            ae(fs.translate('.'), join(root, 'sub'))
+            ae(fs.translate('..'), root)
+            ae(fs.translate('a'), join(root, 'sub/a'))
+            ae(fs.translate('a/'), join(root, 'sub/a'))
+            ae(fs.translate('a/..'), join(root, 'sub'))
+            ae(fs.translate('a/b'), join(root, 'sub/a/b'))
+            ae(fs.translate('a/b/..'), join(root, 'sub/a'))
+            ae(fs.translate('a/b/../..'), join(root, 'sub'))
+            ae(fs.translate('a/b/../../..'), root)
+            ae(fs.translate('//a'), join(root, 'a')) # UNC paths must be collapsed
 
-            # the same as above but using the root directory /
-            fs.root = '/'
-            fs.cwd = '/'
-            ae(fs.translate(''), '/')
-            ae(fs.translate('/'), '/')
-            ae(fs.translate('.'), '/')
-            ae(fs.translate('..'), '/')
-            ae(fs.translate('a'), '/a')
-            ae(fs.translate('/a'), '/a')
-            ae(fs.translate('/a/'), '/a')
-            ae(fs.translate('a/..'), '/')
-            ae(fs.translate('a/b'), '/a/b')
-            ae(fs.translate('/a/b'), '/a/b')
-            ae(fs.translate('/a/b/..'), '/a')
-            ae(fs.translate('/a/b/../..'), '/')
-            fs.cwd = '/sub'
-            ae(fs.translate(''), '/sub')
-            ae(fs.translate('/'), '/')
-            ae(fs.translate('.'), '/sub')
-            ae(fs.translate('..'), '/')
-            ae(fs.translate('a'), '/sub/a')
-            ae(fs.translate('a/'), '/sub/a')
-            ae(fs.translate('a/..'), '/sub')
-            ae(fs.translate('a/b'), '/sub/a/b')
-            ae(fs.translate('a/b/..'), '/sub/a')
-            ae(fs.translate('a/b/../..'), '/sub')
-            ae(fs.translate('a/b/../../..'), '/')
-            ae(fs.translate('//a'), '/a') # UNC paths must be collapsed
-
-        # Windows
-        elif os.sep == '\\':
-            fs.root = r'C:\dir'
-            fs.cwd = '/'
-            ae(fs.translate(''), r'C:\dir')
-            ae(fs.translate('/'), r'C:\dir')
-            ae(fs.translate('.'), r'C:\dir')
-            ae(fs.translate('..'), r'C:\dir')
-            ae(fs.translate('a'), r'C:\dir\a')
-            ae(fs.translate('/a'), r'C:\dir\a')
-            ae(fs.translate('/a/'), r'C:\dir\a')
-            ae(fs.translate('a/..'), r'C:\dir')
-            ae(fs.translate('a/b'), r'C:\dir\a\b')
-            ae(fs.translate('/a/b'), r'C:\dir\a\b')
-            ae(fs.translate('/a/b/..'), r'C:\dir\a')
-            ae(fs.translate('/a/b/../..'), r'C:\dir')
-            fs.cwd = '/sub'
-            ae(fs.translate(''), r'C:\dir\sub')
-            ae(fs.translate('/'), r'C:\dir')
-            ae(fs.translate('.'), r'C:\dir\sub')
-            ae(fs.translate('..'), r'C:\dir')
-            ae(fs.translate('a'), r'C:\dir\sub\a')
-            ae(fs.translate('a/'), r'C:\dir\sub\a')
-            ae(fs.translate('a/..'), r'C:\dir\sub')
-            ae(fs.translate('a/b'), r'C:\dir\sub\a\b')
-            ae(fs.translate('a/b/..'), r'C:\dir\sub\a')
-            ae(fs.translate('a/b/../..'), r'C:\dir\sub')
-            ae(fs.translate('a/b/../../..'), r'C:\dir')
-            ae(fs.translate('//a'), r'C:\dir\a') # UNC paths must be collapsed
-
-            # the same as above but using the drive root C:\
-            fs.root = 'C:\\'
-            fs.cwd = '/'
-            ae(fs.translate(''), 'C:\\')
-            ae(fs.translate('/'), 'C:\\')
-            ae(fs.translate('.'), 'C:\\')
-            ae(fs.translate('..'), 'C:\\')
-            ae(fs.translate('a'), r'C:\a')
-            ae(fs.translate('/a'), r'C:\a')
-            ae(fs.translate('/a/'), r'C:\a')
-            ae(fs.translate('a/..'), 'C:\\')
-            ae(fs.translate('a/b'), r'C:\a\b')
-            ae(fs.translate('/a/b'), r'C:\a\b')
-            ae(fs.translate('/a/b/..'), r'C:\a')
-            ae(fs.translate('/a/b/../..'), 'C:\\')
-            fs.cwd = '/sub'
-            ae(fs.translate(''), r'C:\sub')
-            ae(fs.translate('/'), 'C:\\')
-            ae(fs.translate('.'), 'C:\\sub')
-            ae(fs.translate('..'), 'C:\\')
-            ae(fs.translate('a'), r'C:\sub\a')
-            ae(fs.translate('a/'), r'C:\sub\a')
-            ae(fs.translate('a/..'), r'C:\sub')
-            ae(fs.translate('a/b'), r'C:\sub\a\b')
-            ae(fs.translate('a/b/..'), r'C:\sub\a')
-            ae(fs.translate('a/b/../..'), r'C:\sub')
-            ae(fs.translate('a/b/../../..'), 'C:\\')
-            ae(fs.translate('//a'), r'C:\a') # UNC paths must be collapsed
-
-        # On Mac OS 8 & 9, the folder delimiter is colon (":"), and the path
-        # separator is a semi-colon (";").  Not enough hardware (...and money
-        # ;-)) for creating tests.
+        if os.sep == '\\':
+            goforit(r'C:\dir')
+            goforit('C:\\')
+            # on DOS-derived filesystems (e.g. Windows) this is the same
+            # as specifying the current drive directory (e.g. 'C:\\')
+            goforit('\\')
+        elif os.sep == '/':
+            goforit('/home/user')
+            goforit('/')
         else:
-            self.fail('Test not available for such system (os.sep == "%s").'
-                        %os.sep)
+            # os.sep == ':'? Don't know... let's try it anyway
+            goforit(os.getcwd())
 
-    def test_checkpath(self):
+    def test_validpath(self):
         fs = ftpserver.AbstractedFS()
         fs.root = home
-        self.assertEqual(fs.checkpath(home), True)
-        self.assertEqual(fs.checkpath(home + '/'), True)
-        self.assertEqual(fs.checkpath(home + 'xxx'), False)
+        self.assertEqual(fs.validpath(home), True)
+        self.assertEqual(fs.validpath(home + '/'), True)
+        self.assertEqual(fs.validpath(home + 'xxx'), False)
 
 
 # --- Tests for AbstractedFS.checksymlink() method.
@@ -248,7 +165,7 @@ if hasattr(os, 'symlink'):
         def test_it(self):
             fs = ftpserver.AbstractedFS()
             fs.root = home
-            fs.checkpath(self.linkname)
+            fs.validpath(self.linkname)
 
     class TestExternalSymlink(unittest.TestCase):
         """Test whether a symlink is considered to be pointing to a
@@ -269,7 +186,7 @@ if hasattr(os, 'symlink'):
                 return
             fs = ftpserver.AbstractedFS()
             fs.root = home
-            self.assertEqual(fs.checkpath(self.linkname), False)
+            self.assertEqual(fs.validpath(self.linkname), False)
 
 
 class DummyAuthorizerClass(unittest.TestCase):
