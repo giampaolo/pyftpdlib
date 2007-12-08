@@ -144,9 +144,9 @@ class AbstractedFSClass(unittest.TestCase):
     def test_validpath(self):
         fs = ftpserver.AbstractedFS()
         fs.root = home
-        self.assertEqual(fs.validpath(home), True)
-        self.assertEqual(fs.validpath(home + '/'), True)
-        self.assertEqual(fs.validpath(home + 'xxx'), False)
+        self.failUnless(fs.validpath(home))
+        self.failUnless(fs.validpath(home + '/'))
+        self.failIf(fs.validpath(home + 'xxx'))
 
 
 # --- Tests for AbstractedFS.checksymlink() method.
@@ -270,9 +270,9 @@ class FtpAuthentication(unittest.TestCase):
         self.failUnlessRaises(ftplib.error_perm, ftp.login, user, passwd='wrong')
         self.failUnlessRaises(ftplib.error_perm, ftp.login, user, passwd='wrong')
         self.failUnlessRaises(ftplib.error_perm, ftp.login, user, passwd='wrong')
-        # If authentication fails for 3 times ftpd disconnect us.
-        # We can check if this happen by using ftp.sendcmd() on the 'dead'
-        # socket object.  If socket object is really dead it should be raised
+        # If authentication fails for 3 times ftpd disconnects the client.
+        # We can check if this happens by using ftp.sendcmd() on the 'dead'
+        # socket object.  If socket object is really closed it should be raised
         # socket.error exception (Windows) or EOFError exception (Linux).
         self.failUnlessRaises((socket.error, EOFError), ftp.sendcmd, '')
 
@@ -316,7 +316,7 @@ class FtpAuthentication(unittest.TestCase):
         self.assertEqual(ftp.voidresp()[:3], '226')
         # account is still flushed, error response is still expected
         self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'size ' + fname_1)
-        # by logging-in again we should be able to execute a file-system command
+        # by logging-in again we should be able to execute a filesystem command
         ftp.login(user=user, passwd=pwd)
         ftp.sendcmd('pwd')
         self.f2.seek(0)
@@ -326,10 +326,8 @@ class FtpAuthentication(unittest.TestCase):
         """Test USER while already authenticated and no transfer is in progress.
         """
         ftp.login(user=user, passwd=pwd)
-        ftp.sendcmd('user ' + user)
-        # user is not yet authenticated, a permission error response is expected
+        ftp.sendcmd('user ' + user)  # authentication flushed
         self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'pwd')
-        # by logging-in again we should be able to execute a file-system command
         ftp.sendcmd('pass ' + pwd)
         ftp.sendcmd('pwd')
 
@@ -364,7 +362,7 @@ class FtpAuthentication(unittest.TestCase):
         self.assertEqual(ftp.voidresp()[:3], '226')
         # account is still flushed, error response is still expected
         self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'pwd')
-        # by logging-in again we should be able to execute a file-system command
+        # by logging-in again we should be able to execute a filesystem command
         ftp.sendcmd('pass ' + pwd)
         ftp.sendcmd('pwd')
         self.f2.seek(0)
@@ -391,11 +389,13 @@ class FtpDummyCmds(unittest.TestCase):
 
     def test_stru(self):
         ftp.sendcmd('stru f')
+        ftp.sendcmd('stru F')
         self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'stru')
         self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'stru ?!?')
 
     def test_mode(self):
         ftp.sendcmd('mode s')
+        ftp.sendcmd('mode S')
         self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'mode')
         self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'mode ?!?')
 
@@ -456,11 +456,11 @@ class FtpFsOperations(unittest.TestCase):
         self.assertEqual(ftp.pwd(), '/' + self.tempdir)
 
     def test_cdup(self):
-        # ftplib.parse257 function is usually used for parsing the '257'
-        # response for a MKD or PWD request returning the directory name
-        # in the 257 reply.
-        # Even if CDUP response code is different (250) we could use parse257
-        # anyway for getting directory name.
+        # ftplib.parse257 function is usually used for parsing the
+        # '257' response for a MKD or PWD request returning the
+        # directory name in the 257 reply.
+        # Although CDUP response code is different (250) we can use
+        # parse257 for getting directory name.
         ftp.cwd(self.tempdir)
         dir = ftplib.parse257(ftp.sendcmd('cdup').replace('250', '257'))
         self.assertEqual(dir, '/')
@@ -470,28 +470,25 @@ class FtpFsOperations(unittest.TestCase):
     def test_mkd(self):
         tempdir = os.path.basename(tempfile.mktemp(dir=home))
         ftp.mkd(tempdir)
-        # make sure we can't create directories which already exist (probably
-        # not really necessary);
-        # let's use a try/except statement to avoid leaving behind orphaned
-        # temporary directory in the event of a test failure.
+        # make sure we can't create directories which already exist
+        # (probably not really necessary);
+        # let's use a try/except statement to avoid leaving behind
+        # orphaned temporary directory in the event of a test failure.
         try:
             ftp.mkd(tempdir)
         except ftplib.error_perm, err:
-            os.rmdir(tempdir) # ok
+            os.rmdir(tempdir)  # ok
         else:
             self.fail('ftplib.error_perm not raised.')
 
     def test_rmd(self):
         ftp.rmd(self.tempdir)
-        # make sure we can't use rmd against files
         self.assertRaises(ftplib.error_perm, ftp.rmd, self.tempfile)
-        # make sure we can't remove root directory
+        # make sure we can't use rmd against root directory
         self.assertRaises(ftplib.error_perm, ftp.rmd, '/')
 
     def test_dele(self):
         ftp.delete(self.tempfile)
-        # make sure we can't rename root directory, just to be safe,
-        # maybe not really necessary...
         self.assertRaises(ftplib.error_perm, ftp.delete, self.tempdir)
 
     def test_rnfr_rnto(self):
@@ -836,10 +833,7 @@ def run():
             ftpd = ftpserver.FTPServer(address, ftp_handler)
             ftpd.serve_forever()
 
-    def exit_fun():
-        os._exit(0)
-    atexit.register(exit_fun)
-
+    atexit.register(lambda: os._exit(0))
     f = ftpd()
     f.start()
     time.sleep(0.3)
