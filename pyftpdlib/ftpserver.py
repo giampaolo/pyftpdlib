@@ -986,10 +986,12 @@ class AbstractedFS:
         Expected argument is a "real" filesystem path. If path is a
         symbolic link it is resolved to check its real destination.
         """
+        root = self.realpath(self.root)
+        path = self.realpath(path)
         if not self.root.endswith(os.sep):
             root = self.root + os.sep
         if not path.endswith(os.sep):
-            path = self.realpath(path) + os.sep
+            path = path + os.sep
         if path[0:len(root)] == root:
             return True
         return False
