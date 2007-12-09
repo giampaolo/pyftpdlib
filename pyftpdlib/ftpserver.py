@@ -2280,7 +2280,8 @@ class FTPHandler(asynchat.async_chat):
                 s.append('Total bytes received: %s' %dc.tot_bytes_received)
             else:
                 s.append('Data connection closed.')
-            self.push('211-%s %s status:\r\n' %(__pname__, __ver__))
+
+            self.push('211-FTP server status:\r\n')
             self.push(''.join([' %s\r\n' %item for item in s]))
             self.respond('211 End of status.')
 
