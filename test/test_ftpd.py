@@ -644,25 +644,44 @@ class FtpRetrieveData(unittest.TestCase):
         self.f2.seek(0)
         self.assertEqual(hash(data), hash (self.f2.read()))
 
-    def test_list(self):
-        l = []
-        ftp.retrlines('LIST ' + TESTFN, l.append)
-        self.assertEqual(len(l), 1)
-        l = []
-        l1, l2, l3, l4 = [], [], [], []
-        ftp.retrlines('LIST', l.append)
-        ftp.retrlines('LIST -a', l1.append)
-        ftp.retrlines('LIST -l', l2.append)
-        ftp.retrlines('LIST -al', l3.append)
-        ftp.retrlines('LIST -la', l4.append)
-        x = [l, l1, l2, l3, l4]
-        for i in range(0,4):
-            self.assertEqual(x[i], x[i+1])
+    def _test_list_nlst(self, cmd):
+        """Tests common to both LIST and NLST commands."""
+        # assume that no argument has the same meaning of "/"
+        l1 = l2 = []
+        ftp.retrlines(cmd, l1.append)
+        ftp.retrlines(cmd + ' /', l2.append)
+        self.assertEqual(l1, l2)
+        # if pathname is a file one line is expected
+        x = []
+        ftp.retrlines('%s '%cmd + TESTFN, x.append)
+        self.assertEqual(len(x), 1)
+        self.failUnless(''.join(x).endswith(TESTFN))
+        # for an empty directory we excpect that the data channel is
+        # opened anyway and that no data is received
+        x = []
+        tempdir = os.path.basename(tempfile.mkdtemp(dir=home))
+        try:
+            ftp.retrlines('%s %s'%(cmd, tempdir), x.append)
+            self.assertEqual(x, [])
+        finally:
+            os.rmdir(tempdir)
 
     def test_nlst(self):
-        noop = lambda x: x
-        ftp.retrlines('NLST', noop)
-        ftp.retrlines('NLST ' + TESTFN, noop)
+        self._test_list_nlst('nlst')
+        
+    def test_list(self):
+        self._test_list_nlst('list')
+        # known incorrect parhname arguments (e.g. old clients) are
+        # expected to be treated as if pathname would be == '/'
+        l1 = l2 = l3 = l4 = l5 = []
+        ftp.retrlines('list /', l1.append)
+        ftp.retrlines('list -a', l2.append)
+        ftp.retrlines('list -l', l3.append)
+        ftp.retrlines('list -al', l4.append)
+        ftp.retrlines('list -la', l5.append)
+        tot = (l1, l2, l3, l4, l5)
+        for x in range(len(tot) - 1):
+            self.assertEqual(tot[x], tot[x+1])
 
 
 class FtpAbort(unittest.TestCase):
