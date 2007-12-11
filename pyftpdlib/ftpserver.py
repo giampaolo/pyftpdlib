@@ -1051,15 +1051,14 @@ class AbstractedFS:
     
     def get_list_dir(self, path):
         """Return a directory listing in a form suitable for LIST command."""
-        # if path is a file or a symlink we return information about it
-        if self.isfile(path)or self.islink(path):
-            basedir, filename = os.path.split(path)
-            listing = [filename]
-        else:
-            basedir = path
+        if self.isdir(path):
             listing = self.listdir(path)
             listing.sort()
-        return self.format_list(basedir, listing)
+            return self.format_list(path, listing)
+        # if path is a file or a symlink we return information about it
+        else:
+            basedir, filename = os.path.split(path)
+            return self.format_list(basedir, [filename], ignore_err=False)
 
     def get_stat_dir(self, rawline):
         """Return a list of files matching a dirname pattern
@@ -1087,12 +1086,13 @@ class AbstractedFS:
             return "Directory is empty.\r\n"
         return data
 
-    def format_list(self, basedir, listing):
+    def format_list(self, basedir, listing, ignore_err=True):
         """Return a directory listing emulating "/bin/ls -lA" UNIX
         command output.
     
-        <basedir> is the absolute dirname, <listing> is a list of files
-        contained in that directory.
+         - basedir: the absolute dirname
+         - listing: a list containing the names of the entries in basedir
+         - ignore_err: if False raise exception if os.stat() call fails
     
         On platforms which do not support the pwd and grp modules (such
         as Windows), ownership is printed as "owner" and "group" as a
@@ -1111,15 +1111,15 @@ class AbstractedFS:
             file = os.path.join(basedir, basename)
             try:
                 st = self.lstat(file)
-            except OSError:
-                continue
-
+            except os.error:
+                if ignore_err:
+                    continue
+                raise
             perms = filemode(st.st_mode)  # permissions
             nlinks = st.st_nlink  # number of links to inode
             if not nlinks:  # non-posix system, let's use a bogus value
                 nlinks = 1
             size = st.st_size  # file size
-
             if pwd and grp:
                 # get user and group name, else just use the raw
                 # uid/gid from stat
@@ -1646,27 +1646,16 @@ class FTPHandler(asynchat.async_chat):
         # --- data transferring
 
     def ftp_LIST(self, line):
-        """Return a list of files in the specified directory to the client.
-        Defaults to the current working directory.
+        """Return a list of files in the specified directory to the
+        client.
         """
-        if line:
-            # some FTP clients like older versions of Konqueror or
-            # Nautilus erroneously issue /bin/ls-like LIST formats
-            # (e.g. "LIST -l", "LIST -al" and so on...) instead of
-            # passing a directory as the argument.  If we receive
-            # such a command, just LIST the current working directory.
-            if line.lower() in ("-a", "-l", "-al", "-la"):
-                path = self.fs.ftp2fs(self.fs.cwd)
-                line = self.fs.cwd
-            # otherwise we assume the arg is a directory name
-            else:
-                path = self.fs.ftp2fs(line)
-                line = self.fs.ftpnorm(line)
-        # no argument, fall back on cwd as default
-        else:
-            path = self.fs.ftp2fs(self.fs.cwd)
+        # - If no argument, fall back on cwd as default.
+        # - Some older FTP clients erroneously issue /bin/ls-like LIST
+        #   formats in which case we fall back on cwd as default.
+        if not line or line.lower() in ('-a', '-l', '-al', '-la'):
             line = self.fs.cwd
-            
+        path = self.fs.ftp2fs(line)
+        line = self.fs.ftpnorm(line)
         try:
             data = self.fs.get_list_dir(path)
         except OSError, err:
@@ -1676,36 +1665,33 @@ class FTPHandler(asynchat.async_chat):
         else:
             self.push_dtp_data(data, log='OK LIST "%s". Transfer starting.' %line)
 
-
     def ftp_NLST(self, line):
         """Return a list of files in the specified directory in a
-        compact form to the client. Default to the current directory.
+        compact form to the client.
         """
-        if line:
-            path = self.fs.ftp2fs(line)
-            line = self.fs.ftpnorm(line)
-        else:
-            path = self.fs.ftp2fs(self.fs.cwd)
+        if not line:
             line = self.fs.cwd
-
-        if self.fs.isfile(path) or self.fs.islink(path):
-            basedir, filename = os.path.split(path)
-            listing = [filename]
-        else:
-            try:
+        path = self.fs.ftp2fs(line)
+        line = self.fs.ftpnorm(line)
+        try:
+            if self.fs.isdir(path):
                 listing = self.fs.listdir(path)
-            except OSError, err:
-                why = _strerror(err)
-                self.log('FAIL NLST "%s". %s.' %(line, why))
-                self.respond('550 %s.' %why)
-                return
-        data = ''
-        if listing:
-            listing.sort()
-            data = '\r\n'.join(listing) + '\r\n'
-        self.push_dtp_data(data, log='OK NLST "%s". Transfer starting.' %line)
-
-
+            else:
+                # if path is a file we just list its name
+                self.fs.lstat(path)  # raise exc in case of problems
+                basedir, filename = os.path.split(path)
+                listing = [filename]
+        except OSError, err:
+            why = _strerror(err)
+            self.log('FAIL NLST "%s". %s.' %(line, why))
+            self.respond('550 %s.' %why)
+        else:
+            data = ''
+            if listing:
+                listing.sort()
+                data = '\r\n'.join(listing) + '\r\n'
+            self.push_dtp_data(data, log='OK NLST "%s". Transfer starting.' %line)
+        
     def ftp_RETR(self, line):
         """Retrieve the specified file (transfer from the server to the
         client)
@@ -2529,7 +2515,7 @@ def test():
     # cmd line usage (provide a read-only anonymous ftp server):
     # python -m pyftpdlib.FTPServer
     authorizer = DummyAuthorizer()
-    authorizer.add_anonymous('\\')
+    authorizer.add_anonymous(os.getcwd())
     FTPHandler.authorizer = authorizer
     address = ('', 21)
     ftpd = FTPServer(address, FTPHandler)
