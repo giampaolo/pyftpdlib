@@ -154,6 +154,8 @@ proto_cmds = {
     'HELP': 'Syntax: HELP [<SP> cmd] (show help).',
     'LIST': 'Syntax: LIST [<SP> path-name] (list files).',
     'MDTM': 'Syntax: MDTM <SP> file-name (get last modification time).',
+    'MLSD': 'Syntax: MLSD [<SP> dir-name] (list files in a machine-processable form)',
+    'MLST': 'Syntax: MLST [<SP> path-name] (show a path in a machine-processable form)',
     'MODE': 'Syntax: MODE <SP> mode (obsolete; set data transfer mode).',
     'MKD' : 'Syntax: MDK <SP> dir-name (create directory).',
     'NLST': 'Syntax: NLST [<SP> path-name] (list files in a compact form).',
@@ -260,12 +262,12 @@ def debug(msg):
 class DummyAuthorizer:
     """Basic "dummy" authorizer class, suitable for subclassing to
     create your own custom authorizers.
-    
+
     An "authorizer" is a class handling authentications and permissions
     of the FTP server.  It is used inside FTPHandler class for verifying
     user's password, getting users home directory and checking user
     permissions when a file read/write event occurs.
-    
+
     DummyAuthorizer is the base authorizer, providing a platform
     independent interface for managing "virtual" FTP users. System
     dependent authorizers can by written by subclassing this base
@@ -304,7 +306,7 @@ class DummyAuthorizer:
                'msg_quit': str(msg_quit)
                }
         self.user_table[username] = dic
-        
+
     def add_anonymous(self, homedir, **kwargs):
         """Add an anonymous user to the virtual users table.
         AuthorizerError exception raised on error conditions such as
@@ -329,7 +331,7 @@ class DummyAuthorizer:
         stored credentials."""
         return self.user_table[username]['pwd'] == password
 
-    def has_user(self, username):        
+    def has_user(self, username):
         """Whether the username exists in the virtual users table."""
         return username in self.user_table
 
@@ -354,7 +356,6 @@ class DummyAuthorizer:
         """Whether the user has write permission for obj (an absolute
         pathname of a file or a directory)"""
         return 'w' in self.user_table[username]['perm']
-
 
 
 # --- DTP classes
@@ -876,7 +877,8 @@ class AbstractedFS:
         '/home/user/x' -> '/x'
         
         As for ftpnorm, directory separators are system independent
-        ("/").
+        ("/") and pathname returned is always absolutized.
+
         On invalid pathnames escaping from user's root directory
         (e.g. "/home" when root is "/home/user") always return "/".
         """
@@ -957,9 +959,11 @@ class AbstractedFS:
         os.rename(src, dst)
 
     def stat(self, path):
+        """Perform a stat() system call on the given path."""
         return os.stat(path)
 
     def lstat(self, path):
+        """Like stat but does not follow symbolic links."""
         return os.lstat(path)
 
     if not hasattr(os, 'lstat'):
@@ -1089,7 +1093,7 @@ class AbstractedFS:
     def format_list(self, basedir, listing, ignore_err=True):
         """Return a directory listing emulating "/bin/ls -lA" UNIX
         command output.
-    
+
          - basedir: the absolute dirname
          - listing: a list containing the names of the entries in basedir
          - ignore_err: if False raise exception if os.stat() call fails
@@ -1121,8 +1125,7 @@ class AbstractedFS:
                 nlinks = 1
             size = st.st_size  # file size
             if pwd and grp:
-                # get user and group name, else just use the raw
-                # uid/gid from stat
+                # get user and group name, else just use the raw uid/gid
                 try:
                     uname = pwd.getpwuid(st.st_uid).pw_name
                 except KeyError:
@@ -1136,17 +1139,13 @@ class AbstractedFS:
                 # bogus values for owner and group
                 uname = "owner"
                 gname = "group"
-
-            # stat.st_mtime could fail (-1) if file's last modification
-            # time is too old, in that case we return local time as
-            # last modification time.
+            # stat.st_mtime could fail (-1) if last mtime is too old
+            # in which case we return the local time as last mtime
             try:
                 mtime = time.strftime("%b %d %H:%M", time.localtime(st.st_mtime))
             except ValueError:
                 mtime = time.strftime("%b %d %H:%M")
-
-            # if the file is a symlink, resolve it,
-            # e.g. "symlink -> real_file"
+            # if the file is a symlink, resolve it, e.g. "symlink -> realfile"
             if stat.S_ISLNK(st.st_mode):
                 basename = basename + " -> " + os.readlink(file)
                 
@@ -1154,6 +1153,88 @@ class AbstractedFS:
             result.append("%s %3s %-8s %-8s %8s %s %s\r\n" %(perms, nlinks,
                                                              uname, gname, size,
                                                              mtime, basename))
+        return ''.join(result)
+    
+    def format_mlsx(self, basedir, listing, ignore_err=True):
+        """Return a directory listing in a form suitable with MLSD and
+        MLST commands including a list of "facts" referring the listed
+        elements.
+        
+        See RFC-3659, chapter 7, to see what every single fact stands
+        for.
+
+         - basedir: the absolute dirname
+         - listing: a list containing the names of the entries in basedir
+         - ignore_err: if False raise exception if os.stat() call fails
+
+        Note that "facts" returned may change depending on the platform
+        and on what user specified by using the OPTS command (if
+        implemented).
+
+        This is how output could appear to the client issuing
+        a MLSD request:
+
+        type=file;size=156;modify=20071029155301;unique=801cd012; music.mp3
+        type=dir;size=4096;modify=20071127230206;unique=801e38e3; ebooks
+        type=file;size=211;modify=20071103093626;unique=801e38e2; module.py
+        """
+        ftype = size = modify = create = mode = uid = gid = unique = ""
+        result = []
+        for basename in listing:
+            file = os.path.join(basedir, basename)
+            try:
+                st = self.stat(file)
+            except OSError:
+                if ignore_err:
+                    continue
+                raise
+            # file type
+            if stat.S_ISDIR(st.st_mode):
+                if basename == '.':
+                    ftype = 'type=cdir;'
+                elif basename == '..':
+                    ftype = 'type=pdir;'
+                else:
+                    ftype = 'type=dir;'
+            else:
+                ftype = 'type=file;'
+            size = 'size=%s;' %st.st_size  # file size
+            # last modification time
+            try:
+                modify = 'modify=%s;' %time.strftime("%Y%m%d%H%M%S",
+                                       time.localtime(st.st_mtime))
+            except ValueError:
+                # stat.st_mtime could fail (-1) if last mtime is too old
+                modify = ""
+            if os.name == 'nt':
+                # on Windows we can provide also the creation time
+                try:
+                    create = 'create=%s;' %time.strftime("%Y%m%d%H%M%S",
+                                           time.localtime(st.st_ctime))
+                except ValueError:
+                    create = ""
+            # Provide uid, gid and mode facts if we're on a UNIX system.
+            # We assume that by checking if pwd and grp are imported.
+            # Theorically we could provide mode also on Windows but I'm
+            # not sure about its reliability.
+            if pwd and grp:
+                mode = 'UNIX.mode=%s;' %oct(st.st_mode & 0777)
+                uid = 'UNIX.uid=%s;' %st.st_uid
+                gid = 'UNIX.gid=%s;' %st.st_gid
+            # Provide unique fact (see RFC-3659, chapter 7.5.2) on
+            # posix platforms only; we get it by mixing st_dev and
+            # st_ino values which should be enough for granting an
+            # uniqueness for the file listed.
+            # The same approach is used by pure-ftpd.
+            # Implementors who want to provide unique fact on other
+            # platforms should use some platform-specific method (e.g.
+            # on Windows NTFS filesystems MTF records could be used).
+            if os.name == 'posix':
+                unique = "unique=%x%x;" %(st.st_dev, st.st_ino)
+
+            result.append("%s%s%s%s%s%s%s%s %s\r\n" %(ftype, size, modify,
+                                                      create, mode, uid, gid,
+                                                      unique, basename))
         return ''.join(result)
 
 
@@ -1691,6 +1772,65 @@ class FTPHandler(asynchat.async_chat):
                 listing.sort()
                 data = '\r\n'.join(listing) + '\r\n'
             self.push_dtp_data(data, log='OK NLST "%s". Transfer starting.' %line)
+
+        # --- MLST and MLSD commands
+
+    # The MLST and MLSD commands are intended to standardize the file and
+    # directory information returned by the server-FTP process.  These
+    # commands differ from the LIST command in that the format of the
+    # replies is strictly defined although extensible.
+
+    def ftp_MLST(self, line):
+        """Return information about a pathname in a machine-processable
+        form as defined in RFC-3659.
+        """
+        # if no argument, fall back on cwd as default
+        if not line:
+            line = self.fs.cwd
+        path = self.fs.ftp2fs(line)
+        line = self.fs.ftpnorm(line)
+        basedir, basename = os.path.split(path)
+        try:
+            data = self.fs.format_mlsx(basedir, [basename], ignore_err=False)
+        except OSError, err:
+            why = _strerror(err)
+            self.log('FAIL MLST "%s". %s.' %(line, why))
+            self.respond('550 %s.' %why)
+        else:
+            # where TVFS is supported, a fully qualified pathname
+            # should be returned
+            data = data.split(' ')[0] + ' %s\r\n'%line
+            # response is expected on the command channel
+            self.push('250-Listing "%s":\r\n' %line)
+            # the fact set must be preceded by a space
+            self.push(' ' + data)
+            self.respond('250 End MLST.')
+
+    def ftp_MLSD(self, line):
+        """Return contents of a directory in a machine-processable form
+        as defined in RFC-3659.
+        """
+        # if no argument, fall back on cwd as default
+        if not line:
+            line = self.fs.cwd
+        path = self.fs.ftp2fs(line)
+        line = self.fs.ftpnorm(line)
+        # RFC-3659 requires 501 response code if path is not a directory
+        if not self.fs.isdir(path):
+            err = 'No such directory'
+            self.log('FAIL MLSD "%s". %s.' %(line, err))
+            self.respond("501 %s." %err)
+            return
+        try:
+            listing = self.fs.listdir(path)
+        except OSError, err:
+            why = _str(err)
+            self.log('FAIL MLSD "%s". %s.' %(line, why))
+            self.respond('550 %s.' %why)
+        else:
+            data = self.fs.format_mlsx(path, listing)
+            self.push_dtp_data(data, log='OK MLSD "%s". Transfer starting.' %line)
+
         
     def ftp_RETR(self, line):
         """Retrieve the specified file (transfer from the server to the

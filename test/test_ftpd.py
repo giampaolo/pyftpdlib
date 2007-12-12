@@ -644,34 +644,41 @@ class FtpRetrieveData(unittest.TestCase):
         self.f2.seek(0)
         self.assertEqual(hash(data), hash (self.f2.read()))
 
-    def _test_list_nlst(self, cmd):
-        """Tests common to both LIST and NLST commands."""
+    def _test_listing_cmds(self, cmd):
+        """Tests common to LIST NLST and MLSD commands."""
         # assume that no argument has the same meaning of "/"
         l1 = l2 = []
         ftp.retrlines(cmd, l1.append)
         ftp.retrlines(cmd + ' /', l2.append)
         self.assertEqual(l1, l2)
-        # if pathname is a file one line is expected
-        x = []
-        ftp.retrlines('%s '%cmd + TESTFN, x.append)
-        self.assertEqual(len(x), 1)
-        self.failUnless(''.join(x).endswith(TESTFN))
+        if not cmd.lower() in 'mlsd':
+            # if pathname is a file one line is expected
+            x = []
+            ftp.retrlines('%s ' %cmd + TESTFN, x.append)
+            self.assertEqual(len(x), 1)
+            self.failUnless(''.join(x).endswith(TESTFN))
+        # non-existent path
+        bogus = os.path.basename(tempfile.mktemp(dir=home))
+        self.assertRaises(ftplib.error_perm, ftp.retrlines, '%s ' %cmd + bogus,
+                          lambda x: x)
         # for an empty directory we excpect that the data channel is
         # opened anyway and that no data is received
         x = []
         tempdir = os.path.basename(tempfile.mkdtemp(dir=home))
         try:
-            ftp.retrlines('%s %s'%(cmd, tempdir), x.append)
+            ftp.retrlines('%s %s' %(cmd, tempdir), x.append)
             self.assertEqual(x, [])
         finally:
             os.rmdir(tempdir)
 
     def test_nlst(self):
-        self._test_list_nlst('nlst')
-        
+        # common tests
+        self._test_listing_cmds('nlst')
+
     def test_list(self):
-        self._test_list_nlst('list')
-        # known incorrect parhname arguments (e.g. old clients) are
+        # common tests
+        self._test_listing_cmds('list')
+        # known incorrect pathname arguments (e.g. old clients) are
         # expected to be treated as if pathname would be == '/'
         l1 = l2 = l3 = l4 = l5 = []
         ftp.retrlines('list /', l1.append)
@@ -682,6 +689,39 @@ class FtpRetrieveData(unittest.TestCase):
         tot = (l1, l2, l3, l4, l5)
         for x in range(len(tot) - 1):
             self.assertEqual(tot[x], tot[x+1])
+            
+    def test_mlst(self):
+        # utility function for extracting the line of interest
+        mlstline = lambda cmd: ftp.voidcmd(cmd).split('\n')[1]
+
+        # the fact set must be preceded by a space
+        self.failUnless(mlstline('mlst').startswith(' '))
+        # where TVFS is supported, a fully qualified pathname is expected
+        self.failUnless(mlstline('mlst ' + TESTFN).endswith('/' + TESTFN))
+        self.failUnless(mlstline('mlst').endswith('/'))
+        # assume that no argument has the same meaning of "/"
+        self.assertEqual(mlstline('mlst'), mlstline('mlst /'))
+        # non-existent path
+        bogus = os.path.basename(tempfile.mktemp(dir=home))
+        self.assertRaises(ftplib.error_perm, mlstline, bogus)
+        # test file/dir notations
+        self.failUnless('type=dir' in mlstline('mlst'))
+        self.failUnless('type=file' in mlstline('mlst ' + TESTFN))
+        
+    def test_mlsd(self):
+        # common tests
+        self._test_listing_cmds('mlsd')
+        # if path is a file a 501 response code is expected
+        dir = os.path.basename(tempfile.mkdtemp(dir=home))
+        try:
+            try:
+                ftp.retrlines('mlsd ' + TESTFN, lambda x: x)
+            except ftplib.error_perm, resp:
+                self.assertEqual(str(resp)[0:3], "501")
+            else:
+                self.fail("Exception not raised")
+        finally:
+            os.rmdir(dir)
 
 
 class FtpAbort(unittest.TestCase):
