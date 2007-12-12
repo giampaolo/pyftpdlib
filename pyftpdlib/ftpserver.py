@@ -1433,13 +1433,14 @@ class FTPHandler(asynchat.async_chat):
             # real path destination belongs to the user's root
             # directory.  If provided path is a symlink we follow its
             # final destination to do so.
-            if cmd in ('APPE','CWD','MDTM','NLST','RETR','SIZE','STOR','XCWD'):
+            if cmd in ('APPE','CWD','DELE','MDTM','NLST','MLSD','MLST','RETR',
+                       'RMD','SIZE','STOR','XCWD','XRMD'):
                 if not self.fs.validpath(self.fs.ftp2fs(arg)):
-                    vpath = self.fs.ftpnorm(arg)
+                    line = self.fs.ftpnorm(arg)
                     err = '"%s" points to a path which is outside ' \
-                          "the user's root directory" %vpath
+                          "the user's root directory" %line
                     self.respond("550 %s." %err)
-                    self.log('FAIL %s "%s". %s.' %(cmd, vpath, err))
+                    self.log('FAIL %s "%s". %s.' %(cmd, line, err))
                     return
             method = getattr(self, 'ftp_' + cmd)
             method(arg)  # call the proper ftp_* method
