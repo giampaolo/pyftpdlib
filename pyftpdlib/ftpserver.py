@@ -2439,7 +2439,15 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
-        features = ['MDTM','REST STREAM','SIZE','TVFS']
+        features = ['MDTM','MLSD','REST STREAM','SIZE','TVFS']
+        s = 'MLST Type*;Size*;Modify*;'
+        if os.name == 'nt':
+            s += 'Create*;'
+        if pwd and grp:
+            s += 'UNIX.mode*;UNIX.uid*;UNIX.gid*;'
+        if os.name == 'posix':
+            s += 'Unique*;'
+        features.append(s)
         features.sort()
         self.push("211-Features supported:\r\n")
         self.push("".join([" %s\r\n" %x for x in features]))
