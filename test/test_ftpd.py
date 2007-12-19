@@ -194,7 +194,7 @@ class AbstractedFSClass(unittest.TestCase):
             goforit(os.getcwd())
 
     def test_validpath(self):
-        """Tests for valipath method."""
+        """Tests for validpath method."""
         fs = ftpserver.AbstractedFS()
         fs.root = home
         self.failUnless(fs.validpath(home))
@@ -936,6 +936,7 @@ def run():
     class FTPd(threading.Thread):
         def __init__(self):
             threading.Thread.__init__(self)
+            self.setDaemon(True)
 
         def run(self):
             devnull = lambda x: x
@@ -948,14 +949,20 @@ def run():
             ftp_handler = ftpserver.FTPHandler
             ftp_handler.authorizer = authorizer
             address = (host, port)
-            ftpd = ftpserver.FTPServer(address, ftp_handler)
-            ftpd.serve_forever()
+            self.ftpd = ftpserver.FTPServer(address, ftp_handler)
+            self.ftpd.serve_forever()
+            
+        def stop(self):
+            self.ftpd.close_all()
 
-    atexit.register(lambda: os._exit(0))
     ftpd = FTPd()
     ftpd.start()
     time.sleep(0.3)
-    unittest.main()
+    tests = [AbstractedFSClass, DummyAuthorizerClass, FtpAuthentication,
+             FtpDummyCmds, FtpFsOperations, FtpRetrieveData, FtpAbort,
+             FtpStoreData]
+    test_support.run_unittest(*tests)
+    ftpd.stop()
 
 
 host = '127.0.0.1'
