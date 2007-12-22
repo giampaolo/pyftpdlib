@@ -930,13 +930,19 @@ class FtpStoreData(unittest.TestCase):
         self.f2.seek(0)
         self.assertEqual(hash(self.f1.read()), hash(self.f2.read()))
         ftp.delete(TESTFN3)
-
+        
 
 def run():
     class FTPd(threading.Thread):
         def __init__(self):
+            self.active = False
             threading.Thread.__init__(self)
             self.setDaemon(True)
+
+        def start(self, flag=None):
+            assert not self.active
+            self.flag = flag
+            threading.Thread.start(self)
 
         def run(self):
             devnull = lambda x: x
@@ -949,15 +955,21 @@ def run():
             ftp_handler = ftpserver.FTPHandler
             ftp_handler.authorizer = authorizer
             address = (host, port)
-            self.ftpd = ftpserver.FTPServer(address, ftp_handler)
-            self.ftpd.serve_forever()
-            
-        def stop(self):
-            self.ftpd.close_all()
+            self.__ftpd = ftpserver.FTPServer(address, ftp_handler)
+            self.flag.set()
+            self.active = True
+            self.__ftpd.serve_forever()
 
+        def stop(self):
+            assert self.active
+            self.active = False
+            self.__ftpd.close_all()
+    
+    flag = threading.Event()
     ftpd = FTPd()
-    ftpd.start()
-    time.sleep(0.3)
+    ftpd.start(flag)
+    # wait for it to start
+    flag.wait()
     tests = [AbstractedFSClass, DummyAuthorizerClass, FtpAuthentication,
              FtpDummyCmds, FtpFsOperations, FtpRetrieveData, FtpAbort,
              FtpStoreData]
