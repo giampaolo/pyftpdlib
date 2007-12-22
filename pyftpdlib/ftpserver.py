@@ -674,7 +674,11 @@ class DTPHandler(asyncore.dispatcher):
             try:
                 data = buffer(first, 0, obs)
             except TypeError:
-                self.producer_fifo.appendleft(first.more())
+                data = first.more()
+                if data:
+                    self.producer_fifo.appendleft(data)
+                else:
+                    del self.producer_fifo[0]
                 continue
 
             # send the data
@@ -759,12 +763,7 @@ class DTPHandler(asyncore.dispatcher):
         self.cmd_channel.on_dtp_close()
 
 
-
-# --- file producer
-
-# Taken from Sam Rushing's Medusa-framework. Similar to
-# asynchat.simple_producer class, but operates on file(-like)
-# objects instead of strings.
+# --- producers
 
 class FileProducer:
     """Producer wrapper for file[-like] objects.
@@ -772,12 +771,11 @@ class FileProducer:
     Depending on the type it creates an appropriate wrapper for the
     outgoing data.
     """
-
-    out_buffer_size = 65536
+    buffer_size = 65536
 
     def __init__(self, file, type):
         """Intialize the producer with a data_wrapper appropriate to TYPE."""
-        self.done = 0
+        self.done = False
         self.file = file
         if type == 'a':
             self.data_wrapper = lambda x: x.replace(os.linesep, '\r\n')
@@ -785,17 +783,14 @@ class FileProducer:
             self.data_wrapper = lambda x: x
 
     def more(self):
-        """Attempt a chunk of data of size self.out_buffer_size."""
+        """Attempt a chunk of data of size self.buffer_size."""
         if self.done:
             return ''
-        else:
-            data = self.data_wrapper(
-                self.file.read(self.out_buffer_size))
-            if not data:
-                self.done = 1
-                self.close()
-            else:
-                return data
+        data = self.data_wrapper(self.file.read(self.buffer_size))
+        if not data:
+            self.done = True
+            self.close()
+        return data
 
     def close(self):
         """Close the file[-like] object."""
