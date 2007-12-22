@@ -572,15 +572,10 @@ class FtpFsOperations(unittest.TestCase):
 
     def test_stat(self):
         ftp.sendcmd('stat')
-        ftp.sendcmd('stat *')
-        ftp.sendcmd('stat ' + self.tempfile)
-        ftp.sendcmd('stat ' + self.tempdir)
-        self.failUnless('Directory is empty' in ftp.sendcmd('stat '+ self.tempdir))
-        self.failUnless('recursion not supported' in ftp.sendcmd('stat /*/*'))
 
 
 class FtpRetrieveData(unittest.TestCase):
-    "test: RETR, REST, LIST, NLST"
+    "test: RETR, REST, LIST, NLST, argumented STAT"
 
     def setUp(self):
         global ftp
@@ -722,6 +717,16 @@ class FtpRetrieveData(unittest.TestCase):
                 self.fail("Exception not raised")
         finally:
             os.rmdir(dir)
+
+    def test_stat(self):
+        # test argumented STAT which is equal to LIST plus
+        # globbing support
+        ftp.sendcmd('stat *')
+        ftp.sendcmd('stat /')
+        ftp.sendcmd('stat ' + TESTFN)
+        self.failUnless('recursion not supported' in ftp.sendcmd('stat /*/*'))
+        bogus = os.path.basename(tempfile.mktemp(dir=home))
+        self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'stat ' + bogus)
 
 
 class FtpAbort(unittest.TestCase):

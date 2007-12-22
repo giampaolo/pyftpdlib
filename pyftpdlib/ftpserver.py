@@ -797,6 +797,35 @@ class FileProducer:
         if not self.file.closed:
             self.file.close()
 
+class IteratorProducer:
+    """Producer for iterator objects."""
+    def __init__(self, iterator):
+        self.iterator = iterator
+
+    def more(self):
+        try:
+            return self.iterator.next()
+        except StopIteration:
+            return ''
+            
+class BufferedIteratorProducer:
+    """Producer for iterator objects with buffer capabilities."""
+    # how many times iterator.next() will be called before
+    # returning some data
+    loops = 20
+
+    def __init__(self, iterator):
+        self.iterator = iterator
+
+    def more(self):
+        buffer = []
+        for x in xrange(self.loops):
+            try:
+                buffer.append(self.iterator.next())
+            except StopIteration:
+                break
+        return ''.join(buffer)
+
 
 # --- filesystem
 
@@ -1042,14 +1071,14 @@ class AbstractedFS:
             names = filter(lambda x: x[0] != '.',names)
         return fnmatch.filter(names, pattern)
     
-    # --- Listing utilities
+    # --- Listing utilities 
     
-    # Note that these are resource-intensive blocking operations so
-    # you may want to override and move them into another
-    # process/thread in some way.
-    
+    # note: the following operations are no more blocking
+
     def get_list_dir(self, path):
-        """Return a directory listing in a form suitable for LIST command."""
+        """"Return an iterator object that yields a directory listing
+        in a form suitable for LIST command.
+        """
         if self.isdir(path):
             listing = self.listdir(path)
             listing.sort()
@@ -1057,37 +1086,33 @@ class AbstractedFS:
         # if path is a file or a symlink we return information about it
         else:
             basedir, filename = os.path.split(path)
-            return self.format_list(basedir, [filename], ignore_err=False)
+            self.lstat(path)  # raise exc in case of problems
+            return self.format_list(basedir, [filename])
 
     def get_stat_dir(self, rawline):
-        """Return a list of files matching a dirname pattern
-        non-recursively in a form suitable for STAT command.
+        """Return an iterator object that yields a list of files
+        matching a dirname pattern non-recursively in a form
+        suitable for STAT command.
+
         rawline is the argument passed by client.
         """
-        path = self.ftpnorm(rawline)
-        basedir, basename = os.path.split(path)
-        if not glob.has_magic(path):
-            data = self.get_list_dir(self.ftp2fs(rawline))
+        ftppath = self.ftpnorm(rawline)
+        if not glob.has_magic(ftppath):
+            return self.get_list_dir(self.ftp2fs(rawline))
         else:
-            if not basedir:
-                basedir = self.ftp2fs(self.cwd)
-                listing = self.glob1(basedir, basename)
-                listing.sort()
-                data = self.format_list(basedir, listing)
-            elif glob.has_magic(basedir):
-                return 'Directory recursion not supported.\r\n'
+            basedir, basename = os.path.split(ftppath)
+            if glob.has_magic(basedir):
+                return iter(['Directory recursion not supported.\r\n'])
             else:
                 basedir = self.ftp2fs(basedir)
                 listing = self.glob1(basedir, basename)
-                listing.sort()
-                data = self.format_list(basedir, listing)
-        if not data:
-            return "Directory is empty.\r\n"
-        return data
+                if listing:
+                    listing.sort()
+                return self.format_list(basedir, listing)
 
     def format_list(self, basedir, listing, ignore_err=True):
-        """Return a directory listing emulating "/bin/ls -lA" UNIX
-        command output.
+        """Return an iterator object that yields the entries of given
+        directory emulating the "/bin/ls -lA" UNIX command output.
 
          - basedir: the absolute dirname
          - listing: a list containing the names of the entries in basedir
@@ -1105,7 +1130,6 @@ class AbstractedFS:
         drwxrwxrwx   1 owner   group          0 Aug 31 18:50 e-books
         -rw-rw-rw-   1 owner   group        380 Sep 02  3:40 module.py
         """
-        result = []
         for basename in listing:
             file = os.path.join(basedir, basename)
             try:
@@ -1145,18 +1169,17 @@ class AbstractedFS:
                 basename = basename + " -> " + os.readlink(file)
                 
             # formatting is matched with proftpd ls output
-            result.append("%s %3s %-8s %-8s %8s %s %s\r\n" %(perms, nlinks,
-                                                             uname, gname, size,
-                                                             mtime, basename))
-        return ''.join(result)
+            yield "%s %3s %-8s %-8s %8s %s %s\r\n" %(perms, nlinks, uname, gname,
+                                                     size, mtime, basename)
     
     def format_mlsx(self, basedir, listing, ignore_err=True):
-        """Return a directory listing in a form suitable with MLSD and
-        MLST commands including a list of "facts" referring the listed
-        elements.
-        
-        See RFC-3659, chapter 7, to see what every single fact stands
-        for.
+        """Return an iterator object that yields the entries of a given
+        directory or of a single file in a form suitable with MLSD and
+        MLST commands.
+
+        Every entry includes a list of "facts" referring the listed
+        element.  See RFC-3659, chapter 7, to see what every single
+        fact stands for.
 
          - basedir: the absolute dirname
          - listing: a list containing the names of the entries in basedir
@@ -1174,7 +1197,6 @@ class AbstractedFS:
         type=file;size=211;modify=20071103093626;unique=801e38e2; module.py
         """
         ftype = size = modify = create = mode = uid = gid = unique = ""
-        result = []
         for basename in listing:
             file = os.path.join(basedir, basename)
             try:
@@ -1227,10 +1249,8 @@ class AbstractedFS:
             if os.name == 'posix':
                 unique = "unique=%x%x;" %(st.st_dev, st.st_ino)
 
-            result.append("%s%s%s%s%s%s%s%s %s\r\n" %(ftype, size, modify,
-                                                      create, mode, uid, gid,
-                                                      unique, basename))
-        return ''.join(result)
+            yield "%s%s%s%s%s%s%s%s %s\r\n" %(ftype, size, modify, create, mode,
+                                              uid, gid, unique, basename)
 
 
 # --- FTP
@@ -1734,13 +1754,15 @@ class FTPHandler(asynchat.async_chat):
         path = self.fs.ftp2fs(line)
         line = self.fs.ftpnorm(line)
         try:
-            data = self.fs.get_list_dir(path)
+            iterator = self.fs.get_list_dir(path)
         except OSError, err:
             why = _strerror(err)
             self.log('FAIL LIST "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
         else:
-            self.push_dtp_data(data, log='OK LIST "%s". Transfer starting.' %line)
+            producer = BufferedIteratorProducer(iterator)
+            self.push_dtp_data(producer, isproducer=True,
+                               log='OK LIST "%s". Transfer starting.' %line)
 
     def ftp_NLST(self, line):
         """Return a list of files in the specified directory in a
@@ -1787,7 +1809,8 @@ class FTPHandler(asynchat.async_chat):
         line = self.fs.ftpnorm(line)
         basedir, basename = os.path.split(path)
         try:
-            data = self.fs.format_mlsx(basedir, [basename], ignore_err=False)
+            data = ''.join(self.fs.format_mlsx(basedir, [basename],
+                   ignore_err=False))
         except OSError, err:
             why = _strerror(err)
             self.log('FAIL MLST "%s". %s.' %(line, why))
@@ -1824,10 +1847,11 @@ class FTPHandler(asynchat.async_chat):
             self.log('FAIL MLSD "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
         else:
-            data = self.fs.format_mlsx(path, listing)
-            self.push_dtp_data(data, log='OK MLSD "%s". Transfer starting.' %line)
+            iterator = self.fs.format_mlsx(path, listing)
+            producer = BufferedIteratorProducer(iterator)
+            self.push_dtp_data(producer, isproducer=True,
+                               log='OK MLSD "%s". Transfer starting.' %line)
 
-        
     def ftp_RETR(self, line):
         """Retrieve the specified file (transfer from the server to the
         client)
@@ -2425,12 +2449,13 @@ class FTPHandler(asynchat.async_chat):
             # and memory-wise, we limit the search to only one
             # directory non-recursively, as LIST does.
             try:
-                data = self.fs.get_stat_dir(line)
+                iterator = self.fs.get_stat_dir(line)
             except OSError, err:
-                data = _strerror(err) + '.\r\n'
-            self.push('213-Status of "%s":\r\n' %self.fs.ftpnorm(line))
-            self.push(data)
-            self.respond('213 End of status.')
+                self.respond('550 %s.' %_strerror(err))
+            else:
+                self.push('213-Status of "%s":\r\n' %self.fs.ftpnorm(line))
+                self.push_with_producer(BufferedIteratorProducer(iterator))
+                self.respond('213 End of status.')
 
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
@@ -2664,7 +2689,6 @@ def test():
     address = ('', 21)
     ftpd = FTPServer(address, FTPHandler)
     ftpd.serve_forever()
-
 
 if __name__ == '__main__':
     test()
