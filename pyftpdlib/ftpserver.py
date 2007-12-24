@@ -459,6 +459,10 @@ class PassiveDTP(asyncore.dispatcher):
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
         self.cmd_channel.debug("PassiveDTP.handle_error()")
+        try:
+            raise
+        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
+            raise
         logerror(traceback.format_exc())
         self.close()
             
@@ -511,6 +515,8 @@ class ActiveDTP(asyncore.dispatcher):
         """Called to handle any uncaught exceptions."""
         self.cmd_channel.debug("ActiveDTP.handle_error()")
         try:
+            raise
+        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             raise
         except socket.error:
             pass
@@ -708,23 +714,25 @@ class DTPHandler(asyncore.dispatcher):
         self.cmd_channel.debug("DTPHandler.handle_error()")
         try:
             raise
-        # if error is connection related we provide a detailed
-        # information about it
+        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
+            raise
         except socket.error, err:
-            if err[0] in errno.errorcode:
-                error = err[1]
+            # fix around asyncore bug (http://bugs.python.org/issue1736101)
+            if err[0] in (errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN, \
+                          errno.ECONNABORTED):
+                self.handle_close()
+                return
             else:
-                error = "Unknown connection error"
+                error = str(err[1])
         # an error could occur in case we fail reading / writing
         # from / to file (e.g. file system gets full)
         except EnvironmentError, err:
             error = _strerror(err)
         except:
-            # some other exception occurred; we don't want to provide
-            # confidential error messages to user so we return a
-            # generic "unknown error" response.
-            logerror(traceback.format_exc())            
-            error = "Unknown error"
+            # some other exception occurred;  we don't want to provide
+            # confidential error messages
+            logerror(traceback.format_exc())
+            error = "Internal error"
         self.cmd_channel.respond("426 %s; transfer aborted." %error)
         self.close()
 
@@ -1490,7 +1498,20 @@ class FTPHandler(asynchat.async_chat):
 
     def handle_error(self):
         self.debug("FTPHandler.handle_error()")
-        logerror(traceback.format_exc())
+        try:
+            raise
+        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
+            raise
+        except socket.error, err:
+            # fix around asyncore bug (http://bugs.python.org/issue1736101)
+            if err[0] in (errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN, \
+                          errno.ECONNABORTED):
+                self.handle_close()
+                return
+            else:
+                logerror(traceback.format_exc())
+        except:
+            logerror(traceback.format_exc())
         self.close()
 
     def handle_close(self):
@@ -2646,6 +2667,10 @@ class FTPServer(asyncore.dispatcher):
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
         debug("FTPServer.handle_error()")
+        try:
+            raise
+        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
+            raise
         logerror(traceback.format_exc())
         self.close()
 
