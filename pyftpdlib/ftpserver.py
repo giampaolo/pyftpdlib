@@ -483,21 +483,15 @@ class ActiveDTP(asyncore.dispatcher):
         asyncore.dispatcher.__init__(self)
         self.cmd_channel = cmd_channel       
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            self.connect((ip, port))
-        except socket.error:
-            self.cmd_channel.respond("425 Can't connect to %s:%s." %(ip, port))
-            self.close()     
+        self.connect((ip, port))
 
     def __del__(self):
         self.cmd_channel.debug("ActiveDTP.__del__()")
 
     # --- connection / overridden
-
+    
     def handle_write(self):
         """NOOP, must be overridden to prevent unhandled write event."""
-        # without overriding this we would get an "unhandled write event"
-        # message from asyncore once connection occurs.
 
     def handle_connect(self):
         """Called when connection is established."""
@@ -509,17 +503,22 @@ class ActiveDTP(asyncore.dispatcher):
         self.cmd_channel.on_dtp_connection()
         #self.close()  # <-- (done automatically)
 
+    def handle_expt(self):
+        self.cmd_channel.respond("425 Can't connect to specified address.")
+        self.close()
+
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
         self.cmd_channel.debug("ActiveDTP.handle_error()")
-        logerror(traceback.format_exc())
+        try:
+            raise
+        except socket.error:
+            pass
+        except:
+            logerror(traceback.format_exc())
+        self.cmd_channel.respond("425 Can't connect to specified address.")
         self.close()
-            
-    def handle_close(self):
-        """Called on closing the data channel."""
-        self.cmd_channel.debug("ActiveDTP.handle_close()")
-        self.close()
-
+        
     def close(self):
         """Close the dispatcher socket."""
         self.cmd_channel.debug("ActiveDTP.close()")
@@ -1650,10 +1649,14 @@ class FTPHandler(asynchat.async_chat):
         # ...where the client's IP address is h1.h2.h3.h4 and the TCP
         # port number is (p1 * 256) + p2.
         try:
-            line = line.split(',')
-            ip = ".".join(line[:4]).replace(',','.')
-            port = (int(line[4]) * 256) + int(line[5])
-        except (ValueError, OverflowError):
+            addr = map(int, line.split(','))
+            assert len(addr) == 6
+            for x in addr[:4]:
+                assert 0 <= x <= 255
+            ip = '%d.%d.%d.%d' %tuple(addr[:4])
+            port = (addr[4] * 256) + addr[5]
+            assert port <= 65535
+        except (AssertionError, ValueError, OverflowError):
             self.respond("501 Invalid PORT format.")
             return
 
