@@ -1676,7 +1676,7 @@ class FTPHandler(asynchat.async_chat):
                 assert 0 <= x <= 255
             ip = '%d.%d.%d.%d' %tuple(addr[:4])
             port = (addr[4] * 256) + addr[5]
-            assert port <= 65535
+            assert 0 <= port <= 65535
         except (AssertionError, ValueError, OverflowError):
             self.respond("501 Invalid PORT format.")
             return
