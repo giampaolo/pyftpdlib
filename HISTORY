@@ -4,16 +4,52 @@ Issue tracker at http://code.google.com/p/pyftpdlib/issues/list
 History
 =======
 
-Version: 0.2.1 - Date: ****-**-**
+Version: 0.*.* - Date: ****-**-**
 ----------------------------------
+
+Major enhancements:
+
+ * Issue #48: real permissions, owner, and group for files on UNIX platforms
+   are now provided when processing LIST.
+ * Issue #51: added the new demo/throttled_ftpd.py script.
+ * Issue #59: iterators are now used for calculating requests requiring long
+   time to complete (LIST and MLSD commands).
 
 RFC-related enhancements:
 
-* Implemented FEAT command.
+ * Issue #42: implemented FEAT command defined in RFC-2389.
+ * Issue #52: implemented MLST and MLSD commands defined in RFC-3659.
 
 Bugfixes:
 
-* Issue #41: error occurred on quit if user was not yet authenticated.
+ * Issue #41: error occurred on quit if user was not yet authenticated.
+ * Issue #43: hidden the server identifier when returning STAT response.
+ * Issue #44: a wrong response code was given on PORT if the data connection
+   attempt failed.
+ * Issue #45: a wrong response code was given on HELP if argument was incorrect.
+ * Issue #46: a wrong response code was given on PASV if remote peer had a
+   foreign internet address.
+ * Issue #47: can't use FTPServer.max_cons option with Python 2.3.
+ * Issue #48: problem when LISTing "broken" symbolic links.
+ * Issue #49: data channel did not respect the outgoing data buffer.
+ * Issue #53: received strings having trailing white spaces was erroneously
+   stripped.
+ * Issue #54: LIST/NLST/STAT outputs are now sorted by file name.
+ * Issue #55: path traversal vulnerability in case of symlinks.
+ * Issue #56: can't rename broken symbolic links.
+ * Issue #57: wrong LIST/NLST behavior when processing symbolic links.
+ * Issue #60: error occurred in case of bad formatted PORT command requests.
+ 
+API changes since 0.2.0:
+ 
+ * New IteratorProducer and BufferedIteratorProducer classes was added.
+ * AbstractedFS class changes:
+   * normalize method has been renamed in "ftpnorm".
+   * translate method has been renamed in "ftp2fs".
+   * new methods: fs2ftp, stat, lstat, islink, realpath, lexists, validpath.
+   * get_list_dir, get_stat_dir and format_list methods now return an iterator
+     object instead of a string.
+   * format_list method has a new "ignore_err" keyword argument.
 
 
 Version: 0.2.0 - Date: 2007-09-17
