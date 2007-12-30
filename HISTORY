@@ -4,7 +4,7 @@ Issue tracker at http://code.google.com/p/pyftpdlib/issues/list
 History
 =======
 
-Version: 0.*.* - Date: ****-**-**
+Version: 0.3.0 - Date: ****-**-**
 ----------------------------------
 
 Major enhancements:
@@ -14,6 +14,7 @@ Major enhancements:
  * Issue #51: added the new demo/throttled_ftpd.py script.
  * Issue #59: iterators are now used for calculating requests requiring long
    time to complete (LIST and MLSD commands).
+ * Issue #61: extended the set of assignable user permissions.
 
 RFC-related enhancements:
 
@@ -43,10 +44,15 @@ Bugfixes:
 API changes since 0.2.0:
  
  * New IteratorProducer and BufferedIteratorProducer classes was added.
+ * DummyAuthorizer class changes:
+   * The permissions management has been changed and the set of available
+     permissions has been extended (see Issue #61). add_user method now accepts
+     'eladfm' permissions beyond the old 'r' and 'w'.
+   * New "has_perm" and "get_perms" methods has been added.
  * AbstractedFS class changes:
    * normalize method has been renamed in "ftpnorm".
    * translate method has been renamed in "ftp2fs".
-   * new methods: fs2ftp, stat, lstat, islink, realpath, lexists, validpath.
+   * New methods: fs2ftp, stat, lstat, islink, realpath, lexists, validpath.
    * get_list_dir, get_stat_dir and format_list methods now return an iterator
      object instead of a string.
    * format_list method has a new "ignore_err" keyword argument.

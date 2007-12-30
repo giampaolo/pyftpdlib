@@ -257,7 +257,7 @@ class DummyAuthorizerClass(unittest.TestCase):
         auth.user_table = {}
 
         # create user
-        auth.add_user(user, pwd, home, perm=('r', 'w'))
+        auth.add_user(user, pwd, home)
         auth.add_anonymous(home)
         # check credentials
         self.failUnless(auth.validate_authentication(user, pwd))
@@ -283,11 +283,12 @@ class DummyAuthorizerClass(unittest.TestCase):
 
         # raise on wrong permission
         self.assertRaises(ftpserver.AuthorizerError, auth.add_user, user, pwd,
-                            home, perm=('?'))
+                            home, perm='?')
         self.assertRaises(ftpserver.AuthorizerError, auth.add_anonymous, home,
-                            perm=('?'))
-        # expect warning on 'w' permission assigned to anonymous user
-        self.assertRaises(RuntimeWarning, auth.add_anonymous, home, perm=('w'))
+                            perm='?')
+        # expect warning on write permissions assigned to anonymous user
+        for x in "adfmw":
+            self.assertRaises(RuntimeWarning, auth.add_anonymous, home, perm=x)
 
 
 class FtpAuthentication(unittest.TestCase):
@@ -845,8 +846,8 @@ class FtpStoreData(unittest.TestCase):
 
         ftp.voidcmd('TYPE I')
         # filename comes in as 1xx FILE: <filename>
-        filename = ftp.sendcmd('stou').split('FILE: ')[1]
         try:
+            filename = ftp.sendcmd('stou').split('FILE: ')[1]
             sock = ftp.makeport()
             conn, sockaddr = sock.accept()
             while 1:
@@ -863,8 +864,11 @@ class FtpStoreData(unittest.TestCase):
         finally:
             # we do not use os.remove because file could be
             # still locked by ftpd thread
-            if os.path.exists(filename):
-                ftp.delete(filename)
+            try:
+                if os.path.exists(filename):
+                    ftp.delete(filename)
+            except NameError:
+                pass
 
     def test_stou_rest(self):
         # watch for STOU preceded by REST, which makes no sense.
@@ -955,7 +959,7 @@ def run():
             ftpserver.logline = devnull
             ftpserver.debug = devnull
             authorizer = ftpserver.DummyAuthorizer()
-            authorizer.add_user(user, pwd, home, perm=('r', 'w'))
+            authorizer.add_user(user, pwd, home, perm='elradfmw')  # full perms
             authorizer.add_anonymous(home)
             ftp_handler = ftpserver.FTPHandler
             ftp_handler.authorizer = authorizer

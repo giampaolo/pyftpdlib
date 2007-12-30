@@ -6,16 +6,16 @@
 #  Copyright (C) 2007 Giampaolo Rodola' <g.rodola@gmail.com>
 #
 #                         All Rights Reserved
-# 
+#
 #  Permission to use, copy, modify, and distribute this software and
 #  its documentation for any purpose and without fee is hereby
 #  granted, provided that the above copyright notice appear in all
 #  copies and that both that copyright notice and this permission
-#  notice appear in supporting documentation, and that the name of 
+#  notice appear in supporting documentation, and that the name of
 #  Giampaolo Rodola' not be used in advertising or publicity pertaining to
 #  distribution of the software without specific, written prior
 #  permission.
-# 
+#
 #  Giampaolo Rodola' DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
 #  INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN
 #  NO EVENT Giampaolo Rodola' BE LIABLE FOR ANY SPECIAL, INDIRECT OR
@@ -24,7 +24,7 @@
 #  NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 #  CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #  ======================================================================
-  
+
 
 """pyftpdlib: RFC-959 asynchronous FTP server.
 
@@ -78,7 +78,7 @@ Usage example:
 
 >>> from pyftpdlib import ftpserver
 >>> authorizer = ftpserver.DummyAuthorizer()
->>> authorizer.add_user('user', '12345', '/home/user', perm=('r', 'w'))
+>>> authorizer.add_user('user', 'password', '/home/user', perm='elradfmw')
 >>> authorizer.add_anonymous('/home/nobody')
 >>> ftp_handler = ftpserver.FTPHandler
 >>> ftp_handler.authorizer = authorizer
@@ -129,7 +129,7 @@ try:
     import grp
 except ImportError:
     pwd = grp = None
-    
+
 
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'debug', 'DummyAuthorizer',
            'FTPHandler', 'FTPServer', 'PassiveDTP', 'ActiveDTP', 'DTPHandler',
@@ -237,7 +237,7 @@ class Error(Exception):
 
 class AuthorizerError(Error):
     """Base class for authorizer exceptions."""
-    
+
 
 # --- loggers
 
@@ -276,16 +276,30 @@ class DummyAuthorizer:
     """
 
     user_table = {}
+    read_perms = "elr"
+    write_perms = "adfmw"
 
-    def add_user(self, username, password, homedir, perm=('r'),
+    def add_user(self, username, password, homedir, perm='elr',
                     msg_login="Login successful.", msg_quit="Goodbye."):
-        """Add a user to the virtual users table.  AuthorizerError
-        exceptions raised on error conditions such as invalid
-        permissions, missing home directory or duplicate usernames.
+        """Add a user to the virtual users table.
 
-        Optional perm argument is a tuple defaulting to ("r")
-        referencing user's permissions.  Valid values are "r"
-        (read access), "w" (write access) or none at all (no access).
+        AuthorizerError exceptions raised on error conditions such as
+        invalid permissions, missing home directory or duplicate usernames.
+
+        Optional perm argument is a string referencing the user's
+        permissions.
+
+        Read permissions:
+         - "e" = change directory (CWD command)
+         - "l" = list files (LIST, NLST, MLSD commands)
+         - "r" = retrieve file from the server (RETR command)
+
+        Write permissions:
+         - "a" = append data to an existing file (APPE command)
+         - "d" = delete file or directory (DELE, RMD commands)
+         - "f" = rename file or directory (RNFR, RNTO commands)
+         - "m" = create directory (MKD command)
+         - "w" = store a file to the server (STOR, STOU commands)
 
         Optional msg_login and msg_quit arguments can be specified to
         provide customized response strings when user log-in and quit.
@@ -295,11 +309,13 @@ class DummyAuthorizer:
         if not os.path.isdir(homedir):
             raise AuthorizerError('No such directory: "%s"' %homedir)
         for p in perm:
-            if p not in ('', 'r', 'w'):
+            if p not in 'elradfmw':
                 raise AuthorizerError('No such permission "%s"' %p)
-            if (p in 'w') and (username == 'anonymous'):
+        for p in perm:
+            if (p in self.write_perms) and (username == 'anonymous'):
                 warnings.warn("write permissions assigned to anonymous user.",
-                                RuntimeWarning)
+                              RuntimeWarning)
+                break
         dic = {'pwd': str(password),
                'home': str(homedir),
                'perm': perm,
@@ -310,16 +326,19 @@ class DummyAuthorizer:
 
     def add_anonymous(self, homedir, **kwargs):
         """Add an anonymous user to the virtual users table.
+
         AuthorizerError exception raised on error conditions such as
-        insufficient permissions, missing home directory, or duplicate
+        invalid permissions, missing home directory, or duplicate
         anonymous users.
 
         The keyword arguments in kwargs are the same expected by
         add_user method: "perm", "msg_login" and "msg_quit".
-        The optional "perm" keyword argument is a tuple defaulting to
-        ("r") referencing "read-only" anonymous user's permission.
-        Using a "w" (write access) value results in a warning message
-        printed to stderr.
+
+        The optional "perm" keyword argument is a string defaulting to
+        "elr" referencing "read-only" anonymous user's permissions.
+
+        Using write permission values ("adfmw") results in a
+        RuntimeWarning.
         """
         DummyAuthorizer.add_user(self, 'anonymous', '', homedir, **kwargs)
 
@@ -336,6 +355,15 @@ class DummyAuthorizer:
         """Whether the username exists in the virtual users table."""
         return username in self.user_table
 
+    def has_perm(self, username, perm, path=None):
+        """Whether the user has permission over path (an absolute
+        pathname of a file or a directory).
+
+        Expected perm argument is one of the following letters:
+        "elradfmw".
+        """
+        return perm in self.user_table[username]['perm']
+
     def get_home_dir(self, username):
         """Return the user's home directory."""
         return self.user_table[username]['home']
@@ -348,15 +376,9 @@ class DummyAuthorizer:
         """Return the user's quitting message."""
         return self.user_table[username]['msg_quit']
 
-    def r_perm(self, username, obj=None):
-        """Whether the user has read permissions for obj (an absolute
-        pathname of a file or a directory)"""
-        return 'r' in self.user_table[username]['perm']
-
-    def w_perm(self, username, obj=None):
-        """Whether the user has write permission for obj (an absolute
-        pathname of a file or a directory)"""
-        return 'w' in self.user_table[username]['perm']
+    def get_perms(self, username):
+        """Return current user permissions."""
+        return self.user_table[username]['perm']
 
 
 # --- DTP classes
@@ -418,7 +440,7 @@ class PassiveDTP(asyncore.dispatcher):
         self.cmd_channel.debug("PassiveDTP.__del__()")
 
     # --- connection / overridden
-    
+
     def handle_accept(self):
         """Called when remote client initiates a connection."""
         self.cmd_channel.debug("PassiveDTP.handle_accept()")
@@ -465,7 +487,7 @@ class PassiveDTP(asyncore.dispatcher):
             raise
         logerror(traceback.format_exc())
         self.close()
-            
+
     def handle_close(self):
         """Called on closing the data connection."""
         self.cmd_channel.debug("PassiveDTP.handle_close()")
@@ -485,7 +507,7 @@ class ActiveDTP(asyncore.dispatcher):
 
     def __init__(self, ip, port, cmd_channel):
         asyncore.dispatcher.__init__(self)
-        self.cmd_channel = cmd_channel       
+        self.cmd_channel = cmd_channel
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connect((ip, port))
 
@@ -493,7 +515,7 @@ class ActiveDTP(asyncore.dispatcher):
         self.cmd_channel.debug("ActiveDTP.__del__()")
 
     # --- connection / overridden
-    
+
     def handle_write(self):
         """NOOP, must be overridden to prevent unhandled write event."""
 
@@ -524,7 +546,7 @@ class ActiveDTP(asyncore.dispatcher):
             logerror(traceback.format_exc())
         self.cmd_channel.respond("425 Can't connect to specified address.")
         self.close()
-        
+
     def close(self):
         """Close the dispatcher socket."""
         self.cmd_channel.debug("ActiveDTP.close()")
@@ -546,7 +568,7 @@ class DTPHandler(asyncore.dispatcher):
 
     sock_obj is the underlying socket used for the connection,
     cmd_channel is the FTPHandler class instance.
-    
+
     DTPHandler implementation note:
     When a producer is consumed and close_when_done() has been called
     previously, refill_buffer() erroneously calls close() instead of
@@ -568,7 +590,7 @@ class DTPHandler(asyncore.dispatcher):
     ac_in_buffer_size = 8192
     ac_out_buffer_size  = 8192
 
-    def __init__(self, sock_obj, cmd_channel):        
+    def __init__(self, sock_obj, cmd_channel):
         """Initialize the DTPHandler instance, replacing asynchat's
         "simple producer" deque wrapper with a pure deque object.
         """
@@ -583,13 +605,13 @@ class DTPHandler(asyncore.dispatcher):
         self.receive = False
         self.transfer_finished = False
         self.tot_bytes_sent = 0
-        self.tot_bytes_received = 0        
+        self.tot_bytes_received = 0
 
     def __del__(self):
         self.cmd_channel.debug("DTPHandler.__del__()")
 
     # --- utility methods
-    
+
     def enable_receiving(self, type):
         """Enable receiving of data over the channel. Depending on the
         TYPE currently in use it creates an appropriate wrapper for the
@@ -815,7 +837,7 @@ class IteratorProducer:
             return self.iterator.next()
         except StopIteration:
             return ''
-            
+
 class BufferedIteratorProducer:
     """Producer for iterator objects with buffer capabilities."""
     # how many times iterator.next() will be called before
@@ -857,7 +879,7 @@ class AbstractedFS:
     def ftpnorm(self, ftppath):
         """Normalize a "virtual" ftp pathname (tipically the raw string
         coming from client) depending on the current working directory.
-        
+
         Example (having "/foo" as current working directory):
         'x' -> '/foo/x'
 
@@ -887,10 +909,10 @@ class AbstractedFS:
         """Translate a "virtual" ftp pathname (tipically the raw string
         coming from client) into equivalent absolute "real" filesystem
         pathname.
-        
+
         Example (having "/home/user" as root directory):
         'x' -> '/home/user/x'
-        
+
         Note: directory separators are system dependent.
         """
         # as far as I know, it should always be path traversal safe...
@@ -899,15 +921,15 @@ class AbstractedFS:
         else:
             p = self.ftpnorm(ftppath)[1:]
             return os.path.normpath(os.path.join(self.root, p))
-        
+
     def fs2ftp(self, fspath):
         """Translate a "real" filesystem pathname into equivalent
         absolute "virtual" ftp pathname depending on the user's
         root directory.
-        
+
         Example (having "/home/user" as root directory):
         '/home/user/x' -> '/x'
-        
+
         As for ftpnorm, directory separators are system independent
         ("/") and pathname returned is always absolutized.
 
@@ -925,13 +947,13 @@ class AbstractedFS:
         if not p.startswith('/'):
             p = '/' + p
         return p
-    
+
     # alias for backward compatibility with 0.2.0
     normalize = ftpnorm
     translate = ftp2fs
-        
+
     # --- Wrapper methods around open() and tempfile.mkstemp
-    
+
     def open(self, filename, mode):
         """Open a file returning its handler."""
         return open(filename, mode)
@@ -950,13 +972,13 @@ class AbstractedFS:
 
         text = not 'b' in mode
         # max number of tries to find out a unique file name
-        tempfile.TMP_MAX = 50 
+        tempfile.TMP_MAX = 50
         fd, name = tempfile.mkstemp(suffix, prefix, dir, text=text)
         file = os.fdopen(fd, mode)
         return FileWrapper(file, name)
-    
+
     # --- Wrapper methods around os.*
-    
+
     def chdir(self, path):
         """Change the current directory."""
         # temporarily join the specified directory to see if we have
@@ -985,7 +1007,7 @@ class AbstractedFS:
     def remove(self, path):
         """Remove the specified file."""
         os.remove(path)
-        
+
     def rename(self, src, dst):
         """Rename the specified src file to the dst filename."""
         os.rename(src, dst)
@@ -1000,7 +1022,7 @@ class AbstractedFS:
 
     if not hasattr(os, 'lstat'):
         lstat = stat
-        
+
     # --- Wrapper methods around os.path.*
 
     def isfile(self, path):
@@ -1014,7 +1036,7 @@ class AbstractedFS:
     def isdir(self, path):
         """Return True if path is a directory."""
         return os.path.isdir(path)
-    
+
     def getsize(self, path):
         """Return the size of the specified file in bytes."""
         return os.path.getsize(path)
@@ -1023,14 +1045,14 @@ class AbstractedFS:
         """Return the last modified time as a number of seconds since
         the epoch."""
         return os.path.getmtime(path)
-    
+
     def realpath(self, path):
         """Return the canonical version of path eliminating any
         symbolic links encountered in the path (if they are
         supported by the operating system).
         """
         return os.path.realpath(path)
-    
+
     def lexists(self, path):
         """Return True if path refers to an existing path, including
         a broken or circular symbolic link.
@@ -1051,7 +1073,7 @@ class AbstractedFS:
     exists = lexists  # alias for backward compatibility with 0.2.0
 
     # --- Utility methods
-    
+
     def validpath(self, path):
         """Check whether the path belongs to user's home directory.
         Expected argument is a "real" filesystem path. If path is a
@@ -1068,7 +1090,7 @@ class AbstractedFS:
         if path[0:len(root)] == root:
             return True
         return False
-    
+
     def glob1(self, dirname, pattern):
         """Return a list of files matching a dirname pattern
         non-recursively.
@@ -1078,9 +1100,9 @@ class AbstractedFS:
         if pattern[0] != '.':
             names = filter(lambda x: x[0] != '.',names)
         return fnmatch.filter(names, pattern)
-    
-    # --- Listing utilities 
-    
+
+    # --- Listing utilities
+
     # note: the following operations are no more blocking
 
     def get_list_dir(self, path):
@@ -1125,15 +1147,15 @@ class AbstractedFS:
          - basedir: the absolute dirname
          - listing: a list containing the names of the entries in basedir
          - ignore_err: if False raise exception if os.stat() call fails
-    
+
         On platforms which do not support the pwd and grp modules (such
         as Windows), ownership is printed as "owner" and "group" as a
         default, and number of hard links is always "1". On UNIX
         systems, the actual owner, group, and number of links are
         printed.
-    
+
         This is how output appears to client:
-    
+
         -rw-rw-rw-   1 owner   group    7045120 Sep 02  3:47 music.mp3
         drwxrwxrwx   1 owner   group          0 Aug 31 18:50 e-books
         -rw-rw-rw-   1 owner   group        380 Sep 02  3:40 module.py
@@ -1175,11 +1197,11 @@ class AbstractedFS:
             # if the file is a symlink, resolve it, e.g. "symlink -> realfile"
             if stat.S_ISLNK(st.st_mode):
                 basename = basename + " -> " + os.readlink(file)
-                
+
             # formatting is matched with proftpd ls output
             yield "%s %3s %-8s %-8s %8s %s %s\r\n" %(perms, nlinks, uname, gname,
                                                      size, mtime, basename)
-    
+
     def format_mlsx(self, basedir, listing, ignore_err=True):
         """Return an iterator object that yields the entries of a given
         directory or of a single file in a form suitable with MLSD and
@@ -1452,19 +1474,8 @@ class FTPHandler(asynchat.async_chat):
 
         # provide full command set
         elif (self.authenticated) and (cmd in proto_cmds):
-            # For the following commands we have to make sure that the
-            # real path destination belongs to the user's root
-            # directory.  If provided path is a symlink we follow its
-            # final destination to do so.
-            if cmd in ('APPE','CWD','DELE','MDTM','NLST','MLSD','MLST','RETR',
-                       'RMD','SIZE','STOR','XCWD','XRMD'):
-                if not self.fs.validpath(self.fs.ftp2fs(arg)):
-                    line = self.fs.ftpnorm(arg)
-                    err = '"%s" points to a path which is outside ' \
-                          "the user's root directory" %line
-                    self.respond("550 %s." %err)
-                    self.log('FAIL %s "%s". %s.' %(cmd, line, err))
-                    return
+            if not (self.__check_path(arg, arg) and self.__check_perm(cmd, arg)):
+                return
             method = getattr(self, 'ftp_' + cmd)
             method(arg)  # call the proper ftp_* method
 
@@ -1477,6 +1488,48 @@ class FTPHandler(asynchat.async_chat):
             # unknown command
             else:
                 self.cmd_not_understood(line)
+
+    def __check_path(self, cmd, line):
+        """Check whether a path is valid."""
+        # For the following commands we have to make sure that the real
+        # path destination belongs to the user's root directory.
+        # If provided path is a symlink we follow its final destination
+        # to do so.
+        if cmd in ('APPE','CWD','DELE','MDTM','NLST','MLSD','MLST','RETR',
+                   'RMD','SIZE','STOR','XCWD','XRMD'):
+            if not self.fs.validpath(self.fs.ftp2fs(line)):
+                line = self.fs.ftpnorm(line)
+                err = '"%s" points to a path which is outside ' \
+                      "the user's root directory" %line
+                self.respond("550 %s." %err)
+                self.log('FAIL %s "%s". %s.' %(cmd, line, err))
+                return False
+        return True
+
+    def __check_perm(self, cmd, line):
+        """Check permissions depending on issued command."""
+        map = {'CWD':'e', 'XCWD':'e', 'CDUP':'e', 'XCUP':'e',
+               'LIST':'l', 'NLST':'l', 'MLSD':'l', 'STAT':'l',
+               'RETR':'r',
+               'APPE':'a',
+               'DELE':'d', 'RMD':'d', 'XRMD':'d',
+               'RNFR':'f',
+               'MKD':'m', 'XMKD':'m',
+               'STOR':'w'}
+        if cmd in map:
+            if cmd == 'STAT' and not line:
+                return True
+            perm = map[cmd]
+            if not line and (cmd in ('LIST','NLST','MLSD')):
+                path = self.fs.ftp2fs(self.fs.cwd)
+            else:
+                path = self.fs.ftp2fs(line)
+            if not self.authorizer.has_perm(self.username, perm, path):
+                self.log('FAIL %s "%s". Not enough privileges.' \
+                         %(cmd, self.fs.ftpnorm(line)))
+                self.respond("550 Can't %s. Not enough privileges." %cmd)
+                return False
+        return True
 
     def handle_expt(self):
         """Called when there is out of band (OOB) data for the socket
@@ -1882,13 +1935,6 @@ class FTPHandler(asynchat.async_chat):
         client)
         """
         file = self.fs.ftp2fs(line)
-
-        if not self.authorizer.r_perm(self.username, file):
-            self.log('FAIL RETR "s". Not enough privileges.'
-                        %self.fs.ftpnorm(line))
-            self.respond("550 Can't RETR: not enough privileges.")
-            return
-
         try:
             fd = self.fs.open(file, 'rb')
         except IOError, err:
@@ -1933,17 +1979,10 @@ class FTPHandler(asynchat.async_chat):
             cmd = 'APPE'
         else:
             cmd = 'STOR'
+
         file = self.fs.ftp2fs(line)
-
-        if not self.authorizer.w_perm(self.username, os.path.dirname(file)):
-            self.log('FAIL %s "%s". Not enough privileges.'
-                        %(cmd, self.fs.ftpnorm(line)))
-            self.respond("550 Can't STOR: not enough privileges.")
-            return
-
         if self.restart_position:
             mode = 'r+'
-
         try:
             fd = self.fs.open(file, mode + 'b')
         except IOError, err:
@@ -2007,13 +2046,6 @@ class FTPHandler(asynchat.async_chat):
         else:
             basedir = self.fs.ftp2fs(self.fs.cwd)
             prefix = 'ftpd.'
-
-        if not self.authorizer.w_perm(self.username, basedir):
-            self.log('FAIL STOU "%s". Not enough privileges' \
-                        %self.fs.ftpnorm(line))
-            self.respond("550 Can't STOU: not enough privileges.")
-            return
-
         try:
             fd = self.fs.mkstemp(prefix=prefix, dir=basedir)
         except IOError, err:
@@ -2029,6 +2061,11 @@ class FTPHandler(asynchat.async_chat):
             return
 
         filename = os.path.basename(fd.name)
+        if not self.authorizer.has_perm(self.username, 'w', filename):
+            self.log('FAIL STOU "%s". Not enough privileges'
+                     %self.fs.ftpnorm(line))
+            self.respond("550 Can't STOU: not enough privileges.")
+            return
 
         # now just acts like STOR except that restarting isn't allowed
         log = 'OK STOU "%s". Upload starting.' %filename
@@ -2047,8 +2084,8 @@ class FTPHandler(asynchat.async_chat):
         # watch for APPE preceded by REST, which makes no sense.
         if self.restart_position:
             self.respond("550 Can't APPE while REST request is pending.")
-            return
-        self.ftp_STOR(line, mode='a')
+        else:
+            self.ftp_STOR(line, mode='a')
 
     def ftp_REST(self, line):
         """Restart a file transfer from a previous mark."""
@@ -2274,17 +2311,10 @@ class FTPHandler(asynchat.async_chat):
             lmt = time.strftime("%Y%m%d%H%M%S", time.localtime(lmt))
             self.respond("213 %s" %lmt)
             self.log('OK MDTM "%s".' %self.fs.ftpnorm(line))
-            
+
     def ftp_MKD(self, line):
         """Create the specified directory."""
         path = self.fs.ftp2fs(line)
-
-        if not self.authorizer.w_perm(self.username, os.path.dirname(path)):
-            self.log('FAIL MKD "%s". Not enough privileges.'
-                        %self.fs.ftpnorm(line))
-            self.respond("550 Can't MKD: not enough privileges.")
-            return
-
         try:
             self.fs.mkdir(path)
         except OSError, err:
@@ -2304,12 +2334,6 @@ class FTPHandler(asynchat.async_chat):
             self.respond("550 %s" %msg)
             self.log('FAIL MKD "/". %s' %msg)
             return
-
-        if not self.authorizer.w_perm(self.username, path):
-            self.log('FAIL RMD "%s". Not enough privileges.' %self.fs.ftpnorm(line))
-            self.respond("550 Can't RMD: not enough privileges.")
-            return
-
         try:
             self.fs.rmdir(path)
         except OSError, err:
@@ -2323,13 +2347,6 @@ class FTPHandler(asynchat.async_chat):
     def ftp_DELE(self, line):
         """Delete the specified file."""
         path = self.fs.ftp2fs(line)
-
-        if not self.authorizer.w_perm(self.username, path):
-            self.log('FAIL DELE "%s". Not enough privileges.'
-                        %self.fs.ftpnorm(line))
-            self.respond("550 Can't DELE: not enough privileges.")
-            return
-
         try:
             self.fs.remove(path)
         except OSError, err:
@@ -2344,13 +2361,6 @@ class FTPHandler(asynchat.async_chat):
         """Rename the specified (only the source name is specified
         here, see RNTO command)"""
         path = self.fs.ftp2fs(line)
-
-        if not self.authorizer.w_perm(self.username, path):
-            self.log('FAIL RNFR "%s". Not enough privileges for renaming.'
-                     %(self.fs.ftpnorm(line)))
-            self.respond("550 Can't RNRF: not enough privileges.")
-            return
-
         if self.fs.lexists(path):
             self.fs.rnfr = line
             self.respond("350 Ready for destination name.")
@@ -2364,18 +2374,8 @@ class FTPHandler(asynchat.async_chat):
         if not self.fs.rnfr:
             self.respond("503 Bad sequence of commands: use RNFR first.")
             return
-
         src = self.fs.ftp2fs(self.fs.rnfr)
         dst = self.fs.ftp2fs(line)
-
-        if not self.authorizer.w_perm(self.username, self.fs.rnfr):
-            self.log('FAIL RNFR/RNTO "%s ==> %s". ' 'Not enough privileges for '
-                     'renaming.' %(self.fs.ftpnorm(self.fs.rnfr),
-                                   self.fs.ftpnorm(line)))
-            self.respond("550 Can't RNTO: not enough privileges.")
-            self.fs.rnfr = None
-            return
-
         try:
             try:
                 self.fs.rename(src, dst)
@@ -2615,7 +2615,7 @@ class FTPServer(asyncore.dispatcher):
             else:
                 map = kwargs['map']
             self._map = self.handler._map = map
-            
+
         try:
             # FIX #16, #26
             # use_poll specifies whether to use select module's poll()

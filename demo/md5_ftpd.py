@@ -20,7 +20,7 @@ if __name__ == "__main__":
     # get a hash digest from a clear-text password
     hash = md5.new('12345').hexdigest()
     authorizer = DummyMD5Authorizer()
-    authorizer.add_user('user', hash, os.getcwd(), perm=('r', 'w'))
+    authorizer.add_user('user', hash, os.getcwd(), perm='elradfmw')
     authorizer.add_anonymous(os.getcwd())    
     ftp_handler = ftpserver.FTPHandler
     ftp_handler.authorizer = authorizer

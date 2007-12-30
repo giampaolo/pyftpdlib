@@ -78,7 +78,7 @@ class ThrottledDTPHandler(ftpserver.DTPHandler):
 
 if __name__ == '__main__':
     authorizer = ftpserver.DummyAuthorizer()
-    authorizer.add_user('user', '12345', os.getcwd(), perm=('r', 'w'))
+    authorizer.add_user('user', '12345', os.getcwd(), perm='elradfmw')
 
     # use the modified DTPHandler class; set a speed
     # limit for both sending and receiving

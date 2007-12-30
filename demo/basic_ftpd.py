@@ -12,9 +12,12 @@ from pyftpdlib import ftpserver
 
 if __name__ == "__main__":
 
-    # Import a dummy authorizer for managing 'virtual users' 
+    # Instantiate a dummy authorizer for managing 'virtual' users
     authorizer = ftpserver.DummyAuthorizer()
-    authorizer.add_user('user', '12345', os.getcwd(), perm=('r', 'w'))
+    
+    # Define a new user having full r/w permissions and a read-only
+    # anonymous user
+    authorizer.add_user('user', '12345', os.getcwd(), perm='elradfmw')
     authorizer.add_anonymous(os.getcwd())
 
     # Instantiate FTP handler class

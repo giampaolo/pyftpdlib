@@ -40,7 +40,7 @@ class WinNtAuthorizer(ftpserver.DummyAuthorizer):
 if __name__ == "__main__":
     authorizer = WinNtAuthorizer()
     # add a user (note: user must already exists)
-    authorizer.add_user('user', perm=('r', 'w'))
+    authorizer.add_user('user', perm='elradfmw')
     authorizer.add_anonymous(os.getcwd())
     ftp_handler = ftpserver.FTPHandler
     ftp_handler.authorizer = authorizer
