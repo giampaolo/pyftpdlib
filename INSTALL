@@ -1,0 +1,53 @@
+
+Requirements
+============
+
+- Python 2.3 or higher (not Python 3.x).
+You can get the latest stable Python distribution from here:
+http://www.python.org/download/
+
+
+Manual installation
+===================
+
+If you have downloaded a pyftpdlib package, follow the following steps:
+
+- Unpack it:
+
+> tar zxf pyftpdlib-0.3.0.tar.gz
+
+- Change to the pyftpdlib directory:
+
+> cd pyftpdlib
+
+- Run setup.py to install pyftpdlib. This step need to be run as root.
+
+> python setup.py install
+
+Note: Windows users just need to run:
+
+> setup.py install
+
+
+Using easy_install
+==================
+
+If you have easy_install [1] on your system, installing pyftpdlib is quite
+simple. Just run:
+
+> easy_install.py pyftpdlib
+
+This will get the most updated pyftpdlib from the Python pypi repository [2],
+unpack it and install it automatically.
+
+Note: if you already have an old version of pyftpdlib installed, easy_install
+will not automatically download the latest version.
+You can ask for a particular version by running for example:
+
+> easy_install pyftpdlib==0.3.0
+
+
+
+References:
+[1] easy_install: http://peak.telecommunity.com/DevCenter/EasyInstall
+[2] pypi: http://pypi.python.org/pypi
