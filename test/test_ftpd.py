@@ -39,7 +39,7 @@ from test import test_support
 
 from pyftpdlib import ftpserver
 
-__release__ = 'pyftpdlib 0.2.1'
+__release__ = 'pyftpdlib 0.3.0'
 
 
 # This test suite has been run successfully on the following systems:
@@ -537,7 +537,7 @@ class FtpFsOperations(unittest.TestCase):
     def test_rmd(self):
         ftp.rmd(self.tempdir)
         self.assertRaises(ftplib.error_perm, ftp.rmd, self.tempfile)
-        # make sure we can't use rmd against root directory
+        # make sure we can't remove the root directory
         self.assertRaises(ftplib.error_perm, ftp.rmd, '/')
 
     def test_dele(self):
@@ -557,8 +557,7 @@ class FtpFsOperations(unittest.TestCase):
         bogus = os.path.basename(tempfile.mktemp(dir=home))
         self.assertRaises(ftplib.error_perm, ftp.rename, bogus, '/x')
         self.assertRaises(ftplib.error_perm, ftp.rename, self.tempfile, '/')
-        # make sure we can't rename root directory, just to be safe,
-        # maybe not really necessary...
+        # make sure we can't rename root directory
         self.assertRaises(ftplib.error_perm, ftp.rename, '/', '/x')
 
     def test_mdtm(self):

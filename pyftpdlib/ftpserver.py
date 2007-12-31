@@ -138,7 +138,7 @@ __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'debug', 'DummyAuthorizer',
 
 
 __pname__   = 'Python FTP server library (pyftpdlib)'
-__ver__     = '0.2.0'  # XXX change ver
+__ver__     = '0.3.0'
 __date__    = '2007-17-09'  # XXX change date
 __author__  = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__     = 'http://code.google.com/p/pyftpdlib/'
@@ -317,7 +317,7 @@ class DummyAuthorizer:
                               RuntimeWarning)
                 break
         dic = {'pwd': str(password),
-               'home': str(homedir),
+               'home': homedir,
                'perm': perm,
                'msg_login': str(msg_login),
                'msg_quit': str(msg_quit)
@@ -2329,7 +2329,7 @@ class FTPHandler(asynchat.async_chat):
         """Remove the specified directory."""
         path = self.fs.ftp2fs(line)
 
-        if path == self.fs.root:
+        if self.fs.realpath(path) == self.fs.realpath(self.fs.root):
             msg = "Can't remove root directory."
             self.respond("550 %s" %msg)
             self.log('FAIL MKD "/". %s' %msg)
@@ -2361,11 +2361,13 @@ class FTPHandler(asynchat.async_chat):
         """Rename the specified (only the source name is specified
         here, see RNTO command)"""
         path = self.fs.ftp2fs(line)
-        if self.fs.lexists(path):
+        if not self.fs.lexists(path):
+            self.respond("550 No such file or directory.")
+        elif self.fs.realpath(path) == self.fs.realpath(self.fs.root):
+            self.respond("550 Can't rename the home directory.")
+        else:
             self.fs.rnfr = line
             self.respond("350 Ready for destination name.")
-        else:
-            self.respond("550 No such file or directory.")
 
     def ftp_RNTO(self, line):
         """Rename file (destination name only, source is specified with
