@@ -1146,7 +1146,7 @@ class AbstractedFS:
 
          - basedir: the absolute dirname
          - listing: a list containing the names of the entries in basedir
-         - ignore_err: if False raise exception if os.stat() call fails
+         - ignore_err: if False raise exception if os.lstat() call fails
 
         On platforms which do not support the pwd and grp modules (such
         as Windows), ownership is printed as "owner" and "group" as a
@@ -1202,7 +1202,7 @@ class AbstractedFS:
             yield "%s %3s %-8s %-8s %8s %s %s\r\n" %(perms, nlinks, uname, gname,
                                                      size, mtime, basename)
 
-    def format_mlsx(self, basedir, listing, ignore_err=True):
+    def format_mlsx(self, basedir, listing, perms, ignore_err=True):
         """Return an iterator object that yields the entries of a given
         directory or of a single file in a form suitable with MLSD and
         MLST commands.
@@ -1213,6 +1213,7 @@ class AbstractedFS:
 
          - basedir: the absolute dirname
          - listing: a list containing the names of the entries in basedir
+         - perms: a string referencing the user permissions
          - ignore_err: if False raise exception if os.stat() call fails
 
         Note that "facts" returned may change depending on the platform
@@ -1222,11 +1223,17 @@ class AbstractedFS:
         This is how output could appear to the client issuing
         a MLSD request:
 
-        type=file;size=156;modify=20071029155301;unique=801cd012; music.mp3
-        type=dir;size=4096;modify=20071127230206;unique=801e38e3; ebooks
-        type=file;size=211;modify=20071103093626;unique=801e38e2; module.py
+        type=file;size=156;perm=r;modify=20071029155301;unique=801cd012; music.mp3
+        type=dir;size=0;perm=el;modify=20071127230206;unique=801e38e3; ebooks
+        type=file;size=211;perm=r;modify=20071103093626;unique=801e38e2; module.py
         """
-        ftype = size = modify = create = mode = uid = gid = unique = ""
+        permdir = ''.join([x for x in perms if x not in 'arw'])
+        permfile = ''.join([x for x in perms if x not in 'celmp'])
+        if ('w' in perms) or ('a' in perms) or ('f' in perms):
+            permdir += 'c'
+        if 'd' in perms:
+            permdir += 'p'
+        ftype = size = perm = modify = create = unique = ""
         for basename in listing:
             file = os.path.join(basedir, basename)
             try:
@@ -1235,7 +1242,7 @@ class AbstractedFS:
                 if ignore_err:
                     continue
                 raise
-            # file type
+            # type + perm
             if stat.S_ISDIR(st.st_mode):
                 if basename == '.':
                     ftype = 'type=cdir;'
@@ -1243,8 +1250,10 @@ class AbstractedFS:
                     ftype = 'type=pdir;'
                 else:
                     ftype = 'type=dir;'
+                perm = 'perm=%s;' %permdir
             else:
                 ftype = 'type=file;'
+                perm = 'perm=%s;' %permfile
             size = 'size=%s;' %st.st_size  # file size
             # last modification time
             try:
@@ -1260,14 +1269,6 @@ class AbstractedFS:
                                            time.localtime(st.st_ctime))
                 except ValueError:
                     create = ""
-            # Provide uid, gid and mode facts if we're on a UNIX system.
-            # We assume that by checking if pwd and grp are imported.
-            # Theorically we could provide mode also on Windows but I'm
-            # not sure about its reliability.
-            if pwd and grp:
-                mode = 'UNIX.mode=%s;' %oct(st.st_mode & 0777)
-                uid = 'UNIX.uid=%s;' %st.st_uid
-                gid = 'UNIX.gid=%s;' %st.st_gid
             # Provide unique fact (see RFC-3659, chapter 7.5.2) on
             # posix platforms only; we get it by mixing st_dev and
             # st_ino values which should be enough for granting an
@@ -1279,8 +1280,8 @@ class AbstractedFS:
             if os.name == 'posix':
                 unique = "unique=%x%x;" %(st.st_dev, st.st_ino)
 
-            yield "%s%s%s%s%s%s%s%s %s\r\n" %(ftype, size, modify, create, mode,
-                                              uid, gid, unique, basename)
+            yield "%s%s%s%s%s%s %s\r\n" %(ftype, size, perm, modify, create,
+                                          unique, basename)
 
 
 # --- FTP
@@ -1886,8 +1887,9 @@ class FTPHandler(asynchat.async_chat):
         path = self.fs.ftp2fs(line)
         line = self.fs.ftpnorm(line)
         basedir, basename = os.path.split(path)
+        perms = self.authorizer.get_perms(self.username)
         try:
-            data = ''.join(self.fs.format_mlsx(basedir, [basename],
+            data = ''.join(self.fs.format_mlsx(basedir, [basename], perms,
                    ignore_err=False))
         except OSError, err:
             why = _strerror(err)
@@ -1925,7 +1927,8 @@ class FTPHandler(asynchat.async_chat):
             self.log('FAIL MLSD "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
         else:
-            iterator = self.fs.format_mlsx(path, listing)
+            perms = self.authorizer.get_perms(self.username)
+            iterator = self.fs.format_mlsx(path, listing, perms)
             producer = BufferedIteratorProducer(iterator)
             self.push_dtp_data(producer, isproducer=True,
                                log='OK MLSD "%s". Transfer starting.' %line)
@@ -2487,11 +2490,9 @@ class FTPHandler(asynchat.async_chat):
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
         features = ['MDTM','MLSD','REST STREAM','SIZE','TVFS']
-        s = 'MLST Type*;Size*;Modify*;'
+        s = 'MLST Type*;Size*;Perm*;Modify*;'
         if os.name == 'nt':
             s += 'Create*;'
-        if pwd and grp:
-            s += 'UNIX.mode*;UNIX.uid*;UNIX.gid*;'
         if os.name == 'posix':
             s += 'Unique*;'
         features.append(s)
