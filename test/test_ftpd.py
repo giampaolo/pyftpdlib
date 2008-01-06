@@ -568,12 +568,22 @@ class FtpFsOperations(unittest.TestCase):
     def test_mdtm(self):
         ftp.sendcmd('mdtm ' + self.tempfile)
         # make sure we can't use mdtm against directories
-        self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'mdtm ' + self.tempdir)
+        try:
+            ftp.sendcmd('mdtm ' + self.tempdir)
+        except ftplib.error_perm, err:
+            self.failUnless("not retrievable" in str(err))
+        else:
+            self.fail('Exception not raised')
 
     def test_size(self):
         ftp.size(self.tempfile)
         # make sure we can't use size against directories
-        self.assertRaises(ftplib.error_perm, ftp.size, self.tempdir)
+        try:
+            ftp.sendcmd('size ' + self.tempdir)
+        except ftplib.error_perm, err:
+            self.failUnless("not retrievable" in str(err))
+        else:
+            self.fail('Exception not raised')
 
     def test_stat(self):
         ftp.sendcmd('stat')

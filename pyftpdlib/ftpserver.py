@@ -2288,37 +2288,43 @@ class FTPHandler(asynchat.async_chat):
         way as specified in RFC-3659.
         """
         path = self.fs.ftp2fs(line)
+        line = self.fs.ftpnorm(line)
         if self.fs.isdir(path):
-            self.respond("550 Could not get a directory size.")
+            why = "%s is not retrievable" %line
+            self.log('FAIL SIZE "%s". %s.' %(line, why))
+            self.respond("550 %s." %why)
             return
         try:
             size = self.fs.getsize(path)
         except OSError, err:
             why = _strerror(err)
-            self.log('FAIL SIZE "%s". %s' %(self.fs.ftpnorm(line), why))
+            self.log('FAIL SIZE "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
         else:
             self.respond("213 %s" %size)
-            self.log('OK SIZE "%s".' %self.fs.ftpnorm(line))
+            self.log('OK SIZE "%s".' %line)
 
     def ftp_MDTM(self, line):
         """Return last modification time of file to the client as an ISO
         3307 style timestamp (YYYYMMDDHHMMSS) as defined in RFC-3659.
         """
         path = self.fs.ftp2fs(line)
+        line = self.fs.ftpnorm(line)
         if not self.fs.isfile(path):
-            self.respond("550 No such file.")
+            why = "%s is not retrievable" %line
+            self.log('FAIL MDTM "%s". %s.' %(line, why))
+            self.respond("550 %s." %why)
             return
         try:
             lmt = self.fs.getmtime(path)
         except OSError, err:
             why = _strerror(err)
-            self.log('FAIL MDTM "%s". %s' %(self.fs.ftpnorm(line), why))
+            self.log('FAIL MDTM "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
         else:
             lmt = time.strftime("%Y%m%d%H%M%S", time.localtime(lmt))
             self.respond("213 %s" %lmt)
-            self.log('OK MDTM "%s".' %self.fs.ftpnorm(line))
+            self.log('OK MDTM "%s".' %line)
 
     def ftp_MKD(self, line):
         """Create the specified directory."""
