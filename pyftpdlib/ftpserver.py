@@ -1896,9 +1896,9 @@ class FTPHandler(asynchat.async_chat):
             self.log('FAIL MLST "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
         else:
-            # where TVFS is supported, a fully qualified pathname
-            # should be returned
-            data = data.split(' ')[0] + ' %s\r\n'%line
+            # since TVFS is supported (see RFC-3659 chapter 6), a fully
+            # qualified pathname should be returned
+            data = data.split(' ')[0] + ' %s\r\n' %line
             # response is expected on the command channel
             self.push('250-Listing "%s":\r\n' %line)
             # the fact set must be preceded by a space
@@ -1938,11 +1938,12 @@ class FTPHandler(asynchat.async_chat):
         client)
         """
         file = self.fs.ftp2fs(line)
+        line = self.fs.ftpnorm(line)
         try:
             fd = self.fs.open(file, 'rb')
         except IOError, err:
             why = _strerror(err)
-            self.log('FAIL RETR "%s". %s.' %(self.fs.ftpnorm(line), why))
+            self.log('FAIL RETR "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
             return
 
@@ -1964,11 +1965,11 @@ class FTPHandler(asynchat.async_chat):
             self.restart_position = 0
             if not ok:
                 self.respond('554 %s' %why)
-                self.log('FAIL RETR "%s". %s.' %(self.fs.ftpnorm(line), why))
+                self.log('FAIL RETR "%s". %s.' %(line, why))
                 return
         producer = FileProducer(fd, self.current_type)
         self.push_dtp_data(producer, isproducer=1,
-            log='OK RETR "%s". Download starting.' %self.fs.ftpnorm(line))
+            log='OK RETR "%s". Download starting.' %line)
 
 
     def ftp_STOR(self, line, mode='w'):
@@ -1984,13 +1985,14 @@ class FTPHandler(asynchat.async_chat):
             cmd = 'STOR'
 
         file = self.fs.ftp2fs(line)
+        line = self.fs.ftpnorm(line)
         if self.restart_position:
             mode = 'r+'
         try:
             fd = self.fs.open(file, mode + 'b')
         except IOError, err:
             why = _strerror(err)
-            self.log('FAIL %s "%s". %s.' %(cmd, self.fs.ftpnorm(line), why))
+            self.log('FAIL %s "%s". %s.' %(cmd, line, why))
             self.respond('550 %s.' %why)
             return
 
@@ -2012,10 +2014,10 @@ class FTPHandler(asynchat.async_chat):
             self.restart_position = 0
             if not ok:
                 self.respond('554 %s' %why)
-                self.log('FAIL %s "%s". %s.' %(cmd, self.fs.ftpnorm(line), why))
+                self.log('FAIL %s "%s". %s.' %(cmd, line, why))
                 return
 
-        log = 'OK %s "%s". Upload starting.' %(cmd, self.fs.ftpnorm(line))
+        log = 'OK %s "%s". Upload starting.' %(cmd, line)
         if self.data_channel:
             self.respond("125 Data connection already open. Transfer starting.")
             self.log(log)
@@ -2055,7 +2057,7 @@ class FTPHandler(asynchat.async_chat):
             # hitted the max number of tries to find out file with
             # unique name
             if err.errno == errno.EEXIST:
-                why = 'No usable unique file name found.'
+                why = 'No usable unique file name found'
             # something else happened
             else:
                 why = _strerror(err)
@@ -2099,7 +2101,7 @@ class FTPHandler(asynchat.async_chat):
         except (ValueError, OverflowError):
             self.respond("501 Invalid parameter.")
         else:
-            self.respond("350 Restarting at position %s. "
+            self.respond("350 Restarting at position %s. " \
                         "Now use RETR/STOR for resuming." %marker)
             self.log("OK REST %s." %marker)
             self.restart_position = marker
@@ -2324,20 +2326,21 @@ class FTPHandler(asynchat.async_chat):
     def ftp_MKD(self, line):
         """Create the specified directory."""
         path = self.fs.ftp2fs(line)
+        line = self.fs.ftpnorm(line)
         try:
             self.fs.mkdir(path)
         except OSError, err:
             why = _strerror(err)
-            self.log('FAIL MKD "%s". %s.' %(self.fs.ftpnorm(line), why))
+            self.log('FAIL MKD "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
         else:
-            self.log('OK MKD "%s".' %self.fs.ftpnorm(line))
+            self.log('OK MKD "%s".' %line)
             self.respond("257 Directory created.")
 
     def ftp_RMD(self, line):
         """Remove the specified directory."""
         path = self.fs.ftp2fs(line)
-
+        line = self.fs.ftpnorm(line)
         if self.fs.realpath(path) == self.fs.realpath(self.fs.root):
             msg = "Can't remove root directory."
             self.respond("550 %s" %msg)
@@ -2347,23 +2350,24 @@ class FTPHandler(asynchat.async_chat):
             self.fs.rmdir(path)
         except OSError, err:
             why = _strerror(err)
-            self.log('FAIL RMD "%s". %s.' %(self.fs.ftpnorm(line), why))
+            self.log('FAIL RMD "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
         else:
-            self.log('OK RMD "%s".' %self.fs.ftpnorm(line))
+            self.log('OK RMD "%s".' %line)
             self.respond("250 Directory removed.")
 
     def ftp_DELE(self, line):
         """Delete the specified file."""
         path = self.fs.ftp2fs(line)
+        line = self.fs.ftpnorm(line)
         try:
             self.fs.remove(path)
         except OSError, err:
             why = _strerror(err)
-            self.log('FAIL DELE "%s". %s.' %(self.fs.ftpnorm(line), why))
+            self.log('FAIL DELE "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
         else:
-            self.log('OK DELE "%s".' %self.fs.ftpnorm(line))
+            self.log('OK DELE "%s".' %line)
             self.respond("250 File removed.")
 
     def ftp_RNFR(self, line):
@@ -2387,17 +2391,18 @@ class FTPHandler(asynchat.async_chat):
             return
         src = self.fs.ftp2fs(self.fs.rnfr)
         dst = self.fs.ftp2fs(line)
+        line = self.fs.ftpnorm(line)
         try:
             try:
                 self.fs.rename(src, dst)
             except OSError, err:
                 why = _strerror(err)
-                self.log('FAIL RNFR/RNTO "%s ==> %s". %s.'
-                    %(self.fs.ftpnorm(self.fs.rnfr), self.fs.ftpnorm(line), why))
+                self.log('FAIL RNFR/RNTO "%s ==> %s". %s.' \
+                         %(self.fs.ftpnorm(self.fs.rnfr), line, why))
                 self.respond('550 %s.' %why)
             else:
-                self.log('OK RNFR/RNTO "%s ==> %s".'
-                    %(self.fs.ftpnorm(self.fs.rnfr), self.fs.ftpnorm(line)))
+                self.log('OK RNFR/RNTO "%s ==> %s".' \
+                         %(self.fs.ftpnorm(self.fs.rnfr), line))
                 self.respond("250 Renaming ok.")
         finally:
             self.fs.rnfr = None
