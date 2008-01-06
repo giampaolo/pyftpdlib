@@ -2070,12 +2070,7 @@ class FTPHandler(asynchat.async_chat):
             self.respond("550 Can't STOU: not enough privileges.")
             return
         
-        # ...Now we just acts like STOR except that restarting isn't
-        # allowed.
-        # - The 250 response code required in RFC-959 has been declared
-        # incorrect in RFC-1123 which requires 125/150 instead.
-        # - The exact format of the STOU response is hereby defined to
-        # be as "125/150 FILE: <filename>".
+        # now just acts like STOR except that restarting isn't allowed
         log = 'OK STOU "%s". Upload starting.' %filename
         if self.data_channel:
             self.respond("125 FILE: %s" %filename)
