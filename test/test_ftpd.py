@@ -951,7 +951,7 @@ class FtpStoreData(unittest.TestCase):
         self.f2.seek(0)
         self.assertEqual(hash(self.f1.read()), hash(self.f2.read()))
         ftp.delete(TESTFN3)
-        
+
         
 class FTPd(threading.Thread):
     """A threaded FTP server used for running tests."""
@@ -994,8 +994,10 @@ def run():
     tests = [AbstractedFSClass, DummyAuthorizerClass, FtpAuthentication,
              FtpDummyCmds, FtpFsOperations, FtpRetrieveData, FtpAbort,
              FtpStoreData]
-    test_support.run_unittest(*tests)
-    ftpd.stop()
+    try:
+        test_support.run_unittest(*tests)
+    finally:
+        ftpd.stop()
 
 
 host = '127.0.0.1'
