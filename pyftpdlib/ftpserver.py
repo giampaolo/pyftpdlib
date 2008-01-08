@@ -161,6 +161,7 @@ proto_cmds = {
     'MKD' : 'Syntax: MDK <SP> dir-name (create directory).',
     'NLST': 'Syntax: NLST [<SP> path-name] (list files in a compact form).',
     'NOOP': 'Syntax: NOOP (just do nothing).',
+    'OPTS': 'Syntax: OPTS <SP> ftp-command [<SP> option] (specify options for FTP commands)',
     'PASS': 'Syntax: PASS <SP> user-name (set user password).',
     'PASV': 'Syntax: PASV (set server in passive mode).',
     'PORT': 'Syntax: PORT <sp> h1,h2,h3,h4,p1,p2 (set server in active mode).',
@@ -1202,7 +1203,7 @@ class AbstractedFS:
             yield "%s %3s %-8s %-8s %8s %s %s\r\n" %(perms, nlinks, uname, gname,
                                                      size, mtime, basename)
 
-    def format_mlsx(self, basedir, listing, perms, ignore_err=True):
+    def format_mlsx(self, basedir, listing, perms, facts, ignore_err=True):
         """Return an iterator object that yields the entries of a given
         directory or of a single file in a form suitable with MLSD and
         MLST commands.
@@ -1214,11 +1215,11 @@ class AbstractedFS:
          - basedir: the absolute dirname
          - listing: a list containing the names of the entries in basedir
          - perms: a string referencing the user permissions
+         - facts: a list of "facts" to be returned
          - ignore_err: if False raise exception if os.stat() call fails
 
         Note that "facts" returned may change depending on the platform
-        and on what user specified by using the OPTS command (if
-        implemented).
+        and on what user specified by using the OPTS command.
 
         This is how output could appear to the client issuing
         a MLSD request:
@@ -1233,7 +1234,7 @@ class AbstractedFS:
             permdir += 'c'
         if 'd' in perms:
             permdir += 'p'
-        ftype = size = perm = modify = create = unique = ""
+        type = size = perm = modify = create = unique = mode = uid = gid = ""
         for basename in listing:
             file = os.path.join(basedir, basename)
             try:
@@ -1244,32 +1245,45 @@ class AbstractedFS:
                 raise
             # type + perm
             if stat.S_ISDIR(st.st_mode):
-                if basename == '.':
-                    ftype = 'type=cdir;'
-                elif basename == '..':
-                    ftype = 'type=pdir;'
-                else:
-                    ftype = 'type=dir;'
-                perm = 'perm=%s;' %permdir
+                if 'type' in facts:
+                    if basename == '.':
+                        type = 'type=cdir;'
+                    elif basename == '..':
+                        type = 'type=pdir;'
+                    else:
+                        type = 'type=dir;'
+                if 'perm' in facts:
+                    perm = 'perm=%s;' %permdir
             else:
-                ftype = 'type=file;'
-                perm = 'perm=%s;' %permfile
-            size = 'size=%s;' %st.st_size  # file size
+                if 'type' in facts:
+                    type = 'type=file;'
+                if 'perm' in facts:
+                    perm = 'perm=%s;' %permfile
+            if 'size' in facts:
+                size = 'size=%s;' %st.st_size  # file size
             # last modification time
-            try:
-                modify = 'modify=%s;' %time.strftime("%Y%m%d%H%M%S",
-                                       time.localtime(st.st_mtime))
-            except ValueError:
-                # stat.st_mtime could fail (-1) if last mtime is too old
-                modify = ""
-            if os.name == 'nt':
+            if 'modify' in facts:
+                try:
+                    modify = 'modify=%s;' %time.strftime("%Y%m%d%H%M%S",
+                                           time.localtime(st.st_mtime))
+                except ValueError:
+                    # stat.st_mtime could fail (-1) if last mtime is too old
+                    modify = ""
+            if 'create' in facts:
                 # on Windows we can provide also the creation time
                 try:
                     create = 'create=%s;' %time.strftime("%Y%m%d%H%M%S",
                                            time.localtime(st.st_ctime))
                 except ValueError:
                     create = ""
-            # Provide unique fact (see RFC-3659, chapter 7.5.2) on
+            # UNIX only
+            if 'unix.mode' in facts:
+                mode = 'unix.mode=%s;' %oct(st.st_mode & 0777)
+            if 'unix.uid' in facts:
+                uid = 'unix.uid=%s;' %st.st_uid
+            if 'unix.gid' in facts:
+                gid = 'unix.gid=%s;' %st.st_gid
+            # We provide unique fact (see RFC-3659, chapter 7.5.2) on
             # posix platforms only; we get it by mixing st_dev and
             # st_ino values which should be enough for granting an
             # uniqueness for the file listed.
@@ -1277,11 +1291,11 @@ class AbstractedFS:
             # Implementors who want to provide unique fact on other
             # platforms should use some platform-specific method (e.g.
             # on Windows NTFS filesystems MTF records could be used).
-            if os.name == 'posix':
+            if 'unique' in facts:
                 unique = "unique=%x%x;" %(st.st_dev, st.st_ino)
 
-            yield "%s%s%s%s%s%s %s\r\n" %(ftype, size, perm, modify, create,
-                                          unique, basename)
+            yield "%s%s%s%s%s%s%s%s%s %s\r\n" %(type, size, perm, modify, create,
+                                                mode, uid, gid, unique, basename)
 
 
 # --- FTP
@@ -1356,6 +1370,16 @@ class FTPHandler(asynchat.async_chat):
         self.current_type = 'a'
         self.restart_position = 0
         self.quit_pending = False
+        
+        # mlsx facts attributes
+        self.current_facts = ['type', 'perm', 'size', 'modify']
+        if os.name == 'posix':
+            self.current_facts.append('unique')
+        self.available_facts = self.current_facts[:]
+        if pwd and grp:
+            self.available_facts += ['unix.mode', 'unix.uid', 'unix.gid']
+        if os.name == 'nt':
+            self.available_facts.append('create')
 
         # dtp attributes
         self.data_server = None
@@ -1419,12 +1443,13 @@ class FTPHandler(asynchat.async_chat):
     unauth_cmds = ('FEAT','HELP','NOOP','PASS','QUIT','STAT','SYST','USER')
 
     # commands needing an argument
-    arg_cmds = ('ALLO','APPE','DELE','MDTM','MODE','MKD', 'PORT','REST','RETR','RMD',
-                'RNFR','RNTO','SIZE', 'STOR','STRU','TYPE','USER','XMKD','XRMD')
+    arg_cmds = ('ALLO','APPE','DELE','MDTM','MODE','MKD','OPTS','PORT',
+                'REST','RETR','RMD','RNFR','RNTO','SIZE', 'STOR','STRU',
+                'TYPE','USER','XMKD','XRMD')
 
     # commands needing no argument
-    unarg_cmds = ('ABOR','CDUP','FEAT','NOOP','PASV','PWD','QUIT','REIN','SYST',
-                  'XCUP','XPWD')
+    unarg_cmds = ('ABOR','CDUP','FEAT','NOOP','PASV','PWD','QUIT','REIN',
+                  'SYST','XCUP','XPWD')
 
     def found_terminator(self):
         r"""Called when the incoming data stream matches the \r\n terminator."""
@@ -1890,7 +1915,7 @@ class FTPHandler(asynchat.async_chat):
         perms = self.authorizer.get_perms(self.username)
         try:
             data = ''.join(self.fs.format_mlsx(basedir, [basename], perms,
-                   ignore_err=False))
+                   self.current_facts, ignore_err=False))
         except OSError, err:
             why = _strerror(err)
             self.log('FAIL MLST "%s". %s.' %(line, why))
@@ -1928,7 +1953,8 @@ class FTPHandler(asynchat.async_chat):
             self.respond('550 %s.' %why)
         else:
             perms = self.authorizer.get_perms(self.username)
-            iterator = self.fs.format_mlsx(path, listing, perms)
+            iterator = self.fs.format_mlsx(path, listing, perms,
+                       self.current_facts)
             producer = BufferedIteratorProducer(iterator)
             self.push_dtp_data(producer, isproducer=True,
                                log='OK MLSD "%s". Transfer starting.' %line)
@@ -2497,20 +2523,40 @@ class FTPHandler(asynchat.async_chat):
                 self.push('213-Status of "%s":\r\n' %self.fs.ftpnorm(line))
                 self.push_with_producer(BufferedIteratorProducer(iterator))
                 self.respond('213 End of status.')
-
+                
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
         features = ['MDTM','MLSD','REST STREAM','SIZE','TVFS']
-        s = 'MLST Type*;Size*;Perm*;Modify*;'
-        if os.name == 'nt':
-            s += 'Create*;'
-        if os.name == 'posix':
-            s += 'Unique*;'
-        features.append(s)
+        s = ''
+        for fact in self.available_facts:
+            if fact in self.current_facts:
+                s += fact + '*;'
+            else:
+                s += fact + ';'
+        features.append('MLST ' + s)
         features.sort()
         self.push("211-Features supported:\r\n")
         self.push("".join([" %s\r\n" %x for x in features]))
         self.respond('211 End FEAT.')
+        
+    def ftp_OPTS(self, line):
+        """Specify options for FTP commands as specified in RFC-2389."""
+        try:
+            assert (not line.count(' ') > 1), 'Invalid number of arguments'
+            if ' ' in line:
+                cmd, arg = line.split(' ')
+                assert (';' in arg), 'Invalid argument'
+            else:
+                cmd, arg = line, ''
+            # actually the only command able to accept options is MLST
+            assert (cmd.upper() == 'MLST'), 'Unsupported command "%s"' %cmd
+        except AssertionError, err:
+            self.respond('501 %s.' %err)
+        else:
+            facts = [x.lower() for x in arg.split(';')]
+            self.current_facts = [x for x in facts if x in self.available_facts]
+            f = ''.join([x + ';' for x in self.current_facts])
+            self.respond('200 MLST OPTS ' + f)
 
     def ftp_NOOP(self, line):
         """Do nothing."""

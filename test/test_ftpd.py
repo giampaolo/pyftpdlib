@@ -29,6 +29,7 @@ import threading
 import unittest
 import socket
 import os
+import re
 import atexit
 import time
 import tempfile
@@ -478,8 +479,31 @@ class FtpDummyCmds(unittest.TestCase):
         self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'rest str')
         self.failUnlessRaises(ftplib.error_perm, ftp.sendcmd, 'rest -1')
 
-    def test_feat(self):
-        ftp.sendcmd('feat')
+    def test_opts_feat(self):
+        self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'opts')
+        self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'opts mlst bad_fact')
+        self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'opts mlst type ;')
+        self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'opts not_mlst')
+        # utility function which used for extracting the MLST "facts"
+        # string from the FEAT response
+        def mlst():
+            resp = ftp.sendcmd('feat')
+            return re.search(r'^\s*MLST\s+(\S+)$', resp, re.MULTILINE).group(1)
+        # we rely on "type", "perm", "size", and "modify" facts which
+        # are those available on all platforms
+        self.failUnless('type*;perm*;size*;modify*;' in mlst())
+        self.assertEqual(ftp.sendcmd('opts mlst type;'), '200 MLST OPTS type;')
+        self.assertEqual(ftp.sendcmd('opts mLSt TypE;'), '200 MLST OPTS type;')
+        self.failUnless('type*;perm;size;modify;' in mlst())
+        
+        self.assertEqual(ftp.sendcmd('opts mlst'), '200 MLST OPTS ')
+        self.failUnless(not '*' in mlst())
+
+        self.assertEqual(ftp.sendcmd('opts mlst fish;cakes;'), '200 MLST OPTS ')
+        self.failUnless(not '*' in mlst())
+        self.assertEqual(ftp.sendcmd('opts mlst fish;cakes;type;'), \
+                                     '200 MLST OPTS type;')
+        self.failUnless('type*;perm;size;modify;' in mlst())
 
     def test_quit(self):
         ftp.sendcmd('quit')
@@ -718,6 +742,13 @@ class FtpRetrieveData(unittest.TestCase):
         # test file/dir notations
         self.failUnless('type=dir' in mlstline('mlst'))
         self.failUnless('type=file' in mlstline('mlst ' + TESTFN))
+        # let's add some tests for OPTS command
+        ftp.sendcmd('opts mlst type;')
+        self.assertEqual(mlstline('mlst'), ' type=dir; /')
+        # where no facts are present, two leading spaces before the
+        # pathname are required (RFC-3659)
+        ftp.sendcmd('opts mlst')
+        self.assertEqual(mlstline('mlst'), '  /')
         
     def test_mlsd(self):
         # common tests
