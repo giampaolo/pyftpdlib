@@ -105,7 +105,7 @@ class AbstractedFSClass(unittest.TestCase):
         """Tests for ftp2fs method."""
         ae = self.assertEquals
         fs = ftpserver.AbstractedFS()
-        join = lambda x,y: os.path.join(x, y.replace('/', os.sep))
+        join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
 
         def goforit(root):
             fs.root = root

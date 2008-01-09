@@ -607,6 +607,7 @@ class DTPHandler(asyncore.dispatcher):
         self.transfer_finished = False
         self.tot_bytes_sent = 0
         self.tot_bytes_received = 0
+        self.data_wrapper = lambda x: x
 
     def __del__(self):
         self.cmd_channel.debug("DTPHandler.__del__()")
@@ -620,8 +621,6 @@ class DTPHandler(asyncore.dispatcher):
         """
         if type == 'a':
             self.data_wrapper = lambda x: x.replace('\r\n', os.linesep)
-        else:
-            self.data_wrapper = lambda x: x
         self.receive = True
 
     def get_transmitted_bytes(self):
@@ -712,10 +711,10 @@ class DTPHandler(asyncore.dispatcher):
 
             # send the data
             try:
-               num_sent = self.send(data)
+                num_sent = self.send(data)
             except socket.error:
-               self.handle_error()
-               return
+                self.handle_error()
+                return
 
             if num_sent:
                 self.tot_bytes_sent += num_sent
@@ -1099,7 +1098,7 @@ class AbstractedFS:
         """
         names = self.listdir(dirname)
         if pattern[0] != '.':
-            names = filter(lambda x: x[0] != '.',names)
+            names = filter(lambda x: x[0] != '.', names)
         return fnmatch.filter(names, pattern)
 
     # --- Listing utilities
@@ -1472,12 +1471,12 @@ class FTPHandler(asynchat.async_chat):
         # let's check if user provided an argument for those commands
         # needing one
         if not arg and cmd in self.arg_cmds:
-            self.cmd_missing_arg()
+            self.respond("501 Syntax error: command needs an argument.")
             return
 
         # let's do the same for those commands requiring no argument.
         elif arg and cmd in self.unarg_cmds:
-            self.cmd_needs_no_arg()
+            self.respond("501 Syntax error: command does not accept arguments.")
             return
 
         # provide a limited set of commands if user isn't
@@ -1496,7 +1495,7 @@ class FTPHandler(asynchat.async_chat):
             elif cmd in proto_cmds:
                 self.respond("530 Log in with USER and PASS first.")
             else:
-                self.cmd_not_understood(line)
+                self.respond('500 Command "%s" not understood.' %line)
 
         # provide full command set
         elif (self.authenticated) and (cmd in proto_cmds):
@@ -1513,7 +1512,7 @@ class FTPHandler(asynchat.async_chat):
                 self.ftp_STAT("")
             # unknown command
             else:
-                self.cmd_not_understood(line)
+                self.respond('500 Command "%s" not understood.' %line)
 
     def __check_path(self, cmd, line):
         """Check whether a path is valid."""
@@ -1634,9 +1633,9 @@ class FTPHandler(asynchat.async_chat):
 
         # check for data to send
         if self.out_dtp_queue:
-            data, isproducer, log = self.out_dtp_queue
-            if log:
-                self.log(log)
+            data, isproducer, _log = self.out_dtp_queue
+            if _log:
+                self.log(_log)
             if not isproducer:
                 self.data_channel.push(data)
             else:
@@ -1647,9 +1646,9 @@ class FTPHandler(asynchat.async_chat):
 
         # check for data to receive
         elif self.in_dtp_queue:
-            fd, log = self.in_dtp_queue
-            if log:
-                self.log(log)
+            fd, _log = self.in_dtp_queue
+            if _log:
+                self.log(_log)
             self.data_channel.file_obj = fd
             self.data_channel.enable_receiving(self.current_type)
             self.in_dtp_queue = None
@@ -1692,21 +1691,10 @@ class FTPHandler(asynchat.async_chat):
             self.respond("150 File status okay. About to open data connection.")
             self.out_dtp_queue = (data, isproducer, log)
 
-    def cmd_not_understood(self, line):
-        """Return a 'command not understood' message to the client."""
-        self.respond('500 Command "%s" not understood.' %line)
-
-    def cmd_missing_arg(self):
-        """Return a 'missing argument' message to the client."""
-        self.respond("501 Syntax error: command needs an argument.")
-
-    def cmd_needs_no_arg(self):
-        """Return a 'command does not accept arguments' message to the client."""
-        self.respond("501 Syntax error: command does not accept arguments.")
-
     def log(self, msg):
         """Log a message, including additional identifying session data."""
-        log("[%s]@%s:%s %s" %(self.username, self.remote_ip, self.remote_port, msg))
+        log("[%s]@%s:%s %s" %(self.username, self.remote_ip,
+                              self.remote_port, msg))
 
     def logline(self, msg):
         """Log a line including additional indentifying session data."""
@@ -2043,15 +2031,15 @@ class FTPHandler(asynchat.async_chat):
                 self.log('FAIL %s "%s". %s.' %(cmd, line, why))
                 return
 
-        log = 'OK %s "%s". Upload starting.' %(cmd, line)
+        _log = 'OK %s "%s". Upload starting.' %(cmd, line)
         if self.data_channel:
             self.respond("125 Data connection already open. Transfer starting.")
-            self.log(log)
+            self.log(_log)
             self.data_channel.file_obj = fd
             self.data_channel.enable_receiving(self.current_type)
         else:
             self.respond("150 File status okay. About to open data connection.")
-            self.in_dtp_queue = (fd, log)
+            self.in_dtp_queue = (fd, _log)
 
 
     def ftp_STOU(self, line):
@@ -2190,8 +2178,9 @@ class FTPHandler(asynchat.async_chat):
             # and account information already supplied and beginning the
             # login sequence again.
             self.flush_account()
-            self.log('OK USER "%s". Previous account information was flushed.' %line)
-            self.respond('331 Previous account information was flushed, send password.')
+            msg = 'Previous account information was flushed'
+            self.log('OK USER "%s". %s.' %(line, msg))
+            self.respond('331 %s, send password.' %msg)
         self.username = line
 
     def ftp_PASS(self, line):
@@ -2270,9 +2259,9 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_CWD(self, line):
         """Change the current working directory."""
-        # TODO: a lot of FTP servers go back to root directory if no arg is
-        # provided but this is not specified in RFC-959. Search for
-        # official references about this behaviour.
+        # TODO: a lot of FTP servers go back to root directory if no
+        # arg is provided but this is not specified in RFC-959.
+        # Search for official references about this behaviour.
         if not line:
             line = '/'
         path = self.fs.ftp2fs(line)
