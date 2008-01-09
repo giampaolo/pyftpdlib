@@ -30,8 +30,6 @@ import unittest
 import socket
 import os
 import re
-import atexit
-import time
 import tempfile
 import ftplib
 import random
@@ -558,7 +556,7 @@ class FtpFsOperations(unittest.TestCase):
         # orphaned temporary directory in the event of a test failure.
         try:
             ftp.mkd(tempdir)
-        except ftplib.error_perm, err:
+        except ftplib.error_perm:
             os.rmdir(tempdir)  # ok
         else:
             self.fail('ftplib.error_perm not raised.')

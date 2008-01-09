@@ -1063,7 +1063,7 @@ class AbstractedFS:
         # grant backward compatibility with python 2.3
         elif hasattr(os, 'lstat'):
             try:
-                st = os.lstat(path)
+                os.lstat(path)
             except os.error:
                 return False
             return True
@@ -1948,7 +1948,7 @@ class FTPHandler(asynchat.async_chat):
         try:
             listing = self.fs.listdir(path)
         except OSError, err:
-            why = _str(err)
+            why = _strerror(err)
             self.log('FAIL MLSD "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
         else:
