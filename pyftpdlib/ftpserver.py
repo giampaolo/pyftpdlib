@@ -2056,7 +2056,7 @@ class FTPHandler(asynchat.async_chat):
 
         # watch for STOU preceded by REST, which makes no sense.
         if self.restart_position:
-            self.respond("550 Can't STOU while REST request is pending.")
+            self.respond("450 Can't STOU while REST request is pending.")
             return
 
         if line:
