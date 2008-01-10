@@ -2322,7 +2322,7 @@ class FTPHandler(asynchat.async_chat):
         """
         path = self.fs.ftp2fs(line)
         line = self.fs.ftpnorm(line)
-        if not self.fs.isfile(path):
+        if not self.fs.isfile(self.fs.realpath(path)):
             why = "%s is not retrievable" %line
             self.log('FAIL MDTM "%s". %s.' %(line, why))
             self.respond("550 %s." %why)
