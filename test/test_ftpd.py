@@ -913,7 +913,7 @@ class FtpStoreData(unittest.TestCase):
     def test_stou_rest(self):
         # watch for STOU preceded by REST, which makes no sense.
         ftp.sendcmd('rest 10')
-        self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'stou')
+        self.assertRaises(ftplib.error_temp, ftp.sendcmd, 'stou')
 
     def test_appe(self):
         # TESTFN3 is the remote file name
