@@ -288,7 +288,7 @@ class DummyAuthorizer:
         invalid permissions, missing home directory or duplicate usernames.
 
         Optional perm argument is a string referencing the user's
-        permissions.
+        permissions explained below:
 
         Read permissions:
          - "e" = change directory (CWD command)
@@ -365,6 +365,10 @@ class DummyAuthorizer:
         """
         return perm in self.user_table[username]['perm']
 
+    def get_perms(self, username):
+        """Return current user permissions."""
+        return self.user_table[username]['perm']
+
     def get_home_dir(self, username):
         """Return the user's home directory."""
         return self.user_table[username]['home']
@@ -377,17 +381,13 @@ class DummyAuthorizer:
         """Return the user's quitting message."""
         return self.user_table[username]['msg_quit']
 
-    def get_perms(self, username):
-        """Return current user permissions."""
-        return self.user_table[username]['perm']
-
 
 # --- DTP classes
 
 class PassiveDTP(asyncore.dispatcher):
     """This class is an asyncore.disptacher subclass.  It creates a
     socket listening on a local port, dispatching the resultant
-    connection DTPHandler.
+    connection to DTPHandler.
     """
 
     def __init__(self, cmd_channel):
@@ -566,18 +566,24 @@ except ImportError:
 class DTPHandler(asyncore.dispatcher):
     """Class handling server-data-transfer-process (server-DTP, see
     RFC-959) managing data-transfer operations.
-
-    sock_obj is the underlying socket used for the connection,
-    cmd_channel is the FTPHandler class instance.
+    
+    Instance attributes:
+     - cmd_channel: the FTPHandler class instance
+     - receive: True if channel is used for receiving data
+     - transfer_finished: True when the transfer is finished
+     - tot_bytes_sent: the total bytes sent
+     - tot_bytes_received: the total bytes received
 
     DTPHandler implementation note:
+
     When a producer is consumed and close_when_done() has been called
     previously, refill_buffer() erroneously calls close() instead of
     handle_close() - (see: http://bugs.python.org/issue1740572)
 
-    To avoid this problem, DTPHandler is implemented as a subclass of
-    asyncore.dispatcher. This implementation follows the same approach
-    that asynchat module should use in Python 2.6.
+    To avoid this problem DTPHandler is implemented as a subclass of
+    asyncore.dispatcher instead of asynchat.async_chat.
+    This implementation follows the same approach that asynchat module
+    should use in Python 2.6.
 
     The most important change in the implementation is related to
     producer_fifo, which is a pure deque object instead of a
@@ -592,9 +598,6 @@ class DTPHandler(asyncore.dispatcher):
     ac_out_buffer_size  = 8192
 
     def __init__(self, sock_obj, cmd_channel):
-        """Initialize the DTPHandler instance, replacing asynchat's
-        "simple producer" deque wrapper with a pure deque object.
-        """
         asyncore.dispatcher.__init__(self, sock_obj)
         # we toss the use of the asynchat's "simple producer" and
         # replace it  with a pure deque, which the original fifo
@@ -769,13 +772,13 @@ class DTPHandler(asyncore.dispatcher):
         if self.receive:
             self.transfer_finished = True
         if self.transfer_finished:
-            self.cmd_channel.respond("226 Transfer complete.")
-            self.cmd_channel.log("Transfer complete; "
-                                 "%d bytes transmitted." %tot_bytes)
+            msg = "Transfer complete; %d bytes transmitted." %tot_bytes
+            self.cmd_channel.respond("226 " + msg)
+            self.cmd_channel.log(msg)
         else:
-            self.cmd_channel.respond("426 Connection closed; transfer aborted.")
-            self.cmd_channel.log("Transfer aborted; "
-                                 "%d bytes transmitted." %tot_bytes)
+            msg = "Transfer aborted; %d bytes transmitted." %tot_bytes
+            self.cmd_channel.respond("426 " + msg)
+            self.cmd_channel.log(msg)
         self.close()
 
     def close(self):
@@ -796,15 +799,16 @@ class DTPHandler(asyncore.dispatcher):
 # --- producers
 
 class FileProducer:
-    """Producer wrapper for file[-like] objects.
+    """Producer wrapper for file[-like] objects."""
 
-    Depending on the type it creates an appropriate wrapper for the
-    outgoing data.
-    """
     buffer_size = 65536
 
     def __init__(self, file, type):
-        """Intialize the producer with a data_wrapper appropriate to TYPE."""
+        """Initialize the producer with a data_wrapper appropriate to TYPE.
+
+         - file: the file[-like] object
+         - type: the current TYPE, 'a' (ASCII) or 'i' (binary)
+        """
         self.done = False
         self.file = file
         if type == 'a':
@@ -827,16 +831,22 @@ class FileProducer:
         if not self.file.closed:
             self.file.close()
 
+
 class IteratorProducer:
     """Producer for iterator objects."""
+
     def __init__(self, iterator):
         self.iterator = iterator
 
     def more(self):
+        """Attempt a chunk of data from iterator by calling its next()
+        method.
+        """
         try:
             return self.iterator.next()
         except StopIteration:
             return ''
+
 
 class BufferedIteratorProducer:
     """Producer for iterator objects with buffer capabilities."""
@@ -848,6 +858,9 @@ class BufferedIteratorProducer:
         self.iterator = iterator
 
     def more(self):
+        """Attempt a chunk of data from iterator by calling
+        its next() method different times.
+        """
         buffer = []
         for x in xrange(self.loops):
             try:
@@ -867,6 +880,11 @@ class AbstractedFS:
     It provides some utility methods and some wraps around operations
     involved in file object creation and file system operations like
     moving files or removing directories.
+
+    Instance attributes:
+     - root: the pathname of user home directory
+     - cwd: the pathname of current working directory
+     - rnfr: the pathname of source file to be renamed
     """
 
     def __init__(self):
@@ -1076,8 +1094,11 @@ class AbstractedFS:
 
     def validpath(self, path):
         """Check whether the path belongs to user's home directory.
-        Expected argument is a "real" filesystem path. If path is a
-        symbolic link it is resolved to check its real destination.
+        Expected argument is a "real" filesystem path.
+
+        If path is a symbolic link it is resolved to check its real
+        destination.
+
         Pathnames escaping from user's root directory are considered
         not valid.
         """
@@ -1094,6 +1115,7 @@ class AbstractedFS:
     def glob1(self, dirname, pattern):
         """Return a list of files matching a dirname pattern
         non-recursively.
+
         Unlike glob.glob1 raises exception if os.listdir() fails.
         """
         names = self.listdir(dirname)
@@ -1301,15 +1323,9 @@ class AbstractedFS:
 
 class FTPHandler(asynchat.async_chat):
     """Implements the FTP server Protocol Interpreter (see RFC-959),
-    handling commands received from the client on the control channel
-    by calling the command's corresponding method. e.g. for received
-    command "MKD pathname", ftp_MKD() method is called with "pathname"
-    as the argument.
-
-    conn and ftpd_instance parameters are automatically passed by
-    FTPServer class instance.
-
-    All relevant session information is stored in instance variables.
+    handling commands received from the client on the control channel.
+    
+    All relevant session information is stored in class attributes.
     """
     # these are overridable defaults:
 
@@ -1451,7 +1467,13 @@ class FTPHandler(asynchat.async_chat):
                   'SYST','XCUP','XPWD')
 
     def found_terminator(self):
-        r"""Called when the incoming data stream matches the \r\n terminator."""
+        r"""Called when the incoming data stream matches the \r\n
+        terminator.
+
+        Depending on the command received it calls the command's
+        corresponding method (e.g. for received command "MKD pathname",
+        ftp_MKD() method is called with "pathname" as the argument).
+        """
         line = ''.join(self.in_buffer)
         self.in_buffer = []
         self.in_buffer_len = 0
@@ -2621,6 +2643,8 @@ class FTPServer(asyncore.dispatcher):
     """This class is an asyncore.disptacher subclass.  It creates a FTP
     socket listening on <address>, dispatching the requests to a <handler>
     (typically FTPHandler class).
+    
+    All relevant session information is stored in class attributes.
     """
 
     # Overiddable defaults (overriding is strongly recommended to avoid
