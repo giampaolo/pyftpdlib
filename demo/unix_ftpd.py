@@ -15,12 +15,14 @@ class UnixAuthorizer(ftpserver.DummyAuthorizer):
 
     def add_user(self, username, home=None, **kwargs):
         """Add a "real" system user to the virtual users table.
-        If no home argument is specified the user's home directory will be used.
-        The keyword arguments in kwargs are the same expected by add_user
-        method: "perm", "msg_login" and "msg_quit".
+        
+        If no home argument is specified the user's home directory will
+        be used.
+        The keyword arguments in kwargs are the same expected by the
+        original add_user method: "perm", "msg_login" and "msg_quit".
         """
-        # get the list of all available users on the system and check if
-        # username provided exists
+        # get the list of all available users on the system and check
+        # if provided username exists
         users = [entry.pw_name for entry in pwd.getpwall()]
         if not username in users:
             raise ftpserver.AuthorizerError('No such user "%s".' %username)

@@ -12,8 +12,8 @@ from pyftpdlib import ftpserver
 
 
 class ThrottledDTPHandler(ftpserver.DTPHandler):
-    """A DTPHandler which wraps sending and receiving in a data counter and
-    sleep loop so that you burst to no more than x Kb/sec average.
+    """A DTPHandler which wraps sending and receiving in a data counter
+    and sleep loop so that you burst to no more than x Kb/sec average.
     """
 
     # maximum number of bytes to transmit in a second (0 == no limit)
@@ -64,7 +64,8 @@ class ThrottledDTPHandler(ftpserver.DTPHandler):
 
     def throttle_bandwidth(self, len_chunk, max_speed):
         """A method which counts data transmitted so that you burst to
-        no more than x Kb/sec average."""
+        no more than x Kb/sec average.
+        """
         self.datacount += len_chunk
         if self.datacount >= max_speed:
             self.datacount = 0
