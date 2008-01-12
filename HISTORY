@@ -20,6 +20,7 @@ RFC-related enhancements:
 
  * Issue #42: implemented FEAT command defined in RFC-2389.
  * Issue #52: implemented MLST and MLSD commands defined in RFC-3659.
+ * Issue #58: implemented OPTS command define in RFC-2389.
 
 Bugfixes:
 
@@ -48,7 +49,7 @@ API changes since 0.2.0:
    * The permissions management has been changed and the set of available
      permissions has been extended (see Issue #61). add_user method now accepts
      'eladfm' permissions beyond the old 'r' and 'w'.
-   * New "has_perm" and "get_perms" methods has been added.
+   * New "has_perm" and "get_perms" methods have been added.
  * AbstractedFS class changes:
    * normalize method has been renamed in "ftpnorm".
    * translate method has been renamed in "ftp2fs".
