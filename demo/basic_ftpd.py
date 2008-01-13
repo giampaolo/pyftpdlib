@@ -26,6 +26,11 @@ if __name__ == "__main__":
 
     # Define a customized banner (string returned when client connects)
     ftp_handler.banner = "pyftpdlib %s based ftpd ready." %ftpserver.__ver__
+    
+    # Specify a masquerade address and the range of ports to use for
+    # passive connections.  Decomment in case you're behind a NAT.
+    #ftp_handler.masquerade_address = '151.25.42.11'
+    #ftp_handler.passive_ports = range(60000, 65535)
 
     # Instantiate FTP server class and listen to 0.0.0.0:21
     address = ('', 21)
