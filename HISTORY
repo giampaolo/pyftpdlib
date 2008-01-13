@@ -48,7 +48,8 @@ API changes since 0.2.0:
  * DummyAuthorizer class changes:
    * The permissions management have been changed and the set of available
      permissions have been extended (see Issue #61). add_user method now accepts
-     "eladfm" permissions beyond the old "r" and "w".
+     'eladfm' permissions beyond the old 'r' and 'w'.
+   * `r_perm` and `w_perm` methods have been removed.
    * New "has_perm" and "get_perms" methods have been added.
  * AbstractedFS class changes:
    * normalize method has been renamed in "ftpnorm".
