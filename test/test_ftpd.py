@@ -1002,17 +1002,29 @@ class FTPd(threading.Thread):
         ftp_handler = ftpserver.FTPHandler
         ftp_handler.authorizer = authorizer
         address = (host, port)
-        self.__ftpd = ftpserver.FTPServer(address, ftp_handler)
+        ftpd = ftpserver.FTPServer(address, ftp_handler)
+
+        # hack for granting backward compatibility with Python 2.3
+        # where asyncore.loop() doesn't provide the 'count' argument
+        import inspect, asyncore
+        if 'count' in inspect.getargspec(asyncore.loop)[0]:
+            fun = ftpd.serve_forever
+            kwargs = {"timeout":0.1, "count":1}
+        else:
+            fun = asyncore.poll
+            kwargs = {"timeout":0.1}
+
         if self.flag:
             self.flag.set()
         self.active = True
-        self.__ftpd.serve_forever()
+        while self.active:
+            fun(**kwargs)
+        ftpd.close()
 
     def stop(self):
         assert self.active
         self.active = False
-        self.__ftpd.close_all()
-        
+
 
 def run():
     flag = threading.Event()
