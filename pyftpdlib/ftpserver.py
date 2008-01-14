@@ -301,6 +301,7 @@ class DummyAuthorizer:
         """
         if self.has_user(username):
             raise AuthorizerError('User "%s" already exists' %username)
+        homedir = os.path.realpath(homedir)
         if not os.path.isdir(homedir):
             raise AuthorizerError('No such directory: "%s"' %homedir)
         for p in perm:

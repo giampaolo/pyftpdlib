@@ -182,12 +182,12 @@ class AbstractedFSClass(unittest.TestCase):
             ae(fs.fs2ftp('D:\\'), '/')
             ae(fs.fs2ftp('D:\\dir'), '/')
         elif os.sep == '/':
-            goforit('/home/user')
+            goforit('/__home/user')
             goforit('/')
-            fs.root = r'/home/user'
-            ae(fs.fs2ftp('/home'), '/')
+            fs.root = r'/__home/user'
+            ae(fs.fs2ftp('/__home'), '/')
             ae(fs.fs2ftp('/'), '/')
-            ae(fs.fs2ftp('/home/userx'), '/')
+            ae(fs.fs2ftp('/__home/userx'), '/')
         else:
             # os.sep == ':'? Don't know... let's try it anyway
             goforit(os.getcwd())
