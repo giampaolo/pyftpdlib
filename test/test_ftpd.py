@@ -995,7 +995,7 @@ class FTPd(threading.Thread):
 
     def run(self):
         assert not self.active
-        ftpserver.log = ftpserver.logline = ftpserver.debug = lambda x: x
+        ftpserver.log = ftpserver.logline = lambda x: x
         authorizer = ftpserver.DummyAuthorizer()
         authorizer.add_user(user, pwd, home, perm='elradfmw')  # full perms
         authorizer.add_anonymous(home)

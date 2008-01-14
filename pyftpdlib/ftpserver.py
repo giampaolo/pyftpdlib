@@ -70,9 +70,6 @@ which can be overridden to allow for custom logging.
 
     [logerror] - log traceback outputs occurring in case of errors.
 
-    [debug] - used for logging function/method calls (disabled by
-    default).
-
 
 Usage example:
 
@@ -131,7 +128,7 @@ except ImportError:
     pwd = grp = None
 
 
-__all__ = ['proto_cmds', 'Error', 'log', 'logline', 'debug', 'DummyAuthorizer',
+__all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer',
            'FTPHandler', 'FTPServer', 'PassiveDTP', 'ActiveDTP', 'DTPHandler',
            'FileProducer', 'IteratorProducer', 'BufferedIteratorProducer',
            'AbstractedFS',]
@@ -254,9 +251,6 @@ def logerror(msg):
     """Log traceback outputs occurring in case of errors."""
     sys.stderr.write(str(msg) + '\n')
     sys.stderr.flush()
-
-def debug(msg):
-    """Log function/method calls (disabled by default)."""
 
 
 # --- authorizers
@@ -437,14 +431,10 @@ class PassiveDTP(asyncore.dispatcher):
         self.cmd_channel.respond('227 Entering passive mode (%s,%d,%d).' %(
                 ip.replace('.', ','), port / 256, port % 256))
 
-    def __del__(self):
-        self.cmd_channel.debug("PassiveDTP.__del__()")
-
     # --- connection / overridden
 
     def handle_accept(self):
         """Called when remote client initiates a connection."""
-        self.cmd_channel.debug("PassiveDTP.handle_accept()")
         sock, addr = self.accept()
 
         # Check the origin of data connection.  If not expressively
@@ -481,7 +471,6 @@ class PassiveDTP(asyncore.dispatcher):
 
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
-        self.cmd_channel.debug("PassiveDTP.handle_error()")
         try:
             raise
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
@@ -491,12 +480,10 @@ class PassiveDTP(asyncore.dispatcher):
 
     def handle_close(self):
         """Called on closing the data connection."""
-        self.cmd_channel.debug("PassiveDTP.handle_close()")
         self.close()
 
     def close(self):
         """Close the dispatcher socket."""
-        self.cmd_channel.debug("PassiveDTP.close()")
         asyncore.dispatcher.close(self)
 
 
@@ -512,9 +499,6 @@ class ActiveDTP(asyncore.dispatcher):
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connect((ip, port))
 
-    def __del__(self):
-        self.cmd_channel.debug("ActiveDTP.__del__()")
-
     # --- connection / overridden
 
     def handle_write(self):
@@ -522,7 +506,6 @@ class ActiveDTP(asyncore.dispatcher):
 
     def handle_connect(self):
         """Called when connection is established."""
-        self.cmd_channel.debug("ActiveDTP.handle_connect()")
         self.cmd_channel.respond('200 PORT command successful.')
         # delegate such connection to DTP handler
         handler = self.cmd_channel.dtp_handler(self.socket, self.cmd_channel)
@@ -536,7 +519,6 @@ class ActiveDTP(asyncore.dispatcher):
 
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
-        self.cmd_channel.debug("ActiveDTP.handle_error()")
         try:
             raise
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
@@ -550,7 +532,6 @@ class ActiveDTP(asyncore.dispatcher):
 
     def close(self):
         """Close the dispatcher socket."""
-        self.cmd_channel.debug("ActiveDTP.close()")
         asyncore.dispatcher.close(self)
 
 
@@ -612,9 +593,6 @@ class DTPHandler(asyncore.dispatcher):
         self.tot_bytes_sent = 0
         self.tot_bytes_received = 0
         self.data_wrapper = lambda x: x
-
-    def __del__(self):
-        self.cmd_channel.debug("DTPHandler.__del__()")
 
     # --- utility methods
 
@@ -731,13 +709,11 @@ class DTPHandler(asyncore.dispatcher):
 
     def handle_expt(self):
         """Called on "exceptional" data events."""
-        self.cmd_channel.debug("DTPHandler.handle_expt()")
         self.cmd_channel.respond("426 Connection error; transfer aborted.")
         self.close()
 
     def handle_error(self):
         """Called when an exception is raised and not otherwise handled."""
-        self.cmd_channel.debug("DTPHandler.handle_error()")
         try:
             raise
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
@@ -764,7 +740,6 @@ class DTPHandler(asyncore.dispatcher):
 
     def handle_close(self):
         """Called when the socket is closed."""
-        self.cmd_channel.debug("DTPHandler.handle_close()")
         # If we used channel for receiving we assume that transfer is
         # finished when client close connection , if we used channel
         # for sending we have to check that all data has been sent
@@ -789,7 +764,6 @@ class DTPHandler(asyncore.dispatcher):
     def close(self):
         """Close the data channel, first attempting to close any remaining
         file handles."""
-        self.cmd_channel.debug("DTPHandler.close()")
         if self.file_obj and not self.file_obj.closed:
             self.file_obj.close()
         asyncore.dispatcher.close(self)
@@ -1396,9 +1370,6 @@ class FTPHandler(asynchat.async_chat):
         self.data_server = None
         self.data_channel = None
 
-    def __del__(self):
-        debug("FTPHandler.__del__()")
-
     def handle(self):
         """Return a 220 'Ready' response to the client over the command
         channel.
@@ -1580,7 +1551,6 @@ class FTPHandler(asynchat.async_chat):
         "special action" (typically STAT and ABOR) in which case we
         append OOB data to incoming buffer.
         """
-        self.debug("FTPHandler.handle_expt()")
         if hasattr(socket, 'MSG_OOB'):
             try:
                 data = self.socket.recv(1024, socket.MSG_OOB)
@@ -1593,7 +1563,6 @@ class FTPHandler(asynchat.async_chat):
         self.close()
 
     def handle_error(self):
-        self.debug("FTPHandler.handle_error()")
         try:
             raise
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
@@ -1611,12 +1580,10 @@ class FTPHandler(asynchat.async_chat):
         self.close()
 
     def handle_close(self):
-        self.debug("FTPHandler.handle_close()")
         self.close()
 
     def close(self):
         """Close the current channel disconnecting the client."""
-        self.debug("FTPHandler.close()")
         if self.data_server:
             self.data_server.close()
             del self.data_server
@@ -1645,7 +1612,6 @@ class FTPHandler(asynchat.async_chat):
         If awaiting inbound data, the data channel is enabled for
         receiving.
         """
-        self.debug("FTPHandler.on_dtp_connection()")
         if self.data_server:
             self.data_server.close()
         self.data_server = None
@@ -1671,7 +1637,6 @@ class FTPHandler(asynchat.async_chat):
 
     def on_dtp_close(self):
         """Called on DTPHandler.close()."""
-        self.debug("FTPHandler.on_dtp_close()")
         self.data_channel = None
         if self.quit_pending:
             self.close_when_done()
@@ -1718,10 +1683,6 @@ class FTPHandler(asynchat.async_chat):
     def logline(self, msg):
         """Log a line including additional indentifying session data."""
         logline("%s:%s %s" %(self.remote_ip, self.remote_port, msg))
-
-    def debug(self, msg):
-        """Log a debug message."""
-        debug(msg)
 
     def flush_account(self):
         """Flush account information by clearing attributes that need
@@ -2663,9 +2624,6 @@ class FTPServer(asyncore.dispatcher):
         self.bind(address)
         self.listen(5)
 
-    def __del__(self):
-        debug("FTPServer.__del__()")
-
     def serve_forever(self, **kwargs):
         """A wrap around asyncore.loop(); starts the asyncore polling
         loop.
@@ -2695,14 +2653,13 @@ class FTPServer(asyncore.dispatcher):
             if kwargs:
                 asyncore.loop(**kwargs)
             else:
-                asyncore.loop(timeout=1, use_poll=False)
+                asyncore.loop(timeout=1.0, use_poll=False)
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             log("Shutting down FTPd.")
             self.close_all()
 
     def handle_accept(self):
         """Called when remote client initiates a connection."""
-        debug("FTPServer.handle_accept()")
         sock_obj, addr = self.accept()
         log("[]%s:%s Connected." %addr)
 
@@ -2734,7 +2691,6 @@ class FTPServer(asyncore.dispatcher):
 
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
-        debug("FTPServer.handle_error()")
         try:
             raise
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):

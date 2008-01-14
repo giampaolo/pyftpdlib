@@ -58,6 +58,7 @@ API changes since 0.2.0:
    * get_list_dir, get_stat_dir and format_list methods now return an iterator
      object instead of a string.
    * format_list method has a new "ignore_err" keyword argument.
+ * global "debug" function has been removed.
 
 
 Version: 0.2.0 - Date: 2007-09-17
