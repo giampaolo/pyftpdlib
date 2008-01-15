@@ -25,6 +25,20 @@
 #  ======================================================================
 
 
+# This test suite has been run successfully on the following systems:
+#
+# -------------------------------------------------------
+#  System                          | Python version
+# -------------------------------------------------------
+#  Linux CentOS 2.6.20.15          | 2.4
+#  Linux Ubuntu 2.6.20-15          | 2.4, 2.5
+#  Linux Debian 2.4.27-2-386       | 2.3.5
+#  Windows XP prof sp2             | 2.3, 2.4, 2.5, 2.6a
+#  OS X 10.4.10                    | 2.3, 2.4, 2.5
+#  FreeBSD 6.0, 7.0                | 2.4, 2.5
+# -------------------------------------------------------
+
+
 import threading
 import unittest
 import socket
@@ -34,34 +48,21 @@ import tempfile
 import ftplib
 import random
 import warnings
-from test import test_support
 
-from pyftpdlib import ftpserver
+import ftpserver
+
 
 __release__ = 'pyftpdlib 0.3.0'
 
-
-# This test suite has been run successfully on the following systems:
-
-# -------------------------------------------------------
-#  System                          | Python version
-# -------------------------------------------------------
-#  Windows XP prof sp2             | 2.3, 2.4, 2.5, 2.6a
-#  Linux CentOS 2.6.20.15          | 2.4
-#  Linux Ubuntu 2.6.20-15          | 2.4, 2.5
-#  Linux Debian 2.4.27-2-386       | 2.3.5
-#  OS X 10.4.10                    | 2.3, 2.4, 2.5
-#  FreeBSD 6.0, 7.0                | 2.4, 2.5
-# -------------------------------------------------------
-
-
-# TODO:
-# - Test QUIT while a transfer is in progress.
-# - Test data transfer in ASCII mode.
-# - Test FTPHandler.masquearade_address and FTPHandler.passive_ports
-
-
-TESTFN = test_support.TESTFN
+host = '127.0.0.1'
+port = 54321
+user = 'user'
+pwd = '12345'
+home = os.getcwd()
+try:
+    from test.test_support import TESTFN
+except ImportError:
+    TESTFN = 'temp-fname'
 TESTFN2 = TESTFN + '2'
 TESTFN3 = TESTFN + '3'
 
@@ -148,7 +149,7 @@ class AbstractedFSClass(unittest.TestCase):
         else:
             # os.sep == ':'? Don't know... let's try it anyway
             goforit(os.getcwd())
-            
+
     def test_fs2ftp(self):
         """Tests for fs2ftp method."""
         ae = self.assertEquals
@@ -182,9 +183,11 @@ class AbstractedFSClass(unittest.TestCase):
             ae(fs.fs2ftp('D:\\'), '/')
             ae(fs.fs2ftp('D:\\dir'), '/')
         elif os.sep == '/':
-            goforit('/__home/user')
             goforit('/')
-            fs.root = r'/__home/user'
+            assert os.path.realpath('/__home/user') == '/__home/user',\
+                                    'Test skipped (symlinks not allowed).'
+            goforit('/__home/user')
+            fs.root = '/__home/user'
             ae(fs.fs2ftp('/__home'), '/')
             ae(fs.fs2ftp('/'), '/')
             ae(fs.fs2ftp('/__home/userx'), '/')
@@ -199,7 +202,7 @@ class AbstractedFSClass(unittest.TestCase):
         self.failUnless(fs.validpath(home))
         self.failUnless(fs.validpath(home + '/'))
         self.failIf(fs.validpath(home + 'xxx'))
-        
+
     if hasattr(os, 'symlink'):
         # Tests for validpath on systems supporting symbolic links
 
@@ -209,7 +212,7 @@ class AbstractedFSClass(unittest.TestCase):
                 os.remove(path)
             except os.error:
                 pass
-        
+
         def test_validpath_validlink(self):
             """Test validpath by issuing a symlink pointing to a path
             inside the root directory."""
@@ -227,7 +230,7 @@ class AbstractedFSClass(unittest.TestCase):
             """Test validpath by issuing a symlink pointing to a path
             outside the root directory."""
             fs = ftpserver.AbstractedFS()
-            fs.root = home           
+            fs.root = home
             try:
                 # tempfile should create our file in /tmp directory
                 # which should be outside the user root. If it is not
@@ -493,7 +496,7 @@ class FtpDummyCmds(unittest.TestCase):
         self.assertEqual(ftp.sendcmd('opts mlst type;'), '200 MLST OPTS type;')
         self.assertEqual(ftp.sendcmd('opts mLSt TypE;'), '200 MLST OPTS type;')
         self.failUnless('type*;perm;size;modify;' in mlst())
-        
+
         self.assertEqual(ftp.sendcmd('opts mlst'), '200 MLST OPTS ')
         self.failUnless(not '*' in mlst())
 
@@ -722,7 +725,7 @@ class FtpRetrieveData(unittest.TestCase):
         tot = (l1, l2, l3, l4, l5)
         for x in range(len(tot) - 1):
             self.assertEqual(tot[x], tot[x+1])
-            
+
     def test_mlst(self):
         # utility function for extracting the line of interest
         mlstline = lambda cmd: ftp.voidcmd(cmd).split('\n')[1]
@@ -747,7 +750,7 @@ class FtpRetrieveData(unittest.TestCase):
         # pathname are required (RFC-3659)
         ftp.sendcmd('opts mlst')
         self.assertEqual(mlstline('mlst'), '  /')
-        
+
     def test_mlsd(self):
         # common tests
         self._test_listing_cmds('mlsd')
@@ -988,10 +991,11 @@ class FTPd(threading.Thread):
         self.active = False
         threading.Thread.__init__(self)
 
-    def start(self, flag=None):
+    def start(self):
         assert not self.active
-        self.flag = flag
+        self.flag = threading.Event()
         threading.Thread.start(self)
+        self.flag.wait()
 
     def run(self):
         assert not self.active
@@ -1014,9 +1018,8 @@ class FTPd(threading.Thread):
             fun = asyncore.poll
             kwargs = {"timeout":0.1}
 
-        if self.flag:
-            self.flag.set()
         self.active = True
+        self.flag.set()
         while self.active:
             fun(**kwargs)
         ftpd.close()
@@ -1024,28 +1027,42 @@ class FTPd(threading.Thread):
     def stop(self):
         assert self.active
         self.active = False
+        self.join()
 
 
-def run():
-    flag = threading.Event()
+def remove_test_files():
+    "Convenience function for removing temporary test files"
+    for file in [TESTFN, TESTFN2, TESTFN3]:
+        try:
+            os.remove(file)
+        except os.error:
+            pass
+
+def run(tests=None):
+    test_suite = unittest.TestSuite()
+    if not tests:
+        tests = [AbstractedFSClass,
+                 DummyAuthorizerClass,
+                 FtpAuthentication,
+                 FtpDummyCmds,
+                 FtpFsOperations,
+                 FtpRetrieveData,
+                 FtpAbort,
+                 FtpStoreData
+                 ]
+    for test in tests:
+        test_suite.addTest(unittest.makeSuite(test))
     ftpd = FTPd()
-    ftpd.start(flag)
-    # wait for it to start
-    flag.wait()
-    tests = [AbstractedFSClass, DummyAuthorizerClass, FtpAuthentication,
-             FtpDummyCmds, FtpFsOperations, FtpRetrieveData, FtpAbort,
-             FtpStoreData]
+    ftpd.start()
+    remove_test_files()
     try:
-        test_support.run_unittest(*tests)
+        unittest.TextTestRunner(verbosity=2).run(test_suite)
     finally:
-        ftpd.stop()
+        try:
+            ftpd.stop()
+        finally:
+            remove_test_files()
 
-
-host = '127.0.0.1'
-port = 54321
-user = 'user'
-pwd = '12345'
-home = os.getcwd()
 
 if __name__ == '__main__':
     run()
