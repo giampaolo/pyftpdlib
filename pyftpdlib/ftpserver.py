@@ -136,7 +136,7 @@ __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer
 
 __pname__   = 'Python FTP server library (pyftpdlib)'
 __ver__     = '0.3.0'
-__date__    = '2007-17-09'  # XXX change date
+__date__    = '2008-01-17'
 __author__  = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__     = 'http://code.google.com/p/pyftpdlib/'
 
@@ -964,8 +964,7 @@ class AbstractedFS:
     def mkstemp(self, suffix='', prefix='', dir=None, mode='wb'):
         """A wrap around tempfile.mkstemp creating a file with a unique
         name.  Unlike mkstemp it returns an object with a file-like
-        interface having a 'name' attribute containining the absolute
-        file name.
+        interface.
         """
         class FileWrapper:
             def __init__(self, fd, name):
