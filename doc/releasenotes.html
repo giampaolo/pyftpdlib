@@ -2,69 +2,73 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>pyftpdlib 0.2.x serie release notes</title>
+<title>pyftpdlib Release Notes</title>
 </head>
 
 <body>
 <div id="wikicontent">
-  <h1>Version: 0.2.0 - Date: 2007-09-17</h1>
-  <h2>Major enhancements</h2>
+  <h1><a id="Version:_0.3.0_-_Date:_2008-01-17">Version: 0.3.0 - Date: 2008-01-17</a></h1>
+  <h2><a id="Major_enhancements">Major enhancements</a></h2>
   <ul>
-    <li><a title="FTPServer.py provides no way to limit the number of acceptable connections (DoS vulnerability)" href="http://code.google.com/p/pyftpdlib/issues/detail?id=5">Issue 5</a>: provided a way to configure / limit the number of maximum acceptable connections. </li>
-    <li><a title="FTPServer.py provides no way to limit the number of acceptable connections (DoS vulnerability)" href="http://code.google.com/p/pyftpdlib/issues/detail?id=5">Issue 5</a>: provided a way to configure / limit the maximum number of clients which may be connected from the same IP address. </li>
-    <li><a title="Implement site-to-site FXP feature" href="http://code.google.com/p/pyftpdlib/issues/detail?id=36">Issue 36</a>: added support for <a href="http://www.proftpd.org/docs/howto/FXP.html" rel="nofollow">FXP</a> site-to-site transfer to allow transfers between FTP servers. </li>
-    <li><a title="Support for FTP servers behind NAT" href="http://code.google.com/p/pyftpdlib/issues/detail?id=39">Issue 39</a>: added NAT/Firewall support with PASV (passive) mode connections for FTP servers behind NAT. </li>
-    <li><a title="Provide a way to control what ports to use for passive data-transfers" href="http://code.google.com/p/pyftpdlib/issues/detail?id=40">Issue 40</a>: provided new FTPHandler.passive_ports attribute to control what ports to use for passive data-transfers. </li>
+    <li><a title="Provide permissions, owner, and group for files on UNIX platforms" href="http://code.google.com/p/pyftpdlib/issues/detail?id=48">Issue 48</a>: real permissions, owner, and group for files on UNIX platforms are now provided when processing LIST. </li>
+    <li><a title="Bandwidth throttling capabilities and updated throttled_ftpd.py script" href="http://code.google.com/p/pyftpdlib/issues/detail?id=51">Issue 51</a>: added the new demo/throttled_ftpd.py script. </li>
+    <li><a title="Using iterators when calculating requests requiring long time to complete (LIST and MLSD commands)" href="http://code.google.com/p/pyftpdlib/issues/detail?id=59">Issue 59</a>: iterators are now used for calculating requests requiring long time to complete (LIST and MLSD commands). </li>
+    <li><a title="Extend the set of user permissions" href="http://code.google.com/p/pyftpdlib/issues/detail?id=61">Issue 61</a>: extended the set of assignable user permissions. </li>
   </ul>
-  <h2>RFC-related enhancements</h2>
+  <h2><a id="RFC-related_enhancements">RFC-related enhancements</a></h2>
   <ul>
-    <li><a title="FTPd should understand also TYPE AN and TYPE L8 commands" href="http://code.google.com/p/pyftpdlib/issues/detail?id=6">Issue 6</a>: accept and process TYPE AN and TYPE L8 commands. </li>
-    <li><a title="Change account if USER command is received twice" href="http://code.google.com/p/pyftpdlib/issues/detail?id=7">Issue 7</a>: a new USER command can now be entered at any point to begin the login sequence again. </li>
-    <li><a title="STOU should follow specifications defined into RFC1123" href="http://code.google.com/p/pyftpdlib/issues/detail?id=8">Issue 8</a>: be compliant with STOU output format defined in RFC 1123. </li>
-    <li><a title="HELP should accept arguments" href="http://code.google.com/p/pyftpdlib/issues/detail?id=10">Issue 10</a>: HELP command arguments are now accepted. </li>
-    <li><a title="RFC1123 wants a 554 error response to be returned if REST fails" href="http://code.google.com/p/pyftpdlib/issues/detail?id=12">Issue 12</a>: 554 error response is now returned on RETR/STOR if REST fails. </li>
-    <li><a title="STAT used with an argument should return directory LISTing" href="http://code.google.com/p/pyftpdlib/issues/detail?id=15">Issue 15</a>: STAT used with an argument return directory LISTing over the command channel. </li>
+    <li><a title="Implement FEAT command" href="http://code.google.com/p/pyftpdlib/issues/detail?id=42">Issue 42</a>: implemented <strong>FEAT</strong> command defined in <a href="http://www.faqs.org/rfcs/rfc2389.html" rel="nofollow">RFC-2389</a>. </li>
+    <li><a title="Implementing MLST and MLSD commands" href="http://code.google.com/p/pyftpdlib/issues/detail?id=52">Issue 52</a>: implemented <strong>MLST</strong> and <strong>MLSD</strong> commands defined in <a href="http://www.faqs.org/rfcs/rfc3659.html" rel="nofollow">RFC-3659</a>. </li>
+    <li><a title="Implement OPTS command" href="http://code.google.com/p/pyftpdlib/issues/detail?id=58">Issue 58</a>: implemented <strong>OPTS</strong> command define in <a href="http://www.faqs.org/rfcs/rfc2389.html" rel="nofollow">RFC-2389</a>. </li>
   </ul>
-  <h2>Security enhancements</h2>
+  <h2><a id="Bugfixes">Bugfixes</a></h2>
   <ul>
-    <li><a title="Stop buffering if extremely long lines are received" href="http://code.google.com/p/pyftpdlib/issues/detail?id=3">Issue 3</a>: stop buffering when extremely long lines are received. </li>
-    <li><a title="(RFC2577) Reject PORT for privileged ports" href="http://code.google.com/p/pyftpdlib/issues/detail?id=11">Issue 11</a>: reject data connection when a privileged port is specified on PORT command. </li>
-    <li><a title="Set a max number of tries for finding unique filename on STOU" href="http://code.google.com/p/pyftpdlib/issues/detail?id=25">Issue 25</a>: limit the number of attempts to find a unique filename for STOU command. </li>
+    <li><a title="Error on QUIT when user is not yet authenticated" href="http://code.google.com/p/pyftpdlib/issues/detail?id=41">Issue 41</a>: error occurred on quit if user was not yet authenticated. </li>
+    <li><a title="Server ident shouldn't be shown in the STAT response" href="http://code.google.com/p/pyftpdlib/issues/detail?id=43">Issue 43</a>: hidden the server identifier when returning STAT response. </li>
+    <li><a title="Wrong PORT response code if data-connection attempt fails" href="http://code.google.com/p/pyftpdlib/issues/detail?id=44">Issue 44</a>: a wrong response code was given on PORT if the data connection attempt failed. </li>
+    <li><a title="Wrong HELP response code on unknown arg command" href="http://code.google.com/p/pyftpdlib/issues/detail?id=45">Issue 45</a>: a wrong response code was given on HELP if argument was incorrect. </li>
+    <li><a title="Wrong response on rejected data connection" href="http://code.google.com/p/pyftpdlib/issues/detail?id=46">Issue 46</a>: a wrong response code was given on PASV if remote peer had a foreign internet address. </li>
+    <li><a title="Maximum connections limit problem on Python 2.3" href="http://code.google.com/p/pyftpdlib/issues/detail?id=47">Issue 47</a>: can't use FTPServer.max_cons option with Python 2.3. </li>
+    <li><a title="Provide permissions, owner, and group for files on UNIX platforms" href="http://code.google.com/p/pyftpdlib/issues/detail?id=48">Issue 48</a>: problem when LISTing &quot;broken&quot; symbolic links. </li>
+    <li><a title="Problem when LISTing " broken="" symbolic="" links="" href="http://code.google.com/p/pyftpdlib/issues/detail?id=49">Issue 49</a>: data channel did not respect the outgoing data buffer. </li>
+    <li><a title="Problem when receiving strings with trailing white spaces" href="http://code.google.com/p/pyftpdlib/issues/detail?id=53">Issue 53</a>: received strings having trailing white spaces was erroneously stripped. </li>
+    <li><a title="Sort LIST / NLST / STAT command output by file name" href="http://code.google.com/p/pyftpdlib/issues/detail?id=54">Issue 54</a>: LIST/NLST/STAT outputs are now sorted by file name. </li>
+    <li><a title="Path traversal vulnerability in case of symlinks" href="http://code.google.com/p/pyftpdlib/issues/detail?id=55">Issue 55</a>: path traversal vulnerability in case of symlinks. </li>
+    <li><a title="Can't rename broken symbolic links" href="http://code.google.com/p/pyftpdlib/issues/detail?id=56">Issue 56</a>: can't rename broken symbolic links. </li>
+    <li><a title="Wrong LIST / NLST behavior with symbolic links" href="http://code.google.com/p/pyftpdlib/issues/detail?id=57">Issue 57</a>: wrong LIST/NLST behavior when processing symbolic links. </li>
+    <li><a title="Error in case of bad formatted PORT command requests" href="http://code.google.com/p/pyftpdlib/issues/detail?id=60">Issue 60</a>: error occurred in case of bad formatted PORT command requests. </li>
   </ul>
-  <h2>Usability enhancements</h2>
+  <p> </p>
+  <h2><a id="API_changes_since_0.2.0">API changes since 0.2.0</a></h2>
   <ul>
-    <li>Provided an overridable attribute to easily set number of maximum login attempts before disconnecting. </li>
-    <li>Docstrings are now provided for almost every method and function. </li>
-    <li><a title="Command help strings improvements" href="http://code.google.com/p/pyftpdlib/issues/detail?id=30">Issue 30</a>: command help strings quality improved by adding command syntaxes. </li>
-    <li><a title="Provide a compact list of recognized cmds on HELP" href="http://code.google.com/p/pyftpdlib/issues/detail?id=31">Issue 31</a>: a compact list of recognized commands is now provided on HELP. </li>
-    <li><a title="Provide 426 responses on data channel " exceptional="" error="" events="" href="http://code.google.com/p/pyftpdlib/issues/detail?id=32">Issue 32</a>: we now provide a detailed error message on connection and file system errors. </li>
-    <li><a title="Anonymous user write access" href="http://code.google.com/p/pyftpdlib/issues/detail?id=38">Issue 38</a>: anonymous user write access can now be optionally granted. </li>
+    <li><a id="API_changes_since_0.2.0">New IteratorProducer and BufferedIteratorProducer classes have been added. </a></li>
+    <li><a id="API_changes_since_0.2.0">DummyAuthorizer class changes: </a></li>
+    <ul>
+      <li><a id="API_changes_since_0.2.0">The permissions management has been changed and the set of available permissions have been extended (see </a><a title="Extend the set of user permissions" href="http://code.google.com/p/pyftpdlib/issues/detail?id=61">Issue 61</a>). add_user() method now accepts &quot;eladfm&quot; permissions beyond the old &quot;r&quot; and &quot;w&quot;. </li>
+      <li>r_perm() and w_perm() methods have been removed. </li>
+      <li>New has_perm() and get_perms() methods have been added. </li>
+    </ul>
+    <li>AbstractedFS class changes: </li>
+    <ul>
+      <li>normalize() method has been renamed in ftpnorm(). </li>
+      <li>translate() method has been renamed in ftp2fs(). </li>
+      <li>New methods: fs2ftp(), stat(), lstat(), islink(), realpath(), lexists(), validpath(). </li>
+      <li>get_list_dir(), get_stat_dir() and format_list() methods now return an iterator object instead of a string. </li>
+      <li>format_list() method has a new &quot;ignore_err&quot; keyword argument. </li>
+    </ul>
+    <li>global debug() function has been removed. </li>
   </ul>
-  <h2>Test suite enhancements</h2>
-  <ul>
-    <li>File  creation/removal moved into setUp and tearDown methods to avoid leaving  behind orphaned temporary files in the event of a test suite failure. </li>
-    <li><a title="Change account if USER command is received twice" href="http://code.google.com/p/pyftpdlib/issues/detail?id=7">Issue 7</a>: added tests for a new USER provided while already authenticated. </li>
-    <li><a title="Change account if USER command is received twice" href="http://code.google.com/p/pyftpdlib/issues/detail?id=7">Issue 7</a>: added tests for REIN while a transfer is in progress. </li>
-    <li><a title="ABOR not checked in test suite" href="http://code.google.com/p/pyftpdlib/issues/detail?id=28">Issue 28</a>: added tests for ABOR command. </li>
-  </ul>
-  <h2>Bugfixes</h2>
-  <ul>
-    <li><a title="Socket's reuse_address used after the socket's binding" href="http://code.google.com/p/pyftpdlib/issues/detail?id=4">Issue 4</a>: socket's &quot;reuse_address&quot; feature was used after the socket's binding. </li>
-    <li><a title="Path traversal vulnerability" href="http://code.google.com/p/pyftpdlib/issues/detail?id=9">Issue 9</a>: corrected path traversal vulnerability affecting file-system path translations. </li>
-    <li><a title="Wrong CDUP response code" href="http://code.google.com/p/pyftpdlib/issues/detail?id=14">Issue 14</a>: a wrong response code was returned on CDUP. </li>
-    <li><a title="Reject SIZE for directories" href="http://code.google.com/p/pyftpdlib/issues/detail?id=17">Issue 17</a>: reject SIZE if pathname is a directory. </li>
-    <li><a title="Wrong ABOR response code" href="http://code.google.com/p/pyftpdlib/issues/detail?id=18">Issue 18</a>: a wrong ABOR response code type was returned. </li>
-    <li><a title="FTPd should watch for STOU preceded by REST" href="http://code.google.com/p/pyftpdlib/issues/detail?id=19">Issue 19</a>: watch for STOU preceded by REST which makes no sense. </li>
-    <li><a title="" attempted="" login="" counter="" is="" not="" increased="" on="" wrong="" username="" href="http://code.google.com/p/pyftpdlib/issues/detail?id=20">Issue 20</a>: &quot;attempted login&quot; counter wasn't incremented on wrong username. </li>
-    <li><a title="Permit STAT also if user isn't authenticated yet" href="http://code.google.com/p/pyftpdlib/issues/detail?id=21">Issue 21</a>: STAT wasn't permitted if user wasn't authenticated yet. </li>
-    <li><a title="Memory leak occurs on KeyboardInterrupt / SIGTERM" href="http://code.google.com/p/pyftpdlib/issues/detail?id=22">Issue 22</a>: corrected memory leaks occurring on KeyboardInterrupt<a href="http://code.google.com/p/pyftpdlib/w/edit/KeyboardInterrupt">?</a>/SIGTERM. </li>
-    <li><a title="PASS should be rejected if user is already authenticated" href="http://code.google.com/p/pyftpdlib/issues/detail?id=23">Issue 23</a>: PASS wasn't rejected when user was already authenticated. </li>
-    <li><a title="Problems with pyftpdlib and Python CE" href="http://code.google.com/p/pyftpdlib/issues/detail?id=24">Issue 24</a>: can't use os.strerror() on pythonCE. </li>
-    <li><a title="Problems with pyftpdlib and Python CE" href="http://code.google.com/p/pyftpdlib/issues/detail?id=24">Issue 24</a>: problem occurred on Windows when using '\\' as user's home directory. </li>
-    <li><a title="" invalid="" rest="" error="" in="" test="" suite="" test_rest_on_stor="" (os="" x,="" python="" 2.5)="" href="http://code.google.com/p/pyftpdlib/issues/detail?id=26">Issue 26</a>: used select() by default instead of poll() because of an asyncore module's defect. </li>
-    <li><a title="Some session attributes aren't resetted on REIN" href="http://code.google.com/p/pyftpdlib/issues/detail?id=33">Issue 33</a>: some FTPHandler class attributes wasn't resetted on REIN. </li>
-    <li><a title="FTPd should watch for APPE preceded by REST" href="http://code.google.com/p/pyftpdlib/issues/detail?id=35">Issue 35</a>: watch for APPE preceded by REST which makes no sense. </li>
-  </ul>
+  <h2><a id="Porting_to_pyftpdlib_0.3.0">Porting to pyftpdlib 0.3.0</a></h2>
+  <p><a id="Porting_to_pyftpdlib_0.3.0">This section lists previously described changes that may require changes to your existent 0.2.0-based code. </a></p>
+  <p><a id="Porting_to_pyftpdlib_0.3.0">The main news in 0.3.0 version is that the DummyAuthorizer  class now provides an extended set of user permissions. For example: to  create a user having full r/w permissions you no longer have to do: </a></p>
+  <pre>    <a id="Porting_to_pyftpdlib_0.3.0">authorizer.add_user(&quot;user&quot;, &quot;12345&quot;, &quot;/home/user&quot;, perm=(&quot;r&quot;,&quot;w&quot;))</a></pre>
+  <p><a id="Porting_to_pyftpdlib_0.3.0">...or: </a></p>
+  <pre>    <a id="Porting_to_pyftpdlib_0.3.0">authorizer.add_user(&quot;user&quot;, &quot;12345&quot;, &quot;/home/user&quot;, perm=&quot;rw&quot;)</a></pre>
+  <p><a id="Porting_to_pyftpdlib_0.3.0">...but instead: </a></p>
+  <pre>    <a id="Porting_to_pyftpdlib_0.3.0">authorizer.add_user(&quot;user&quot;, &quot;12345&quot;, &quot;/home/user&quot;, perm=&quot;elradfmw&quot;)</a></pre>
+  <p><a id="Porting_to_pyftpdlib_0.3.0">Folks who sub-classed DummyAuthorizer class to create their own custom authorizer (e.g. I've seen some SQL-based authorizers around) must note that r_perm() and w_perm() methods have been removed and replaced by the new has_perm() method. </a></p>
+  <p><a id="Porting_to_pyftpdlib_0.3.0">Other changes are fundamentally related to AbstractedFS class which acquired some new methods and renamed others but this should interest only folks who sub-classed it (e.g. </a><a href="http://walco.n--tree.net/projects/aksy/wiki" rel="nofollow">Aksy library</a> which implemented a virtual file-system). </p>
+  <p>&nbsp;</p>
   <p>&nbsp;</p>
 </div>
 </body>
