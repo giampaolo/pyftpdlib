@@ -187,16 +187,7 @@ deprecated_cmds = {
     'XPWD': 'Syntax: XPWD (obsolete; get current dir).',
     'XRMD': 'Syntax: XRMD <SP> dir-name (obsolete; remove directory).',
     }
-
 proto_cmds.update(deprecated_cmds)
-
-# The following RFC-959 commands are not implemented. These commands
-# are also not implemented by many other FTP servers
-not_implemented_cmds = {
-    'ACCT': 'Syntax: ACCT account-info (specify account information).',
-    'SITE': 'Syntax: SITE [<SP> site-cmd] (site specific server services).',
-    'SMNT': 'Syntax: SMNT <SP> path-name (mount file-system structure).'
-    }
 
 
 # hack around format_exc function of traceback module to grant
@@ -219,8 +210,9 @@ if not hasattr(traceback, 'format_exc'):
 
 def _strerror(err):
     """A wrap around os.strerror() which may be not available on all
-    platforms (e.g. pythonCE).  err argument expected must be an
-    EnvironmentError (or derived) class instance.
+    platforms (e.g. pythonCE).
+
+     - (instance) err: an EnvironmentError or derived class instance.
     """
     if hasattr(os, 'strerror'):
         return os.strerror(err.errno)
@@ -386,6 +378,10 @@ class PassiveDTP(asyncore.dispatcher):
     """
 
     def __init__(self, cmd_channel):
+        """Initialize the passive data server.
+
+         - (instance) cmd_channel: the command channel class instance.
+        """
         asyncore.dispatcher.__init__(self)
         self.cmd_channel = cmd_channel
 
@@ -495,6 +491,13 @@ class ActiveDTP(asyncore.dispatcher):
     """
 
     def __init__(self, ip, port, cmd_channel):
+        """Initialize the active data channel attemping to connect
+        to remote data socket.
+
+         - (str) ip: the remote IP address.
+         - (int) port: the remote port.
+         - (instance) cmd_channel: the command channel class instance.
+        """
         asyncore.dispatcher.__init__(self)
         self.cmd_channel = cmd_channel
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -547,15 +550,18 @@ except ImportError:
 
 class DTPHandler(asyncore.dispatcher):
     """Class handling server-data-transfer-process (server-DTP, see
-    RFC-959) managing data-transfer operations.
+    RFC-959) managing data-transfer operations involving sending
+    and receiving data.
     
-    Instance attributes:
-     - cmd_channel: the FTPHandler class instance
-     - file_obj: the file transferred
-     - receive: True if channel is used for receiving data
-     - transfer_finished: True when the transfer is finished
-     - tot_bytes_sent: the total bytes sent
-     - tot_bytes_received: the total bytes received
+    Instance attributes defined in this class, initialized when
+    channel is opened:
+
+     - (instance) cmd_channel: the command channel class instance.
+     - (file) file_obj: the file transferred (if any).
+     - (bool) receive: True if channel is used for receiving data.
+     - (bool) transfer_finished: True if transfer completed successfully.
+     - (int) tot_bytes_sent: the total bytes sent.
+     - (int) tot_bytes_received: the total bytes received.
 
     DTPHandler implementation note:
 
@@ -601,9 +607,15 @@ class DTPHandler(asyncore.dispatcher):
         """Enable receiving of data over the channel. Depending on the
         TYPE currently in use it creates an appropriate wrapper for the
         incoming data.
+        
+         - (str) type: current transfer type, 'a' (ASCII) or 'i' (binary).
         """
         if type == 'a':
             self.data_wrapper = lambda x: x.replace('\r\n', os.linesep)
+        elif type == 'i':
+            self.data_wrapper = lambda x: x
+        else:
+            raise Error, "Unsupported type"
         self.receive = True
 
     def get_transmitted_bytes(self):
@@ -781,15 +793,17 @@ class FileProducer:
     def __init__(self, file, type):
         """Initialize the producer with a data_wrapper appropriate to TYPE.
 
-         - file: the file[-like] object
-         - type: the current TYPE, 'a' (ASCII) or 'i' (binary)
+         - (file) file: the file[-like] object.
+         - (str) type: the current TYPE, 'a' (ASCII) or 'i' (binary).
         """
         self.done = False
         self.file = file
         if type == 'a':
             self.data_wrapper = lambda x: x.replace(os.linesep, '\r\n')
-        else:
+        elif type == 'i':
             self.data_wrapper = lambda x: x
+        else:
+            raise Error, "Unsupported type"
 
     def more(self):
         """Attempt a chunk of data of size self.buffer_size."""
@@ -849,13 +863,13 @@ class AbstractedFS:
     UNIX style filesystems.
 
     It provides some utility methods and some wraps around operations
-    involved in file object creation and file system operations like
-    moving files or removing directories.
+    involved in file creation and file system operations like moving
+    files or removing directories.
 
     Instance attributes:
-     - root: the pathname of user home directory
-     - cwd: the pathname of current working directory
-     - rnfr: the pathname of source file to be renamed
+     - (str) root: the user home directory.
+     - (str) cwd: the current working directory.
+     - (str) rnfr: source file to be renamed.
     """
 
     def __init__(self):
@@ -949,8 +963,9 @@ class AbstractedFS:
 
     def mkstemp(self, suffix='', prefix='', dir=None, mode='wb'):
         """A wrap around tempfile.mkstemp creating a file with a unique
-        name. Unlike mkstemp it returns an object with a file-like
-        interface. The 'name' attribute contains the absolute file name.
+        name.  Unlike mkstemp it returns an object with a file-like
+        interface having a 'name' attribute containining the absolute
+        file name.
         """
         class FileWrapper:
             def __init__(self, fd, name):
@@ -1065,7 +1080,7 @@ class AbstractedFS:
 
     def validpath(self, path):
         """Check whether the path belongs to user's home directory.
-        Expected argument is a "real" filesystem path.
+        Expected argument is a "real" filesystem pathname.
 
         If path is a symbolic link it is resolved to check its real
         destination.
@@ -1117,7 +1132,8 @@ class AbstractedFS:
         matching a dirname pattern non-recursively in a form
         suitable for STAT command.
 
-        rawline is the argument passed by client.
+         - (str) rawline: the raw string passed by client as command
+         argument.
         """
         ftppath = self.ftpnorm(rawline)
         if not glob.has_magic(ftppath):
@@ -1137,9 +1153,10 @@ class AbstractedFS:
         """Return an iterator object that yields the entries of given
         directory emulating the "/bin/ls -lA" UNIX command output.
 
-         - basedir: the absolute dirname
-         - listing: a list containing the names of the entries in basedir
-         - ignore_err: if False raise exception if os.lstat() call fails
+         - (str) basedir: the absolute dirname.
+         - (list) listing: the names of the entries in basedir
+         - (bool) ignore_err: when False raise exception if os.lstat()
+         call fails.
 
         On platforms which do not support the pwd and grp modules (such
         as Windows), ownership is printed as "owner" and "group" as a
@@ -1204,11 +1221,12 @@ class AbstractedFS:
         element.  See RFC-3659, chapter 7, to see what every single
         fact stands for.
 
-         - basedir: the absolute dirname
-         - listing: a list containing the names of the entries in basedir
-         - perms: a string referencing the user permissions
-         - facts: a list of "facts" to be returned
-         - ignore_err: if False raise exception if os.stat() call fails
+         - (str) basedir: the absolute dirname.
+         - (list) listing: the names of the entries in basedir
+         - (str) perms: the string referencing the user permissions.
+         - (str) facts: the list of "facts" to be returned.
+         - (bool) ignore_err: when False raise exception if os.stat()
+         call fails.
 
         Note that "facts" returned may change depending on the platform
         and on what user specified by using the OPTS command.
@@ -1216,9 +1234,9 @@ class AbstractedFS:
         This is how output could appear to the client issuing
         a MLSD request:
 
-        type=file;size=156;perm=r;modify=20071029155301;unique=801cd012; music.mp3
-        type=dir;size=0;perm=el;modify=20071127230206;unique=801e38e3; ebooks
-        type=file;size=211;perm=r;modify=20071103093626;unique=801e38e2; module.py
+        type=file;size=156;perm=r;modify=20071029155301;unique=801cd2; music.mp3
+        type=dir;size=0;perm=el;modify=20071127230206;unique=801e33; ebooks
+        type=file;size=211;perm=r;modify=20071103093626;unique=801e32; module.py
         """
         permdir = ''.join([x for x in perms if x not in 'arw'])
         permfile = ''.join([x for x in perms if x not in 'celmp'])
@@ -1296,9 +1314,53 @@ class FTPHandler(asynchat.async_chat):
     """Implements the FTP server Protocol Interpreter (see RFC-959),
     handling commands received from the client on the control channel.
     
-    All relevant session information is stored in class attributes.
+    All relevant session information overridable before instantiating
+    this class is stored in class attributes reproduced below.
+
+     - (str) banner: the string sent when client connects.
+     
+     - (int) max_login_attempts:
+        the maximum number of wrong authentications before disconnecting
+        the client (default 3).
+       
+     - (bool)permit_foreign_addresses:
+        FTP site-to-site transfer feature: also referenced as "FXP" it
+        permits for transferring a file between two remote FTP servers
+        without the transfer going through the client's host (not
+        recommended for security reasons as described in RFC-2577).
+        Having this attribute set to False means that all data
+        connections from/to remote IP addresses which do not match the
+        client's IP address will be dropped (defualt False).
+
+     - (bool) permit_privileged_ports:
+        set to True if you want to permit active data connections (PORT)
+        over privileged ports (not recommended, defaulting to False).
+
+     - (str) masquerade_address:
+        the "masqueraded" IP address to provide along PASV reply when
+        pyftpdlib is running behind a NAT or other types of gateways.
+        When configured pyftpdlib will hide its local address and
+        instead use the public address of your NAT (default None).
+
+     - (list) passive_ports:
+        what ports ftpd will use for its passive data transfers.
+        Value expected is a list of integers (e.g. range(60000, 65535)).
+        When configured pyftpdlib will no longer use kernel-assigned
+        random ports (default None).
+
+
+    All relevant instance attributes initialized when client connects
+    are reproduced below.  You may be interested in them in case you
+    wnat to subclass FTPHandler.
+    
+     - (bool) authenticated: True if client authenticated himself.
+     - (str) username: the name of the connected user (if any)
+     - (int) attempted_logins: number of currently attempted logins.
+     - (str) current_type: the current transfer type (default "a")
+     - (instance) self.data_server: the data server instance (if any)
+     - (instance) self.data_channel: the data channel instance (if any)
     """
-    # these are overridable defaults:
+    # these are overridable defaults
 
     # default classes
     authorizer = DummyAuthorizer()
@@ -1307,38 +1369,21 @@ class FTPHandler(asynchat.async_chat):
     dtp_handler = DTPHandler
     abstracted_fs = AbstractedFS
 
-    # String returned when client connects
+    # session attributes (explained in the docstring)
     banner = "pyftpdlib %s ready." %__ver__
-
-    # Maximum number of wrong authentications before disconnecting
     max_login_attempts = 3
-
-    # FTP site-to-site transfer feature: also referenced as "FXP" it
-    # permits for transferring a file between two remote FTP servers
-    # without the transfer going through the client's host (not
-    # recommended for security reasons as described in RFC-2577).
-    # Having this attribute set to False means that all data
-    # connections from/to remote IP addresses which do not match the
-    # client's IP address will be dropped.
     permit_foreign_addresses = False
-
-    # Set to True if you want to permit active data connections (PORT)
-    # over privileged ports (not recommended).
     permit_privileged_ports = False
-
-    # The "masqueraded" IP address to provide along PASV reply when
-    # pyftpdlib is running behind a NAT or other types of gateways.
-    # When configured pyftpdlib will hide its local address and instead
-    # use the public address of your NAT.
     masquerade_address = None
-
-    # What ports ftpd will use for its passive data transfers.
-    # Value expected is a list of integers (e.g. range(60000, 65535)).
-    # When configured pyftpdlib will no longer use kernel-assigned
-    # random ports.
     passive_ports = None
 
     def __init__(self, conn, ftpd_instance):
+        """Initialize the data channel.
+
+         - (instance) conn: the socket object instance of the newly
+            established connection.
+         - (instance) ftpd_instance: the ftp server class instance.
+        """
         asynchat.async_chat.__init__(self, conn=conn)
         self.ftpd_instance = ftpd_instance
         self.remote_ip, self.remote_port = self.socket.getpeername()
@@ -1548,7 +1593,7 @@ class FTPHandler(asynchat.async_chat):
 
     def handle_expt(self):
         """Called when there is out of band (OOB) data for the socket
-        connection. This could happen in case of such commands needing
+        connection.  This could happen in case of such commands needing
         "special action" (typically STAT and ABOR) in which case we
         append OOB data to incoming buffer.
         """
@@ -1652,15 +1697,16 @@ class FTPHandler(asynchat.async_chat):
     def push_dtp_data(self, data, isproducer=False, file=None):
         """Pushes data into the data channel.
 
-         - data: the data to send (a string or a producer object)
-         - producer: whether treat data as a producer or not
-         - file: a file object
-
         It is usually called for those commands requiring some data to
         be sent over the data channel (e.g. RETR).
         If data channel does not exist yet, it queues the data to send
-        later;  data will then be pushed into data channel when
+        later; data will then be pushed into data channel when
         on_dtp_connection() will be called.
+
+         - (str/classobj) data: the data to send which may be a string
+            or a producer object).
+         - (bool) isproducer: whether treat data as a producer.
+         - (file) file: the file[-like] object to send (if any).
         """
         if self.data_channel:
             self.respond("125 Data connection already open. Transfer starting.")
@@ -2435,6 +2481,20 @@ class FTPHandler(asynchat.async_chat):
     def ftp_STAT(self, line):
         """Return statistics about current ftp session. If an argument
         is provided return directory listing over command channel.
+        
+        Implementation note:
+        
+        RFC-959 do not explicitly mention globbing; this means that FTP
+        servers are not required to support globbing in order to be
+        compliant.  However, many FTP servers do support globbing as a
+        measure of convenience for FTP clients and users.
+
+        In order to search for and match the given globbing expression,
+        the code has to search (possibly) many directories, examine
+        each contained filename, and build a list of matching files in
+        memory.  Since this operation can be quite intensive, both CPU-
+        and memory-wise, we limit the search to only one directory
+        non-recursively, as LIST does.
         """
         # return STATus information about ftpd
         if not line:
@@ -2455,34 +2515,19 @@ class FTPHandler(asynchat.async_chat):
             if self.data_server:
                 s.append('Passive data channel waiting for connection.')
             elif self.data_channel:
-                dc = self.data_channel
+                bytes_sent = self.data_channel.tot_bytes_sent
+                bytes_recv = self.data_channel.tot_bytes_received
                 s.append('Data connection open:')
-                s.append('Total bytes sent: %s' %dc.tot_bytes_sent)
-                s.append('Total bytes received: %s' %dc.tot_bytes_received)
+                s.append('Total bytes sent: %s' %bytes_sent)
+                s.append('Total bytes received: %s' %bytes_recv)
             else:
                 s.append('Data connection closed.')
 
             self.push('211-FTP server status:\r\n')
             self.push(''.join([' %s\r\n' %item for item in s]))
             self.respond('211 End of status.')
-
         # return directory LISTing over the command channel
         else:
-            # When argument is provided along STAT we should return
-            # directory LISTing over the command channel.
-            # RFC-959 do not explicitly mention globbing; this means
-            # that FTP servers are not required to support globbing
-            # in order to be compliant.  However, many FTP servers do
-            # support globbing as a measure of convenience for FTP
-            # clients and users.
-
-            # In order to search for and match the given globbing
-            # expression, the code has to search (possibly) many
-            # directories, examine each contained filename, and
-            # build a list of matching files in memory.
-            # Since this operation can be quite intensive, both CPU-
-            # and memory-wise, we limit the search to only one
-            # directory non-recursively, as LIST does.
             try:
                 iterator = self.fs.get_stat_dir(line)
             except OSError, err:
@@ -2531,7 +2576,7 @@ class FTPHandler(asynchat.async_chat):
         self.respond("250 I successfully done nothin'.")
 
     def ftp_SYST(self, line):
-        """Return system type (always returns UNIX type L8)."""
+        """Return system type (always returns UNIX type: L8)."""
         # This command is used to find out the type of operating system
         # at the server.  The reply shall have as its first word one of
         # the system names listed in RFC-943.
@@ -2601,21 +2646,30 @@ class FTPServer(asyncore.dispatcher):
     socket listening on <address>, dispatching the requests to a <handler>
     (typically FTPHandler class).
     
-    All relevant session information is stored in class attributes.
+    All relevant session information is stored in class attributes
+    described below.
+    Overriding them is strongly recommended to avoid running out of
+    file descriptors (DoS)!
+
+     - (int) max_cons:
+        number of maximum simultaneous connections accepted (defaults
+        to 0 == unlimited).
+    
+     - (int) max_cons_per_ip:
+        number of maximum connections accepted for the same IP address
+        (defaults to 0 == unlimited).
     """
 
-    # Overiddable defaults (overriding is strongly recommended to avoid
-    # running out of file descriptors (DoS) !).
-
-    # number of maximum simultaneous connections accepted
-    # (0 == unlimited)
     max_cons = 0
-
-    # number of maximum connections accepted for the same IP address
-    # (0 == unlimited)
     max_cons_per_ip = 0
 
     def __init__(self, address, handler):
+        """Initiate the FTP server opening listening on address.
+
+         - (tuple) address: the ip:port pair on which to listen
+            for ftp data connections.
+         - (classobj) handler: the handler class to use.
+        """
         asyncore.dispatcher.__init__(self)
         self.handler = handler
         self.ip_map = []
@@ -2703,19 +2757,24 @@ class FTPServer(asyncore.dispatcher):
         """Stop serving; close all existent connections disconnecting
         clients.
 
-        The map parameter is a dictionary whose items are the channels to
-        close.
-        If map is omitted, the default asyncore.socket_map is used.
-        Having ignore_all parameter set to False results in raising
-        exception in case of unexpected errors.
+         - (dict) map:
+            A dictionary whose items are the channels to close.
+            If map is omitted, the default asyncore.socket_map is used.
+
+         - (bool) ignore_all:
+            having it set to False results in raising exception in case
+            of unexpected errors.
+            
+        Implementation note:
+
+        Instead of using the current asyncore.close_all() function
+        which only close sockets, we iterate over all existent channels
+        calling close() method for each one of them, avoiding memory
+        leaks.
+
+        This is how asyncore.close_all() function should work in
+        Python 2.6.
         """
-        # Implementation note:
-        # instead of using the current asyncore.close_all() function
-        # which only close sockets, we iterate over all existent
-        # channels calling close() method for each one of them,
-        # avoiding memory leaks.
-        # This is how close_all() function should appear in the fixed
-        # version of asyncore that will be included in Python 2.6.
         if map is None:
             map = self._map
         for x in map.values():
