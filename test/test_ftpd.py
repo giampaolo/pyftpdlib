@@ -49,7 +49,7 @@ import ftplib
 import random
 import warnings
 
-import ftpserver
+from pyftpdlib import ftpserver
 
 
 __release__ = 'pyftpdlib 0.3.0'
