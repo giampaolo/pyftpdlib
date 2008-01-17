@@ -6,7 +6,7 @@
 """
 
 import os
-import win32security, win32net, pywintypes
+import win32security, win32net, win32profile, pywintypes
 
 from pyftpdlib import ftpserver
 
@@ -27,7 +27,8 @@ class WinNtAuthorizer(ftpserver.DummyAuthorizer):
         if not username in users:
             raise ftpserver.AuthorizerError('No such user "%s".' %username)
         if not home:
-            home = os.environ['USERPROFILE']
+            profiles = win32profile.GetProfilesDirectory()
+            home = str(os.path.join(profiles, username))
         ftpserver.DummyAuthorizer.add_user(self, username, '', home, **kwargs)
 
     def validate_authentication(self, username, password):
