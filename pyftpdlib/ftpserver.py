@@ -587,6 +587,12 @@ class DTPHandler(asyncore.dispatcher):
     ac_out_buffer_size  = 8192
 
     def __init__(self, sock_obj, cmd_channel):
+        """Initialize the command channel.
+        
+         - (instance) sock_obj: the socket object instance of the newly
+            established connection.
+         - (instance) cmd_channel: the command channel class instance.
+        """
         asyncore.dispatcher.__init__(self, sock_obj)
         # we toss the use of the asynchat's "simple producer" and
         # replace it  with a pure deque, which the original fifo
@@ -615,7 +621,7 @@ class DTPHandler(asyncore.dispatcher):
         elif type == 'i':
             self.data_wrapper = lambda x: x
         else:
-            raise Error, "Unsupported type"
+            raise TypeError, "Unsupported type"
         self.receive = True
 
     def get_transmitted_bytes(self):
@@ -803,7 +809,7 @@ class FileProducer:
         elif type == 'i':
             self.data_wrapper = lambda x: x
         else:
-            raise Error, "Unsupported type"
+            raise TypeError, "Unsupported type"
 
     def more(self):
         """Attempt a chunk of data of size self.buffer_size."""
@@ -1313,8 +1319,9 @@ class FTPHandler(asynchat.async_chat):
     """Implements the FTP server Protocol Interpreter (see RFC-959),
     handling commands received from the client on the control channel.
     
-    All relevant session information overridable before instantiating
-    this class is stored in class attributes reproduced below.
+    All relevant session information is stored in class attributes
+    reproduced below and can be modified before instantiating this
+    class.
 
      - (str) banner: the string sent when client connects.
      
@@ -1350,14 +1357,15 @@ class FTPHandler(asynchat.async_chat):
 
     All relevant instance attributes initialized when client connects
     are reproduced below.  You may be interested in them in case you
-    wnat to subclass FTPHandler.
+    want to subclass the original FTPHandler.
     
      - (bool) authenticated: True if client authenticated himself.
-     - (str) username: the name of the connected user (if any)
+     - (str) username: the name of the connected user (if any).
      - (int) attempted_logins: number of currently attempted logins.
      - (str) current_type: the current transfer type (default "a")
-     - (instance) self.data_server: the data server instance (if any)
-     - (instance) self.data_channel: the data channel instance (if any)
+     - (instance) ftpd_instance: the FTPServer class instance.
+     - (instance) data_server: the data server instance (if any).
+     - (instance) data_channel: the data channel instance (if any).
     """
     # these are overridable defaults
 
@@ -1377,7 +1385,7 @@ class FTPHandler(asynchat.async_chat):
     passive_ports = None
 
     def __init__(self, conn, ftpd_instance):
-        """Initialize the data channel.
+        """Initialize the command channel.
 
          - (instance) conn: the socket object instance of the newly
             established connection.
@@ -1681,7 +1689,7 @@ class FTPHandler(asynchat.async_chat):
             self.__in_dtp_queue = None
 
     def on_dtp_close(self):
-        """Called on DTPHandler.close()."""
+        """Called every time the data channel is closed."""
         self.data_channel = None
         if self.quit_pending:
             self.close_when_done()
