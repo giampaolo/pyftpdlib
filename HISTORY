@@ -4,13 +4,14 @@ Issue tracker at http://code.google.com/p/pyftpdlib/issues/list
 History
 =======
 
+
 Version: 0.3.0 - Date: 2008-01-17
 ---------------------------------
 
 Major enhancements:
 
- * Issue #48: real permissions, owner, and group for files on UNIX platforms
-   are now provided when processing LIST.
+ * Issue #48: real permissions, owner, and group for files on UNIX platforms are
+   now provided when processing LIST.
  * Issue #51: added the new demo/throttled_ftpd.py script.
  * Issue #59: iterators are now used for calculating requests requiring long
    time to complete (LIST and MLSD commands).
@@ -41,25 +42,25 @@ Bugfixes:
  * Issue #56: can't rename broken symbolic links.
  * Issue #57: wrong LIST/NLST behavior when processing symbolic links.
  * Issue #60: error occurred in case of bad formatted PORT command requests.
- 
+
 API changes since 0.2.0:
- 
+
  * New IteratorProducer and BufferedIteratorProducer classes have been added.
  * DummyAuthorizer class changes:
-   * The permissions management has changed and the set of available permissions
-     have been extended (see Issue #61). add_user() method now accepts "eladfm"
-     permissions beyond the old "r" and "w".
-   * r_perm() and w_perm() methods have been removed.
-   * New has_perm() and get_perms() methods have been added.
- * AbstractedFS class changes:
-   * normalize method has been renamed in ftpnorm().
-   * translate method has been renamed in ftp2fs().
-   * New methods: fs2ftp(), stat(), lstat(), islink(), realpath(), lexists(),
-     validpath().
-   * get_list_dir(), get_stat_dir() and format_list() methods now return an iterator
-     object instead of a string.
-   * format_list() method has a new "ignore_err" keyword argument.
- * global debug() function has been removed.
+      * The permissions management has been changed and the set of available
+        permissions have been extended (see Issue #61). add_user() method
+        now accepts "eladfm" permissions beyond the old "r" and "w".
+      * r_perm() and w_perm() methods have been removed.
+      * New has_perm() and get_perms() methods have been added.
+* AbstractedFS class changes:
+      * normalize() method has been renamed in ftpnorm().
+      * translate() method has been renamed in ftp2fs().
+      * New methods: fs2ftp(), stat(), lstat(), islink(), realpath(), lexists(),
+        validpath().
+      * get_list_dir(), get_stat_dir() and format_list() methods now return an
+        iterator object instead of a string.
+      * format_list() method has a new "ignore_err" keyword argument.
+* global debug() function has been removed.
 
 
 Version: 0.2.0 - Date: 2007-09-17
@@ -71,7 +72,7 @@ Major enhancements:
    acceptable connections.
  * Issue #5: provided a way to configure / limit the maximum number of clients
    which may be connected from the same IP address.
- * Issue #36: added support for FXP site-to-site transfer to allow transfers 
+ * Issue #36: added support for FXP site-to-site transfer to allow transfers
    between FTP servers.
  * Issue #39: added NAT/Firewall support with PASV (passive) mode connections
    for FTP servers behind NAT.
