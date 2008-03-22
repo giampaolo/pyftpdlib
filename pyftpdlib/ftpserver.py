@@ -2227,8 +2227,8 @@ class FTPHandler(asynchat.async_chat):
 
         # username ok
         if self.authorizer.has_user(self.username):
-            if self.authorizer.validate_authentication(self.username, line) \
-            or self.username == 'anonymous':
+            if self.username == 'anonymous' \
+            or self.authorizer.validate_authentication(self.username, line):
                 msg_login = self.authorizer.get_msg_login(self.username)
                 if len(msg_login) <= 75:
                     self.respond('230 %s' %msg_login)
