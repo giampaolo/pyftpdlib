@@ -2277,8 +2277,8 @@ class FTPHandler(asynchat.async_chat):
                     self.close()
                 else:
                     self.respond("530 Authentication failed.")
-                    self.username = ""
                 self.log('Authentication failed (user: "%s").' %self.username)
+                self.username = ""
 
         # wrong username
         else:
