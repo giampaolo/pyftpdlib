@@ -4,6 +4,19 @@ Issue tracker at http://code.google.com/p/pyftpdlib/issues/list
 History
 =======
 
+Version: 0.3.1 - Date: XXXX-XX-XX
+---------------------------------
+
+Major enhancements:
+
+ * Issue #65: assume the id of real users when using system dependent 
+   authorizers.  
+
+API changes since 0.2.0:
+
+ * DummyAuthorizer class changes:
+      * impersonate_user() and terminate_impersonation() methods has been added.
+
 
 Version: 0.3.0 - Date: 2008-01-17
 ---------------------------------

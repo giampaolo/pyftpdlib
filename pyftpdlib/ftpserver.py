@@ -338,6 +338,24 @@ class DummyAuthorizer:
         """Return True if the supplied username and password match the
         stored credentials."""
         return self.user_table[username]['pwd'] == password
+    
+    def impersonate_user(self, username, password):
+        """Impersonate another user (noop).
+
+        It is always called before accessing the filesystem.
+        By default it does nothing.  The subclass overriding this 
+        method is expected to provide a mechanism to change the 
+        current user.
+        """
+
+    def terminate_impersonation(self):
+        """Terminate impersonation (noop).
+
+        It is always called after having accessed the filesystem.
+        By default it does nothing.  The subclass overriding this
+        method is expected to provide a mechanism to switch back 
+        to the original user.
+        """
 
     def has_user(self, username):
         """Whether the username exists in the virtual users table."""
@@ -1402,6 +1420,7 @@ class FTPHandler(asynchat.async_chat):
         self.fs = self.abstracted_fs()
         self.authenticated = False
         self.username = ""
+        self.password = ""
         self.attempted_logins = 0
         self.current_type = 'a'
         self.restart_position = 0
@@ -1753,6 +1772,7 @@ class FTPHandler(asynchat.async_chat):
         self.fs.rnfr = None
         self.authenticated = False
         self.username = ""
+        self.password = ""
         self.attempted_logins = 0
         self.current_type = 'a'
         self.restart_position = 0
@@ -1760,7 +1780,14 @@ class FTPHandler(asynchat.async_chat):
         self.__in_dtp_queue = None
         self.__out_dtp_queue = None
 
-
+    def run_as_current_user(self, function, *args, **kwargs):
+        """Execute a function impersonating the current logged-in user."""
+        self.authorizer.impersonate_user(self.username, self.password)
+        try:
+            return function(*args, **kwargs)
+        finally:
+            self.authorizer.terminate_impersonation()
+            
         # --- connection
 
     def ftp_PORT(self, line):
@@ -1880,7 +1907,7 @@ class FTPHandler(asynchat.async_chat):
         path = self.fs.ftp2fs(line)
         line = self.fs.ftpnorm(line)
         try:
-            iterator = self.fs.get_list_dir(path)
+            iterator = self.run_as_current_user(self.fs.get_list_dir, path)
         except OSError, err:
             why = _strerror(err)
             self.log('FAIL LIST "%s". %s.' %(line, why))
@@ -1900,7 +1927,7 @@ class FTPHandler(asynchat.async_chat):
         line = self.fs.ftpnorm(line)
         try:
             if self.fs.isdir(path):
-                listing = self.fs.listdir(path)
+                listing = self.run_as_current_user(self.fs.listdir, path)
             else:
                 # if path is a file we just list its name
                 self.fs.lstat(path)  # raise exc in case of problems
@@ -1937,8 +1964,9 @@ class FTPHandler(asynchat.async_chat):
         basedir, basename = os.path.split(path)
         perms = self.authorizer.get_perms(self.username)
         try:
-            data = ''.join(self.fs.format_mlsx(basedir, [basename], perms,
-                   self.current_facts, ignore_err=False))
+            iterator = self.run_as_current_user(self.fs.format_mlsx, basedir, 
+                       [basename], perms, self.current_facts, ignore_err=False)
+            data = ''.join(iterator)
         except OSError, err:
             why = _strerror(err)
             self.log('FAIL MLST "%s". %s.' %(line, why))
@@ -1969,7 +1997,7 @@ class FTPHandler(asynchat.async_chat):
             self.respond("501 %s." %err)
             return
         try:
-            listing = self.fs.listdir(path)
+            listing = self.run_as_current_user(self.fs.listdir, path)
         except OSError, err:
             why = _strerror(err)
             self.log('FAIL MLSD "%s". %s.' %(line, why))
@@ -1989,7 +2017,7 @@ class FTPHandler(asynchat.async_chat):
         file = self.fs.ftp2fs(line)
         line = self.fs.ftpnorm(line)
         try:
-            fd = self.fs.open(file, 'rb')
+            fd = self.run_as_current_user(self.fs.open, file, 'rb')
         except IOError, err:
             why = _strerror(err)
             self.log('FAIL RETR "%s". %s.' %(line, why))
@@ -2037,7 +2065,7 @@ class FTPHandler(asynchat.async_chat):
         if self.restart_position:
             mode = 'r+'
         try:
-            fd = self.fs.open(file, mode + 'b')
+            fd = self.run_as_current_user(self.fs.open, file, mode + 'b')
         except IOError, err:
             why = _strerror(err)
             self.log('FAIL %s "%s". %s.' %(cmd, line, why))
@@ -2099,7 +2127,8 @@ class FTPHandler(asynchat.async_chat):
             basedir = self.fs.ftp2fs(self.fs.cwd)
             prefix = 'ftpd.'
         try:
-            fd = self.fs.mkstemp(prefix=prefix, dir=basedir)
+            fd = self.run_as_current_user(self.fs.mkstemp, prefix=prefix, 
+                                          dir=basedir)
         except IOError, err:
             # hitted the max number of tries to find out file with
             # unique name
@@ -2237,6 +2266,7 @@ class FTPHandler(asynchat.async_chat):
                     self.respond("230 ")
 
                 self.authenticated = True
+                self.password = line
                 self.attempted_logins = 0
                 self.fs.root = self.authorizer.get_home_dir(self.username)
                 self.log("User %s logged in." %self.username)
@@ -2298,7 +2328,7 @@ class FTPHandler(asynchat.async_chat):
             line = '/'
         path = self.fs.ftp2fs(line)
         try:
-            self.fs.chdir(path)
+            self.run_as_current_user(self.fs.chdir, path)
         except OSError, err:
             why = _strerror(err)
             self.log('FAIL CWD "%s". %s.' %(self.fs.ftpnorm(line), why))
@@ -2339,7 +2369,7 @@ class FTPHandler(asynchat.async_chat):
             self.respond("550 %s." %why)
             return
         try:
-            size = self.fs.getsize(path)
+            size = self.run_as_current_user(self.fs.getsize, path)
         except OSError, err:
             why = _strerror(err)
             self.log('FAIL SIZE "%s". %s.' %(line, why))
@@ -2360,7 +2390,7 @@ class FTPHandler(asynchat.async_chat):
             self.respond("550 %s." %why)
             return
         try:
-            lmt = self.fs.getmtime(path)
+            lmt = self.run_as_current_user(self.fs.getmtime, path)
         except OSError, err:
             why = _strerror(err)
             self.log('FAIL MDTM "%s". %s.' %(line, why))
@@ -2375,7 +2405,7 @@ class FTPHandler(asynchat.async_chat):
         path = self.fs.ftp2fs(line)
         line = self.fs.ftpnorm(line)
         try:
-            self.fs.mkdir(path)
+            self.run_as_current_user(self.fs.mkdir, path)
         except OSError, err:
             why = _strerror(err)
             self.log('FAIL MKD "%s". %s.' %(line, why))
@@ -2394,7 +2424,7 @@ class FTPHandler(asynchat.async_chat):
             self.log('FAIL MKD "/". %s' %msg)
             return
         try:
-            self.fs.rmdir(path)
+            self.run_as_current_user(self.fs.rmdir, path)
         except OSError, err:
             why = _strerror(err)
             self.log('FAIL RMD "%s". %s.' %(line, why))
@@ -2408,7 +2438,7 @@ class FTPHandler(asynchat.async_chat):
         path = self.fs.ftp2fs(line)
         line = self.fs.ftpnorm(line)
         try:
-            self.fs.remove(path)
+            self.run_as_current_user(self.fs.remove, path)
         except OSError, err:
             why = _strerror(err)
             self.log('FAIL DELE "%s". %s.' %(line, why))
@@ -2441,7 +2471,7 @@ class FTPHandler(asynchat.async_chat):
         line = self.fs.ftpnorm(line)
         try:
             try:
-                self.fs.rename(src, dst)
+                self.run_as_current_user(self.fs.rename, src, dst)
             except OSError, err:
                 why = _strerror(err)
                 self.log('FAIL RNFR/RNTO "%s ==> %s". %s.' \
@@ -2536,7 +2566,7 @@ class FTPHandler(asynchat.async_chat):
         # return directory LISTing over the command channel
         else:
             try:
-                iterator = self.fs.get_stat_dir(line)
+                iterator = self.run_as_current_user(self.fs.get_stat_dir, line)
             except OSError, err:
                 self.respond('550 %s.' %_strerror(err))
             else:
