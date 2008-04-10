@@ -8,23 +8,26 @@ I'm sure I am  forgetting some people (feel free to email
 me), but here is a short list.
 It's modeled after the Linux CREDITS file where the fields
 are:
-name (N), e-mail (E), web-address (W), description (D).
+name (N), e-mail (E), web-address (W), country (C) description (D).
 Really thanks to all of you.
 
 
 Maintainers
 ===========
 
-N: Giampaolo Rodola' (Italy)
+N: Giampaolo Rodola' 
+C: Italy
 E: g.rodola@gmail.com
 D: Original pyftpdlib author and maintainer
 
-N: Jay Loden (New Jersey, USA)
+N: Jay Loden
+C: NJ, USA
 E: jloden@gmail.com
 W: http://www.jayloden.com
 D: OS X and Linux platform development/testing
 
-N: Li-Wen Hsu (Taiwan)
+N: Li-Wen Hsu
+C: Taiwan
 E: lwhsu@lwhsu.org
 W: http://lwhsu.org
 D: FreeBSD port maintainer
@@ -33,11 +36,37 @@ D: FreeBSD port maintainer
 Contributors
 ============
 
-N: Yan Raber (Italy)
+N: Pavel Tsekov
+E: ptsekov@gmx.net
+D: Inclusion of pyftpdlib in Far Manager, a file and archive manager for Windows
+   operating systems (http://enforum.farmanager.com/viewtopic.php?t=640).   
+   
+N: Arkadiusz Wahlig
+C: Germany
+W: http://arkadiusz-wahlig.blogspot.com
+D: Inclusion of pyftpdlib in gpftpd project, an FTP daemon for managing files 
+   hosted on Google Pages 
+   (http://arkadiusz-wahlig.blogspot.com/2008/04/hosting-files-on-google.html).
+   
+N: Walco van Loon
+C: Netherlands
+E: walco@n--tree.net
+D: Inclusion of pyftpdlib in aksy project 
+   (http://walco.n--tree.net/projects/aksy).
+
+N: Shinya Okano
+C: Japan
+E: xxshss@yahoo.co.jp
+D: Japanese translation of pyftpdlib announces. Inclusion of pyftpdlib in 
+   unbox-ftpd project (http://code.google.com/p/unboxftpd).
+
+N: Yan Raber
+C: Italy
 E: yanraber@gmail.com
 D: Fix of Issue #9 (Path traversal vulnerability)
 
 N: Alex Martelli
+C: Italy
 E: aleax@gmail.com
 D: Various useful suggestions
 
@@ -52,4 +81,3 @@ D: Bug report #16 (Extending compatibility with older python versions)
 N: Roger Erens
 E: rogererens@gmail.com
 D: Bug report affecting unix_ftpd.py's authorizer
-
