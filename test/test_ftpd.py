@@ -72,7 +72,7 @@ class AbstractedFSClass(unittest.TestCase):
     """Test for conversion utility methods of AbstractedFS class."""
 
     def test_ftpnorm(self):
-        """Tests for ftpnorm method."""
+        # Tests for ftpnorm method.
         ae = self.assertEquals
         fs = ftpserver.AbstractedFS()
 
@@ -104,7 +104,7 @@ class AbstractedFSClass(unittest.TestCase):
         ae(fs.ftpnorm('//'), '/')  # UNC paths must be collapsed
 
     def test_ftp2fs(self):
-        """Tests for ftp2fs method."""
+        # Tests for ftp2fs method.
         ae = self.assertEquals
         fs = ftpserver.AbstractedFS()
         join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
@@ -152,7 +152,7 @@ class AbstractedFSClass(unittest.TestCase):
             goforit(os.getcwd())
 
     def test_fs2ftp(self):
-        """Tests for fs2ftp method."""
+        # Tests for fs2ftp method.
         ae = self.assertEquals
         fs = ftpserver.AbstractedFS()
         join = lambda x,y: os.path.join(x, y.replace('/', os.sep))
@@ -197,7 +197,7 @@ class AbstractedFSClass(unittest.TestCase):
             goforit(os.getcwd())
 
     def test_validpath(self):
-        """Tests for validpath method."""
+        # Tests for validpath method.
         fs = ftpserver.AbstractedFS()
         fs.root = home
         self.failUnless(fs.validpath(home))
@@ -205,7 +205,7 @@ class AbstractedFSClass(unittest.TestCase):
         self.failIf(fs.validpath(home + 'xxx'))
 
     if hasattr(os, 'symlink'):
-        # Tests for validpath on systems supporting symbolic links
+        # Tests for validpath on systems supporting symbolic links.
 
         def _safe_remove(self, path):
             # convenience function for removing temporary files
@@ -215,8 +215,8 @@ class AbstractedFSClass(unittest.TestCase):
                 pass
 
         def test_validpath_validlink(self):
-            """Test validpath by issuing a symlink pointing to a path
-            inside the root directory."""
+            # Test validpath by issuing a symlink pointing to a path
+            # inside the root directory.
             fs = ftpserver.AbstractedFS()
             fs.root = home
             try:
@@ -228,8 +228,8 @@ class AbstractedFSClass(unittest.TestCase):
                 self._safe_remove(TESTFN2)
 
         def test_validpath_external_symlink(self):
-            """Test validpath by issuing a symlink pointing to a path
-            outside the root directory."""
+            # Test validpath by issuing a symlink pointing to a path
+            # outside the root directory.
             fs = ftpserver.AbstractedFS()
             fs.root = home
             try:
@@ -381,9 +381,8 @@ class FtpAuthentication(unittest.TestCase):
         self.assertEqual(hash(data), hash (self.f2.read()))
 
     def test_user(self):
-        """Test USER while already authenticated and no transfer
-        is in progress.
-        """
+        # Test USER while already authenticated and no transfer
+        # is in progress.
         ftp.login(user=user, passwd=pwd)
         ftp.sendcmd('user ' + user)  # authentication flushed
         self.assertRaises(ftplib.error_perm, ftp.sendcmd, 'pwd')
@@ -391,9 +390,8 @@ class FtpAuthentication(unittest.TestCase):
         ftp.sendcmd('pwd')
 
     def test_user_on_transfer(self):
-        """Test USER while already authenticated and a transfer is
-        in progress.
-        """
+        # Test USER while already authenticated and a transfer is
+        # in progress.
         ftp.login(user=user, passwd=pwd)
         data = 'abcde12345' * 100000
         self.f1.write(data)
@@ -1039,9 +1037,9 @@ def remove_test_files():
         except os.error:
             pass
 
-def run(tests=None):
+def test_main(tests=None):
     test_suite = unittest.TestSuite()
-    if not tests:
+    if tests is None:
         tests = [AbstractedFSClass,
                  DummyAuthorizerClass,
                  FtpAuthentication,
@@ -1066,4 +1064,4 @@ def run(tests=None):
 
 
 if __name__ == '__main__':
-    run()
+    test_main()
