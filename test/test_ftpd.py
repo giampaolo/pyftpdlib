@@ -55,7 +55,10 @@ from pyftpdlib import ftpserver
 
 __release__ = 'pyftpdlib 0.3.0'
 
-HOST = '127.0.0.1'
+try:
+    HOST = socket.gethostbyname('localhost')
+except socket.gaierror:
+    HOST = '127.0.0.1'
 PORT = 54321
 USER = 'user'
 PASSWD = '12345'
