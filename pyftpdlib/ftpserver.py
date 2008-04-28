@@ -2711,7 +2711,7 @@ class FTPServer(asyncore.dispatcher):
         self.handler = handler
         self.ip_map = []
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        if os.name == 'posix':
+        if os.name not in ('nt', 'ce'):
             self.set_reuse_addr()
         self.bind(address)
         self.listen(5)
