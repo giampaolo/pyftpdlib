@@ -497,10 +497,6 @@ class PassiveDTP(asyncore.dispatcher):
         """Called on closing the data connection."""
         self.close()
 
-    def close(self):
-        """Close the dispatcher socket."""
-        asyncore.dispatcher.close(self)
-
 
 class ActiveDTP(asyncore.dispatcher):
     """This class is an asyncore.disptacher subclass. It creates a
@@ -551,10 +547,6 @@ class ActiveDTP(asyncore.dispatcher):
             logerror(traceback.format_exc())
         self.cmd_channel.respond("425 Can't connect to specified address.")
         self.close()
-
-    def close(self):
-        """Close the dispatcher socket."""
-        asyncore.dispatcher.close(self)
 
 
 try:
@@ -691,9 +683,6 @@ class DTPHandler(asyncore.dispatcher):
 
     def readable(self):
         """Predicate for inclusion in the readable for select()."""
-        # cannot use the old predicate, it violates the claim of the
-        # set_terminator method.
-        #return (len(self.ac_in_buffer) <= self.ac_in_buffer_size)
         return self.receive
 
     def writable(self):
