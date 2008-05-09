@@ -261,10 +261,12 @@ class DummyAuthorizer:
     dependent authorizers can by written by subclassing this base
     class and overriding appropriate methods as necessary.
     """
-
-    user_table = {}
+    
     read_perms = "elr"
     write_perms = "adfmw"
+    
+    def __init__(self):
+        self.user_table = {}
 
     def add_user(self, username, password, homedir, perm='elr',
                     msg_login="Login successful.", msg_quit="Goodbye."):

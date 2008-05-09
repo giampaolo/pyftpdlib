@@ -256,8 +256,6 @@ class DummyAuthorizerClass(unittest.TestCase):
 
     def test_dummy_authorizer(self):
         auth = ftpserver.DummyAuthorizer()
-        auth.user_table = {}
-
         # create user
         auth.add_user(USER, PASSWD, HOME)
         auth.add_anonymous(HOME)
@@ -1006,7 +1004,6 @@ class FTPd(threading.Thread):
         if not verbose:
             ftpserver.log = ftpserver.logline = lambda x: x
         self.authorizer = ftpserver.DummyAuthorizer()
-        self.authorizer.user_table = {}
         self.authorizer.add_user(USER, PASSWD, HOME, perm='elradfmw')  # full perms
         self.authorizer.add_anonymous(HOME)
         self.handler = ftpserver.FTPHandler
