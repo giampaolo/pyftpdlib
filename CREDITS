@@ -82,3 +82,6 @@ D: Bug report #16 (Extending compatibility with older python versions)
 N: Roger Erens
 E: rogererens@gmail.com
 D: Bug report affecting unix_ftpd.py's authorizer
+
+N: Coronado Ivan
+D: Bug report #70 (Wrong NOOP response code)

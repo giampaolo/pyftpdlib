@@ -2601,7 +2601,7 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_NOOP(self, line):
         """Do nothing."""
-        self.respond("250 I successfully done nothin'.")
+        self.respond("200 I successfully done nothin'.")
 
     def ftp_SYST(self, line):
         """Return system type (always returns UNIX type: L8)."""
