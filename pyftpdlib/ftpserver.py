@@ -1372,7 +1372,7 @@ class FTPHandler(asynchat.async_chat):
      - (str) username: the name of the connected user (if any).
      - (int) attempted_logins: number of currently attempted logins.
      - (str) current_type: the current transfer type (default "a")
-     - (instance) ftpd_instance: the FTPServer class instance.
+     - (instance) server: the FTPServer class instance.
      - (instance) data_server: the data server instance (if any).
      - (instance) data_channel: the data channel instance (if any).
     """
@@ -1393,15 +1393,15 @@ class FTPHandler(asynchat.async_chat):
     masquerade_address = None
     passive_ports = None
 
-    def __init__(self, conn, ftpd_instance):
+    def __init__(self, conn, server):
         """Initialize the command channel.
 
          - (instance) conn: the socket object instance of the newly
             established connection.
-         - (instance) ftpd_instance: the ftp server class instance.
+         - (instance) server: the ftp server class instance.
         """
         asynchat.async_chat.__init__(self, conn=conn)
-        self.ftpd_instance = ftpd_instance
+        self.server = server
         self.remote_ip, self.remote_port = self.socket.getpeername()
         self.in_buffer = []
         self.in_buffer_len = 0
@@ -1659,7 +1659,7 @@ class FTPHandler(asynchat.async_chat):
         del self.__in_dtp_queue
 
         # remove client IP address from ip map
-        self.ftpd_instance.ip_map.remove(self.remote_ip)
+        self.server.ip_map.remove(self.remote_ip)
         asynchat.async_chat.close(self)
         self.log("Disconnected.")
 
@@ -1828,8 +1828,8 @@ class FTPHandler(asynchat.async_chat):
             self.data_channel = None
 
         # make sure we are not hitting the max connections limit
-        if self.ftpd_instance.max_cons:
-            if len(self._map) >= self.ftpd_instance.max_cons:
+        if self.server.max_cons:
+            if len(self._map) >= self.server.max_cons:
                 msg = "Too many connections. Can't open data channel."
                 self.respond("425 %s" %msg)
                 self.log(msg)
@@ -1850,8 +1850,8 @@ class FTPHandler(asynchat.async_chat):
             self.data_channel = None
 
         # make sure we are not hitting the max connections limit
-        if self.ftpd_instance.max_cons:
-            if len(self._map) >= self.ftpd_instance.max_cons:
+        if self.server.max_cons:
+            if len(self._map) >= self.server.max_cons:
                 msg = "Too many connections. Can't open data channel."
                 self.respond("425 %s" %msg)
                 self.log(msg)
