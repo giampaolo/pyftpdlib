@@ -9,8 +9,8 @@ Version: 0.3.1 - Date: XXXX-XX-XX
 
 Major enhancements:
 
- * Issue #65: assume the id of real users when using system dependent 
-   authorizers.  
+ * Issue #65: assume the id of real users when using system dependent
+   authorizers.
 
 API changes since 0.2.0:
 

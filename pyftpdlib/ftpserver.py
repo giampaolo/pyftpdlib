@@ -261,10 +261,10 @@ class DummyAuthorizer:
     dependent authorizers can by written by subclassing this base
     class and overriding appropriate methods as necessary.
     """
-    
+
     read_perms = "elr"
     write_perms = "adfmw"
-    
+
     def __init__(self):
         self.user_table = {}
 
@@ -340,13 +340,13 @@ class DummyAuthorizer:
         """Return True if the supplied username and password match the
         stored credentials."""
         return self.user_table[username]['pwd'] == password
-    
+
     def impersonate_user(self, username, password):
         """Impersonate another user (noop).
 
         It is always called before accessing the filesystem.
-        By default it does nothing.  The subclass overriding this 
-        method is expected to provide a mechanism to change the 
+        By default it does nothing.  The subclass overriding this
+        method is expected to provide a mechanism to change the
         current user.
         """
 
@@ -355,7 +355,7 @@ class DummyAuthorizer:
 
         It is always called after having accessed the filesystem.
         By default it does nothing.  The subclass overriding this
-        method is expected to provide a mechanism to switch back 
+        method is expected to provide a mechanism to switch back
         to the original user.
         """
 
@@ -564,7 +564,7 @@ class DTPHandler(asyncore.dispatcher):
     """Class handling server-data-transfer-process (server-DTP, see
     RFC-959) managing data-transfer operations involving sending
     and receiving data.
-    
+
     Instance attributes defined in this class, initialized when
     channel is opened:
 
@@ -600,7 +600,7 @@ class DTPHandler(asyncore.dispatcher):
 
     def __init__(self, sock_obj, cmd_channel):
         """Initialize the command channel.
-        
+
          - (instance) sock_obj: the socket object instance of the newly
             established connection.
          - (instance) cmd_channel: the command channel class instance.
@@ -625,7 +625,7 @@ class DTPHandler(asyncore.dispatcher):
         """Enable receiving of data over the channel. Depending on the
         TYPE currently in use it creates an appropriate wrapper for the
         incoming data.
-        
+
          - (str) type: current transfer type, 'a' (ASCII) or 'i' (binary).
         """
         if type == 'a':
@@ -1327,17 +1327,17 @@ class AbstractedFS:
 class FTPHandler(asynchat.async_chat):
     """Implements the FTP server Protocol Interpreter (see RFC-959),
     handling commands received from the client on the control channel.
-    
+
     All relevant session information is stored in class attributes
     reproduced below and can be modified before instantiating this
     class.
 
      - (str) banner: the string sent when client connects.
-     
+
      - (int) max_login_attempts:
         the maximum number of wrong authentications before disconnecting
         the client (default 3).
-       
+
      - (bool)permit_foreign_addresses:
         FTP site-to-site transfer feature: also referenced as "FXP" it
         permits for transferring a file between two remote FTP servers
@@ -1367,7 +1367,7 @@ class FTPHandler(asynchat.async_chat):
     All relevant instance attributes initialized when client connects
     are reproduced below.  You may be interested in them in case you
     want to subclass the original FTPHandler.
-    
+
      - (bool) authenticated: True if client authenticated himself.
      - (str) username: the name of the connected user (if any).
      - (int) attempted_logins: number of currently attempted logins.
@@ -1418,7 +1418,7 @@ class FTPHandler(asynchat.async_chat):
         self.quit_pending = False
         self.__in_dtp_queue = None
         self.__out_dtp_queue = None
-        
+
         # mlsx facts attributes
         self.current_facts = ['type', 'perm', 'size', 'modify']
         if os.name == 'posix':
@@ -1654,7 +1654,7 @@ class FTPHandler(asynchat.async_chat):
         if self.data_channel:
             self.data_channel.close()
             del self.data_channel
-            
+
         del self.__out_dtp_queue
         del self.__in_dtp_queue
 
@@ -1778,7 +1778,7 @@ class FTPHandler(asynchat.async_chat):
             return function(*args, **kwargs)
         finally:
             self.authorizer.terminate_impersonation()
-            
+
         # --- connection
 
     def ftp_PORT(self, line):
@@ -1955,7 +1955,7 @@ class FTPHandler(asynchat.async_chat):
         basedir, basename = os.path.split(path)
         perms = self.authorizer.get_perms(self.username)
         try:
-            iterator = self.run_as_current_user(self.fs.format_mlsx, basedir, 
+            iterator = self.run_as_current_user(self.fs.format_mlsx, basedir,
                        [basename], perms, self.current_facts, ignore_err=False)
             data = ''.join(iterator)
         except OSError, err:
@@ -2118,7 +2118,7 @@ class FTPHandler(asynchat.async_chat):
             basedir = self.fs.ftp2fs(self.fs.cwd)
             prefix = 'ftpd.'
         try:
-            fd = self.run_as_current_user(self.fs.mkstemp, prefix=prefix, 
+            fd = self.run_as_current_user(self.fs.mkstemp, prefix=prefix,
                                           dir=basedir)
         except IOError, err:
             # hitted the max number of tries to find out file with
@@ -2138,7 +2138,7 @@ class FTPHandler(asynchat.async_chat):
                      %self.fs.ftpnorm(line))
             self.respond("550 Can't STOU: not enough privileges.")
             return
-        
+
         # now just acts like STOR except that restarting isn't allowed
         self.log('OK STOU "%s". Upload starting.' %filename)
         if self.data_channel:
@@ -2509,9 +2509,9 @@ class FTPHandler(asynchat.async_chat):
     def ftp_STAT(self, line):
         """Return statistics about current ftp session. If an argument
         is provided return directory listing over command channel.
-        
+
         Implementation note:
-        
+
         RFC-959 do not explicitly mention globbing; this means that FTP
         servers are not required to support globbing in order to be
         compliant.  However, many FTP servers do support globbing as a
@@ -2564,7 +2564,7 @@ class FTPHandler(asynchat.async_chat):
                 self.push('213-Status of "%s":\r\n' %self.fs.ftpnorm(line))
                 self.push_with_producer(BufferedIteratorProducer(iterator))
                 self.respond('213 End of status.')
-                
+
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
         features = ['MDTM','MLSD','REST STREAM','SIZE','TVFS']
@@ -2579,7 +2579,7 @@ class FTPHandler(asynchat.async_chat):
         self.push("211-Features supported:\r\n")
         self.push("".join([" %s\r\n" %x for x in features]))
         self.respond('211 End FEAT.')
-        
+
     def ftp_OPTS(self, line):
         """Specify options for FTP commands as specified in RFC-2389."""
         try:
@@ -2673,7 +2673,7 @@ class FTPServer(asyncore.dispatcher):
     """This class is an asyncore.disptacher subclass.  It creates a FTP
     socket listening on <address>, dispatching the requests to a <handler>
     (typically FTPHandler class).
-    
+
     All relevant session information is stored in class attributes
     described below.
     Overriding them is strongly recommended to avoid running out of
@@ -2682,7 +2682,7 @@ class FTPServer(asyncore.dispatcher):
      - (int) max_cons:
         number of maximum simultaneous connections accepted (defaults
         to 0 == unlimited).
-    
+
      - (int) max_cons_per_ip:
         number of maximum connections accepted for the same IP address
         (defaults to 0 == unlimited).
@@ -2792,7 +2792,7 @@ class FTPServer(asyncore.dispatcher):
          - (bool) ignore_all:
             having it set to False results in raising exception in case
             of unexpected errors.
-            
+
         Implementation note:
 
         Instead of using the current asyncore.close_all() function

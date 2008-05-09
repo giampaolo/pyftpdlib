@@ -19,10 +19,10 @@ class UnixAuthorizer(ftpserver.DummyAuthorizer):
     # the uid/gid the daemon runs under
     PROCESS_UID = os.getuid()
     PROCESS_GID = os.getgid()
-      
+
     def add_user(self, username, homedir=None, **kwargs):
         """Add a "real" system user to the virtual users table.
-        
+
         If no home argument is specified the user's home directory will
         be used.
 
@@ -40,8 +40,8 @@ class UnixAuthorizer(ftpserver.DummyAuthorizer):
 
     def add_anonymous(self, homedir=None, realuser="nobody", **kwargs):
         """Add an anonymous user to the virtual users table.
-        
-        If no homedir argument is specified the realuser's home 
+
+        If no homedir argument is specified the realuser's home
         directory will possibly be determined and used.
 
         realuser argument specifies the system user to use for managing
@@ -52,7 +52,7 @@ class UnixAuthorizer(ftpserver.DummyAuthorizer):
         if not realuser in users:
             raise ftpserver.AuthorizerError('No such user "%s".' %realuser)
         if not homedir:
-            homedir = pwd.getpwnam(realuser).pw_dir   
+            homedir = pwd.getpwnam(realuser).pw_dir
         ftpserver.DummyAuthorizer.add_anonymous(self, homedir, **kwargs)
         self.anon_user = realuser
 

@@ -282,7 +282,7 @@ class DummyAuthorizerClass(unittest.TestCase):
         auth.remove_user('anonymous')
 
         # raise on wrong permission
-        self.assertRaises(ftpserver.AuthorizerError, auth.add_user, USER, 
+        self.assertRaises(ftpserver.AuthorizerError, auth.add_user, USER,
                           PASSWD, HOME, perm='?')
         self.assertRaises(ftpserver.AuthorizerError, auth.add_anonymous, HOME,
                             perm='?')
@@ -310,13 +310,13 @@ class FtpAuthentication(unittest.TestCase):
         if not self.f2.closed:
             self.f2.close()
         os.remove(TESTFN)
-        os.remove(TESTFN2)        
+        os.remove(TESTFN2)
 
     def test_auth_ok(self):
         self.client.login(user=USER, passwd=PASSWD)
 
     def test_auth_failed(self):
-        self.assertRaises(ftplib.error_perm, self.client.login, USER, 
+        self.assertRaises(ftplib.error_perm, self.client.login, USER,
                               passwd='wrong')
 
     def test_anon_auth(self):
@@ -372,7 +372,7 @@ class FtpAuthentication(unittest.TestCase):
         # a 226 response is expected once tranfer finishes
         self.assertEqual(self.client.voidresp()[:3], '226')
         # account is still flushed, error response is still expected
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd,
                           'size ' + TESTFN)
         # by logging-in again we should be able to execute a
         # filesystem command
@@ -434,7 +434,7 @@ class FtpDummyCmds(unittest.TestCase):
     def setUp(self):
         self.server = FTPd()
         self.server.start()
-        self.client = ftplib.FTP()        
+        self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
         self.client.login(USER, PASSWD)
 
@@ -531,7 +531,7 @@ class FtpFsOperations(unittest.TestCase):
         if os.path.exists(self.tempfile):
             os.remove(self.tempfile)
         if os.path.exists(self.tempdir):
-            os.rmdir(self.tempdir)        
+            os.rmdir(self.tempdir)
 
     def test_cwd(self):
         self.client.cwd(self.tempdir)
@@ -638,7 +638,7 @@ class FtpRetrieveData(unittest.TestCase):
         if not self.f2.closed:
             self.f2.close()
         os.remove(TESTFN)
-        os.remove(TESTFN2)        
+        os.remove(TESTFN2)
 
     def test_retr(self):
         data = 'abcde12345' * 100000
@@ -701,7 +701,7 @@ class FtpRetrieveData(unittest.TestCase):
             self.failUnless(''.join(x).endswith(TESTFN))
         # non-existent path, 550 response is expected
         bogus = os.path.basename(tempfile.mktemp(dir=HOME))
-        self.assertRaises(ftplib.error_perm, self.client.retrlines, 
+        self.assertRaises(ftplib.error_perm, self.client.retrlines,
                           '%s ' %cmd + bogus, lambda x: x)
         # for an empty directory we excpect that the data channel is
         # opened anyway and that no data is received
@@ -802,7 +802,7 @@ class FtpAbort(unittest.TestCase):
         if not self.f2.closed:
             self.f2.close()
         os.remove(self.f1.name)
-        os.remove(self.f2.name)        
+        os.remove(self.f2.name)
 
     def test_abor_no_data(self):
         # Case 1: ABOR while no data channel is opened: respond with 225.
@@ -877,7 +877,7 @@ class FtpStoreData(unittest.TestCase):
         if not self.f2.closed:
             self.f2.close()
         os.remove(TESTFN)
-        os.remove(TESTFN2)        
+        os.remove(TESTFN2)
 
     def test_stor(self):
         # TESTFN3 is the remote file name
@@ -994,7 +994,7 @@ class FtpStoreData(unittest.TestCase):
         self.assertEqual(hash(self.f1.read()), hash(self.f2.read()))
         self.client.delete(TESTFN3)
 
-        
+
 class FTPd(threading.Thread):
     """A threaded FTP server used for running tests."""
 
@@ -1007,7 +1007,7 @@ class FTPd(threading.Thread):
         self.authorizer.add_user(USER, PASSWD, HOME, perm='elradfmw')  # full perms
         self.authorizer.add_anonymous(HOME)
         self.handler = ftpserver.FTPHandler
-        self.handler.authorizer = self.authorizer        
+        self.handler.authorizer = self.authorizer
         self.server = ftpserver.FTPServer((host, port), self.handler)
         self.host, self.port = self.server.socket.getsockname()[:2]
         self.active_lock = threading.Lock()
@@ -1029,9 +1029,9 @@ class FTPd(threading.Thread):
             poller = asyncore.poll
             kwargs = {"timeout":0.001}
         self.active = True
-        self.__flag.set()        
+        self.__flag.set()
         while self.active:
-            self.active_lock.acquire()            
+            self.active_lock.acquire()
             poller(**kwargs)
             self.active_lock.release()
         self.server.close()

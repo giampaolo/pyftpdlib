@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     # Instantiate a dummy authorizer for managing 'virtual' users
     authorizer = ftpserver.DummyAuthorizer()
-    
+
     # Define a new user having full r/w permissions and a read-only
     # anonymous user
     authorizer.add_user('user', '12345', os.getcwd(), perm='elradfmw')
@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
     # Define a customized banner (string returned when client connects)
     ftp_handler.banner = "pyftpdlib %s based ftpd ready." %ftpserver.__ver__
-    
+
     # Specify a masquerade address and the range of ports to use for
     # passive connections.  Decomment in case you're behind a NAT.
     #ftp_handler.masquerade_address = '151.25.42.11'

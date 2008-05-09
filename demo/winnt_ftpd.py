@@ -30,11 +30,11 @@ def get_profile_dir(username):
 
 
 class WinNtAuthorizer(ftpserver.DummyAuthorizer):
-   
+
     def add_user(self, username, homedir=None, **kwargs):
         """Add a "real" system user to the virtual users table.
-        
-        If no homedir argument is specified the user's profile 
+
+        If no homedir argument is specified the user's profile
         directory will possibly be determined and used.
 
         The keyword arguments in kwargs are the same expected by the
@@ -47,17 +47,17 @@ class WinNtAuthorizer(ftpserver.DummyAuthorizer):
             raise ftpserver.AuthorizerError('No such user "%s".' %username)
         if not homedir:
             homedir = get_profile_dir(username)
-        ftpserver.DummyAuthorizer.add_user(self, username, '', homedir, 
+        ftpserver.DummyAuthorizer.add_user(self, username, '', homedir,
                                            **kwargs)
 
-    def add_anonymous(self, homedir=None, realuser="Guest", 
+    def add_anonymous(self, homedir=None, realuser="Guest",
                       password="", **kwargs):
         """Add an anonymous user to the virtual users table.
-        
-        If no homedir argument is specified the realuser's profile 
+
+        If no homedir argument is specified the realuser's profile
         directory will possibly be determined and used.
-        
-        realuser and password arguments are the credentials to use for 
+
+        realuser and password arguments are the credentials to use for
         managing anonymous sessions.
         The same behaviour is followed in IIS where the Guest account
         is used to do so (note: it must be enabled first).
@@ -71,18 +71,18 @@ class WinNtAuthorizer(ftpserver.DummyAuthorizer):
         # will be thrown; to do so we actually impersonate the user
         self.impersonate_user(realuser, password)
         self.terminate_impersonation()
-        ftpserver.DummyAuthorizer.add_anonymous(self, homedir, **kwargs)        
+        ftpserver.DummyAuthorizer.add_anonymous(self, homedir, **kwargs)
         self.anon_user = realuser
         self.anon_pwd = password
 
     def validate_authentication(self, username, password):
         if (username == "anonymous") and self.has_user('anonymous'):
             username = self.anon_user
-            password = self.anon_pwd        
+            password = self.anon_pwd
         try:
             win32security.LogonUser(username, None, password,
                 win32con.LOGON32_LOGON_INTERACTIVE,
-                win32con.LOGON32_PROVIDER_DEFAULT)           
+                win32con.LOGON32_PROVIDER_DEFAULT)
             return True
         except pywintypes.error:
             return False
