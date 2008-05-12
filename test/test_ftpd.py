@@ -1109,9 +1109,9 @@ class _TestNetworkProtocols(unittest.TestCase):
     def test_epsv_all(self):
         self.client.sendcmd('epsv all')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'pasv')
-        self.assertRaises(ftplib.error_perm, self.client.sendport, HOST, 2000)
+        self.assertRaises(ftplib.error_perm, self.client.sendport, self.HOST, 2000)
         self.assertRaises(ftplib.error_perm, self.client.sendcmd,
-                          'eprt |%s|%s|%s|' %(self.proto, HOST, 2000))
+                          'eprt |%s|%s|%s|' %(self.proto, self.HOST, 2000))
 
 
 class TestIPv4Environment(_TestNetworkProtocols):
@@ -1137,8 +1137,8 @@ class TestIPv4Environment(_TestNetworkProtocols):
         ae(self.cmdresp('port 127,0,0,1,256,1'), msg)  # port > 65535
         ae(self.cmdresp('port 127,0,0,1,-1,0'), msg)   # port < 0
         msg = "501 Can't connect over a privileged port."
-        ae(self.cmdresp('port %s,1,1' %HOST.replace('.',',')),msg) # port < 1024
-        if "1.2.3.4" != HOST:
+        ae(self.cmdresp('port %s,1,1' %self.HOST.replace('.',',')),msg) # port < 1024
+        if "1.2.3.4" != self.HOST:
             msg = "501 Can't connect to a foreign address."
             ae(self.cmdresp('port 1,2,3,4,4,4'), msg)
 
