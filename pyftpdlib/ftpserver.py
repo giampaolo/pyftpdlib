@@ -2861,8 +2861,9 @@ class FTPServer(asyncore.dispatcher):
 
     def set_reuse_addr(self):
         # Overridden for convenience. Avoid to reuse address on Windows.
-        if os.name not in ('nt', 'ce'):
-            asyncore.dispatcher.set_reuse_addr(self)
+        if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
+            return
+        asyncore.dispatcher.set_reuse_addr(self)
 
     def serve_forever(self, **kwargs):
         """A wrap around asyncore.loop(); starts the asyncore polling
