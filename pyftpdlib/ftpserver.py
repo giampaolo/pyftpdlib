@@ -148,6 +148,8 @@ proto_cmds = {
     'CDUP': 'Syntax: CDUP (go to parent directory).',
     'CWD' : 'Syntax: CWD <SP> dir-name (change current working directory).',
     'DELE': 'Syntax: DELE <SP> file-name (delete file).',
+    'EPRT': 'Syntax: EPRT <SP> |proto|ip|port| (set server in extended active mode).',
+    'EPSV': 'Syntax: EPSV [<SP> proto/"ALL"] (set server in extended passive mode).',
     'FEAT': 'Syntax: FEAT (list all new features supported).',
     'HELP': 'Syntax: HELP [<SP> cmd] (show help).',
     'LIST': 'Syntax: LIST [<SP> path-name] (list files).',
@@ -397,16 +399,17 @@ class PassiveDTP(asyncore.dispatcher):
     connection to DTPHandler.
     """
 
-    def __init__(self, cmd_channel):
+    def __init__(self, cmd_channel, extmode=False):
         """Initialize the passive data server.
 
          - (instance) cmd_channel: the command channel class instance.
+         - (bool) extmode: wheter use extended passive mode response type.
         """
         asyncore.dispatcher.__init__(self)
         self.cmd_channel = cmd_channel
 
         ip = self.cmd_channel.getsockname()[0]
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.create_socket(self.cmd_channel.af, socket.SOCK_STREAM)
 
         if not self.cmd_channel.passive_ports:
         # By using 0 as port number value we let kernel choose a free
@@ -439,14 +442,17 @@ class PassiveDTP(asyncore.dispatcher):
                 else:
                     break
         self.listen(5)
-        if self.cmd_channel.masquerade_address:
-            ip = self.cmd_channel.masquerade_address
         port = self.socket.getsockname()[1]
-
-        # The format of 227 response in not standardized.
-        # This is the most expected:
-        self.cmd_channel.respond('227 Entering passive mode (%s,%d,%d).' %(
-                ip.replace('.', ','), port / 256, port % 256))
+        if not extmode:
+            if self.cmd_channel.masquerade_address:
+                ip = self.cmd_channel.masquerade_address
+            # The format of 227 response in not standardized.
+            # This is the most expected:
+            self.cmd_channel.respond('227 Entering passive mode (%s,%d,%d).' %(
+                    ip.replace('.', ','), port / 256, port % 256))
+        else:
+            self.cmd_channel.respond('229 Entering extended passive mode '
+                                     '(|||%d|).' %port)
 
     # --- connection / overridden
 
@@ -516,8 +522,12 @@ class ActiveDTP(asyncore.dispatcher):
         """
         asyncore.dispatcher.__init__(self)
         self.cmd_channel = cmd_channel
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.connect((ip, port))
+        self.create_socket(self.cmd_channel.af, socket.SOCK_STREAM)
+        try:
+            self.connect((ip, port))
+        except socket.gaierror:
+            self.cmd_channel.respond("425 Can't connect to specified address.")
+            self.close()
 
     # --- connection / overridden
 
@@ -526,7 +536,7 @@ class ActiveDTP(asyncore.dispatcher):
 
     def handle_connect(self):
         """Called when connection is established."""
-        self.cmd_channel.respond('200 PORT command successful.')
+        self.cmd_channel.respond('200 Active data connection established.')
         # delegate such connection to DTP handler
         handler = self.cmd_channel.dtp_handler(self.socket, self.cmd_channel)
         self.cmd_channel.data_channel = handler
@@ -1372,6 +1382,7 @@ class FTPHandler(asynchat.async_chat):
      - (str) username: the name of the connected user (if any).
      - (int) attempted_logins: number of currently attempted logins.
      - (str) current_type: the current transfer type (default "a")
+     - (int) af: the address family (IPv4/IPv6)
      - (instance) server: the FTPServer class instance.
      - (instance) data_server: the data server instance (if any).
      - (instance) data_channel: the data channel instance (if any).
@@ -1402,7 +1413,7 @@ class FTPHandler(asynchat.async_chat):
         """
         asynchat.async_chat.__init__(self, conn=conn)
         self.server = server
-        self.remote_ip, self.remote_port = self.socket.getpeername()
+        self.remote_ip, self.remote_port = self.socket.getpeername()[:2]
         self.in_buffer = []
         self.in_buffer_len = 0
         self.set_terminator("\r\n")
@@ -1416,6 +1427,7 @@ class FTPHandler(asynchat.async_chat):
         self.current_type = 'a'
         self.restart_position = 0
         self.quit_pending = False
+        self._epsvall = False
         self.__in_dtp_queue = None
         self.__out_dtp_queue = None
 
@@ -1432,6 +1444,13 @@ class FTPHandler(asynchat.async_chat):
         # dtp attributes
         self.data_server = None
         self.data_channel = None
+
+        if hasattr(self.socket, 'family'):
+            self.af = self.socket.family
+        else:  # python < 2.5
+            ip, port = self.socket.getsockname()[:2]
+            self.af = socket.getaddrinfo(ip, port, socket.AF_UNSPEC,
+                                         socket.SOCK_STREAM)[0][0]
 
     def handle(self):
         """Return a 220 'Ready' response to the client over the command
@@ -1488,7 +1507,7 @@ class FTPHandler(asynchat.async_chat):
     unauth_cmds = ('FEAT','HELP','NOOP','PASS','QUIT','STAT','SYST','USER')
 
     # commands needing an argument
-    arg_cmds = ('ALLO','APPE','DELE','MDTM','MODE','MKD','OPTS','PORT',
+    arg_cmds = ('ALLO','APPE','DELE','EPRT','MDTM','MODE','MKD','OPTS','PORT',
                 'REST','RETR','RMD','RNFR','RNTO','SIZE', 'STOR','STRU',
                 'TYPE','USER','XMKD','XRMD')
 
@@ -1781,32 +1800,17 @@ class FTPHandler(asynchat.async_chat):
 
         # --- connection
 
-    def ftp_PORT(self, line):
-        """Start an active data-channel."""
-        # Parse PORT request for getting IP and PORT.
-        # Request comes in as:
-        # > h1,h2,h3,h4,p1,p2
-        # ...where the client's IP address is h1.h2.h3.h4 and the TCP
-        # port number is (p1 * 256) + p2.
-        try:
-            addr = map(int, line.split(','))
-            assert len(addr) == 6
-            for x in addr[:4]:
-                assert 0 <= x <= 255
-            ip = '%d.%d.%d.%d' %tuple(addr[:4])
-            port = (addr[4] * 256) + addr[5]
-            assert 0 <= port <= 65535
-        except (AssertionError, ValueError, OverflowError):
-            self.respond("501 Invalid PORT format.")
-            return
-
+    def _make_eport(self, ip, port):
+        """Establish an active data channel with remote client which
+        issued a PORT or EPRT command.
+        """
         # FTP bounce attacks protection: according to RFC-2577 it's
         # recommended to reject PORT if IP address specified in it
         # does not match client IP address.
         if not self.permit_foreign_addresses:
             if ip != self.remote_ip:
                 self.log("Rejected data connection to foreign address %s:%s."
-                        %(ip, port))
+                         %(ip, port))
                 self.respond("501 Can't connect to a foreign address.")
                 return
 
@@ -1822,7 +1826,6 @@ class FTPHandler(asynchat.async_chat):
         if self.data_server:
             self.data_server.close()
             self.data_server = None
-
         if self.data_channel:
             self.data_channel.close()
             self.data_channel = None
@@ -1838,8 +1841,12 @@ class FTPHandler(asynchat.async_chat):
         # open DTP channel
         self.active_dtp(ip, port, self)
 
-    def ftp_PASV(self, line):
-        """Start a passive data-channel."""
+    def _make_epasv(self, extmode=False):
+        """Initialize a passive data channel with remote client which
+        issued a PASV or EPSV command.
+        If extmode argument is False we assume that client issued EPSV in
+        which case extended passive mode will be used (see RFC-2428).
+        """
         # close existing DTP-server instance, if any
         if self.data_server:
             self.data_server.close()
@@ -1857,8 +1864,126 @@ class FTPHandler(asynchat.async_chat):
                 self.log(msg)
                 return
 
-        # open DTP channel
-        self.data_server = self.passive_dtp(self)
+        # open data channel
+        self.data_server = self.passive_dtp(self, extmode)
+
+    def ftp_PORT(self, line):
+        """Start an active data channel by using IPv4."""
+        if self._epsvall:
+            self.respond("501 PORT not allowed after EPSV ALL.")
+            return
+        if self.af != socket.AF_INET:
+            self.respond("425 You cannot use PORT on IPv6 connections. "
+                         "Use EPRT instead.")
+            return
+        # Parse PORT request for getting IP and PORT.
+        # Request comes in as:
+        # > h1,h2,h3,h4,p1,p2
+        # ...where the client's IP address is h1.h2.h3.h4 and the TCP
+        # port number is (p1 * 256) + p2.
+        try:
+            addr = map(int, line.split(','))
+            assert len(addr) == 6
+            for x in addr[:4]:
+                assert 0 <= x <= 255
+            ip = '%d.%d.%d.%d' %tuple(addr[:4])
+            port = (addr[4] * 256) + addr[5]
+            assert 0 <= port <= 65535
+        except (AssertionError, ValueError, OverflowError):
+            self.respond("501 Invalid PORT format.")
+            return
+        self._make_eport(ip, port)
+
+    def ftp_EPRT(self, line):
+        """Start an active data channel by choosing the network protocol
+        to use (IPv4/IPv6) as defined in RFC-2428.
+        """
+        if self._epsvall:
+            self.respond("501 EPRT not allowed after EPSV ALL.")
+            return
+        # Parse EPRT request for getting protocol, IP and PORT.
+        # Request comes in as:
+        # # <d>proto<d>ip<d>port<d>
+        # ...where <d> is an arbitrary delimiter character (usually "|") and
+        # <proto> is the network protocol to use (1 for IPv4, 2 for IPv6).
+        try:
+            af, ip, port = line.split(line[0])[1:-1]
+            port = int(port)
+            assert 0 <= port <= 65535
+        except (AssertionError, ValueError, IndexError, OverflowError):
+            self.respond("501 Invalid EPRT format.")
+            return
+
+        if af == "1":
+            if self.af != socket.AF_INET:
+                self.respond('522 Network protocol not supported (use 2).')
+            else:
+                try:
+                    octs = map(int, ip.split('.'))
+                    assert len(octs) == 4
+                    for x in octs:
+                        assert 0 <= x <= 255
+                except (AssertionError, ValueError, OverflowError), err:
+                    self.respond("501 Invalid EPRT format.")
+                else:
+                    self._make_eport(ip, port)
+        elif af == "2":
+            if self.af == socket.AF_INET:
+                self.respond('522 Network protocol not supported (use 1).')
+            else:
+                self._make_eport(ip, port)
+        else:
+            if self.af == socket.AF_INET:
+                self.respond('501 Unknown network protocol (use 1).')
+            else:
+                self.respond('501 Unknown network protocol (use 2).')
+
+    def ftp_PASV(self, line):
+        """Start a passive data channel by using IPv4."""
+        if self._epsvall:
+            self.respond("501 PASV not allowed after EPSV ALL.")
+            return
+        if self.af != socket.AF_INET:
+            self.respond("425 You cannot use PASV on IPv6 connections. "
+                         "Use EPSV instead.")
+        else:
+            self._make_epasv(extmode=False)
+
+    def ftp_EPSV(self, line):
+        """Start a passive data channel by using IPv4 or IPv6 as defined
+        in RFC-2428.
+        """
+        # RFC-2428 specifies that if an optional parameter is given,
+        # we have to determine the address family from that otherwise
+        # use the same address family used on the control connection.
+        # In such a scenario a client may use IPv4 on the control channel
+        # and choose to use IPv6 for the data channel.
+        # But how could we use IPv6 on the data channel without knowing
+        # which IPv6 address to use for binding the socket?
+        # Unfortunately RFC-2428 does not provide satisfing information
+        # on how to do that.  The assumption is that we don't have any way
+        # to know wich address to use, hence we just use the same address
+        # family used on the control connection.
+        if not line:
+            self._make_epasv(extmode=True)
+        elif line == "1":
+            if self.af != socket.AF_INET:
+                self.respond('522 Network protocol not supported (use 2).')
+            else:
+                self._make_epasv(extmode=True)
+        elif line == "2":
+            if self.af == socket.AF_INET:
+                self.respond('522 Network protocol not supported (use 1).')
+            else:
+                self._make_epasv(extmode=True)
+        elif line.lower() == 'all':
+            self._epsvall = True
+            self.respond('220 Other commands other than EPSV are now disabled.')
+        else:
+            if self.af == socket.AF_INET:
+                self.respond('501 Unknown network protocol (use 1).')
+            else:
+                self.respond('501 Unknown network protocol (use 2).')
 
     def ftp_QUIT(self, line):
         """Quit the current session."""
@@ -2527,7 +2652,7 @@ class FTPHandler(asynchat.async_chat):
         # return STATus information about ftpd
         if not line:
             s = []
-            s.append('Connected to: %s:%s' %self.socket.getsockname())
+            s.append('Connected to: %s:%s' %self.socket.getsockname()[:2])
             if self.authenticated:
                 s.append('Logged in as: %s' %self.username)
             else:
@@ -2567,7 +2692,7 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
-        features = ['MDTM','MLSD','REST STREAM','SIZE','TVFS']
+        features = ['EPRT','EPSV','MDTM','MLSD','REST STREAM','SIZE','TVFS']
         s = ''
         for fact in self.available_facts:
             if fact in self.current_facts:
@@ -2674,6 +2799,9 @@ class FTPServer(asyncore.dispatcher):
     socket listening on <address>, dispatching the requests to a <handler>
     (typically FTPHandler class).
 
+    Depending on the type of address specified IPv4 or IPv6 connections
+    (or both, depending from the underlying system) will be accepted.
+
     All relevant session information is stored in class attributes
     described below.
     Overriding them is strongly recommended to avoid running out of
@@ -2694,18 +2822,46 @@ class FTPServer(asyncore.dispatcher):
     def __init__(self, address, handler):
         """Initiate the FTP server opening listening on address.
 
-         - (tuple) address: the ip:port pair on which to listen
+         - (tuple) address: the host:port pair on which to listen
             for ftp data connections.
          - (classobj) handler: the handler class to use.
         """
         asyncore.dispatcher.__init__(self)
         self.handler = handler
         self.ip_map = []
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        if os.name not in ('nt', 'ce'):
-            self.set_reuse_addr()
-        self.bind(address)
+        host, port = address
+
+        # AF_INET or AF_INET6 socket
+        # Get the correct address family for our host (allows IPv6 addresses)
+        try:
+            info = socket.getaddrinfo(host, port, socket.AF_UNSPEC,
+                                      socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+        except socket.gaierror:
+            # Probably a DNS issue. Assume IPv4.
+            self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.bind((host, port))
+            self.set_reuse_address()
+        else:
+            for res in info:
+                af, socktype, proto, canonname, sa = res
+                try:
+                    self.create_socket(af, socktype)
+                    self.bind(sa)
+                    self.set_reuse_address()
+                except socket.error, msg:
+                    if self.socket:
+                        self.socket.close()
+                    self.socket = None
+                    continue
+                break
+            if not self.socket:
+                raise socket.error, msg
         self.listen(5)
+
+    def set_reuse_address(self):
+        # Overridden for convenience. Avoid to reuse address on Windows.
+        if os.name not in ('nt', 'ce'):
+            asyncore.dispatcher.set_reuse_addr(self)
 
     def serve_forever(self, **kwargs):
         """A wrap around asyncore.loop(); starts the asyncore polling
@@ -2715,7 +2871,7 @@ class FTPServer(asyncore.dispatcher):
         asyncore.loop() function: timeout, use_poll, map and count.
         """
         if not 'count' in kwargs:
-            log("Serving FTP on %s:%s" %self.socket.getsockname())
+            log("Serving FTP on %s:%s" %self.socket.getsockname()[:2])
 
         # backward compatibility for python < 2.4
         if not hasattr(self, '_map'):
@@ -2744,7 +2900,7 @@ class FTPServer(asyncore.dispatcher):
     def handle_accept(self):
         """Called when remote client initiates a connection."""
         sock_obj, addr = self.accept()
-        log("[]%s:%s Connected." %addr)
+        log("[]%s:%s Connected." %addr[:2])
 
         handler = self.handler(sock_obj, self)
         ip = addr[0]

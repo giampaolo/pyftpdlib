@@ -55,7 +55,11 @@ from pyftpdlib import ftpserver
 
 __release__ = 'pyftpdlib 0.3.0'
 
-HOST = 'localhost'
+# Attempt to use IP rather than hostname (test suite will run a lot faster)
+try:
+    HOST = socket.gethostbyname('localhost')
+except socket.error:
+    HOST = 'localhost'
 USER = 'user'
 PASSWD = '12345'
 HOME = os.getcwd()
@@ -65,6 +69,19 @@ except ImportError:
     TESTFN = 'temp-fname'
 TESTFN2 = TESTFN + '2'
 TESTFN3 = TESTFN + '3'
+
+def try_address(host, port=0):
+    """Try to bind a daemon on the given host:port and return True
+    if that has been possible."""
+    try:
+        ftpserver.FTPServer((host, port), None)
+    except socket.error:
+        return False
+    else:
+        return True
+
+SUPPORTS_IPV4 = try_address('127.0.0.1')
+SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1')
 
 
 class AbstractedFSClass(unittest.TestCase):
@@ -813,7 +830,7 @@ class FtpAbort(unittest.TestCase):
         # Case 2: user sends a PASV, a data-channel socket is listening
         # but not connected, and ABOR is sent: close listening data
         # socket, respond with 225.
-        self.client.sendcmd('PASV')
+        self.client.makepasv()
         respcode = self.client.sendcmd('ABOR')[:3]
         self.failUnlessEqual('225', respcode)
 
@@ -995,6 +1012,172 @@ class FtpStoreData(unittest.TestCase):
         self.client.delete(TESTFN3)
 
 
+class _TestNetworkProtocols(unittest.TestCase):
+    """Test PASV, EPSV, PORT and EPRT commands.
+
+    Do not use this class directly. Let TestIPv4Environment and
+    TestIPv6Environment classes use it instead.
+    """
+    HOST = HOST
+
+    def setUp(self):
+        self.server = FTPd(self.HOST)
+        self.server.start()
+        self.client = ftplib.FTP()
+        self.client.connect(self.server.host, self.server.port)
+        self.client.login(USER, PASSWD)
+        if self.client.af == socket.AF_INET:
+            self.proto = "1"
+            self.other_proto = "2"
+        else:
+            self.proto = "2"
+            self.other_proto = "1"
+
+    def tearDown(self):
+        self.client.close()
+        self.server.stop()
+
+    def cmdresp(self, cmd):
+        """Send a command and return response, also if the command failed."""
+        try:
+            return self.client.sendcmd(cmd)
+        except ftplib.Error, err:
+            return str(err)
+
+    def test_eprt(self):
+        # test wrong proto
+        try:
+            self.client.sendcmd('eprt |%s|%s|%s|' %(self.other_proto,
+                                self.server.host, self.server.port))
+        except ftplib.error_perm, err:
+            self.assertEqual(str(err)[0:3], "522")
+        else:
+            self.fail("Exception not raised")
+
+        # test bad args
+        msg = "501 Invalid EPRT format."
+        # len('|') > 3
+        self.assertEqual(self.cmdresp('eprt ||||'), msg)
+        # len('|') < 3
+        self.assertEqual(self.cmdresp('eprt ||'), msg)
+        # port > 65535
+        self.assertEqual(self.cmdresp('eprt |%s|%s|65536|' %(self.proto,
+                                                             self.HOST)), msg)
+        # port < 0
+        self.assertEqual(self.cmdresp('eprt |%s|%s|-1|' %(self.proto,
+                                                          self.HOST)), msg)
+        # port < 1024
+        self.assertEqual(self.cmdresp('eprt |%s|%s|222|' %(self.proto,
+                       self.HOST)), "501 Can't connect over a privileged port.")
+
+        # test connection
+        sock = socket.socket(self.client.af, socket.SOCK_STREAM)
+        sock.bind((self.client.sock.getsockname()[0], 0))
+        sock.listen(5)
+        sock.settimeout(2)
+        ip, port =  sock.getsockname()[:2]
+        self.client.sendcmd('eprt |%s|%s|%s|' %(self.proto, ip, port))
+        try:
+            try:
+                sock.accept()
+            except socket.timeout:
+                self.fail("Server didn't connect to passive socket")
+        finally:
+            sock.close()
+
+    def test_epsv(self):
+        # test wrong proto
+        try:
+            self.client.sendcmd('epsv ' + self.other_proto)
+        except ftplib.error_perm, err:
+            self.assertEqual(str(err)[0:3], "522")
+        else:
+            self.fail("Exception not raised")
+
+        # test connection
+        for cmd in ('EPSV', 'EPSV ' + self.proto):
+            host, port = ftplib.parse229(self.client.sendcmd(cmd),
+                         self.client.sock.getpeername())
+            s = socket.socket(self.client.af, socket.SOCK_STREAM)
+            s.settimeout(2)
+            try:
+                s.connect((host, port))
+                self.client.sendcmd('abor')
+            finally:
+                s.close()
+
+    def test_epsv_all(self):
+        self.client.sendcmd('epsv all')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'pasv')
+        self.assertRaises(ftplib.error_perm, self.client.sendport, HOST, 2000)
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd,
+                          'eprt |%s|%s|%s|' %(self.proto, HOST, 2000))
+
+
+class TestIPv4Environment(_TestNetworkProtocols):
+    """Test PASV, EPSV, PORT and EPRT commands.
+
+    Runs tests contained in _TestNetworkProtocols class by using IPv4
+    plus some additional specific tests.
+    """
+    HOST = '127.0.0.1'
+
+    def test_port_v4(self):
+        # test connection
+        self.client.makeport()
+        self.client.sendcmd('abor')
+        # test bad arguments
+        ae = self.assertEqual
+        msg = "501 Invalid PORT format."
+        ae(self.cmdresp('port 127,0,0,1,1.1'), msg)    # sep != ','
+        ae(self.cmdresp('port X,0,0,1,1,1'), msg)      # value != int
+        ae(self.cmdresp('port 127,0,0,1,1,1,1'), msg)  # len(args) > 6
+        ae(self.cmdresp('port 127,0,0,1'), msg)        # len(args) < 6
+        ae(self.cmdresp('port 256,0,0,1,1,1'), msg)    # oct > 255
+        ae(self.cmdresp('port 127,0,0,1,256,1'), msg)  # port > 65535
+        ae(self.cmdresp('port 127,0,0,1,-1,0'), msg)   # port < 0
+        msg = "501 Can't connect over a privileged port."
+        ae(self.cmdresp('port %s,1,1' %HOST.replace('.',',')),msg) # port < 1024
+        if "1.2.3.4" != HOST:
+            msg = "501 Can't connect to a foreign address."
+            ae(self.cmdresp('port 1,2,3,4,4,4'), msg)
+
+    def test_eprt_v4(self):
+        self.assertEqual(self.cmdresp('eprt |1|0.10.10.10|2222|'),
+                         "501 Can't connect to a foreign address.")
+
+    def test_pasv_v4(self):
+        host, port = ftplib.parse227(self.client.sendcmd('pasv'))
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(2)
+        try:
+            s.connect((host, port))
+        finally:
+            s.close()
+
+
+class TestIPv6Environment(_TestNetworkProtocols):
+    """Test PASV, EPSV, PORT and EPRT commands.
+
+    Runs tests contained in _TestNetworkProtocols class by using IPv6
+    plus some additional specific tests.
+    """
+    HOST = '::1'
+
+    def test_port_v6(self):
+        # 425 expected
+        self.assertRaises(ftplib.error_temp, self.client.sendport,
+                          self.server.host, self.server.port)
+
+    def test_pasv_v6(self):
+        # 425 expected
+        self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'pasv')
+
+    def test_eprt_v6(self):
+        self.assertEqual(self.cmdresp('eprt |2|::xxx|2222|'),
+                         "501 Can't connect to a foreign address.")
+
+
 class FTPd(threading.Thread):
     """A threaded FTP server used for running tests."""
 
@@ -1053,7 +1236,8 @@ def remove_test_files():
 def test_main(tests=None):
     test_suite = unittest.TestSuite()
     if tests is None:
-        tests = [AbstractedFSClass,
+        tests = [
+                 AbstractedFSClass,
                  DummyAuthorizerClass,
                  FtpAuthentication,
                  FtpDummyCmds,
@@ -1062,6 +1246,11 @@ def test_main(tests=None):
                  FtpAbort,
                  FtpStoreData
                  ]
+        if SUPPORTS_IPV4:
+            tests.append(TestIPv4Environment)
+        if SUPPORTS_IPV6:
+            tests.append(TestIPv6Environment)
+
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
     remove_test_files()
