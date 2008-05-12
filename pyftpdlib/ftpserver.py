@@ -1838,7 +1838,7 @@ class FTPHandler(asynchat.async_chat):
                 self.log(msg)
                 return
 
-        # open DTP channel
+        # open data channel
         self.active_dtp(ip, port, self)
 
     def _make_epasv(self, extmode=False):
@@ -2822,8 +2822,9 @@ class FTPServer(asyncore.dispatcher):
     def __init__(self, address, handler):
         """Initiate the FTP server opening listening on address.
 
-         - (tuple) address: the host:port pair on which to listen
-            for ftp data connections.
+         - (tuple) address: the host:port pair on which the command
+           channel will listen.
+
          - (classobj) handler: the handler class to use.
         """
         asyncore.dispatcher.__init__(self)
@@ -2840,14 +2841,14 @@ class FTPServer(asyncore.dispatcher):
             # Probably a DNS issue. Assume IPv4.
             self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
             self.bind((host, port))
-            self.set_reuse_address()
+            self.set_reuse_addr()
         else:
             for res in info:
                 af, socktype, proto, canonname, sa = res
                 try:
                     self.create_socket(af, socktype)
                     self.bind(sa)
-                    self.set_reuse_address()
+                    self.set_reuse_addr()
                 except socket.error, msg:
                     if self.socket:
                         self.socket.close()
@@ -2858,7 +2859,7 @@ class FTPServer(asyncore.dispatcher):
                 raise socket.error, msg
         self.listen(5)
 
-    def set_reuse_address(self):
+    def set_reuse_addr(self):
         # Overridden for convenience. Avoid to reuse address on Windows.
         if os.name not in ('nt', 'ce'):
             asyncore.dispatcher.set_reuse_addr(self)
