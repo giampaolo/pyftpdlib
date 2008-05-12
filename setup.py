@@ -16,7 +16,7 @@ FTP servers with Python."""
 
 setup(
     name='pyftpdlib',
-    version="0.3.0",
+    version="0.4.0",
     description='High-level asynchronous FTP server library',
     long_description=long_descr,
     license='MIT License',

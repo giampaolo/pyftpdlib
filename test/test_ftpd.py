@@ -53,7 +53,7 @@ import warnings
 from pyftpdlib import ftpserver
 
 
-__release__ = 'pyftpdlib 0.3.0'
+__release__ = 'pyftpdlib 0.4.0'
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
 try:
