@@ -24,7 +24,7 @@ setup(
     author="Giampaolo Rodola'",
     author_email='g.rodola@gmail.com',
     url='http://code.google.com/p/pyftpdlib/',
-    download_url='http://pyftpdlib.googlecode.com/files/pyftpdlib-0.3.0.tar.gz',
+    download_url='http://pyftpdlib.googlecode.com/files/pyftpdlib-0.4.0.tar.gz',
     packages=['pyftpdlib'],
     classifiers=[
           'Development Status :: 4 - Beta',
