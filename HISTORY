@@ -11,11 +11,22 @@ Major enhancements:
 
  * Issue #65: assume the id of real users when using system dependent
    authorizers.
+ * Issue #67: added IPv6 support.
 
-API changes since 0.2.0:
+Bugfixes:
+
+ * Issue #64: issue when authenticating as anonymous user using user-defined
+   authorizers.
+ * Issue #66: WinNTAuthorizer does not determine the real user home directory.
+ * Issue #69: DummyAuthorizer incorrectly uses class attribute instead of
+   instance attribute for user_table dictionary.
+ * Issue #70: wrong NOOP response code.
+
+API changes since 0.3.0:
 
  * DummyAuthorizer class changes:
-      * impersonate_user() and terminate_impersonation() methods has been added.
+      * impersonate_user() and terminate_impersonation() methods have been
+        added.
 
 
 Version: 0.3.0 - Date: 2008-01-17
