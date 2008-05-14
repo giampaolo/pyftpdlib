@@ -902,7 +902,7 @@ class AbstractedFS:
         self.cwd = '/'
         self.rnfr = None
 
-    # --- Conversion utilities
+    # --- Pathname / conversion utilities
 
     def ftpnorm(self, ftppath):
         """Normalize a "virtual" ftp pathname (tipically the raw string
@@ -979,6 +979,26 @@ class AbstractedFS:
     # alias for backward compatibility with 0.2.0
     normalize = ftpnorm
     translate = ftp2fs
+
+    def validpath(self, path):
+        """Check whether the path belongs to user's home directory.
+        Expected argument is a "real" filesystem pathname.
+
+        If path is a symbolic link it is resolved to check its real
+        destination.
+
+        Pathnames escaping from user's root directory are considered
+        not valid.
+        """
+        root = self.realpath(self.root)
+        path = self.realpath(path)
+        if not self.root.endswith(os.sep):
+            root = self.root + os.sep
+        if not path.endswith(os.sep):
+            path = path + os.sep
+        if path[0:len(root)] == root:
+            return True
+        return False
 
     # --- Wrapper methods around open() and tempfile.mkstemp
 
@@ -1099,28 +1119,6 @@ class AbstractedFS:
             return os.path.exists(path)
 
     exists = lexists  # alias for backward compatibility with 0.2.0
-
-    # --- Utility methods
-
-    def validpath(self, path):
-        """Check whether the path belongs to user's home directory.
-        Expected argument is a "real" filesystem pathname.
-
-        If path is a symbolic link it is resolved to check its real
-        destination.
-
-        Pathnames escaping from user's root directory are considered
-        not valid.
-        """
-        root = self.realpath(self.root)
-        path = self.realpath(path)
-        if not self.root.endswith(os.sep):
-            root = self.root + os.sep
-        if not path.endswith(os.sep):
-            path = path + os.sep
-        if path[0:len(root)] == root:
-            return True
-        return False
 
     def glob1(self, dirname, pattern):
         """Return a list of files matching a dirname pattern
