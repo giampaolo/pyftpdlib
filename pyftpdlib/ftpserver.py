@@ -180,16 +180,12 @@ proto_cmds = {
     'SYST': 'Syntax: SYST (get operating system type).',
     'TYPE': 'Syntax: TYPE <SP> [A | I] (set transfer type).',
     'USER': 'Syntax: USER <SP> user-name (set username).',
-    }
-
-deprecated_cmds = {
     'XCUP': 'Syntax: XCUP (obsolete; go to parent directory).',
     'XCWD': 'Syntax: XCWD <SP> dir-name (obsolete; change current directory).',
     'XMKD': 'Syntax: XMDK <SP> dir-name (obsolete; create directory).',
     'XPWD': 'Syntax: XPWD (obsolete; get current dir).',
     'XRMD': 'Syntax: XRMD <SP> dir-name (obsolete; remove directory).',
     }
-proto_cmds.update(deprecated_cmds)
 
 
 # hack around format_exc function of traceback module to grant
