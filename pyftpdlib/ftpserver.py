@@ -2837,15 +2837,15 @@ class FTPServer(asyncore.dispatcher):
         except socket.gaierror:
             # Probably a DNS issue. Assume IPv4.
             self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.bind((host, port))
             self.set_reuse_addr()
+            self.bind((host, port))
         else:
             for res in info:
                 af, socktype, proto, canonname, sa = res
                 try:
                     self.create_socket(af, socktype)
-                    self.bind(sa)
                     self.set_reuse_addr()
+                    self.bind(sa)
                 except socket.error, msg:
                     if self.socket:
                         self.socket.close()
