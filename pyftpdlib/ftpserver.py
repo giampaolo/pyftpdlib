@@ -251,8 +251,9 @@ class DummyAuthorizer:
 
     An "authorizer" is a class handling authentications and permissions
     of the FTP server.  It is used inside FTPHandler class for verifying
-    user's password, getting users home directory and checking user
-    permissions when a file read/write event occurs.
+    user's password, getting users home directory, checking user
+    permissions when a file read/write event occurs and changing user
+    before accessing the filesystem.
 
     DummyAuthorizer is the base authorizer, providing a platform
     independent interface for managing "virtual" FTP users. System
@@ -1658,24 +1659,26 @@ class FTPHandler(asynchat.async_chat):
     def handle_close(self):
         self.close()
 
+    _closed = False
     def close(self):
         """Close the current channel disconnecting the client."""
-        if self.data_server:
-            self.data_server.close()
-            del self.data_server
+        if not self._closed:
+            self._closed = True
+            if self.data_server:
+                self.data_server.close()
+                del self.data_server
 
-        if self.data_channel:
-            self.data_channel.close()
-            del self.data_channel
+            if self.data_channel:
+                self.data_channel.close()
+                del self.data_channel
 
-        del self.__out_dtp_queue
-        del self.__in_dtp_queue
+            del self.__out_dtp_queue
+            del self.__in_dtp_queue
 
-        # remove client IP address from ip map
-        self.server.ip_map.remove(self.remote_ip)
-        asynchat.async_chat.close(self)
-        self.log("Disconnected.")
-
+            # remove client IP address from ip map
+            self.server.ip_map.remove(self.remote_ip)
+            asynchat.async_chat.close(self)
+            self.log("Disconnected.")
 
     # --- callbacks
 
