@@ -33,10 +33,12 @@
 #  Linux CentOS 2.6.20.15          | 2.4, 2.5
 #  Linux Ubuntu 2.6.20-15          | 2.4, 2.5
 #  Linux Debian 2.4.27-2-386       | 2.3.5
-#  Windows XP prof sp2             | 2.3, 2.4, 2.5, 2.6a
+#  Windows 2000 SP4                | 2.5
+#  Windows XP prof SP3             | 2.3, 2.4, 2.5, 2.6a3
+#  Windows Vista 32 & 64 bit       | 2.5
 #  OS X 10.4.10                    | 2.3, 2.4, 2.5
 #  FreeBSD 6.2, 7.0-RC1            | 2.4, 2.5
-#  Windows Mobile 6                | PythonCE 2.5
+#  Windows Mobile 6.0              | PythonCE 2.5
 # -------------------------------------------------------
 
 

@@ -136,7 +136,7 @@ __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer
 
 __pname__   = 'Python FTP server library (pyftpdlib)'
 __ver__     = '0.4.0'
-__date__    = '2008-01-17'  # XXX set date
+__date__    = '2008-05-16'
 __author__  = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__     = 'http://code.google.com/p/pyftpdlib/'
 
