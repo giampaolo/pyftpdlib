@@ -106,9 +106,9 @@
         </ul>
       </ul>
       <hr />
-      <p><a id="2.0_-_API_reference">class ftpserver.<strong>FTPHandler(</strong><em>conn, ftpd_instance</em><strong>)</strong> </a></p>
+      <p><a id="2.0_-_API_reference">class ftpserver.<strong>FTPHandler(</strong><em>conn, server</em><strong>)</strong> </a></p>
       <blockquote><a id="2.0_-_API_reference">This class implements the FTP server Protocol Interpreter (see </a><a href="http://www.faqs.org/rfcs/rfc959.html" rel="nofollow">RFC-959</a>),  handling commands received from the client on the control channel by  calling the command's corresponding method (e.g. for received command  &quot;MKD pathname&quot;, ftp_MKD() method is called with pathname as the argument).  All relevant session information are stored in instance variables. </blockquote>
-      <blockquote>conn is the underlying socket object instance of the newly established connection, ftpd_instance is the FTPHandler class instance.  Basic usage simply requires creating an instance of FTPHandler class and specify which authorizer instance it will going to use: </blockquote>
+      <blockquote>conn is the underlying socket object instance of the newly established connection, server is the FTPHandler class instance.  Basic usage simply requires creating an instance of FTPHandler class and specify which authorizer instance it will going to use: </blockquote>
       <pre>&gt;&gt;&gt; ftp_handler = ftpserver.FTPHandler<br />&gt;&gt;&gt; ftp_handler.authorizer = authorizer</pre>
       <blockquote>All  relevant session information is stored in class attributes reproduced  below and can be modified before instantiating this class: </blockquote>
       <ul>
