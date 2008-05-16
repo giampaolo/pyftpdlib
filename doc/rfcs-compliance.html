@@ -8,8 +8,8 @@
 <body>
 <div id="wikicontent">
   <h1><a id="Introduction">Introduction</a></h1>
-  <p><a id="Introduction">This page lists current standard Internet RFCs that define the FTP protocol. </a></p>
-  <p><a id="Introduction">pyftpdlib conforms to the FTP protocol standard as defined in </a><a href="http://www.ietf.org/rfc/rfc959.txt" rel="nofollow">RFC-959</a> and <a href="http://www.ietf.org/rfc/rfc1123.txt" rel="nofollow">RFC-1123</a> implementing all the fundamental commands and features described in  them. It also implements some more recent features such as OPTS and  FEAT commands defined in <a href="http://www.ietf.org/rfc/rfc2389.txt" rel="nofollow">RFC-2398</a> and all the new commands defined in <a href="http://www.ietf.org/rfc/rfc3659.txt" rel="nofollow">RFC-3659</a>. </p>
+  <p><a id="Introduction2">This page lists current standard Internet RFCs that define the FTP protocol. </a></p>
+  <p><a id="Introduction2">pyftpdlib conforms to the FTP protocol standard as defined in </a><a href="http://www.ietf.org/rfc/rfc959.txt" rel="nofollow">RFC-959</a> and <a href="http://www.ietf.org/rfc/rfc1123.txt" rel="nofollow">RFC-1123</a> implementing all the fundamental commands and features described in  them. It also implements some more recent features such as OPTS and  FEAT commands defined in <a href="http://www.ietf.org/rfc/rfc2389.txt" rel="nofollow">RFC-2398</a>, IPv6 support as defined in <a href="ftp://ftp.rfc-editor.org/in-notes/rfc2428.txt" rel="nofollow">RFC-2428</a> and all the new commands defined in <a href="http://www.ietf.org/rfc/rfc3659.txt" rel="nofollow">RFC-3659</a>. </p>
   <p>Future plans for pyftpdlib include the gradual implementation of other standards track RFCs. </p>
   <p>Some  of the features like ACCT, SMNT or OPTS commands will never be  implemented deliberately. Other features described in more recent RFCs  like the TLS/SSL support for securing FTP are taken in great  consideration and should be implemented in future (Python 2.6 should  grant a full SSL support). </p>
   <h1><a href="http://www.ietf.org/rfc/rfc959.txt" rel="nofollow">RFC-959</a></h1>
@@ -519,16 +519,16 @@
       <tr>
         <td> EPRT </td>
         <td> MAY </td>
-        <td> NO </td>
-        <td> --- </td>
+        <td> YES</td>
+        <td> 0.4.0</td>
         <td> Set active data connection over IPv4 or IPv6 </td>
         <td></td>
       </tr>
       <tr>
         <td> EPSV </td>
         <td> MAY </td>
-        <td> NO </td>
-        <td> --- </td>
+        <td> YES</td>
+        <td> 0.4.0 </td>
         <td> Set passive data connection over IPv4 or IPv6 </td>
         <td></td>
       </tr>

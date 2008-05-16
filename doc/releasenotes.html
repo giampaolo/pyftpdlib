@@ -7,68 +7,35 @@
 
 <body>
 <div id="wikicontent">
-  <h1><a id="Version:_0.3.0_-_Date:_2008-01-17">Version: 0.3.0 - Date: 2008-01-17</a></h1>
-  <h2><a id="Major_enhancements">Major enhancements</a></h2>
-  <ul>
-    <li><a title="Provide permissions, owner, and group for files on UNIX platforms" href="http://code.google.com/p/pyftpdlib/issues/detail?id=48">Issue 48</a>: real permissions, owner, and group for files on UNIX platforms are now provided when processing LIST. </li>
-    <li><a title="Bandwidth throttling capabilities and updated throttled_ftpd.py script" href="http://code.google.com/p/pyftpdlib/issues/detail?id=51">Issue 51</a>: added the new demo/throttled_ftpd.py script. </li>
-    <li><a title="Using iterators when calculating requests requiring long time to complete (LIST and MLSD commands)" href="http://code.google.com/p/pyftpdlib/issues/detail?id=59">Issue 59</a>: iterators are now used for calculating requests requiring long time to complete (LIST and MLSD commands). </li>
-    <li><a title="Extend the set of user permissions" href="http://code.google.com/p/pyftpdlib/issues/detail?id=61">Issue 61</a>: extended the set of assignable user permissions. </li>
-  </ul>
-  <h2><a id="RFC-related_enhancements">RFC-related enhancements</a></h2>
-  <ul>
-    <li><a title="Implement FEAT command" href="http://code.google.com/p/pyftpdlib/issues/detail?id=42">Issue 42</a>: implemented <strong>FEAT</strong> command defined in <a href="http://www.faqs.org/rfcs/rfc2389.html" rel="nofollow">RFC-2389</a>. </li>
-    <li><a title="Implementing MLST and MLSD commands" href="http://code.google.com/p/pyftpdlib/issues/detail?id=52">Issue 52</a>: implemented <strong>MLST</strong> and <strong>MLSD</strong> commands defined in <a href="http://www.faqs.org/rfcs/rfc3659.html" rel="nofollow">RFC-3659</a>. </li>
-    <li><a title="Implement OPTS command" href="http://code.google.com/p/pyftpdlib/issues/detail?id=58">Issue 58</a>: implemented <strong>OPTS</strong> command define in <a href="http://www.faqs.org/rfcs/rfc2389.html" rel="nofollow">RFC-2389</a>. </li>
-  </ul>
-  <h2><a id="Bugfixes">Bugfixes</a></h2>
-  <ul>
-    <li><a title="Error on QUIT when user is not yet authenticated" href="http://code.google.com/p/pyftpdlib/issues/detail?id=41">Issue 41</a>: error occurred on quit if user was not yet authenticated. </li>
-    <li><a title="Server ident shouldn't be shown in the STAT response" href="http://code.google.com/p/pyftpdlib/issues/detail?id=43">Issue 43</a>: hidden the server identifier when returning STAT response. </li>
-    <li><a title="Wrong PORT response code if data-connection attempt fails" href="http://code.google.com/p/pyftpdlib/issues/detail?id=44">Issue 44</a>: a wrong response code was given on PORT if the data connection attempt failed. </li>
-    <li><a title="Wrong HELP response code on unknown arg command" href="http://code.google.com/p/pyftpdlib/issues/detail?id=45">Issue 45</a>: a wrong response code was given on HELP if argument was incorrect. </li>
-    <li><a title="Wrong response on rejected data connection" href="http://code.google.com/p/pyftpdlib/issues/detail?id=46">Issue 46</a>: a wrong response code was given on PASV if remote peer had a foreign internet address. </li>
-    <li><a title="Maximum connections limit problem on Python 2.3" href="http://code.google.com/p/pyftpdlib/issues/detail?id=47">Issue 47</a>: can't use FTPServer.max_cons option with Python 2.3. </li>
-    <li><a title="Provide permissions, owner, and group for files on UNIX platforms" href="http://code.google.com/p/pyftpdlib/issues/detail?id=48">Issue 48</a>: problem when LISTing &quot;broken&quot; symbolic links. </li>
-    <li><a title="Problem when LISTing " broken="" symbolic="" links="" href="http://code.google.com/p/pyftpdlib/issues/detail?id=49">Issue 49</a>: data channel did not respect the outgoing data buffer. </li>
-    <li><a title="Problem when receiving strings with trailing white spaces" href="http://code.google.com/p/pyftpdlib/issues/detail?id=53">Issue 53</a>: received strings having trailing white spaces was erroneously stripped. </li>
-    <li><a title="Sort LIST / NLST / STAT command output by file name" href="http://code.google.com/p/pyftpdlib/issues/detail?id=54">Issue 54</a>: LIST/NLST/STAT outputs are now sorted by file name. </li>
-    <li><a title="Path traversal vulnerability in case of symlinks" href="http://code.google.com/p/pyftpdlib/issues/detail?id=55">Issue 55</a>: path traversal vulnerability in case of symlinks. </li>
-    <li><a title="Can't rename broken symbolic links" href="http://code.google.com/p/pyftpdlib/issues/detail?id=56">Issue 56</a>: can't rename broken symbolic links. </li>
-    <li><a title="Wrong LIST / NLST behavior with symbolic links" href="http://code.google.com/p/pyftpdlib/issues/detail?id=57">Issue 57</a>: wrong LIST/NLST behavior when processing symbolic links. </li>
-    <li><a title="Error in case of bad formatted PORT command requests" href="http://code.google.com/p/pyftpdlib/issues/detail?id=60">Issue 60</a>: error occurred in case of bad formatted PORT command requests. </li>
-  </ul>
-  <p> </p>
-  <h2><a id="API_changes_since_0.2.0">API changes since 0.2.0</a></h2>
-  <ul>
-    <li><a id="API_changes_since_0.2.0">New IteratorProducer and BufferedIteratorProducer classes have been added. </a></li>
-    <li><a id="API_changes_since_0.2.0">DummyAuthorizer class changes: </a></li>
+  <div id="wikicontent2">
+    <h1><a id="Version:_0.4.0_-_Date:_2008-05-16">Version: 0.4.0 - Date: 2008-05-16</a></h1>
+    <h2><a id="Major_enhancements">Major enhancements</a></h2>
     <ul>
-      <li><a id="API_changes_since_0.2.0">The permissions management has been changed and the set of available permissions have been extended (see </a><a title="Extend the set of user permissions" href="http://code.google.com/p/pyftpdlib/issues/detail?id=61">Issue 61</a>). add_user() method now accepts &quot;eladfm&quot; permissions beyond the old &quot;r&quot; and &quot;w&quot;. </li>
-      <li>r_perm() and w_perm() methods have been removed. </li>
-      <li>New has_perm() and get_perms() methods have been added. </li>
+      <li><a title="Assume the id of real users when using system dependent authorizers" href="http://code.google.com/p/pyftpdlib/issues/detail?id=65">Issue 65</a>: it is now possible to assume the id of real users when using system dependent authorizers. </li>
+      <li><a title="Add IPv6 support to pyftpdlib [RFC-2428]" href="http://code.google.com/p/pyftpdlib/issues/detail?id=67">Issue 67</a>: added IPv6 support (<a href="http://www.faqs.org/rfcs/rfc2428.html" rel="nofollow">RFC-2428</a>). </li>
     </ul>
-    <li>AbstractedFS class changes: </li>
+    <h2><a id="Bugfixes">Bugfixes</a></h2>
     <ul>
-      <li>normalize() method has been renamed in ftpnorm(). </li>
-      <li>translate() method has been renamed in ftp2fs(). </li>
-      <li>New methods: fs2ftp(), stat(), lstat(), islink(), realpath(), lexists(), validpath(). </li>
-      <li>get_list_dir(), get_stat_dir() and format_list() methods now return an iterator object instead of a string. </li>
-      <li>format_list() method has a new &quot;ignore_err&quot; keyword argument. </li>
+      <li><a title="Issue when authenticating as anonymous using user-defined authorizers" href="http://code.google.com/p/pyftpdlib/issues/detail?id=64">Issue 64</a>: issue when authenticating as anonymous user using user-defined authorizers. </li>
+      <li><a title="WinNTAuthorizer does not determine the real user home directory" href="http://code.google.com/p/pyftpdlib/issues/detail?id=66">Issue 66</a>: WinNTAuthorizer does not determine the real user home directory. </li>
+      <li><a title="DummyAuthorizer incorrectly uses class attribute instead of instance attribute for user_table dictionary" href="http://code.google.com/p/pyftpdlib/issues/detail?id=69">Issue 69</a>: DummyAuthorizer<a href="http://code.google.com/p/pyftpdlib/w/edit/DummyAuthorizer">?</a> incorrectly uses class attribute instead of instance attribute for user_table dictionary. </li>
+      <li><a title="Wrong NOOP response code" href="http://code.google.com/p/pyftpdlib/issues/detail?id=70">Issue 70</a>: wrong NOOP response code. </li>
     </ul>
-    <li>global debug() function has been removed. </li>
-  </ul>
-  <h2><a id="Porting_to_pyftpdlib_0.3.0">Porting to pyftpdlib 0.3.0</a></h2>
-  <p><a id="Porting_to_pyftpdlib_0.3.0">This section lists previously described changes that may require changes to your existent 0.2.0-based code. </a></p>
-  <p><a id="Porting_to_pyftpdlib_0.3.0">The main news in 0.3.0 version is that the DummyAuthorizer  class now provides an extended set of user permissions. For example: to  create a user having full r/w permissions you no longer have to do: </a></p>
-  <pre>    <a id="Porting_to_pyftpdlib_0.3.0">authorizer.add_user(&quot;user&quot;, &quot;12345&quot;, &quot;/home/user&quot;, perm=(&quot;r&quot;,&quot;w&quot;))</a></pre>
-  <p><a id="Porting_to_pyftpdlib_0.3.0">...or: </a></p>
-  <pre>    <a id="Porting_to_pyftpdlib_0.3.0">authorizer.add_user(&quot;user&quot;, &quot;12345&quot;, &quot;/home/user&quot;, perm=&quot;rw&quot;)</a></pre>
-  <p><a id="Porting_to_pyftpdlib_0.3.0">...but instead: </a></p>
-  <pre>    <a id="Porting_to_pyftpdlib_0.3.0">authorizer.add_user(&quot;user&quot;, &quot;12345&quot;, &quot;/home/user&quot;, perm=&quot;elradfmw&quot;)</a></pre>
-  <p><a id="Porting_to_pyftpdlib_0.3.0">Folks who sub-classed DummyAuthorizer class to create their own custom authorizer (e.g. I've seen some SQL-based authorizers around) must note that r_perm() and w_perm() methods have been removed and replaced by the new has_perm() method. </a></p>
-  <p><a id="Porting_to_pyftpdlib_0.3.0">Other changes are fundamentally related to AbstractedFS class which acquired some new methods and renamed others but this should interest only folks who sub-classed it (e.g. </a><a href="http://walco.n--tree.net/projects/aksy/wiki" rel="nofollow">Aksy library</a> which implemented a virtual file-system). </p>
-  <p>&nbsp;</p>
+    <h2><a id="API_changes_since_0.3.0">API changes since 0.3.0</a></h2>
+    <ul>
+      <li><a id="API_changes_since_0.3.0">impersonate_user() and terminate_impersonation() methods have been added to the DummyAuthorizer class. </a></li>
+    </ul>
+    <h2><a id="Migration_notes">Migration notes</a></h2>
+    <p><a id="Migration_notes">Changes  applied to the 0.4.0 trunk are fully compatible with the previous 0.3.0  version. Your existing 0.3.0 based code will most likely work without  need to be modified. The new features in this release are detailed  below. </a></p>
+    <h3><a id="IPv6">IPv6</a></h3>
+    <p><a id="IPv6">Starting from version 0.4.0 pyftpdlib supports IPv6 (</a><a href="http://www.faqs.org/rfcs/rfc2428.html" rel="nofollow">RFC-2428</a>). If you use IPv6 and want your FTP server to do so just pass a valid IPv6 address to the FTPServer class constructor which now accepts both IPv4 and IPv6 address types. Example: </p>
+    <pre>&gt;&gt;&gt; from pyftpdlib import ftpserver<br />&gt;&gt;&gt; address = (&quot;::1&quot;, 21)  # listen on localhost, port 21<br />&gt;&gt;&gt; ftpd = ftpserver.FTPServer(address, ftpserver.FTPHandler)<br />&gt;&gt;&gt; ftpd.serve_forever()<br />Serving FTP on ::1:21</pre>
+    <h3><a id="Real_users_impersonation">Real users impersonation</a></h3>
+    <p><a id="Real_users_impersonation">Two new methods have been added to the original DummyAuthorizer class: impersonate_user() and terminate_impersonation(). <br />
+    </a><a id="Real_users_impersonation">System  dependent authorizers subclassing the dummy authorizer can now assume  the id of real users by overriding them as necessary. <br />
+    </a><a id="Real_users_impersonation">Every  time the FTP server is going to access the filesystem (e.g. for  creating or renaming a file) it will temporarily impersonate the  currently logged on user, execute the filesystem call and then switch  back to the user who originally started the server. <br />
+    </a><a id="Real_users_impersonation">Example UNIX and Windows FTP servers contained in the </a><a href="http://code.google.com/p/pyftpdlib/source/browse/tags/release-0.4.0/demo/" rel="nofollow">demo directory</a> implement real user impersonation. </p>
+  </div>
   <p>&nbsp;</p>
 </div>
 </body>
