@@ -85,3 +85,7 @@ D: Bug report affecting unix_ftpd.py's authorizer
 
 N: Coronado Ivan
 D: Bug report #70 (Wrong NOOP response code)
+
+N: Rauli Ruohonen
+D: Bug report #71 (Socket handles are leaked when a data transfer is in progress
+   and user QUITs)

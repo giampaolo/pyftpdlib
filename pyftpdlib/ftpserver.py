@@ -1983,12 +1983,7 @@ class FTPHandler(asynchat.async_chat):
                 self.respond('501 Unknown network protocol (use 2).')
 
     def ftp_QUIT(self, line):
-        """Quit the current session."""
-        # From RFC-959:
-        # This command terminates a USER and if file transfer is not
-        # in progress, the server closes the control connection.
-        # If file transfer is in progress, the connection will remain
-        # open for result response and the server will then close it.
+        """Quit the current session disconnecting the client."""
         if self.authenticated:
             msg_quit = self.authorizer.get_msg_quit(self.username)
         else:
@@ -1999,12 +1994,15 @@ class FTPHandler(asynchat.async_chat):
             self.push("221-%s\r\n" %msg_quit)
             self.respond("221 ")
 
-        if not self.data_channel:
-            self.close_when_done()
-        else:
-            # tell the cmd channel to stop responding to commands.
+        # From RFC-959:
+        # If file transfer is in progress, the connection will remain
+        # open for result response and the server will then close it.
+        # We also stop responding to any further command.
+        dc = self.data_channel
+        if dc is not None and dc.transfer_in_progress():
             self.quit_pending = True
-
+        else:
+            self.close_when_done()
 
         # --- data transferring
 
