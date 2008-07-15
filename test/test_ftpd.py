@@ -46,6 +46,7 @@ import threading
 import unittest
 import socket
 import os
+import time
 import re
 import tempfile
 import ftplib
@@ -308,6 +309,79 @@ class DummyAuthorizerClass(unittest.TestCase):
         # expect warning on write permissions assigned to anonymous user
         for x in "adfmw":
             self.assertRaises(RuntimeWarning, auth.add_anonymous, HOME, perm=x)
+
+
+class CallLaterClass(unittest.TestCase):
+    """Tests for CallLater class."""
+
+    def tearDown(self):
+        for task in ftpserver.tasks:
+            if not task.cancelled:
+                task.cancel()
+        del ftpserver.tasks[:]
+
+    def scheduler(self, timeout=0.01, count=100):
+        while ftpserver.tasks and count > 0:
+            ftpserver._scheduler()
+            count -= 1
+            time.sleep(timeout)
+
+    def test_interface(self):
+        fun = lambda: 0
+        x = ftpserver.CallLater(3, fun)
+        self.assert_(x.cancelled is False)
+        x.cancel()
+        self.assert_(x.cancelled is True)
+        self.assertRaises(AssertionError, x.call)
+        self.assertRaises(AssertionError, x.reset)
+        self.assertRaises(AssertionError, x.delay, 2)
+        self.assertRaises(AssertionError, x.cancel)
+
+    def test_order(self):
+        l = []
+        ftpserver.tasks = []
+        import heapq
+        heapq.heapify(ftpserver.tasks)
+        fun = lambda x: l.append(x)
+        for x in [0.05, 0.04, 0.03, 0.02, 0.01]:
+            ftpserver.CallLater(x, fun, x)
+        self.scheduler()
+        self.assertEqual(l, [0.01, 0.02, 0.03, 0.04, 0.05])
+
+    def test_delay(self):
+        l = []
+        fun = lambda x: l.append(x)
+        ftpserver.CallLater(0.01, fun, 0.01).delay(0.07)
+        ftpserver.CallLater(0.02, fun, 0.02).delay(0.08)
+        ftpserver.CallLater(0.03, fun, 0.03)
+        ftpserver.CallLater(0.04, fun, 0.04)
+        ftpserver.CallLater(0.05, fun, 0.05)
+        self.scheduler()
+        self.assertEqual(l, [0.03, 0.04, 0.05, 0.01, 0.02])
+
+    def test_reset(self):
+        l = []
+        fun = lambda x: l.append(x)
+        ftpserver.CallLater(0.01, fun, 0.01)
+        ftpserver.CallLater(0.02, fun, 0.02)
+        ftpserver.CallLater(0.03, fun, 0.03)
+        x = ftpserver.CallLater(0.04, fun, 0.04)
+        ftpserver.CallLater(0.05, fun, 0.05)
+        time.sleep(0.1)
+        x.reset()
+        self.scheduler()
+        self.assertEqual(l, [0.01, 0.02, 0.03, 0.05, 0.04])
+
+    def test_cancel(self):
+        l = []
+        fun = lambda x: l.append(x)
+        ftpserver.CallLater(0.01, fun, 0.01).cancel()
+        ftpserver.CallLater(0.02, fun, 0.02)
+        ftpserver.CallLater(0.03, fun, 0.03)
+        ftpserver.CallLater(0.04, fun, 0.04)
+        ftpserver.CallLater(0.05, fun, 0.05).cancel()
+        self.scheduler()
+        self.assertEqual(l, [0.02, 0.03, 0.04])
 
 
 class FtpAuthentication(unittest.TestCase):
@@ -1014,6 +1088,111 @@ class FtpStoreData(unittest.TestCase):
         self.client.delete(TESTFN3)
 
 
+class TestTimeouts(unittest.TestCase):
+
+    def _setUp(self, idle_timeout=300, data_timeout=300, pasv_timeout=30,
+               port_timeout=30):
+        self.server = FTPd()
+        self.server.handler.timeout = idle_timeout
+        self.server.handler.dtp_handler.timeout = data_timeout
+        self.server.handler.active_dtp.timeout = port_timeout
+        self.server.handler.passive_dtp.timeout = pasv_timeout
+        self.server.start()
+        self.client = ftplib.FTP()
+        self.client.connect(self.server.host, self.server.port)
+        self.client.login(USER, PASSWD)
+
+    def tearDown(self):
+        self.client.close()
+        self.server.handler.timeout = 300
+        self.server.handler.dtp_handler.timeout = 300
+        self.server.handler.active_dtp.timeout = 30
+        self.server.handler.passive_dtp.timeout = 30
+        self.server.stop()
+
+    def test_idle_timeout(self):
+        # Test control channel timeout. The client which does not send
+        # any command within the time specified in FTPHandler.timeout is
+        # supposed to be kicked off.
+        self._setUp(idle_timeout=0.1)
+        # fail if no msg is received within 1 second
+        self.client.sock.settimeout(1)
+        data = self.client.sock.recv(1024)
+        self.assertEqual(data, "421 Control connection timed out.\r\n")
+        # ensure client has been kicked off
+        self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
+
+    def test_data_timeout(self):
+        # Test data channel timeout. The client which does not send
+        # or receive any data within the time specified in
+        # DTPHandler.timeout is supposed to be kicked off.
+        self._setUp(data_timeout=0.1)
+        addr = self.client.makepasv()
+        s = socket.socket()
+        s.connect(addr)
+        # fail if no msg is received within 1 second
+        self.client.sock.settimeout(1)
+        data = self.client.sock.recv(1024)
+        self.assertEqual(data, "421 Data connection timed out.\r\n")
+        # ensure client has been kicked off
+        self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
+
+    def test_idle_data_timeout1(self):
+        # Tests that the control connection timeout is suspended while
+        # the data channel is opened
+        self._setUp(idle_timeout=0.1, data_timeout=0.2)
+        addr = self.client.makepasv()
+        s = socket.socket()
+        s.connect(addr)
+        # fail if no msg is received within 1 second
+        self.client.sock.settimeout(1)
+        data = self.client.sock.recv(1024)
+        self.assertEqual(data, "421 Data connection timed out.\r\n")
+        # ensure client has been kicked off
+        self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
+
+    def test_idle_data_timeout2(self):
+        # Tests that the control connection timeout is restarted after
+        # data channel has been closed
+        self._setUp(idle_timeout=0.1, data_timeout=0.2)
+        addr = self.client.makepasv()
+        s = socket.socket()
+        s.connect(addr)
+        # close data channel
+        self.client.sendcmd('abor')
+        self.client.sock.settimeout(1)
+        data = self.client.sock.recv(1024)
+        self.assertEqual(data, "421 Control connection timed out.\r\n")
+        # ensure client has been kicked off
+        self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
+
+    def test_pasv_timeout(self):
+        # Test pasv data channel timeout. The client which does not connect
+        # to the listening data socket within the time specified in
+        # PassiveDTP.timeout is supposed to receive a 421 response.
+        self._setUp(pasv_timeout=0.1)
+        addr = self.client.makepasv()
+        # fail if no msg is received within 1 second
+        self.client.sock.settimeout(1)
+        data = self.client.sock.recv(1024)
+        self.assertEqual(data, "421 Passive data channel timed out.\r\n")
+        # client is not expected to be kicked off
+        self.client.sendcmd('noop')
+
+    def test_port_timeout(self):
+        # Test port data channel timeout. The client which does not accept
+        # the server's connection attempts within the time specified in
+        # ActiveDTP.timeout is supposed to receive a 421 response.
+        self._setUp(port_timeout=0.1)
+        sock = self.client.makeport()
+        # fail if no msg is received within 1 second
+        self.client.sock.settimeout(1)
+        data = self.client.sock.recv(1024)
+        self.assertEqual(data, "421 Active data channel timed out.\r\n")
+        # client is not expected to be kicked off
+        self.client.sendcmd('noop')
+
+
 class _TestNetworkProtocols(unittest.TestCase):
     """Test PASV, EPSV, PORT and EPRT commands.
 
@@ -1204,22 +1383,13 @@ class FTPd(threading.Thread):
         self.__flag.wait()
 
     def run(self):
-        # hack for granting backward compatibility with Python 2.3
-        # where asyncore.loop() doesn't provide the 'count' argument
-        import inspect, asyncore
-        if 'count' in inspect.getargspec(asyncore.loop)[0]:
-            poller = self.server.serve_forever
-            kwargs = {"timeout":0.001, "count":1}
-        else:
-            poller = asyncore.poll
-            kwargs = {"timeout":0.001}
         self.active = True
         self.__flag.set()
         while self.active:
             self.active_lock.acquire()
-            poller(**kwargs)
+            self.server.serve_forever(timeout=0.001, count=1)
             self.active_lock.release()
-        self.server.close()
+        self.server.close_all(ignore_all=True)
 
     def stop(self):
         assert self.active
@@ -1241,12 +1411,14 @@ def test_main(tests=None):
         tests = [
                  AbstractedFSClass,
                  DummyAuthorizerClass,
+                 CallLaterClass,
                  FtpAuthentication,
                  FtpDummyCmds,
                  FtpFsOperations,
                  FtpRetrieveData,
                  FtpAbort,
-                 FtpStoreData
+                 FtpStoreData,
+                 TestTimeouts,
                  ]
         if SUPPORTS_IPV4:
             tests.append(TestIPv4Environment)

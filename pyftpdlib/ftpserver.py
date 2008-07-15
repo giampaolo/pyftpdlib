@@ -119,6 +119,7 @@ import tempfile
 import warnings
 import random
 import stat
+import heapq
 from tarfile import filemode
 
 try:
@@ -131,7 +132,7 @@ except ImportError:
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer',
            'FTPHandler', 'FTPServer', 'PassiveDTP', 'ActiveDTP', 'DTPHandler',
            'FileProducer', 'IteratorProducer', 'BufferedIteratorProducer',
-           'AbstractedFS',]
+           'AbstractedFS', 'CallLater']
 
 
 __pname__   = 'Python FTP server library (pyftpdlib)'
@@ -216,6 +217,83 @@ def _strerror(err):
         return os.strerror(err.errno)
     else:
         return err.strerror
+
+# the heap used for the scheduled tasks
+tasks = []
+
+def _scheduler():
+    now = time.time()
+    while tasks and now >= tasks[0].timeout:
+        delayed = heapq.heappop(tasks)
+        try:
+            delayed.call()
+        finally:
+            if not delayed.cancelled:
+                delayed.cancel()
+
+
+class CallLater:
+    """Calls a function at a later time.
+
+    The instance returned is an object that can be used to cancel the
+    scheduled call, by calling its cancel() method.
+    It also may be rescheduled by calling delay() or reset()} methods.
+    """
+
+    def __init__(self, delay, target, *args, **kwargs):
+        """
+        - delay: the number of seconds to wait
+        - target: the callable object to call later
+        - args: the arguments to call it with
+        - kwargs: the keyword arguments to call it with
+        """
+        assert callable(target), "%s is not callable" %target
+        assert sys.maxint >= delay >= 0, "%s is not greater than or equal " \
+                                           "to 0 seconds" % (delay)
+        self.__delay = delay
+        self.__target = target
+        self.__args = args
+        self.__kwargs = kwargs
+        self.__reset = None
+        # seconds from the epoch at which to call the function
+        self.timeout = time.time() + self.__delay
+        self.cancelled = False
+        heapq.heappush(tasks, self)
+
+    def __le__(self, other):
+        return self.timeout <= other.timeout
+
+    def call(self):
+        """Call this scheduled function."""
+        assert not self.cancelled, "Already cancelled"
+        self.__target(*self.__args, **self.__kwargs)
+
+    def reset(self):
+        """Reschedule this call resetting the current countdown."""
+        assert not self.cancelled, "Already cancelled"
+        self.timeout = time.time() + self.__delay
+        heapq.heapify(tasks)
+
+    def delay(self, seconds):
+        """Reschedule this call for a later time."""
+        assert not self.cancelled, "Already cancelled."
+        assert sys.maxint >= seconds >= 0, "%s is not greater than or equal " \
+                                           "to 0 seconds" %(seconds)
+        self.__delay = seconds
+        self.reset()
+
+    def cancel(self):
+        """Unschedule this call."""
+        assert not self.cancelled, "Already cancelled"
+        self.cancelled = True
+        del self.__target, self.__args, self.__kwargs
+        if self in tasks:
+            n = tasks.index(self)
+            if n == len(tasks)-1:
+                tasks.pop()
+            else:
+                tasks[n] = tasks.pop()
+                heapq._siftup(tasks, n)
 
 
 # --- library defined exceptions
@@ -394,7 +472,11 @@ class PassiveDTP(asyncore.dispatcher):
     """This class is an asyncore.disptacher subclass.  It creates a
     socket listening on a local port, dispatching the resultant
     connection to DTPHandler.
+
+     - (int) timeout: the timeout for a remote client to establish
+       connection with the listening socket. Defaults to 30 seconds.
     """
+    timeout = 30
 
     def __init__(self, cmd_channel, extmode=False):
         """Initialize the passive data server.
@@ -450,6 +532,7 @@ class PassiveDTP(asyncore.dispatcher):
         else:
             self.cmd_channel.respond('229 Entering extended passive mode '
                                      '(|||%d|).' %port)
+        self.idler = CallLater(self.timeout, self.handle_timeout)
 
     # --- connection / overridden
 
@@ -486,6 +569,10 @@ class PassiveDTP(asyncore.dispatcher):
         self.cmd_channel.data_channel = handler
         self.cmd_channel.on_dtp_connection()
 
+    def handle_timeout(self):
+        self.cmd_channel.respond("421 Passive data channel timed out.")
+        self.close()
+
     def writable(self):
         return 0
 
@@ -498,16 +585,21 @@ class PassiveDTP(asyncore.dispatcher):
         logerror(traceback.format_exc())
         self.close()
 
-    def handle_close(self):
-        """Called on closing the data connection."""
-        self.close()
+    def close(self):
+        if not self.idler.cancelled:
+            self.idler.cancel()
+        asyncore.dispatcher.close(self)
 
 
 class ActiveDTP(asyncore.dispatcher):
     """This class is an asyncore.disptacher subclass. It creates a
     socket resulting from the connection to a remote user-port,
     dispatching it to DTPHandler.
+
+     - (int) timeout: the timeout for us to establish connection with
+       the client's listening data socket.
     """
+    timeout = 30
 
     def __init__(self, ip, port, cmd_channel):
         """Initialize the active data channel attemping to connect
@@ -525,6 +617,7 @@ class ActiveDTP(asyncore.dispatcher):
         except socket.gaierror:
             self.cmd_channel.respond("425 Can't connect to specified address.")
             self.close()
+        self.idler = CallLater(self.timeout, self.handle_timeout)
 
     # --- connection / overridden
 
@@ -539,6 +632,10 @@ class ActiveDTP(asyncore.dispatcher):
         self.cmd_channel.data_channel = handler
         self.cmd_channel.on_dtp_connection()
         #self.close()  # <-- (done automatically)
+
+    def handle_timeout(self):
+        self.cmd_channel.respond("421 Active data channel timed out.")
+        self.close()
 
     def handle_expt(self):
         self.cmd_channel.respond("425 Can't connect to specified address.")
@@ -557,6 +654,11 @@ class ActiveDTP(asyncore.dispatcher):
         self.cmd_channel.respond("425 Can't connect to specified address.")
         self.close()
 
+    def close(self):
+        if self.idler and not self.idler.cancelled:
+            self.idler.cancel()
+        asyncore.dispatcher.close(self)
+
 
 try:
     from collections import deque
@@ -574,6 +676,10 @@ class DTPHandler(asyncore.dispatcher):
 
     Instance attributes defined in this class, initialized when
     channel is opened:
+
+     - (int) timeout: the timeout which roughly is the maximum time we
+       permit data transfers to stall for with no progress. If the
+       timeout triggers, the remote client will be kicked off.
 
      - (instance) cmd_channel: the command channel class instance.
      - (file) file_obj: the file transferred (if any).
@@ -602,6 +708,7 @@ class DTPHandler(asyncore.dispatcher):
     available we use a list instead.
     """
 
+    timeout = 300
     ac_in_buffer_size = 8192
     ac_out_buffer_size  = 8192
 
@@ -624,7 +731,12 @@ class DTPHandler(asyncore.dispatcher):
         self.transfer_finished = False
         self.tot_bytes_sent = 0
         self.tot_bytes_received = 0
+        self._lastdata = 0
         self.data_wrapper = lambda x: x
+        if self.timeout:
+            self.idler = CallLater(self.timeout, self.handle_timeout)
+        else:
+            self.idler = None
 
     # --- utility methods
 
@@ -742,6 +854,20 @@ class DTPHandler(asyncore.dispatcher):
             # we tried to send some actual data
             return
 
+    def handle_timeout(self):
+        """Called cyclically to check if data trasfer is stalling with
+        no progress in which case the client is kicked off.
+        """
+        if self.get_transmitted_bytes() > self._lastdata:
+            self._lastdata = self.get_transmitted_bytes()
+            self.idler = CallLater(self.timeout, self.handle_timeout)
+        else:
+            msg = "Data connection timed out."
+            self.cmd_channel.log(msg)
+            self.cmd_channel.respond("421 " + msg)
+            self.cmd_channel.close_when_done()
+            self.close()
+
     def handle_expt(self):
         """Called on "exceptional" data events."""
         self.cmd_channel.respond("426 Connection error; transfer aborted.")
@@ -801,6 +927,8 @@ class DTPHandler(asyncore.dispatcher):
         file handles."""
         if self.file_obj is not None and not self.file_obj.closed:
             self.file_obj.close()
+        if self.idler and not self.idler.cancelled:
+            self.idler.cancel()
         asyncore.dispatcher.close(self)
         self.cmd_channel.on_dtp_close()
 
@@ -1337,6 +1465,10 @@ class FTPHandler(asynchat.async_chat):
     reproduced below and can be modified before instantiating this
     class.
 
+     - (int) timeout: the timeout which is the maximum time a remote
+       client may spend between FTP commands. If the timeout triggers,
+       the remote client will be kicked off.  Defaults to 300 seconds.
+
      - (str) banner: the string sent when client connects.
 
      - (int) max_login_attempts:
@@ -1392,6 +1524,7 @@ class FTPHandler(asynchat.async_chat):
     abstracted_fs = AbstractedFS
 
     # session attributes (explained in the docstring)
+    timeout = 300
     banner = "pyftpdlib %s ready." %__ver__
     max_login_attempts = 3
     permit_foreign_addresses = False
@@ -1446,6 +1579,10 @@ class FTPHandler(asynchat.async_chat):
             ip, port = self.socket.getsockname()[:2]
             self.af = socket.getaddrinfo(ip, port, socket.AF_UNSPEC,
                                          socket.SOCK_STREAM)[0][0]
+        if self.timeout:
+            self.idler = CallLater(self.timeout, self.handle_timeout)
+        else:
+            self.idler = None
 
     def handle(self):
         """Return a 220 'Ready' response to the client over the command
@@ -1476,6 +1613,14 @@ class FTPHandler(asynchat.async_chat):
         msg = "Too many connections from the same IP address."
         self.respond("421 %s" %msg)
         self.log(msg)
+        self.close_when_done()
+
+    def handle_timeout(self):
+        """Called when client does not send any command within the time
+        specified in <timeout> attribute."""
+        msg = "Control connection timed out."
+        self.log(msg)
+        self.respond("421 " + msg)
         self.close_when_done()
 
     # --- asyncore / asynchat overridden methods
@@ -1518,6 +1663,9 @@ class FTPHandler(asynchat.async_chat):
         corresponding method (e.g. for received command "MKD pathname",
         ftp_MKD() method is called with "pathname" as the argument).
         """
+        if self.idler and not self.idler.cancelled:
+            self.idler.reset()
+
         line = ''.join(self.in_buffer)
         self.in_buffer = []
         self.in_buffer_len = 0
@@ -1675,6 +1823,9 @@ class FTPHandler(asynchat.async_chat):
             del self.__out_dtp_queue
             del self.__in_dtp_queue
 
+            if self.idler and not self.idler.cancelled:
+                self.idler.cancel()
+
             # remove client IP address from ip map
             self.server.ip_map.remove(self.remote_ip)
             asynchat.async_chat.close(self)
@@ -1694,6 +1845,10 @@ class FTPHandler(asynchat.async_chat):
         if self.data_server is not None:
             self.data_server.close()
         self.data_server = None
+
+        # stop the idle timer as long as the data transfer is not finished
+        if self.idler and not self.idler.cancelled:
+            self.idler.cancel()
 
         # check for data to send
         if self.__out_dtp_queue is not None:
@@ -1719,6 +1874,9 @@ class FTPHandler(asynchat.async_chat):
         self.data_channel = None
         if self.quit_pending:
             self.close_when_done()
+        elif self.timeout:
+            # data transfer finished, restart the idle timer
+            self.idler = CallLater(self.timeout, self.handle_timeout)
 
     # --- utility
 
@@ -1998,8 +2156,7 @@ class FTPHandler(asynchat.async_chat):
         # If file transfer is in progress, the connection will remain
         # open for result response and the server will then close it.
         # We also stop responding to any further command.
-        dc = self.data_channel
-        if dc is not None and dc.transfer_in_progress():
+        if self.data_channel:
             self.quit_pending = True
         else:
             self.close_when_done()
@@ -2860,39 +3017,41 @@ class FTPServer(asyncore.dispatcher):
             return
         asyncore.dispatcher.set_reuse_addr(self)
 
-    def serve_forever(self, **kwargs):
+    def serve_forever(self, timeout=1, use_poll=False, map=None, count=None):
         """A wrap around asyncore.loop(); starts the asyncore polling
-        loop.
-
-        The keyword arguments in kwargs are the same expected by
-        asyncore.loop() function: timeout, use_poll, map and count.
+        loop including running the scheduler.
+        The arguments are the same expected by original asyncore.loop()
+        function.
         """
-        if not 'count' in kwargs:
-            log("Serving FTP on %s:%s" %self.socket.getsockname()[:2])
-
-        # backward compatibility for python < 2.4
+        if map is None:
+            map = asyncore.socket_map
+        # backward compatibility for python versions < 2.4
         if not hasattr(self, '_map'):
-            if not 'map' in kwargs:
-                map = asyncore.socket_map
-            else:
-                map = kwargs['map']
             self._map = self.handler._map = map
 
-        try:
-            # FIX #16, #26
-            # use_poll specifies whether to use select module's poll()
-            # with asyncore or whether to use asyncore's own poll()
-            # method Python versions < 2.4 need use_poll set to False
-            # This breaks on OS X systems if use_poll is set to True.
-            # All systems seem to work fine with it set to False
-            # (tested on Linux, Windows, and OS X platforms)
-            if kwargs:
-                asyncore.loop(**kwargs)
-            else:
-                asyncore.loop(timeout=1.0, use_poll=False)
-        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
-            log("Shutting down FTPd.")
-            self.close_all()
+        if use_poll and hasattr(select, 'poll'):
+            poll_fun = asyncore.poll2
+        else:
+            poll_fun = asyncore.poll
+
+        if count is None:
+            log("Serving FTP on %s:%s" %self.socket.getsockname()[:2])
+            try:
+                while map or tasks:
+                    if map:
+                        poll_fun(timeout, map)
+                    if tasks:
+                        _scheduler()
+            except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
+                log("Shutting down FTP server.")
+                self.close_all()
+        else:
+            while (map or tasks) and count > 0:
+                if map:
+                    poll_fun(timeout, map)
+                if tasks:
+                    _scheduler()
+                count = count - 1
 
     def handle_accept(self):
         """Called when remote client initiates a connection."""

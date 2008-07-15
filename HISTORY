@@ -4,6 +4,20 @@ Issue tracker at http://code.google.com/p/pyftpdlib/issues/list
 History
 =======
 
+Version: 0.5.0 - Date: ????-??-??
+---------------------------------
+
+Major enhancements:
+
+ * Issue #72: pyftpdlib now provides configurable idle timeouts to disconnect
+   client after a long time of inactivity.
+
+Bugfixes:
+
+ * Issue #71: socket handles are leaked when a data transfer is in progress and
+   user QUITs.
+
+
 Version: 0.4.0 - Date: 2008-05-16
 ---------------------------------
 
