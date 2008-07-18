@@ -617,7 +617,8 @@ class ActiveDTP(asyncore.dispatcher):
         except socket.gaierror:
             self.cmd_channel.respond("425 Can't connect to specified address.")
             self.close()
-        self.idler = CallLater(self.timeout, self.handle_timeout)
+        else:
+            self.idler = CallLater(self.timeout, self.handle_timeout)
 
     # --- connection / overridden
 
