@@ -1466,9 +1466,10 @@ class FTPHandler(asynchat.async_chat):
     reproduced below and can be modified before instantiating this
     class.
 
-     - (int) timeout: the timeout which is the maximum time a remote
-       client may spend between FTP commands. If the timeout triggers,
-       the remote client will be kicked off.  Defaults to 300 seconds.
+     - (int) timeout:
+       The timeout which is the maximum time a remote client may spend
+       between FTP commands. If the timeout triggers, the remote client
+       will be kicked off.  Defaults to 300 seconds.
 
      - (str) banner: the string sent when client connects.
 
@@ -1541,13 +1542,11 @@ class FTPHandler(asynchat.async_chat):
          - (instance) server: the ftp server class instance.
         """
         asynchat.async_chat.__init__(self, conn=conn)
-        self.server = server
-        self.remote_ip, self.remote_port = self.socket.getpeername()[:2]
-        self.in_buffer = []
-        self.in_buffer_len = 0
         self.set_terminator("\r\n")
 
-        # session attributes
+        # public session attributes
+        self.server = server
+        self.remote_ip, self.remote_port = self.socket.getpeername()[:2]
         self.fs = self.abstracted_fs()
         self.authenticated = False
         self.username = ""
@@ -1557,34 +1556,33 @@ class FTPHandler(asynchat.async_chat):
         self.restart_position = 0
         self.quit_pending = False
         self.sleeping = False
-        self._epsvall = False
-        self.__in_dtp_queue = None
-        self.__out_dtp_queue = None
-
-        # mlsx facts attributes
-        self.current_facts = ['type', 'perm', 'size', 'modify']
-        if os.name == 'posix':
-            self.current_facts.append('unique')
-        self.available_facts = self.current_facts[:]
-        if pwd and grp:
-            self.available_facts += ['unix.mode', 'unix.uid', 'unix.gid']
-        if os.name == 'nt':
-            self.available_facts.append('create')
-
-        # dtp attributes
         self.data_server = None
         self.data_channel = None
-
+        if self.timeout:
+            self.idler = CallLater(self.timeout, self.handle_timeout)
+        else:
+            self.idler = None
         if hasattr(self.socket, 'family'):
             self.af = self.socket.family
         else:  # python < 2.5
             ip, port = self.socket.getsockname()[:2]
             self.af = socket.getaddrinfo(ip, port, socket.AF_UNSPEC,
                                          socket.SOCK_STREAM)[0][0]
-        if self.timeout:
-            self.idler = CallLater(self.timeout, self.handle_timeout)
-        else:
-            self.idler = None
+
+        # private session attributes
+        self._in_buffer = []
+        self._in_buffer_len = 0
+        self._epsvall = False
+        self._in_dtp_queue = None
+        self._out_dtp_queue = None
+        self._current_facts = ['type', 'perm', 'size', 'modify']
+        if os.name == 'posix':
+            self._current_facts.append('unique')
+        self._available_facts = self._current_facts[:]
+        if pwd and grp:
+            self._available_facts += ['unix.mode', 'unix.uid', 'unix.gid']
+        if os.name == 'nt':
+            self._available_facts.append('create')
 
     def handle(self):
         """Return a 220 'Ready' response to the client over the command
@@ -1629,21 +1627,21 @@ class FTPHandler(asynchat.async_chat):
 
     def readable(self):
         # if there's a quit pending we stop reading data from socket
-        return not self.quit_pending and not self.sleeping
+        return not self.sleeping
 
     def collect_incoming_data(self, data):
         """Read incoming data and append to the input buffer."""
-        self.in_buffer.append(data)
-        self.in_buffer_len += len(data)
+        self._in_buffer.append(data)
+        self._in_buffer_len += len(data)
         # Flush buffer if it gets too long (possible DoS attacks).
         # RFC-959 specifies that a 500 response could be given in
         # such cases
         buflimit = 2048
-        if self.in_buffer_len > buflimit:
+        if self._in_buffer_len > buflimit:
             self.respond('500 Command too long.')
             self.log('Command received exceeded buffer limit of %s.' %(buflimit))
-            self.in_buffer = []
-            self.in_buffer_len = 0
+            self._in_buffer = []
+            self._in_buffer_len = 0
 
     # commands accepted before authentication
     unauth_cmds = ('FEAT','HELP','NOOP','PASS','QUIT','STAT','SYST','USER')
@@ -1668,9 +1666,9 @@ class FTPHandler(asynchat.async_chat):
         if self.idler and not self.idler.cancelled:
             self.idler.reset()
 
-        line = ''.join(self.in_buffer)
-        self.in_buffer = []
-        self.in_buffer_len = 0
+        line = ''.join(self._in_buffer)
+        self._in_buffer = []
+        self._in_buffer_len = 0
 
         cmd = line.split(' ')[0].upper()
         space = line.find(' ')
@@ -1715,7 +1713,7 @@ class FTPHandler(asynchat.async_chat):
 
         # provide full command set
         elif (self.authenticated) and (cmd in proto_cmds):
-            if not (self.__check_path(arg, arg) and self.__check_perm(cmd, arg)):
+            if not (self._check_path(arg, arg) and self._check_perm(cmd, arg)):
                 return
             method = getattr(self, 'ftp_' + cmd)
             method(arg)  # call the proper ftp_* method
@@ -1730,7 +1728,7 @@ class FTPHandler(asynchat.async_chat):
             else:
                 self.respond('500 Command "%s" not understood.' %line)
 
-    def __check_path(self, cmd, line):
+    def _check_path(self, cmd, line):
         """Check whether a path is valid."""
         # For the following commands we have to make sure that the real
         # path destination belongs to the user's root directory.
@@ -1747,7 +1745,7 @@ class FTPHandler(asynchat.async_chat):
                 return False
         return True
 
-    def __check_perm(self, cmd, line):
+    def _check_perm(self, cmd, line):
         """Check permissions depending on issued command."""
         map = {'CWD':'e', 'XCWD':'e', 'CDUP':'e', 'XCUP':'e',
                'LIST':'l', 'NLST':'l', 'MLSD':'l', 'STAT':'l',
@@ -1784,7 +1782,7 @@ class FTPHandler(asynchat.async_chat):
             except socket.error:
                 pass
             else:
-                self.in_buffer.append(data)
+                self._in_buffer.append(data)
                 return
         self.log("Can't handle OOB data.")
         self.close()
@@ -1822,8 +1820,8 @@ class FTPHandler(asynchat.async_chat):
                 self.data_channel.close()
                 del self.data_channel
 
-            del self.__out_dtp_queue
-            del self.__in_dtp_queue
+            del self._out_dtp_queue
+            del self._in_dtp_queue
 
             if self.idler and not self.idler.cancelled:
                 self.idler.cancel()
@@ -1853,8 +1851,8 @@ class FTPHandler(asynchat.async_chat):
             self.idler.cancel()
 
         # check for data to send
-        if self.__out_dtp_queue is not None:
-            data, isproducer, file = self.__out_dtp_queue
+        if self._out_dtp_queue is not None:
+            data, isproducer, file = self._out_dtp_queue
             if file:
                 self.data_channel.file_obj = file
             if not isproducer:
@@ -1863,13 +1861,13 @@ class FTPHandler(asynchat.async_chat):
                 self.data_channel.push_with_producer(data)
             if self.data_channel is not None:
                 self.data_channel.close_when_done()
-            self.__out_dtp_queue = None
+            self._out_dtp_queue = None
 
         # check for data to receive
-        elif self.__in_dtp_queue is not None:
-            self.data_channel.file_obj = self.__in_dtp_queue
+        elif self._in_dtp_queue is not None:
+            self.data_channel.file_obj = self._in_dtp_queue
             self.data_channel.enable_receiving(self.current_type)
-            self.__in_dtp_queue = None
+            self._in_dtp_queue = None
 
     def on_dtp_close(self):
         """Called every time the data channel is closed."""
@@ -1913,7 +1911,7 @@ class FTPHandler(asynchat.async_chat):
                 self.data_channel.close_when_done()
         else:
             self.respond("150 File status okay. About to open data connection.")
-            self.__out_dtp_queue = (data, isproducer, file)
+            self._out_dtp_queue = (data, isproducer, file)
 
     def log(self, msg):
         """Log a message, including additional identifying session data."""
@@ -1945,8 +1943,8 @@ class FTPHandler(asynchat.async_chat):
         self.restart_position = 0
         self.quit_pending = False
         self.sleeping = False
-        self.__in_dtp_queue = None
-        self.__out_dtp_queue = None
+        self._in_dtp_queue = None
+        self._out_dtp_queue = None
 
     def run_as_current_user(self, function, *args, **kwargs):
         """Execute a function impersonating the current logged-in user."""
@@ -2161,6 +2159,7 @@ class FTPHandler(asynchat.async_chat):
         # We also stop responding to any further command.
         if self.data_channel:
             self.quit_pending = True
+            self.sleeping = True
         else:
             self.close_when_done()
 
@@ -2236,7 +2235,7 @@ class FTPHandler(asynchat.async_chat):
         perms = self.authorizer.get_perms(self.username)
         try:
             iterator = self.run_as_current_user(self.fs.format_mlsx, basedir,
-                       [basename], perms, self.current_facts, ignore_err=False)
+                       [basename], perms, self._current_facts, ignore_err=False)
             data = ''.join(iterator)
         except OSError, err:
             why = _strerror(err)
@@ -2276,7 +2275,7 @@ class FTPHandler(asynchat.async_chat):
         else:
             perms = self.authorizer.get_perms(self.username)
             iterator = self.fs.format_mlsx(path, listing, perms,
-                       self.current_facts)
+                       self._current_facts)
             producer = BufferedIteratorProducer(iterator)
             self.log('OK MLSD "%s". Transfer starting.' %line)
             self.push_dtp_data(producer, isproducer=True)
@@ -2371,7 +2370,7 @@ class FTPHandler(asynchat.async_chat):
             self.data_channel.enable_receiving(self.current_type)
         else:
             self.respond("150 File status okay. About to open data connection.")
-            self.__in_dtp_queue = fd
+            self._in_dtp_queue = fd
 
 
     def ftp_STOU(self, line):
@@ -2427,7 +2426,7 @@ class FTPHandler(asynchat.async_chat):
             self.data_channel.enable_receiving(self.current_type)
         else:
             self.respond("150 FILE: %s" %filename)
-            self.__in_dtp_queue = fd
+            self._in_dtp_queue = fd
 
 
     def ftp_APPE(self, line):
@@ -2565,7 +2564,6 @@ class FTPHandler(asynchat.async_chat):
                 CallLater(5, auth_failed)
             self.username = ""
             self.sleeping = True
-
 
     def ftp_REIN(self, line):
         """Reinitialize user's current session."""
@@ -2848,8 +2846,8 @@ class FTPHandler(asynchat.async_chat):
         """List all new features supported as defined in RFC-2398."""
         features = ['EPRT','EPSV','MDTM','MLSD','REST STREAM','SIZE','TVFS']
         s = ''
-        for fact in self.available_facts:
-            if fact in self.current_facts:
+        for fact in self._available_facts:
+            if fact in self._current_facts:
                 s += fact + '*;'
             else:
                 s += fact + ';'
@@ -2874,8 +2872,8 @@ class FTPHandler(asynchat.async_chat):
             self.respond('501 %s.' %err)
         else:
             facts = [x.lower() for x in arg.split(';')]
-            self.current_facts = [x for x in facts if x in self.available_facts]
-            f = ''.join([x + ';' for x in self.current_facts])
+            self._current_facts = [x for x in facts if x in self._available_facts]
+            f = ''.join([x + ';' for x in self._current_facts])
             self.respond('200 MLST OPTS ' + f)
 
     def ftp_NOOP(self, line):
