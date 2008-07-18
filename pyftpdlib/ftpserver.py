@@ -1556,6 +1556,7 @@ class FTPHandler(asynchat.async_chat):
         self.current_type = 'a'
         self.restart_position = 0
         self.quit_pending = False
+        self.sleeping = False
         self._epsvall = False
         self.__in_dtp_queue = None
         self.__out_dtp_queue = None
@@ -1628,7 +1629,7 @@ class FTPHandler(asynchat.async_chat):
 
     def readable(self):
         # if there's a quit pending we stop reading data from socket
-        return not self.quit_pending
+        return not self.quit_pending and not self.sleeping
 
     def collect_incoming_data(self, data):
         """Read incoming data and append to the input buffer."""
@@ -1943,6 +1944,7 @@ class FTPHandler(asynchat.async_chat):
         self.current_type = 'a'
         self.restart_position = 0
         self.quit_pending = False
+        self.sleeping = False
         self.__in_dtp_queue = None
         self.__out_dtp_queue = None
 
@@ -2515,13 +2517,25 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_PASS(self, line):
         """Check username's password against the authorizer."""
-
         if self.authenticated:
             self.respond("503 User already authenticated.")
             return
         if not self.username:
             self.respond("503 Login with USER first.")
             return
+
+        def auth_failed(msg="Authentication failed."):
+            if not self._closed:
+                self.attempted_logins += 1
+                if self.attempted_logins >= self.max_login_attempts:
+                    msg = "530 " + msg + " Disconnecting."
+                    self.respond(msg)
+                    self.log(msg)
+                    self.close_when_done()
+                else:
+                    self.respond("530 " + msg)
+                    self.log(msg)
+                    self.sleeping = False
 
         # username ok
         if self.authorizer.has_user(self.username):
@@ -2540,31 +2554,18 @@ class FTPHandler(asynchat.async_chat):
                 self.fs.root = self.authorizer.get_home_dir(self.username)
                 self.log("User %s logged in." %self.username)
             else:
-                self.attempted_logins += 1
-                if self.attempted_logins >= self.max_login_attempts:
-                    self.respond("530 Maximum login attempts. Disconnecting.")
-                    self.close()
-                else:
-                    self.respond("530 Authentication failed.")
-                self.log('Authentication failed (user: "%s").' %self.username)
+                CallLater(5, auth_failed)
                 self.username = ""
-
+                self.sleeping = True
         # wrong username
         else:
-            self.attempted_logins += 1
-            if self.attempted_logins >= self.max_login_attempts:
-                self.log('Authentication failed: unknown username "%s".'
-                            %self.username)
-                self.respond("530 Maximum login attempts. Disconnecting.")
-                self.close()
-            elif self.username.lower() == 'anonymous':
-                self.respond("530 Anonymous access not allowed.")
-                self.log('Authentication failed: anonymous access not allowed.')
+            if self.username.lower() == 'anonymous':
+                CallLater(5, auth_failed, "Anonymous access not allowed.")
             else:
-                self.respond("530 Authentication failed.")
-                self.log('Authentication failed: unknown username "%s".'
-                            %self.username)
-                self.username = ""
+                CallLater(5, auth_failed)
+            self.username = ""
+            self.sleeping = True
+
 
     def ftp_REIN(self, line):
         """Reinitialize user's current session."""

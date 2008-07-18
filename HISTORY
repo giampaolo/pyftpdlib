@@ -9,6 +9,9 @@ Version: 0.5.0 - Date: ????-??-??
 
 Major enhancements:
 
+ * Issue #73 impose a delay before replying for invalid credentials to minimize
+   the risk of brute force password guessing.
+
  * Issue #72: pyftpdlib now provides configurable idle timeouts to disconnect
    client after a long time of inactivity.
 
