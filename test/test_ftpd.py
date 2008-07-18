@@ -87,7 +87,7 @@ SUPPORTS_IPV4 = try_address('127.0.0.1')
 SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1')
 
 
-class AbstractedFSClass(unittest.TestCase):
+class TestAbstractedFS(unittest.TestCase):
     """Test for conversion utility methods of AbstractedFS class."""
 
     def test_ftpnorm(self):
@@ -265,7 +265,8 @@ class AbstractedFSClass(unittest.TestCase):
                 file.close()
 
 
-class DummyAuthorizerClass(unittest.TestCase):
+class TestDummyAuthorizer(unittest.TestCase):
+    """Tests for DummyAuthorizer class."""
 
     # temporarily change warnings to exceptions for the purposes of testing
     def setUp(self):
@@ -311,7 +312,7 @@ class DummyAuthorizerClass(unittest.TestCase):
             self.assertRaises(RuntimeWarning, auth.add_anonymous, HOME, perm=x)
 
 
-class CallLaterClass(unittest.TestCase):
+class TestCallLater(unittest.TestCase):
     """Tests for CallLater class."""
 
     def tearDown(self):
@@ -384,7 +385,7 @@ class CallLaterClass(unittest.TestCase):
         self.assertEqual(l, [0.02, 0.03, 0.04])
 
 
-class FtpAuthentication(unittest.TestCase):
+class TestFtpAuthentication(unittest.TestCase):
     "test: USER, PASS, REIN."
 
     def setUp(self):
@@ -525,7 +526,7 @@ class FtpAuthentication(unittest.TestCase):
         self.assertEqual(hash(data), hash (self.f2.read()))
 
 
-class FtpDummyCmds(unittest.TestCase):
+class TestFtpDummyCmds(unittest.TestCase):
     "test: TYPE, STRU, MODE, NOOP, SYST, ALLO, HELP"
 
     def setUp(self):
@@ -609,7 +610,7 @@ class FtpDummyCmds(unittest.TestCase):
         self.client.sendcmd('quit')
 
 
-class FtpFsOperations(unittest.TestCase):
+class TestFtpFsOperations(unittest.TestCase):
     "test: PWD, CWD, CDUP, SIZE, RNFR, RNTO, DELE, MKD, RMD, MDTM, STAT"
 
     def setUp(self):
@@ -715,7 +716,7 @@ class FtpFsOperations(unittest.TestCase):
         self.client.sendcmd('stat')
 
 
-class FtpRetrieveData(unittest.TestCase):
+class TestFtpRetrieveData(unittest.TestCase):
     "test: RETR, REST, LIST, NLST, argumented STAT"
 
     def setUp(self):
@@ -870,7 +871,8 @@ class FtpRetrieveData(unittest.TestCase):
             os.rmdir(dir)
 
     def test_stat(self):
-        # test argumented STAT which is equal to LIST plus globbing support
+        # test STAT provided with argument which is equal to LIST plus
+        # globbing support
         self.client.sendcmd('stat *')
         self.client.sendcmd('stat /')
         self.client.sendcmd('stat ' + TESTFN)
@@ -879,7 +881,7 @@ class FtpRetrieveData(unittest.TestCase):
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'stat ' + bogus)
 
 
-class FtpAbort(unittest.TestCase):
+class TestFtpAbort(unittest.TestCase):
     "test: ABOR"
 
     def setUp(self):
@@ -954,7 +956,7 @@ class FtpAbort(unittest.TestCase):
         self.failUnlessEqual('226', self.client.voidresp()[:3])
 
 
-class FtpStoreData(unittest.TestCase):
+class TestFtpStoreData(unittest.TestCase):
     "test: STOR, STOU, APPE, REST"
 
     def setUp(self):
@@ -1093,6 +1095,7 @@ class FtpStoreData(unittest.TestCase):
 
 
 class TestTimeouts(unittest.TestCase):
+    """Test idle-timeout capabilities of control and data channels."""
 
     def _setUp(self, idle_timeout=300, data_timeout=300, pasv_timeout=30,
                port_timeout=30):
@@ -1413,15 +1416,15 @@ def test_main(tests=None):
     test_suite = unittest.TestSuite()
     if tests is None:
         tests = [
-                 AbstractedFSClass,
-                 DummyAuthorizerClass,
-                 CallLaterClass,
-                 FtpAuthentication,
-                 FtpDummyCmds,
-                 FtpFsOperations,
-                 FtpRetrieveData,
-                 FtpAbort,
-                 FtpStoreData,
+                 TestAbstractedFS,
+                 TestDummyAuthorizer,
+                 TestCallLater,
+                 TestFtpAuthentication,
+                 TestFtpDummyCmds,
+                 TestFtpFsOperations,
+                 TestFtpRetrieveData,
+                 TestFtpAbort,
+                 TestFtpStoreData,
                  TestTimeouts,
                  ]
         if SUPPORTS_IPV4:
