@@ -1719,12 +1719,13 @@ class FTPHandler(asynchat.async_chat):
             method(arg)  # call the proper ftp_* method
 
         else:
-            # recognize those commands having "special semantics"
-            if 'ABOR' in cmd:
-                self.ftp_ABOR("")
-            elif 'STAT' in cmd:
-                self.ftp_STAT("")
-            # unknown command
+            # Recognize those commands having "special semantics". They
+            # may be sent as OOB data but since many ftp clients does
+            # not follow the procedure from the RFC to send Telnet IP
+            # and Synch first, we check the last 4 characters only.
+            if cmd[-4:] in ('ABOR', 'STAT', 'QUIT'):
+                method = getattr(self, 'ftp_' + cmd[-4:])
+                method('')   # call the proper ftp_* method
             else:
                 self.respond('500 Command "%s" not understood.' %line)
 
