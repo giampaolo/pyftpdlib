@@ -130,9 +130,9 @@ except ImportError:
 
 
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer',
-           'FTPHandler', 'FTPServer', 'PassiveDTP', 'ActiveDTP', 'DTPHandler',
-           'FileProducer', 'IteratorProducer', 'BufferedIteratorProducer',
-           'AbstractedFS', 'CallLater']
+           'AuthorizerError', 'FTPHandler', 'FTPServer', 'PassiveDTP',
+           'ActiveDTP', 'DTPHandler', 'FileProducer', 'IteratorProducer',
+           'BufferedIteratorProducer', 'AbstractedFS', 'CallLater']
 
 
 __pname__   = 'Python FTP server library (pyftpdlib)'
