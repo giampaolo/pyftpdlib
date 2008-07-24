@@ -2192,9 +2192,7 @@ class FTPHandler(asynchat.async_chat):
         """Return a list of files in the specified directory in a
         compact form to the client.
         """
-        if not line:
-            line = self.fs.cwd
-        path = self.fs.ftp2fs(line)
+        path = self.fs.ftp2fs(line or self.fs.cwd)
         line = self.fs.ftpnorm(line)
         try:
             if self.fs.isdir(path):
@@ -2228,9 +2226,7 @@ class FTPHandler(asynchat.async_chat):
         form as defined in RFC-3659.
         """
         # if no argument, fall back on cwd as default
-        if not line:
-            line = self.fs.cwd
-        path = self.fs.ftp2fs(line)
+        path = self.fs.ftp2fs(line or self.fs.cwd)
         line = self.fs.ftpnorm(line)
         basedir, basename = os.path.split(path)
         perms = self.authorizer.get_perms(self.username)
@@ -2257,9 +2253,7 @@ class FTPHandler(asynchat.async_chat):
         as defined in RFC-3659.
         """
         # if no argument, fall back on cwd as default
-        if not line:
-            line = self.fs.cwd
-        path = self.fs.ftp2fs(line)
+        path = self.fs.ftp2fs(line or self.fs.cwd)
         line = self.fs.ftpnorm(line)
         # RFC-3659 requires 501 response code if path is not a directory
         if not self.fs.isdir(path):
@@ -2593,9 +2587,7 @@ class FTPHandler(asynchat.async_chat):
         # TODO: a lot of FTP servers go back to root directory if no
         # arg is provided but this is not specified in RFC-959.
         # Search for official references about this behaviour.
-        if not line:
-            line = '/'
-        path = self.fs.ftp2fs(line)
+        path = self.fs.ftp2fs(line or self.fs.root)
         try:
             self.run_as_current_user(self.fs.chdir, path)
         except OSError, err:
