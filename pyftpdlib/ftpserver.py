@@ -2587,7 +2587,9 @@ class FTPHandler(asynchat.async_chat):
         # TODO: a lot of FTP servers go back to root directory if no
         # arg is provided but this is not specified in RFC-959.
         # Search for official references about this behaviour.
-        path = self.fs.ftp2fs(line or self.fs.root)
+        if not line:
+            line = '/'
+        path = self.fs.ftp2fs(line)
         try:
             self.run_as_current_user(self.fs.chdir, path)
         except OSError, err:

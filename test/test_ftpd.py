@@ -633,7 +633,12 @@ class TestFtpFsOperations(unittest.TestCase):
 
     def test_cwd(self):
         self.client.cwd(self.tempdir)
+        self.assertEqual(self.client.pwd(), '/' + self.tempdir)
         self.assertRaises(ftplib.error_perm, self.client.cwd, 'subtempdir')
+        # cwd provided with no arguments is supposed to move us to the
+        # root directory
+        self.client.sendcmd('cwd')
+        self.assertEqual(self.client.pwd(), '/')
 
     def test_pwd(self):
         self.assertEqual(self.client.pwd(), '/')
@@ -641,16 +646,13 @@ class TestFtpFsOperations(unittest.TestCase):
         self.assertEqual(self.client.pwd(), '/' + self.tempdir)
 
     def test_cdup(self):
-        # ftplib.parse257 function is usually used for parsing the
-        # '257' response for a MKD or PWD request returning the
-        # directory name in the 257 reply.
-        # Although CDUP response code is different (250) we can use
-        # parse257 for getting directory name.
         self.client.cwd(self.tempdir)
-        dir = ftplib.parse257(self.client.sendcmd('cdup').replace('250', '257'))
-        self.assertEqual(dir, '/')
-        dir = ftplib.parse257(self.client.sendcmd('cdup').replace('250', '257'))
-        self.assertEqual(dir, '/')
+        self.assertEqual(self.client.pwd(), '/' + self.tempdir)
+        self.client.sendcmd('cdup')
+        self.assertEqual(self.client.pwd(), '/')
+        # make sure we can't escape from root directory
+        self.client.sendcmd('cdup')
+        self.assertEqual(self.client.pwd(), '/')
 
     def test_mkd(self):
         tempdir = os.path.basename(tempfile.mktemp(dir=HOME))
