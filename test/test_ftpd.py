@@ -543,19 +543,16 @@ class TestFtpDummyCmds(unittest.TestCase):
     def test_type(self):
         self.client.sendcmd('type a')
         self.client.sendcmd('type i')
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'type')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'type ?!?')
 
     def test_stru(self):
         self.client.sendcmd('stru f')
         self.client.sendcmd('stru F')
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'stru')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'stru ?!?')
 
     def test_mode(self):
         self.client.sendcmd('mode s')
         self.client.sendcmd('mode S')
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'mode')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'mode ?!?')
 
     def test_noop(self):
@@ -566,6 +563,9 @@ class TestFtpDummyCmds(unittest.TestCase):
 
     def test_allo(self):
         self.client.sendcmd('allo x')
+
+    def test_quit(self):
+        self.client.sendcmd('quit')
 
     def test_help(self):
         self.client.sendcmd('help')
@@ -581,7 +581,6 @@ class TestFtpDummyCmds(unittest.TestCase):
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest -1')
 
     def test_opts_feat(self):
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'opts')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'opts mlst bad_fact')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'opts mlst type ;')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'opts not_mlst')
@@ -606,7 +605,63 @@ class TestFtpDummyCmds(unittest.TestCase):
                                      '200 MLST OPTS type;')
         self.failUnless('type*;perm;size;modify;' in mlst())
 
-    def test_quit(self):
+
+class TestFtpCmdsSemantic(unittest.TestCase):
+
+    arg_cmds = ('allo','appe','dele','eprt','mdtm','mode','mkd','opts','port',
+                'rest','retr','rmd','rnfr','rnto','size', 'stor', 'stru','type',
+                'user','xmkd','xrmd')
+
+    def setUp(self):
+        self.server = FTPd()
+        self.server.start()
+        self.client = ftplib.FTP()
+        self.client.connect(self.server.host, self.server.port)
+        self.client.login(USER, PASSWD)
+
+    def tearDown(self):
+        self.client.close()
+        self.server.stop()
+
+    def test_arg_cmds(self):
+        # test commands requiring an argument
+        expected = "501 Syntax error: command needs an argument."
+        for cmd in self.arg_cmds:
+            self.client.putcmd(cmd)
+            resp = self.client.getmultiline()
+            self.assertEqual(resp, expected)
+
+    def test_no_arg_cmds(self):
+        # test commands accepting no arguments
+        expected = "501 Syntax error: command does not accept arguments."
+        for cmd in ('abor','cdup','feat','noop','pasv','pwd','quit','rein',
+                    'syst','xcup','xpwd'):
+            self.client.putcmd(cmd + ' arg')
+            resp = self.client.getmultiline()
+            self.assertEqual(resp, expected)
+
+    def test_auth_cmds(self):
+        # test those commands requiring client to be authenticated
+        expected = "530 Log in with USER and PASS first."
+        self.client.sendcmd('rein')
+        for cmd in ftpserver.proto_cmds:
+            cmd = cmd.lower()
+            if cmd in ('feat','help','noop','user','pass','stat','syst','quit'):
+                continue
+            if cmd in self.arg_cmds:
+                cmd = cmd + ' arg'
+            self.client.putcmd(cmd)
+            resp = self.client.getmultiline()
+            self.assertEqual(resp, expected)
+
+    def test_no_auth_cmds(self):
+        # test those commands that do not require client to be authenticated
+        self.client.sendcmd('rein')
+        for cmd in ('feat','help','noop','stat','syst'):
+            self.client.sendcmd(cmd)
+        # STAT provided with an argument is equal to LIST plus globbing
+        # support, hence not allowed in phase of pre-authentication
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'stat /')
         self.client.sendcmd('quit')
 
 
@@ -713,9 +768,6 @@ class TestFtpFsOperations(unittest.TestCase):
             self.failUnless("not retrievable" in str(err))
         else:
             self.fail('Exception not raised')
-
-    def test_stat(self):
-        self.client.sendcmd('stat')
 
 
 class TestFtpRetrieveData(unittest.TestCase):
@@ -1423,6 +1475,7 @@ def test_main(tests=None):
                  TestCallLater,
                  TestFtpAuthentication,
                  TestFtpDummyCmds,
+                 TestFtpCmdsSemantic,
                  TestFtpFsOperations,
                  TestFtpRetrieveData,
                  TestFtpAbort,
