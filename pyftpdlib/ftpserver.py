@@ -2406,14 +2406,19 @@ class FTPHandler(asynchat.async_chat):
             self.log('FAIL STOU "%s". %s.' %(self.fs.ftpnorm(line), why))
             return
 
-        filename = os.path.basename(fd.name)
-        if not self.authorizer.has_perm(self.username, 'w', filename):
+        if not self.authorizer.has_perm(self.username, 'w', fd.name):
+            try:
+                fd.close()
+                self.run_as_current_user(self.fs.remove, fd.name)
+            except os.error:
+                pass
             self.log('FAIL STOU "%s". Not enough privileges'
                      %self.fs.ftpnorm(line))
             self.respond("550 Can't STOU: not enough privileges.")
             return
 
         # now just acts like STOR except that restarting isn't allowed
+        filename = os.path.basename(fd.name)
         self.log('OK STOU "%s". Upload starting.' %filename)
         if self.data_channel is not None:
             self.respond("125 FILE: %s" %filename)
