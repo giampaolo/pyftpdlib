@@ -131,8 +131,8 @@ except ImportError:
 
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer',
            'AuthorizerError', 'FTPHandler', 'FTPServer', 'PassiveDTP',
-           'ActiveDTP', 'DTPHandler', 'FileProducer', 'IteratorProducer',
-           'BufferedIteratorProducer', 'AbstractedFS', 'CallLater']
+           'ActiveDTP', 'DTPHandler', 'FileProducer', 'BufferedIteratorProducer',
+           'AbstractedFS', 'CallLater']
 
 
 __pname__   = 'Python FTP server library (pyftpdlib)'
@@ -966,22 +966,6 @@ class FileProducer:
             if not self.file.closed:
                 self.file.close()
         return data
-
-
-class IteratorProducer:
-    """Producer for iterator objects."""
-
-    def __init__(self, iterator):
-        self.iterator = iterator
-
-    def more(self):
-        """Attempt a chunk of data from iterator by calling its next()
-        method.
-        """
-        try:
-            return self.iterator.next()
-        except StopIteration:
-            return ''
 
 
 class BufferedIteratorProducer:
