@@ -659,8 +659,8 @@ class TestFtpCmdsSemantic(unittest.TestCase):
         self.client.sendcmd('rein')
         for cmd in ('feat','help','noop','stat','syst'):
             self.client.sendcmd(cmd)
-        # STAT provided with an argument is equal to LIST plus globbing
-        # support, hence not allowed in phase of pre-authentication
+        # STAT provided with an argument is equal to LIST hence not allowed
+        # if not authenticated
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'stat /')
         self.client.sendcmd('quit')
 
@@ -925,12 +925,12 @@ class TestFtpRetrieveData(unittest.TestCase):
             os.rmdir(dir)
 
     def test_stat(self):
-        # test STAT provided with argument which is equal to LIST plus
-        # globbing support
-        self.client.sendcmd('stat *')
+        # test STAT provided with argument which is equal to LIST
         self.client.sendcmd('stat /')
         self.client.sendcmd('stat ' + TESTFN)
-        self.failUnless('recursion not supported' in self.client.sendcmd('stat /*/*'))
+        self.client.putcmd('stat *')
+        resp = self.client.getmultiline()
+        self.assertEqual(resp, '550 Globbing not supported.')
         bogus = os.path.basename(tempfile.mktemp(dir=HOME))
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'stat ' + bogus)
 
