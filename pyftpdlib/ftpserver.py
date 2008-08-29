@@ -1503,7 +1503,7 @@ class FTPHandler(asynchat.async_chat):
             established connection.
          - (instance) server: the ftp server class instance.
         """
-        asynchat.async_chat.__init__(self, conn=conn)
+        asynchat.async_chat.__init__(self, conn)
         self.set_terminator("\r\n")
 
         # public session attributes
