@@ -9,11 +9,11 @@ Version: 0.5.0 - Date: ????-??-??
 
 Major enhancements:
 
- * Issue #73 impose a delay before replying for invalid credentials to minimize
-   the risk of brute force password guessing.
-
  * Issue #72: pyftpdlib now provides configurable idle timeouts to disconnect
    client after a long time of inactivity.
+
+ * Issue #73: impose a delay before replying for invalid credentials to minimize
+   the risk of brute force password guessing.
 
  * Improved bandwidth throttling capabilities of demo/throttled_ftpd.py script
    by having used the new CallLater class which drastically reduces the number
@@ -24,6 +24,8 @@ Bugfixes:
  * Issue #71: socket handles are leaked when a data transfer is in progress and
    user QUITs.
 
+ * Issue #75: orphaned file was left behind in case STOU failed for insufficient
+   user permissions.
 
 Version: 0.4.0 - Date: 2008-05-16
 ---------------------------------
