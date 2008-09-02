@@ -15,6 +15,10 @@ Major enhancements:
  * Issue #72: pyftpdlib now provides configurable idle timeouts to disconnect
    client after a long time of inactivity.
 
+ * Improved bandwidth throttling capabilities of demo/throttled_ftpd.py script
+   by having used the new CallLater class which drastically reduces the number
+   of calls to time.time().
+
 Bugfixes:
 
  * Issue #71: socket handles are leaked when a data transfer is in progress and
