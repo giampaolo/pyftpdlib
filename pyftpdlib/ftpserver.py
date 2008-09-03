@@ -549,6 +549,7 @@ class PassiveDTP(asyncore.dispatcher):
 
     def handle_accept(self):
         """Called when remote client initiates a connection."""
+        self.idler.cancel()
         sock, addr = self.accept()
 
         # Check the origin of data connection.  If not expressively
@@ -627,6 +628,7 @@ class ActiveDTP(asyncore.dispatcher):
             self.connect((ip, port))
         except socket.gaierror:
             self.cmd_channel.respond("425 Can't connect to specified address.")
+            self.idler = None
             self.close()
         else:
             self.idler = CallLater(self.timeout, self.handle_timeout)
@@ -643,6 +645,7 @@ class ActiveDTP(asyncore.dispatcher):
         handler = self.cmd_channel.dtp_handler(self.socket, self.cmd_channel)
         self.cmd_channel.data_channel = handler
         self.cmd_channel.on_dtp_connection()
+        self.idler.cancel()
         #self.close()  # <-- (done automatically)
 
     def handle_timeout(self):

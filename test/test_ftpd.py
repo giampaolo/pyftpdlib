@@ -1149,7 +1149,9 @@ class TestFtpStoreData(unittest.TestCase):
 
 
 class TestTimeouts(unittest.TestCase):
-    """Test idle-timeout capabilities of control and data channels."""
+    """Test idle-timeout capabilities of control and data channels.
+    Some tests may fail on slow machines.
+    """
 
     def _setUp(self, idle_timeout=300, data_timeout=300, pasv_timeout=30,
                port_timeout=30):
@@ -1245,13 +1247,22 @@ class TestTimeouts(unittest.TestCase):
         # the server's connection attempts within the time specified in
         # ActiveDTP.timeout is supposed to receive a 421 response.
         self._setUp(port_timeout=0.1)
-        sock = self.client.makeport()
-        # fail if no msg is received within 1 second
-        self.client.sock.settimeout(1)
-        data = self.client.sock.recv(1024)
-        self.assertEqual(data, "421 Active data channel timed out.\r\n")
-        # client is not expected to be kicked off
-        self.client.sendcmd('noop')
+        sock = socket.socket(self.client.af, socket.SOCK_STREAM)
+        try:
+            sock.bind((self.client.sock.getsockname()[0], 0))
+            ip, port =  sock.getsockname()[:2]
+            # fail if no msg is received within 1 second
+            self.client.sock.settimeout(1)
+            try:
+                msg = self.client.sendport(ip, port)
+            except ftplib.error_temp, err:
+                self.assertEqual(str(err), "421 Active data channel timed out.")
+            else:
+                self.fail('Unexpected msg received: "%s"' %msg)
+            # client is not expected to be kicked off
+            self.client.sendcmd('noop')
+        finally:
+            sock.close()
 
 
 class _TestNetworkProtocols(unittest.TestCase):
