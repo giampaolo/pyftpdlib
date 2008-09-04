@@ -400,14 +400,14 @@ class DummyAuthorizer:
         homedir = os.path.realpath(homedir)
         if not os.path.isdir(homedir):
             raise AuthorizerError('No such directory: "%s"' %homedir)
+        warned = 0
         for p in perm:
             if p not in 'elradfmw':
                 raise AuthorizerError('No such permission "%s"' %p)
-        for p in perm:
-            if (p in self.write_perms) and (username == 'anonymous'):
-                warnings.warn("write permissions assigned to anonymous user.",
+            if (username == 'anonymous') and (p in "adfmw") and not warned:
+                warnings.warn("Write permissions assigned to anonymous user.",
                               RuntimeWarning)
-                break
+                warned = 1
         dic = {'pwd': str(password),
                'home': homedir,
                'perm': perm,
