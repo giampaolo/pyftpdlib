@@ -299,12 +299,14 @@ class CallLater:
         self.cancelled = True
         del self.__target, self.__args, self.__kwargs
         if self in tasks:
-            n = tasks.index(self)
-            if n == len(tasks)-1:
-                tasks.pop()
+            pos = tasks.index(self)
+            if pos == 0:
+                heapq.heappop(tasks)
+            elif pos == len(tasks) - 1:
+                tasks.pop(pos)
             else:
-                tasks[n] = tasks.pop()
-                heapq._siftup(tasks, n)
+                tasks[pos] = tasks.pop()
+                heapq._siftup(tasks, pos)
 
 
 # --- library defined exceptions
