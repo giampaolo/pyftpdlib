@@ -357,8 +357,9 @@ class TestCallLater(unittest.TestCase):
         ftpserver.CallLater(0.03, fun, 0.03)
         ftpserver.CallLater(0.04, fun, 0.04)
         ftpserver.CallLater(0.05, fun, 0.05)
+        ftpserver.CallLater(0.06, fun, 0.06).delay(0.001)
         self.scheduler()
-        self.assertEqual(l, [0.03, 0.04, 0.05, 0.01, 0.02])
+        self.assertEqual(l, [0.06, 0.03, 0.04, 0.05, 0.01, 0.02])
 
     def test_reset(self):
         l = []

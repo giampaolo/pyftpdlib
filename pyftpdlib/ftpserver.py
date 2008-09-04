@@ -233,14 +233,19 @@ def _strerror(err):
 tasks = []
 
 def _scheduler():
+    """Run the scheduled functions due to expire soonest (if any)."""
     now = time.time()
     while tasks and now >= tasks[0].timeout:
-        delayed = heapq.heappop(tasks)
+        call = heapq.heappop(tasks)
+        if call._repush:
+            heapq.heappush(tasks, call)
+            call._repush = False
+            continue
         try:
-            delayed.call()
+            call.call()
         finally:
-            if not delayed.cancelled:
-                delayed.cancel()
+            if not call.cancelled:
+                call.cancel()
 
 
 class CallLater:
@@ -265,7 +270,7 @@ class CallLater:
         self.__target = target
         self.__args = args
         self.__kwargs = kwargs
-        self.__reset = None
+        self._repush = False
         # seconds from the epoch at which to call the function
         self.timeout = time.time() + self.__delay
         self.cancelled = False
@@ -283,7 +288,7 @@ class CallLater:
         """Reschedule this call resetting the current countdown."""
         assert not self.cancelled, "Already cancelled"
         self.timeout = time.time() + self.__delay
-        heapq.heapify(tasks)
+        self._repush = True
 
     def delay(self, seconds):
         """Reschedule this call for a later time."""
@@ -291,7 +296,14 @@ class CallLater:
         assert sys.maxint >= seconds >= 0, "%s is not greater than or equal " \
                                            "to 0 seconds" %(seconds)
         self.__delay = seconds
-        self.reset()
+        newtime = time.time() + self.__delay
+        if newtime > self.timeout:
+            self.timeout = newtime
+            self._repush = True
+        else:
+            # XXX - slow, can be improved
+            self.timeout = newtime
+            heapq.heapify(tasks)
 
     def cancel(self):
         """Unschedule this call."""
