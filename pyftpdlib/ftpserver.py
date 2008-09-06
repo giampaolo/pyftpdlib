@@ -198,6 +198,7 @@ class CommandProperty:
 
 for cmd, properties in proto_cmds.iteritems():
     proto_cmds[cmd] = CommandProperty(*properties)
+del cmd, properties
 
 
 # hack around format_exc function of traceback module to grant
@@ -1332,7 +1333,7 @@ class AbstractedFS:
             except ValueError:
                 mtime = time.strftime("%b %d %H:%M")
             # if the file is a symlink, resolve it, e.g. "symlink -> realfile"
-            if stat.S_ISLNK(st.st_mode):
+            if stat.S_ISLNK(st.st_mode) and hasattr(os, 'readlink'):
                 basename = basename + " -> " + os.readlink(file)
 
             # formatting is matched with proftpd ls output
@@ -2028,7 +2029,7 @@ class FTPHandler(asynchat.async_chat):
                     assert len(octs) == 4
                     for x in octs:
                         assert 0 <= x <= 255
-                except (AssertionError, ValueError, OverflowError), err:
+                except (AssertionError, ValueError, OverflowError):
                     self.respond("501 Invalid EPRT format.")
                 else:
                     self._make_eport(ip, port)
@@ -2144,8 +2145,7 @@ class FTPHandler(asynchat.async_chat):
             else:
                 # if path is a file we just list its name
                 self.fs.lstat(path)  # raise exc in case of problems
-                basedir, filename = os.path.split(path)
-                listing = [filename]
+                listing = [os.path.basename(path)]
         except OSError, err:
             why = _strerror(err)
             self.log('FAIL NLST "%s". %s.' %(line, why))
@@ -2953,7 +2953,7 @@ class FTPServer(asyncore.dispatcher):
         if not hasattr(self, '_map'):
             self._map = self.handler._map = map
 
-        if use_poll and hasattr(select, 'poll'):
+        if use_poll and hasattr(asyncore.select, 'poll'):
             poll_fun = asyncore.poll2
         else:
             poll_fun = asyncore.poll

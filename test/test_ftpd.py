@@ -174,7 +174,7 @@ class TestAbstractedFS(unittest.TestCase):
         # Tests for fs2ftp method.
         ae = self.assertEquals
         fs = ftpserver.AbstractedFS()
-        join = lambda x,y: os.path.join(x, y.replace('/', os.sep))
+        join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
 
         def goforit(root):
             fs.root = root
@@ -204,7 +204,7 @@ class TestAbstractedFS(unittest.TestCase):
             ae(fs.fs2ftp('D:\\dir'), '/')
         elif os.sep == '/':
             goforit('/')
-            assert os.path.realpath('/__home/user') == '/__home/user',\
+            assert os.path.realpath('/__home/user') == '/__home/user', \
                                     'Test skipped (symlinks not allowed).'
             goforit('/__home/user')
             fs.root = '/__home/user'
@@ -329,7 +329,11 @@ class TestCallLater(unittest.TestCase):
 
     def test_interface(self):
         fun = lambda: 0
+        self.assertRaises(AssertionError, ftpserver.CallLater, -1, fun)
         x = ftpserver.CallLater(3, fun)
+        self.assertRaises(AssertionError, x.delay, -1)
+        import sys
+        self.assertRaises(AssertionError, x.delay, sys.maxint + 1)
         self.assert_(x.cancelled is False)
         x.cancel()
         self.assert_(x.cancelled is True)
@@ -804,7 +808,6 @@ class TestFtpRetrieveData(unittest.TestCase):
     def test_restore_on_retr(self):
         data = 'abcde12345' * 100000
         fname_1 = os.path.basename(self.f1.name)
-        fname_2 = os.path.basename(self.f2.name)
         self.f1.write(data)
         self.f1.close()
 
@@ -1235,7 +1238,7 @@ class TestTimeouts(unittest.TestCase):
         # to the listening data socket within the time specified in
         # PassiveDTP.timeout is supposed to receive a 421 response.
         self._setUp(pasv_timeout=0.1)
-        addr = self.client.makepasv()
+        self.client.makepasv()
         # fail if no msg is received within 1 second
         self.client.sock.settimeout(1)
         data = self.client.sock.recv(1024)
