@@ -188,7 +188,7 @@ proto_cmds = {
     'XRMD': ('d',  True,  True,  True,  'Syntax: XRMD <SP> dir-name (obsolete; remove directory).'),
     }
 
-class CommandProperty:
+class _CommandProperty:
     def __init__(self, perm, auth_needed, arg_needed, check_path, help):
         self.perm = perm
         self.auth_needed = auth_needed
@@ -197,7 +197,7 @@ class CommandProperty:
         self.help = help
 
 for cmd, properties in proto_cmds.iteritems():
-    proto_cmds[cmd] = CommandProperty(*properties)
+    proto_cmds[cmd] = _CommandProperty(*properties)
 del cmd, properties
 
 
@@ -231,16 +231,16 @@ def _strerror(err):
         return err.strerror
 
 # the heap used for the scheduled tasks
-tasks = []
+_tasks = []
 
 def _scheduler():
     """Run the scheduled functions due to expire soonest (if any)."""
     now = time.time()
-    while tasks and now >= tasks[0].timeout:
-        call = heapq.heappop(tasks)
-        if call._repush:
-            heapq.heappush(tasks, call)
-            call._repush = False
+    while _tasks and now >= _tasks[0].timeout:
+        call = heapq.heappop(_tasks)
+        if call.repush:
+            heapq.heappush(_tasks, call)
+            call.repush = False
             continue
         try:
             call.call()
@@ -271,11 +271,11 @@ class CallLater:
         self.__target = target
         self.__args = args
         self.__kwargs = kwargs
-        self._repush = False
         # seconds from the epoch at which to call the function
         self.timeout = time.time() + self.__delay
+        self.repush = False
         self.cancelled = False
-        heapq.heappush(tasks, self)
+        heapq.heappush(_tasks, self)
 
     def __le__(self, other):
         return self.timeout <= other.timeout
@@ -289,7 +289,7 @@ class CallLater:
         """Reschedule this call resetting the current countdown."""
         assert not self.cancelled, "Already cancelled"
         self.timeout = time.time() + self.__delay
-        self._repush = True
+        self.repush = True
 
     def delay(self, seconds):
         """Reschedule this call for a later time."""
@@ -300,26 +300,26 @@ class CallLater:
         newtime = time.time() + self.__delay
         if newtime > self.timeout:
             self.timeout = newtime
-            self._repush = True
+            self.repush = True
         else:
             # XXX - slow, can be improved
             self.timeout = newtime
-            heapq.heapify(tasks)
+            heapq.heapify(_tasks)
 
     def cancel(self):
         """Unschedule this call."""
         assert not self.cancelled, "Already cancelled"
         self.cancelled = True
         del self.__target, self.__args, self.__kwargs
-        if self in tasks:
-            pos = tasks.index(self)
+        if self in _tasks:
+            pos = _tasks.index(self)
             if pos == 0:
-                heapq.heappop(tasks)
-            elif pos == len(tasks) - 1:
-                tasks.pop(pos)
+                heapq.heappop(_tasks)
+            elif pos == len(_tasks) - 1:
+                _tasks.pop(pos)
             else:
-                tasks[pos] = tasks.pop()
-                heapq._siftup(tasks, pos)
+                _tasks[pos] = _tasks.pop()
+                heapq._siftup(_tasks, pos)
 
 
 # --- library defined exceptions
@@ -517,8 +517,8 @@ class PassiveDTP(asyncore.dispatcher):
         self.create_socket(self.cmd_channel.af, socket.SOCK_STREAM)
 
         if self.cmd_channel.passive_ports is None:
-        # By using 0 as port number value we let kernel choose a free
-        # unprivileged random port.
+            # By using 0 as port number value we let kernel choose a
+            # free unprivileged random port.
             self.bind((ip, 0))
         else:
             ports = list(self.cmd_channel.passive_ports)
@@ -2961,19 +2961,19 @@ class FTPServer(asyncore.dispatcher):
         if count is None:
             log("Serving FTP on %s:%s" %self.socket.getsockname()[:2])
             try:
-                while map or tasks:
+                while map or _tasks:
                     if map:
                         poll_fun(timeout, map)
-                    if tasks:
+                    if _tasks:
                         _scheduler()
             except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
                 log("Shutting down FTP server.")
                 self.close_all()
         else:
-            while (map or tasks) and count > 0:
+            while (map or _tasks) and count > 0:
                 if map:
                     poll_fun(timeout, map)
-                if tasks:
+                if _tasks:
                     _scheduler()
                 count = count - 1
 
