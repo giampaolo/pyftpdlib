@@ -316,13 +316,13 @@ class TestCallLater(unittest.TestCase):
     """Tests for CallLater class."""
 
     def tearDown(self):
-        for task in ftpserver.tasks:
+        for task in ftpserver._tasks:
             if not task.cancelled:
                 task.cancel()
-        del ftpserver.tasks[:]
+        del ftpserver._tasks[:]
 
     def scheduler(self, timeout=0.01, count=100):
-        while ftpserver.tasks and count > 0:
+        while ftpserver._tasks and count > 0:
             ftpserver._scheduler()
             count -= 1
             time.sleep(timeout)
@@ -344,9 +344,9 @@ class TestCallLater(unittest.TestCase):
 
     def test_order(self):
         l = []
-        ftpserver.tasks = []
+        ftpserver._tasks = []
         import heapq
-        heapq.heapify(ftpserver.tasks)
+        heapq.heapify(ftpserver._tasks)
         fun = lambda x: l.append(x)
         for x in [0.05, 0.04, 0.03, 0.02, 0.01]:
             ftpserver.CallLater(x, fun, x)
