@@ -1913,20 +1913,18 @@ class FTPHandler(asynchat.async_chat):
         # FTP bounce attacks protection: according to RFC-2577 it's
         # recommended to reject PORT if IP address specified in it
         # does not match client IP address.
-        if not self.permit_foreign_addresses:
-            if ip != self.remote_ip:
-                self.log("Rejected data connection to foreign address %s:%s."
-                         %(ip, port))
-                self.respond("501 Can't connect to a foreign address.")
-                return
+        if not self.permit_foreign_addresses and ip != self.remote_ip:
+            self.log("Rejected data connection to foreign address %s:%s."
+                     %(ip, port))
+            self.respond("501 Can't connect to a foreign address.")
+            return
 
         # ...another RFC-2577 recommendation is rejecting connections
         # to privileged ports (< 1024) for security reasons.
-        if not self.permit_privileged_ports:
-            if port < 1024:
-                self.log('PORT against the privileged port "%s" refused.' %port)
-                self.respond("501 Can't connect over a privileged port.")
-                return
+        if not self.permit_privileged_ports and port < 1024:
+            self.log('PORT against the privileged port "%s" refused.' %port)
+            self.respond("501 Can't connect over a privileged port.")
+            return
 
         # close existent DTP-server instance, if any.
         if self.data_server is not None:
@@ -1937,12 +1935,11 @@ class FTPHandler(asynchat.async_chat):
             self.data_channel = None
 
         # make sure we are not hitting the max connections limit
-        if self.server.max_cons:
-            if len(self._map) >= self.server.max_cons:
-                msg = "Too many connections. Can't open data channel."
-                self.respond("425 %s" %msg)
-                self.log(msg)
-                return
+        if self.server.max_cons and len(self._map) >= self.server.max_cons:
+            msg = "Too many connections. Can't open data channel."
+            self.respond("425 %s" %msg)
+            self.log(msg)
+            return
 
         # open data channel
         self.active_dtp(ip, port, self)
@@ -1963,12 +1960,11 @@ class FTPHandler(asynchat.async_chat):
             self.data_channel = None
 
         # make sure we are not hitting the max connections limit
-        if self.server.max_cons:
-            if len(self._map) >= self.server.max_cons:
-                msg = "Too many connections. Can't open data channel."
-                self.respond("425 %s" %msg)
-                self.log(msg)
-                return
+        if self.server.max_cons and len(self._map) >= self.server.max_cons:
+            msg = "Too many connections. Can't open data channel."
+            self.respond("425 %s" %msg)
+            self.log(msg)
+            return
 
         # open data channel
         self.data_server = self.passive_dtp(self, extmode)
