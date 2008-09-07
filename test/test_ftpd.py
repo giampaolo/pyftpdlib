@@ -315,7 +315,7 @@ class TestDummyAuthorizer(unittest.TestCase):
 class TestCallLater(unittest.TestCase):
     """Tests for CallLater class."""
 
-    def tearDown(self):
+    def setUp(self):
         for task in ftpserver._tasks:
             if not task.cancelled:
                 task.cancel()
@@ -332,8 +332,6 @@ class TestCallLater(unittest.TestCase):
         self.assertRaises(AssertionError, ftpserver.CallLater, -1, fun)
         x = ftpserver.CallLater(3, fun)
         self.assertRaises(AssertionError, x.delay, -1)
-        import sys
-        self.assertRaises(AssertionError, x.delay, sys.maxint + 1)
         self.assert_(x.cancelled is False)
         x.cancel()
         self.assert_(x.cancelled is True)
