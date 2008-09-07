@@ -344,9 +344,6 @@ class TestCallLater(unittest.TestCase):
 
     def test_order(self):
         l = []
-        ftpserver._tasks = []
-        import heapq
-        heapq.heapify(ftpserver._tasks)
         fun = lambda x: l.append(x)
         for x in [0.05, 0.04, 0.03, 0.02, 0.01]:
             ftpserver.CallLater(x, fun, x)
