@@ -1264,6 +1264,49 @@ class TestTimeouts(unittest.TestCase):
             sock.close()
 
 
+class TestMaxConnections(unittest.TestCase):
+    """Test maximum connections (FTPServer.max_cons)."""
+
+    def setUp(self):
+        self.server = FTPd()
+        self.server.server.max_cons = 3
+        self.server.start()
+
+    def tearDown(self):
+        self.server.server.max_cons = 0
+        self.server.stop()
+
+    def test_max_connections(self):
+        c1 = ftplib.FTP()
+        c2 = ftplib.FTP()
+        c3 = ftplib.FTP()
+        try:
+            c1.connect(self.server.host, self.server.port)
+            c2.connect(self.server.host, self.server.port)
+            self.assertRaises(ftplib.error_temp, c3.connect, self.server.host,
+                              self.server.port)
+            # with passive data channel established
+            c2.close()
+            c1.login(USER, PASSWD)
+            c1.makepasv()
+            self.assertRaises(ftplib.error_temp, c2.connect, self.server.host,
+                              self.server.port)
+            # with passive data socket waiting for connection
+            c1.login(USER, PASSWD)
+            c1.sendcmd('pasv')
+            self.assertRaises(ftplib.error_temp, c2.connect, self.server.host,
+                              self.server.port)
+            # with active data channel established
+            c1.login(USER, PASSWD)
+            c1.makeport()
+            self.assertRaises(ftplib.error_temp, c2.connect, self.server.host,
+                              self.server.port)
+        finally:
+            c1.close()
+            c2.close()
+            c3.close()
+
+
 class _TestNetworkProtocols(unittest.TestCase):
     """Test PASV, EPSV, PORT and EPRT commands.
 
@@ -1491,6 +1534,7 @@ def test_main(tests=None):
                  TestFtpAbort,
                  TestFtpStoreData,
                  TestTimeouts,
+                 TestMaxConnections
                  ]
         if SUPPORTS_IPV4:
             tests.append(TestIPv4Environment)
