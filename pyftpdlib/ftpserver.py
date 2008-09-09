@@ -512,6 +512,10 @@ class PassiveDTP(asyncore.dispatcher):
         """
         asyncore.dispatcher.__init__(self)
         self.cmd_channel = cmd_channel
+        if self.timeout:
+            self.idler = CallLater(self.timeout, self.handle_timeout)
+        else:
+            self.idler = None
 
         ip = self.cmd_channel.getsockname()[0]
         self.create_socket(self.cmd_channel.af, socket.SOCK_STREAM)
@@ -558,13 +562,13 @@ class PassiveDTP(asyncore.dispatcher):
         else:
             self.cmd_channel.respond('229 Entering extended passive mode '
                                      '(|||%d|).' %port)
-        self.idler = CallLater(self.timeout, self.handle_timeout)
 
     # --- connection / overridden
 
     def handle_accept(self):
         """Called when remote client initiates a connection."""
-        self.idler.cancel()
+        if self.idler and not self.idler.cancelled:
+            self.idler.cancel()
         sock, addr = self.accept()
 
         # Check the origin of data connection.  If not expressively
@@ -613,7 +617,7 @@ class PassiveDTP(asyncore.dispatcher):
         self.close()
 
     def close(self):
-        if not self.idler.cancelled:
+        if self.idler and not self.idler.cancelled:
             self.idler.cancel()
         asyncore.dispatcher.close(self)
 
@@ -638,15 +642,16 @@ class ActiveDTP(asyncore.dispatcher):
         """
         asyncore.dispatcher.__init__(self)
         self.cmd_channel = cmd_channel
+        if self.timeout:
+            self.idler = CallLater(self.timeout, self.handle_timeout)
+        else:
+            self.idler = None
         self.create_socket(self.cmd_channel.af, socket.SOCK_STREAM)
         try:
             self.connect((ip, port))
         except socket.gaierror:
             self.cmd_channel.respond("425 Can't connect to specified address.")
-            self.idler = None
             self.close()
-        else:
-            self.idler = CallLater(self.timeout, self.handle_timeout)
 
     # --- connection / overridden
 
@@ -655,12 +660,13 @@ class ActiveDTP(asyncore.dispatcher):
 
     def handle_connect(self):
         """Called when connection is established."""
+        if self.idler and not self.idler.cancelled:
+            self.idler.cancel()
         self.cmd_channel.respond('200 Active data connection established.')
         # delegate such connection to DTP handler
         handler = self.cmd_channel.dtp_handler(self.socket, self.cmd_channel)
         self.cmd_channel.data_channel = handler
         self.cmd_channel.on_dtp_connection()
-        self.idler.cancel()
         #self.close()  # <-- (done automatically)
 
     def handle_timeout(self):

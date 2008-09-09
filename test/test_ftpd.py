@@ -1152,12 +1152,10 @@ class TestTimeouts(unittest.TestCase):
     Some tests may fail on slow machines.
     """
 
-    def _setUp(self, idle_timeout=300, data_timeout=300, pasv_timeout=30,
-               port_timeout=30):
+    def _setUp(self, idle_timeout=300, data_timeout=300, pasv_timeout=30):
         self.server = FTPd()
         self.server.handler.timeout = idle_timeout
         self.server.handler.dtp_handler.timeout = data_timeout
-        self.server.handler.active_dtp.timeout = port_timeout
         self.server.handler.passive_dtp.timeout = pasv_timeout
         self.server.start()
         self.client = ftplib.FTP()
@@ -1168,7 +1166,6 @@ class TestTimeouts(unittest.TestCase):
         self.client.close()
         self.server.handler.timeout = 300
         self.server.handler.dtp_handler.timeout = 300
-        self.server.handler.active_dtp.timeout = 30
         self.server.handler.passive_dtp.timeout = 30
         self.server.stop()
 
@@ -1240,28 +1237,6 @@ class TestTimeouts(unittest.TestCase):
         self.assertEqual(data, "421 Passive data channel timed out.\r\n")
         # client is not expected to be kicked off
         self.client.sendcmd('noop')
-
-    def test_port_timeout(self):
-        # Test port data channel timeout. The client which does not accept
-        # the server's connection attempts within the time specified in
-        # ActiveDTP.timeout is supposed to receive a 421 response.
-        self._setUp(port_timeout=0.1)
-        sock = socket.socket(self.client.af, socket.SOCK_STREAM)
-        try:
-            sock.bind((self.client.sock.getsockname()[0], 0))
-            ip, port =  sock.getsockname()[:2]
-            # fail if no msg is received within 1 second
-            self.client.sock.settimeout(1)
-            try:
-                msg = self.client.sendport(ip, port)
-            except ftplib.error_temp, err:
-                self.assertEqual(str(err), "421 Active data channel timed out.")
-            else:
-                self.fail('Unexpected msg received: "%s"' %msg)
-            # client is not expected to be kicked off
-            self.client.sendcmd('noop')
-        finally:
-            sock.close()
 
 
 class TestMaxConnections(unittest.TestCase):
