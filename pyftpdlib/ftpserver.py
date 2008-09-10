@@ -252,12 +252,12 @@ def _scheduler():
 class CallLater:
     """Calls a function at a later time.
 
-    The instance returned is an object that can be used to cancel the
-    scheduled call, by calling its cancel() method.
-    It also may be rescheduled by calling delay() or reset()} methods.
+    It can be used to asynchronously schedule a call within the polling
+    loop without blocking it. The instance returned is an object that
+    can be used to cancel or reschedule the call.
     """
 
-    def __init__(self, delay, target, *args, **kwargs):
+    def __init__(self, seconds, target, *args, **kwargs):
         """
         - delay: the number of seconds to wait
         - target: the callable object to call later
@@ -265,9 +265,9 @@ class CallLater:
         - kwargs: the keyword arguments to call it with
         """
         assert callable(target), "%s is not callable" %target
-        assert sys.maxint >= delay >= 0, "%s is not greater than or equal " \
-                                           "to 0 seconds" % (delay)
-        self.__delay = delay
+        assert sys.maxint >= seconds >= 0, "%s is not greater than or equal " \
+                                           "to 0 seconds" % (seconds)
+        self.__delay = seconds
         self.__target = target
         self.__args = args
         self.__kwargs = kwargs
