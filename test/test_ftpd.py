@@ -1008,6 +1008,18 @@ class TestFtpAbort(unittest.TestCase):
         # transfer successfully aborted, so should now respond with a 226
         self.failUnlessEqual('226', self.client.voidresp()[:3])
 
+    if hasattr(socket, 'MSG_OOB'):
+        def test_oob_abor(self):
+            # Send ABOR by following the RFC-959 directives of sending
+            # Telnet IP/Synch sequence as OOB data.
+            # On some systems like FreeBSD this happened to be a problem
+            # due to a different SO_OOBINLINE behavior.
+            self.client.sock.sendall(chr(244), socket.MSG_OOB)
+            self.client.sock.sendall(chr(242), socket.MSG_OOB)
+            self.client.sock.sendall('abor\r\n')
+            self.client.sock.settimeout(1)
+            self.assertEqual(self.client.getresp()[:3], '225')
+
 
 class TestFtpStoreData(unittest.TestCase):
     "test: STOR, STOU, APPE, REST"

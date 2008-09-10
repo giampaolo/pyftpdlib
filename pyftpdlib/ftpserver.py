@@ -1529,6 +1529,11 @@ class FTPHandler(asynchat.async_chat):
         """
         asynchat.async_chat.__init__(self, conn)
         self.set_terminator("\r\n")
+        # try to handle urgent data inline
+        try:
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_OOBINLINE, 1)
+        except socket.error:
+            pass
 
         # public session attributes
         self.server = server
@@ -1727,16 +1732,20 @@ class FTPHandler(asynchat.async_chat):
             method(arg)
 
     def handle_expt(self):
-        """Called when there is out of band (OOB) data for the socket
-        connection.  This could happen in case of such commands needing
-        "special action" (typically STAT and ABOR) in which case we
-        append OOB data to incoming buffer.
+        """Called when there is out of band (OOB) data to be read.
+        This could happen in case of such clients strictly following
+        the RFC-959 directives of sending Telnet IP and Synch as OOB
+        data before issuing ABOR, STAT and QUIT commands.
+        It should never be called since the SO_OOBINLINE option is
+        enabled except on some systems like FreeBSD where it doesn't
+        seem to have effect.
         """
         if hasattr(socket, 'MSG_OOB'):
             try:
                 data = self.socket.recv(1024, socket.MSG_OOB)
-            except socket.error:
-                pass
+            except socket.error, why:
+                if why[0] == errno.EINVAL:
+                    return
             else:
                 self._in_buffer.append(data)
                 return

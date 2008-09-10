@@ -27,6 +27,9 @@ Bugfixes:
  * Issue #75: orphaned file was left behind in case STOU failed for insufficient
    user permissions.
 
+ * Issue #77: incorrect OOB data management on FreeBSD.
+
+
 Version: 0.4.0 - Date: 2008-05-16
 ---------------------------------
 
