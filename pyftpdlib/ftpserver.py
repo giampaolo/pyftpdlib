@@ -398,20 +398,14 @@ class DummyAuthorizer:
         """
         if self.has_user(username):
             raise AuthorizerError('User "%s" already exists' %username)
-        homedir = os.path.realpath(homedir)
         if not os.path.isdir(homedir):
             raise AuthorizerError('No such directory: "%s"' %homedir)
-        warned = 0
-        for p in perm:
-            if p not in 'elradfmw':
-                raise AuthorizerError('No such permission "%s"' %p)
-            if (username == 'anonymous') and (p in "adfmw") and not warned:
-                warnings.warn("Write permissions assigned to anonymous user.",
-                              RuntimeWarning)
-                warned = 1
+        homedir = os.path.realpath(homedir)
+        self._check_permissions(username, perm)
         dic = {'pwd': str(password),
                'home': homedir,
                'perm': perm,
+               'operms': {},
                'msg_login': str(msg_login),
                'msg_quit': str(msg_quit)
                }
@@ -438,6 +432,19 @@ class DummyAuthorizer:
     def remove_user(self, username):
         """Remove a user from the virtual users table."""
         del self.user_table[username]
+
+    def override_perm(self, username, directory, perm, recursive=False):
+        """Override permissions for a given directory."""
+        self._check_permissions(username, perm)
+        if not os.path.isdir(directory):
+            raise AuthorizerError('No such directory: "%s"' %directory)
+        directory = os.path.normcase(os.path.realpath(directory))
+        home = os.path.normcase(self.get_home_dir(username))
+        if directory == home:
+            raise AuthorizerError("Can't override home directory permissions")
+        if not self._issubpath(directory, home):
+            raise AuthorizerError("Path escapes user home directory")
+        self.user_table[username]['operms'][directory] = perm, recursive
 
     def validate_authentication(self, username, password):
         """Return True if the supplied username and password match the
@@ -473,6 +480,19 @@ class DummyAuthorizer:
         Expected perm argument is one of the following letters:
         "elradfmw".
         """
+        if path is None:
+            return perm in self.user_table[username]['perm']
+
+        path = os.path.normcase(path)
+        for dir in self.user_table[username]['operms'].keys():
+            operm, recursive = self.user_table[username]['operms'][dir]
+            if self._issubpath(path, dir):
+                if recursive:
+                    return perm in operm
+                if (path == dir) or (os.path.dirname(path) == dir \
+                and not os.path.isdir(path)):
+                    return perm in operm
+
         return perm in self.user_table[username]['perm']
 
     def get_perms(self, username):
@@ -490,6 +510,23 @@ class DummyAuthorizer:
     def get_msg_quit(self, username):
         """Return the user's quitting message."""
         return self.user_table[username]['msg_quit']
+
+    def _check_permissions(self, username, perm):
+        warned = 0
+        for p in perm:
+            if p not in 'elradfmw':
+                raise AuthorizerError('No such permission "%s"' %p)
+            if (username == 'anonymous') and (p in "adfmw") and not warned:
+                warnings.warn("Write permissions assigned to anonymous user.",
+                              RuntimeWarning)
+                warned = 1
+
+    def _issubpath(self, a, b):
+        """Return True if a is a sub-path of b or if the paths are equal."""
+        p1 = a.rstrip(os.sep).split(os.sep)
+        p2 = b.rstrip(os.sep).split(os.sep)
+        return p1[:len(p2)] == p2
+
 
 
 # --- DTP classes

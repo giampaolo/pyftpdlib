@@ -15,6 +15,10 @@ Major enhancements:
  * Issue #73: impose a delay before replying for invalid credentials to minimize
    the risk of brute force password guessing.
 
+ * Issue #74: it is now possible to define permission exceptions for certain
+   directories (e.g. creating a user which does not have write permission except
+   for one sub-directory in FTP root).
+
  * Improved bandwidth throttling capabilities of demo/throttled_ftpd.py script
    by having used the new CallLater class which drastically reduces the number
    of calls to time.time().

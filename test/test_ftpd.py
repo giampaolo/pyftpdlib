@@ -52,6 +52,7 @@ import tempfile
 import ftplib
 import random
 import warnings
+import sys
 
 from pyftpdlib import ftpserver
 
@@ -270,12 +271,32 @@ class TestDummyAuthorizer(unittest.TestCase):
 
     # temporarily change warnings to exceptions for the purposes of testing
     def setUp(self):
+        self.tempdir = tempfile.mkdtemp(dir=HOME)
+        self.subtempdir = tempfile.mkdtemp(dir=os.path.join(HOME, self.tempdir))
+        self.tempfile = open(os.path.join(self.tempdir, TESTFN), 'w').name
+        self.subtempfile = open(os.path.join(self.subtempdir, TESTFN), 'w').name
         warnings.filterwarnings("error")
 
     def tearDown(self):
+        os.remove(self.tempfile)
+        os.remove(self.subtempfile)
+        os.rmdir(self.subtempdir)
+        os.rmdir(self.tempdir)
         warnings.resetwarnings()
 
-    def test_dummy_authorizer(self):
+    def assertRaisesWithMsg(self, excClass, msg, callableObj, *args, **kwargs):
+        try:
+            callableObj(*args, **kwargs)
+        except excClass, why:
+            if str(why) == msg:
+                return
+            raise self.failureException("%s != %s" %(str(why), msg))
+        else:
+            if hasattr(excClass,'__name__'): excName = excClass.__name__
+            else: excName = str(excClass)
+            raise self.failureException, "%s not raised" % excName
+
+    def test_common_methods(self):
         auth = ftpserver.DummyAuthorizer()
         # create user
         auth.add_user(USER, PASSWD, HOME)
@@ -286,30 +307,112 @@ class TestDummyAuthorizer(unittest.TestCase):
         # remove them
         auth.remove_user(USER)
         auth.remove_user('anonymous')
-
         # raise exc if user does not exists
         self.assertRaises(KeyError, auth.remove_user, USER)
         # raise exc if path does not exist
-        self.assertRaises(ftpserver.AuthorizerError, auth.add_user, USER,
-                            PASSWD, '?:\\')
-        self.assertRaises(ftpserver.AuthorizerError, auth.add_anonymous, '?:\\')
+        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+                                'No such directory: "%s"' %'?:\\',
+                                 auth.add_user, USER, PASSWD, '?:\\')
+        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+                                'No such directory: "%s"' %'?:\\',
+                                 auth.add_anonymous, '?:\\')
         # raise exc if user already exists
         auth.add_user(USER, PASSWD, HOME)
         auth.add_anonymous(HOME)
-        self.assertRaises(ftpserver.AuthorizerError, auth.add_user, USER,
-                            PASSWD, HOME)
-        self.assertRaises(ftpserver.AuthorizerError, auth.add_anonymous, HOME)
+        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+                                'User "%s" already exists' %USER,
+                                 auth.add_user, USER, PASSWD, HOME)
+        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+                                'User "anonymous" already exists',
+                                 auth.add_anonymous, HOME)
         auth.remove_user(USER)
         auth.remove_user('anonymous')
-
         # raise on wrong permission
-        self.assertRaises(ftpserver.AuthorizerError, auth.add_user, USER,
-                          PASSWD, HOME, perm='?')
-        self.assertRaises(ftpserver.AuthorizerError, auth.add_anonymous, HOME,
-                            perm='?')
+        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+                                 'No such permission "?"',
+                                 auth.add_user, USER, PASSWD, HOME, perm='?')
+        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+                                 'No such permission "?"',
+                                 auth.add_anonymous, HOME, perm='?')
         # expect warning on write permissions assigned to anonymous user
         for x in "adfmw":
-            self.assertRaises(RuntimeWarning, auth.add_anonymous, HOME, perm=x)
+            self.assertRaisesWithMsg(RuntimeWarning,
+                                "Write permissions assigned to anonymous user.",
+                                auth.add_anonymous, HOME, perm=x)
+
+    def test_override_perm_interface(self):
+        auth = ftpserver.DummyAuthorizer()
+        auth.add_user(USER, PASSWD, HOME, perm='elr')
+        # raise exc if user does not exists
+        self.assertRaises(KeyError, auth.override_perm, USER+'w', HOME, 'elr')
+        # raise exc if path does not exist or it's not a directory
+        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+                                'No such directory: "%s"' %'?:\\',
+                                auth.override_perm, USER, '?:\\', 'elr')
+        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+                                'No such directory: "%s"' %self.tempfile,
+                                auth.override_perm, USER, self.tempfile, 'elr')
+        # raise on wrong permission
+        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+                                 'No such permission "?"', auth.override_perm,
+                                 USER, HOME, perm='?')
+        # expect warning on write permissions assigned to anonymous user
+        auth.add_anonymous(HOME)
+        for p in "adfmw":
+            self.assertRaisesWithMsg(RuntimeWarning,
+                                "Write permissions assigned to anonymous user.",
+                                auth.override_perm, 'anonymous', HOME, p)
+        # raise on attempt to override home directory permissions
+        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+                                 "Can't override home directory permissions",
+                                 auth.override_perm, USER, HOME, perm='w')
+        # raise on attempt to override a path escaping home directory
+        if os.path.dirname(HOME) != HOME:
+            self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+                                     "Path escapes user home directory",
+                                     auth.override_perm, USER,
+                                     os.path.dirname(HOME), perm='w')
+        # try to re-set an overridden permission
+        auth.override_perm(USER, self.tempdir, perm='w')
+        auth.override_perm(USER, self.tempdir, perm='wr')
+
+    def test_override_perm_recursive_paths(self):
+        auth = ftpserver.DummyAuthorizer()
+        auth.add_user(USER, PASSWD, HOME, perm='elr')
+        self.assert_(auth.has_perm(USER, 'w', self.tempdir) is False)
+        auth.override_perm(USER, self.tempdir, perm='w', recursive=True)
+        self.assert_(auth.has_perm(USER, 'w', HOME) is False)
+        self.assert_(auth.has_perm(USER, 'w', self.tempdir) is True)
+        self.assert_(auth.has_perm(USER, 'w', self.tempfile) is True)
+        self.assert_(auth.has_perm(USER, 'w', self.subtempdir) is True)
+        self.assert_(auth.has_perm(USER, 'w', self.subtempfile) is True)
+
+        self.assert_(auth.has_perm(USER, 'w', HOME + '@') is False)
+        self.assert_(auth.has_perm(USER, 'w', self.tempdir + '@') is False)
+        path = os.path.join(self.tempdir + '@', os.path.basename(self.tempfile))
+        self.assert_(auth.has_perm(USER, 'w', path) is False)
+        # test case-sensitiveness
+        if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
+            self.assert_(auth.has_perm(USER, 'w', self.tempdir.upper()) is True)
+
+    def test_override_perm_not_recursive_paths(self):
+        auth = ftpserver.DummyAuthorizer()
+        auth.add_user(USER, PASSWD, HOME, perm='elr')
+        self.assert_(auth.has_perm(USER, 'w', self.tempdir) is False)
+        auth.override_perm(USER, self.tempdir, perm='w')
+        self.assert_(auth.has_perm(USER, 'w', HOME) is False)
+        self.assert_(auth.has_perm(USER, 'w', self.tempdir) is True)
+        self.assert_(auth.has_perm(USER, 'w', self.tempfile) is True)
+        self.assert_(auth.has_perm(USER, 'w', self.subtempdir) is False)
+        self.assert_(auth.has_perm(USER, 'w', self.subtempfile) is False)
+
+        self.assert_(auth.has_perm(USER, 'w', HOME + '@') is False)
+        self.assert_(auth.has_perm(USER, 'w', self.tempdir + '@') is False)
+        path = os.path.join(self.tempdir + '@', os.path.basename(self.tempfile))
+        self.assert_(auth.has_perm(USER, 'w', path) is False)
+        # test case-sensitiveness
+        if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
+            self.assert_(auth.has_perm(USER, 'w', self.tempdir.upper()) is True)
 
 
 class TestCallLater(unittest.TestCase):
