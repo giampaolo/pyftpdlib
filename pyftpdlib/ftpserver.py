@@ -56,6 +56,9 @@ the backend functionality for the FTPd:
     providing a high level, cross-platform interface compatible
     with both Windows and UNIX style filesystems.
 
+    [CallLater] - calls a function at a later time whithin the polling
+    loop asynchronously.
+
     [AuthorizerError] - base class for authorizers exceptions.
 
 
@@ -135,8 +138,8 @@ __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer
 
 
 __pname__   = 'Python FTP server library (pyftpdlib)'
-__ver__     = '0.4.0'
-__date__    = '2008-05-16'
+__ver__     = '0.5.0'
+__date__    = '????-??-??' # XXX fix date
 __author__  = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__     = 'http://code.google.com/p/pyftpdlib/'
 
@@ -259,10 +262,10 @@ class CallLater:
 
     def __init__(self, seconds, target, *args, **kwargs):
         """
-        - delay: the number of seconds to wait
-        - target: the callable object to call later
-        - args: the arguments to call it with
-        - kwargs: the keyword arguments to call it with
+         - (int) seconds: the number of seconds to wait
+         - (obj) target: the callable object to call later
+         - args: the arguments to call it with
+         - kwargs: the keyword arguments to call it with
         """
         assert callable(target), "%s is not callable" %target
         assert sys.maxint >= seconds >= 0, "%s is not greater than or equal " \
@@ -693,7 +696,9 @@ class ActiveDTP(asyncore.dispatcher):
     # --- connection / overridden
 
     def handle_write(self):
-        """NOOP, must be overridden to prevent unhandled write event."""
+        # NOOP, overridden to prevent unhandled write event msg to
+        # be printed on Python < 2.6
+        pass
 
     def handle_connect(self):
         """Called when connection is established."""
@@ -804,8 +809,9 @@ class DTPHandler(asyncore.dispatcher):
         self.transfer_finished = False
         self.tot_bytes_sent = 0
         self.tot_bytes_received = 0
-        self._lastdata = 0
         self.data_wrapper = lambda x: x
+        self._lastdata = 0
+        self._closed = False
         if self.timeout:
             self.idler = CallLater(self.timeout, self.handle_timeout)
         else:
@@ -998,12 +1004,14 @@ class DTPHandler(asyncore.dispatcher):
     def close(self):
         """Close the data channel, first attempting to close any remaining
         file handles."""
-        if self.file_obj is not None and not self.file_obj.closed:
-            self.file_obj.close()
-        if self.idler and not self.idler.cancelled:
-            self.idler.cancel()
-        asyncore.dispatcher.close(self)
-        self.cmd_channel.on_dtp_close()
+        if not self._closed:
+            self._closed = True
+            if self.file_obj is not None and not self.file_obj.closed:
+                self.file_obj.close()
+            if self.idler and not self.idler.cancelled:
+                self.idler.cancel()
+            asyncore.dispatcher.close(self)
+            self.cmd_channel.on_dtp_close()
 
 
 # --- producers
@@ -1603,6 +1611,7 @@ class FTPHandler(asynchat.async_chat):
         self._epsvall = False
         self._in_dtp_queue = None
         self._out_dtp_queue = None
+        self._closed = False
         self._current_facts = ['type', 'perm', 'size', 'modify']
         if os.name == 'posix':
             self._current_facts.append('unique')
@@ -1809,7 +1818,6 @@ class FTPHandler(asynchat.async_chat):
     def handle_close(self):
         self.close()
 
-    _closed = False
     def close(self):
         """Close the current channel disconnecting the client."""
         if not self._closed:
