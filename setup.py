@@ -16,7 +16,7 @@ FTP servers with Python."""
 
 setup(
     name='pyftpdlib',
-    version="0.4.0",
+    version="0.5.0",
     description='High-level asynchronous FTP server library',
     long_description=long_descr,
     license='MIT License',
@@ -24,7 +24,7 @@ setup(
     author="Giampaolo Rodola'",
     author_email='g.rodola@gmail.com',
     url='http://code.google.com/p/pyftpdlib/',
-    download_url='http://pyftpdlib.googlecode.com/files/pyftpdlib-0.4.0.tar.gz',
+    download_url='http://pyftpdlib.googlecode.com/files/pyftpdlib-0.5.0.tar.gz',
     packages=['pyftpdlib'],
     classifiers=[
           'Development Status :: 4 - Beta',
