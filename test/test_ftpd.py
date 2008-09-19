@@ -464,6 +464,8 @@ class TestCallLater(unittest.TestCase):
         self.assertEqual(l, [0.06, 0.03, 0.04, 0.05, 0.01, 0.02])
 
     def test_reset(self):
+        # will fail on such systems where time.time() does not provide
+        # time with a better precision than 1 second.
         l = []
         fun = lambda x: l.append(x)
         ftpserver.CallLater(0.01, fun, 0.01)
@@ -1117,6 +1119,8 @@ class TestFtpAbort(unittest.TestCase):
             # Telnet IP/Synch sequence as OOB data.
             # On some systems like FreeBSD this happened to be a problem
             # due to a different SO_OOBINLINE behavior.
+            # On some platforms (e.g. Python CE) the test may fail
+            # although the MSG_OOB constant is defined.
             self.client.sock.sendall(chr(244), socket.MSG_OOB)
             self.client.sock.sendall(chr(242), socket.MSG_OOB)
             self.client.sock.sendall('abor\r\n')
