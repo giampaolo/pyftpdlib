@@ -556,21 +556,17 @@ class TestFtpAuthentication(unittest.TestCase):
 
         self.client.voidcmd('TYPE I')
         conn = self.client.transfercmd('retr ' + TESTFN)
-        bytes_recv = 0
         rein_sent = 0
         while 1:
             chunk = conn.recv(8192)
-            # stop transfer while it isn't finished yet
-            if bytes_recv >= 524288: # 2^19
-                if not rein_sent:
-                    # flush account, error response expected
-                    self.client.sendcmd('rein')
-                    self.assertRaises(ftplib.error_perm, self.client.dir)
-                    rein_sent = 1
             if not chunk:
                 break
             self.f2.write(chunk)
-            bytes_recv += len(chunk)
+            if not rein_sent:
+                rein_sent = 1
+                # flush account, error response expected
+                self.client.sendcmd('rein')
+                self.assertRaises(ftplib.error_perm, self.client.dir)
 
         # a 226 response is expected once tranfer finishes
         self.assertEqual(self.client.voidresp()[:3], '226')
@@ -603,21 +599,18 @@ class TestFtpAuthentication(unittest.TestCase):
 
         self.client.voidcmd('TYPE I')
         conn = self.client.transfercmd('retr ' + TESTFN)
-        bytes_recv = 0
         rein_sent = 0
         while 1:
             chunk = conn.recv(8192)
-            # stop transfer while it isn't finished yet
-            if bytes_recv >= 524288: # 2^19
-                if not rein_sent:
-                    # flush account, expect an error response
-                    self.client.sendcmd('user ' + USER)
-                    self.assertRaises(ftplib.error_perm, self.client.dir)
-                    rein_sent = 1
             if not chunk:
                 break
             self.f2.write(chunk)
-            bytes_recv += len(chunk)
+            # stop transfer while it isn't finished yet
+            if not rein_sent:
+                rein_sent = 1
+                # flush account, expect an error response
+                self.client.sendcmd('user ' + USER)
+                self.assertRaises(ftplib.error_perm, self.client.dir)
 
         # a 226 response is expected once tranfer finishes
         self.assertEqual(self.client.voidresp()[:3], '226')
@@ -914,18 +907,9 @@ class TestFtpRetrieveData(unittest.TestCase):
         # look at ftplib.FTP.retrbinary method to understand this mess
         self.client.voidcmd('TYPE I')
         conn = self.client.transfercmd('retr ' + fname_1)
-        bytes_recv = 0
-        while 1:
-            chunk = conn.recv(8192)
-            # stop transfer while it isn't finished yet
-            if bytes_recv >= 524288: # 2^19
-                break
-            elif not chunk:
-                break
-            self.f2.write(chunk)
-            bytes_recv += len(chunk)
+        chunk = conn.recv(len(data) / 2)
+        self.f2.write(chunk)
         conn.close()
-
         # transfer wasn't finished yet so we expect a 426 response
         self.assertRaises(ftplib.error_temp, self.client.voidresp)
 
@@ -937,7 +921,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'retr ' + fname_1)
 
         # test resume
-        self.client.sendcmd('rest %s' %bytes_recv)
+        self.client.sendcmd('rest %s' %len(chunk))
         self.client.retrbinary("retr " + fname_1, self.f2.write)
         self.f2.seek(0)
         self.assertEqual(hash(data), hash (self.f2.read()))
@@ -1095,16 +1079,8 @@ class TestFtpAbort(unittest.TestCase):
         # in a separate thread
         self.client.voidcmd('TYPE I')
         conn = self.client.transfercmd('retr ' + TESTFN)
-        bytes_recv = 0
-        while 1:
-            chunk = conn.recv(8192)
-            # stop transfer while it isn't finished yet
-            if bytes_recv >= 524288: # 2^19
-                break
-            elif not chunk:
-                break
-            self.f2.write(chunk)
-            bytes_recv += len(chunk)
+        chunk = conn.recv(len(data) / 2)
+        # stop transfer while it isn't finished yet
         self.client.putcmd('ABOR')
 
         # transfer isn't finished yet so ftpd should respond with 426

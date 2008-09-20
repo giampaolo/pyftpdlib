@@ -25,6 +25,8 @@ Major enhancements:
 
 Bugfixes:
 
+ * Issue #62: some unit tests were failing on dual core machines.
+
  * Issue #71: socket handles are leaked when a data transfer is in progress and
    user QUITs.
 
