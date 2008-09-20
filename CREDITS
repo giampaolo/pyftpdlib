@@ -72,8 +72,10 @@ E: aleax@gmail.com
 D: Various useful suggestions
 
 N: Knic
+C: Redmond, USA
 E: oneeyedelf1@googlemail.com
-D: Bug report #24 (some troubles on PythonCE)
+D: Bug report #24 (some troubles on PythonCE), tester for various platforms
+   including Windows Mobile, Windows Server 2008 and various 64 bit OSes.
 
 N: Greg Copeland
 E: gcopeland@efjohnson.com
