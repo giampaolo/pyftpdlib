@@ -1707,10 +1707,11 @@ class FTPHandler(asynchat.async_chat):
         else:
             self.logline("<== %s %s" %(line.split(' ')[0], '*' * 6))
 
-        # Recognize those commands having "special semantics". They
-        # may be sent as OOB data but since many ftp clients does
-        # not follow the procedure from the RFC to send Telnet IP
-        # and Synch first, we check the last 4 characters only.
+        # Recognize those commands having a "special semantic". They
+        # should be sent by following the RFC-959 procedure of sending
+        # Telnet IP/Synch sequence (chr 242 and 255) as OOB data but
+        # since many ftp clients don't do it correctly we check the
+        # last 4 characters only.
         if not cmd in proto_cmds:
             if cmd[-4:] in ('ABOR', 'STAT', 'QUIT'):
                 cmd = cmd[-4:]

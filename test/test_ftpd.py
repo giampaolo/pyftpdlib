@@ -1099,7 +1099,7 @@ class TestFtpAbort(unittest.TestCase):
             # On some platforms (e.g. Python CE) the test may fail
             # although the MSG_OOB constant is defined.
             self.client.sock.sendall(chr(244), socket.MSG_OOB)
-            self.client.sock.sendall(chr(242), socket.MSG_OOB)
+            self.client.sock.sendall(chr(255), socket.MSG_OOB)
             self.client.sock.sendall('abor\r\n')
             self.client.sock.settimeout(1)
             self.assertEqual(self.client.getresp()[:3], '225')
