@@ -607,10 +607,7 @@ class PassiveDTP(asyncore.dispatcher):
 
     def handle_accept(self):
         """Called when remote client initiates a connection."""
-        if self.idler and not self.idler.cancelled:
-            self.idler.cancel()
         sock, addr = self.accept()
-
         # Check the origin of data connection.  If not expressively
         # configured we drop the incoming data connection if remote
         # IP address does not match the client's IP address.
