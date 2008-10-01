@@ -1248,11 +1248,13 @@ class TestTimeouts(unittest.TestCase):
     Some tests may fail on slow machines.
     """
 
-    def _setUp(self, idle_timeout=300, data_timeout=300, pasv_timeout=30):
+    def _setUp(self, idle_timeout=300, data_timeout=300, pasv_timeout=30,
+               port_timeout=30):
         self.server = FTPd()
         self.server.handler.timeout = idle_timeout
         self.server.handler.dtp_handler.timeout = data_timeout
         self.server.handler.passive_dtp.timeout = pasv_timeout
+        self.server.handler.active_dtp.timeout = port_timeout
         self.server.start()
         self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
@@ -1263,6 +1265,7 @@ class TestTimeouts(unittest.TestCase):
         self.server.handler.timeout = 300
         self.server.handler.dtp_handler.timeout = 300
         self.server.handler.passive_dtp.timeout = 30
+        self.server.handler.active_dtp.timeout = 30
         self.server.stop()
 
     def test_idle_timeout(self):
@@ -1333,6 +1336,32 @@ class TestTimeouts(unittest.TestCase):
         self.assertEqual(data, "421 Passive data channel timed out.\r\n")
         # client is not expected to be kicked off
         self.client.sendcmd('noop')
+
+    def test_disabled_idle_timeout(self):
+        self._setUp(idle_timeout=0)
+        self.client.sendcmd('noop')
+
+    def test_disabled_data_timeout(self):
+        self._setUp(data_timeout=0)
+        addr = self.client.makepasv()
+        s = socket.socket()
+        s.connect(addr)
+        s.close()
+
+    def test_disabled_pasv_timeout(self):
+        self._setUp(pasv_timeout=0)
+        self.client.makepasv()
+        # reset passive socket
+        addr = self.client.makepasv()
+        s = socket.socket()
+        s.connect(addr)
+        s.close()
+
+    def test_disabled_port_timeout(self):
+        self._setUp(port_timeout=0)
+        self.client.makeport()
+        s = self.client.makeport()
+        s.close()
 
 
 class TestMaxConnections(unittest.TestCase):
