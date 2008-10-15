@@ -9,6 +9,9 @@ Version: 0.X.X - Date: XXXX-XX-XX
 
 Bugfixes:
 
+ * Issue #78: the idle timeout of passive data connections gets stopped in case
+   of rejected "site-to-site" connections.
+
  * Issue #80: demo/md5_ftpd.py should use hashlib module instead of the
    deprecated md5 module.
 
