@@ -95,3 +95,8 @@ D: Bug report #71 (Socket handles are leaked when a data transfer is in progress
 N: Equand
 E: equand@gmail.com
 D: Bug report #77 (incorrect OOB data management on FreeBSD).
+
+N: fogwraith
+E: fogwraith@gmail.com
+D: Bug report #80 (demo/md5_ftpd.py should use hashlib module instead of the
+   deprecated md5 module)

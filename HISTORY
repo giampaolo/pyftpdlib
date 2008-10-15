@@ -4,6 +4,15 @@ Issue tracker at http://code.google.com/p/pyftpdlib/issues/list
 History
 =======
 
+Version: 0.X.X - Date: XXXX-XX-XX
+---------------------------------
+
+Bugfixes:
+
+ * Issue #80: demo/md5_ftpd.py should use hashlib module instead of the
+   deprecated md5 module.
+
+
 Version: 0.5.0 - Date: 2008-09-20
 ---------------------------------
 
