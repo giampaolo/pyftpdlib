@@ -1183,10 +1183,12 @@ class TestFtpStoreData(unittest.TestCase):
             self.f1.write(data1)
             self.f1.seek(0)
             self.client.storbinary('stor ' + TESTFN3, self.f1)
+            self.f1.close()
 
             data2 = 'fghil67890' * 100000
+            self.f1 = open(TESTFN, "a+b")
             self.f1.write(data2)
-            self.f1.seek(self.client.size(TESTFN3))
+            self.f1.seek(len(data1))
             self.client.storbinary('appe ' + TESTFN3, self.f1)
 
             self.client.retrbinary("retr " + TESTFN3, self.f2.write)
