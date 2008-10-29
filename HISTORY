@@ -7,6 +7,10 @@ History
 Version: 0.X.X - Date: XXXX-XX-XX
 ---------------------------------
 
+Enhancements:
+
+ * Issue #82: added table of contents in documentation.
+
 Bugfixes:
 
  * Issue #78: the idle timeout of passive data connections gets stopped in case
