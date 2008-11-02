@@ -1176,6 +1176,18 @@ class TestFtpStoreData(unittest.TestCase):
         self.client.sendcmd('rest 10')
         self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'stou')
 
+    def test_stou_orphaned_file(self):
+        # Check that no orphaned file gets left behind when STOU fails.
+        # By logging in as anonymous STOU is denied but the temp file
+        # is created.
+        self.client.login('anonymous', '@nopasswd')
+        try:
+            self.client.sendcmd('stou foo')
+        except:
+            pass
+        for file in os.listdir('.'):
+            self.assert_(not file.startswith('foo.'))
+
     def test_appe(self):
         # TESTFN3 is the remote file name
         try:
