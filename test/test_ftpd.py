@@ -1178,15 +1178,25 @@ class TestFtpStoreData(unittest.TestCase):
 
     def test_stou_orphaned_file(self):
         # Check that no orphaned file gets left behind when STOU fails.
-        # By logging in as anonymous STOU is denied but the temp file
-        # is created.
+        # Even if STOU fails the file is first created and then erased.
+        # Since we can't know the name of the file the best way that
+        # we have to test this case is comparing the content of the
+        # directory before and after STOU has been issued.
+        # Assuming that TESTFN3 is supposed to be a "reserved" file
+        # name we shouldn't get false positives.
+        if os.path.isfile(TESTFN3):
+            os.remove(TESTFN3)
+        # login as a limited user to let STOU fail
         self.client.login('anonymous', '@nopasswd')
+        before = os.listdir('.')
         try:
-            self.client.sendcmd('stou foo')
+            self.client.sendcmd('stou ' + TESTFN3)
         except:
             pass
-        for file in os.listdir('.'):
-            self.assert_(not file.startswith('foo.'))
+        after = os.listdir('.')
+        if before != after:
+            for file in after:
+                self.assert_(not file.startswith(TESTFN3))
 
     def test_appe(self):
         # TESTFN3 is the remote file name
