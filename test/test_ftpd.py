@@ -1188,12 +1188,12 @@ class TestFtpStoreData(unittest.TestCase):
             os.remove(TESTFN3)
         # login as a limited user to let STOU fail
         self.client.login('anonymous', '@nopasswd')
-        before = os.listdir('.')
+        before = os.listdir(HOME)
         try:
             self.client.sendcmd('stou ' + TESTFN3)
         except:
             pass
-        after = os.listdir('.')
+        after = os.listdir(HOME)
         if before != after:
             for file in after:
                 self.assert_(not file.startswith(TESTFN3))
