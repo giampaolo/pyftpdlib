@@ -13,6 +13,9 @@ Enhancements:
 
 Bugfixes:
 
+ * Issue #84: fixed a very rare unhandled exception which can occur when
+   retrieving the first bytes of a corrupted file.
+
  * Issue #78: the idle timeout of passive data connections gets stopped in case
    of rejected "site-to-site" connections.
 

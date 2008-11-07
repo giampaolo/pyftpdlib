@@ -54,6 +54,8 @@ import ftplib
 import random
 import warnings
 import sys
+import errno
+import StringIO
 
 from pyftpdlib import ftpserver
 
@@ -927,6 +929,43 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.f2.seek(0)
         self.assertEqual(hash(data), hash (self.f2.read()))
 
+    def test_unforeseen_retr_event(self):
+        # Emulate a case where we RETR a corrupted file from the
+        # server, where "corrupted" means that something very
+        # unexpected just happened (e.g. a physical unit gets
+        # disconnected).
+        # When such an event occurs we expect the server to not
+       	# crash and to return a message to inform the client about
+        # what actually happened.
+        # To do so we temporarily replace open() with a "dummy" one
+        # raising exception when read() gets called.
+
+        class BrokenFileObject(StringIO.StringIO):
+            """A dummy file-like object which raises exception every
+            time it's going to be read.
+            """
+            def __init__(self, filename, mode):
+                StringIO.StringIO.__init__(self)
+                self.name = filename
+            def read(self, data):
+                # it doesn't really matter what the real problem is, we
+                # just want IOError to be raised
+                raise IOError(errno.ENOSPC, "No space left on device")
+
+        _open = ftpserver.AbstractedFS.open
+        try:
+            ftpserver.AbstractedFS.open = BrokenFileObject
+            try:
+                self.client.retrbinary('retr ' + TESTFN, lambda x: x)
+            except ftplib.error_temp, err:
+                self.assert_("No space left on device" in str(err))
+                # make sure client hasn't been disconnected
+                self.client.sendcmd('noop')
+                return
+            self.fail("Exception not raised")
+        finally:
+            ftpserver.AbstractedFS.open = _open
+
     def _test_listing_cmds(self, cmd):
         """Tests common to LIST NLST and MLSD commands."""
         # assume that no argument has the same meaning of "/"
@@ -1265,6 +1304,39 @@ class TestFtpStoreData(unittest.TestCase):
         self.f2.seek(0)
         self.assertEqual(hash(self.f1.read()), hash(self.f2.read()))
         self.client.delete(TESTFN3)
+
+    def test_unforeseen_stor_event(self):
+        # Emulate a case where we try to STOR a file on a server
+        # which does not have enough space on the disk.
+        # When such an event occurs we expect the server to not
+       	# unexpectedly crash and to return a message to inform the
+        # client about what actually happened.
+        # To do so we temporarily replace open() with a "dummy" one
+        # raising exception when write() gets called.
+
+        class BrokenFileObject(StringIO.StringIO):
+            """A dummy file-like object which raises exception every
+            time it's going to be written.
+            """
+            def __init__(self, filename, mode):
+                StringIO.StringIO.__init__(self)
+                self.name = filename
+            def write(self, data):
+                raise IOError(errno.ENOSPC, "No space left on device")
+
+        _open = ftpserver.AbstractedFS.open
+        try:
+            ftpserver.AbstractedFS.open = BrokenFileObject
+            try:
+                self.client.storbinary('stor ' + TESTFN3, StringIO.StringIO('foo'))
+            except ftplib.error_temp, err:
+                self.assert_("No space left on device" in str(err))
+                # make sure client hasn't been disconnected
+                self.client.sendcmd('noop')
+                return
+            self.fail("Exception not raised")
+        finally:
+            ftpserver.AbstractedFS.open = _open
 
 
 class TestTimeouts(unittest.TestCase):

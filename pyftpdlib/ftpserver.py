@@ -1861,15 +1861,19 @@ class FTPHandler(asynchat.async_chat):
         # check for data to send
         if self._out_dtp_queue is not None:
             data, isproducer, file = self._out_dtp_queue
+            self._out_dtp_queue = None
             if file:
                 self.data_channel.file_obj = file
-            if not isproducer:
-                self.data_channel.push(data)
-            else:
-                self.data_channel.push_with_producer(data)
-            if self.data_channel is not None:
-                self.data_channel.close_when_done()
-            self._out_dtp_queue = None
+            try:
+                if not isproducer:
+                    self.data_channel.push(data)
+                else:
+                    self.data_channel.push_with_producer(data)
+                if self.data_channel is not None:
+                    self.data_channel.close_when_done()
+            except:
+                # dealing with this exception is up to DTP (see bug #84)
+                self.data_channel.handle_error()
 
         # check for data to receive
         elif self._in_dtp_queue is not None:
@@ -1911,12 +1915,16 @@ class FTPHandler(asynchat.async_chat):
             self.respond("125 Data connection already open. Transfer starting.")
             if file:
                 self.data_channel.file_obj = file
-            if not isproducer:
-                self.data_channel.push(data)
-            else:
-                self.data_channel.push_with_producer(data)
-            if self.data_channel is not None:
-                self.data_channel.close_when_done()
+            try:
+                if not isproducer:
+                    self.data_channel.push(data)
+                else:
+                    self.data_channel.push_with_producer(data)
+                if self.data_channel is not None:
+                    self.data_channel.close_when_done()
+            except:
+                # dealing with this exception is up to DTP (see bug #84)
+                self.data_channel.handle_error()
         else:
             self.respond("150 File status okay. About to open data connection.")
             self._out_dtp_queue = (data, isproducer, file)
