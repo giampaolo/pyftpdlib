@@ -654,7 +654,7 @@ class PassiveDTP(asyncore.dispatcher):
         self.close()
 
     def close(self):
-        if self.idler and not self.idler.cancelled:
+        if self.idler is not None and not self.idler.cancelled:
             self.idler.cancel()
         asyncore.dispatcher.close(self)
 
@@ -699,7 +699,7 @@ class ActiveDTP(asyncore.dispatcher):
 
     def handle_connect(self):
         """Called when connection is established."""
-        if self.idler and not self.idler.cancelled:
+        if self.idler is not None and not self.idler.cancelled:
             self.idler.cancel()
         self.cmd_channel.respond('200 Active data connection established.')
         # delegate such connection to DTP handler
@@ -730,7 +730,7 @@ class ActiveDTP(asyncore.dispatcher):
         self.close()
 
     def close(self):
-        if self.idler and not self.idler.cancelled:
+        if self.idler is not None and not self.idler.cancelled:
             self.idler.cancel()
         asyncore.dispatcher.close(self)
 
@@ -1005,7 +1005,7 @@ class DTPHandler(asyncore.dispatcher):
             self._closed = True
             if self.file_obj is not None and not self.file_obj.closed:
                 self.file_obj.close()
-            if self.idler and not self.idler.cancelled:
+            if self.idler is not None and not self.idler.cancelled:
                 self.idler.cancel()
             asyncore.dispatcher.close(self)
             self.cmd_channel.on_dtp_close()
@@ -1685,7 +1685,7 @@ class FTPHandler(asynchat.async_chat):
         corresponding method (e.g. for received command "MKD pathname",
         ftp_MKD() method is called with "pathname" as the argument).
         """
-        if self.idler and not self.idler.cancelled:
+        if self.idler is not None and not self.idler.cancelled:
             self.idler.reset()
 
         line = ''.join(self._in_buffer)
@@ -1831,7 +1831,7 @@ class FTPHandler(asynchat.async_chat):
             del self._out_dtp_queue
             del self._in_dtp_queue
 
-            if self.idler and not self.idler.cancelled:
+            if self.idler is not None and not self.idler.cancelled:
                 self.idler.cancel()
 
             # remove client IP address from ip map
@@ -1855,7 +1855,7 @@ class FTPHandler(asynchat.async_chat):
         self.data_server = None
 
         # stop the idle timer as long as the data transfer is not finished
-        if self.idler and not self.idler.cancelled:
+        if self.idler is not None and not self.idler.cancelled:
             self.idler.cancel()
 
         # check for data to send
