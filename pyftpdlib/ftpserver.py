@@ -147,7 +147,7 @@ __web__     = 'http://code.google.com/p/pyftpdlib/'
 proto_cmds = {
     # cmd : (perm, auth,  arg,   path,  help)
     'ABOR': (None, True,  False, False, 'Syntax: ABOR (abort transfer).'),
-    'ALLO': (None, True,  True,  False, 'Syntax: ALLO <SP> bytes (obsolete; allocate storage).'),
+    'ALLO': (None, True,  True,  False, 'Syntax: ALLO <SP> bytes (noop; allocate storage).'),
     'APPE': ('a',  True,  True,  True,  'Syntax: APPE <SP> file-name (append data to an existent file).'),
     'CDUP': ('e',  True,  False, True,  'Syntax: CDUP (go to parent directory).'),
     'CWD' : ('e',  True,  None,  True,  'Syntax: CWD [<SP> dir-name] (change current working directory).'),
@@ -160,7 +160,7 @@ proto_cmds = {
     'MDTM': (None, True,  True,  True,  'Syntax: MDTM [<SP> file-name] (get last modification time).'),
     'MLSD': ('l',  True,  None,  True,  'Syntax: MLSD [<SP> dir-name] (list files in a machine-processable form)'),
     'MLST': (None, True,  None,  True,  'Syntax: MLST [<SP> path-name] (show a path in a machine-processable form)'),
-    'MODE': (None, True,  True,  False, 'Syntax: MODE <SP> mode (obsolete; set data transfer mode).'),
+    'MODE': (None, True,  True,  False, 'Syntax: MODE <SP> mode (noop; set data transfer mode).'),
     'MKD' : ('m',  True,  True,  True,  'Syntax: MDK <SP> dir-name (create directory).'),
     'NLST': ('l',  True,  None,  True,  'Syntax: NLST [<SP> path-name] (list files in a compact form).'),
     'NOOP': (None, False, False, False, 'Syntax: NOOP (just do nothing).'),
@@ -180,7 +180,7 @@ proto_cmds = {
     'STAT': ('l',  False, None,  True,  'Syntax: STAT [<SP> path name] (status information [list files]).'),
     'STOR': ('w',  True,  True,  True,  'Syntax: STOR <SP> file-name (store a file).'),
     'STOU': ('w',  True,  None,  True,  'Syntax: STOU [<SP> file-name] (store a file with a unique name).'),
-    'STRU': (None, True,  True,  False, 'Syntax: STRU <SP> type (obsolete; set file structure).'),
+    'STRU': (None, True,  True,  False, 'Syntax: STRU <SP> type (noop; set file structure).'),
     'SYST': (None, False, False, False, 'Syntax: SYST (get operating system type).'),
     'TYPE': (None, True,  True,  False, 'Syntax: TYPE <SP> [A | I] (set transfer type).'),
     'USER': (None, False, True,  False, 'Syntax: USER <SP> user-name (set username).'),
@@ -2739,21 +2739,22 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_TYPE(self, line):
         """Set current type data type to binary/ascii"""
-        line = line.upper()
-        if line in ("A", "AN", "A N"):
+        type = line.upper().replace(' ', '')
+        if type in ("A", "AN"):
             self.respond("200 Type set to: ASCII.")
             self.current_type = 'a'
-        elif line in ("I", "L8", "L 8"):
+        elif type in ("I", "L8"):
             self.respond("200 Type set to: Binary.")
             self.current_type = 'i'
         else:
             self.respond('504 Unsupported type "%s".' %line)
 
     def ftp_STRU(self, line):
-        """Set file structure ("F" is the only one supported as no-op)."""
-        if line.upper() == 'F':
+        """Set file structure ("F" is the only one supported (noop))."""
+        stru = line.upper()
+        if stru == 'F':
             self.respond('200 File transfer structure set to: F.')
-        elif line.upper() in ('P', 'R'):
+        elif stru in ('P', 'R'):
            # R is required in minimum implementations by RFC-959, 5.1.
            # RFC-1123, 4.1.2.13, amends this to only apply to servers
            # whose file systems support record structures, but also
@@ -2769,12 +2770,14 @@ class FTPHandler(asynchat.async_chat):
             self.respond('501 Unrecognized STRU type.')
 
     def ftp_MODE(self, line):
-        """Set data transfer mode (obsolete)"""
-        # obsolete (backward compatibility with older ftp clients)
-        if line in ('s', 'S'):
+        """Set data transfer mode ("S" is the only one supported (noop))."""
+        mode = line.upper()
+        if mode == 'S':
             self.respond('200 Transfer mode set to: S')
-        else:
+        elif mode in ('B', 'C'):
             self.respond('504 Unimplemented MODE type.')
+        else:
+            self.respond('501 Unrecognized MODE type.')
 
     def ftp_STAT(self, path):
         """Return statistics about current ftp session. If an argument
@@ -2884,8 +2887,8 @@ class FTPHandler(asynchat.async_chat):
         self.respond("215 UNIX Type: L8")
 
     def ftp_ALLO(self, line):
-        """Allocate bytes for storage (obsolete)."""
-        # obsolete (always respond with 202)
+        """Allocate bytes for storage (noop)."""
+        # not necessary (always respond with 202)
         self.respond("202 No storage allocation necessary.")
 
     def ftp_HELP(self, line):
