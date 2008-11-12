@@ -13,9 +13,6 @@ Enhancements:
 
 Bugfixes:
 
- * Issue #84: fixed a very rare unhandled exception which can occur when
-   retrieving the first bytes of a corrupted file.
-
  * Issue #78: the idle timeout of passive data connections gets stopped in case
    of rejected "site-to-site" connections.
 
@@ -23,6 +20,12 @@ Bugfixes:
    deprecated md5 module.
 
  * Issue #81: fixed some tests which failed on SunOS.
+
+ * Issue #84: fixed a very rare unhandled exception which can occur when
+   retrieving the first bytes of a corrupted file.
+
+ * Issue #89: "TYPE AN" was erroneously treated as synonym for "TYPE A" when
+   "TYPE L7" should have been used instead.
 
 
 Version: 0.5.0 - Date: 2008-09-20

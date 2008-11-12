@@ -644,6 +644,8 @@ class TestFtpDummyCmds(unittest.TestCase):
     def test_type(self):
         self.client.sendcmd('type a')
         self.client.sendcmd('type i')
+        self.client.sendcmd('type l7')
+        self.client.sendcmd('type l8')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'type ?!?')
 
     def test_stru(self):

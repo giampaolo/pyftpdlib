@@ -2740,7 +2740,7 @@ class FTPHandler(asynchat.async_chat):
     def ftp_TYPE(self, line):
         """Set current type data type to binary/ascii"""
         type = line.upper().replace(' ', '')
-        if type in ("A", "AN"):
+        if type in ("A", "L7"):
             self.respond("200 Type set to: ASCII.")
             self.current_type = 'a'
         elif type in ("I", "L8"):
