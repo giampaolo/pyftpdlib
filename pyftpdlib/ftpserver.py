@@ -2750,12 +2750,22 @@ class FTPHandler(asynchat.async_chat):
             self.respond('504 Unsupported type "%s".' %line)
 
     def ftp_STRU(self, line):
-        """Set file structure (obsolete)."""
-        # obsolete (backward compatibility with older ftp clients)
-        if line in ('f','F'):
+        """Set file structure ("F" is the only one supported as no-op)."""
+        if line.upper() == 'F':
             self.respond('200 File transfer structure set to: F.')
-        else:
+       # - R is required in minimum implementations by RFC-959, 5.1.
+       # RFC-1123, 4.1.2.13, amends this to only apply to servers whose
+       # file systems support record structures, but also suggests that
+       # such a server "may still accept files with STRU R, recording
+       # the byte stream literally".
+       # Should we accept R but with no operational difference from F?
+       # proftpd and wu-ftpd don't accept STRU R. We just do the same.
+       #
+       # - RFC-1123 recommends against implementing P.
+        elif line.upper() in ('P', 'R'):
             self.respond('504 Unimplemented STRU type.')
+        else:
+            self.respond('501 Unrecognized STRU type.')
 
     def ftp_MODE(self, line):
         """Set data transfer mode (obsolete)"""
