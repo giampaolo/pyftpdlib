@@ -2445,9 +2445,7 @@ class FTPHandler(asynchat.async_chat):
         except (ValueError, OverflowError):
             self.respond("501 Invalid parameter.")
         else:
-            self.respond("350 Restarting at position %s. " \
-                        "Now use RETR/STOR for resuming." %marker)
-            self.log("OK REST %s." %marker)
+            self.respond("350 Restarting at position %s." %marker)
             self.restart_position = marker
 
     def ftp_ABOR(self, line):
