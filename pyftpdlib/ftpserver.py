@@ -2669,7 +2669,10 @@ class FTPHandler(asynchat.async_chat):
             self.respond('550 %s.' %why)
         else:
             self.log('OK MKD "%s".' %line)
-            self.respond("257 Directory created.")
+            # The 257 response is supposed to include the directory
+            # name and in case it contains embedded double-quotes
+            # they must be doubled (see RFC-959, chapter 7, appendix 2).
+            self.respond('257 "%s" directory created.' %line.replace('"', '""'))
 
     def ftp_RMD(self, path):
         """Remove the specified directory."""

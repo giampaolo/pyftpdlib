@@ -24,6 +24,8 @@ Bugfixes:
  * Issue #84: fixed a very rare unhandled exception which can occur when
    retrieving the first bytes of a corrupted file.
 
+ * Issue #85: MKD response is supposed to include the directory name.
+
  * Issue #89: "TYPE AN" was erroneously treated as synonym for "TYPE A" when
    "TYPE L7" should have been used instead.
 
