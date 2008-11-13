@@ -860,6 +860,8 @@ class TestFtpFsOperations(unittest.TestCase):
 
     def test_mdtm(self):
         self.client.sendcmd('mdtm ' + self.tempfile)
+        bogus = os.path.basename(tempfile.mktemp(dir=HOME))
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'mdtm ' + bogus)
         # make sure we can't use mdtm against directories
         try:
             self.client.sendcmd('mdtm ' + self.tempdir)
@@ -867,6 +869,25 @@ class TestFtpFsOperations(unittest.TestCase):
             self.failUnless("not retrievable" in str(err))
         else:
             self.fail('Exception not raised')
+
+    def test_unforseen_mdtm_event(self):
+        # Emulate a case where the file last modification time is prior
+        # to year 1970. This most likely will never happen unless
+        # someone specifically force the last modification time of a
+        # file in some way.
+        # To do so we temporarily override os.path.getmtime so that it
+        # returns a negative value. It causes time.localtime/gmtime
+        # to raise a ValueError exception which is supposed to be
+        # handled by server.
+        _getmtime = ftpserver.AbstractedFS.getmtime
+        try:
+            ftpserver.AbstractedFS.getmtime = lambda x, y: -1
+            self.assertRaises(ftplib.error_perm, self.client.sendcmd,
+                              'mdtm ' + self.tempfile)
+            # make sure client hasn't been disconnected
+            self.client.sendcmd('noop')
+        finally:
+            ftpserver.AbstractedFS.getmtime = _getmtime
 
     def test_size(self):
         self.client.sendcmd('type a')

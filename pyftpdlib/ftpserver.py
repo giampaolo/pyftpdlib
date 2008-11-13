@@ -1374,11 +1374,12 @@ class AbstractedFS:
                 # bogus values for owner and group
                 uname = "owner"
                 gname = "group"
-            # stat.st_mtime could fail (-1) if last mtime is too old
-            # in which case we return the local time as last mtime
             try:
                 mtime = time.strftime("%b %d %H:%M", time.localtime(st.st_mtime))
             except ValueError:
+                # It could be raised if last mtime happens to be too
+                # old (prior to year 1970) in which case we return
+                # the current time as last mtime.
                 mtime = time.strftime("%b %d %H:%M")
             # if the file is a symlink, resolve it, e.g. "symlink -> realfile"
             if stat.S_ISLNK(st.st_mode) and hasattr(os, 'readlink'):
@@ -1452,8 +1453,9 @@ class AbstractedFS:
                 try:
                     modify = 'modify=%s;' %time.strftime("%Y%m%d%H%M%S",
                                            time.localtime(st.st_mtime))
+                # it could be raised if last mtime happens to be too old
+                # (prior to year 1970)
                 except ValueError:
-                    # stat.st_mtime could fail (-1) if last mtime is too old
                     modify = ""
             if 'create' in facts:
                 # on Windows we can provide also the creation time
@@ -2654,13 +2656,18 @@ class FTPHandler(asynchat.async_chat):
             self.respond("550 %s." %why)
             return
         try:
-            lmt = self.run_as_current_user(self.fs.getmtime, path)
-        except OSError, err:
-            why = _strerror(err)
+            secs = self.run_as_current_user(self.fs.getmtime, path)
+            lmt = time.strftime("%Y%m%d%H%M%S", time.localtime(secs))
+        except (OSError, ValueError), err:
+            if isinstance(err, OSError):
+                why = _strerror(err)
+            else:
+                # It could happen if file's last modification time
+                # happens to be too old (prior to year 1970)
+                why = "Can't determine file's last modification time"
             self.log('FAIL MDTM "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
         else:
-            lmt = time.strftime("%Y%m%d%H%M%S", time.localtime(lmt))
             self.respond("213 %s" %lmt)
             self.log('OK MDTM "%s".' %line)
 
