@@ -2438,6 +2438,9 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_REST(self, line):
         """Restart a file transfer from a previous mark."""
+        if self.current_type == 'a':
+            self.respond('501 Resuming transfers not allowed in ASCII mode.')
+            return
         try:
             marker = int(line)
             if marker < 0:

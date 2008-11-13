@@ -678,10 +678,14 @@ class TestFtpDummyCmds(unittest.TestCase):
 
     def test_rest(self):
         # test error conditions only;
-        # restored data-transfer is tested later
+        # resumed data transfers are tested later
+        self.client.sendcmd('type i')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest str')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest -1')
+        # REST is not supposed to be allowed in ASCII mode
+        self.client.sendcmd('type a')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest 10')
 
     def test_opts_feat(self):
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'opts mlst bad_fact')
@@ -1219,6 +1223,7 @@ class TestFtpStoreData(unittest.TestCase):
 
     def test_stou_rest(self):
         # watch for STOU preceded by REST, which makes no sense.
+        self.client.sendcmd('type i')
         self.client.sendcmd('rest 10')
         self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'stou')
 
@@ -1270,6 +1275,7 @@ class TestFtpStoreData(unittest.TestCase):
 
     def test_appe_rest(self):
         # watch for APPE preceded by REST, which makes no sense.
+        self.client.sendcmd('type i')
         self.client.sendcmd('rest 10')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'appe x')
 

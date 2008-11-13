@@ -28,6 +28,8 @@ Bugfixes:
 
  * Issue #87: SIZE should be rejected when the current TYPE is ASCII.
 
+ * Issue #88: REST should be rejected when the current TYPE is ASCII.
+
  * Issue #89: "TYPE AN" was erroneously treated as synonym for "TYPE A" when
    "TYPE L7" should have been used instead.
 
