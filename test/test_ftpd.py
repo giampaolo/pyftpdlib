@@ -876,9 +876,9 @@ class TestFtpFsOperations(unittest.TestCase):
         # someone specifically force the last modification time of a
         # file in some way.
         # To do so we temporarily override os.path.getmtime so that it
-        # returns a negative value referring to a year prior to 1970. 
+        # returns a negative value referring to a year prior to 1970.
         # It causes time.localtime/gmtime to raise a ValueError exception
-	# which is supposed to be handled by server.
+        # which is supposed to be handled by server.
         _getmtime = ftpserver.AbstractedFS.getmtime
         try:
             ftpserver.AbstractedFS.getmtime = lambda x, y: -9000000000
