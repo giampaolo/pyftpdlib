@@ -1378,7 +1378,7 @@ class AbstractedFS:
                 mtime = time.strftime("%b %d %H:%M", time.localtime(st.st_mtime))
             except ValueError:
                 # It could be raised if last mtime happens to be too
-                # old (prior to year 1970) in which case we return
+                # old (prior to year 1900) in which case we return
                 # the current time as last mtime.
                 mtime = time.strftime("%b %d %H:%M")
             # if the file is a symlink, resolve it, e.g. "symlink -> realfile"
@@ -1454,7 +1454,7 @@ class AbstractedFS:
                     modify = 'modify=%s;' %time.strftime("%Y%m%d%H%M%S",
                                            time.localtime(st.st_mtime))
                 # it could be raised if last mtime happens to be too old
-                # (prior to year 1970)
+                # (prior to year 1900)
                 except ValueError:
                     modify = ""
             if 'create' in facts:
@@ -2663,7 +2663,7 @@ class FTPHandler(asynchat.async_chat):
                 why = _strerror(err)
             else:
                 # It could happen if file's last modification time
-                # happens to be too old (prior to year 1970)
+                # happens to be too old (prior to year 1900)
                 why = "Can't determine file's last modification time"
             self.log('FAIL MDTM "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
