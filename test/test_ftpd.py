@@ -814,7 +814,9 @@ class TestFtpFsOperations(unittest.TestCase):
 
     def test_mkd(self):
         tempdir = os.path.basename(tempfile.mktemp(dir=HOME))
-        self.client.mkd(tempdir)
+        dirname = self.client.mkd(tempdir)
+        # the 257 response is supposed to include the absolute dirname
+        self.assertEqual(dirname, '/' + tempdir)
         # make sure we can't create directories which already exist
         # (probably not really necessary);
         # let's use a try/except statement to avoid leaving behind
