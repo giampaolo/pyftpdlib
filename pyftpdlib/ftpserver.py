@@ -2605,23 +2605,25 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_SIZE(self, path):
         """Return size of file in a format suitable for using with
-        RESTart as defined in RFC-3659.
+        RESTart as defined in RFC-3659."""
 
-        Implementation note:
-        properly handling the SIZE command when TYPE ASCII is used would
-        require to scan the entire file to perform the ASCII translation
-        logic (file.read().replace(os.linesep, '\r\n')) and then
-        calculating the len of such data which may be different than
-        the actual size of the file on the server.  Considering that
-        calculating such result could be very resource-intensive it
-        could be easy for a malicious client to try a DoS attack, thus
-        we do not perform the ASCII translation.
-
-        However, clients in general should not be resuming downloads in
-        ASCII mode.  Resuming downloads in binary mode is the recommended
-        way as specified in RFC-3659.
-        """
+        # Implementation note: properly handling the SIZE command when
+        # TYPE ASCII is used would require to scan the entire file to
+        # perform the ASCII translation logic
+        # (file.read().replace(os.linesep, '\r\n')) and then calculating
+        # the len of such data which may be different than the actual
+        # size of the file on the server.  Considering that calculating
+        # such result could be very resource-intensive and also dangerous
+        # (DoS) we reject SIZE when the current TYPE is ASCII.
+        # However, clients in general should not be resuming downloads
+        # in ASCII mode.  Resuming downloads in binary mode is the
+        # recommended way as specified in RFC-3659.
         line = self.fs.fs2ftp(path)
+        if self.current_type == 'a':
+            why = "SIZE not allowed in ASCII mode"
+            self.log('FAIL SIZE "%s". %s.' %(line, why))
+            self.respond("550 %s." %why)
+            return
         if self.fs.isdir(path):
             why = "%s is not retrievable" %line
             self.log('FAIL SIZE "%s". %s.' %(line, why))

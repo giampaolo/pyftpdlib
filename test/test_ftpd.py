@@ -865,6 +865,9 @@ class TestFtpFsOperations(unittest.TestCase):
             self.fail('Exception not raised')
 
     def test_size(self):
+        self.client.sendcmd('type a')
+        self.assertRaises(ftplib.error_perm, self.client.size, self.tempfile)
+        self.client.sendcmd('type i')
         self.client.size(self.tempfile)
         # make sure we can't use size against directories
         try:
