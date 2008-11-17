@@ -33,8 +33,11 @@ Bugfixes:
  * Issue #89: "TYPE AN" was erroneously treated as synonym for "TYPE A" when
    "TYPE L7" should have been used instead.
 
- * Issue #90: an unhandled exception could occur when using MDTM against a file
-   modified before year 1970.
+ * Issue #90: an unhandled exception can occur when using MDTM against a file
+   modified before year 1900.
+
+ * Issue #91: an unhandled exception can occur in case accept() returns None
+   instead of a socket (it happens sometimes).
 
 
 Version: 0.5.0 - Date: 2008-09-20
