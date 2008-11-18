@@ -829,7 +829,10 @@ class DTPHandler(asyncore.dispatcher):
          - (str) type: current transfer type, 'a' (ASCII) or 'i' (binary).
         """
         if type == 'a':
-            self.data_wrapper = lambda x: x.replace('\r\n', os.linesep)
+            if os.linesep == '\r\n':
+                self.data_wrapper = lambda x: x
+            else:
+                self.data_wrapper = lambda x: x.replace('\r\n', os.linesep)
         elif type == 'i':
             self.data_wrapper = lambda x: x
         else:
@@ -1032,7 +1035,10 @@ class FileProducer:
         self.done = False
         self.file = file
         if type == 'a':
-            self.data_wrapper = lambda x: x.replace(os.linesep, '\r\n')
+            if os.linesep == '\r\n':
+                self.data_wrapper = lambda x: x
+            else:
+                self.data_wrapper = lambda x: x.replace(os.linesep, '\r\n')
         elif type == 'i':
             self.data_wrapper = lambda x: x
         else:

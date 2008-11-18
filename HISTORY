@@ -11,6 +11,9 @@ Enhancements:
 
  * Issue #82: added table of contents in documentation.
 
+ * Issue #92: ASCII transfers are now 200% faster on those systems using
+   "\r\n" as line separator (tipically Windows).
+
 Bugfixes:
 
  * Issue #78: the idle timeout of passive data connections gets stopped in case
