@@ -12,7 +12,7 @@ Enhancements:
  * Issue #82: added table of contents in documentation.
 
  * Issue #92: ASCII transfers are now 200% faster on those systems using
-   "\r\n" as line separator (tipically Windows).
+   "\r\n" as line separator (typically Windows).
 
 Bugfixes:
 
@@ -46,7 +46,7 @@ Bugfixes:
 Version: 0.5.0 - Date: 2008-09-20
 ---------------------------------
 
-Major enhancements:
+Enhancements:
 
  * Issue #72: pyftpdlib now provides configurable idle timeouts to disconnect
    client after a long time of inactivity.
@@ -74,23 +74,38 @@ Bugfixes:
 
  * Issue #77: incorrect OOB data management on FreeBSD.
 
+API changes since 0.4.0:
+
+ * FTPHandler, DTPHandler, PassiveDTP and ActiveDTP classes gained a new timeout
+   class attribute.
+
+ * DummyAuthorizer class gained a new override_perm method.
+
+ * A new class called CallLater has been added.
+
+ * AbstractedFS.get_stat_dir method has been removed.
+
 
 Version: 0.4.0 - Date: 2008-05-16
 ---------------------------------
 
-Major enhancements:
+Enhancements:
 
  * Issue #65: assume the id of real users when using system dependent
    authorizers.
+
  * Issue #67: added IPv6 support.
 
 Bugfixes:
 
  * Issue #64: issue when authenticating as anonymous user using user-defined
    authorizers.
+
  * Issue #66: WinNTAuthorizer does not determine the real user home directory.
+
  * Issue #69: DummyAuthorizer incorrectly uses class attribute instead of
    instance attribute for user_table dictionary.
+
  * Issue #70: wrong NOOP response code.
 
 API changes since 0.3.0:
@@ -103,51 +118,70 @@ API changes since 0.3.0:
 Version: 0.3.0 - Date: 2008-01-17
 ---------------------------------
 
-Major enhancements:
+Enhancements:
+
+ * Issue #42: implemented FEAT command defined in RFC-2389.
 
  * Issue #48: real permissions, owner, and group for files on UNIX platforms are
    now provided when processing LIST.
+
  * Issue #51: added the new demo/throttled_ftpd.py script.
+
+ * Issue #52: implemented MLST and MLSD commands defined in RFC-3659.
+
+ * Issue #58: implemented OPTS command defined in RFC-2389.
+
  * Issue #59: iterators are now used for calculating requests requiring long
    time to complete (LIST and MLSD commands).
+
  * Issue #61: extended the set of assignable user permissions.
-
-RFC-related enhancements:
-
- * Issue #42: implemented FEAT command defined in RFC-2389.
- * Issue #52: implemented MLST and MLSD commands defined in RFC-3659.
- * Issue #58: implemented OPTS command define in RFC-2389.
 
 Bugfixes:
 
  * Issue #41: error occurred on quit if user was not yet authenticated.
+
  * Issue #43: hidden the server identifier when returning STAT response.
+
  * Issue #44: a wrong response code was given on PORT if the data connection
    attempt failed.
+
  * Issue #45: a wrong response code was given on HELP if argument was incorrect.
+
  * Issue #46: a wrong response code was given on PASV if remote peer had a
    foreign internet address.
+
  * Issue #47: can't use FTPServer.max_cons option with Python 2.3.
+
  * Issue #48: problem when LISTing "broken" symbolic links.
+
  * Issue #49: data channel did not respect the outgoing data buffer.
+
  * Issue #53: received strings having trailing white spaces was erroneously
    stripped.
+
  * Issue #54: LIST/NLST/STAT outputs are now sorted by file name.
- * Issue #55: path traversal vulnerability in case of symlinks.
+
+ * Issue #55: path traversal vulnerability in case of symbolic links escaping
+   user's home directory.
+
  * Issue #56: can't rename broken symbolic links.
+
  * Issue #57: wrong LIST/NLST behavior when processing symbolic links.
+
  * Issue #60: error occurred in case of bad formatted PORT command requests.
 
 API changes since 0.2.0:
 
  * New IteratorProducer and BufferedIteratorProducer classes have been added.
+
  * DummyAuthorizer class changes:
       * The permissions management has been changed and the set of available
         permissions have been extended (see Issue #61). add_user() method
         now accepts "eladfm" permissions beyond the old "r" and "w".
       * r_perm() and w_perm() methods have been removed.
       * New has_perm() and get_perms() methods have been added.
-* AbstractedFS class changes:
+
+ * AbstractedFS class changes:
       * normalize() method has been renamed in ftpnorm().
       * translate() method has been renamed in ftp2fs().
       * New methods: fs2ftp(), stat(), lstat(), islink(), realpath(), lexists(),
@@ -155,85 +189,117 @@ API changes since 0.2.0:
       * get_list_dir(), get_stat_dir() and format_list() methods now return an
         iterator object instead of a string.
       * format_list() method has a new "ignore_err" keyword argument.
-* global debug() function has been removed.
+
+ * global debug() function has been removed.
 
 
 Version: 0.2.0 - Date: 2007-09-17
-----------------------------------
+---------------------------------
 
 Major enhancements:
 
- * Issue #5: provided a way to configure / limit the number of maximum
-   acceptable connections.
- * Issue #5: provided a way to configure / limit the maximum number of clients
-   which may be connected from the same IP address.
+ * Issue #5: provided two new attributes to limit the number of maximum
+   acceptable connections and the maximum number of clients which may be
+   connected from the same IP address.
+
  * Issue #36: added support for FXP site-to-site transfer to allow transfers
    between FTP servers.
+
  * Issue #39: added NAT/Firewall support with PASV (passive) mode connections
    for FTP servers behind NAT.
+
  * Issue #40: provided new FTPHandler.passive_ports attribute to control what
    ports to use for passive data-transfers.
 
 RFC-related enhancements:
 
- * Issue #6: accept and process TYPE AN and TYPE L8 commands.
+ * Issue #6: accept TYPE AN and TYPE L8 as synonyms for TYPE ASCII and TYPE
+   Binary.
+
  * Issue #7: a new USER command can now be entered at any point to begin the
    login sequence again.
+
  * Issue #8: be compliant with STOU output format defined in RFC 1123.
+
  * Issue #10: HELP command arguments are now accepted.
+
  * Issue #12: 554 error response is now returned on RETR/STOR if REST fails.
- * Issue #15: STAT used with an argument return directory LISTing over the
+
+ * Issue #15: STAT used with an argument now returns directory LISTing over the
    command channel.
 
 Security enhancements:
 
  * Issue #3: stop buffering when extremely long lines are received.
- * Issue #11: reject data connection when a privileged port is specified on
-   PORT command.
- * Issue #25: limit the number of attempts to find a unique filename for
+
+ * Issue #11: data connection is now rejected in case a privileged port is
+   specified in PORT command.
+
+ * Issue #25: limited the number of attempts to find a unique filename by using
    STOU command.
 
 Usability enhancements:
 
  * Provided an overridable attribute to easily set number of maximum login
    attempts before disconnecting.
+
  * Docstrings are now provided for almost every method and function.
+
  * Issue #30: command help strings quality improved by adding command
    syntaxes.
+
  * Issue #31: a compact list of recognized commands is now provided on HELP.
+
  * Issue #32: we now provide a detailed error message on connection and file
    system errors.
+
  * Issue #38: anonymous user write access can now be optionally granted.
 
 Test suite enhancements:
 
  * File creation/removal moved into setUp and tearDown methods to avoid leaving
    behind orphaned temporary files in the event of a test suite failure.
- * Issue #7: added tests for a new USER provided while already
-   authenticated.
+
+ * Issue #7: added tests for a new USER provided while already authenticated.
+
  * Issue #7: added tests for REIN while a transfer is in progress.
+
  * Issue #28: added tests for ABOR command.
 
 Bugfixes:
 
  * Issue #4: socket's "reuse_address" feature was used after the socket's
    binding.
+
  * Issue #9: corrected path traversal vulnerability affecting file-system path
    translations.
+
  * Issue #14: a wrong response code was returned on CDUP.
- * Issue #17: reject SIZE if pathname is a directory.
+
+ * Issue #17: reject SIZE if path is not a regular file.
+
  * Issue #18: a wrong ABOR response code type was returned.
+
  * Issue #19: watch for STOU preceded by REST which makes no sense.
+
  * Issue #20: "attempted login" counter wasn't incremented on wrong username.
+
  * Issue #21: STAT wasn't permitted if user wasn't authenticated yet.
+
  * Issue #22: corrected memory leaks occurring on KeyboardInterrupt/SIGTERM.
+
  * Issue #23: PASS wasn't rejected when user was already authenticated.
+
  * Issue #24: can't use os.strerror() on pythonCE.
+
  * Issue #24: problem occurred on Windows when using '\\' as user's home
    directory.
+
  * Issue #26: used select() by default instead of poll() because of an asyncore
    module's defect.
+
  * Issue #33: some FTPHandler class attributes wasn't resetted on REIN.
+
  * Issue #35: watch for APPE preceded by REST which makes no sense.
 
 
@@ -241,12 +307,16 @@ Version: 0.1.1 - Date: 2007-03-27
 ----------------------------------
 
  * Port selection on PASV command has been randomized to prevent a remote user
-   to know how many data connections are in progress on the server.
+   to guess how many data connections are in progress on the server.
+
  * Fixed bug in demo/unix_ftpd.py script (reported by Roger Erens).
+
  * Little modification to add_anonymous method of dummy_authorizer class.
- * ftp_server.serve_forever automatically re-use address if current system is
-   unix.
- * License changed into a MIT style one.
+
+ * ftp_server.serve_forever now automatically re-use address if current system
+   is posix.
+
+ * License changed to MIT.
 
 
 Version: 0.1.0 - Date: 2007-02-26
