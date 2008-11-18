@@ -933,6 +933,29 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.f2.seek(0)
         self.assertEqual(hash(data), hash(self.f2.read()))
 
+    def test_retr_ascii(self):
+        # test RETR in ASCII mode
+
+        def retrieve(cmd, callback, blocksize=8192, rest=None):
+            # like retrbinary but uses TYPE A instead
+            self.client.voidcmd('type a')
+            conn = self.client.transfercmd(cmd, rest)
+            while 1:
+                data = conn.recv(blocksize)
+                if not data:
+                    break
+                callback(data)
+            conn.close()
+            return self.client.voidresp()
+
+        data = ('abcde12345' + os.linesep) * 100000
+        self.f1.write(data)
+        self.f1.close()
+        retrieve("retr " + TESTFN, self.f2.write)
+        expected = data.replace(os.linesep, '\r\n')
+        self.f2.seek(0)
+        self.assertEqual(hash(expected), hash(self.f2.read()))
+
     def test_restore_on_retr(self):
         data = 'abcde12345' * 100000
         fname_1 = os.path.basename(self.f1.name)
@@ -1208,6 +1231,32 @@ class TestFtpStoreData(unittest.TestCase):
             self.client.retrbinary('retr ' + TESTFN3, self.f2.write)
             self.f2.seek(0)
             self.assertEqual(hash(data), hash (self.f2.read()))
+        finally:
+            # we do not use os.remove because file could be still
+            # locked by ftpd thread
+            if os.path.exists(TESTFN3):
+                self.client.delete(TESTFN3)
+
+    def test_stor_ascii(self):
+        # test STOR in ASCII mode
+
+        def store(cmd, fp, blocksize=8192):
+            self.client.voidcmd('type a')
+            conn = self.client.transfercmd(cmd)
+            while 1:
+                buf = fp.read(blocksize)
+                if not buf: break
+                conn.sendall(buf)
+            conn.close()
+            return self.client.voidresp()
+
+        try:
+            data = 'abcde12345\r\n' * 100000
+            store('stor ' + TESTFN3, StringIO.StringIO(data))
+            self.client.retrbinary('retr ' + TESTFN3, self.f2.write)
+            expected = data.replace('\r\n', os.linesep)
+            self.f2.seek(0)
+            self.assertEqual(hash(expected), hash(self.f2.read()))
         finally:
             # we do not use os.remove because file could be still
             # locked by ftpd thread
