@@ -55,7 +55,10 @@ import random
 import warnings
 import sys
 import errno
-import StringIO
+try:
+    import cStringIO as StringIO
+except ImportError:
+    import StringIO
 
 from pyftpdlib import ftpserver
 
@@ -74,8 +77,6 @@ try:
     from test.test_support import TESTFN
 except ImportError:
     TESTFN = 'temp-fname'
-TESTFN2 = TESTFN + '2'
-TESTFN3 = TESTFN + '3'
 
 def try_address(host, port=0):
     """Try to bind a daemon on the given host:port and return True
@@ -89,6 +90,14 @@ def try_address(host, port=0):
 
 SUPPORTS_IPV4 = try_address('127.0.0.1')
 SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1')
+
+def safe_remove(*files):
+    "Convenience function for removing temporary test files"
+    for file in files:
+        try:
+            os.remove(file)
+        except os.error:
+            pass
 
 
 class TestAbstractedFS(unittest.TestCase):
@@ -228,27 +237,19 @@ class TestAbstractedFS(unittest.TestCase):
         self.failIf(fs.validpath(HOME + 'xxx'))
 
     if hasattr(os, 'symlink'):
-        # Tests for validpath on systems supporting symbolic links.
-
-        def _safe_remove(self, path):
-            # convenience function for removing temporary files
-            try:
-                os.remove(path)
-            except os.error:
-                pass
 
         def test_validpath_validlink(self):
             # Test validpath by issuing a symlink pointing to a path
             # inside the root directory.
             fs = ftpserver.AbstractedFS()
             fs.root = HOME
+            TESTFN2 = TESTFN + '1'
             try:
                 open(TESTFN, 'w')
                 os.symlink(TESTFN, TESTFN2)
                 self.failUnless(fs.validpath(TESTFN))
             finally:
-                self._safe_remove(TESTFN)
-                self._safe_remove(TESTFN2)
+                safe_remove(TESTFN, TESTFN2)
 
         def test_validpath_external_symlink(self):
             # Test validpath by issuing a symlink pointing to a path
@@ -265,7 +266,7 @@ class TestAbstractedFS(unittest.TestCase):
                 os.symlink(file.name, TESTFN)
                 self.failIf(fs.validpath(TESTFN))
             finally:
-                self._safe_remove(TESTFN)
+                safe_remove(TESTFN)
                 file.close()
 
 
@@ -501,18 +502,17 @@ class TestFtpAuthentication(unittest.TestCase):
         self.server.start()
         self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
-        self.f1 = open(TESTFN, 'w+b')
-        self.f2 = open(TESTFN2, 'w+b')
+        self.file = open(TESTFN, 'w+b')
+        self.dummyfile = StringIO.StringIO()
 
     def tearDown(self):
         self.client.close()
         self.server.stop()
-        if not self.f1.closed:
-            self.f1.close()
-        if not self.f2.closed:
-            self.f2.close()
+        if not self.file.closed:
+            self.file.close()
+        if not self.dummyfile.closed:
+            self.dummyfile.close()
         os.remove(TESTFN)
-        os.remove(TESTFN2)
 
     def test_auth_ok(self):
         self.client.login(user=USER, passwd=PASSWD)
@@ -554,17 +554,17 @@ class TestFtpAuthentication(unittest.TestCase):
     def test_rein_during_transfer(self):
         self.client.login(user=USER, passwd=PASSWD)
         data = 'abcde12345' * 100000
-        self.f1.write(data)
-        self.f1.close()
+        self.file.write(data)
+        self.file.close()
 
-        self.client.voidcmd('TYPE I')
+        self.client.voidcmd('type i')
         conn = self.client.transfercmd('retr ' + TESTFN)
         rein_sent = 0
         while 1:
             chunk = conn.recv(8192)
             if not chunk:
                 break
-            self.f2.write(chunk)
+            self.dummyfile.write(chunk)
             if not rein_sent:
                 rein_sent = 1
                 # flush account, error response expected
@@ -580,8 +580,8 @@ class TestFtpAuthentication(unittest.TestCase):
         # filesystem command
         self.client.login(user=USER, passwd=PASSWD)
         self.client.sendcmd('pwd')
-        self.f2.seek(0)
-        self.assertEqual(hash(data), hash (self.f2.read()))
+        self.dummyfile.seek(0)
+        self.assertEqual(hash(data), hash (self.dummyfile.read()))
 
     def test_user(self):
         # Test USER while already authenticated and no transfer
@@ -597,8 +597,8 @@ class TestFtpAuthentication(unittest.TestCase):
         # in progress.
         self.client.login(user=USER, passwd=PASSWD)
         data = 'abcde12345' * 100000
-        self.f1.write(data)
-        self.f1.close()
+        self.file.write(data)
+        self.file.close()
 
         self.client.voidcmd('TYPE I')
         conn = self.client.transfercmd('retr ' + TESTFN)
@@ -607,7 +607,7 @@ class TestFtpAuthentication(unittest.TestCase):
             chunk = conn.recv(8192)
             if not chunk:
                 break
-            self.f2.write(chunk)
+            self.dummyfile.write(chunk)
             # stop transfer while it isn't finished yet
             if not rein_sent:
                 rein_sent = 1
@@ -623,8 +623,8 @@ class TestFtpAuthentication(unittest.TestCase):
         # filesystem command
         self.client.sendcmd('pass ' + PASSWD)
         self.client.sendcmd('pwd')
-        self.f2.seek(0)
-        self.assertEqual(hash(data), hash (self.f2.read()))
+        self.dummyfile.seek(0)
+        self.assertEqual(hash(data), hash (self.dummyfile.read()))
 
 
 class TestFtpDummyCmds(unittest.TestCase):
@@ -912,26 +912,25 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
         self.client.login(USER, PASSWD)
-        self.f1 = open(TESTFN, 'w+b')
-        self.f2 = open(TESTFN2, 'w+b')
+        self.file = open(TESTFN, 'w+b')
+        self.dummyfile = StringIO.StringIO()
 
     def tearDown(self):
         self.client.close()
         self.server.stop()
-        if not self.f1.closed:
-            self.f1.close()
-        if not self.f2.closed:
-            self.f2.close()
+        if not self.file.closed:
+            self.file.close()
+        if not self.dummyfile.closed:
+            self.dummyfile.close()
         os.remove(TESTFN)
-        os.remove(TESTFN2)
 
     def test_retr(self):
         data = 'abcde12345' * 100000
-        self.f1.write(data)
-        self.f1.close()
-        self.client.retrbinary("retr " + TESTFN, self.f2.write)
-        self.f2.seek(0)
-        self.assertEqual(hash(data), hash(self.f2.read()))
+        self.file.write(data)
+        self.file.close()
+        self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
+        self.dummyfile.seek(0)
+        self.assertEqual(hash(data), hash(self.dummyfile.read()))
 
     def test_retr_ascii(self):
         # test RETR in ASCII mode
@@ -949,24 +948,23 @@ class TestFtpRetrieveData(unittest.TestCase):
             return self.client.voidresp()
 
         data = ('abcde12345' + os.linesep) * 100000
-        self.f1.write(data)
-        self.f1.close()
-        retrieve("retr " + TESTFN, self.f2.write)
+        self.file.write(data)
+        self.file.close()
+        retrieve("retr " + TESTFN, self.dummyfile.write)
         expected = data.replace(os.linesep, '\r\n')
-        self.f2.seek(0)
-        self.assertEqual(hash(expected), hash(self.f2.read()))
+        self.dummyfile.seek(0)
+        self.assertEqual(hash(expected), hash(self.dummyfile.read()))
 
     def test_restore_on_retr(self):
         data = 'abcde12345' * 100000
-        fname_1 = os.path.basename(self.f1.name)
-        self.f1.write(data)
-        self.f1.close()
+        self.file.write(data)
+        self.file.close()
 
         # look at ftplib.FTP.retrbinary method to understand this mess
         self.client.voidcmd('TYPE I')
-        conn = self.client.transfercmd('retr ' + fname_1)
+        conn = self.client.transfercmd('retr ' + TESTFN)
         chunk = conn.recv(len(data) / 2)
-        self.f2.write(chunk)
+        self.dummyfile.write(chunk)
         conn.close()
         # transfer wasn't finished yet so we expect a 426 response
         self.assertRaises(ftplib.error_temp, self.client.voidresp)
@@ -974,15 +972,15 @@ class TestFtpRetrieveData(unittest.TestCase):
         # resuming transfer by using a marker value greater than the
         # file size stored on the server should result in an error
         # on retr (RFC-1123)
-        file_size = self.client.size(fname_1)
+        file_size = self.client.size(TESTFN)
         self.client.sendcmd('rest %s' %((file_size + 1)))
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'retr ' + fname_1)
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'retr ' + TESTFN)
 
         # test resume
         self.client.sendcmd('rest %s' %len(chunk))
-        self.client.retrbinary("retr " + fname_1, self.f2.write)
-        self.f2.seek(0)
-        self.assertEqual(hash(data), hash (self.f2.read()))
+        self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
+        self.dummyfile.seek(0)
+        self.assertEqual(hash(data), hash (self.dummyfile.read()))
 
     def test_unforeseen_retr_event(self):
         # Emulate a case where we RETR a corrupted file from the
@@ -994,13 +992,14 @@ class TestFtpRetrieveData(unittest.TestCase):
         # what actually happened.
         # To do so we temporarily replace open() with a "dummy" one
         # raising exception when read() gets called.
+        from StringIO import StringIO as PyStringIO
 
-        class BrokenFileObject(StringIO.StringIO):
+        class BrokenFileObject(PyStringIO):
             """A dummy file-like object which raises exception every
             time it's going to be read.
             """
             def __init__(self, filename, mode):
-                StringIO.StringIO.__init__(self)
+                PyStringIO.__init__(self)
                 self.name = filename
             def read(self, data):
                 # it doesn't really matter what the real problem is, we
@@ -1127,18 +1126,10 @@ class TestFtpAbort(unittest.TestCase):
         self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
         self.client.login(USER, PASSWD)
-        self.f1 = open(TESTFN, 'w+b')
-        self.f2 = open(TESTFN2, 'w+b')
 
     def tearDown(self):
         self.client.close()
         self.server.stop()
-        if not self.f1.closed:
-            self.f1.close()
-        if not self.f2.closed:
-            self.f2.close()
-        os.remove(self.f1.name)
-        os.remove(self.f2.name)
 
     def test_abor_no_data(self):
         # Case 1: ABOR while no data channel is opened: respond with 225.
@@ -1166,23 +1157,26 @@ class TestFtpAbort(unittest.TestCase):
         # progress: close data channel, respond with 426, respond
         # with 226.
         data = 'abcde12345' * 100000
-        self.f1.write(data)
-        self.f1.close()
+        f = open(TESTFN, 'w+b')
+        f.write(data)
+        f.close()
+        try:
+            # this ugly loop construct is to simulate an interrupted
+            # transfer since ftplib doesn't like running storbinary()
+            # in a separate thread
+            self.client.voidcmd('TYPE I')
+            conn = self.client.transfercmd('retr ' + TESTFN)
+            chunk = conn.recv(len(data) / 2)
+            # stop transfer while it isn't finished yet
+            self.client.putcmd('ABOR')
 
-        # this ugly loop construct is to simulate an interrupted
-        # transfer since ftplib doesn't like running storbinary()
-        # in a separate thread
-        self.client.voidcmd('TYPE I')
-        conn = self.client.transfercmd('retr ' + TESTFN)
-        chunk = conn.recv(len(data) / 2)
-        # stop transfer while it isn't finished yet
-        self.client.putcmd('ABOR')
+            # transfer isn't finished yet so ftpd should respond with 426
+            self.assertRaises(ftplib.error_temp, self.client.voidresp)
 
-        # transfer isn't finished yet so ftpd should respond with 426
-        self.assertRaises(ftplib.error_temp, self.client.voidresp)
-
-        # transfer successfully aborted, so should now respond with a 226
-        self.failUnlessEqual('226', self.client.voidresp()[:3])
+            # transfer successfully aborted, so should now respond with a 226
+            self.failUnlessEqual('226', self.client.voidresp()[:3])
+        finally:
+            self.client.delete(TESTFN)
 
     if hasattr(socket, 'MSG_OOB'):
         def test_oob_abor(self):
@@ -1208,34 +1202,31 @@ class TestFtpStoreData(unittest.TestCase):
         self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
         self.client.login(USER, PASSWD)
-        self.f1 = open(TESTFN, 'w+b')
-        self.f2 = open(TESTFN2, 'w+b')
+        self.dummy_recvfile = StringIO.StringIO()
+        self.dummy_sendfile = StringIO.StringIO()
 
     def tearDown(self):
         self.client.close()
         self.server.stop()
-        if not self.f1.closed:
-            self.f1.close()
-        if not self.f2.closed:
-            self.f2.close()
-        os.remove(TESTFN)
-        os.remove(TESTFN2)
+        self.dummy_recvfile.close()
+        self.dummy_sendfile.close()
+        if os.path.isfile(TESTFN):
+            os.remove(TESTFN)
 
     def test_stor(self):
-        # TESTFN3 is the remote file name
         try:
             data = 'abcde12345' * 100000
-            self.f1.write(data)
-            self.f1.seek(0)
-            self.client.storbinary('stor ' + TESTFN3, self.f1)
-            self.client.retrbinary('retr ' + TESTFN3, self.f2.write)
-            self.f2.seek(0)
-            self.assertEqual(hash(data), hash (self.f2.read()))
+            self.dummy_sendfile.write(data)
+            self.dummy_sendfile.seek(0)
+            self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
+            self.client.retrbinary('retr ' + TESTFN, self.dummy_recvfile.write)
+            self.dummy_recvfile.seek(0)
+            self.assertEqual(hash(data), hash (self.dummy_recvfile.read()))
         finally:
             # we do not use os.remove because file could be still
             # locked by ftpd thread
-            if os.path.exists(TESTFN3):
-                self.client.delete(TESTFN3)
+            if os.path.exists(TESTFN):
+                self.client.delete(TESTFN)
 
     def test_stor_ascii(self):
         # test STOR in ASCII mode
@@ -1252,21 +1243,23 @@ class TestFtpStoreData(unittest.TestCase):
 
         try:
             data = 'abcde12345\r\n' * 100000
-            store('stor ' + TESTFN3, StringIO.StringIO(data))
-            self.client.retrbinary('retr ' + TESTFN3, self.f2.write)
+            self.dummy_sendfile.write(data)
+            self.dummy_sendfile.seek(0)
+            store('stor ' + TESTFN, self.dummy_sendfile)
+            self.client.retrbinary('retr ' + TESTFN, self.dummy_recvfile.write)
             expected = data.replace('\r\n', os.linesep)
-            self.f2.seek(0)
-            self.assertEqual(hash(expected), hash(self.f2.read()))
+            self.dummy_recvfile.seek(0)
+            self.assertEqual(hash(expected), hash(self.dummy_recvfile.read()))
         finally:
             # we do not use os.remove because file could be still
             # locked by ftpd thread
-            if os.path.exists(TESTFN3):
-                self.client.delete(TESTFN3)
+            if os.path.exists(TESTFN):
+                self.client.delete(TESTFN)
 
     def test_stou(self):
         data = 'abcde12345' * 100000
-        self.f1.write(data)
-        self.f1.seek(0)
+        self.dummy_sendfile.write(data)
+        self.dummy_sendfile.seek(0)
 
         self.client.voidcmd('TYPE I')
         # filename comes in as "1xx FILE: <filename>"
@@ -1275,16 +1268,16 @@ class TestFtpStoreData(unittest.TestCase):
             sock = self.client.makeport()
             conn, sockaddr = sock.accept()
             while 1:
-                buf = self.f1.read(8192)
+                buf = self.dummy_sendfile.read(8192)
                 if not buf:
                     break
                 conn.sendall(buf)
             conn.close()
             # transfer finished, a 226 response is expected
             self.client.voidresp()
-            self.client.retrbinary('retr ' + filename, self.f2.write)
-            self.f2.seek(0)
-            self.assertEqual(hash(data), hash (self.f2.read()))
+            self.client.retrbinary('retr ' + filename, self.dummy_recvfile.write)
+            self.dummy_recvfile.seek(0)
+            self.assertEqual(hash(data), hash (self.dummy_recvfile.read()))
         finally:
             # we do not use os.remove because file could be
             # still locked by ftpd thread
@@ -1303,45 +1296,42 @@ class TestFtpStoreData(unittest.TestCase):
         # Since we can't know the name of the file the best way that
         # we have to test this case is comparing the content of the
         # directory before and after STOU has been issued.
-        # Assuming that TESTFN3 is supposed to be a "reserved" file
+        # Assuming that TESTFN is supposed to be a "reserved" file
         # name we shouldn't get false positives.
-        if os.path.isfile(TESTFN3):
-            os.remove(TESTFN3)
+        if os.path.isfile(TESTFN):
+            os.remove(TESTFN)
         # login as a limited user to let STOU fail
         self.client.login('anonymous', '@nopasswd')
         before = os.listdir(HOME)
         try:
-            self.client.sendcmd('stou ' + TESTFN3)
+            self.client.sendcmd('stou ' + TESTFN)
         except:
             pass
         after = os.listdir(HOME)
         if before != after:
             for file in after:
-                self.assert_(not file.startswith(TESTFN3))
+                self.assert_(not file.startswith(TESTFN))
 
     def test_appe(self):
-        # TESTFN3 is the remote file name
         try:
             data1 = 'abcde12345' * 100000
-            self.f1.write(data1)
-            self.f1.seek(0)
-            self.client.storbinary('stor ' + TESTFN3, self.f1)
-            self.f1.close()
+            self.dummy_sendfile.write(data1)
+            self.dummy_sendfile.seek(0)
+            self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
 
             data2 = 'fghil67890' * 100000
-            self.f1 = open(TESTFN, "a+b")
-            self.f1.write(data2)
-            self.f1.seek(len(data1))
-            self.client.storbinary('appe ' + TESTFN3, self.f1)
+            self.dummy_sendfile.write(data2)
+            self.dummy_sendfile.seek(len(data1))
+            self.client.storbinary('appe ' + TESTFN, self.dummy_sendfile)
 
-            self.client.retrbinary("retr " + TESTFN3, self.f2.write)
-            self.f2.seek(0)
-            self.assertEqual(hash(data1 + data2), hash (self.f2.read()))
+            self.client.retrbinary("retr " + TESTFN, self.dummy_recvfile.write)
+            self.dummy_recvfile.seek(0)
+            self.assertEqual(hash(data1 + data2), hash (self.dummy_recvfile.read()))
         finally:
             # we do not use os.remove because file could be still
             # locked by ftpd thread
-            if os.path.exists(TESTFN3):
-                self.client.delete(TESTFN3)
+            if os.path.exists(TESTFN):
+                self.client.delete(TESTFN)
 
     def test_appe_rest(self):
         # watch for APPE preceded by REST, which makes no sense.
@@ -1350,16 +1340,15 @@ class TestFtpStoreData(unittest.TestCase):
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'appe x')
 
     def test_rest_on_stor(self):
-        # TESTFN3 is the remote file name
         data = 'abcde12345' * 100000
-        self.f1.write(data)
-        self.f1.seek(0)
+        self.dummy_sendfile.write(data)
+        self.dummy_sendfile.seek(0)
 
         self.client.voidcmd('TYPE I')
-        conn = self.client.transfercmd('stor ' + TESTFN3)
+        conn = self.client.transfercmd('stor ' + TESTFN)
         bytes_sent = 0
         while 1:
-            chunk = self.f1.read(8192)
+            chunk = self.dummy_sendfile.read(8192)
             conn.sendall(chunk)
             bytes_sent += len(chunk)
             # stop transfer while it isn't finished yet
@@ -1374,19 +1363,21 @@ class TestFtpStoreData(unittest.TestCase):
         # resuming transfer by using a marker value greater than the
         # file size stored on the server should result in an error
         # on stor
-        file_size = self.client.size(TESTFN3)
+        file_size = self.client.size(TESTFN)
         self.assertEqual(file_size, bytes_sent)
         self.client.sendcmd('rest %s' %((file_size + 1)))
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'stor ' + TESTFN3)
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'stor ' + TESTFN)
 
         self.client.sendcmd('rest %s' %bytes_sent)
-        self.client.storbinary('stor ' + TESTFN3, self.f1)
+        self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
 
-        self.client.retrbinary('retr ' + TESTFN3, self.f2.write)
-        self.f1.seek(0)
-        self.f2.seek(0)
-        self.assertEqual(hash(self.f1.read()), hash(self.f2.read()))
-        self.client.delete(TESTFN3)
+        self.client.retrbinary('retr ' + TESTFN, self.dummy_recvfile.write)
+        self.dummy_sendfile.seek(0)
+        self.dummy_recvfile.seek(0)
+        self.assertEqual(hash(self.dummy_sendfile.read()),
+                         hash(self.dummy_recvfile.read())
+                         )
+        self.client.delete(TESTFN)
 
     def test_unforeseen_stor_event(self):
         # Emulate a case where we try to STOR a file on a server
@@ -1396,13 +1387,14 @@ class TestFtpStoreData(unittest.TestCase):
         # client about what actually happened.
         # To do so we temporarily replace open() with a "dummy" one
         # raising exception when write() gets called.
+        from StringIO import StringIO as PyStringIO
 
-        class BrokenFileObject(StringIO.StringIO):
+        class BrokenFileObject(PyStringIO):
             """A dummy file-like object which raises exception every
             time it's going to be written.
             """
             def __init__(self, filename, mode):
-                StringIO.StringIO.__init__(self)
+                PyStringIO.__init__(self)
                 self.name = filename
             def write(self, data):
                 raise IOError(errno.ENOSPC, "No space left on device")
@@ -1411,7 +1403,7 @@ class TestFtpStoreData(unittest.TestCase):
         try:
             ftpserver.AbstractedFS.open = BrokenFileObject
             try:
-                self.client.storbinary('stor ' + TESTFN3, StringIO.StringIO('foo'))
+                self.client.storbinary('stor ' + TESTFN, StringIO.StringIO('foo'))
             except ftplib.error_temp, err:
                 self.assert_("No space left on device" in str(err))
                 # make sure client hasn't been disconnected
@@ -1790,14 +1782,6 @@ class FTPd(threading.Thread):
         self.join()
 
 
-def remove_test_files():
-    "Convenience function for removing temporary test files"
-    for file in [TESTFN, TESTFN2, TESTFN3]:
-        try:
-            os.remove(file)
-        except os.error:
-            pass
-
 def test_main(tests=None):
     test_suite = unittest.TestSuite()
     if tests is None:
@@ -1822,9 +1806,9 @@ def test_main(tests=None):
 
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
-    remove_test_files()
+    safe_remove(TESTFN)
     unittest.TextTestRunner(verbosity=2).run(test_suite)
-    remove_test_files()
+    safe_remove(TESTFN)
 
 
 if __name__ == '__main__':
