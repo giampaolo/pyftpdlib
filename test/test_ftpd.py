@@ -1399,9 +1399,6 @@ class TestFtpAbort(unittest.TestCase):
         f.write(data)
         f.close()
         try:
-            # this ugly loop construct is to simulate an interrupted
-            # transfer since ftplib doesn't like running storbinary()
-            # in a separate thread
             self.client.voidcmd('TYPE I')
             conn = self.client.transfercmd('retr ' + TESTFN)
             chunk = conn.recv(len(data) / 2)
