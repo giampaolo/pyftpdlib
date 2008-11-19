@@ -1181,7 +1181,6 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.file.write(data)
         self.file.close()
 
-        # look at ftplib.FTP.retrbinary method to understand this mess
         self.client.voidcmd('TYPE I')
         conn = self.client.transfercmd('retr ' + TESTFN)
         chunk = conn.recv(len(data) / 2)
