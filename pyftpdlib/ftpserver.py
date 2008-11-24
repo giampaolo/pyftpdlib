@@ -3124,7 +3124,7 @@ class FTPServer(asyncore.dispatcher):
         self.close()
 
     def close_all(self, map=None, ignore_all=False):
-        """Stop serving; close all existent connections disconnecting
+        """Stop serving and also disconnects all currently connected
         clients.
 
          - (dict) map:
@@ -3137,13 +3137,11 @@ class FTPServer(asyncore.dispatcher):
 
         Implementation note:
 
-        Instead of using the current asyncore.close_all() function
-        which only close sockets, we iterate over all existent channels
-        calling close() method for each one of them, avoiding memory
-        leaks.
-
-        This is how asyncore.close_all() function should work in
+        This is how asyncore.close_all() is implemented starting from
         Python 2.6.
+        The previous versions of close_all() instead of iteratating over
+        all opened channels and calling close() method for each one
+        of them only closed sockets generating memory leaks.
         """
         if map is None:
             map = self._map
