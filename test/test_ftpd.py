@@ -63,7 +63,7 @@ except ImportError:
 from pyftpdlib import ftpserver
 
 
-__release__ = 'pyftpdlib 0.5.0'
+__release__ = 'pyftpdlib 0.5.1'
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
 try:
