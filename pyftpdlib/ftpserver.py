@@ -754,19 +754,16 @@ class DTPHandler(asyncore.dispatcher):
     RFC-959) managing data-transfer operations involving sending
     and receiving data.
 
-    Instance attributes defined in this class, initialized when
-    channel is opened:
+    Class attributes:
 
      - (int) timeout: the timeout which roughly is the maximum time we
        permit data transfers to stall for with no progress. If the
-       timeout triggers, the remote client will be kicked off.
+       timeout triggers, the remote client will be kicked off
+       (defaults 300).
 
-     - (instance) cmd_channel: the command channel class instance.
-     - (file) file_obj: the file transferred (if any).
-     - (bool) receive: True if channel is used for receiving data.
-     - (bool) transfer_finished: True if transfer completed successfully.
-     - (int) tot_bytes_sent: the total bytes sent.
-     - (int) tot_bytes_received: the total bytes received.
+     - (int) ac_in_buffer_size: incoming data buffer size (defaults 65536)
+
+     - (int) ac_out_buffer_size: outgoing data buffer size (defaults 65536)
 
     DTPHandler implementation note:
 
@@ -789,8 +786,8 @@ class DTPHandler(asyncore.dispatcher):
     """
 
     timeout = 300
-    ac_in_buffer_size = 8192
-    ac_out_buffer_size  = 8192
+    ac_in_buffer_size = 65536
+    ac_out_buffer_size = 65536
 
     def __init__(self, sock_obj, cmd_channel):
         """Initialize the command channel.
