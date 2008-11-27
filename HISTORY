@@ -46,6 +46,8 @@ Bugfixes:
  * Issue #91: an unhandled exception can occur in case accept() returns None
    instead of a socket (it happens sometimes).
 
+ * Issue #95: anonymous is now treated as any other case-sensitive user.
+
 
 Version: 0.5.0 - Date: 2008-09-20
 ---------------------------------

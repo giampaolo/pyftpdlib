@@ -2500,10 +2500,6 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_USER(self, line):
         """Set the username for the current session."""
-        # we always treat anonymous user as lower-case string.
-        if line.lower() == "anonymous":
-            line = "anonymous"
-
         # RFC-959 specifies a 530 response to the USER command if the
         # username is not valid.  If the username is valid is required
         # ftpd returns a 331 response instead.  In order to prevent a
@@ -2523,6 +2519,8 @@ class FTPHandler(asynchat.async_chat):
             self.log('OK USER "%s". %s.' %(line, msg))
             self.respond('331 %s, send password.' %msg)
         self.username = line
+
+    _auth_failed_timeout = 5
 
     def ftp_PASS(self, line):
         """Check username's password against the authorizer."""
@@ -2563,15 +2561,16 @@ class FTPHandler(asynchat.async_chat):
                 self.fs.root = self.authorizer.get_home_dir(self.username)
                 self.log("User %s logged in." %self.username)
             else:
-                CallLater(5, auth_failed)
+                CallLater(self._auth_failed_timeout, auth_failed)
                 self.username = ""
                 self.sleeping = True
         # wrong username
         else:
             if self.username.lower() == 'anonymous':
-                CallLater(5, auth_failed, "Anonymous access not allowed.")
+                CallLater(self._auth_failed_timeout, auth_failed,
+                          msg="Anonymous access not allowed.")
             else:
-                CallLater(5, auth_failed)
+                CallLater(self._auth_failed_timeout, auth_failed)
             self.username = ""
             self.sleeping = True
 
