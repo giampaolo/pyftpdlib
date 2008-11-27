@@ -385,40 +385,40 @@ class TestDummyAuthorizer(unittest.TestCase):
     def test_override_perm_recursive_paths(self):
         auth = ftpserver.DummyAuthorizer()
         auth.add_user(USER, PASSWD, HOME, perm='elr')
-        self.assert_(auth.has_perm(USER, 'w', self.tempdir) is False)
+        self.assertEqual(auth.has_perm(USER, 'w', self.tempdir), False)
         auth.override_perm(USER, self.tempdir, perm='w', recursive=True)
-        self.assert_(auth.has_perm(USER, 'w', HOME) is False)
-        self.assert_(auth.has_perm(USER, 'w', self.tempdir) is True)
-        self.assert_(auth.has_perm(USER, 'w', self.tempfile) is True)
-        self.assert_(auth.has_perm(USER, 'w', self.subtempdir) is True)
-        self.assert_(auth.has_perm(USER, 'w', self.subtempfile) is True)
+        self.assertEqual(auth.has_perm(USER, 'w', HOME), False)
+        self.assertEqual(auth.has_perm(USER, 'w', self.tempdir), True)
+        self.assertEqual(auth.has_perm(USER, 'w', self.tempfile), True)
+        self.assertEqual(auth.has_perm(USER, 'w', self.subtempdir), True)
+        self.assertEqual(auth.has_perm(USER, 'w', self.subtempfile), True)
 
-        self.assert_(auth.has_perm(USER, 'w', HOME + '@') is False)
-        self.assert_(auth.has_perm(USER, 'w', self.tempdir + '@') is False)
+        self.assertEqual(auth.has_perm(USER, 'w', HOME + '@'), False)
+        self.assertEqual(auth.has_perm(USER, 'w', self.tempdir + '@'), False)
         path = os.path.join(self.tempdir + '@', os.path.basename(self.tempfile))
-        self.assert_(auth.has_perm(USER, 'w', path) is False)
+        self.assertEqual(auth.has_perm(USER, 'w', path), False)
         # test case-sensitiveness
         if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
-            self.assert_(auth.has_perm(USER, 'w', self.tempdir.upper()) is True)
+            self.assertEqual(auth.has_perm(USER, 'w', self.tempdir.upper()), True)
 
     def test_override_perm_not_recursive_paths(self):
         auth = ftpserver.DummyAuthorizer()
         auth.add_user(USER, PASSWD, HOME, perm='elr')
-        self.assert_(auth.has_perm(USER, 'w', self.tempdir) is False)
+        self.assertEqual(auth.has_perm(USER, 'w', self.tempdir), False)
         auth.override_perm(USER, self.tempdir, perm='w')
-        self.assert_(auth.has_perm(USER, 'w', HOME) is False)
-        self.assert_(auth.has_perm(USER, 'w', self.tempdir) is True)
-        self.assert_(auth.has_perm(USER, 'w', self.tempfile) is True)
-        self.assert_(auth.has_perm(USER, 'w', self.subtempdir) is False)
-        self.assert_(auth.has_perm(USER, 'w', self.subtempfile) is False)
+        self.assertEqual(auth.has_perm(USER, 'w', HOME), False)
+        self.assertEqual(auth.has_perm(USER, 'w', self.tempdir), True)
+        self.assertEqual(auth.has_perm(USER, 'w', self.tempfile), True)
+        self.assertEqual(auth.has_perm(USER, 'w', self.subtempdir), False)
+        self.assertEqual(auth.has_perm(USER, 'w', self.subtempfile), False)
 
-        self.assert_(auth.has_perm(USER, 'w', HOME + '@') is False)
-        self.assert_(auth.has_perm(USER, 'w', self.tempdir + '@') is False)
+        self.assertEqual(auth.has_perm(USER, 'w', HOME + '@'), False)
+        self.assertEqual(auth.has_perm(USER, 'w', self.tempdir + '@'), False)
         path = os.path.join(self.tempdir + '@', os.path.basename(self.tempfile))
-        self.assert_(auth.has_perm(USER, 'w', path) is False)
+        self.assertEqual(auth.has_perm(USER, 'w', path), False)
         # test case-sensitiveness
         if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
-            self.assert_(auth.has_perm(USER, 'w', self.tempdir.upper()) is True)
+            self.assertEqual(auth.has_perm(USER, 'w', self.tempdir.upper()), True)
 
 
 class TestCallLater(unittest.TestCase):
@@ -441,9 +441,9 @@ class TestCallLater(unittest.TestCase):
         self.assertRaises(AssertionError, ftpserver.CallLater, -1, fun)
         x = ftpserver.CallLater(3, fun)
         self.assertRaises(AssertionError, x.delay, -1)
-        self.assert_(x.cancelled is False)
+        self.assertEqual(x.cancelled, False)
         x.cancel()
-        self.assert_(x.cancelled is True)
+        self.assertEqual(x.cancelled, True)
         self.assertRaises(AssertionError, x.call)
         self.assertRaises(AssertionError, x.reset)
         self.assertRaises(AssertionError, x.delay, 2)
