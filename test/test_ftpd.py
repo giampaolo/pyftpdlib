@@ -78,18 +78,20 @@ try:
 except ImportError:
     TESTFN = 'temp-fname'
 
-def try_address(host, port=0):
-    """Try to bind a daemon on the given host:port and return True
+def try_address(host, port=0, family=socket.AF_INET):
+    """Try to bind a socket on the given host:port and return True
     if that has been possible."""
     try:
-        ftpserver.FTPServer((host, port), None)
+        s = socket.socket(family, socket.SOCK_STREAM)
+        s.bind((host, port))
     except socket.error:
         return False
     else:
+        s.close()
         return True
 
 SUPPORTS_IPV4 = try_address('127.0.0.1')
-SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1')
+SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
 
 def safe_remove(*files):
     "Convenience function for removing temporary test files"
