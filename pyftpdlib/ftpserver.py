@@ -452,6 +452,10 @@ class DummyAuthorizer:
     def validate_authentication(self, username, password):
         """Return True if the supplied username and password match the
         stored credentials."""
+        if not self.has_user(username):
+            return False
+        if username == 'anonymous':
+            return True
         return self.user_table[username]['pwd'] == password
 
     def impersonate_user(self, username, password):
@@ -2544,35 +2548,26 @@ class FTPHandler(asynchat.async_chat):
                     self.log(msg)
                     self.sleeping = False
 
-        # username ok
-        if self.authorizer.has_user(self.username):
-            if self.username == 'anonymous' \
-            or self.authorizer.validate_authentication(self.username, line):
-                msg_login = self.authorizer.get_msg_login(self.username)
-                if len(msg_login) <= 75:
-                    self.respond('230 %s' %msg_login)
-                else:
-                    self.push("230-%s\r\n" %msg_login)
-                    self.respond("230 ")
-
-                self.authenticated = True
-                self.password = line
-                self.attempted_logins = 0
-                self.fs.root = self.authorizer.get_home_dir(self.username)
-                self.log("User %s logged in." %self.username)
+        if self.authorizer.validate_authentication(self.username, line):
+            msg_login = self.authorizer.get_msg_login(self.username)
+            if len(msg_login) <= 75:
+                self.respond('230 %s' %msg_login)
             else:
-                CallLater(self._auth_failed_timeout, auth_failed)
-                self.username = ""
-                self.sleeping = True
-        # wrong username
+                self.push("230-%s\r\n" %msg_login)
+                self.respond("230 ")
+            self.authenticated = True
+            self.password = line
+            self.attempted_logins = 0
+            self.fs.root = self.authorizer.get_home_dir(self.username)
+            self.log("User %s logged in." %self.username)
         else:
-            if self.username.lower() == 'anonymous':
-                CallLater(self._auth_failed_timeout, auth_failed,
-                          msg="Anonymous access not allowed.")
-            else:
-                CallLater(self._auth_failed_timeout, auth_failed)
             self.username = ""
             self.sleeping = True
+            if self.username == 'anonymous':
+                CallLater(self._auth_failed_timeout, auth_failed,
+                          "Anonymous access not allowed.")
+            else:
+                CallLater(self._auth_failed_timeout, auth_failed)
 
     def ftp_REIN(self, line):
         """Reinitialize user's current session."""
