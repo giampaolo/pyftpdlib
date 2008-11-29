@@ -2999,6 +2999,10 @@ class FTPServer(asyncore.dispatcher):
         self.handler = handler
         self.ip_map = []
         host, port = address
+        # "" is usually used as symbolic name meaning all available
+        # interfaces but our implementation uses None instead
+        if host == "":
+            host = None
 
         # AF_INET or AF_INET6 socket
         # Get the correct address family for our host (allows IPv6 addresses)

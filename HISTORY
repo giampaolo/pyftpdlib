@@ -48,6 +48,9 @@ Bugfixes:
 
  * Issue #95: anonymous is now treated as any other case-sensitive user.
 
+ * Issue #96: pyftpdlib now listens on all available network interfaces if
+   specified address is an empty string "".
+
 
 Version: 0.5.0 - Date: 2008-09-20
 ---------------------------------
