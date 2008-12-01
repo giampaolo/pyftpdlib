@@ -21,6 +21,10 @@ class ThrottledDTPHandler(ftpserver.DTPHandler):
     read_limit = 0
     write_limit = 0
 
+    # smaller the buffers, the less bursty and smoother the throughput
+    ac_in_buffer_size = 4096
+    ac_out_buffer_size = 4096
+
     def __init__(self, sock_obj, cmd_channel):
         ftpserver.DTPHandler.__init__(self, sock_obj, cmd_channel)
         self._timenext = 0
@@ -77,8 +81,8 @@ if __name__ == '__main__':
     # use the modified DTPHandler class and set a speed limit for both
     # sending and receiving
     dtp_handler = ThrottledDTPHandler
-    dtp_handler.read_limit = 30072  # 30 Kb/sec (30 * 1024)
-    dtp_handler.write_limit = 30072  # 30 Kb/sec (30 * 1024)
+    dtp_handler.read_limit = 30720  # 30 Kb/sec (30 * 1024)
+    dtp_handler.write_limit = 30720  # 30 Kb/sec (30 * 1024)
 
     ftp_handler = ftpserver.FTPHandler
     ftp_handler.authorizer = authorizer
