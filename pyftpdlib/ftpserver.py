@@ -176,6 +176,8 @@ proto_cmds = {
     'RMD' : ('d',  True,  True,  True,  'Syntax: RMD <SP> dir-name (remove directory).'),
     'RNFR': ('f',  True,  True,  True,  'Syntax: RNFR <SP> file-name (file renaming (source name)).'),
     'RNTO': (None, True,  True,  True,  'Syntax: RNTO <SP> file-name (file renaming (destination name)).'),
+    'SITE': (None, False, True, False,  'Syntax: SITE <SP> site-command (execute the specified SITE command).'),
+    'SITE HELP' : (None, False, None, False, 'Syntax: SITE HELP [<SP> site-command] (show SITE command help).'),
     'SIZE': (None, True,  True,  True,  'Syntax: HELP <SP> file-name (get file size).'),
     'STAT': ('l',  False, None,  True,  'Syntax: STAT [<SP> path name] (status information [list files]).'),
     'STOR': ('w',  True,  True,  True,  'Syntax: STOR <SP> file-name (store a file).'),
@@ -1707,11 +1709,10 @@ class FTPHandler(asynchat.async_chat):
         self._in_buffer_len = 0
 
         cmd = line.split(' ')[0].upper()
-        space = line.find(' ')
-        if space != -1:
-            arg = line[space + 1:]
-        else:
-            arg = ""
+        arg = line[len(cmd)+1:]
+        if cmd == "SITE" and arg:
+            cmd = "SITE %s" %arg.split(' ')[0].upper()
+            arg = line[len(cmd)+1:]
 
         if cmd != 'PASS':
             self.logline("<== %s" %line)
@@ -1741,7 +1742,7 @@ class FTPHandler(asynchat.async_chat):
             if proto_cmds[cmd].auth_needed or (cmd == 'STAT' and arg):
                 self.respond("530 Log in with USER and PASS first.")
             else:
-                method = getattr(self, 'ftp_' + cmd)
+                method = getattr(self, 'ftp_' + cmd.replace(' ', '_'))
                 method(arg)  # call the proper ftp_* method
         else:
             if cmd == 'STAT' and not arg:
@@ -1786,7 +1787,7 @@ class FTPHandler(asynchat.async_chat):
                     return
 
             # call the proper ftp_* method
-            method = getattr(self, 'ftp_' + cmd)
+            method = getattr(self, 'ftp_' + cmd.replace(' ', '_'))
             method(arg)
 
     def handle_expt(self):
@@ -2921,7 +2922,7 @@ class FTPHandler(asynchat.async_chat):
             # provide a compact list of recognized commands
             def formatted_help():
                 cmds = []
-                keys = proto_cmds.keys()
+                keys = [x for x in proto_cmds.keys() if not x.startswith('SITE ')]
                 keys.sort()
                 while keys:
                     elems = tuple((keys[0:8]))
@@ -2933,6 +2934,30 @@ class FTPHandler(asynchat.async_chat):
             self.push(formatted_help())
             self.respond("214 Help command successful.")
 
+        # --- site commands
+
+    # No SITE commands aside from SITE HELP are implemented by default.
+    # The user willing to add support for a specific SITE command has
+    # to define a new ftp_SITE_%CMD% method in the subclass.
+
+    def ftp_SITE_HELP(self, line):
+        """Return help text to the client for a given SITE command."""
+        if line:
+            line = line.upper()
+            if line in proto_cmds:
+                self.respond("214 %s" %proto_cmds[line].help)
+            else:
+                self.respond("501 Unrecognized SITE command.")
+        else:
+            self.push("214-The following SITE commands are recognized:\r\n")
+            site_cmds = []
+            keys = proto_cmds.keys()
+            keys.sort()
+            for cmd in keys:
+                if cmd.startswith('SITE '):
+                    site_cmds.append(' %s\r\n' %cmd[5:])
+            self.push(''.join(site_cmds))
+            self.respond("214 Help SITE command successful.")
 
         # --- support for deprecated cmds
 

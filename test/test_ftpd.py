@@ -629,7 +629,7 @@ class TestFtpAuthentication(unittest.TestCase):
 
 
 class TestFtpDummyCmds(unittest.TestCase):
-    "test: TYPE, STRU, MODE, NOOP, SYST, ALLO, HELP"
+    "test: TYPE, STRU, MODE, NOOP, SYST, ALLO, HELP, SITE HELP"
 
     def setUp(self):
         self.server = FTPd()
@@ -677,6 +677,17 @@ class TestFtpDummyCmds(unittest.TestCase):
         self.client.sendcmd('help %s' %cmd)
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'help ?!?')
 
+    def test_site(self):
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'site')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'site ?!?')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'site foo bar')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'sitefoo bar')
+
+    def test_site_help(self):
+        self.client.sendcmd('site help')
+        self.client.sendcmd('site help help')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'site help ?!?')
+
     def test_rest(self):
         # test error conditions only;
         # resumed data transfers are tested later
@@ -717,8 +728,8 @@ class TestFtpDummyCmds(unittest.TestCase):
 class TestFtpCmdsSemantic(unittest.TestCase):
 
     arg_cmds = ('allo','appe','dele','eprt','mdtm','mode','mkd','opts','port',
-                'rest','retr','rmd','rnfr','rnto','size', 'stor', 'stru','type',
-                'user','xmkd','xrmd')
+                'rest','retr','rmd','rnfr','rnto','site','size','stor','stru',
+                'type','user','xmkd','xrmd')
 
     def setUp(self):
         self.server = FTPd()
@@ -754,7 +765,8 @@ class TestFtpCmdsSemantic(unittest.TestCase):
         self.client.sendcmd('rein')
         for cmd in ftpserver.proto_cmds:
             cmd = cmd.lower()
-            if cmd in ('feat','help','noop','user','pass','stat','syst','quit'):
+            if cmd in ('feat','help','noop','user','pass','stat','syst','quit',
+                       'site', 'site help'):
                 continue
             if cmd in self.arg_cmds:
                 cmd = cmd + ' arg'
@@ -765,7 +777,7 @@ class TestFtpCmdsSemantic(unittest.TestCase):
     def test_no_auth_cmds(self):
         # test those commands that do not require client to be authenticated
         self.client.sendcmd('rein')
-        for cmd in ('feat','help','noop','stat','syst'):
+        for cmd in ('feat','help','noop','stat','syst','site help'):
             self.client.sendcmd(cmd)
         # STAT provided with an argument is equal to LIST hence not allowed
         # if not authenticated

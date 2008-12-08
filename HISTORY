@@ -14,8 +14,10 @@ Enhancements:
  * Issue #92: ASCII transfers are now 200% faster on those systems using
    "\r\n" as line separator (typically Windows).
 
- * Issue #93: A bigger buffer size for send() and recv() has been set resulting
+ * Issue #93: a bigger buffer size for send() and recv() has been set resulting
    in a considerable speedup for both incoming and outgoing data transfers.
+
+ * Issue #98: added preliminary support for SITE command.
 
 Bugfixes:
 
