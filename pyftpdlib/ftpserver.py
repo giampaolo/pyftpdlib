@@ -523,9 +523,9 @@ class DummyAuthorizer:
     def _check_permissions(self, username, perm):
         warned = 0
         for p in perm:
-            if p not in 'elradfmw':
+            if p not in self.read_perms + self.write_perms:
                 raise AuthorizerError('No such permission "%s"' %p)
-            if (username == 'anonymous') and (p in "adfmw") and not warned:
+            if (username == 'anonymous') and (p in self.write_perms) and not warned:
                 warnings.warn("Write permissions assigned to anonymous user.",
                               RuntimeWarning)
                 warned = 1
