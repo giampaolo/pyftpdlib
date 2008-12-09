@@ -469,20 +469,21 @@ class TestCallLater(unittest.TestCase):
         self.scheduler()
         self.assertEqual(l, [0.06, 0.03, 0.04, 0.05, 0.01, 0.02])
 
-    def test_reset(self):
-        # Note: this will fail on such systems where time.time() does
-        # not provide time with a better precision than 1 second.
-        l = []
-        fun = lambda x: l.append(x)
-        ftpserver.CallLater(0.01, fun, 0.01)
-        ftpserver.CallLater(0.02, fun, 0.02)
-        ftpserver.CallLater(0.03, fun, 0.03)
-        x = ftpserver.CallLater(0.04, fun, 0.04)
-        ftpserver.CallLater(0.05, fun, 0.05)
-        time.sleep(0.1)
-        x.reset()
-        self.scheduler()
-        self.assertEqual(l, [0.01, 0.02, 0.03, 0.05, 0.04])
+    # The test is reliable only on those systems where time.time()
+    # provides time with a better precision than 1 second.
+    if isinstance(time.time(), float):
+        def test_reset(self):
+            l = []
+            fun = lambda x: l.append(x)
+            ftpserver.CallLater(0.01, fun, 0.01)
+            ftpserver.CallLater(0.02, fun, 0.02)
+            ftpserver.CallLater(0.03, fun, 0.03)
+            x = ftpserver.CallLater(0.04, fun, 0.04)
+            ftpserver.CallLater(0.05, fun, 0.05)
+            time.sleep(0.1)
+            x.reset()
+            self.scheduler()
+            self.assertEqual(l, [0.01, 0.02, 0.03, 0.05, 0.04])
 
     def test_cancel(self):
         l = []
