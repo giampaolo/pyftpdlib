@@ -1060,7 +1060,7 @@ class TestFtpStoreData(unittest.TestCase):
         # watch for APPE preceded by REST, which makes no sense.
         self.client.sendcmd('type i')
         self.client.sendcmd('rest 10')
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'appe x')
+        self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'appe x')
 
     def test_rest_on_stor(self):
         data = 'abcde12345' * 100000

@@ -2451,7 +2451,7 @@ class FTPHandler(asynchat.async_chat):
         """Append data to an existing file on the server."""
         # watch for APPE preceded by REST, which makes no sense.
         if self.restart_position:
-            self.respond("550 Can't APPE while REST request is pending.")
+            self.respond("450 Can't APPE while REST request is pending.")
         else:
             self.ftp_STOR(file, mode='a')
 
