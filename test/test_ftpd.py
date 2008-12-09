@@ -260,8 +260,8 @@ class TestAbstractedFS(unittest.TestCase):
             fs.root = HOME
             try:
                 # tempfile should create our file in /tmp directory
-                # which should be outside the user root. If it is not
-                # we just skip the test.
+                # which should be outside the user root.  If it is
+                # not we just skip the test.
                 file = tempfile.NamedTemporaryFile()
                 if HOME == os.path.dirname(file.name):
                     return
@@ -470,8 +470,8 @@ class TestCallLater(unittest.TestCase):
         self.assertEqual(l, [0.06, 0.03, 0.04, 0.05, 0.01, 0.02])
 
     def test_reset(self):
-        # will fail on such systems where time.time() does not provide
-        # time with a better precision than 1 second.
+        # Note: this will fail on such systems where time.time() does
+        # not provide time with a better precision than 1 second.
         l = []
         fun = lambda x: l.append(x)
         ftpserver.CallLater(0.01, fun, 0.01)
@@ -689,8 +689,8 @@ class TestFtpDummyCmds(unittest.TestCase):
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'site help ?!?')
 
     def test_rest(self):
-        # test error conditions only;
-        # resumed data transfers are tested later
+        # Test error conditions only; resumed data transfers are
+        # tested later.
         self.client.sendcmd('type i')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest str')
@@ -744,7 +744,7 @@ class TestFtpCmdsSemantic(unittest.TestCase):
         self.server.stop()
 
     def test_arg_cmds(self):
-        # test commands requiring an argument
+        # Test commands requiring an argument.
         expected = "501 Syntax error: command needs an argument."
         for cmd in self.arg_cmds:
             self.client.putcmd(cmd)
@@ -752,7 +752,7 @@ class TestFtpCmdsSemantic(unittest.TestCase):
             self.assertEqual(resp, expected)
 
     def test_no_arg_cmds(self):
-        # test commands accepting no arguments
+        # Test commands accepting no arguments.
         expected = "501 Syntax error: command does not accept arguments."
         for cmd in ('abor','cdup','feat','noop','pasv','pwd','quit','rein',
                     'syst','xcup','xpwd'):
@@ -761,7 +761,7 @@ class TestFtpCmdsSemantic(unittest.TestCase):
             self.assertEqual(resp, expected)
 
     def test_auth_cmds(self):
-        # test those commands requiring client to be authenticated
+        # Test those commands requiring client to be authenticated.
         expected = "530 Log in with USER and PASS first."
         self.client.sendcmd('rein')
         for cmd in ftpserver.proto_cmds:
@@ -776,7 +776,7 @@ class TestFtpCmdsSemantic(unittest.TestCase):
             self.assertEqual(resp, expected)
 
     def test_no_auth_cmds(self):
-        # test those commands that do not require client to be authenticated
+        # Test those commands that do not require client to be authenticated.
         self.client.sendcmd('rein')
         for cmd in ('feat','help','noop','stat','syst','site help'):
             self.client.sendcmd(cmd)
@@ -885,7 +885,7 @@ class TestFtpFsOperations(unittest.TestCase):
 
     def test_unforseen_mdtm_event(self):
         # Emulate a case where the file last modification time is prior
-        # to year 1900. This most likely will never happen unless
+        # to year 1900.  This most likely will never happen unless
         # someone specifically force the last modification time of a
         # file in some way.
         # To do so we temporarily override os.path.getmtime so that it
@@ -952,7 +952,7 @@ class TestFtpStoreData(unittest.TestCase):
                 self.client.delete(TESTFN)
 
     def test_stor_ascii(self):
-        # test STOR in ASCII mode
+        # Test STOR in ASCII mode.
 
         def store(cmd, fp, blocksize=8192):
             self.client.voidcmd('type a')
@@ -1008,7 +1008,7 @@ class TestFtpStoreData(unittest.TestCase):
                 self.client.delete(filename)
 
     def test_stou_rest(self):
-        # watch for STOU preceded by REST, which makes no sense.
+        # Watch for STOU preceded by REST, which makes no sense.
         self.client.sendcmd('type i')
         self.client.sendcmd('rest 10')
         self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'stou')
@@ -1054,12 +1054,13 @@ class TestFtpStoreData(unittest.TestCase):
                 self.client.delete(TESTFN)
 
     def test_appe_rest(self):
-        # watch for APPE preceded by REST, which makes no sense.
+        # Watch for APPE preceded by REST, which makes no sense.
         self.client.sendcmd('type i')
         self.client.sendcmd('rest 10')
         self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'appe x')
 
     def test_rest_on_stor(self):
+        # Test STOR preceded by REST.
         data = 'abcde12345' * 100000
         self.dummy_sendfile.write(data)
         self.dummy_sendfile.seek(0)
@@ -1100,15 +1101,15 @@ class TestFtpStoreData(unittest.TestCase):
         self.client.delete(TESTFN)
 
     def test_failing_rest_on_stor(self):
-        # test REST -> STOR against a non existing file
+        # Test REST -> STOR against a non existing file.
         if os.path.exists(TESTFN):
             self.client.delete(TESTFN)
         self.client.sendcmd('type i')
         self.client.sendcmd('rest 10')
         self.assertRaises(ftplib.error_perm, self.client.storbinary,
                           'stor ' + TESTFN, lambda x: x)
-        # if the first STOR failed because of REST the REST setting
-        # is supposed to be discarded
+        # if the first STOR failed because of REST, the REST marker
+        # is supposed to be resetted to 0
         self.dummy_sendfile.write('x' * 4096)
         self.dummy_sendfile.seek(0)
         self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
@@ -1178,7 +1179,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.assertEqual(hash(data), hash(self.dummyfile.read()))
 
     def test_retr_ascii(self):
-        # test RETR in ASCII mode
+        # Test RETR in ASCII mode.
 
         def retrieve(cmd, callback, blocksize=8192, rest=None):
             # like retrbinary but uses TYPE A instead
@@ -1368,7 +1369,7 @@ class TestFtpListingCmds(unittest.TestCase):
             os.rmdir(dir)
 
     def test_stat(self):
-        # test STAT provided with argument which is equal to LIST
+        # Test STAT provided with argument which is equal to LIST
         self.client.sendcmd('stat /')
         self.client.sendcmd('stat ' + TESTFN)
         self.client.putcmd('stat *')
@@ -1477,7 +1478,7 @@ class TestTimeouts(unittest.TestCase):
         self.server.stop()
 
     def test_idle_timeout(self):
-        # Test control channel timeout. The client which does not send
+        # Test control channel timeout.  The client which does not send
         # any command within the time specified in FTPHandler.timeout is
         # supposed to be kicked off.
         self._setUp(idle_timeout=0.1)
@@ -1489,7 +1490,7 @@ class TestTimeouts(unittest.TestCase):
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
 
     def test_data_timeout(self):
-        # Test data channel timeout. The client which does not send
+        # Test data channel timeout.  The client which does not send
         # or receive any data within the time specified in
         # DTPHandler.timeout is supposed to be kicked off.
         self._setUp(data_timeout=0.1)
@@ -1533,9 +1534,9 @@ class TestTimeouts(unittest.TestCase):
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
 
     def test_pasv_timeout(self):
-        # Test pasv data channel timeout. The client which does not connect
-        # to the listening data socket within the time specified in
-        # PassiveDTP.timeout is supposed to receive a 421 response.
+        # Test pasv data channel timeout.  The client which does not
+        # connect to the listening data socket within the time specified
+        # in PassiveDTP.timeout is supposed to receive a 421 response.
         self._setUp(pasv_timeout=0.1)
         self.client.makepasv()
         # fail if no msg is received within 1 second
@@ -1618,7 +1619,7 @@ class TestMaxConnections(unittest.TestCase):
 class _TestNetworkProtocols(unittest.TestCase):
     """Test PASV, EPSV, PORT and EPRT commands.
 
-    Do not use this class directly. Let TestIPv4Environment and
+    Do not use this class directly, let TestIPv4Environment and
     TestIPv6Environment classes use it instead.
     """
     HOST = HOST
