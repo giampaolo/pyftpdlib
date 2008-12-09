@@ -2297,6 +2297,8 @@ class FTPHandler(asynchat.async_chat):
         client)
         """
         line = self.fs.fs2ftp(file)
+        rest_pos = self.restart_position
+        self.restart_position = 0
         try:
             fd = self.run_as_current_user(self.fs.open, file, 'rb')
         except IOError, err:
@@ -2305,7 +2307,7 @@ class FTPHandler(asynchat.async_chat):
             self.respond('550 %s.' %why)
             return
 
-        if self.restart_position:
+        if rest_pos:
             # Make sure that the requested offset is valid (within the
             # size of the file being resumed).
             # According to RFC-1123 a 554 reply may result in case that
@@ -2313,14 +2315,13 @@ class FTPHandler(asynchat.async_chat):
             # the REST.
             ok = 0
             try:
-                assert not self.restart_position > self.fs.getsize(file)
-                fd.seek(self.restart_position)
+                assert not rest_pos > self.fs.getsize(file)
+                fd.seek(rest_pos)
                 ok = 1
             except AssertionError:
                 why = "Invalid REST parameter"
             except IOError, err:
                 why = _strerror(err)
-            self.restart_position = 0
             if not ok:
                 self.respond('554 %s' %why)
                 self.log('FAIL RETR "%s". %s.' %(line, why))
@@ -2341,7 +2342,9 @@ class FTPHandler(asynchat.async_chat):
         else:
             cmd = 'STOR'
         line = self.fs.fs2ftp(file)
-        if self.restart_position:
+        rest_pos = self.restart_position
+        self.restart_position = 0
+        if rest_pos:
             mode = 'r+'
         try:
             fd = self.run_as_current_user(self.fs.open, file, mode + 'b')
@@ -2351,7 +2354,7 @@ class FTPHandler(asynchat.async_chat):
             self.respond('550 %s.' %why)
             return
 
-        if self.restart_position:
+        if rest_pos:
             # Make sure that the requested offset is valid (within the
             # size of the file being resumed).
             # According to RFC-1123 a 554 reply may result in case
@@ -2359,14 +2362,13 @@ class FTPHandler(asynchat.async_chat):
             # specified in the REST.
             ok = 0
             try:
-                assert not self.restart_position > self.fs.getsize(file)
-                fd.seek(self.restart_position)
+                assert not rest_pos > self.fs.getsize(file)
+                fd.seek(rest_pos)
                 ok = 1
             except AssertionError:
                 why = "Invalid REST parameter"
             except IOError, err:
                 why = _strerror(err)
-            self.restart_position = 0
             if not ok:
                 self.respond('554 %s' %why)
                 self.log('FAIL %s "%s". %s.' %(cmd, line, why))
@@ -2399,6 +2401,8 @@ class FTPHandler(asynchat.async_chat):
             self.respond("450 Can't STOU while REST request is pending.")
             return
 
+        rest_pos = self.restart_position
+        self.restart_position = 0
         if line:
             basedir, prefix = os.path.split(self.fs.ftp2fs(line))
             prefix = prefix + '.'

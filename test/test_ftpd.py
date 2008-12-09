@@ -695,6 +695,7 @@ class TestFtpDummyCmds(unittest.TestCase):
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest str')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest -1')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest 10.1')
         # REST is not supposed to be allowed in ASCII mode
         self.client.sendcmd('type a')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest 10')
@@ -1100,6 +1101,20 @@ class TestFtpStoreData(unittest.TestCase):
                          hash(self.dummy_recvfile.read())
                          )
         self.client.delete(TESTFN)
+
+    def test_failing_rest_on_stor(self):
+        # test REST -> STOR against a non existing file
+        if os.path.exists(TESTFN):
+            self.client.delete(TESTFN)
+        self.client.sendcmd('type i')
+        self.client.sendcmd('rest 10')
+        self.assertRaises(ftplib.error_perm, self.client.storbinary,
+                          'stor ' + TESTFN, lambda x: x)
+        # if the first STOR failed because of REST the REST setting
+        # is supposed to be discarded
+        self.dummy_sendfile.write('x' * 4096)
+        self.dummy_sendfile.seek(0)
+        self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
 
     def test_unforeseen_stor_event(self):
         # Emulate a case where we try to STOR a file on a server
