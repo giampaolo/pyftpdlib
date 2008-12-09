@@ -795,8 +795,7 @@ class TestFtpFsOperations(unittest.TestCase):
         self.client.connect(self.server.host, self.server.port)
         self.client.login(USER, PASSWD)
         self.tempfile = os.path.basename(open(TESTFN, 'w+b').name)
-        self.tempdir = os.path.basename(tempfile.mktemp(dir=HOME))
-        os.mkdir(self.tempdir)
+        self.tempdir = os.path.basename(tempfile.mkdtemp(dir=HOME))
 
     def tearDown(self):
         self.client.close()
