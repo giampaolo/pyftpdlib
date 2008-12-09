@@ -1026,10 +1026,7 @@ class TestFtpStoreData(unittest.TestCase):
         # login as a limited user to let STOU fail
         self.client.login('anonymous', '@nopasswd')
         before = os.listdir(HOME)
-        try:
-            self.client.sendcmd('stou ' + TESTFN)
-        except:
-            pass
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'stou ' + TESTFN)
         after = os.listdir(HOME)
         if before != after:
             for file in after:
