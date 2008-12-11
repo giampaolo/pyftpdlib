@@ -890,14 +890,28 @@ class TestFtpFsOperations(unittest.TestCase):
         # someone specifically force the last modification time of a
         # file in some way.
         # To do so we temporarily override os.path.getmtime so that it
-        # returns a negative value referring to a year prior to 1970.
+        # returns a negative value referring to a year prior to 1900.
         # It causes time.localtime/gmtime to raise a ValueError exception
         # which is supposed to be handled by server.
+
+        # Python 2.3 on certain posix platforms does not raise
+        # ValueError as expected;
+        # (see http://bugs.python.org/issue874042)
+        try:
+            time.localtime(-9000000000)
+        except ValueError:
+            skip = 0
+        else:
+            skip = 1
+
         _getmtime = ftpserver.AbstractedFS.getmtime
         try:
             ftpserver.AbstractedFS.getmtime = lambda x, y: -9000000000
-            self.assertRaises(ftplib.error_perm, self.client.sendcmd,
-                              'mdtm ' + self.tempfile)
+            if not skip:
+                self.assertRaises(ftplib.error_perm, self.client.sendcmd,
+                                  'mdtm ' + self.tempfile)
+            else:
+                self.client.sendcmd('mdtm ' + self.tempfile)
             # make sure client hasn't been disconnected
             self.client.sendcmd('noop')
         finally:
