@@ -219,8 +219,8 @@ class TestAbstractedFS(unittest.TestCase):
             ae(fs.fs2ftp('D:\\dir'), '/')
         elif os.sep == '/':
             goforit('/')
-            assert os.path.realpath('/__home/user') == '/__home/user', \
-                                    'Test skipped (symlinks not allowed).'
+            if os.path.realpath('/__home/user') != '/__home/user':
+                self.fail('Test skipped (symlinks not allowed).')
             goforit('/__home/user')
             fs.root = '/__home/user'
             ae(fs.fs2ftp('/__home'), '/')
