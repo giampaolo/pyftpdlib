@@ -92,6 +92,12 @@ def try_address(host, port=0, family=socket.AF_INET):
 
 SUPPORTS_IPV4 = try_address('127.0.0.1')
 SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
+BIND_ON_PRIVILEGED_PORTS = False
+for port in range(1, 1024)[::-1]:
+    if try_address(HOST, port):
+        BIND_ON_PRIVILEGED_PORTS = True
+        break
+del port
 
 def safe_remove(*files):
     "Convenience function for removing temporary test files"
@@ -1588,19 +1594,31 @@ class TestTimeouts(unittest.TestCase):
         s.close()
 
 
-class TestMaxConnections(unittest.TestCase):
-    """Test maximum connections (FTPServer.max_cons)."""
+class TestConfigurableOptions(unittest.TestCase):
+    """Test those daemon options which are commonly modified by user."""
 
     def setUp(self):
         self.server = FTPd()
-        self.server.server.max_cons = 3
         self.server.start()
+        self.client = ftplib.FTP()
+        self.client.connect(self.server.host, self.server.port)
+        self.client.login(USER, PASSWD)
 
     def tearDown(self):
+        # set back options to their original value
         self.server.server.max_cons = 0
+        self.server.handler.banner = "pyftpdlib %s ready." %ftpserver.__ver__
+        self.server.handler.max_login_attempts = 3
+        self.server.handler._auth_failed_timeout = 5
+        self.server.handler.masquerade_address = None
+        self.server.handler.permit_privileged_ports = False
+        self.server.handler.passive_ports = None
         self.server.stop()
 
     def test_max_connections(self):
+        # Test FTPServer.max_cons attribute
+        self.server.server.max_cons = 3
+        self.client.close()
         c1 = ftplib.FTP()
         c2 = ftplib.FTP()
         c3 = ftplib.FTP()
@@ -1629,6 +1647,67 @@ class TestMaxConnections(unittest.TestCase):
             c1.close()
             c2.close()
             c3.close()
+
+    def test_banner(self):
+        # Test FTPHandler.banner attribute
+        self.server.handler.banner = 'hello there'
+        self.client.close()
+        self.client = ftplib.FTP()
+        self.client.connect(self.server.host, self.server.port)
+        self.assertEqual(self.client.getwelcome()[4:], 'hello there')
+
+    def test_max_login_attempts(self):
+        # Test FTPHandler.max_login_attempts attribute.
+        self.server.handler.max_login_attempts = 1
+        self.server.handler._auth_failed_timeout = 0
+        self.assertRaises(ftplib.error_perm, self.client.login, 'wrong', 'wrong')
+        # socket.error (Windows) or EOFError (Linux) exceptions are
+        # supposed to be raised when attempting to send/recv some data
+        # using a disconnected socket
+        self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
+
+    def test_masquerade_address(self):
+        # Test FTPHandler.masquerade_address attribute
+        host, port = self.client.makepasv()
+        self.assertEqual(host, self.server.host)
+        self.server.handler.masquerade_address = "256.256.256.256"
+        host, port = self.client.makepasv()
+        self.assertEqual(host, "256.256.256.256")
+
+    def test_passive_ports(self):
+        # Test FTPHandler.passive_ports attribute
+        _range = range(40000, 60000, 200)
+        self.server.handler.passive_ports = _range
+        self.assert_(self.client.makepasv()[1] in _range)
+        self.assert_(self.client.makepasv()[1] in _range)
+        self.assert_(self.client.makepasv()[1] in _range)
+        self.assert_(self.client.makepasv()[1] in _range)
+
+    if BIND_ON_PRIVILEGED_PORTS:
+
+        def test_permit_privileged_ports(self):
+            # Test FTPHandler.permit_privileged_ports_active attribute
+            for port in range(1, 1024)[::-1]:
+                try:
+                    sock = socket.socket(self.client.af, socket.SOCK_STREAM)
+                    sock.bind((HOST, port))
+                    break
+                except socket.error, err:
+                    sock.close()
+            else:
+                self.fail("No usable free port found")
+
+            try:
+                self.server.handler.permit_privileged_ports = False
+                self.assertRaises(ftplib.error_perm, self.client.sendport, HOST,
+                                  port)
+                self.server.handler.permit_privileged_ports = True
+                sock.listen(5)
+                sock.settimeout(2)
+                self.client.sendport(HOST, port)
+                sock.accept()
+            finally:
+                sock.close()
 
 
 class _TestNetworkProtocols(unittest.TestCase):
@@ -1851,7 +1930,7 @@ def test_main(tests=None):
                  TestFtpListingCmds,
                  TestFtpAbort,
                  TestTimeouts,
-                 TestMaxConnections
+                 TestConfigurableOptions
                  ]
         if SUPPORTS_IPV4:
             tests.append(TestIPv4Environment)
