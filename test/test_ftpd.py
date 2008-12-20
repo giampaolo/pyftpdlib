@@ -92,12 +92,7 @@ def try_address(host, port=0, family=socket.AF_INET):
 
 SUPPORTS_IPV4 = try_address('127.0.0.1')
 SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
-BIND_ON_PRIVILEGED_PORTS = False
-for port in range(1, 1024)[::-1]:
-    if try_address(HOST, port):
-        BIND_ON_PRIVILEGED_PORTS = True
-        break
-del port
+
 
 def safe_remove(*files):
     "Convenience function for removing temporary test files"
@@ -1683,31 +1678,50 @@ class TestConfigurableOptions(unittest.TestCase):
         self.assert_(self.client.makepasv()[1] in _range)
         self.assert_(self.client.makepasv()[1] in _range)
 
-    if BIND_ON_PRIVILEGED_PORTS:
+    if hasattr(socket, 'getservbyport'):   # python > 2.3
 
         def test_permit_privileged_ports(self):
             # Test FTPHandler.permit_privileged_ports_active attribute
+
+            # try to bind a socket on a privileged port
+            sock = None
             for port in range(1, 1024)[::-1]:
                 try:
-                    sock = socket.socket(self.client.af, socket.SOCK_STREAM)
-                    sock.bind((HOST, port))
-                    break
+                    socket.getservbyport(port)
                 except socket.error, err:
-                    sock.close()
+                    # not registered port; go on
+                    try:
+                        sock = socket.socket(self.client.af, socket.SOCK_STREAM)
+                        sock.bind((HOST, port))
+                        break
+                    except socket.error, err:
+                        if err[0] == errno.EACCES:
+                            # root privileges needed
+                            sock = None
+                            break
+                        sock.close()
+                        continue
+                else:
+                    # registered port found; skip to the next one
+                    continue
             else:
-                self.fail("No usable free port found")
+                # no usable privileged port was found
+                sock = None
 
             try:
                 self.server.handler.permit_privileged_ports = False
                 self.assertRaises(ftplib.error_perm, self.client.sendport, HOST,
                                   port)
-                self.server.handler.permit_privileged_ports = True
-                sock.listen(5)
-                sock.settimeout(2)
-                self.client.sendport(HOST, port)
-                sock.accept()
+                if sock:
+                    port = sock.getsockname()[1]
+                    self.server.handler.permit_privileged_ports = True
+                    sock.listen(5)
+                    sock.settimeout(2)
+                    self.client.sendport(HOST, port)
+                    sock.accept()
             finally:
-                sock.close()
+                if sock is not None:
+                    sock.close()
 
 
 class _TestNetworkProtocols(unittest.TestCase):
