@@ -1891,11 +1891,22 @@ class TestIPv6Environment(_TestNetworkProtocols):
 
 
 class FTPd(threading.Thread):
-    """A threaded FTP server used for running tests."""
+    """A threaded FTP server used for running tests.
+
+    This is basically a modified version of the FTPServer class which
+    wraps the polling loop into a thread.
+
+    The instance returned can be used to start(), stop() and
+    eventually re-start() the server.
+    """
 
     def __init__(self, host=HOST, port=0, verbose=False):
         threading.Thread.__init__(self)
-        self.active = False
+        self.__serving = False
+        self.__stopped = False
+        self.__lock = threading.Lock()
+        self.__flag = threading.Event()
+
         if not verbose:
             ftpserver.log = ftpserver.logline = lambda x: x
         self.authorizer = ftpserver.DummyAuthorizer()
@@ -1905,26 +1916,51 @@ class FTPd(threading.Thread):
         self.handler.authorizer = self.authorizer
         self.server = ftpserver.FTPServer((host, port), self.handler)
         self.host, self.port = self.server.socket.getsockname()[:2]
-        self.active_lock = threading.Lock()
 
-    def start(self):
-        assert not self.active
-        self.__flag = threading.Event()
+    def __repr__(self):
+        status = [self.__class__.__module__ + "." + self.__class__.__name__]
+        if self.__serving:
+            status.append('active')
+        else:
+            status.append('inactive')
+        status.append('%s:%s' %self.server.socket.getsockname()[:2])
+        return '<%s at %#x>' % (' '.join(status), id(self))
+
+    def start(self, timeout=0.001, use_poll=False, map=None):
+        """Start serving until an explicit stop() request.
+        Polls for shutdown every 'timeout' seconds.
+        """
+        if self.__serving:
+            raise RuntimeError("Server already started")
+        if self.__stopped:
+            # ensure the server can be started again
+            ThreadedFTPServer.__init__(self, self.socket.getsockname(),
+                                       self.handler)
+        self.__timeout = timeout
+        self.__use_poll = use_poll
+        self.__map = map
         threading.Thread.start(self)
         self.__flag.wait()
 
     def run(self):
-        self.active = True
+        self.__serving = True
         self.__flag.set()
-        while self.active:
-            self.active_lock.acquire()
-            self.server.serve_forever(timeout=0.001, count=1)
-            self.active_lock.release()
+        while self.__serving:
+            self.__lock.acquire()
+            self.server.serve_forever(timeout=self.__timeout, count=1,
+                                      use_poll=self.__use_poll, map=self.__map)
+            self.__lock.release()
         self.server.close_all(ignore_all=True)
 
     def stop(self):
-        assert self.active
-        self.active = False
+        """Stop serving (also disconnecting all currently connected
+        clients) by telling the serve_forever() loop to stop and
+        waits until it does.
+        """
+        if not self.__serving:
+            raise RuntimeError("Server not started yet")
+        self.__serving = False
+        self.__stopped = True
         self.join()
 
 
