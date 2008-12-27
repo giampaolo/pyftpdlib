@@ -1613,7 +1613,7 @@ class TestConfigurableOptions(unittest.TestCase):
     def test_max_connections(self):
         # Test FTPServer.max_cons attribute
         self.server.server.max_cons = 3
-        self.client.close()
+        self.client.quit()
         c1 = ftplib.FTP()
         c2 = ftplib.FTP()
         c3 = ftplib.FTP()
@@ -1623,7 +1623,7 @@ class TestConfigurableOptions(unittest.TestCase):
             self.assertRaises(ftplib.error_temp, c3.connect, self.server.host,
                               self.server.port)
             # with passive data channel established
-            c2.close()
+            c2.quit()
             c1.login(USER, PASSWD)
             c1.makepasv()
             self.assertRaises(ftplib.error_temp, c2.connect, self.server.host,
