@@ -980,6 +980,11 @@ class TestFtpStoreData(unittest.TestCase):
                 except (ftplib.Error, EOFError, socket.error):
                     safe_remove(TESTFN)
 
+    def test_stor_active(self):
+        # Like test_stor but using PORT
+        self.client.set_pasv(False)
+        self.test_stor()
+
     def test_stor_ascii(self):
         # Test STOR in ASCII mode.
 
