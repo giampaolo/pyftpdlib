@@ -563,14 +563,16 @@ class TestFtpAuthentication(unittest.TestCase):
 
         self.client.voidcmd('type i')
         conn = self.client.transfercmd('retr ' + TESTFN)
-        rein_sent = 0
+        rein_sent = False
+        bytes_recv = 0
         while 1:
             chunk = conn.recv(8192)
             if not chunk:
                 break
+            bytes_recv += len(chunk)
             self.dummyfile.write(chunk)
-            if not rein_sent:
-                rein_sent = 1
+            if bytes_recv > 524288 and not rein_sent:
+                rein_sent = True
                 # flush account, error response expected
                 self.client.sendcmd('rein')
                 self.assertRaises(ftplib.error_perm, self.client.dir)
@@ -596,7 +598,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.client.sendcmd('pass ' + PASSWD)
         self.client.sendcmd('pwd')
 
-    def test_user_on_transfer(self):
+    def test_user_during_transfer(self):
         # Test USER while already authenticated and a transfer is
         # in progress.
         self.client.login(user=USER, passwd=PASSWD)
@@ -607,14 +609,16 @@ class TestFtpAuthentication(unittest.TestCase):
         self.client.voidcmd('TYPE I')
         conn = self.client.transfercmd('retr ' + TESTFN)
         rein_sent = 0
+        bytes_recv = 0
         while 1:
             chunk = conn.recv(8192)
             if not chunk:
                 break
+            bytes_recv += len(chunk)
             self.dummyfile.write(chunk)
             # stop transfer while it isn't finished yet
-            if not rein_sent:
-                rein_sent = 1
+            if bytes_recv > 524288 and not rein_sent:
+                rein_sent = True
                 # flush account, expect an error response
                 self.client.sendcmd('user ' + USER)
                 self.assertRaises(ftplib.error_perm, self.client.dir)
@@ -980,7 +984,8 @@ class TestFtpStoreData(unittest.TestCase):
             conn = self.client.transfercmd(cmd)
             while 1:
                 buf = fp.read(blocksize)
-                if not buf: break
+                if not buf:
+                    break
                 conn.sendall(buf)
             conn.close()
             return self.client.voidresp()
@@ -1094,10 +1099,9 @@ class TestFtpStoreData(unittest.TestCase):
             conn.sendall(chunk)
             bytes_sent += len(chunk)
             # stop transfer while it isn't finished yet
-            if bytes_sent >= 524288: # 2^19
+            if bytes_sent >= 524288 or not chunk:
                 break
-            elif not chunk:
-                break
+
         conn.close()
         # transfer wasn't finished yet so we expect a 426 response
         self.client.voidresp()
@@ -1438,7 +1442,7 @@ class TestFtpAbort(unittest.TestCase):
         respcode = self.client.sendcmd('ABOR')[:3]
         self.failUnlessEqual('225', respcode)
 
-    def test_abor(self):
+    def test_abor_during_transfer(self):
         # Case 4: ABOR while a data transfer on DTP channel is in
         # progress: close data channel, respond with 426, respond
         # with 226.
@@ -1449,7 +1453,13 @@ class TestFtpAbort(unittest.TestCase):
         try:
             self.client.voidcmd('TYPE I')
             conn = self.client.transfercmd('retr ' + TESTFN)
-            chunk = conn.recv(len(data) / 2)
+            bytes_recv = 0
+            while 1:
+                chunk = conn.recv(8192)
+                bytes_recv += len(chunk)
+                if bytes_recv > 524288 or not chunk:
+                    break
+
             # stop transfer while it isn't finished yet
             self.client.putcmd('ABOR')
 
