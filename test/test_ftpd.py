@@ -507,6 +507,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.server.start()
         self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
         self.file = open(TESTFN, 'w+b')
         self.dummyfile = StringIO.StringIO()
 
@@ -638,6 +639,7 @@ class TestFtpDummyCmds(unittest.TestCase):
         self.server.start()
         self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
 
     def tearDown(self):
@@ -739,6 +741,7 @@ class TestFtpCmdsSemantic(unittest.TestCase):
         self.server.start()
         self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
 
     def tearDown(self):
@@ -796,6 +799,7 @@ class TestFtpFsOperations(unittest.TestCase):
         self.server.start()
         self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
         self.tempfile = os.path.basename(open(TESTFN, 'w+b').name)
         self.tempdir = os.path.basename(tempfile.mkdtemp(dir=HOME))
@@ -940,6 +944,7 @@ class TestFtpStoreData(unittest.TestCase):
         self.server.start()
         self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
         self.dummy_recvfile = StringIO.StringIO()
         self.dummy_sendfile = StringIO.StringIO()
@@ -1173,6 +1178,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.server.start()
         self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
         self.file = open(TESTFN, 'w+b')
         self.dummyfile = StringIO.StringIO()
@@ -1290,6 +1296,7 @@ class TestFtpListingCmds(unittest.TestCase):
         self.server.start()
         self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
         open(TESTFN, 'w').close()
 
@@ -1403,6 +1410,7 @@ class TestFtpAbort(unittest.TestCase):
         self.server.start()
         self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
 
     def tearDown(self):
@@ -1483,6 +1491,7 @@ class TestTimeouts(unittest.TestCase):
         self.server.start()
         self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
 
     def tearDown(self):
@@ -1597,6 +1606,7 @@ class TestConfigurableOptions(unittest.TestCase):
         self.server.start()
         self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
 
     def tearDown(self):
@@ -1649,6 +1659,7 @@ class TestConfigurableOptions(unittest.TestCase):
         self.client.close()
         self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
         self.assertEqual(self.client.getwelcome()[4:], 'hello there')
 
     def test_max_login_attempts(self):
@@ -1737,6 +1748,7 @@ class _TestNetworkProtocols(unittest.TestCase):
         self.server.start()
         self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
         if self.client.af == socket.AF_INET:
             self.proto = "1"
