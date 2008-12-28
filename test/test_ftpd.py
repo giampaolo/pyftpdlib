@@ -1037,8 +1037,8 @@ class TestFtpStoreData(unittest.TestCase):
             self.assertEqual(hash(data), hash (self.dummy_recvfile.read()))
         finally:
             # We do not use os.remove() because file could still be
-            # still locked by ftpd thread.  If DELE through FTP fails
-            # try os.remove() as last resort.
+            # locked by ftpd thread.  If DELE through FTP fails try
+            # os.remove() as last resort.
             if os.path.exists(filename):
                 try:
                     self.client.delete(filename)
@@ -1302,8 +1302,8 @@ class TestFtpRetrieveData(unittest.TestCase):
                 self.assert_("No space left on device" in str(err))
                 # make sure client hasn't been disconnected
                 self.client.sendcmd('noop')
-                return
-            self.fail("Exception not raised")
+            else:
+                self.fail("Exception not raised")
         finally:
             ftpserver.AbstractedFS.open = _open
 
