@@ -259,11 +259,11 @@ class TestAbstractedFS(unittest.TestCase):
             # outside the root directory.
             fs = ftpserver.AbstractedFS()
             fs.root = HOME
+            # tempfile should create our file in /tmp directory
+            # which should be outside the user root.  If it is
+            # not we just skip the test.
+            file = tempfile.NamedTemporaryFile()
             try:
-                # tempfile should create our file in /tmp directory
-                # which should be outside the user root.  If it is
-                # not we just skip the test.
-                file = tempfile.NamedTemporaryFile()
                 if HOME == os.path.dirname(file.name):
                     return
                 os.symlink(file.name, TESTFN)
@@ -971,10 +971,14 @@ class TestFtpStoreData(unittest.TestCase):
             self.dummy_recvfile.seek(0)
             self.assertEqual(hash(data), hash (self.dummy_recvfile.read()))
         finally:
-            # we do not use os.remove because file could be still
-            # locked by ftpd thread
+            # We do not use os.remove() because file could still be
+            # locked by ftpd thread.  If DELE through FTP fails try
+            # os.remove() as last resort.
             if os.path.exists(TESTFN):
-                self.client.delete(TESTFN)
+                try:
+                    self.client.delete(TESTFN)
+                except (ftplib.Error, EOFError, socket.error):
+                    safe_remove(TESTFN)
 
     def test_stor_ascii(self):
         # Test STOR in ASCII mode.
@@ -1000,10 +1004,14 @@ class TestFtpStoreData(unittest.TestCase):
             self.dummy_recvfile.seek(0)
             self.assertEqual(hash(expected), hash(self.dummy_recvfile.read()))
         finally:
-            # we do not use os.remove because file could be still
-            # locked by ftpd thread
+            # We do not use os.remove() because file could still be
+            # locked by ftpd thread.  If DELE through FTP fails try
+            # os.remove() as last resort.
             if os.path.exists(TESTFN):
-                self.client.delete(TESTFN)
+                try:
+                    self.client.delete(TESTFN)
+                except (ftplib.Error, EOFError, socket.error):
+                    safe_remove(TESTFN)
 
     def test_stou(self):
         data = 'abcde12345' * 100000
@@ -1028,10 +1036,14 @@ class TestFtpStoreData(unittest.TestCase):
             self.dummy_recvfile.seek(0)
             self.assertEqual(hash(data), hash (self.dummy_recvfile.read()))
         finally:
-            # we do not use os.remove because file could be
-            # still locked by ftpd thread
+            # We do not use os.remove() because file could still be
+            # still locked by ftpd thread.  If DELE through FTP fails
+            # try os.remove() as last resort.
             if os.path.exists(filename):
-                self.client.delete(filename)
+                try:
+                    self.client.delete(filename)
+                except (ftplib.Error, EOFError, socket.error):
+                    safe_remove(filename)
 
     def test_stou_rest(self):
         # Watch for STOU preceded by REST, which makes no sense.
@@ -1074,10 +1086,14 @@ class TestFtpStoreData(unittest.TestCase):
             self.dummy_recvfile.seek(0)
             self.assertEqual(hash(data1 + data2), hash (self.dummy_recvfile.read()))
         finally:
-            # we do not use os.remove because file could be still
-            # locked by ftpd thread
+            # We do not use os.remove() because file could still be
+            # locked by ftpd thread.  If DELE through FTP fails try
+            # os.remove() as last resort.
             if os.path.exists(TESTFN):
-                self.client.delete(TESTFN)
+                try:
+                    self.client.delete(TESTFN)
+                except (ftplib.Error, EOFError, socket.error):
+                    safe_remove(TESTFN)
 
     def test_appe_rest(self):
         # Watch for APPE preceded by REST, which makes no sense.
@@ -1334,7 +1350,10 @@ class TestFtpListingCmds(unittest.TestCase):
             self.client.retrlines('%s %s' %(cmd, tempdir), x.append)
             self.assertEqual(x, [])
         finally:
-            os.rmdir(tempdir)
+            try:
+                os.rmdir(tempdir)
+            except OSError:
+                pass
 
     def test_nlst(self):
         # common tests
@@ -1393,7 +1412,10 @@ class TestFtpListingCmds(unittest.TestCase):
             else:
                 self.fail("Exception not raised")
         finally:
-            os.rmdir(dir)
+            try:
+                os.rmdir(dir)
+            except OSError:
+                pass
 
     def test_stat(self):
         # Test STAT provided with argument which is equal to LIST
@@ -1469,7 +1491,13 @@ class TestFtpAbort(unittest.TestCase):
             # transfer successfully aborted, so should now respond with a 226
             self.failUnlessEqual('226', self.client.voidresp()[:3])
         finally:
-            self.client.delete(TESTFN)
+            # We do not use os.remove() because file could still be
+            # locked by ftpd thread.  If DELE through FTP fails try
+            # os.remove() as last resort.
+            try:
+                self.client.delete(TESTFN)
+            except (ftplib.Error, EOFError, socket.error):
+                safe_remove(TESTFN)
 
     if hasattr(socket, 'MSG_OOB'):
         def test_oob_abor(self):
