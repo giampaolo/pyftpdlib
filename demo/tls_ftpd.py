@@ -40,17 +40,17 @@ class SSLConnection(object, asyncore.dispatcher):
         if self.ssl_accepting:
             self.do_ssl_handshake()
         else:
-            asyncore.dispatcher.handle_read_event(self)
+            super(SSLConnection, self).handle_read_event()
 
     def handle_write_event(self):
         if self.ssl_accepting:
             self.do_ssl_handshake()
         else:
-            asyncore.dispatcher.handle_write_event(self)
+            super(SSLConnection, self).handle_write_event()
 
     def send(self, data):
         try:
-            return asyncore.dispatcher.send(self, data)
+            return super(SSLConnection, self).send(data)
         except ssl.SSLError, err:
             if err.args[0] == ssl.SSL_ERROR_EOF:
                 return 0
@@ -58,7 +58,7 @@ class SSLConnection(object, asyncore.dispatcher):
 
     def recv(self, buffer_size):
         try:
-            return asyncore.dispatcher.recv(self, buffer_size)
+            return super(SSLConnection, self).recv(buffer_size)
         except ssl.SSLError, err:
             if err.args[0] == ssl.SSL_ERROR_EOF:
                 self.handle_close()
@@ -67,12 +67,6 @@ class SSLConnection(object, asyncore.dispatcher):
 
 
 class TLS_DTPHandler(SSLConnection, DTPHandler):
-
-    do_ssl_handshake = SSLConnection.do_ssl_handshake
-    handle_read_event = SSLConnection.handle_read_event
-    handle_write_event = SSLConnection.handle_write_event
-    send = SSLConnection.send
-    recv = SSLConnection.recv
 
     def __init__(self, sock_obj, cmd_channel):
         DTPHandler.__init__(self, sock_obj, cmd_channel)
@@ -87,12 +81,6 @@ class TLS_DTPHandler(SSLConnection, DTPHandler):
 class TLS_FTPHandler(SSLConnection, FTPHandler):
 
     dtp_handler = TLS_DTPHandler
-
-    do_ssl_handshake = SSLConnection.do_ssl_handshake
-    handle_read_event = SSLConnection.handle_read_event
-    handle_write_event = SSLConnection.handle_write_event
-    send = SSLConnection.send
-    recv = SSLConnection.recv
 
     def __init__(self, conn, server):
         FTPHandler.__init__(self, conn, server)
