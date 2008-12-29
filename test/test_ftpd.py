@@ -564,14 +564,12 @@ class TestFtpAuthentication(unittest.TestCase):
         self.client.voidcmd('type i')
         conn = self.client.transfercmd('retr ' + TESTFN)
         rein_sent = False
-        bytes_recv = 0
         while 1:
             chunk = conn.recv(8192)
             if not chunk:
                 break
-            bytes_recv += len(chunk)
             self.dummyfile.write(chunk)
-            if bytes_recv > 524288 and not rein_sent:
+            if not rein_sent:
                 rein_sent = True
                 # flush account, error response expected
                 self.client.sendcmd('rein')
@@ -608,16 +606,14 @@ class TestFtpAuthentication(unittest.TestCase):
 
         self.client.voidcmd('TYPE I')
         conn = self.client.transfercmd('retr ' + TESTFN)
-        rein_sent = 0
-        bytes_recv = 0
+        rein_sent = False
         while 1:
             chunk = conn.recv(8192)
             if not chunk:
                 break
-            bytes_recv += len(chunk)
             self.dummyfile.write(chunk)
             # stop transfer while it isn't finished yet
-            if bytes_recv > 524288 and not rein_sent:
+            if not rein_sent:
                 rein_sent = True
                 # flush account, expect an error response
                 self.client.sendcmd('user ' + USER)
@@ -1480,12 +1476,7 @@ class TestFtpAbort(unittest.TestCase):
         try:
             self.client.voidcmd('TYPE I')
             conn = self.client.transfercmd('retr ' + TESTFN)
-            bytes_recv = 0
-            while 1:
-                chunk = conn.recv(8192)
-                bytes_recv += len(chunk)
-                if bytes_recv > 524288 or not chunk:
-                    break
+            chunk = conn.recv(len(data) / 2)
 
             # stop transfer while it isn't finished yet
             self.client.putcmd('ABOR')
