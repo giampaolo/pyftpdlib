@@ -26,24 +26,31 @@ del cmd, properties, new_proto_cmds, _CommandProperty
 
 
 class SSLConnection(object, asyncore.dispatcher):
+    _ssl_accepting = False
+
+    def secure_connection(self):
+        self.socket = ssl.wrap_socket(self.socket, suppress_ragged_eofs=False,
+                                      certfile=CERTFILE, server_side=True,
+                                      do_handshake_on_connect=False)
+        self._ssl_accepting = True
 
     def do_ssl_handshake(self):
         try:
             self.socket.do_handshake()
-            self.ssl_accepting = False
+            self._ssl_accepting = False
         except ssl.SSLError, err:
             if err.args[0] in (ssl.SSL_ERROR_WANT_READ, ssl.SSL_ERROR_WANT_WRITE):
                 return
             raise
 
     def handle_read_event(self):
-        if self.ssl_accepting:
+        if self._ssl_accepting:
             self.do_ssl_handshake()
         else:
             super(SSLConnection, self).handle_read_event()
 
     def handle_write_event(self):
-        if self.ssl_accepting:
+        if self._ssl_accepting:
             self.do_ssl_handshake()
         else:
             super(SSLConnection, self).handle_write_event()
@@ -70,12 +77,8 @@ class TLS_DTPHandler(SSLConnection, DTPHandler):
 
     def __init__(self, sock_obj, cmd_channel):
         DTPHandler.__init__(self, sock_obj, cmd_channel)
-        self.ssl_accepting = False
-        if self.cmd_channel.secure_data_channel:
-            self.socket = ssl.wrap_socket(self.socket, do_handshake_on_connect=0,
-                                          certfile=CERTFILE, server_side=True,
-                                          suppress_ragged_eofs=False)
-            self.ssl_accepting = True
+        if self.cmd_channel._prot_p:
+            self.secure_connection()
 
 
 class TLS_FTPHandler(SSLConnection, FTPHandler):
@@ -84,23 +87,19 @@ class TLS_FTPHandler(SSLConnection, FTPHandler):
 
     def __init__(self, conn, server):
         FTPHandler.__init__(self, conn, server)
-        self.ssl_accepting = False
-        self.secure_data_channel = False
-
+        self._prot_p = False
 
     def ftp_AUTH(self, line):
+        """Set up secure control channel."""
         self.respond('234 AUTH TLS successful')
-        self.socket = ssl.wrap_socket(self.socket, suppress_ragged_eofs=False,
-                                      certfile=CERTFILE, server_side=True,
-                                      do_handshake_on_connect=False)
-        self.ssl_accepting = True
+        self.secure_connection()
 
     def ftp_PBSZ(self, line):
         self.respond('200 PBSZ=0 successful.')
 
     def ftp_PROT(self, line):
         self.respond('200 Protection set to Private')
-        self.secure_data_channel = True
+        self._prot_p = True
 
 
 if __name__ == '__main__':

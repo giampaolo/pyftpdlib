@@ -7,6 +7,7 @@ import unittest
 import ftplib
 import ssl
 import os
+import socket
 import threading
 import StringIO
 
@@ -196,17 +197,35 @@ class TestCase(unittest.TestCase):
         self.client = TLS_FTP()
         self.client.connect(self.server.host, self.server.port)
         self.client.sock.settimeout(2)
-        self.file = open(TESTFN, 'w+b')
-        self.dummyfile = StringIO.StringIO()
+        self.client.login(USER, PASSWD)
+        self.dummy_recvfile = StringIO.StringIO()
+        self.dummy_sendfile = StringIO.StringIO()
 
     def tearDown(self):
         self.client.close()
         self.server.stop()
-        if not self.file.closed:
-            self.file.close()
-        if not self.dummyfile.closed:
-            self.dummyfile.close()
-        os.remove(TESTFN)
+        self.dummy_recvfile.close()
+        self.dummy_sendfile.close()
+        if os.path.isfile(TESTFN):
+            os.remove(TESTFN)
+
+    def transfer_data(self):
+        try:
+            data = 'abcde12345' * 100000
+            self.dummy_sendfile.write(data)
+            self.dummy_sendfile.seek(0)
+            self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
+            self.client.retrbinary('retr ' + TESTFN, self.dummy_recvfile.write)
+            self.dummy_recvfile.seek(0)
+            self.assertEqual(hash(data), hash (self.dummy_recvfile.read()))
+        finally:
+            # We do not use os.remove() because file could still be
+            # locked by ftpd thread.
+            if os.path.exists(TESTFN):
+                try:
+                    self.client.delete(TESTFN)
+                except (ftplib.Error, EOFError, socket.error):
+                    pass
 
     def test_auth(self):
         pass
@@ -217,16 +236,31 @@ class TestCase(unittest.TestCase):
     def test_prot(self):
         pass
 
-    def test_cleartext_data_transfer(self):
-        pass
+    def test_cleartext_data_transfer_1(self):
+        self.transfer_data()
 
-    def test_encrypted_data_transfer(self):
-        pass
+    def test_cleartext_data_transfer_2(self):
+        # like above but using an encrypted control channel
+        self.client.auth_tls()
+        self.transfer_data()
+
+    def test_encrypted_data_transfer_1(self):
+        self.client.prot_p()
+        self.transfer_data()
+
+    def test_encrypted_data_transfer_2(self):
+        # like above but using an encrypted control channel
+        self.client.auth_tls()
+        self.client.prot_p()
+        self.transfer_data()
 
 
-if __name__ == '__main__':
+def test_main():
     test_suite = unittest.TestSuite()
     tests = [TestCase]
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
     unittest.TextTestRunner(verbosity=2).run(test_suite)
+
+if __name__ == '__main__':
+    test_main()
