@@ -33,15 +33,19 @@ class SSLConnection(object, asyncore.dispatcher):
                                       certfile=CERTFILE, server_side=True,
                                       do_handshake_on_connect=False)
         self._ssl_accepting = True
+        self.do_ssl_handshake()
 
     def do_ssl_handshake(self):
         try:
             self.socket.do_handshake()
-            self._ssl_accepting = False
         except ssl.SSLError, err:
             if err.args[0] in (ssl.SSL_ERROR_WANT_READ, ssl.SSL_ERROR_WANT_WRITE):
                 return
+            elif err.args[0] == ssl.SSL_ERROR_EOF:
+                return self.handle_close()
             raise
+        else:
+            self._ssl_accepting = False
 
     def handle_read_event(self):
         if self._ssl_accepting:
