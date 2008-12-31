@@ -228,7 +228,9 @@ class TestCase(unittest.TestCase):
                     pass
 
     def test_auth(self):
-        pass
+        self.assertEqual(self.client.auth_tls()[:3], '234')
+        self.assertRaises(ftplib.error_perm, self.client.auth_tls)
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'auth foo')
 
     def test_pbsz(self):
         pass

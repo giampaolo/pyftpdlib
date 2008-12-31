@@ -95,8 +95,17 @@ class TLS_FTPHandler(SSLConnection, FTPHandler):
 
     def ftp_AUTH(self, line):
         """Set up secure control channel."""
-        self.respond('234 AUTH TLS successful')
-        self.secure_connection()
+        arg = line.upper()
+        if arg not in ('SSL', 'TLS'):
+            self.respond("502 Unrecognized encryption type (use TLS/SSL).")
+        elif isinstance(self.socket, ssl.SSLSocket):
+            self.respond("503 Already using TLS.")
+        else:
+            # XXX - depending on the provided argument (TLS/SSL)
+            # should we specify wrap_socket()'s ssl_version
+            # parameter?
+            self.respond('234 AUTH TLS/SSL successful.')
+            self.secure_connection()
 
     def ftp_PBSZ(self, line):
         self.respond('200 PBSZ=0 successful.')
