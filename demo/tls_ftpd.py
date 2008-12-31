@@ -92,11 +92,12 @@ class TLS_FTPHandler(SSLConnection, FTPHandler):
     def __init__(self, conn, server):
         FTPHandler.__init__(self, conn, server)
         self._prot_p = False
+        self._pbsz = False
 
     def ftp_AUTH(self, line):
         """Set up secure control channel."""
         arg = line.upper()
-        if arg not in ('SSL', 'TLS'):
+        if arg not in ('SSL', 'TLS', 'TLS-C'):
             self.respond("502 Unrecognized encryption type (use TLS/SSL).")
         elif isinstance(self.socket, ssl.SSLSocket):
             self.respond("503 Already using TLS.")
@@ -108,11 +109,28 @@ class TLS_FTPHandler(SSLConnection, FTPHandler):
             self.secure_connection()
 
     def ftp_PBSZ(self, line):
+        """Negotiate size of buffer for secure data transfer.
+        For TLS/SSL the only valid value for the parameter is '0'.
+        Any other value is accepted but ignored.
+        """
         self.respond('200 PBSZ=0 successful.')
+        self._pbsz = True
 
     def ftp_PROT(self, line):
-        self.respond('200 Protection set to Private')
-        self._prot_p = True
+        """Setup un/secure data channel."""
+        arg = line.upper()
+        if not self._pbsz:
+            self.respond("503 You must issue the PBSZ command prior to PROT.")
+        elif arg == 'C':
+            self.respond('200 Protection set to Clear')
+            self._prot_p = False
+        elif arg == 'P':
+            self.respond('200 Protection set to Private')
+            self._prot_p = True
+        elif arg in ('S', 'E'):
+            self.respond('504 PROT %s unsupported' %arg)
+        else:
+            self.respond("502 Unrecognized PROT type (use C or P).")
 
 
 if __name__ == '__main__':

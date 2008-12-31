@@ -233,10 +233,24 @@ class TestCase(unittest.TestCase):
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'auth foo')
 
     def test_pbsz(self):
-        pass
+        self.assertEqual(self.client.sendcmd('pbsz 0'), '200 PBSZ=0 successful.')
+        self.assertEqual(self.client.sendcmd('pbsz 9'), '200 PBSZ=0 successful.')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'pbsz')
 
     def test_prot(self):
-        pass
+        # no argument
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'prot')
+        # no PBSZ issued before PROT
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'prot p')
+        # unsupported arguments
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'prot s')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'prot e')
+        # unrecognized argument
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'prot x')
+        # supported arguments
+        self.client.sendcmd('pbsz 0')
+        self.assertEqual(self.client.sendcmd('prot c'), '200 Protection set to Clear')
+        self.assertEqual(self.client.sendcmd('prot p'), '200 Protection set to Private')
 
     def test_cleartext_data_transfer_1(self):
         self.transfer_data()
