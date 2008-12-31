@@ -13,10 +13,10 @@ from pyftpdlib.ftpserver import *
 CERTFILE = 'keycert.pem'
 
 new_proto_cmds = {
-    # cmd : (perm, auth,  arg,   path,  help)
-    'AUTH': (None, False, True,  False, 'Syntax: AUTH <SP> TLS|SSL (set up secure control connection).'),
-    'PBSZ': (None, False, True,  False, 'Syntax: PBSZ <SP> 0 (negotiate size of buffer for secure data transfer).'),
-    'PROT': (None, False, True,  False, 'Syntax: PROT <SP> [C|P] (set up un/secure data channel).'),
+    # cmd : (perm, auth,  arg,  path,  help)
+    'AUTH': (None, False, True, False, 'Syntax: AUTH <SP> TLS|SSL (set up secure control connection).'),
+    'PBSZ': (None, True,  True, False, 'Syntax: PBSZ <SP> 0 (negotiate size of buffer for secure data transfer).'),
+    'PROT': (None, True,  True, False, 'Syntax: PROT <SP> [C|P] (set up un/secure data channel).'),
     }
 
 from pyftpdlib.ftpserver import _CommandProperty
@@ -98,7 +98,7 @@ class TLS_FTPHandler(SSLConnection, FTPHandler):
         """Set up secure control channel."""
         arg = line.upper()
         if arg not in ('SSL', 'TLS', 'TLS-C'):
-            self.respond("502 Unrecognized encryption type (use TLS/SSL).")
+            self.respond("502 Unrecognized encryption type (use TLS or SSL).")
         elif isinstance(self.socket, ssl.SSLSocket):
             self.respond("503 Already using TLS.")
         else:
@@ -128,7 +128,7 @@ class TLS_FTPHandler(SSLConnection, FTPHandler):
             self.respond('200 Protection set to Private')
             self._prot_p = True
         elif arg in ('S', 'E'):
-            self.respond('504 PROT %s unsupported' %arg)
+            self.respond('504 PROT %s unsupported (use C or P).' %arg)
         else:
             self.respond("502 Unrecognized PROT type (use C or P).")
 

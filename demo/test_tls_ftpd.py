@@ -197,7 +197,6 @@ class TestCase(unittest.TestCase):
         self.client = TLS_FTP()
         self.client.connect(self.server.host, self.server.port)
         self.client.sock.settimeout(2)
-        self.client.login(USER, PASSWD)
         self.dummy_recvfile = StringIO.StringIO()
         self.dummy_sendfile = StringIO.StringIO()
 
@@ -233,11 +232,17 @@ class TestCase(unittest.TestCase):
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'auth foo')
 
     def test_pbsz(self):
+        # authentication is required
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'pbsz 0')
+        self.client.login()
         self.assertEqual(self.client.sendcmd('pbsz 0'), '200 PBSZ=0 successful.')
         self.assertEqual(self.client.sendcmd('pbsz 9'), '200 PBSZ=0 successful.')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'pbsz')
 
     def test_prot(self):
+        # authentication is required
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'prot p')
+        self.client.login()
         # no argument
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'prot')
         # no PBSZ issued before PROT
@@ -253,19 +258,23 @@ class TestCase(unittest.TestCase):
         self.assertEqual(self.client.sendcmd('prot p'), '200 Protection set to Private')
 
     def test_cleartext_data_transfer_1(self):
+        self.client.login(USER, PASSWD)
         self.transfer_data()
 
     def test_cleartext_data_transfer_2(self):
         # like above but using an encrypted control channel
+        self.client.login(USER, PASSWD)
         self.client.auth_tls()
         self.transfer_data()
 
     def test_encrypted_data_transfer_1(self):
+        self.client.login(USER, PASSWD)
         self.client.prot_p()
         self.transfer_data()
 
     def test_encrypted_data_transfer_2(self):
         # like above but using an encrypted control channel
+        self.client.login(USER, PASSWD)
         self.client.auth_tls()
         self.client.prot_p()
         self.transfer_data()
