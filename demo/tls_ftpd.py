@@ -33,7 +33,6 @@ class SSLConnection(object, asyncore.dispatcher):
                                       certfile=CERTFILE, server_side=True,
                                       do_handshake_on_connect=False)
         self._ssl_accepting = True
-        self.do_ssl_handshake()
 
     def do_ssl_handshake(self):
         try:
