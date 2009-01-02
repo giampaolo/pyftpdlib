@@ -76,6 +76,13 @@ class SSLConnection(object, asyncore.dispatcher):
                 return ''
             raise
 
+    def close(self):
+        try:
+            if isinstance(self.socket, ssl.SSLSocket):
+                self.socket.unwrap()
+        finally:
+            super(SSLConnection, self).close()
+
 
 class TLS_DTPHandler(SSLConnection, DTPHandler):
 
