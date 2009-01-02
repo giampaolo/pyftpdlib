@@ -96,7 +96,7 @@ class TLS_FTPHandler(SSLConnection, FTPHandler):
     def ftp_AUTH(self, line):
         """Set up secure control channel."""
         arg = line.upper()
-        if arg not in ('SSL', 'TLS', 'TLS-C'):
+        if arg not in ('SSL', 'TLS-P', 'TLS', 'TLS-C'):
             self.respond("502 Unrecognized encryption type (use TLS or SSL).")
         elif isinstance(self.socket, ssl.SSLSocket):
             self.respond("503 Already using TLS.")
@@ -127,7 +127,7 @@ class TLS_FTPHandler(SSLConnection, FTPHandler):
             self.respond('200 Protection set to Private')
             self._prot_p = True
         elif arg in ('S', 'E'):
-            self.respond('504 PROT %s unsupported (use C or P).' %arg)
+            self.respond('521 PROT %s unsupported (use C or P).' %arg)
         else:
             self.respond("502 Unrecognized PROT type (use C or P).")
 
