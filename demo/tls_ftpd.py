@@ -28,10 +28,11 @@ del cmd, properties, new_proto_cmds, _CommandProperty
 class SSLConnection(object, asyncore.dispatcher):
     _ssl_accepting = False
 
-    def secure_connection(self):
+    def secure_connection(self, ssl_version):
         self.socket = ssl.wrap_socket(self.socket, suppress_ragged_eofs=False,
                                       certfile=CERTFILE, server_side=True,
-                                      do_handshake_on_connect=False)
+                                      do_handshake_on_connect=False,
+                                      ssl_version=ssl_version)
         self._ssl_accepting = True
 
     def do_ssl_handshake(self):
@@ -81,7 +82,7 @@ class TLS_DTPHandler(SSLConnection, DTPHandler):
     def __init__(self, sock_obj, cmd_channel):
         DTPHandler.__init__(self, sock_obj, cmd_channel)
         if self.cmd_channel._prot_p:
-            self.secure_connection()
+            self.secure_connection(self.cmd_channel.socket.ssl_version)
 
 
 class TLS_FTPHandler(SSLConnection, FTPHandler):
@@ -90,22 +91,25 @@ class TLS_FTPHandler(SSLConnection, FTPHandler):
 
     def __init__(self, conn, server):
         FTPHandler.__init__(self, conn, server)
-        self._prot_p = False
+        self._auth = None
         self._pbsz = False
+        self._prot_p = False
 
     def ftp_AUTH(self, line):
         """Set up secure control channel."""
         arg = line.upper()
-        if arg not in ('SSL', 'TLS-P', 'TLS', 'TLS-C'):
-            self.respond("502 Unrecognized encryption type (use TLS or SSL).")
-        elif isinstance(self.socket, ssl.SSLSocket):
+        if isinstance(self.socket, ssl.SSLSocket):
             self.respond("503 Already using TLS.")
+        elif arg in ('TLS', 'TLS-C'):
+            self.respond('234 AUTH TLS successful.')
+            self.secure_connection(ssl.PROTOCOL_TLSv1)
+            self._auth = True
+        elif arg in ('SSL', 'TLS-P'):
+            self.respond('234 AUTH SSL successful.')
+            self.secure_connection(ssl.PROTOCOL_SSLv23)
+            self._auth = True
         else:
-            # XXX - depending on the provided argument (TLS/SSL)
-            # should we specify wrap_socket()'s ssl_version
-            # parameter?
-            self.respond('234 AUTH TLS/SSL successful.')
-            self.secure_connection()
+            self.respond("502 Unrecognized encryption type (use TLS or SSL).")
 
     def ftp_PBSZ(self, line):
         """Negotiate size of buffer for secure data transfer.
@@ -118,7 +122,9 @@ class TLS_FTPHandler(SSLConnection, FTPHandler):
     def ftp_PROT(self, line):
         """Setup un/secure data channel."""
         arg = line.upper()
-        if not self._pbsz:
+        if not isinstance(self.socket, ssl.SSLSocket):
+            self.respond("503 PROT not allowed on insecure control connection")
+        elif not self._pbsz:
             self.respond("503 You must issue the PBSZ command prior to PROT.")
         elif arg == 'C':
             self.respond('200 Protection set to Clear')

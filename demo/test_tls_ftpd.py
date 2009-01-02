@@ -97,7 +97,7 @@ class TLS_FTP(ftplib.FTP):
     def ntransfercmd(self, cmd, rest=None):
         conn, size = ftplib.FTP.ntransfercmd(self, cmd, rest)
         if self.prot_private:
-            conn = ssl.wrap_socket(conn, self.keyfile, self.certfile)
+            conn = ssl.wrap_socket(conn, self.keyfile, self.certfile, ssl_version=ssl.PROTOCOL_TLSv1)
         return conn, size
 
     # overridden to accept 6xy as valid response code
@@ -240,6 +240,7 @@ class TestCase(unittest.TestCase):
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'pbsz')
 
     def test_prot(self):
+        self.client.auth_tls()
         # authentication is required
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'prot p')
         self.client.login()
@@ -267,12 +268,7 @@ class TestCase(unittest.TestCase):
         self.client.auth_tls()
         self.transfer_data()
 
-    def test_encrypted_data_transfer_1(self):
-        self.client.login(USER, PASSWD)
-        self.client.prot_p()
-        self.transfer_data()
-
-    def test_encrypted_data_transfer_2(self):
+    def test_encrypted_data_transfer(self):
         # like above but using an encrypted control channel
         self.client.login(USER, PASSWD)
         self.client.auth_tls()
