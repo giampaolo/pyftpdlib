@@ -88,7 +88,7 @@ class TLS_DTPHandler(SSLConnection, DTPHandler):
 
     def __init__(self, sock_obj, cmd_channel):
         DTPHandler.__init__(self, sock_obj, cmd_channel)
-        if self.cmd_channel._prot_p:
+        if self.cmd_channel._prot:
             self.secure_connection(self.cmd_channel.socket.ssl_version)
 
 
@@ -98,9 +98,8 @@ class TLS_FTPHandler(SSLConnection, FTPHandler):
 
     def __init__(self, conn, server):
         FTPHandler.__init__(self, conn, server)
-        self._auth = None
         self._pbsz = False
-        self._prot_p = False
+        self._prot = False
 
     def ftp_AUTH(self, line):
         """Set up secure control channel."""
@@ -110,11 +109,9 @@ class TLS_FTPHandler(SSLConnection, FTPHandler):
         elif arg in ('TLS', 'TLS-C'):
             self.respond('234 AUTH TLS successful.')
             self.secure_connection(ssl.PROTOCOL_TLSv1)
-            self._auth = True
         elif arg in ('SSL', 'TLS-P'):
             self.respond('234 AUTH SSL successful.')
             self.secure_connection(ssl.PROTOCOL_SSLv23)
-            self._auth = True
         else:
             self.respond("502 Unrecognized encryption type (use TLS or SSL).")
 
@@ -123,8 +120,11 @@ class TLS_FTPHandler(SSLConnection, FTPHandler):
         For TLS/SSL the only valid value for the parameter is '0'.
         Any other value is accepted but ignored.
         """
-        self.respond('200 PBSZ=0 successful.')
-        self._pbsz = True
+        if not isinstance(self.socket, ssl.SSLSocket):
+            self.respond("503 PROT not allowed on insecure control connection")
+        else:
+            self.respond('200 PBSZ=0 successful.')
+            self._pbsz = True
 
     def ftp_PROT(self, line):
         """Setup un/secure data channel."""
@@ -135,10 +135,10 @@ class TLS_FTPHandler(SSLConnection, FTPHandler):
             self.respond("503 You must issue the PBSZ command prior to PROT.")
         elif arg == 'C':
             self.respond('200 Protection set to Clear')
-            self._prot_p = False
+            self._prot = False
         elif arg == 'P':
             self.respond('200 Protection set to Private')
-            self._prot_p = True
+            self._prot = True
         elif arg in ('S', 'E'):
             self.respond('521 PROT %s unsupported (use C or P).' %arg)
         else:

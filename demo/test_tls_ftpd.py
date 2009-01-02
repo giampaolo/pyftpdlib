@@ -94,11 +94,82 @@ class TLS_FTP(ftplib.FTP):
         self.prot_private = False
         return resp
 
+    # --- Overridden FTP methods
+
     def ntransfercmd(self, cmd, rest=None):
         conn, size = ftplib.FTP.ntransfercmd(self, cmd, rest)
         if self.prot_private:
             conn = ssl.wrap_socket(conn, self.keyfile, self.certfile, ssl_version=ssl.PROTOCOL_TLSv1)
         return conn, size
+
+    def retrbinary(self, cmd, callback, blocksize=8192, rest=None):
+        self.voidcmd('TYPE I')
+        conn = self.transfercmd(cmd, rest)
+        while 1:
+            data = conn.recv(blocksize)
+            if not data:
+                break
+            callback(data)
+        # shutdown ssl layer
+        if isinstance(conn, ssl.SSLSocket):
+            conn.unwrap()
+        conn.close()
+        return self.voidresp()
+
+    def retrlines(self, cmd, callback = None):
+        from ftplib import print_line, CRLF
+        if callback is None: callback = print_line
+        resp = self.sendcmd('TYPE A')
+        conn = self.transfercmd(cmd)
+        fp = conn.makefile('rb')
+        while 1:
+            line = fp.readline()
+            if self.debugging > 2: print '*retr*', repr(line)
+            if not line:
+                break
+            if line[-2:] == CRLF:
+                line = line[:-2]
+            elif line[-1:] == '\n':
+                line = line[:-1]
+            callback(line)
+        # shutdown ssl layer
+        if isinstance(conn, ssl.SSLSocket):
+            conn.unwrap()
+        fp.close()
+        conn.close()
+        return self.voidresp()
+
+    def storbinary(self, cmd, fp, blocksize=8192, callback=None):
+        self.voidcmd('TYPE I')
+        conn = self.transfercmd(cmd)
+        while 1:
+            buf = fp.read(blocksize)
+            if not buf: break
+            conn.sendall(buf)
+            if callback: callback(buf)
+        # shutdown ssl layer
+        if isinstance(conn, ssl.SSLSocket):
+            conn.unwrap()
+        conn.close()
+        return self.voidresp()
+
+    def storlines(self, cmd, fp, callback=None):
+        from ftplib import CRLF
+        self.voidcmd('TYPE A')
+        conn = self.transfercmd(cmd)
+        while 1:
+            buf = fp.readline()
+            if not buf: break
+            if buf[-2:] != CRLF:
+                if buf[-1] in CRLF: buf = buf[:-1]
+                buf = buf + CRLF
+            conn.sendall(buf)
+            if callback: callback(buf)
+        # shutdown ssl layer
+        if isinstance(conn, ssl.SSLSocket):
+            conn.unwrap()
+        conn.close()
+        return self.voidresp()
 
     # overridden to accept 6xy as valid response code
     def getresp(self):
@@ -235,6 +306,7 @@ class TestCase(unittest.TestCase):
         # authentication is required
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'pbsz 0')
         self.client.login()
+        self.client.auth_tls()
         self.assertEqual(self.client.sendcmd('pbsz 0'), '200 PBSZ=0 successful.')
         self.assertEqual(self.client.sendcmd('pbsz 9'), '200 PBSZ=0 successful.')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'pbsz')
