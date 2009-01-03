@@ -1625,6 +1625,7 @@ class FTPHandler(asynchat.async_chat):
         self._in_dtp_queue = None
         self._out_dtp_queue = None
         self._closed = False
+        self._extra_feats = []
         self._current_facts = ['type', 'perm', 'size', 'modify']
         if os.name == 'posix':
             self._current_facts.append('unique')
@@ -2865,6 +2866,7 @@ class FTPHandler(asynchat.async_chat):
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
         features = ['EPRT','EPSV','MDTM','MLSD','REST STREAM','SIZE','TVFS']
+        features.extend(self._extra_feats)
         s = ''
         for fact in self._available_facts:
             if fact in self._current_facts:

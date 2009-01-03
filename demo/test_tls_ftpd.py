@@ -332,6 +332,14 @@ class TestCase(unittest.TestCase):
         self.assertEqual(self.client.sendcmd('prot c'), '200 Protection set to Clear')
         self.assertEqual(self.client.sendcmd('prot p'), '200 Protection set to Private')
 
+    def test_feat(self):
+        # Make sure new commands are displayed in FEAT response
+        resp = self.client.sendcmd('feat')
+        self.assert_('AUTH TLS' in resp)
+        self.assert_('AUTH SSL' in resp)
+        self.assert_('PBSZ' in resp)
+        self.assert_('PROT' in resp)
+
     def test_cleartext_data_transfer_1(self):
         self.client.login(USER, PASSWD)
         self.transfer_data()

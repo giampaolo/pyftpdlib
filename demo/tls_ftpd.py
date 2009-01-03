@@ -115,6 +115,7 @@ class TLS_FTPHandler(SSLConnection, FTPHandler):
 
     def __init__(self, conn, server):
         FTPHandler.__init__(self, conn, server)
+        self._extra_feats = ['AUTH TLS', 'AUTH SSL', 'PBSZ', 'PROT']
         self._pbsz = False
         self._prot = False
 
