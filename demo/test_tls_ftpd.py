@@ -99,7 +99,8 @@ class TLS_FTP(ftplib.FTP):
     def ntransfercmd(self, cmd, rest=None):
         conn, size = ftplib.FTP.ntransfercmd(self, cmd, rest)
         if self.prot_private:
-            conn = ssl.wrap_socket(conn, self.keyfile, self.certfile, ssl_version=ssl.PROTOCOL_TLSv1)
+            conn = ssl.wrap_socket(conn, self.keyfile, self.certfile,
+                                   ssl_version=ssl.PROTOCOL_TLSv1)
         return conn, size
 
     def retrbinary(self, cmd, callback, blocksize=8192, rest=None):
@@ -205,6 +206,7 @@ class TLS_FTPd(threading.Thread):
 
         if not verbose:
             ftpserver.log = ftpserver.logline = lambda x: x
+            tls_ftpd.log = tls_ftpd.logline = lambda x: x
         self.authorizer = ftpserver.DummyAuthorizer()
         self.authorizer.add_user(USER, PASSWD, HOME, perm='elradfmw')  # full perms
         self.authorizer.add_anonymous(HOME)
@@ -346,6 +348,40 @@ class TestCase(unittest.TestCase):
         self.client.auth_tls()
         self.client.prot_p()
         self.transfer_data()
+
+    def test_cmd_channel_failing_tls_handshake(self):
+        # Emulate a case where the client asks to switch to a TLS
+        # encrypted control channel but for some reason the client
+        # side decides to use SSL protocol instead (e.g. broken
+        # client implementations).
+        # We expect the server to not crash and close the connection
+        # without returning any error.
+        self.client.voidcmd('AUTH TLS')
+        try:
+            self.client.sock = ssl.wrap_socket(self.client.sock, None, None,
+                                        ssl_version=ssl.PROTOCOL_SSLv2)
+        except socket.error:
+            pass
+
+    def test_data_channel_failing_tls_handshake(self):
+        # Emulate a case where the client asks the server to open a TLS
+        # data channel but for some reason the client side decides
+        # to use SSL protocol instead (e.g. broken client implementations).
+        # We expect the server to not crash and close the data channel
+        # returning a 522 response code over the control channel as
+        # specified by RFC-4217, chapter 10.2.
+        self.client.login(USER, PASSWD)
+        self.client.auth_tls()
+        self.client.voidcmd('PBSZ 0')
+        self.client.voidcmd('PROT P')
+        sock = self.client.transfercmd('list')
+        try:
+            sock = ssl.wrap_socket(sock, None, None, ssl_version=ssl.PROTOCOL_SSLv2)
+        except socket.error:
+            try:
+                self.client.getresp()
+            except ftplib.error_perm, err:
+                self.assertEqual(str(err)[:3], "522")
 
 
 def test_main():

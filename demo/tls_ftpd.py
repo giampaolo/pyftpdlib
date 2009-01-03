@@ -91,6 +91,23 @@ class TLS_DTPHandler(SSLConnection, DTPHandler):
         if self.cmd_channel._prot:
             self.secure_connection(self.cmd_channel.socket.ssl_version)
 
+    def handle_error(self):
+        try:
+            raise
+        except ssl.SSLError, err:
+            if self._ssl_accepting and err.args[0] == ssl.SSL_ERROR_SSL:
+                # TLS/SSL handshake failure, probably client's fault.
+                # RFC-4217, chapter 10.2 expects us to return 522.
+                proto = ssl.get_protocol_name(self.socket.ssl_version)
+                self.cmd_channel.respond("522 %s handshake failed." %proto)
+            else:
+                # We don't want to provide any confidential message
+                self.cmd_channel.respond("426 Internal SSL error. Transfer aborted")
+                logerror(str(err))
+            self.close()
+        except:
+            DTPHandler.handle_error(self)
+
 
 class TLS_FTPHandler(SSLConnection, FTPHandler):
 
@@ -143,6 +160,22 @@ class TLS_FTPHandler(SSLConnection, FTPHandler):
             self.respond('521 PROT %s unsupported (use C or P).' %arg)
         else:
             self.respond("502 Unrecognized PROT type (use C or P).")
+
+    def handle_error(self):
+        try:
+            raise
+        except ssl.SSLError, err:
+            # TLS/SSL handshake failure, probably client's fault.
+            if self._ssl_accepting and err.args[0] == ssl.SSL_ERROR_SSL:
+                proto = ssl.get_protocol_name(self.socket.ssl_version)
+                log("%s handshake failed. Disconnecting. %s" %(proto, str(err)))
+            else:
+                logerror(str(err))
+            # We can't rely on the control channel anymore so we just
+            # disconnect the client without sending any response.
+            self.close()
+        except:
+            FTPHandler.handle_error(self)
 
 
 if __name__ == '__main__':
