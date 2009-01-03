@@ -1,7 +1,14 @@
 #!/usr/bin/env python
 # tls_ftpd.py
 
-"""RFC-2228 asynchronous FTPS server."""
+"""An RFC-4217 asynchronous FTPS server supporting both SSL and TLS.
+
+Requires ssl module (integrated with Python 2.6 and higher).
+For Python versions prior to 2.6 ssl module must be installed separately,
+see: http://pypi.python.org/pypi/ssl/
+
+Development status: experimental.
+"""
 
 import ssl
 import os
@@ -26,6 +33,8 @@ del cmd, properties, new_proto_cmds, _CommandProperty
 
 
 class SSLConnection(object, asyncore.dispatcher):
+    """An asyncore.dispatcher subclass supporting TLS/SSL."""
+
     _ssl_accepting = False
 
     def secure_connection(self, ssl_version):
@@ -35,7 +44,7 @@ class SSLConnection(object, asyncore.dispatcher):
                                       ssl_version=ssl_version)
         self._ssl_accepting = True
 
-    def do_ssl_handshake(self):
+    def _do_ssl_handshake(self):
         try:
             self.socket.do_handshake()
         except ssl.SSLError, err:
@@ -49,13 +58,13 @@ class SSLConnection(object, asyncore.dispatcher):
 
     def handle_read_event(self):
         if self._ssl_accepting:
-            self.do_ssl_handshake()
+            self._do_ssl_handshake()
         else:
             super(SSLConnection, self).handle_read_event()
 
     def handle_write_event(self):
         if self._ssl_accepting:
-            self.do_ssl_handshake()
+            self._do_ssl_handshake()
         else:
             super(SSLConnection, self).handle_write_event()
 
@@ -85,6 +94,7 @@ class SSLConnection(object, asyncore.dispatcher):
 
 
 class TLS_DTPHandler(SSLConnection, DTPHandler):
+    """A ftpserver.DTPHandler subclass supporting TLS/SSL."""
 
     def __init__(self, sock_obj, cmd_channel):
         DTPHandler.__init__(self, sock_obj, cmd_channel)
@@ -110,6 +120,10 @@ class TLS_DTPHandler(SSLConnection, DTPHandler):
 
 
 class TLS_FTPHandler(SSLConnection, FTPHandler):
+    """A ftpserver.FTPHandler subclass supporting TLS/SSL.
+
+    Implements AUTH, PBSZ and PROT commands (RFC-2228).
+    """
 
     dtp_handler = TLS_DTPHandler
 
