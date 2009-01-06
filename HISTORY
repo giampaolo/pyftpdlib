@@ -9,6 +9,9 @@ Version: 0.5.1 - Date: XXXX-XX-XX
 
 Enhancements:
 
+ * Issue #79: added two new callback methods to FTPHandler class to handle
+   "on_file_sent" and "on_file_received" events.
+
  * Issue #82: added table of contents in documentation.
 
  * Issue #92: ASCII transfers are now 200% faster on those systems using
@@ -53,6 +56,8 @@ Bugfixes:
 API changes since 0.5.0:
 
  * FTPHandler gained a new "_extra_feats" private attribute.
+
+ * FTPHandler gained two new methods: "on_file_sent" and "on_file_received".
 
 
 Version: 0.5.0 - Date: 2008-09-20

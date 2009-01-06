@@ -1019,6 +1019,11 @@ class DTPHandler(asyncore.dispatcher):
             if self.idler is not None and not self.idler.cancelled:
                 self.idler.cancel()
             asyncore.dispatcher.close(self)
+            if self.file_obj is not None and self.transfer_finished:
+                if self.receive:
+                    self.cmd_channel.on_file_received(self.file_obj.name)
+                else:
+                    self.cmd_channel.on_file_sent(self.file_obj.name)
             self.cmd_channel.on_dtp_close()
 
 
@@ -1856,6 +1861,16 @@ class FTPHandler(asynchat.async_chat):
             self.log("Disconnected.")
 
     # --- callbacks
+
+    def on_file_sent(self, file):
+        """Called every time a file has been succesfully sent.
+        'file' is the complete filename of the file being sent.
+        """
+
+    def on_file_received(self, file):
+        """Called every time a file has been succesfully received.
+        'file' is the complete filename of the file being received.
+        """
 
     def on_dtp_connection(self):
         """Called every time data channel connects (either active or
