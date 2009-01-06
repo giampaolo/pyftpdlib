@@ -22,6 +22,10 @@ Enhancements:
 
  * Issue #98: added preliminary support for SITE command.
 
+ * Issue #99: a new script implementing FTPS (FTP over TLS/SSL) has been added
+   to the demo directory. See:
+   http://code.google.com/p/pyftpdlib/source/browse/trunk/demo/tls_ftpd.py
+
 Bugfixes:
 
  * Issue #78: the idle timeout of passive data connections gets stopped in case
