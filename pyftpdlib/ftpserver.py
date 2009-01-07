@@ -703,9 +703,13 @@ class ActiveDTP(asyncore.dispatcher):
 
     # --- connection / overridden
 
+    # NOOP, overridden to prevent unhandled read/write event
+    # messages to be printed on Python < 2.6
+
     def handle_write(self):
-        # NOOP, overridden to prevent unhandled write event msg to
-        # be printed on Python < 2.6
+        pass
+
+    def handle_read(self):
         pass
 
     def handle_connect(self):
