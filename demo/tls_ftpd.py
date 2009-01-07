@@ -37,11 +37,11 @@ class SSLConnection(object, asyncore.dispatcher):
 
     _ssl_accepting = False
 
-    def secure_connection(self, ssl_version):
+    def secure_connection(self):
         self.socket = ssl.wrap_socket(self.socket, suppress_ragged_eofs=False,
                                       certfile=CERTFILE, server_side=True,
                                       do_handshake_on_connect=False,
-                                      ssl_version=ssl_version)
+                                      ssl_version=ssl.PROTOCOL_SSLv23)
         self._ssl_accepting = True
 
     def _do_ssl_handshake(self):
@@ -99,7 +99,7 @@ class TLS_DTPHandler(SSLConnection, DTPHandler):
     def __init__(self, sock_obj, cmd_channel):
         DTPHandler.__init__(self, sock_obj, cmd_channel)
         if self.cmd_channel._prot:
-            self.secure_connection(self.cmd_channel.socket.ssl_version)
+            self.secure_connection()
 
     def handle_error(self):
         try:
@@ -138,12 +138,12 @@ class TLS_FTPHandler(SSLConnection, FTPHandler):
         arg = line.upper()
         if isinstance(self.socket, ssl.SSLSocket):
             self.respond("503 Already using TLS.")
-        elif arg in ('TLS', 'TLS-C'):
-            self.respond('234 AUTH TLS successful.')
-            self.secure_connection(ssl.PROTOCOL_TLSv1)
-        elif arg in ('SSL', 'TLS-P'):
-            self.respond('234 AUTH SSL successful.')
-            self.secure_connection(ssl.PROTOCOL_SSLv23)
+        elif arg in ('TLS', 'TLS-C', 'SSL', 'TLS-P'):
+            # From RFC-4217: "As the SSL/TLS protocols self-negotiate
+            # their levels, there is no need to distinguish between SSL
+            # and TLS in the application layer".
+            self.respond('234 AUTH %s successful.' %arg)
+            self.secure_connection()
         else:
             self.respond("502 Unrecognized encryption type (use TLS or SSL).")
 
