@@ -72,7 +72,7 @@ class SSLConnection(object, asyncore.dispatcher):
         try:
             return super(SSLConnection, self).send(data)
         except ssl.SSLError, err:
-            if err.args[0] == ssl.SSL_ERROR_EOF:
+            if err.args[0] in (ssl.SSL_ERROR_EOF, ssl.SSL_ERROR_ZERO_RETURN):
                 return 0
             raise
 
@@ -80,7 +80,7 @@ class SSLConnection(object, asyncore.dispatcher):
         try:
             return super(SSLConnection, self).recv(buffer_size)
         except ssl.SSLError, err:
-            if err.args[0] == ssl.SSL_ERROR_EOF:
+            if err.args[0] in (ssl.SSL_ERROR_EOF, ssl.SSL_ERROR_ZERO_RETURN):
                 self.handle_close()
                 return ''
             raise
