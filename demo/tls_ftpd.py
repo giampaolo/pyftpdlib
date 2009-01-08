@@ -88,7 +88,8 @@ class SSLConnection(object, asyncore.dispatcher):
     def close(self):
         try:
             if isinstance(self.socket, ssl.SSLSocket):
-                self.socket.unwrap()
+                if self.socket._sslobj is not None:
+                    self.socket.unwrap()
         finally:
             super(SSLConnection, self).close()
 
