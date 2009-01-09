@@ -3204,7 +3204,7 @@ class FTPServer(asyncore.dispatcher):
 
 def test():
     # cmd line usage (provide a read-only anonymous ftp server):
-    # python -m pyftpdlib.FTPServer
+    # python -m pyftpdlib.ftpserver
     authorizer = DummyAuthorizer()
     authorizer.add_anonymous(os.getcwd())
     FTPHandler.authorizer = authorizer
