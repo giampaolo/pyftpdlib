@@ -563,18 +563,23 @@ class TestFtpAuthentication(unittest.TestCase):
         self.file.write(data)
         self.file.close()
 
-        def callback(chunk):
-            self.__bytes_received += len(chunk)
+        conn = self.client.transfercmd('retr ' + TESTFN)
+        rein_sent = False
+        bytes_recv = 0
+        while 1:
+            chunk = conn.recv(8192)
+            if not chunk:
+                break
+            bytes_recv += len(chunk)
             self.dummyfile.write(chunk)
-            if self.__bytes_received > 65536 and not self.__rein_sent:
-                self.__rein_sent = True
+            if bytes_recv > 65536 and not rein_sent:
+                rein_sent = True
+                # flush account, error response expected
                 self.client.sendcmd('rein')
-                # account flushed, an error response is expected
                 self.assertRaises(ftplib.error_perm, self.client.dir)
 
-        self.__bytes_received = 0
-        self.__rein_sent = False
-        self.client.retrbinary("retr " + TESTFN, callback)
+        # a 226 response is expected once tranfer finishes
+        self.assertEqual(self.client.voidresp()[:3], '226')
         # account is still flushed, error response is still expected
         self.assertRaises(ftplib.error_perm, self.client.sendcmd,
                           'size ' + TESTFN)
@@ -602,18 +607,24 @@ class TestFtpAuthentication(unittest.TestCase):
         self.file.write(data)
         self.file.close()
 
-        def callback(chunk):
-            self.__bytes_received += len(chunk)
+        conn = self.client.transfercmd('retr ' + TESTFN)
+        rein_sent = 0
+        bytes_recv = 0
+        while 1:
+            chunk = conn.recv(8192)
+            if not chunk:
+                break
+            bytes_recv += len(chunk)
             self.dummyfile.write(chunk)
-            if self.__bytes_received > 65536 and not self.__rein_sent:
-                self.__rein_sent = True
+            # stop transfer while it isn't finished yet
+            if bytes_recv > 65536 and not rein_sent:
+                rein_sent = True
+                # flush account, expect an error response
                 self.client.sendcmd('user ' + USER)
-                # account flushed, an error response is expected
                 self.assertRaises(ftplib.error_perm, self.client.dir)
 
-        self.__bytes_received = 0
-        self.__rein_sent = False
-        self.client.retrbinary("retr " + TESTFN, callback)
+        # a 226 response is expected once tranfer finishes
+        self.assertEqual(self.client.voidresp()[:3], '226')
         # account is still flushed, error response is still expected
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'pwd')
         # by logging-in again we should be able to execute a
