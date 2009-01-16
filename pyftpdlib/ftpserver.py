@@ -2421,8 +2421,6 @@ class FTPHandler(asynchat.async_chat):
             self.respond("450 Can't STOU while REST request is pending.")
             return
 
-        rest_pos = self.restart_position
-        self.restart_position = 0
         if line:
             basedir, prefix = os.path.split(self.fs.ftp2fs(line))
             prefix = prefix + '.'

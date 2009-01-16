@@ -1987,8 +1987,7 @@ class FTPd(threading.Thread):
             raise RuntimeError("Server already started")
         if self.__stopped:
             # ensure the server can be started again
-            ThreadedFTPServer.__init__(self, self.socket.getsockname(),
-                                       self.handler)
+            FTPd.__init__(self, self.server.socket.getsockname(), self.handler)
         self.__timeout = timeout
         self.__use_poll = use_poll
         self.__map = map
