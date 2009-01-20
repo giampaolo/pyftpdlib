@@ -1160,40 +1160,6 @@ class TestFtpStoreData(unittest.TestCase):
         self.dummy_sendfile.seek(0)
         self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
 
-    def test_unforeseen_stor_event(self):
-        # Emulate a case where we try to STOR a file on a server
-        # which does not have enough space on the disk.
-        # When such an event occurs we expect the server to not
-       	# unexpectedly crash and to return a message to inform the
-        # client about what actually happened.
-        # To do so we temporarily replace open() with a "dummy" one
-        # raising exception when write() gets called.
-        from StringIO import StringIO as PyStringIO
-
-        class BrokenFileObject(PyStringIO):
-            """A dummy file-like object which raises exception every
-            time it's going to be written.
-            """
-            def __init__(self, filename, mode):
-                PyStringIO.__init__(self)
-                self.name = filename
-            def write(self, data):
-                raise IOError(errno.ENOSPC, "No space left on device")
-
-        _open = ftpserver.AbstractedFS.open
-        try:
-            ftpserver.AbstractedFS.open = BrokenFileObject
-            try:
-                self.client.storbinary('stor ' + TESTFN, StringIO.StringIO('foo'))
-            except ftplib.error_temp, err:
-                self.assert_("No space left on device" in str(err))
-                # make sure client hasn't been disconnected
-                self.client.sendcmd('noop')
-                return
-            self.fail("Exception not raised")
-        finally:
-            ftpserver.AbstractedFS.open = _open
-
 
 class TestFtpRetrieveData(unittest.TestCase):
     "Test RETR, REST, TYPE"
@@ -1273,44 +1239,6 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
         self.dummyfile.seek(0)
         self.assertEqual(hash(data), hash (self.dummyfile.read()))
-
-    def test_unforeseen_retr_event(self):
-        # Emulate a case where we RETR a corrupted file from the
-        # server, where "corrupted" means that something very
-        # unexpected just happened (e.g. a physical unit gets
-        # disconnected).
-        # When such an event occurs we expect the server to not
-       	# crash and to return a message to inform the client about
-        # what actually happened.
-        # To do so we temporarily replace open() with a "dummy" one
-        # raising exception when read() gets called.
-        from StringIO import StringIO as PyStringIO
-
-        class BrokenFileObject(PyStringIO):
-            """A dummy file-like object which raises exception every
-            time it's going to be read.
-            """
-            def __init__(self, filename, mode):
-                PyStringIO.__init__(self)
-                self.name = filename
-            def read(self, data):
-                # it doesn't really matter what the real problem is, we
-                # just want IOError to be raised
-                raise IOError(errno.ENOSPC, "No space left on device")
-
-        _open = ftpserver.AbstractedFS.open
-        try:
-            ftpserver.AbstractedFS.open = BrokenFileObject
-            try:
-                self.client.retrbinary('retr ' + TESTFN, lambda x: x)
-            except ftplib.error_temp, err:
-                self.assert_("No space left on device" in str(err))
-                # make sure client hasn't been disconnected
-                self.client.sendcmd('noop')
-            else:
-                self.fail("Exception not raised")
-        finally:
-            ftpserver.AbstractedFS.open = _open
 
 
 class TestFtpListingCmds(unittest.TestCase):
