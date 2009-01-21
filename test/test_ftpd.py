@@ -33,7 +33,7 @@
 #  Linux Ubuntu 2.6.20-15          | 2.4, 2.5
 #  Linux Kubuntu 8.04 32 & 64 bits | 2.5.2
 #  Linux Debian 2.4.27-2-386       | 2.3.5
-#  Windows XP prof SP3             | 2.3, 2.4, 2.5, 2.6-RC2
+#  Windows XP prof SP3             | 2.3, 2.4, 2.5, 2.6.1
 #  Windows Vista Ultimate 64 bit   | 2.5.1
 #  Windows Vista Business 32 bit   | 2.5.1
 #  Windows Server 2008 64bit       | 2.5.1

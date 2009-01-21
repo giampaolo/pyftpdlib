@@ -4,7 +4,7 @@ Issue tracker at http://code.google.com/p/pyftpdlib/issues/list
 History
 =======
 
-Version: 0.5.1 - Date: 2009-01-16
+Version: 0.5.1 - Date: 2009-01-21
 ---------------------------------
 
 Enhancements:
@@ -18,7 +18,8 @@ Enhancements:
    "\r\n" as line separator (typically Windows).
 
  * Issue #94: a bigger buffer size for send() and recv() has been set resulting
-   in a considerable speedup for both incoming and outgoing data transfers.
+   in a considerable speedup (about 40% faster) for both incoming and outgoing
+   data transfers.
 
  * Issue #98: added preliminary support for SITE command.
 
