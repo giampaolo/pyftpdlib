@@ -472,7 +472,7 @@ class TestCallLater(unittest.TestCase):
 
     # The test is reliable only on those systems where time.time()
     # provides time with a better precision than 1 second.
-    if isinstance(time.time(), float):
+    if not str(time.time()).endswith('.0'):
         def test_reset(self):
             l = []
             fun = lambda x: l.append(x)
