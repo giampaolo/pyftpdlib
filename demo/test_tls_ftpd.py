@@ -57,12 +57,12 @@ class TLS_FTP(ftplib.FTP):
     """
 
     def __init__(self, host='', user='', passwd='', acct='', keyfile=None,
-                 certfile=None, timeout=None):
+                 certfile=None):
         self.keyfile = keyfile
         self.certfile = certfile
         self.encrypted_pi = False
         self.prot_private = False
-        ftplib.FTP.__init__(self, host, user, passwd, acct, timeout)
+        ftplib.FTP.__init__(self, host, user, passwd, acct)
 
     def auth_tls(self):
         """Set up secure control connection by using TLS."""
