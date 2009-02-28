@@ -4,6 +4,13 @@ Issue tracker at http://code.google.com/p/pyftpdlib/issues/list
 History
 =======
 
+Version: 0.5.2 - Date: 2009-XX-XX
+---------------------------------
+
+ * Issue #100: fixed a race condition in FTPHandler constructor which could
+   throw an exception in case of connection bashing (DoS).  (thanks Bram Neijt)
+
+
 Version: 0.5.1 - Date: 2009-01-21
 ---------------------------------
 

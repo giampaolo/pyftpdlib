@@ -1596,15 +1596,9 @@ class FTPHandler(asynchat.async_chat):
         """
         asynchat.async_chat.__init__(self, conn)
         self.set_terminator("\r\n")
-        # try to handle urgent data inline
-        try:
-            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_OOBINLINE, 1)
-        except socket.error:
-            pass
 
         # public session attributes
         self.server = server
-        self.remote_ip, self.remote_port = self.socket.getpeername()[:2]
         self.fs = self.abstracted_fs()
         self.authenticated = False
         self.username = ""
@@ -1616,16 +1610,13 @@ class FTPHandler(asynchat.async_chat):
         self.sleeping = False
         self.data_server = None
         self.data_channel = None
+        self.remote_ip = ""
+        self.remote_port = ""
+        self.af = -1
         if self.timeout:
             self.idler = CallLater(self.timeout, self.handle_timeout)
         else:
             self.idler = None
-        if hasattr(self.socket, 'family'):
-            self.af = self.socket.family
-        else:  # python < 2.5
-            ip, port = self.socket.getsockname()[:2]
-            self.af = socket.getaddrinfo(ip, port, socket.AF_UNSPEC,
-                                         socket.SOCK_STREAM)[0][0]
 
         # private session attributes
         self._in_buffer = []
@@ -1643,6 +1634,31 @@ class FTPHandler(asynchat.async_chat):
             self._available_facts += ['unix.mode', 'unix.uid', 'unix.gid']
         if os.name == 'nt':
             self._available_facts.append('create')
+
+        # connection properties
+        try:
+            self.remote_ip, self.remote_port = self.socket.getpeername()[:2]
+        except socket.error, err:
+            # a race condition  may occur if the other end is closing
+            # before we can get the peername (see issue #100)
+            if err[0] == errno.ENOTCONN:
+                self.connected = False
+                self.close()
+                return
+            raise
+
+        if hasattr(self.socket, 'family'):
+            self.af = self.socket.family
+        else:  # python < 2.5
+            ip, port = self.socket.getsockname()[:2]
+            self.af = socket.getaddrinfo(ip, port, socket.AF_UNSPEC,
+                                         socket.SOCK_STREAM)[0][0]
+
+        # try to handle urgent data inline
+        try:
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_OOBINLINE, 1)
+        except socket.error:
+            pass
 
     def handle(self):
         """Return a 220 'Ready' response to the client over the command
@@ -1860,7 +1876,8 @@ class FTPHandler(asynchat.async_chat):
                 self.idler.cancel()
 
             # remove client IP address from ip map
-            self.server.ip_map.remove(self.remote_ip)
+            if self.remote_ip in self.server.ip_map:
+                self.server.ip_map.remove(self.remote_ip)
             asynchat.async_chat.close(self)
             self.log("Disconnected.")
 
@@ -3128,6 +3145,8 @@ class FTPServer(asyncore.dispatcher):
         log("[]%s:%s Connected." %addr[:2])
 
         handler = self.handler(sock_obj, self)
+        if not handler.connected:
+            return
         ip = addr[0]
         self.ip_map.append(ip)
 

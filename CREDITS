@@ -105,3 +105,8 @@ N: fogwraith
 E: fogwraith@gmail.com
 D: Bug report #80 (demo/md5_ftpd.py should use hashlib module instead of the
    deprecated md5 module)
+
+N: Bram Neijt
+E: bneijt@gmail.com
+D: Bug report #100, author of ShareFTP project:
+   http://git.logfish.net/shareftp.git/
