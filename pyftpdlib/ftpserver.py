@@ -1645,7 +1645,9 @@ class FTPHandler(asynchat.async_chat):
                 self.connected = False
                 self.close()
                 return
-            raise
+            else:
+                self.handle_error(self)
+                return
 
         if hasattr(self.socket, 'family'):
             self.af = self.socket.family
