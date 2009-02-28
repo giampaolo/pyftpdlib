@@ -1641,13 +1641,12 @@ class FTPHandler(asynchat.async_chat):
         except socket.error, err:
             # a race condition  may occur if the other end is closing
             # before we can get the peername (see issue #100)
+            self.connected = False
             if err[0] == errno.ENOTCONN:
-                self.connected = False
                 self.close()
-                return
             else:
                 self.handle_error(self)
-                return
+            return
 
         if hasattr(self.socket, 'family'):
             self.af = self.socket.family
