@@ -3231,6 +3231,16 @@ class FTPServer(asyncore.dispatcher):
                     raise
         map.clear()
 
+        for x in _tasks:
+            try:
+                x.cancel()
+            except (asyncore.ExitNow, KeyboardInterrupt, SystemExit):
+                raise
+            except:
+                if not ignore_all:
+                    raise
+        del _tasks[:]
+
 
 def test():
     # cmd line usage (provide a read-only anonymous ftp server):
