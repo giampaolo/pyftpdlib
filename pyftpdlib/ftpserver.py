@@ -3099,11 +3099,23 @@ class FTPServer(asyncore.dispatcher):
             return
         asyncore.dispatcher.set_reuse_addr(self)
 
-    def serve_forever(self, timeout=1, use_poll=False, map=None, count=None):
+    def serve_forever(self, timeout=1.0, use_poll=False, map=None, count=None):
         """A wrap around asyncore.loop(); starts the asyncore polling
         loop including running the scheduler.
         The arguments are the same expected by original asyncore.loop()
-        function.
+        function:
+
+         - (float) timeout: the timeout passed to select() or poll()
+           system calls expressed in seconds (default 1.0).
+
+         - (bool) use_poll: when True use poll() instead of select()
+           (default False).
+
+         - (dict) map: a dictionary whose items are the channels to
+           watch.
+
+         - (int) count: how many times the polling loop gets called
+           before returning.  If None loops forever (default None).
         """
         if map is None:
             map = asyncore.socket_map
@@ -3198,7 +3210,7 @@ class FTPServer(asyncore.dispatcher):
 
         This is how asyncore.close_all() is implemented starting from
         Python 2.6.
-        The previous versions of close_all() instead of iteratating over
+        The previous versions of close_all() instead of iterating over
         all opened channels and calling close() method for each one
         of them only closed sockets generating memory leaks.
         """
