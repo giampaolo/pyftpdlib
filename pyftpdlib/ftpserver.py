@@ -2978,8 +2978,9 @@ class FTPHandler(asynchat.async_chat):
         # --- site commands
 
     # No SITE commands aside from SITE HELP are implemented by default.
-    # The user willing to add support for a specific SITE command has
-    # to define a new ftp_SITE_%CMD% method in the subclass.
+    # The user willing to add support for a specific SITE command must
+    # update proto_cmds dictionary and define a new ftp_SITE_%CMD%
+    # method in the subclass.
 
     def ftp_SITE_HELP(self, line):
         """Return help text to the client for a given SITE command."""
