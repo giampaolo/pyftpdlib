@@ -7,8 +7,13 @@ History
 Version: 0.5.2 - Date: 2009-XX-XX
 ---------------------------------
 
+Bugfixes
+
  * Issue #100: fixed a race condition in FTPHandler constructor which could
    throw an exception in case of connection bashing (DoS).  (thanks Bram Neijt)
+
+ * Issue #102: FTPServer.close_all() now removes any unfired delayed call left
+   behind to prevent potential memory leaks.
 
 
 Version: 0.5.1 - Date: 2009-01-21
