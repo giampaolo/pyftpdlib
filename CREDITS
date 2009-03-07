@@ -110,3 +110,8 @@ N: Bram Neijt
 E: bneijt@gmail.com
 D: Bug report #100, author of ShareFTP project:
    http://git.logfish.net/shareftp.git/
+
+N: Michele Petrazzo
+C: Italy
+E: michele.petrazzo@gmail.com
+D: Creation of the demo/unix_daemon.py code.

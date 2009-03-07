@@ -15,6 +15,7 @@ Bugfixes
  * Issue #102: FTPServer.close_all() now removes any unfired delayed call left
    behind to prevent potential memory leaks.
 
+ * Issue #103: unix_daeon.py script implementing a "unix daemon" beheaviour.
 
 Version: 0.5.1 - Date: 2009-01-21
 ---------------------------------
