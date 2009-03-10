@@ -10,8 +10,7 @@ import os
 from pyftpdlib import ftpserver
 
 
-if __name__ == "__main__":
-
+def main():
     # Instantiate a dummy authorizer for managing 'virtual' users
     authorizer = ftpserver.DummyAuthorizer()
 
@@ -42,3 +41,7 @@ if __name__ == "__main__":
 
     # start ftp server
     ftpd.serve_forever()
+
+if __name__ == '__main__':
+    main()
+
