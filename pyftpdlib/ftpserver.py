@@ -616,9 +616,12 @@ class PassiveDTP(asyncore.dispatcher):
         try:
             sock, addr = self.accept()
         except TypeError:
-            # for some reason sometimes accept() returns None instead
-            # of a socket
+            # sometimes accept() might return None (see issue 91)
             return
+        else:
+            # sometimes addr == None instead of (ip, port) (see issue 104)
+            if addr == None:
+                return
         # Check the origin of data connection.  If not expressively
         # configured we drop the incoming data connection if remote
         # IP address does not match the client's IP address.
@@ -3151,14 +3154,17 @@ class FTPServer(asyncore.dispatcher):
     def handle_accept(self):
         """Called when remote client initiates a connection."""
         try:
-            sock_obj, addr = self.accept()
+            sock, addr = self.accept()
         except TypeError:
-            # for some reason sometimes accept() returns None instead
-            # of a socket
+            # sometimes accept() might return None (see issue 91)
             return
+        else:
+            # sometimes addr == None instead of (ip, port) (see issue 104)
+            if addr == None:
+                return
         log("[]%s:%s Connected." %addr[:2])
 
-        handler = self.handler(sock_obj, self)
+        handler = self.handler(sock, self)
         if not handler.connected:
             return
         ip = addr[0]
