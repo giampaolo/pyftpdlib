@@ -620,7 +620,7 @@ class PassiveDTP(asyncore.dispatcher):
             return
         except socket.error, err:
             # ECONNABORTED might be thrown on *BSD (see issue 105)
-            if err[0] != ECONNABORTED:
+            if err[0] != errno.ECONNABORTED:
                 logerror(traceback.format_exc())
             return
         else:
@@ -3166,7 +3166,7 @@ class FTPServer(asyncore.dispatcher):
             return
         except socket.error, err:
             # ECONNABORTED might be thrown on *BSD (see issue 105)
-            if err[0] != ECONNABORTED:
+            if err[0] != errno.ECONNABORTED:
                 logerror(traceback.format_exc())
             return
         else:
