@@ -618,10 +618,16 @@ class PassiveDTP(asyncore.dispatcher):
         except TypeError:
             # sometimes accept() might return None (see issue 91)
             return
+        except socket.error, err:
+            # ECONNABORTED might be thrown on *BSD (see issue 105)
+            if err[0] != ECONNABORTED:
+                logerror(traceback.format_exc())
+            return
         else:
             # sometimes addr == None instead of (ip, port) (see issue 104)
             if addr == None:
                 return
+
         # Check the origin of data connection.  If not expressively
         # configured we drop the incoming data connection if remote
         # IP address does not match the client's IP address.
@@ -3158,12 +3164,17 @@ class FTPServer(asyncore.dispatcher):
         except TypeError:
             # sometimes accept() might return None (see issue 91)
             return
+        except socket.error, err:
+            # ECONNABORTED might be thrown on *BSD (see issue 105)
+            if err[0] != ECONNABORTED:
+                logerror(traceback.format_exc())
+            return
         else:
             # sometimes addr == None instead of (ip, port) (see issue 104)
             if addr == None:
                 return
-        log("[]%s:%s Connected." %addr[:2])
 
+        log("[]%s:%s Connected." %addr[:2])
         handler = self.handler(sock, self)
         if not handler.connected:
             return
