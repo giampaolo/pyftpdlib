@@ -7,7 +7,7 @@ History
 Version: 0.5.2 - Date: 2009-XX-XX
 ---------------------------------
 
-Bugfixes
+Bugfixes:
 
  * Issue #100: fixed a race condition in FTPHandler constructor which could
    throw an exception in case of connection bashing (DoS).  (thanks Bram Neijt)
@@ -21,6 +21,9 @@ Bugfixes
 
  * Issue #104: an EPIPE socket exception might be thrown by asyncore.recv()
    when dealing with ill-behaved clients on OS X . (reported by Wentao Han)
+
+ * Issue #105: ECONNABORTED might be thrown by socket.accept() on FreeBSD
+   causing the server to crash.
 
 Enhancements:
 
