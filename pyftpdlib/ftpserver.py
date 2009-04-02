@@ -976,7 +976,7 @@ class DTPHandler(asyncore.dispatcher):
         except socket.error, err:
             # fix around asyncore bug (http://bugs.python.org/issue1736101)
             if err[0] in (errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN, \
-                          errno.ECONNABORTED):
+                          errno.ECONNABORTED, errno.EPIPE):
                 self.handle_close()
                 return
             else:
@@ -1849,7 +1849,7 @@ class FTPHandler(asynchat.async_chat):
         except socket.error, err:
             # fix around asyncore bug (http://bugs.python.org/issue1736101)
             if err[0] in (errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN, \
-                          errno.ECONNABORTED):
+                          errno.ECONNABORTED, errno.EPIPE):
                 self.handle_close()
                 return
             else:

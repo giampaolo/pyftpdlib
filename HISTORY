@@ -15,7 +15,17 @@ Bugfixes
  * Issue #102: FTPServer.close_all() now removes any unfired delayed call left
    behind to prevent potential memory leaks.
 
- * Issue #103: unix_daeon.py script implementing a "unix daemon" beheaviour.
+ * Issue #104: fixed a bug in FTPServer.handle_accept() where socket.accept()
+   could return None instead of a valid address causing the server to crash.
+   (OS X only, reported by Wentao Han)
+
+ * Issue #104: an EPIPE socket exception might be thrown by asyncore.recv()
+   when dealing with ill-behaved clients on OS X . (reported by Wentao Han)
+
+Enhancements:
+
+ * Issue #103: added unix_daemon.py script.
+
 
 Version: 0.5.1 - Date: 2009-01-21
 ---------------------------------
