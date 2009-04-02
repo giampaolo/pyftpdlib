@@ -670,8 +670,9 @@ class PassiveDTP(asyncore.dispatcher):
             raise
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             raise
-        logerror(traceback.format_exc())
-        self.close()
+        except:
+            logerror(traceback.format_exc())
+            self.close()
 
     def close(self):
         if self.idler is not None and not self.idler.cancelled:
@@ -747,7 +748,7 @@ class ActiveDTP(asyncore.dispatcher):
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             raise
         except socket.error:
-            pass
+            logerror(traceback.format_exc())
         except:
             logerror(traceback.format_exc())
         self.cmd_channel.respond("425 Can't connect to specified address.")
@@ -3209,8 +3210,10 @@ class FTPServer(asyncore.dispatcher):
             raise
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             raise
-        logerror(traceback.format_exc())
-        self.close()
+        except:
+            logerror(traceback.format_exc())
+            # do not stop serving
+            #self.close()
 
     def close_all(self, map=None, ignore_all=False):
         """Stop serving and also disconnects all currently connected
