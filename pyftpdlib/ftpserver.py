@@ -3211,8 +3211,7 @@ class FTPServer(asyncore.dispatcher):
             raise
         except:
             logerror(traceback.format_exc())
-        # do not stop serving
-        #self.close()
+        self.close()
 
     def close_all(self, map=None, ignore_all=False):
         """Stop serving and also disconnects all currently connected
