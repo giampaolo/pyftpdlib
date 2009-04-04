@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# basic_ftpd.py
+# $Id$
 
 """A basic FTP server which uses a DummyAuthorizer for managing 'virtual
 users', setting a limit for incoming connections.

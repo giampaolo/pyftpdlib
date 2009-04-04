@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# md5_ftpd.py
+# $Id$
 
 """A basic ftpd storing passwords as hash digests (platform independent).
 """

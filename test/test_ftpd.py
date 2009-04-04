@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# test_ftpd.py
+# $Id$
 
 #  ======================================================================
 #  Copyright (C) 2007 Giampaolo Rodola' <g.rodola@gmail.com>

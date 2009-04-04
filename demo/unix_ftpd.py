@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# unix_ftpd.py
+# $Id$
 
 """A ftpd using local unix account database to authenticate users
 (users must already exist).

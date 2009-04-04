@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# unix_daemon.py
+# $Id$
 
 """A basic unix daemon based on a Chad J. Schroeder recipe:
 http://code.activestate.com/recipes/278731

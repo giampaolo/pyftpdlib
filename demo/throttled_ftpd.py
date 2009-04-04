@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# throttled_ftpd.py
+# $Id$
 
 """ftpd supporting bandwidth throttling capabilities for data transfer.
 """

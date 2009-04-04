@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# winnt_ftpd.py
+# $Id$
 
 """A ftpd using local Windows NT account database to authenticate users
 (users must already exist).

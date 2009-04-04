@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# ftpserver.py
+# $Id$
 #
 #  pyftpdlib is released under the MIT license, reproduced below:
 #  ======================================================================
