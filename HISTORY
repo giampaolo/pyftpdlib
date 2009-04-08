@@ -7,6 +7,13 @@ History
 Version: 0.5.2 - Date: 2009-XX-XX
 ---------------------------------
 
+Enhancements:
+
+ * Issue #103: added unix_daemon.py script.
+
+ * Issue #107: a new ThrottledDTPHandler class has been added for limiting the
+   speed of downloads and uploads.
+
 Bugfixes:
 
  * Issue #100: fixed a race condition in FTPHandler constructor which could
@@ -25,9 +32,9 @@ Bugfixes:
  * Issue #105: ECONNABORTED might be thrown by socket.accept() on FreeBSD
    causing the server to crash.
 
-Enhancements:
+API changes since 0.5.1:
 
- * Issue #103: added unix_daemon.py script.
+ * ThrottledDTPHandler class has been added.
 
 
 Version: 0.5.1 - Date: 2009-01-21

@@ -981,6 +981,74 @@ class DTPHandler(asynchat.async_chat):
             self.cmd_channel.on_dtp_close()
 
 
+class ThrottledDTPHandler(DTPHandler):
+    """A DTPHandler subclass which wraps sending and receiving in a data
+    counter and temporarily "sleeps" the channel so that you burst to no
+    more than x Kb/sec average.
+
+     - (int) read_limit: the maximum number of bytes to read (receive)
+       in one second (defaults to 0 == no limit).
+
+     - (int) write_limit: the maximum number of bytes to write (send)
+       in one second (defaults to 0 == no limit).
+    """
+    read_limit = 0
+    write_limit = 0
+
+    # Smaller the buffers, the less bursty and smoother the throughput
+    # You might want to bump them up to 65534 if you set limits higher
+    # than 64 Kb/sec.
+    ac_in_buffer_size = 4096
+    ac_out_buffer_size = 4096
+
+    def __init__(self, sock_obj, cmd_channel):
+        DTPHandler.__init__(self, sock_obj, cmd_channel)
+        self._timenext = 0
+        self._datacount = 0
+        self._sleeping = False
+        self._throttler = None
+
+    def readable(self):
+        return not self._sleeping and DTPHandler.readable(self)
+
+    def writable(self):
+        return not self._sleeping and DTPHandler.writable(self)
+
+    def recv(self, buffer_size):
+        chunk = DTPHandler.recv(self, buffer_size)
+        if self.read_limit:
+            self._throttle_bandwidth(len(chunk), self.read_limit)
+        return chunk
+
+    def send(self, data):
+        num_sent = DTPHandler.send(self, data)
+        if self.write_limit:
+            self._throttle_bandwidth(num_sent, self.write_limit)
+        return num_sent
+
+    def _throttle_bandwidth(self, len_chunk, max_speed):
+        """A method which counts data transmitted so that you burst to
+        no more than x Kb/sec average.
+        """
+        self._datacount += len_chunk
+        if self._datacount >= max_speed:
+            self._datacount = 0
+            now = time.time()
+            sleepfor = self._timenext - now
+            if sleepfor > 0:
+                # we've passed bandwidth limits
+                def unsleep():
+                    self._sleeping = False
+                self._sleeping = True
+                self._throttler = CallLater(sleepfor * 2, unsleep)
+            self._timenext = now + 1
+
+    def close(self):
+        if self._throttler is not None and not self._throttler.cancelled:
+            self._throttler.cancel()
+        DTPHandler.close(self)
+
+
 # --- producers
 
 class FileProducer:
