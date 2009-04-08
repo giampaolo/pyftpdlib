@@ -1704,6 +1704,80 @@ class TestConfigurableOptions(unittest.TestCase):
                     sock.close()
 
 
+class TestCallbacks(unittest.TestCase):
+    """Test FTPHandler class callback methods."""
+
+    def _setUp(self, handler):
+        self.server = FTPd(handler=handler)
+        self.server.start()
+        self.client = ftplib.FTP()
+        self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
+        self.client.login(USER, PASSWD)
+        self.file = open(TESTFN, 'w+b')
+        self.dummyfile = StringIO.StringIO()
+        self._tearDown = False
+
+    def tearDown(self):
+        if not self._tearDown:
+            self._tearDown = True
+            if self.client is not None:
+                self.client.close()
+            if self.server is not None:
+                self.server.stop()
+            if not self.file.closed:
+                self.file.close()
+            if not self.dummyfile.closed:
+                self.dummyfile.close()
+            os.remove(TESTFN)
+
+    def test_on_file_sent(self):
+        sentflag = []
+        recvflag = []
+
+        class TestHandler(ftpserver.FTPHandler):
+            def on_file_sent(self, file):
+                sentflag.append(None)
+                assert file == os.path.abspath(TESTFN)
+
+            def on_file_received(self, file):
+                recvflag.append(None)
+                assert file == os.path.abspath(TESTFN)
+
+        self._setUp(TestHandler)
+        data = 'abcde12345' * 100000
+        self.file.write(data)
+        self.file.close()
+        self.client.retrbinary("retr " + TESTFN, lambda x: x)
+        # shut down the server to avoid race conditions
+        self.tearDown()
+        self.assertTrue(None in sentflag)
+        self.assertFalse(None in recvflag)
+
+    def test_on_file_received(self):
+        sentflag = []
+        recvflag = []
+
+        class TestHandler(ftpserver.FTPHandler):
+            def on_file_sent(self, file):
+                sentflag.append(None)
+                assert file == os.path.abspath(TESTFN)
+
+            def on_file_received(self, file):
+                recvflag.append(None)
+                assert file == os.path.abspath(TESTFN)
+
+        self._setUp(TestHandler)
+        data = 'abcde12345' * 100000
+        self.dummyfile.write(data)
+        self.dummyfile.seek(0)
+        self.client.storbinary('stor ' + TESTFN, self.dummyfile)
+        # shut down the server to avoid race conditions
+        self.tearDown()
+        self.assertFalse(None in sentflag)
+        self.assertTrue(None in recvflag)
+
+
 class _TestNetworkProtocols(unittest.TestCase):
     """Test PASV, EPSV, PORT and EPRT commands.
 
@@ -1881,7 +1955,8 @@ class FTPd(threading.Thread):
     eventually re-start() the server.
     """
 
-    def __init__(self, host=HOST, port=0, verbose=False):
+    def __init__(self, host=HOST, port=0, handler=ftpserver.FTPHandler,
+                 verbose=False):
         threading.Thread.__init__(self)
         self.__serving = False
         self.__stopped = False
@@ -1893,7 +1968,7 @@ class FTPd(threading.Thread):
         self.authorizer = ftpserver.DummyAuthorizer()
         self.authorizer.add_user(USER, PASSWD, HOME, perm='elradfmw')  # full perms
         self.authorizer.add_anonymous(HOME)
-        self.handler = ftpserver.FTPHandler
+        self.handler = handler
         self.handler.authorizer = self.authorizer
         self.server = ftpserver.FTPServer((host, port), self.handler)
         self.host, self.port = self.server.socket.getsockname()[:2]
@@ -1960,7 +2035,8 @@ def test_main(tests=None):
                  TestFtpListingCmds,
                  TestFtpAbort,
                  TestTimeouts,
-                 TestConfigurableOptions
+                 TestConfigurableOptions,
+                 TestCallbacks
                  ]
         if SUPPORTS_IPV4:
             tests.append(TestIPv4Environment)
