@@ -6,7 +6,6 @@
 
 import os
 import time
-import asyncore
 
 from pyftpdlib import ftpserver
 
@@ -39,13 +38,13 @@ class ThrottledDTPHandler(ftpserver.DTPHandler):
         return not self._sleeping and ftpserver.DTPHandler.writable(self)
 
     def recv(self, buffer_size):
-        chunk = asyncore.dispatcher.recv(self, buffer_size)
+        chunk = ftpserver.DTPHandler.recv(self, buffer_size)
         if self.read_limit:
             self.throttle_bandwidth(len(chunk), self.read_limit)
         return chunk
 
     def send(self, data):
-        num_sent = asyncore.dispatcher.send(self, data)
+        num_sent = ftpserver.DTPHandler.send(self, data)
         if self.write_limit:
             self.throttle_bandwidth(num_sent, self.write_limit)
         return num_sent

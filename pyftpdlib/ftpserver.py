@@ -758,16 +758,7 @@ class ActiveDTP(asyncore.dispatcher):
         asyncore.dispatcher.close(self)
 
 
-try:
-    from collections import deque
-except ImportError:
-    # backward compatibility with Python < 2.4 by replacing deque with a list
-    class deque(list):
-        def appendleft(self, obj):
-            list.insert(self, 0, obj)
-
-
-class DTPHandler(asyncore.dispatcher):
+class DTPHandler(asynchat.async_chat):
     """Class handling server-data-transfer-process (server-DTP, see
     RFC-959) managing data-transfer operations involving sending
     and receiving data.
@@ -782,25 +773,6 @@ class DTPHandler(asyncore.dispatcher):
      - (int) ac_in_buffer_size: incoming data buffer size (defaults 65536)
 
      - (int) ac_out_buffer_size: outgoing data buffer size (defaults 65536)
-
-    DTPHandler implementation note:
-
-    When a producer is consumed and close_when_done() has been called
-    previously, refill_buffer() erroneously calls close() instead of
-    handle_close() - (see: http://bugs.python.org/issue1740572)
-
-    To avoid this problem DTPHandler is implemented as a subclass of
-    asyncore.dispatcher instead of asynchat.async_chat.
-    This implementation follows the same approach that asynchat module
-    should use in Python 2.6.
-
-    The most important change in the implementation is related to
-    producer_fifo, which is a pure deque object instead of a
-    producer_fifo instance.
-
-    Since we don't want to break backward compatibily with older python
-    versions (deque has been introduced in Python 2.4), if deque is not
-    available we use a list instead.
     """
 
     timeout = 300
@@ -814,12 +786,7 @@ class DTPHandler(asyncore.dispatcher):
             established connection.
          - (instance) cmd_channel: the command channel class instance.
         """
-        asyncore.dispatcher.__init__(self, sock_obj)
-        # we toss the use of the asynchat's "simple producer" and
-        # replace it  with a pure deque, which the original fifo
-        # was a wrapping of
-        self.producer_fifo = deque()
-
+        asynchat.async_chat.__init__(self, sock_obj)
         self.cmd_channel = cmd_channel
         self.file_obj = None
         self.receive = False
@@ -864,6 +831,40 @@ class DTPHandler(asyncore.dispatcher):
 
     # --- connection
 
+    def send(self, data):
+        result = asyncore.dispatcher.send(self, data)
+        self.tot_bytes_sent += result
+        return result
+
+    def refill_buffer (self):
+        """Overridden as a fix around http://bugs.python.org/issue1740572
+        (when the producer is consumed, close() was called instead of
+        handle_close()).
+        """
+        while 1:
+            if len(self.producer_fifo):
+                p = self.producer_fifo.first()
+                # a 'None' in the producer fifo is a sentinel,
+                # telling us to close the channel.
+                if p is None:
+                    if not self.ac_out_buffer:
+                        self.producer_fifo.pop()
+                        #self.close()
+                        self.handle_close()
+                    return
+                elif isinstance(p, str):
+                    self.producer_fifo.pop()
+                    self.ac_out_buffer = self.ac_out_buffer + p
+                    return
+                data = p.more()
+                if data:
+                    self.ac_out_buffer = self.ac_out_buffer + data
+                    return
+                else:
+                    self.producer_fifo.pop()
+            else:
+                return
+
     def handle_read(self):
         """Called when there is data waiting to be read."""
         try:
@@ -882,76 +883,15 @@ class DTPHandler(asyncore.dispatcher):
             # a detailed error message.
             self.file_obj.write(self.data_wrapper(chunk))
 
-    def handle_write(self):
-        """Called when data is ready to be written, initiates send."""
-        self.initiate_send()
-
-    def push(self, data):
-        """Push data onto the deque and initiate send."""
-        sabs = self.ac_out_buffer_size
-        if len(data) > sabs:
-            for i in xrange(0, len(data), sabs):
-                self.producer_fifo.append(data[i:i+sabs])
-        else:
-            self.producer_fifo.append(data)
-        self.initiate_send()
-
-    def push_with_producer(self, producer):
-        """Push data using a producer and initiate send."""
-        self.producer_fifo.append(producer)
-        self.initiate_send()
-
     def readable(self):
         """Predicate for inclusion in the readable for select()."""
+        # we don't use asynchat's find terminator feature so we can
+        # freely avoid to call the original implementation
         return self.receive
 
     def writable(self):
         """Predicate for inclusion in the writable for select()."""
-        return self.producer_fifo or (not self.connected)
-
-    def close_when_done(self):
-        """Automatically close this channel once the outgoing queue is empty."""
-        self.producer_fifo.append(None)
-
-    def initiate_send(self):
-        """Attempt to send data in fifo order."""
-        while self.producer_fifo and self.connected:
-            first = self.producer_fifo[0]
-            # handle empty string/buffer or None entry
-            if not first:
-                del self.producer_fifo[0]
-                if first is None:
-                    self.transfer_finished = True
-                    self.handle_close()
-                    return
-
-            # handle classic producer behavior
-            obs = self.ac_out_buffer_size
-            try:
-                data = buffer(first, 0, obs)
-            except TypeError:
-                data = first.more()
-                if data:
-                    self.producer_fifo.appendleft(data)
-                else:
-                    del self.producer_fifo[0]
-                continue
-
-            # send the data
-            try:
-                num_sent = self.send(data)
-            except socket.error:
-                self.handle_error()
-                return
-
-            if num_sent:
-                self.tot_bytes_sent += num_sent
-                if num_sent < len(data) or obs < len(first):
-                    self.producer_fifo[0] = first[num_sent:]
-                else:
-                    del self.producer_fifo[0]
-            # we tried to send some actual data
-            return
+        return not self.receive and asynchat.async_chat.writable(self)
 
     def handle_timeout(self):
         """Called cyclically to check if data trasfer is stalling with
@@ -1009,6 +949,7 @@ class DTPHandler(asyncore.dispatcher):
             self.transfer_finished = True
             action = 'received'
         else:
+            self.transfer_finished = len(self.producer_fifo) == 0
             action = 'sent'
         if self.transfer_finished:
             self.cmd_channel.respond("226 Transfer complete.")
