@@ -1732,17 +1732,14 @@ class TestCallbacks(unittest.TestCase):
             os.remove(TESTFN)
 
     def test_on_file_sent(self):
-        sentflag = []
-        recvflag = []
+        _file = []
 
         class TestHandler(ftpserver.FTPHandler):
             def on_file_sent(self, file):
-                sentflag.append(None)
-                assert file == os.path.abspath(TESTFN)
+                _file.append(file)
 
             def on_file_received(self, file):
-                recvflag.append(None)
-                assert file == os.path.abspath(TESTFN)
+                raise Exception
 
         self._setUp(TestHandler)
         data = 'abcde12345' * 100000
@@ -1751,21 +1748,17 @@ class TestCallbacks(unittest.TestCase):
         self.client.retrbinary("retr " + TESTFN, lambda x: x)
         # shut down the server to avoid race conditions
         self.tearDown()
-        self.assertTrue(None in sentflag)
-        self.assertFalse(None in recvflag)
+        self.assertEqual(_file.pop(), os.path.abspath(TESTFN))
 
     def test_on_file_received(self):
-        sentflag = []
-        recvflag = []
+        _file = []
 
         class TestHandler(ftpserver.FTPHandler):
             def on_file_sent(self, file):
-                sentflag.append(None)
-                assert file == os.path.abspath(TESTFN)
+                raise Exception
 
             def on_file_received(self, file):
-                recvflag.append(None)
-                assert file == os.path.abspath(TESTFN)
+                _file.append(file)
 
         self._setUp(TestHandler)
         data = 'abcde12345' * 100000
@@ -1774,8 +1767,7 @@ class TestCallbacks(unittest.TestCase):
         self.client.storbinary('stor ' + TESTFN, self.dummyfile)
         # shut down the server to avoid race conditions
         self.tearDown()
-        self.assertFalse(None in sentflag)
-        self.assertTrue(None in recvflag)
+        self.assertEqual(_file.pop(), os.path.abspath(TESTFN))
 
 
 class _TestNetworkProtocols(unittest.TestCase):
