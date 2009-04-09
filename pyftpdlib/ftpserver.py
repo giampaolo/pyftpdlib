@@ -45,6 +45,9 @@ the backend functionality for the FTPd:
     [DTPHandler] - this class handles processing of data transfer
     operations (server-DTP, see RFC-959).
 
+    [ThrottledDTPHandler] - a DTPHandler subclass implementing transfer
+    rates limits.
+
     [DummyAuthorizer] - an "authorizer" is a class handling FTPd
     authentications and permissions. It is used inside FTPHandler class
     to verify user passwords, to get user's home directory and to get
@@ -133,8 +136,8 @@ except ImportError:
 
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer',
            'AuthorizerError', 'FTPHandler', 'FTPServer', 'PassiveDTP',
-           'ActiveDTP', 'DTPHandler', 'FileProducer', 'BufferedIteratorProducer',
-           'AbstractedFS', 'CallLater']
+           'ActiveDTP', 'DTPHandler', 'ThrottledDTPHandler', 'FileProducer',
+           'BufferedIteratorProducer', 'AbstractedFS', 'CallLater']
 
 
 __pname__   = 'Python FTP server library (pyftpdlib)'
@@ -282,7 +285,7 @@ class CallLater:
         self.cancelled = False
         heapq.heappush(_tasks, self)
 
-    def __le__(self, other):
+    def __lt__(self, other):
         return self.timeout <= other.timeout
 
     def call(self):
@@ -541,7 +544,7 @@ class DummyAuthorizer:
 # --- DTP classes
 
 class PassiveDTP(asyncore.dispatcher):
-    """This class is an asyncore.disptacher subclass.  It creates a
+    """This class is an asyncore.dispatcher subclass. It creates a
     socket listening on a local port, dispatching the resultant
     connection to DTPHandler.
 
@@ -711,10 +714,8 @@ class ActiveDTP(asyncore.dispatcher):
             self.cmd_channel.respond("425 Can't connect to specified address.")
             self.close()
 
-    # --- connection / overridden
-
-    # NOOP, overridden to prevent unhandled read/write event
-    # messages to be printed on Python < 2.6
+    # overridden to prevent unhandled read/write event messages to
+    # be printed by asyncore on Python < 2.6
 
     def handle_write(self):
         pass
@@ -1137,7 +1138,8 @@ class AbstractedFS:
         coming from client) depending on the current working directory.
 
         Example (having "/foo" as current working directory):
-        'x' -> '/foo/x'
+        >>> ftpnorm('bar')
+        '/foo/bar'
 
         Note: directory separators are system independent ("/").
         Pathname returned is always absolutized.
@@ -1167,7 +1169,8 @@ class AbstractedFS:
         pathname.
 
         Example (having "/home/user" as root directory):
-        'x' -> '/home/user/x'
+        >>> ftp2fs("foo")
+        '/home/user/foo'
 
         Note: directory separators are system dependent.
         """
@@ -1184,7 +1187,8 @@ class AbstractedFS:
         root directory.
 
         Example (having "/home/user" as root directory):
-        '/home/user/x' -> '/x'
+        >>> fs2ftp("/home/user/foo")
+        '/foo'
 
         As for ftpnorm, directory separators are system independent
         ("/") and pathname returned is always absolutized.
@@ -3195,17 +3199,15 @@ class FTPServer(asyncore.dispatcher):
         # should contain.  When we're running out of such limit we'll
         # use the last available channel for sending a 421 response
         # to the client before disconnecting it.
-        if self.max_cons:
-            if len(self._map) > self.max_cons:
-                handler.handle_max_cons()
-                return
+        if self.max_cons and (len(self._map) > self.max_cons):
+            handler.handle_max_cons()
+            return
 
         # accept only a limited number of connections from the same
         # source address.
-        if self.max_cons_per_ip:
-            if self.ip_map.count(ip) > self.max_cons_per_ip:
-                handler.handle_max_cons_per_ip()
-                return
+        if self.max_cons_per_ip and (self.ip_map.count(ip) > self.max_cons_per_ip):
+            handler.handle_max_cons_per_ip()
+            return
 
         handler.handle()
 
