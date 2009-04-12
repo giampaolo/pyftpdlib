@@ -2602,7 +2602,7 @@ class FTPHandler(asynchat.async_chat):
 
         def auth_failed(msg="Authentication failed."):
             self.sleeping = False
-            if not self._closed:
+            if hasattr(self, '_closed') and not self._closed:
                 self.attempted_logins += 1
                 if self.attempted_logins >= self.max_login_attempts:
                     msg = "530 " + msg + " Disconnecting."
