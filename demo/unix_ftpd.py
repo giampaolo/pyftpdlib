@@ -20,6 +20,11 @@ class UnixAuthorizer(ftpserver.DummyAuthorizer):
     PROCESS_UID = os.getuid()
     PROCESS_GID = os.getgid()
 
+    def __init__(self):
+        ftpserver.DummyAuthorizer.__init__(self)
+        self._anon_user = ''
+        self._dynamic_home_users = []
+
     def add_user(self, username, homedir=None, **kwargs):
         """Add a "real" system user to the virtual users table.
 
@@ -36,6 +41,7 @@ class UnixAuthorizer(ftpserver.DummyAuthorizer):
             raise ftpserver.AuthorizerError('No such user "%s".' %username)
         if not homedir:
             homedir = pwd.getpwnam(username).pw_dir
+            self._dynamic_home_users.append(username)
         ftpserver.DummyAuthorizer.add_user(self, username, '', homedir,**kwargs)
 
     def add_anonymous(self, homedir=None, realuser="nobody", **kwargs):
@@ -53,19 +59,28 @@ class UnixAuthorizer(ftpserver.DummyAuthorizer):
             raise ftpserver.AuthorizerError('No such user "%s".' %realuser)
         if not homedir:
             homedir = pwd.getpwnam(realuser).pw_dir
+            self._dynamic_home_users.append(username)
         ftpserver.DummyAuthorizer.add_anonymous(self, homedir, **kwargs)
-        self.anon_user = realuser
+        self._anon_user = realuser
+
+    def get_home_dir(self, username):
+        if username not in self._dynamic_home_users:
+            return self.user_table[username]['home']
+        else:
+            if (username == "anonymous") and self.has_user('anonymous'):
+                username = self._anon_user
+            return pwd.getpwnam(username).pw_dir
 
     def validate_authentication(self, username, password):
         if (username == "anonymous") and self.has_user('anonymous'):
-            username = self.anon_user
+            username = self._anon_user
         pw1 = spwd.getspnam(username).sp_pwd
         pw2 = crypt.crypt(password, pw1)
         return pw1 == pw2
 
     def impersonate_user(self, username, password):
         if (username == "anonymous") and self.has_user('anonymous'):
-            username = self.anon_user
+            username = self._anon_user
         uid = pwd.getpwnam(username).pw_uid
         gid = pwd.getpwnam(username).pw_gid
         os.setegid(gid)
