@@ -1725,8 +1725,10 @@ class FTPHandler(asynchat.async_chat):
     # --- asyncore / asynchat overridden methods
 
     def readable(self):
-        # if there's a quit pending we stop reading data from socket
-        return not self.sleeping
+        return not self.sleeping and asynchat.async_chat.readable(self)
+
+    def writable(self):
+        return not self.sleeping and asynchat.async_chat.writable(self)
 
     def collect_incoming_data(self, data):
         """Read incoming data and append to the input buffer."""
@@ -2599,6 +2601,7 @@ class FTPHandler(asynchat.async_chat):
             return
 
         def auth_failed(msg="Authentication failed."):
+            self.sleeping = False
             if not self._closed:
                 self.attempted_logins += 1
                 if self.attempted_logins >= self.max_login_attempts:
@@ -2609,7 +2612,6 @@ class FTPHandler(asynchat.async_chat):
                 else:
                     self.respond("530 " + msg)
                     self.log(msg)
-                    self.sleeping = False
 
         if self.authorizer.validate_authentication(self.username, line):
             msg_login = self.authorizer.get_msg_login(self.username)
