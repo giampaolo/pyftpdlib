@@ -36,6 +36,8 @@ API changes since 0.5.1:
 
  * ThrottledDTPHandler class has been added.
 
+ * FTPHandler.process_command() method has been added.
+
 
 Version: 0.5.1 - Date: 2009-01-21
 ---------------------------------

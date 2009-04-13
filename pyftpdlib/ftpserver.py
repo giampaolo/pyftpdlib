@@ -1747,10 +1747,6 @@ class FTPHandler(asynchat.async_chat):
     def found_terminator(self):
         r"""Called when the incoming data stream matches the \r\n
         terminator.
-
-        Depending on the command received it calls the command's
-        corresponding method (e.g. for received command "MKD pathname",
-        ftp_MKD() method is called with "pathname" as the argument).
         """
         if self.idler is not None and not self.idler.cancelled:
             self.idler.reset()
@@ -1793,16 +1789,17 @@ class FTPHandler(asynchat.async_chat):
             if proto_cmds[cmd].auth_needed or (cmd == 'STAT' and arg):
                 self.respond("530 Log in with USER and PASS first.")
             else:
-                method = getattr(self, 'ftp_' + cmd.replace(' ', '_'))
-                method(arg)  # call the proper ftp_* method
+                # call the proper ftp_* method
+                self.process_command(cmd, arg)
+                return
         else:
-            if cmd == 'STAT' and not arg:
+            if (cmd == 'STAT') and not arg:
                 self.ftp_STAT('')
                 return
 
             # for file-system related commands check whether real path
             # destination is valid
-            if proto_cmds[cmd].check_path and cmd != 'STOU':
+            if proto_cmds[cmd].check_path and (cmd != 'STOU'):
                 if cmd in ('CWD', 'XCWD'):
                     arg = self.fs.ftp2fs(arg or '/')
                 elif cmd in ('CDUP', 'XCUP'):
@@ -1838,8 +1835,15 @@ class FTPHandler(asynchat.async_chat):
                     return
 
             # call the proper ftp_* method
-            method = getattr(self, 'ftp_' + cmd.replace(' ', '_'))
-            method(arg)
+            self.process_command(cmd, arg)
+
+    def process_command(self, cmd, *args, **kwargs):
+        """Depending on the command received it calls the command's
+        corresponding method (e.g. for received command "MKD pathname",
+        ftp_MKD() method is called with "pathname" as the argument.
+        """
+        method = getattr(self, 'ftp_' + cmd.replace(' ', '_'))
+        method(*args, **kwargs)  # call the proper ftp_* method
 
     def handle_expt(self):
         """Called when there is out of band (OOB) data to be read.
