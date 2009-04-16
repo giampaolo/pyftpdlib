@@ -290,7 +290,7 @@ class CallLater:
         self.cancelled = False
         heapq.heappush(_tasks, self)
 
-    def __lt__(self, other):
+    def __le__(self, other):
         return self.timeout <= other.timeout
 
     def call(self):
