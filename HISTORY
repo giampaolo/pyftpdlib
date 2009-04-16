@@ -32,6 +32,8 @@ Bugfixes:
  * Issue #105: ECONNABORTED might be thrown by socket.accept() on FreeBSD
    causing the server to crash.
 
+ * Issue #111: the license used was not MIT as stated in source files.
+
 API changes since 0.5.1:
 
  * ThrottledDTPHandler class has been added.
