@@ -912,7 +912,7 @@ class TestFtpFsOperations(unittest.TestCase):
         # ValueError as expected;
         # (see http://bugs.python.org/issue874042)
         try:
-            time.localtime(-9000000000)
+            time.strftime("%Y%m%d%H%M%S", time.localtime(-9000000000))
         except ValueError:
             skip = 0
         else:

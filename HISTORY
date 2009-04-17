@@ -34,6 +34,8 @@ Bugfixes:
 
  * Issue #111: the license used was not MIT as stated in source files.
 
+ * Issue #112: fixed a MDTM related test case failure occurring on 64 bit OSes.
+
 API changes since 0.5.1:
 
  * ThrottledDTPHandler class has been added.
