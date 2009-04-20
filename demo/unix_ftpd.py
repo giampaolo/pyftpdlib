@@ -44,22 +44,22 @@ class UnixAuthorizer(ftpserver.DummyAuthorizer):
             self._dynamic_home_users.append(username)
         ftpserver.DummyAuthorizer.add_user(self, username, '', homedir,**kwargs)
 
-    def add_anonymous(self, homedir=None, realuser="nobody", **kwargs):
+    def add_anonymous(self, homedir=None, realuser="ftp", **kwargs):
         """Add an anonymous user to the virtual users table.
 
         If no homedir argument is specified the realuser's home
         directory will possibly be determined and used.
 
         realuser argument specifies the system user to use for managing
-        anonymous sessions.  On many UNIX systems "nobody" is tipically
-        used but it may change (e.g. "ftp").
+        anonymous sessions.  On many UNIX systems "ftp" is tipically
+        used but it may change (e.g. "nobody").
         """
         users = [entry.pw_name for entry in pwd.getpwall()]
         if not realuser in users:
             raise ftpserver.AuthorizerError('No such user "%s".' %realuser)
         if not homedir:
             homedir = pwd.getpwnam(realuser).pw_dir
-            self._dynamic_home_users.append(username)
+            self._dynamic_home_users.append(realuser)
         ftpserver.DummyAuthorizer.add_anonymous(self, homedir, **kwargs)
         self._anon_user = realuser
 
