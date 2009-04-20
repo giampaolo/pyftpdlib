@@ -1915,17 +1915,23 @@ class FTPHandler(asynchat.async_chat):
             asynchat.async_chat.close(self)
             self.log("Disconnected.")
 
-    # --- callbacks
+    # --- public callbacks
 
     def on_file_sent(self, file):
         """Called every time a file has been succesfully sent.
-        'file' is the complete filename of the file being sent.
+        "file" is the absolute name of the file being sent.
+        To run a time consuming task use a separate Python process
+        or thread.
         """
 
     def on_file_received(self, file):
         """Called every time a file has been succesfully received.
-        'file' is the complete filename of the file being received.
+        "file" is the absolute name of the file being received.
+        To run a time consuming task use a separate Python process
+        or thread.
         """
+
+    # --- internal callbacks
 
     def on_dtp_connection(self):
         """Called every time data channel connects (either active or
