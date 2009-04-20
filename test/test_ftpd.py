@@ -898,7 +898,7 @@ class TestFtpFsOperations(unittest.TestCase):
         else:
             self.fail('Exception not raised')
 
-    def test_unforseen_mdtm_event(self):
+    def test_unforeseen_mdtm_event(self):
         # Emulate a case where the file last modification time is prior
         # to year 1900.  This most likely will never happen unless
         # someone specifically force the last modification time of a
@@ -1364,6 +1364,25 @@ class TestFtpListingCmds(unittest.TestCase):
         self.assertEqual(resp, '550 Globbing not supported.')
         bogus = os.path.basename(tempfile.mktemp(dir=HOME))
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'stat ' + bogus)
+
+    def test_unforeseen_time_event(self):
+        # Emulate a case where the file last modification time is prior
+        # to year 1900.  This most likely will never happen unless
+        # someone specifically force the last modification time of a
+        # file in some way.
+        # To do so we temporarily override os.path.getmtime so that it
+        # returns a negative value referring to a year prior to 1900.
+        # It causes time.localtime/gmtime to raise a ValueError exception
+        # which is supposed to be handled by server.
+        _getmtime = ftpserver.AbstractedFS.getmtime
+        try:
+            ftpserver.AbstractedFS.getmtime = lambda x, y: -9000000000
+            self.client.sendcmd('stat /')  # test AbstractedFS.format_list()
+            self.client.sendcmd('mlst /')  # test AbstractedFS.format_mlsx()
+            # make sure client hasn't been disconnected
+            self.client.sendcmd('noop')
+        finally:
+            ftpserver.AbstractedFS.getmtime = _getmtime
 
 
 class TestFtpAbort(unittest.TestCase):
