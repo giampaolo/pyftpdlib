@@ -73,7 +73,7 @@ class UnixAuthorizer(ftpserver.DummyAuthorizer):
 
     def validate_authentication(self, username, password):
         if (username == "anonymous") and self.has_user('anonymous'):
-            username = self._anon_user
+            return True
         pw1 = spwd.getspnam(username).sp_pwd
         pw2 = crypt.crypt(password, pw1)
         return pw1 == pw2
