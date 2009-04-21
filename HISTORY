@@ -38,6 +38,9 @@ Bugfixes:
 
  * Issue #113: fixed unix_ftp.py which was treating anonymous as a normal user.
 
+ * Issue #114: MLST is now denied unless the "l" permission has been specified
+   for the user.
+
 API changes since 0.5.1:
 
  * ThrottledDTPHandler class has been added.

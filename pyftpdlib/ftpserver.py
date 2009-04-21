@@ -167,7 +167,7 @@ proto_cmds = {
     'LIST': ('l',  True,  None,  True,  'Syntax: LIST [<SP> path-name] (list files).'),
     'MDTM': (None, True,  True,  True,  'Syntax: MDTM [<SP> file-name] (get last modification time).'),
     'MLSD': ('l',  True,  None,  True,  'Syntax: MLSD [<SP> dir-name] (list files in a machine-processable form)'),
-    'MLST': (None, True,  None,  True,  'Syntax: MLST [<SP> path-name] (show a path in a machine-processable form)'),
+    'MLST': ('l', True,  None,  True,  'Syntax: MLST [<SP> path-name] (show a path in a machine-processable form)'),
     'MODE': (None, True,  True,  False, 'Syntax: MODE <SP> mode (noop; set data transfer mode).'),
     'MKD' : ('m',  True,  True,  True,  'Syntax: MDK <SP> dir-name (create directory).'),
     'NLST': ('l',  True,  None,  True,  'Syntax: NLST [<SP> path-name] (list files in a compact form).'),
@@ -396,7 +396,7 @@ class DummyAuthorizer:
 
         Read permissions:
          - "e" = change directory (CWD command)
-         - "l" = list files (LIST, NLST, MLSD commands)
+         - "l" = list files (LIST, NLST, STAT, MLSD, MLST commands)
          - "r" = retrieve file from the server (RETR command)
 
         Write permissions:
