@@ -36,6 +36,8 @@ Bugfixes:
 
  * Issue #112: fixed a MDTM related test case failure occurring on 64 bit OSes.
 
+ * Issue #113: fixed unix_ftp.py which was treating anonymous as a normal user.
+
 API changes since 0.5.1:
 
  * ThrottledDTPHandler class has been added.
