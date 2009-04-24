@@ -1117,17 +1117,22 @@ class BufferedIteratorProducer:
 # --- filesystem
 
 class AbstractedFS:
-    """A class used to interact with the file system, providing a high
-    level, cross-platform interface compatible with both Windows and
-    UNIX style filesystems.
+    """A class used to interact with the file system, providing a
+    cross-platform interface compatible with both Windows and
+    UNIX style filesystems where all paths use "/" separator.
 
-    It provides some utility methods and some wraps around operations
-    involved in file creation and file system operations like moving
+    AbstractedFS distinguishes between "real" filesystem paths and
+    "virtual" ftp paths emulating a UNIX chroot jail where the user
+    can not escape its home directory (example: real "/home/user"
+    path will be seen as "/" by the client)
+
+    It also provides some utility methods and wraps around all os.*
+    calls involving operations against the filesystem like creating
     files or removing directories.
 
     Instance attributes:
-     - (str) root: the user home directory.
-     - (str) cwd: the current working directory.
+     - (str) root: the "real" user home directory.
+     - (str) cwd: the "virtual" current working directory.
      - (str) rnfr: source file to be renamed.
     """
 
@@ -1213,7 +1218,7 @@ class AbstractedFS:
             p = '/' + p
         return p
 
-    # alias for backward compatibility with 0.2.0
+    # XXX - alias for backward compatibility with 0.2.0
     normalize = ftpnorm
     translate = ftp2fs
 
@@ -1262,7 +1267,7 @@ class AbstractedFS:
         file = os.fdopen(fd, mode)
         return FileWrapper(file, name)
 
-    # --- Wrapper methods around os.*
+    # --- Wrapper methods around os.* calls
 
     def chdir(self, path):
         """Change the current directory."""
@@ -1308,7 +1313,7 @@ class AbstractedFS:
     if not hasattr(os, 'lstat'):
         lstat = stat
 
-    # --- Wrapper methods around os.path.*
+    # --- Wrapper methods around os.path.* calls
 
     def isfile(self, path):
         """Return True if path is a file."""
@@ -1355,7 +1360,7 @@ class AbstractedFS:
         else:
             return os.path.exists(path)
 
-    exists = lexists  # alias for backward compatibility with 0.2.0
+    exists = lexists  # XXX - alias for backward compatibility with 0.2.0
 
     # --- Listing utilities
 
@@ -1521,6 +1526,7 @@ class AbstractedFS:
                 uid = 'unix.uid=%s;' %st.st_uid
             if 'unix.gid' in facts:
                 gid = 'unix.gid=%s;' %st.st_gid
+
             # We provide unique fact (see RFC-3659, chapter 7.5.2) on
             # posix platforms only; we get it by mixing st_dev and
             # st_ino values which should be enough for granting an
@@ -1577,7 +1583,7 @@ class FTPHandler(asynchat.async_chat):
         instead use the public address of your NAT (default None).
 
      - (list) passive_ports:
-        what ports ftpd will use for its passive data transfers.
+        what ports the ftpd will use for its passive data transfers.
         Value expected is a list of integers (e.g. range(60000, 65535)).
         When configured pyftpdlib will no longer use kernel-assigned
         random ports (default None).
@@ -1591,9 +1597,8 @@ class FTPHandler(asynchat.async_chat):
      - (str) username: the name of the connected user (if any).
      - (int) attempted_logins: number of currently attempted logins.
      - (str) current_type: the current transfer type (default "a")
-     - (int) af: the address family (IPv4/IPv6)
+     - (int) af: the connection's address family (IPv4/IPv6)
      - (instance) server: the FTPServer class instance.
-     - (instance) data_server: the data server instance (if any).
      - (instance) data_channel: the data channel instance (if any).
     """
     # these are overridable defaults
@@ -1843,16 +1848,16 @@ class FTPHandler(asynchat.async_chat):
             self.process_command(cmd, arg)
 
     def process_command(self, cmd, *args, **kwargs):
-        """Depending on the command received it calls the command's
-        corresponding method (e.g. for received command "MKD pathname",
-        ftp_MKD() method is called with "pathname" as the argument.
+        """Process command by calling the corresponding ftp_* class
+        method (e.g. for received command "MKD pathname", ftp_MKD()
+        method is called with "pathname" as the argument).
         """
         method = getattr(self, 'ftp_' + cmd.replace(' ', '_'))
-        method(*args, **kwargs)  # call the proper ftp_* method
+        method(*args, **kwargs)
 
     def handle_expt(self):
         """Called when there is out of band (OOB) data to be read.
-        This could happen in case of such clients strictly following
+        This might happen in case of such clients strictly following
         the RFC-959 directives of sending Telnet IP and Synch as OOB
         data before issuing ABOR, STAT and QUIT commands.
         It should never be called since the SO_OOBINLINE option is
@@ -1919,23 +1924,23 @@ class FTPHandler(asynchat.async_chat):
 
     def on_file_sent(self, file):
         """Called every time a file has been succesfully sent.
-        "file" is the absolute name of the file being sent.
-        To run a time consuming task use a separate Python process
-        or thread.
+        "file" is the absolute name of the file just being sent.
+        To run a time consuming task make sure to use a separate
+        process or thread.
         """
 
     def on_file_received(self, file):
         """Called every time a file has been succesfully received.
-        "file" is the absolute name of the file being received.
-        To run a time consuming task use a separate Python process
-        or thread.
+        "file" is the absolute name of the file just being received.
+        To run a time consuming task make sure to use a separate
+        process or thread.
         """
 
     # --- internal callbacks
 
     def on_dtp_connection(self):
-        """Called every time data channel connects (either active or
-        passive).
+        """Called every time data channel connects, either active or
+        passive (internal, not supposed to be overridden).
 
         Incoming and outgoing queues are checked for pending data.
         If outbound data is pending, it is pushed into the data channel.
@@ -1974,7 +1979,8 @@ class FTPHandler(asynchat.async_chat):
             self._in_dtp_queue = None
 
     def on_dtp_close(self):
-        """Called every time the data channel is closed."""
+        """Called every time the data channel is closed (internal, not
+        supposed to be overridden)."""
         self.data_channel = None
         if self.quit_pending:
             self.close_when_done()
@@ -2062,7 +2068,7 @@ class FTPHandler(asynchat.async_chat):
         finally:
             self.authorizer.terminate_impersonation()
 
-        # --- connection
+    # --- connection
 
     def _make_eport(self, ip, port):
         """Establish an active data channel with remote client which
@@ -2084,7 +2090,7 @@ class FTPHandler(asynchat.async_chat):
             self.respond("501 Can't connect over a privileged port.")
             return
 
-        # close existent DTP-server instance, if any.
+        # close existent DTP-server instance, if any
         if self.data_server is not None:
             self.data_server.close()
             self.data_server = None
@@ -2105,7 +2111,7 @@ class FTPHandler(asynchat.async_chat):
     def _make_epasv(self, extmode=False):
         """Initialize a passive data channel with remote client which
         issued a PASV or EPSV command.
-        If extmode argument is False we assume that client issued EPSV in
+        If extmode argument is True we assume that client issued EPSV in
         which case extended passive mode will be used (see RFC-2428).
         """
         # close existing DTP-server instance, if any
@@ -2133,7 +2139,7 @@ class FTPHandler(asynchat.async_chat):
             self.respond("501 PORT not allowed after EPSV ALL.")
             return
         if self.af != socket.AF_INET:
-            self.respond("425 You cannot use PORT on IPv6 connections. "
+            self.respond("425 You cannot use PORT over IPv6 connection. "
                          "Use EPRT instead.")
             return
         # Parse PORT request for getting IP and PORT.
@@ -2163,7 +2169,7 @@ class FTPHandler(asynchat.async_chat):
             return
         # Parse EPRT request for getting protocol, IP and PORT.
         # Request comes in as:
-        # # <d>proto<d>ip<d>port<d>
+        # <d>proto<d>ip<d>port<d>
         # ...where <d> is an arbitrary delimiter character (usually "|") and
         # <proto> is the network protocol to use (1 for IPv4, 2 for IPv6).
         try:
@@ -2204,7 +2210,7 @@ class FTPHandler(asynchat.async_chat):
             self.respond("501 PASV not allowed after EPSV ALL.")
             return
         if self.af != socket.AF_INET:
-            self.respond("425 You cannot use PASV on IPv6 connections. "
+            self.respond("425 You cannot use PASV over IPv6 connection. "
                          "Use EPSV instead.")
         else:
             self._make_epasv(extmode=False)
@@ -2226,11 +2232,13 @@ class FTPHandler(asynchat.async_chat):
         # family used on the control connection.
         if not line:
             self._make_epasv(extmode=True)
+        # IPv4
         elif line == "1":
             if self.af != socket.AF_INET:
                 self.respond('522 Network protocol not supported (use 2).')
             else:
                 self._make_epasv(extmode=True)
+        # IPv6
         elif line == "2":
             if self.af == socket.AF_INET:
                 self.respond('522 Network protocol not supported (use 1).')
@@ -2258,7 +2266,7 @@ class FTPHandler(asynchat.async_chat):
             self.respond("221 ")
 
         # From RFC-959:
-        # If file transfer is in progress, the connection will remain
+        # If file transfer is in progress, the connection must remain
         # open for result response and the server will then close it.
         # We also stop responding to any further command.
         if self.data_channel:
