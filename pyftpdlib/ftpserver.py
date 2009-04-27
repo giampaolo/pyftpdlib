@@ -997,15 +997,16 @@ class ThrottledDTPHandler(DTPHandler):
 
      - (int) write_limit: the maximum number of bytes to write (send)
        in one second (defaults to 0 == no limit).
+
+     - (bool) auto_sized_buffers: this option only applies when read
+       and/or write limits are specified. When enabled it bumps down
+       the data buffer sizes so that they are never greater than read
+       and write limits which results in a less bursty and smoother
+       throughput (default: True).
     """
     read_limit = 0
     write_limit = 0
-
-    # Smaller the buffers, the less bursty and smoother the throughput
-    # You might want to bump them up to 65534 if you set limits higher
-    # than 64 Kb/sec.
-    ac_in_buffer_size = 4096
-    ac_out_buffer_size = 4096
+    auto_sized_buffers = True
 
     def __init__(self, sock_obj, cmd_channel):
         DTPHandler.__init__(self, sock_obj, cmd_channel)
@@ -1013,6 +1014,14 @@ class ThrottledDTPHandler(DTPHandler):
         self._datacount = 0
         self._sleeping = False
         self._throttler = None
+
+        if self.auto_sized_buffers:
+            if self.read_limit:
+                while self.ac_in_buffer_size > self.read_limit:
+                    self.ac_in_buffer_size /= 2
+            if self.write_limit:
+                while self.ac_out_buffer_size > self.write_limit:
+                    self.ac_out_buffer_size /= 2
 
     def readable(self):
         return not self._sleeping and DTPHandler.readable(self)
