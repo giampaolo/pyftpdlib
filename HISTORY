@@ -41,6 +41,11 @@ Bugfixes:
  * Issue #114: MLST is now denied unless the "l" permission has been specified
    for the user.
 
+ * Issue #115: asyncore.dispatcher.close() is now called before doing any other
+   cleanup operation when client disconnects. This way we avoid an endless loop
+   of useless messages to be printed.  (thanks Arkadiusz Wahlig)
+
+
 API changes since 0.5.1:
 
  * ThrottledDTPHandler class has been added.
