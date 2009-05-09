@@ -683,9 +683,9 @@ class PassiveDTP(asyncore.dispatcher):
         self.close()
 
     def close(self):
+        asyncore.dispatcher.close(self)
         if self.idler is not None and not self.idler.cancelled:
             self.idler.cancel()
-        asyncore.dispatcher.close(self)
 
 
 class ActiveDTP(asyncore.dispatcher):
@@ -759,9 +759,9 @@ class ActiveDTP(asyncore.dispatcher):
         self.close()
 
     def close(self):
+        asyncore.dispatcher.close(self)
         if self.idler is not None and not self.idler.cancelled:
             self.idler.cancel()
-        asyncore.dispatcher.close(self)
 
 
 class DTPHandler(asynchat.async_chat):
@@ -974,11 +974,11 @@ class DTPHandler(asynchat.async_chat):
         file handles."""
         if not self._closed:
             self._closed = True
+            asyncore.dispatcher.close(self)
             if self.file_obj is not None and not self.file_obj.closed:
                 self.file_obj.close()
             if self.idler is not None and not self.idler.cancelled:
                 self.idler.cancel()
-            asyncore.dispatcher.close(self)
             if self.file_obj is not None and self.transfer_finished:
                 if self.receive:
                     self.cmd_channel.on_file_received(self.file_obj.name)
@@ -1909,6 +1909,7 @@ class FTPHandler(asynchat.async_chat):
         """Close the current channel disconnecting the client."""
         if not self._closed:
             self._closed = True
+            asynchat.async_chat.close(self)
             if self.data_server is not None:
                 self.data_server.close()
                 del self.data_server
@@ -1926,7 +1927,6 @@ class FTPHandler(asynchat.async_chat):
             # remove client IP address from ip map
             if self.remote_ip in self.server.ip_map:
                 self.server.ip_map.remove(self.remote_ip)
-            asynchat.async_chat.close(self)
             self.log("Disconnected.")
 
     # --- public callbacks
