@@ -9,25 +9,28 @@ To install pyftpdlib just open a command shell and run:
 
 from distutils.core import setup
 
-long_descr = """\
-Python FTP server library, based on asyncore framework, provides
-an high-level portable interface to easily write asynchronous
-FTP servers with Python."""
+name = 'pyftpdlib'
+version = '0.5.2'
+download_url = "http://pyftpdlib.googlecode.com/files/" + name + "-" + \
+                                                          version + ".tar.gz"
 
 setup(
-    name='pyftpdlib',
-    version="0.5.1",
+    name=name,
+    version=version,
     description='High-level asynchronous FTP server library',
-    long_description=long_descr,
+    long_description="Python FTP server library provides an high-level portable "
+                     "interface to easily write asynchronous FTP servers with "
+                     "Python.",
     license='MIT License',
     platforms='Platform Independent',
     author="Giampaolo Rodola'",
     author_email='g.rodola@gmail.com',
     url='http://code.google.com/p/pyftpdlib/',
-    download_url='http://pyftpdlib.googlecode.com/files/pyftpdlib-0.5.1.tar.gz',
+    download_url=download_url,
     packages=['pyftpdlib'],
+    keywords=['ftp', 'server', 'ftpd', 'daemon', 'rfc959', 'python'],
     classifiers=[
-          'Development Status :: 4 - Beta',
+          'Development Status :: 5 - Production/Stable',
           'Environment :: Console',
           'Intended Audience :: Developers',
           'Intended Audience :: System Administrators',

@@ -130,7 +130,7 @@ import warnings
 import random
 import stat
 import heapq
-from tarfile import filemode
+from tarfile import filemode as _filemode
 
 try:
     import pwd
@@ -146,7 +146,7 @@ __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer
 
 
 __pname__   = 'Python FTP server library (pyftpdlib)'
-__ver__     = '0.5.1'
+__ver__     = '0.5.2'
 __date__    = '2009-01-21'
 __author__  = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__     = 'http://code.google.com/p/pyftpdlib/'
@@ -167,7 +167,7 @@ proto_cmds = {
     'LIST': ('l',  True,  None,  True,  'Syntax: LIST [<SP> path-name] (list files).'),
     'MDTM': (None, True,  True,  True,  'Syntax: MDTM [<SP> file-name] (get last modification time).'),
     'MLSD': ('l',  True,  None,  True,  'Syntax: MLSD [<SP> dir-name] (list files in a machine-processable form)'),
-    'MLST': ('l', True,  None,  True,  'Syntax: MLST [<SP> path-name] (show a path in a machine-processable form)'),
+    'MLST': ('l',  True,  None,  True,  'Syntax: MLST [<SP> path-name] (show a path in a machine-processable form)'),
     'MODE': (None, True,  True,  False, 'Syntax: MODE <SP> mode (noop; set data transfer mode).'),
     'MKD' : ('m',  True,  True,  True,  'Syntax: MDK <SP> dir-name (create directory).'),
     'NLST': ('l',  True,  None,  True,  'Syntax: NLST [<SP> path-name] (list files in a compact form).'),
@@ -824,7 +824,7 @@ class DTPHandler(asynchat.async_chat):
         elif type == 'i':
             self.data_wrapper = lambda x: x
         else:
-            raise TypeError, "Unsupported type"
+            raise TypeError("Unsupported type")
         self.receive = True
 
     def get_transmitted_bytes(self):
@@ -948,9 +948,11 @@ class DTPHandler(asynchat.async_chat):
     def handle_close(self):
         """Called when the socket is closed."""
         # If we used channel for receiving we assume that transfer is
-        # finished when client close connection , if we used channel
+        # finished when client closes the connection, if we used channel
         # for sending we have to check that all data has been sent
         # (responding with 226) or not (responding with 426).
+        # In both cases handle_close() is automatically called by the
+        # underlying asynchat module.
         if self.receive:
             self.transfer_finished = True
             action = 'received'
@@ -1087,7 +1089,7 @@ class FileProducer:
         elif type == 'i':
             self.data_wrapper = lambda x: x
         else:
-            raise TypeError, "Unsupported type"
+            raise TypeError("Unsupported type")
 
     def more(self):
         """Attempt a chunk of data of size self.buffer_size."""
@@ -1418,7 +1420,7 @@ class AbstractedFS:
                 if ignore_err:
                     continue
                 raise
-            perms = filemode(st.st_mode)  # permissions
+            perms = _filemode(st.st_mode)  # permissions
             nlinks = st.st_nlink  # number of links to inode
             if not nlinks:  # non-posix system, let's use a bogus value
                 nlinks = 1
@@ -1703,7 +1705,7 @@ class FTPHandler(asynchat.async_chat):
             pass
 
     def handle(self):
-        """Return a 220 'Ready' response to the client over the command
+        """Return a 220 'ready' response to the client over the command
         channel.
         """
         if len(self.banner) <= 75:
@@ -3147,7 +3149,7 @@ class FTPServer(asyncore.dispatcher):
                     continue
                 break
             if not self.socket:
-                raise socket.error, msg
+                raise socket.error(msg)
         self.listen(5)
 
     def set_reuse_addr(self):
@@ -3221,10 +3223,10 @@ class FTPServer(asyncore.dispatcher):
             if addr == None:
                 return
 
-        log("[]%s:%s Connected." %addr[:2])
         handler = self.handler(sock, self)
         if not handler.connected:
             return
+        log("[]%s:%s Connected." %addr[:2])
         ip = addr[0]
         self.ip_map.append(ip)
 
