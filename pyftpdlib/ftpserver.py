@@ -2177,13 +2177,16 @@ class FTPHandler(asynchat.async_chat):
         # port number is (p1 * 256) + p2.
         try:
             addr = map(int, line.split(','))
-            assert len(addr) == 6
+            if len(addr) != 6:
+                raise ValueError
             for x in addr[:4]:
-                assert 0 <= x <= 255
+                if not 0 <= x <= 255:
+                    raise ValueError
             ip = '%d.%d.%d.%d' %tuple(addr[:4])
             port = (addr[4] * 256) + addr[5]
-            assert 0 <= port <= 65535
-        except (AssertionError, ValueError, OverflowError):
+            if not 0 <= port <= 65535:
+                raise ValueError
+        except (ValueError, OverflowError):
             self.respond("501 Invalid PORT format.")
             return
         self._make_eport(ip, port)
@@ -2203,8 +2206,9 @@ class FTPHandler(asynchat.async_chat):
         try:
             af, ip, port = line.split(line[0])[1:-1]
             port = int(port)
-            assert 0 <= port <= 65535
-        except (AssertionError, ValueError, IndexError, OverflowError):
+            if not 0 <= port <= 65535:
+                raise ValueError
+        except (ValueError, IndexError, OverflowError):
             self.respond("501 Invalid EPRT format.")
             return
 
@@ -2214,10 +2218,12 @@ class FTPHandler(asynchat.async_chat):
             else:
                 try:
                     octs = map(int, ip.split('.'))
-                    assert len(octs) == 4
+                    if len(octs) != 4:
+                        raise ValueError
                     for x in octs:
-                        assert 0 <= x <= 255
-                except (AssertionError, ValueError, OverflowError):
+                        if not 0 <= x <= 255:
+                            raise ValueError
+                except (ValueError, OverflowError):
                     self.respond("501 Invalid EPRT format.")
                 else:
                     self._make_eport(ip, port)
@@ -2428,10 +2434,11 @@ class FTPHandler(asynchat.async_chat):
             # the REST.
             ok = 0
             try:
-                assert not rest_pos > self.fs.getsize(file)
+                if rest_pos > self.fs.getsize(file):
+                    raise ValueError
                 fd.seek(rest_pos)
                 ok = 1
-            except AssertionError:
+            except ValueError:
                 why = "Invalid REST parameter"
             except IOError, err:
                 why = _strerror(err)
@@ -2475,10 +2482,11 @@ class FTPHandler(asynchat.async_chat):
             # specified in the REST.
             ok = 0
             try:
-                assert not rest_pos > self.fs.getsize(file)
+                if rest_pos > self.fs.getsize(file):
+                    raise ValueError
                 fd.seek(rest_pos)
                 ok = 1
-            except AssertionError:
+            except ValueError:
                 why = "Invalid REST parameter"
             except IOError, err:
                 why = _strerror(err)
@@ -2992,15 +3000,18 @@ class FTPHandler(asynchat.async_chat):
     def ftp_OPTS(self, line):
         """Specify options for FTP commands as specified in RFC-2389."""
         try:
-            assert (not line.count(' ') > 1), 'Invalid number of arguments'
+            if line.count(' ') > 1:
+                raise ValueError('Invalid number of arguments')
             if ' ' in line:
                 cmd, arg = line.split(' ')
-                assert (';' in arg), 'Invalid argument'
+                if ';' not in arg:
+                    raise ValueError('Invalid argument')
             else:
                 cmd, arg = line, ''
             # actually the only command able to accept options is MLST
-            assert (cmd.upper() == 'MLST'), 'Unsupported command "%s"' %cmd
-        except AssertionError, err:
+            if cmd.upper() != 'MLST':
+                raise ValueError('Unsupported command "%s"' %cmd)
+        except ValueError, err:
             self.respond('501 %s.' %err)
         else:
             facts = [x.lower() for x in arg.split(';')]
