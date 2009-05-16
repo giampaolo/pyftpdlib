@@ -46,6 +46,9 @@ Bugfixes:
    which hangs the server in case an exception is raised in close() method.
    (thanks Arkadiusz Wahlig)
 
+ * Issue #116: extra carriage returns were added to files transferred in ASCII
+   mode.
+
 
 API changes since 0.5.1:
 

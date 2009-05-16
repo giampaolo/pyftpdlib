@@ -802,12 +802,29 @@ class DTPHandler(asynchat.async_chat):
         self.data_wrapper = lambda x: x
         self._lastdata = 0
         self._closed = False
+        self._had_cr = False
         if self.timeout:
             self.idler = CallLater(self.timeout, self.handle_timeout)
         else:
             self.idler = None
 
     # --- utility methods
+
+    def _posix_ascii_data_wrapper(self, chunk):
+        """The data wrapper used for receiving data in ASCII mode on
+        systems using a single line terminator, handling those cases
+        where CRLF ('\r\n') gets delivered in two chunks.
+        """
+        if self._had_cr:
+            chunk = '\r' + chunk
+
+        if chunk.endswith('\r'):
+            self._had_cr = True
+            chunk = chunk[:-1]
+        else:
+            self._had_cr = False
+
+        return chunk.replace('\r\n', os.linesep)
 
     def enable_receiving(self, type):
         """Enable receiving of data over the channel. Depending on the
@@ -820,7 +837,7 @@ class DTPHandler(asynchat.async_chat):
             if os.linesep == '\r\n':
                 self.data_wrapper = lambda x: x
             else:
-                self.data_wrapper = lambda x: x.replace('\r\n', os.linesep)
+                self.data_wrapper = self._posix_ascii_data_wrapper
         elif type == 'i':
             self.data_wrapper = lambda x: x
         else:
