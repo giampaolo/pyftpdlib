@@ -49,6 +49,8 @@ Bugfixes:
  * Issue #116: extra carriage returns were added to files transferred in ASCII
    mode.
 
+ * Issue #118: CDUP always changes to "/".
+
 
 API changes since 0.5.1:
 

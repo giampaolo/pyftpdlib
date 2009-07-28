@@ -52,6 +52,7 @@ import threading
 import unittest
 import socket
 import os
+import shutil
 import time
 import re
 import tempfile
@@ -819,7 +820,7 @@ class TestFtpFsOperations(unittest.TestCase):
         if os.path.exists(self.tempfile):
             os.remove(self.tempfile)
         if os.path.exists(self.tempdir):
-            os.rmdir(self.tempdir)
+            shutil.rmtree(self.tempdir)
 
     def test_cwd(self):
         self.client.cwd(self.tempdir)
@@ -836,10 +837,17 @@ class TestFtpFsOperations(unittest.TestCase):
         self.assertEqual(self.client.pwd(), '/' + self.tempdir)
 
     def test_cdup(self):
-        self.client.cwd(self.tempdir)
-        self.assertEqual(self.client.pwd(), '/' + self.tempdir)
+        subfolder = os.path.basename(tempfile.mkdtemp(dir=self.tempdir))
+        self.assertEqual(self.client.pwd(), '/')
+        self.client.cwd(self.tempdir)        
+        self.assertEqual(self.client.pwd(), '/%s' %self.tempdir)        
+        self.client.cwd(subfolder)
+        self.assertEqual(self.client.pwd(), '/%s/%s' %(self.tempdir, subfolder))
+        self.client.sendcmd('cdup')
+        self.assertEqual(self.client.pwd(), '/%s' %self.tempdir)
         self.client.sendcmd('cdup')
         self.assertEqual(self.client.pwd(), '/')
+
         # make sure we can't escape from root directory
         self.client.sendcmd('cdup')
         self.assertEqual(self.client.pwd(), '/')

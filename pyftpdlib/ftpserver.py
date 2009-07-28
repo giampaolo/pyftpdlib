@@ -2728,11 +2728,11 @@ class FTPHandler(asynchat.async_chat):
             self.log('OK CWD "%s".' %self.fs.cwd)
             self.respond('250 "%s" is the current directory.' %self.fs.cwd)
 
-    def ftp_CDUP(self, line):
+    def ftp_CDUP(self, path):
         """Change into the parent directory."""
         # Note: RFC-959 says that code 200 is required but it also says
         # that CDUP uses the same codes as CWD.
-        self.ftp_CWD('..')
+        self.ftp_CWD(path)
 
     def ftp_SIZE(self, path):
         """Return size of file in a format suitable for using with
