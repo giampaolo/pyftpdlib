@@ -51,6 +51,8 @@ Bugfixes:
 
  * Issue #118: CDUP always changes to "/".
 
+ * Issue #119: QUIT sent during a transfer caused a memory leak.
+
 
 API changes since 0.5.1:
 

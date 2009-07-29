@@ -2011,7 +2011,7 @@ class FTPHandler(asynchat.async_chat):
         supposed to be overridden)."""
         self.data_channel = None
         if self.quit_pending:
-            self.close_when_done()
+            self.close()
         elif self.timeout:
             # data transfer finished, restart the idle timer
             self.idler = CallLater(self.timeout, self.handle_timeout)
