@@ -540,6 +540,11 @@ class TestFtpAuthentication(unittest.TestCase):
         self.assertRaises(ftplib.error_perm, self.client.login, 'wrong', PASSWD)
         self.assertRaises(ftplib.error_perm, self.client.login, 'wrong', 'wrong')
 
+    def test_wrong_cmds_order(self):
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'pass ' + PASSWD)
+        self.client.login(user=USER, passwd=PASSWD)
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'pass ' + PASSWD)
+
     def test_max_auth(self):
         self.assertRaises(ftplib.error_perm, self.client.login, USER, 'wrong')
         self.assertRaises(ftplib.error_perm, self.client.login, USER, 'wrong')
@@ -660,17 +665,21 @@ class TestFtpDummyCmds(unittest.TestCase):
         self.client.sendcmd('type a')
         self.client.sendcmd('type i')
         self.client.sendcmd('type l7')
-        self.client.sendcmd('type l8')
+        self.client.sendcmd('type l8')       
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'type ?!?')
 
     def test_stru(self):
         self.client.sendcmd('stru f')
         self.client.sendcmd('stru F')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'stru p')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'stru r')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'stru ?!?')
 
     def test_mode(self):
         self.client.sendcmd('mode s')
         self.client.sendcmd('mode S')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'mode b')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'mode c')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'mode ?!?')
 
     def test_noop(self):
@@ -891,6 +900,9 @@ class TestFtpFsOperations(unittest.TestCase):
         bogus = os.path.basename(tempfile.mktemp(dir=HOME))
         self.assertRaises(ftplib.error_perm, self.client.rename, bogus, '/x')
         self.assertRaises(ftplib.error_perm, self.client.rename, self.tempfile, '/')
+        # rnto sent without first specifying the source
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rnto ' + self.tempfile)
+
         # make sure we can't rename root directory
         self.assertRaises(ftplib.error_perm, self.client.rename, '/', '/x')
 
@@ -904,7 +916,7 @@ class TestFtpFsOperations(unittest.TestCase):
         except ftplib.error_perm, err:
             self.failUnless("not retrievable" in str(err))
         else:
-            self.fail('Exception not raised')
+            self.fail('Exception not raised')      
 
     def test_unforeseen_mdtm_event(self):
         # Emulate a case where the file last modification time is prior
@@ -950,7 +962,7 @@ class TestFtpFsOperations(unittest.TestCase):
         except ftplib.error_perm, err:
             self.failUnless("not retrievable" in str(err))
         else:
-            self.fail('Exception not raised')
+            self.fail('Exception not raised')       
 
 
 class TestFtpStoreData(unittest.TestCase):
@@ -1407,6 +1419,24 @@ class TestFtpListingCmds(unittest.TestCase):
                 os.rmdir(dir)
             except OSError:
                 pass
+                
+    def test_mlsd_specific_platform_opts(self):
+        opts = []
+        feats = self.client.sendcmd('feat')
+        if 'unique' in feats:
+            opts.append('unique;')
+        if 'create' in feats:
+            opts.append('create;')
+        if 'unix.mode' in feats:
+            opts.append('unix.mode;')
+        if 'unix.uid' in feats:
+            opts.append('unix.uid;')
+        if 'unix.gid' in feats:
+            opts.append('unix.gid;')      
+        if opts:
+            lines = []
+            self.client.sendcmd('opts mlst ' + ''.join(opts))
+            self.client.retrlines('mlsd .', lines.append) 
 
     def test_stat(self):
         # Test STAT provided with argument which is equal to LIST
@@ -1658,6 +1688,7 @@ class TestConfigurableOptions(unittest.TestCase):
     def tearDown(self):
         # set back options to their original value
         self.server.server.max_cons = 0
+        self.server.server.max_cons_per_ip = 0
         self.server.handler.banner = "pyftpdlib %s ready." %ftpserver.__ver__
         self.server.handler.max_login_attempts = 3
         self.server.handler._auth_failed_timeout = 5
@@ -1698,6 +1729,30 @@ class TestConfigurableOptions(unittest.TestCase):
             c1.close()
             c2.close()
             c3.close()
+            
+    def test_max_connections_per_ip(self):
+        # Test FTPServer.max_cons_per_ip attribute
+        self.server.server.max_cons_per_ip = 3
+        self.client.quit()
+        c1 = ftplib.FTP()
+        c2 = ftplib.FTP()
+        c3 = ftplib.FTP()
+        c4 = ftplib.FTP()
+        try:
+            c1.connect(self.server.host, self.server.port)
+            c2.connect(self.server.host, self.server.port)
+            c3.connect(self.server.host, self.server.port)
+            self.assertRaises(ftplib.error_temp, c4.connect, self.server.host,
+                              self.server.port)
+            # Make sure client has been disconnected.
+            # socket.error (Windows) or EOFError (Linux) exception is
+            # supposed to be raised in such a case.
+            self.assertRaises((socket.error, EOFError), c4.sendcmd, 'noop')
+        finally:
+            c1.close()
+            c2.close()
+            c3.close()
+            c4.close() 
 
     def test_banner(self):
         # Test FTPHandler.banner attribute
@@ -1905,6 +1960,15 @@ class _TestNetworkProtocols(unittest.TestCase):
         # port < 1024
         self.assertEqual(self.cmdresp('eprt |%s|%s|222|' %(self.proto,
                        self.HOST)), "501 Can't connect over a privileged port.")
+
+        if self.proto == '1':
+            # len(ip.octs) > 4
+            self.assertEqual(self.cmdresp('eprt |1|1.2.3.4.5|2048|'), msg)
+            # ip.oct > 255
+            self.assertEqual(self.cmdresp('eprt |1|1.2.3.256|2048|'), msg)
+            # bad proto
+            resp = self.cmdresp('eprt |2|1.2.3.256|2048|')
+            self.assert_("Network protocol not supported" in resp)
 
         # test connection
         sock = socket.socket(self.client.af, socket.SOCK_STREAM)
