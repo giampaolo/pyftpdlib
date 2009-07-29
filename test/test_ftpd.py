@@ -1230,6 +1230,22 @@ class TestFtpStoreData(unittest.TestCase):
         self.dummy_sendfile.seek(0)
         self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
 
+    def test_quit_during_transfer(self):
+        # RFC-959 states that if QUIT is sent while a transfer is in 
+        # progress, the connection must remain open for result response
+        # and the server will then close it.
+        conn = self.client.transfercmd('stor ' + TESTFN)
+        conn.sendall('abcde12345' * 50000)
+        self.client.sendcmd('quit')
+        conn.sendall('abcde12345' * 50000)
+        conn.close()
+        # expect the response (transfer ok)
+        self.client.voidresp()
+        # Make sure client has been disconnected.
+        # socket.error (Windows) or EOFError (Linux) exception is supposed
+        # to be raised in such a case.
+        self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
+
 
 class TestFtpRetrieveData(unittest.TestCase):
     "Test RETR, REST, TYPE"
@@ -1260,6 +1276,11 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
         self.dummyfile.seek(0)
         self.assertEqual(hash(data), hash(self.dummyfile.read()))
+
+        # attempt to retrieve a file which doesn't exist
+        bogus = os.path.basename(tempfile.mktemp(dir=HOME))
+        self.assertRaises(ftplib.error_perm, self.client.retrbinary,
+                                             "retr " + bogus, lambda x: x)
 
     def test_retr_ascii(self):
         # Test RETR in ASCII mode.
@@ -1390,7 +1411,7 @@ class TestFtpListingCmds(unittest.TestCase):
         self.assertEqual(mlstline('mlst'), mlstline('mlst /'))
         # non-existent path
         bogus = os.path.basename(tempfile.mktemp(dir=HOME))
-        self.assertRaises(ftplib.error_perm, mlstline, bogus)
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'mlst '+bogus)
         # test file/dir notations
         self.failUnless('type=dir' in mlstline('mlst'))
         self.failUnless('type=file' in mlstline('mlst ' + TESTFN))
@@ -1604,6 +1625,22 @@ class TestTimeouts(unittest.TestCase):
         self.assertEqual(data, "421 Data connection timed out.\r\n")
         # ensure client has been kicked off
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
+
+    def test_data_timeout_not_reached(self):
+        # Impose a timeout for the data channel, then keep sending data for a 
+        # time which is longer than that to make sure that the code checking
+        # whether the transfer stalled for with no progress is executed.
+        self._setUp(data_timeout=0.1)
+        sock = self.client.transfercmd('stor ' + TESTFN)
+        try:
+            stop_at = time.time() + 0.2
+            while time.time() < stop_at:
+                sock.send('x' * 1024)
+            sock.close()
+            self.client.voidresp()
+        finally:
+            if os.path.exists(TESTFN):
+                self.client.delete(TESTFN)
 
     def test_idle_data_timeout1(self):
         # Tests that the control connection timeout is suspended while
@@ -1960,6 +1997,10 @@ class _TestNetworkProtocols(unittest.TestCase):
         # port < 1024
         self.assertEqual(self.cmdresp('eprt |%s|%s|222|' %(self.proto,
                        self.HOST)), "501 Can't connect over a privileged port.")
+        # proto > 2
+        _cmd = 'eprt |3|%s|%s|' %(self.server.host, self.server.port)
+        self.assertRaises(ftplib.error_perm,  self.client.sendcmd, _cmd)
+
 
         if self.proto == '1':
             # len(ip.octs) > 4
@@ -1993,6 +2034,9 @@ class _TestNetworkProtocols(unittest.TestCase):
             self.assertEqual(str(err)[0:3], "522")
         else:
             self.fail("Exception not raised")
+
+        # proto > 2
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'epsv 3')
 
         # test connection
         for cmd in ('EPSV', 'EPSV ' + self.proto):
