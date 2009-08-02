@@ -1901,6 +1901,16 @@ class TestConfigurableOptions(unittest.TestCase):
         self.assert_(self.client.makepasv()[1] in _range)
         self.assert_(self.client.makepasv()[1] in _range)
 
+    def test_passive_ports_busy(self):
+        # If the ports in the configured range are busy it is expected
+        # that a kernel-assigned port gets chosen
+        s = socket.socket()
+        s.bind((HOST, 0))
+        port = s.getsockname()[1]
+        self.server.handler.passive_ports = [port]
+        resulting_port = self.client.makepasv()[1]
+        self.assert_(port != resulting_port)
+
     if hasattr(socket, 'getservbyport'):   # python > 2.3
 
         def test_permit_privileged_ports(self):
