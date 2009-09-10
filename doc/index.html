@@ -1,116 +1,97 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-<title>pyftpdlib Home Page</title></head>
+<link rel="stylesheet" type="text/css" href="style.css">
+<title>pyftpdlib - Home</title>
+<img id="logo" src="logo.png" />
 
-<body>
-<div id="wikicontent">
-  <h1><a name="Python_FTP_server_library_(pyftpdlib)" id="Python_FTP_server_library_(pyftpdlib)">Python FTP server library (pyftpdlib)</a></h1>
-  <h2><a name="About" id="About">About</a></h2>
-  <p><a name="About" id="About">Python  FTP server library provides a high-level portable interface to easily  write asynchronous FTP servers with Python. Based on <strong>asyncore</strong> framework pyftpdlib is currently the most complete </a><a href="http://www.faqs.org/rfcs/rfc959.html" rel="nofollow">RFC-959</a> FTP server implementation available for <a href="http://www.python.org/" rel="nofollow">Python</a> programming language. </p>
-  <h2><a name="Features" id="Features">Features</a></h2>
-  <ul>
-    <li><a name="Features" id="Features">Support for recent FTP commands like <strong>MLSD</strong>, <strong>MLST</strong>, <strong>SIZE</strong> and <strong>MDTM</strong> defined in </a><a href="http://www.faqs.org/rfcs/rfc3659.html" rel="nofollow">RFC-3659</a>. </li>
-    <li>Support for <strong><a href="http://en.wikipedia.org/wiki/FTPS" rel="nofollow">FTPS</a></strong> (FTP over TLS/SSL, still experimental and provided as a <a href="http://code.google.com/p/pyftpdlib/source/browse/trunk/demo/tls_ftpd.py" rel="nofollow">demo script</a>). </li>
-    <li>Support for <strong><a href="http://www.proftpd.org/docs/howto/FXP.html" rel="nofollow">FXP</a></strong>, site-to-site transfers. </li>
-    <li>Support for <strong>IPv6</strong> (<a href="ftp://ftp.rfc-editor.org/in-notes/rfc2428.txt" rel="nofollow">RFC-2428</a>). </li>
-    <li>NAT/Firewall support with <strong>PASV/EPSV</strong> passive mode connections. </li>
-    <li>Support for resumed transfers. </li>
-    <li>Per-user permissions configurability. </li>
-    <li>Maximum connections limit. </li>
-    <li>Per-source-IP limits. </li>
-    <li>Configurable idle timeouts for both control and data channels. </li>
-    <li>Compact: the entire library is distributed in a single file (<a href="http://pyftpdlib.googlecode.com/svn/trunk/pyftpdlib/ftpserver.py" rel="nofollow">ftpserver.py</a>). </li>
-    <li>High portability: </li>
-    <ul>
-      <li>Entirely written in pure Python, no third party modules are used. It works on any system where <em>select( )</em> or <em>poll( )</em> is available. </li>
-      <li>Extremely flexible system of &quot;authorizers&quot; able to manage both &quot;virtual&quot; and &quot;real&quot; users on different platforms (<strong>Windows</strong>, <strong>UNIX</strong>, <strong>OSx</strong>). </li>
-    </ul>
-  </ul>
-  <h2><a name="Quick_start" id="Quick_start">Quick start</a></h2>
-  <pre><a name="Quick_start" id="Quick_start">&gt;&gt;&gt; from pyftpdlib import ftpserver  <br />&gt;&gt;&gt; authorizer = ftpserver.DummyAuthorizer()  <br />&gt;&gt;&gt; authorizer.add_user(&quot;user&quot;, &quot;12345&quot;, &quot;/home/user&quot;, perm=&quot;elradfmw&quot;)
-&gt;&gt;&gt; authorizer.add_anonymous(&quot;/home/nobody&quot;)
-&gt;&gt;&gt; ftp_handler = ftpserver.FTPHandler
-&gt;&gt;&gt; ftp_handler.authorizer = authorizer
-&gt;&gt;&gt; address = (&quot;127.0.0.1&quot;, 21)
-&gt;&gt;&gt; ftpd = ftpserver.FTPServer(address, ftp_handler)
-&gt;&gt;&gt; ftpd.serve_forever()
+<h1>Python FTP server library (pyftpdlib)</h1>
+
+<h2>About</h2>
+
+<p>Python FTP server library provides a high-level portable interface to easily write asynchronous FTP servers with Python.<br />pyftpdlib is currently the most complete <a href="http://www.faqs.org/rfcs/rfc959.html" rel="nofollow">RFC-959</a> FTP server implementation available for <a href="http://www.python.org/" rel="nofollow">Python</a> programming language.<br />It is used in projects like <a href="http://www.code.google.com/chromium/" rel="nofollow">Google Chromium</a> and <a href="http://bazaar-vcs.org/" rel="nofollow">Bazaar</a> and included in <a href="http://fedoraproject.org/" rel="nofollow">Linux Fedora</a> and <a href="http://www.freebsd.org/" rel="nofollow">FreeBSD</a> package repositories.</p>
+
+<h2>Features</h2>
+
+<ul><li>Support for recent FTP commands like <strong>MLSD</strong> and <strong>MLST</strong> (<a href="http://www.faqs.org/rfcs/rfc3659.html" rel="nofollow">RFC-3659</a>). </li><li>Support for <strong><a href="http://en.wikipedia.org/wiki/FTPS" rel="nofollow">FTPS</a></strong> (FTP over TLS/SSL, still experimental and provided as a <a href="http://code.google.com/p/pyftpdlib/source/browse/trunk/demo/tls_ftpd.py" rel="nofollow">demo script</a>). <em><strong>New in 0.5.1</strong></em> </li><li>Support for <strong><a href="http://www.proftpd.org/docs/howto/FXP.html" rel="nofollow">FXP</a></strong>, site-to-site transfers. </li><li>Support for <strong>IPv6</strong> (<a href="ftp://ftp.rfc-editor.org/in-notes/rfc2428.txt" rel="nofollow">RFC-2428</a>). </li><li>NAT/Firewall support with <strong>PASV/EPSV</strong> passive mode connections. </li><li>Bandwidth throttling. <em><strong>New in 0.5.2</strong></em> </li><li>Support for resumed transfers. </li><li>Per-user permissions configurability. </li><li>Maximum connections limit. </li><li>Per-source-IP limits. </li><li>Configurable idle timeouts for both control and data channels. </li><li>Compact: the entire library is distributed in a single file (<a href="http://pyftpdlib.googlecode.com/svn/trunk/pyftpdlib/ftpserver.py" rel="nofollow">ftpserver.py</a>). </li><li>High portability: </li>
+<ul><li>Entirely written in pure Python, no third party modules are used. It works on any system where <em>select( )</em> or <em>poll( )</em> is available. </li><li>Extremely flexible system of "authorizers" able to manage both "virtual" and "real" users on different platforms (<strong>Windows</strong>, <strong>UNIX</strong>, <strong>OS X</strong>). </li><li>Works with Python 2.3, 2.4, 2.5 and 2.6. </li></ul>
+</ul>
+
+<h2>Quick start</h2>
+
+<pre>
+>>> from pyftpdlib import ftpserver
+>>> authorizer = ftpserver.DummyAuthorizer()
+>>> authorizer.add_user("user", "12345", "/home/user", perm="elradfmw")
+>>> authorizer.add_anonymous("/home/nobody")
+>>> ftp_handler = ftpserver.FTPHandler
+>>> ftp_handler.authorizer = authorizer
+>>> address = ("127.0.0.1", 21)
+>>> ftpd = ftpserver.FTPServer(address, ftp_handler)
+>>> ftpd.serve_forever()
 Serving FTP on 127.0.0.1:21
 []127.0.0.1:2503 connected.
-127.0.0.1:2503 ==&gt; 220 Ready.
-127.0.0.1:2503 &lt;== USER anonymous
-127.0.0.1:2503 ==&gt; 331 Username ok, send password.
-127.0.0.1:2503 &lt;== PASS ******
-127.0.0.1:2503 ==&gt; 230 Login successful.
+127.0.0.1:2503 ==> 220 Ready.
+127.0.0.1:2503 <== USER anonymous
+127.0.0.1:2503 ==> 331 Username ok, send password.
+127.0.0.1:2503 <== PASS ******
+127.0.0.1:2503 ==> 230 Login successful.
 [anonymous]@127.0.0.1:2503 User anonymous logged in.
-127.0.0.1:2503 &lt;== TYPE A
-127.0.0.1:2503 ==&gt; 200 Type set to: ASCII.
-127.0.0.1:2503 &lt;== PASV
-127.0.0.1:2503 ==&gt; 227 Entering passive mode (127,0,0,1,9,201).
-127.0.0.1:2503 &lt;== LIST
-127.0.0.1:2503 ==&gt; 150 File status okay. About to open data connection.
-[anonymous]@127.0.0.1:2503 OK LIST &quot;/&quot;. Transfer starting.
-127.0.0.1:2503 ==&gt; 226 Transfer complete.
+127.0.0.1:2503 <== TYPE A
+127.0.0.1:2503 ==> 200 Type set to: ASCII.
+127.0.0.1:2503 <== PASV
+127.0.0.1:2503 ==> 227 Entering passive mode (127,0,0,1,9,201).
+127.0.0.1:2503 <== LIST
+127.0.0.1:2503 ==> 150 File status okay. About to open data connection.
+[anonymous]@127.0.0.1:2503 OK LIST "/". Transfer starting.
+127.0.0.1:2503 ==> 226 Transfer complete.
 [anonymous]@127.0.0.1:2503 Transfer complete. 706 bytes transmitted.
-127.0.0.1:2503 &lt;== QUIT
-127.0.0.1:2503 ==&gt; 221 Goodbye.
-[anonymous]@127.0.0.1:2503 Disconnected.</a></pre>
-  <h2><a name="Timeline" id="Timeline">Timeline</a></h2>
-  <ul>
-    <li><a name="Timeline" id="Timeline">2009-01-21: version </a><a href="http://pyftpdlib.googlecode.com/files/pyftpdlib-0.5.1.tar.gz" rel="nofollow">0.5.1</a> released. </li>
-    <li>2008-12-27: pyftpdlib included in <a href="http://code.google.com/intl/it-IT/chromium/" rel="nofollow">Google Chromium</a>, the open source project behind <a href="http://www.google.com/chrome" rel="nofollow">Google Chrome</a>. </li>
-    <li>2008-12-27: pyftpdlib ported on <a href="http://www.gnu-darwin.org/" rel="nofollow">GNU Darwin</a> systems to make users can easily install on it. </li>
-    <li>2008-11-26: pyftpdlib included in <a href="http://openerp.com" rel="nofollow">OpenERP</a>. </li>
-    <li>2008-10-26: pyftpdlib included in <a href="http://www.vmspython.org/" rel="nofollow">Python for OpenVMS</a> as standard package. </li>
-    <li>2008-10-09: pyftpdlib included in <a href="http://bbs.archlinux.org/viewtopic.php?pid=431474" rel="nofollow">Shareme</a> project. </li>
-    <li>2008-09-20: version <a href="http://pyftpdlib.googlecode.com/files/pyftpdlib-0.5.0.tar.gz" rel="nofollow">0.5.0</a> released. </li>
-    <li>2008-08-10: pyftpdlib included in <a href="http://trac.manent-backup.com/" rel="nofollow">Manent</a> project. </li>
-    <li>2008-05-16: version <a href="http://pyftpdlib.googlecode.com/files/pyftpdlib-0.4.0.tar.gz" rel="nofollow">0.4.0</a> released. </li>
-    <li>2008-04-09: pyftpdlib used as backend for <a href="http://arkadiusz-wahlig.blogspot.com/2008/04/hosting-files-on-google.html" rel="nofollow">gpftpd</a>, an FTP server for managing files hosted on <a href="http://pages.google.com" rel="nofollow">Google Pages</a>. </li>
-    <li>2008-01-17: version <a href="http://pyftpdlib.googlecode.com/files/pyftpdlib-0.3.0.tar.gz" rel="nofollow">0.3.0</a> released. </li>
-    <li>2007-10-14: pyftpdlib included in <a href="http://walco.n--tree.net/projects/aksy/wiki" rel="nofollow">Aksy</a> project. </li>
-    <li>2007-09-17: version <a href="http://pyftpdlib.googlecode.com/files/pyftpdlib_0.2.0.tar.gz" rel="nofollow">0.2.0</a> released. </li>
-    <li>2007-09-08: pyftpdlib included as <a href="http://farmanager.com/" rel="nofollow">FarManager</a> <a href="http://www.farmanager.com/enforum/viewtopic.php?t=640&amp;highlight=&amp;sid=12d4d90f27f421243bcf7a0e3c516efb" rel="nofollow">plug-in</a>. </li>
-    <li>2007-03-06: pyftpdlib <a href="http://www.freshports.org/ftp/py-pyftpdlib/" rel="nofollow">ported on FreeBSD</a> systems to make users can easily install on it. </li>
-    <li>2007-03-07: version <a href="http://pyftpdlib.googlecode.com/files/pyftpdlib_0.1.1.tar.gz" rel="nofollow">0.1.1</a> released. </li>
-    <li>2007-02-26: version <a href="http://pyftpdlib.googlecode.com/files/pyftpdlib_0.1.tar.gz" rel="nofollow">0.1.0</a> released. </li>
-  </ul>
-  <h2><a name="Contribute" id="Contribute">Contribute</a></h2>
-  <p><a name="Contribute" id="Contribute">If you want to help or just give us suggestions about the project and other related things,  subscribe to the </a><a href="http://groups.google.com/group/pyftpdlib" rel="nofollow">discussion mailing list</a>.  If you want to talk with project team members about pyftpdlib and other  related things feel free to contact us at the following addresses: </p>
-  <table border="1">
-    <tbody>
-      <tr>
-        <td><strong>Name</strong> </td>
-        <td><strong>Country</strong> </td>
-        <td><strong>E-mail</strong> </td>
-        <td><strong>Description</strong> </td>
-      </tr>
-      <tr>
-        <td> Giampaolo Rodola' </td>
-        <td> Italy </td>
-        <td>g.rodola at gmail dot com</td>
-        <td> Original pyftpdlib author and main maintainer. </td>
-      </tr>
-      <tr>
-        <td> Jay Loden </td>
-        <td> New Jersey (USA) </td>
-        <td>jloden at gmail dot com</td>
-        <td> OS X and Linux platform development/testing. </td>
-      </tr>
-      <tr>
-        <td> Li-Wen Hsu </td>
-        <td> Taiwan </td>
-        <td>lwhsu at freebsd dot org</td>
-        <td> FreeBSD port maintainer. </td>
-      </tr>
-    </tbody>
-  </table>
-  <p>Feedbacks and suggestions are greatly appreciated as well as new testers and coders willing to join the development.<br />
-    For any bug report, patch proposal or feature request, add an entry into the <a href="http://code.google.com/p/pyftpdlib/issues/list" rel="nofollow">Issue Tracker</a>.<br />
-    In case you're using pyftpdlib into a software or website of yours, please update the pyftpdlib <a href="http://code.google.com/p/pyftpdlib/wiki/Adoptions" rel="nofollow">Adoptions List</a> by adding a comment in the Wiki. </p>
-  <p>Thank you. </p>
-  <p>&nbsp;</p>
-</div>
-</body>
-</html>
+127.0.0.1:2503 <== QUIT
+127.0.0.1:2503 ==> 221 Goodbye.
+[anonymous]@127.0.0.1:2503 Disconnected.
+</pre>
+
+<h2>Timeline</h2>
+
+<ul><li>2009-10-10: pyftpdlib included in <a href="http://github.com/wuzhe/imgserve/tree/master" rel="nofollow">Imgserve</a> project. </li><li>2009-07-22: pyftpdlib included in  <a href="http://plumi.org/wiki" rel="nofollow">Plumi</a> project. </li><li>2009-04-02: pyftpdlib RPM-packaged and ported on <a href="https://admin.fedoraproject.org/pkgdb/packages/name/pyftpdlib" rel="nofollow">Fedora</a> to make users can easily install on it via <em>yum install pyftpdlib</em>. </li><li>2009-03-28: pyftpdlib included in  <a href="http://bazaar-vcs.org/" rel="nofollow">Bazaar</a> project. </li><li>2009-02-23: pyftpdlib included in <a href="http://git.logfish.net/shareftp.git/" rel="nofollow">ShareFTP</a> project. </li><li>2009-01-21: version <a href="http://pyftpdlib.googlecode.com/files/pyftpdlib-0.5.1.tar.gz" rel="nofollow">0.5.1</a> released. </li><li>2008-12-27: pyftpdlib included in <a href="http://code.google.com/intl/it-IT/chromium/" rel="nofollow">Google Chromium</a>, the open source project behind <a href="http://www.google.com/chrome" rel="nofollow">Google Chrome</a>. </li><li>2008-12-27: pyftpdlib ported on <a href="http://www.gnu-darwin.org/" rel="nofollow">GNU Darwin</a> systems to make users can easily install on it. </li><li>2008-11-26: pyftpdlib included in <a href="http://openerp.com/" rel="nofollow">OpenERP</a>. </li><li>2008-10-26: pyftpdlib included in <a href="http://www.vmspython.org/" rel="nofollow">Python for OpenVMS</a> as standard package. </li><li>2008-10-09: pyftpdlib included in <a href="http://bbs.archlinux.org/viewtopic.php?pid=431474" rel="nofollow">Shareme</a> project. </li><li>2008-09-20: version <a href="http://pyftpdlib.googlecode.com/files/pyftpdlib-0.5.0.tar.gz" rel="nofollow">0.5.0</a> released. </li><li>2008-08-10: pyftpdlib included in <a href="http://trac.manent-backup.com/" rel="nofollow">Manent</a> project. </li><li>2008-05-16: version <a href="http://pyftpdlib.googlecode.com/files/pyftpdlib-0.4.0.tar.gz" rel="nofollow">0.4.0</a> released. </li><li>2008-04-09: pyftpdlib used as backend for <a href="http://arkadiusz-wahlig.blogspot.com/2008/04/hosting-files-on-google.html" rel="nofollow">gpftpd</a>, an FTP server for managing files hosted on <a href="http://pages.google.com/" rel="nofollow">Google Pages</a>. </li><li>2008-01-17: version <a href="http://pyftpdlib.googlecode.com/files/pyftpdlib-0.3.0.tar.gz" rel="nofollow">0.3.0</a> released. </li><li>2007-10-14: pyftpdlib included in <a href="http://walco.n--tree.net/projects/aksy/wiki" rel="nofollow">Aksy</a> project. </li><li>2007-09-17: version <a href="http://pyftpdlib.googlecode.com/files/pyftpdlib_0.2.0.tar.gz" rel="nofollow">0.2.0</a> released. </li><li>2007-09-08: pyftpdlib included as <a href="http://farmanager.com/" rel="nofollow">FarManager</a> <a href="http://www.farmanager.com/enforum/viewtopic.php?t=640&amp;highlight=&amp;sid=12d4d90f27f421243bcf7a0e3c516efb" rel="nofollow">plug-in</a>. </li><li>2007-03-06: pyftpdlib <a href="http://www.freshports.org/ftp/py-pyftpdlib/" rel="nofollow">ported on FreeBSD</a> systems to make users can easily install on it. </li><li>2007-03-07: version <a href="http://pyftpdlib.googlecode.com/files/pyftpdlib_0.1.1.tar.gz" rel="nofollow">0.1.1</a> released. </li><li>2007-02-26: version <a href="http://pyftpdlib.googlecode.com/files/pyftpdlib_0.1.tar.gz" rel="nofollow">0.1.0</a> released. </li></ul>
+
+<h2>Contribute</h2>
+
+<p>If you want to help or just give us suggestions about the project and other related things, subscribe to the <a href="http://groups.google.com/group/pyftpdlib" rel="nofollow">discussion mailing list</a>.
+If you want to talk with project team members about pyftpdlib and other
+related things feel free to contact us at the following addresses:</p>
+<table>
+<tbody>
+<tr>
+<td> <strong>Name</strong></td>
+<td> <strong>Country</strong></td>
+<td> <strong>E-mail</strong></td>
+<td> <strong>Description</strong></td>
+</tr>
+<tr>
+<td> Giampaolo Rodola'</td>
+<td> Turin (Italy)</td>
+<td> g.rodola at gmail dot com</td>
+<td> Original pyftpdlib author and main maintainer.</td>
+</tr>
+<tr>
+<td> Jay Loden</td>
+<td> New Jersey (USA)</td>
+<td> jloden at gmail dot com</td>
+<td> OS X and Linux platform development/testing</td>
+</tr>
+<tr>
+<td> Silas Sewell</td>
+<td> Denver (USA)</td>
+<td> silas at sewell dot ch</td>
+<td> Fedora port maintainer</td>
+</tr>
+<tr>
+<td> Li-Wen Hsu</td>
+<td> Taiwan</td>
+<td> lwhsu at freebsd dot org</td>
+<td> FreeBSD port maintainer</td>
+</tr>
+</tbody>
+</table>
+
+<p>Feedbacks and suggestions are greatly appreciated as well as new testers and coders willing to join the development.<br /> For any bug report, patch proposal or feature request, add an entry into the <a href="http://code.google.com/p/pyftpdlib/issues/list" rel="nofollow">Issue Tracker</a>.<br /> In case you're using pyftpdlib into a software or website of yours, please update the pyftpdlib <a href="http://code.google.com/p/pyftpdlib/wiki/Adoptions" rel="nofollow">Adoptions List</a> by adding a comment in the Wiki.</p>
+<p>Thank you.</p>
+
