@@ -1,14 +1,21 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>pyftpdlib Install instructions</title>
-</head>
+<a href="http://code.google.com/p/pyftpdlib"><img id="logo" src="logo.png" /></a>
 
-<body>
 <div id="wikicontent">
   <h1><a id="Requirements">Requirements</a></h1>
-  <p><a id="Requirements">Python 2.3 or higher (not Python 3.x). You can get the latest 2.x stable Python release from here: </a><a href="http://www.python.org/download/" rel="nofollow">http://www.python.org/download/</a>. </p>
+  <p><a id="Requirements">Python 2.3 or higher (not Python 3.x). You can get the 
+    latest 2.x stable Python release from here: </a><a href="http://www.python.org/download/" rel="nofollow">http://www.python.org/download/</a>. 
+  </p>
+  <h1><a id="Using_easy_install">Using easy_instal</a><a>l</a></h1>
+  <p><a id="Using_easy_install">If you have </a><a href="http://peak.telecommunity.com/DevCenter/EasyInstall" rel="nofollow">easy_install</a> 
+    on your system, installing pyftpdlib is quite simple. Just run: </p>
+  <pre>    easy_install.py pyftpdlib</pre>
+  <p>This will get the most updated pyftpdlib from the Python <a href="http://pypi.python.org/pypi" rel="nofollow">pypi 
+    repository</a>, unpack it and install it automatically. </p>
+  <p>Note: if you already have an old version of pyftpdlib installed, easy_install 
+    will not automatically download the latest version. You can ask for a particular 
+    version by running, for example: </p>
+  <pre>    easy_install.py pyftpdlib==0.3.0</pre>
   <h1><a id="Manual_installation">Manual installation</a></h1>
   <p><a id="Manual_installation">If you have downloaded a pyftpdlib package, follow the following steps: </a></p>
   <p><a id="Manual_installation">Unpack it (Windows users could use 7Zip, WinRar or other similar program): </a></p>
@@ -19,16 +26,5 @@
   <pre>    <a id="Manual_installation">python setup.py install</a></pre>
   <p><a id="Manual_installation">If you're on Windows just run: </a></p>
   <pre>    <a id="Manual_installation">setup.py install</a></pre>
-  <h1><a id="Using_easy_install">Using easy_instal</a><a>l</a></h1>
-  <p><a id="Using_easy_install">If you have </a><a href="http://peak.telecommunity.com/DevCenter/EasyInstall" rel="nofollow">easy_install</a> on your system, installing pyftpdlib is quite simple. Just run: </p>
-  <pre>    python easy_install.py pyftpdlib<a href="index.html">index</a></pre>
-  <p>This will get the most updated pyftpdlib from the Python <a href="http://pypi.python.org/pypi" rel="nofollow">pypi repository</a>, unpack it and install it automatically. </p>
-  <p>Note:  if you already have an old version of pyftpdlib installed, easy_install  will not automatically download the latest version. You can ask for a  particular version by running, for example: </p>
-  <pre>    python easy_install.py pyftpdlib==0.3.0
-
-
-
-</pre>
+  <h1>&nbsp;</h1>
 </div>
-</body>
-</html>

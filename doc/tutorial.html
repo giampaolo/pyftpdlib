@@ -1,11 +1,6 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 <title>pyftpdlib Tutorial</title>
-</head>
+<a href="http://code.google.com/p/pyftpdlib"><img id="logo" src="logo.png" /></a>
 
-<body>
 <h1>Tutorial</h1>
 <h1><a name="Table_of_contents" id="Table_of_contents">Table of contents</a></h1>
 <ul>
@@ -147,6 +142,27 @@ Optional msg_login and msg_quit arguments can be specified to provide customized
     Return the number of transmitted bytes. </li>
 </ul>
 <hr />
+<p>class ftpserver.<strong>ThrottledDTPHandler(</strong><em>sock_obj, cmd_channel</em><strong>)</strong> 
+</p>
+<blockquote>
+  <p>A DTPHandler subclass which wraps sending and receiving in a data counter 
+    and temporarily &quot;sleeps&quot; the channel so that you burst to no more 
+    than x Kb/sec average. Use it instead of DTPHandler to set transfer rates 
+    limits for both downloads and/or uploads (see the <a href="http://code.google.com/p/pyftpdlib/source/browse/trunk/demo/throttled_ftpd.py">demo 
+    script</a> showing the example usage). </p>
+  <p><em><strong>New in 0.5.2</strong></em></p>
+</blockquote>
+<ul>
+  <li> read_limit<br />
+    The maximum number of bytes to read (receive) in one second (defaults to 0 
+    == no limit)</li>
+</ul>
+<ul>
+  <li>write_limit<br />
+    The maximum number of bytes to write (send) in one second (defaults to 0 == 
+    no limit). </li>
+</ul>
+<hr />
 <p>class ftpserver.<strong>FTPServer(</strong><em>address, handler</em><strong>)</strong> </p>
 <blockquote>This class is an asyncore.dispatcher subclass.  It creates a FTP socket listening on address (a tuple containing the ip:port pair), dispatching the requests to a &quot;handler&quot; (typically FTPHandler class object).  It is typically used for starting asyncore polling loop: </blockquote>
 <pre>&gt;&gt;&gt; address = ('127.0.0.1', 21)<br />&gt;&gt;&gt; ftpd = ftpserver.FTPServer(address, ftp_handler)<br />&gt;&gt;&gt; ftpd.serve_forever()</pre>
@@ -256,5 +272,3 @@ Optional msg_login and msg_quit arguments can be specified to provide customized
 <p><a name="4.2_-_Adding_bandwidth_throttling_capabilities" id="4.2_-_Adding_bandwidth_throttling_capabilities">To accomplish such behaviour I used the CallLater class to implement the asynchronous sleeps and ovverridden the original DTPHandler  class. When the new DTPHandler realizes that more than x Kb in a second  are being transmitted it temporary blocks the transfer for a certain  number of seconds. </a></p>
 <p><a href="http://pyftpdlib.googlecode.com/svn/trunk/demo/throttled_ftpd.py" rel="nofollow">download script</a> </p>
 <pre>&nbsp;</pre>
-</body>
-</html>

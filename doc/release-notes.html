@@ -1,12 +1,64 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 <title>pyftpdlib 0.5.x Release notes</title>
-</head>
+<a href="http://code.google.com/p/pyftpdlib"><img id="logo" src="logo.png" /></a>
 
-<body>
 <h1>0.5.x Release notes </h1>
+<h1>Version: 0.5.2 - Date: 2009-09-14</h1>
+<h2>Enhancements</h2>
+<ul>
+  <li>Issue <a href="http://code.google.com/p/pyftpdlib/issues/detail?id=103">103</a>: 
+    added new demo/unix_ftpd.py daemon script.</li>
+  <li>Issue <a href="http://code.google.com/p/pyftpdlib/issues/detail?id=108">108</a>: 
+    added native data channel bandwidth throttling (new ThrottledDTPHandler class).</li>
+</ul>
+<h2>Bugfixes</h2>
+<ul>
+  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=100">Issue 
+    100</a>: fixed a race condition in FTPHandler constructor which could throw 
+    an exception in case of connection bashing (DoS). (thanks Bram Neijt)</li>
+  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=102">Issue 
+    102</a>: FTPServer.close_all() now removes any unfired delayed call left behind 
+    to prevent potential memory leaks.</li>
+  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=104">Issue 
+    104</a>: fixed a bug in FTPServer.handle_accept() where socket.accept() could 
+    return None instead of a valid address causing the server to crash. (OS X 
+    only, reported by Wentao Han)</li>
+  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=104">Issue 
+    104</a>: an unhandled EPIPE exception might be thrown by asyncore.recv() when 
+    dealing with ill-behaved clients on OS X . (reported by Wentao Han)</li>
+  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=105">Issue 
+    105</a>: ECONNABORTED might be thrown by socket.accept() on FreeBSD causing 
+    the server to crash.</li>
+  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=109">Issue 
+    109</a>: an unhandled EBADF exception might be thrown when using poll() on 
+    OS X and FreeBSD.</li>
+  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=111">Issue 
+    111</a>: the license used was not MIT as stated in source files.</li>
+  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=112">Issue 
+    112</a>: fixed a MDTM related test case failure occurring on 64 bit OSes.</li>
+  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=113">Issue 
+    113</a>: fixed unix_ftp.py which was treating anonymous as a normal user.</li>
+  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=114">Issue 
+    114</a>: MLST is now denied unless the &quot;l&quot; permission has been specified 
+    for the user.</li>
+  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=115">Issue 
+    115</a>: asyncore.dispatcher.close() is now called before doing any other 
+    cleanup operation when client disconnects. This way we avoid an endless loop 
+    which</li>
+  <li>hangs the server in case an exception is raised in close() method. (thanks 
+    Arkadiusz Wahlig)</li>
+  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=116">Issue 
+    116</a>: extra carriage returns were added to files transferred in ASCII mode.</li>
+  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=118">Issue 
+    118</a>: CDUP always changes to &quot;/&quot;.</li>
+  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=119">Issue 
+    119</a>: QUIT sent during a transfer caused a memory leak.</li>
+</ul>
+<h2>API changes since 0.5.1</h2>
+<ul>
+  <li>ThrottledDTPHandler class has been added.</li>
+  <li>FTPHandler.process_command() method has been added.</li>
+</ul>
+<hr />
 <h1><a name="Version:_0.5.1_-_Date:_2009-01-21" id="Version:_0.5.1_-_Date:_2009-01-16">Version: 0.5.1 - Date: 2009-01-16</a></h1>
 <h2><a name="Enhancements" id="Enhancements">Enhancements</a></h2>
 <ul>
@@ -70,5 +122,3 @@
 <p><a name="Permission_exceptions" id="Permission_exceptions">The DummyAuthorizer  now gives the possibility to define permission exceptions for  directories. For example, if you want to create a user which does not  have write permission except for one sub-directory in FTP root, you can  now do as follows: </a></p>
 <pre><a name="Permission_exceptions" id="Permission_exceptions">&gt;&gt;&gt; from pyftpdlib import ftpserver<br />&gt;&gt;&gt; authorizer = ftpserver.DummyAuthorizer()<br />&gt;&gt;&gt; authorizer.add_user('user', 'password', '/home/ftp', perm='elr')<br />&gt;&gt;&gt; authorizer.override_perm('user', '/home/ftp/pub', 'elradfmw', recursive=True)</a></pre>
 <p>&nbsp;</p>
-</body>
-</html>
