@@ -11,7 +11,7 @@ Enhancements:
 
  * Issue #103: added unix_daemon.py script.
 
- * Issue #107: a new ThrottledDTPHandler class has been added for limiting the
+ * Issue #108: a new ThrottledDTPHandler class has been added for limiting the
    speed of downloads and uploads.
 
 Bugfixes:
@@ -26,11 +26,14 @@ Bugfixes:
    could return None instead of a valid address causing the server to crash.
    (OS X only, reported by Wentao Han)
 
- * Issue #104: an EPIPE socket exception might be thrown by asyncore.recv()
+ * Issue #104: an unhandled EPIPE exception might be thrown by asyncore.recv()
    when dealing with ill-behaved clients on OS X . (reported by Wentao Han)
 
  * Issue #105: ECONNABORTED might be thrown by socket.accept() on FreeBSD
    causing the server to crash.
+
+ * Issue #109: an unhandled EBADF exception might be thrown when using poll() on
+   OS X and FreeBSD.
 
  * Issue #111: the license used was not MIT as stated in source files.
 

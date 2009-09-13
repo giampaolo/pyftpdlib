@@ -942,9 +942,12 @@ class DTPHandler(asynchat.async_chat):
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             raise
         except socket.error, err:
-            # fix around asyncore bug (http://bugs.python.org/issue1736101)
+            # fixes around various bugs:
+            # - http://bugs.python.org/issue1736101
+            # - http://code.google.com/p/pyftpdlib/issues/detail?id=104
+            # - http://code.google.com/p/pyftpdlib/issues/detail?id=109
             if err[0] in (errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN, \
-                          errno.ECONNABORTED, errno.EPIPE):
+                          errno.ECONNABORTED, errno.EPIPE, errno.EBADF):
                 self.handle_close()
                 return
             else:
@@ -1910,9 +1913,12 @@ class FTPHandler(asynchat.async_chat):
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             raise
         except socket.error, err:
-            # fix around asyncore bug (http://bugs.python.org/issue1736101)
+            # fixes around various bugs:
+            # - http://bugs.python.org/issue1736101
+            # - http://code.google.com/p/pyftpdlib/issues/detail?id=104
+            # - http://code.google.com/p/pyftpdlib/issues/detail?id=109
             if err[0] in (errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN, \
-                          errno.ECONNABORTED, errno.EPIPE):
+                          errno.ECONNABORTED, errno.EPIPE, errno.EBADF):
                 self.handle_close()
                 return
             else:
