@@ -1499,7 +1499,6 @@ class TestFtpAbort(unittest.TestCase):
         self.client.connect(self.server.host, self.server.port)
         self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
-        self.client.passiveserver = 0
 
     def tearDown(self):
         self.client.close()
@@ -1509,6 +1508,7 @@ class TestFtpAbort(unittest.TestCase):
         # Case 1: ABOR while no data channel is opened: respond with 225.
         resp = self.client.sendcmd('ABOR')
         self.failUnlessEqual('225 No transfer to abort.', resp)
+        self.client.retrlines('list', [].append)
 
     def test_abor_pasv(self):
         # Case 2: user sends a PASV, a data-channel socket is listening
@@ -1517,14 +1517,17 @@ class TestFtpAbort(unittest.TestCase):
         self.client.makepasv()
         respcode = self.client.sendcmd('ABOR')[:3]
         self.failUnlessEqual('225', respcode)
+        self.client.retrlines('list', [].append)
 
     def test_abor_port(self):
         # Case 3: data channel opened with PASV or PORT, but ABOR sent
         # before a data transfer has been started: close data channel,
         # respond with 225
+        self.client.set_pasv(0)
         self.client.makeport()
         respcode = self.client.sendcmd('ABOR')[:3]
         self.failUnlessEqual('225', respcode)
+        self.client.retrlines('list', [].append)
 
     def test_abor_during_transfer(self):
         # Case 4: ABOR while a data transfer on DTP channel is in
