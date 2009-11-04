@@ -665,7 +665,7 @@ class TestFtpDummyCmds(unittest.TestCase):
         self.client.sendcmd('type a')
         self.client.sendcmd('type i')
         self.client.sendcmd('type l7')
-        self.client.sendcmd('type l8')       
+        self.client.sendcmd('type l8')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'type ?!?')
 
     def test_stru(self):
@@ -848,8 +848,8 @@ class TestFtpFsOperations(unittest.TestCase):
     def test_cdup(self):
         subfolder = os.path.basename(tempfile.mkdtemp(dir=self.tempdir))
         self.assertEqual(self.client.pwd(), '/')
-        self.client.cwd(self.tempdir)        
-        self.assertEqual(self.client.pwd(), '/%s' %self.tempdir)        
+        self.client.cwd(self.tempdir)
+        self.assertEqual(self.client.pwd(), '/%s' %self.tempdir)
         self.client.cwd(subfolder)
         self.assertEqual(self.client.pwd(), '/%s/%s' %(self.tempdir, subfolder))
         self.client.sendcmd('cdup')
@@ -916,7 +916,7 @@ class TestFtpFsOperations(unittest.TestCase):
         except ftplib.error_perm, err:
             self.failUnless("not retrievable" in str(err))
         else:
-            self.fail('Exception not raised')      
+            self.fail('Exception not raised')
 
     def test_unforeseen_mdtm_event(self):
         # Emulate a case where the file last modification time is prior
@@ -962,7 +962,7 @@ class TestFtpFsOperations(unittest.TestCase):
         except ftplib.error_perm, err:
             self.failUnless("not retrievable" in str(err))
         else:
-            self.fail('Exception not raised')       
+            self.fail('Exception not raised')
 
 
 class TestFtpStoreData(unittest.TestCase):
@@ -1231,7 +1231,7 @@ class TestFtpStoreData(unittest.TestCase):
         self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
 
     def test_quit_during_transfer(self):
-        # RFC-959 states that if QUIT is sent while a transfer is in 
+        # RFC-959 states that if QUIT is sent while a transfer is in
         # progress, the connection must remain open for result response
         # and the server will then close it.
         conn = self.client.transfercmd('stor ' + TESTFN)
@@ -1440,7 +1440,7 @@ class TestFtpListingCmds(unittest.TestCase):
                 os.rmdir(dir)
             except OSError:
                 pass
-                
+
     def test_mlsd_specific_platform_opts(self):
         opts = []
         feats = self.client.sendcmd('feat')
@@ -1453,11 +1453,11 @@ class TestFtpListingCmds(unittest.TestCase):
         if 'unix.uid' in feats:
             opts.append('unix.uid;')
         if 'unix.gid' in feats:
-            opts.append('unix.gid;')      
+            opts.append('unix.gid;')
         if opts:
             lines = []
             self.client.sendcmd('opts mlst ' + ''.join(opts))
-            self.client.retrlines('mlsd .', lines.append) 
+            self.client.retrlines('mlsd .', lines.append)
 
     def test_stat(self):
         # Test STAT provided with argument which is equal to LIST
@@ -1499,6 +1499,7 @@ class TestFtpAbort(unittest.TestCase):
         self.client.connect(self.server.host, self.server.port)
         self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
+        self.client.passiveserver = 0
 
     def tearDown(self):
         self.client.close()
@@ -1701,7 +1702,7 @@ class TestTimeouts(unittest.TestCase):
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
 
     def test_data_timeout_not_reached(self):
-        # Impose a timeout for the data channel, then keep sending data for a 
+        # Impose a timeout for the data channel, then keep sending data for a
         # time which is longer than that to make sure that the code checking
         # whether the transfer stalled for with no progress is executed.
         self._setUp(data_timeout=0.1)
@@ -1840,7 +1841,7 @@ class TestConfigurableOptions(unittest.TestCase):
             c1.close()
             c2.close()
             c3.close()
-            
+
     def test_max_connections_per_ip(self):
         # Test FTPServer.max_cons_per_ip attribute
         self.server.server.max_cons_per_ip = 3
@@ -2206,6 +2207,45 @@ class TestIPv6Environment(_TestNetworkProtocols):
                          "501 Can't connect to a foreign address.")
 
 
+class TestCornerCases(unittest.TestCase):
+    """Tests for any kind of strange situation for the server to be in,
+    mainly referring to bugs signaled on the bug tracker.
+    """
+
+    def setUp(self):
+        self.server = FTPd()
+        self.server.start()
+        self.client = ftplib.FTP()
+        self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
+        self.client.login(USER, PASSWD)
+
+    def tearDown(self):
+        self.client.close()
+        self.server.stop()
+
+    def test_port_race_condition(self):
+        # Refers to bug #120, first sends PORT, then disconnects the
+        # control channel before accept()ing the incoming data connection.
+        # The original server behavior was to reply with "200 Active
+        # data connection established" *after* the client had already
+        # disconnected the control connection.
+        sock = socket.socket(self.client.af, socket.SOCK_STREAM)
+        sock.bind((self.client.sock.getsockname()[0], 0))
+        sock.listen(5)
+        sock.settimeout(2)
+        host, port =  sock.getsockname()[:2]
+
+        hbytes = host.split('.')
+        pbytes = [repr(port//256), repr(port%256)]
+        bytes = hbytes + pbytes
+        cmd = 'PORT ' + ','.join(bytes)
+        self.client.sock.sendall(cmd + '\r\n')
+        self.client.quit()
+        sock.accept()
+        sock.close()
+
+
 class FTPd(threading.Thread):
     """A threaded FTP server used for running tests.
 
@@ -2298,7 +2338,8 @@ def test_main(tests=None):
                  TestFtpAbort,
                  TestTimeouts,
                  TestConfigurableOptions,
-                 TestCallbacks
+                 TestCallbacks,
+                 TestCornerCases,
                  ]
         if SUPPORTS_IPV4:
             tests.append(TestIPv4Environment)

@@ -737,7 +737,10 @@ class ActiveDTP(asyncore.dispatcher):
         handler = self.cmd_channel.dtp_handler(self.socket, self.cmd_channel)
         self.cmd_channel.data_channel = handler
         self.cmd_channel.on_dtp_connection()
-        #self.close()  # <-- (done automatically)
+        # Can't close right now as the handler would have the socket
+        # object disconnected.  This class will be "closed" once the
+        # data transfer is completed or the client disconnects.
+        #self.close()
 
     def handle_timeout(self):
         self.cmd_channel.respond("421 Active data channel timed out.")
@@ -1671,7 +1674,6 @@ class FTPHandler(asynchat.async_chat):
         self.restart_position = 0
         self.quit_pending = False
         self.sleeping = False
-        self.data_server = None
         self.data_channel = None
         self.remote_ip = ""
         self.remote_port = ""
@@ -1685,6 +1687,8 @@ class FTPHandler(asynchat.async_chat):
         self._in_buffer = []
         self._in_buffer_len = 0
         self._epsvall = False
+        self._dtp_acceptor = None
+        self._dtp_connector = None
         self._in_dtp_queue = None
         self._out_dtp_queue = None
         self._closed = False
@@ -1935,9 +1939,8 @@ class FTPHandler(asynchat.async_chat):
         if not self._closed:
             self._closed = True
             asynchat.async_chat.close(self)
-            if self.data_server is not None:
-                self.data_server.close()
-                del self.data_server
+
+            self._shutdown_connecting_dtp()
 
             if self.data_channel is not None:
                 self.data_channel.close()
@@ -1953,6 +1956,17 @@ class FTPHandler(asynchat.async_chat):
             if self.remote_ip in self.server.ip_map:
                 self.server.ip_map.remove(self.remote_ip)
             self.log("Disconnected.")
+
+    def _shutdown_connecting_dtp(self):
+        """Close any ActiveDTP or PassiveDTP instance waiting to
+        establish a connection (passive or active).
+        """
+        if self._dtp_acceptor is not None:
+            self._dtp_acceptor.close()
+            self._dtp_acceptor = None
+        if self._dtp_connector is not None:
+            self._dtp_connector.close()
+            self._dtp_connector = None
 
     # --- public callbacks
 
@@ -1981,9 +1995,12 @@ class FTPHandler(asynchat.async_chat):
         If awaiting inbound data, the data channel is enabled for
         receiving.
         """
-        if self.data_server is not None:
-            self.data_server.close()
-        self.data_server = None
+        # Close accepting DTP only. By closing ActiveDTP DTPHandler
+        # would receive a closed socket object.
+        #self._shutdown_connecting_dtp()
+        if self._dtp_acceptor is not None:
+            self._dtp_acceptor.close()
+            self._dtp_acceptor = None
 
         # stop the idle timer as long as the data transfer is not finished
         if self.idler is not None and not self.idler.cancelled:
@@ -2074,13 +2091,13 @@ class FTPHandler(asynchat.async_chat):
         """Flush account information by clearing attributes that need
         to be reset on a REIN or new USER command.
         """
+        self._shutdown_connecting_dtp()
+        # if there's a transfer in progress RFC-959 states we are
+        # supposed to let it finish
         if self.data_channel is not None:
             if not self.data_channel.transfer_in_progress():
                 self.data_channel.close()
                 self.data_channel = None
-        if self.data_server is not None:
-            self.data_server.close()
-            self.data_server = None
 
         self.fs.rnfr = None
         self.authenticated = False
@@ -2124,10 +2141,9 @@ class FTPHandler(asynchat.async_chat):
             self.respond("501 Can't connect over a privileged port.")
             return
 
-        # close existent DTP-server instance, if any
-        if self.data_server is not None:
-            self.data_server.close()
-            self.data_server = None
+        # close establishing DTP instances, if any
+        self._shutdown_connecting_dtp()
+
         if self.data_channel is not None:
             self.data_channel.close()
             self.data_channel = None
@@ -2140,7 +2156,7 @@ class FTPHandler(asynchat.async_chat):
             return
 
         # open data channel
-        self.active_dtp(ip, port, self)
+        self._dtp_connector = self.active_dtp(ip, port, self)
 
     def _make_epasv(self, extmode=False):
         """Initialize a passive data channel with remote client which
@@ -2148,11 +2164,10 @@ class FTPHandler(asynchat.async_chat):
         If extmode argument is True we assume that client issued EPSV in
         which case extended passive mode will be used (see RFC-2428).
         """
-        # close existing DTP-server instance, if any
-        if self.data_server is not None:
-            self.data_server.close()
-            self.data_server = None
+        # close establishing DTP instances, if any
+        self._shutdown_connecting_dtp()
 
+        # close established data connections, if any
         if self.data_channel is not None:
             self.data_channel.close()
             self.data_channel = None
@@ -2165,7 +2180,7 @@ class FTPHandler(asynchat.async_chat):
             return
 
         # open data channel
-        self.data_server = self.passive_dtp(self, extmode)
+        self._dtp_acceptor = self.passive_dtp(self, extmode)
 
     def ftp_PORT(self, line):
         """Start an active data channel by using IPv4."""
@@ -2313,6 +2328,7 @@ class FTPHandler(asynchat.async_chat):
             self.quit_pending = True
             self.sleeping = True
         else:
+            self._shutdown_connecting_dtp()
             self.close_when_done()
 
         # --- data transferring
@@ -2597,15 +2613,15 @@ class FTPHandler(asynchat.async_chat):
 
     def ftp_ABOR(self, line):
         """Abort the current data transfer."""
-
         # ABOR received while no data channel exists
-        if (self.data_server is None) and (self.data_channel is None):
-            resp = "225 No transfer to abort."
+        if (self._dtp_acceptor is None) and (self._dtp_connector is None) \
+        and (self.data_channel is None):
+            self.respond("225 No transfer to abort.")
+            return
         else:
-            # a PASV was received but connection wasn't made yet
-            if self.data_server is not None:
-                self.data_server.close()
-                self.data_server = None
+            # a PASV or PORT was received but connection wasn't made yet
+            if self._dtp_acceptor is not None or self._dtp_connector is not None:
+                self._shutdown_connecting_dtp()
                 resp = "225 ABOR command successful; data channel closed."
 
             # If a data transfer is in progress the server must first
@@ -2959,7 +2975,7 @@ class FTPHandler(asynchat.async_chat):
             else:
                 type = 'Binary'
             s.append("TYPE: %s; STRUcture: File; MODE: Stream" %type)
-            if self.data_server is not None:
+            if self._dtp_acceptor is not None:
                 s.append('Passive data channel waiting for connection.')
             elif self.data_channel is not None:
                 bytes_sent = self.data_channel.tot_bytes_sent
