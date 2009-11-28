@@ -1568,6 +1568,10 @@ class FTPHandler(asynchat.async_chat):
     masquerade_address = None
     passive_ports = None
 
+    #
+    use_encoding = True
+    encoding = 'latin1'
+
     def __init__(self, conn, server):
         """Initialize the command channel.
 
@@ -1576,7 +1580,7 @@ class FTPHandler(asynchat.async_chat):
          - (instance) server: the ftp server class instance.
         """
         asynchat.async_chat.__init__(self, conn)
-        self.set_terminator("\r\n")
+        self.set_terminator(b"\r\n")
 
         # public session attributes
         self.server = server
@@ -1705,7 +1709,8 @@ class FTPHandler(asynchat.async_chat):
         if self.idler is not None and not self.idler.cancelled:
             self.idler.reset()
 
-        line = ''.join(self._in_buffer)
+        line = b''.join(self._in_buffer)
+        line = str(line, self.encoding)
         self._in_buffer = []
         self._in_buffer_len = 0
 
@@ -1947,6 +1952,9 @@ class FTPHandler(asynchat.async_chat):
             self.idler = CallLater(self.timeout, self.handle_timeout)
 
     # --- utility
+
+    def push(self, resp):
+        asynchat.async_chat.push(self, bytes(resp, self.encoding))
 
     def respond(self, resp):
         """Send a response to the client using the command channel."""
