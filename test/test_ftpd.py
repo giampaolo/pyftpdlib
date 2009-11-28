@@ -241,9 +241,9 @@ class TestAbstractedFS(unittest.TestCase):
         # Tests for validpath method.
         fs = ftpserver.AbstractedFS()
         fs.root = HOME
-        self.failUnless(fs.validpath(HOME))
-        self.failUnless(fs.validpath(HOME + '/'))
-        self.failIf(fs.validpath(HOME + 'xxx'))
+        self.assertTrue(fs.validpath(HOME))
+        self.assertTrue(fs.validpath(HOME + '/'))
+        self.assertFalse(fs.validpath(HOME + 'xxx'))
 
     if hasattr(os, 'symlink'):
 
@@ -256,7 +256,7 @@ class TestAbstractedFS(unittest.TestCase):
             try:
                 open(TESTFN, 'w')
                 os.symlink(TESTFN, TESTFN2)
-                self.failUnless(fs.validpath(TESTFN))
+                self.assertTrue(fs.validpath(TESTFN))
             finally:
                 safe_remove(TESTFN, TESTFN2)
 
@@ -273,7 +273,7 @@ class TestAbstractedFS(unittest.TestCase):
                 if HOME == os.path.dirname(file.name):
                     return
                 os.symlink(file.name, TESTFN)
-                self.failIf(fs.validpath(TESTFN))
+                self.assertFalse(fs.validpath(TESTFN))
             finally:
                 safe_remove(TESTFN)
                 file.close()
@@ -315,8 +315,8 @@ class TestDummyAuthorizer(unittest.TestCase):
         auth.add_user(USER, PASSWD, HOME)
         auth.add_anonymous(HOME)
         # check credentials
-        self.failUnless(auth.validate_authentication(USER, PASSWD))
-        self.failIf(auth.validate_authentication(USER, 'wrongpwd'))
+        self.assertTrue(auth.validate_authentication(USER, PASSWD))
+        self.assertFalse(auth.validate_authentication(USER, 'wrongpwd'))
         # remove them
         auth.remove_user(USER)
         auth.remove_user('anonymous')
@@ -734,19 +734,19 @@ class TestFtpDummyCmds(unittest.TestCase):
             return re.search(r'^\s*MLST\s+(\S+)$', resp, re.MULTILINE).group(1)
         # we rely on "type", "perm", "size", and "modify" facts which
         # are those available on all platforms
-        self.failUnless('type*;perm*;size*;modify*;' in mlst())
+        self.assertTrue('type*;perm*;size*;modify*;' in mlst())
         self.assertEqual(self.client.sendcmd('opts mlst type;'), '200 MLST OPTS type;')
         self.assertEqual(self.client.sendcmd('opts mLSt TypE;'), '200 MLST OPTS type;')
-        self.failUnless('type*;perm;size;modify;' in mlst())
+        self.assertTrue('type*;perm;size;modify;' in mlst())
 
         self.assertEqual(self.client.sendcmd('opts mlst'), '200 MLST OPTS ')
-        self.failUnless(not '*' in mlst())
+        self.assertTrue(not '*' in mlst())
 
         self.assertEqual(self.client.sendcmd('opts mlst fish;cakes;'), '200 MLST OPTS ')
-        self.failUnless(not '*' in mlst())
+        self.assertTrue(not '*' in mlst())
         self.assertEqual(self.client.sendcmd('opts mlst fish;cakes;type;'), \
                                      '200 MLST OPTS type;')
-        self.failUnless('type*;perm;size;modify;' in mlst())
+        self.assertTrue('type*;perm;size;modify;' in mlst())
 
 
 class TestFtpCmdsSemantic(unittest.TestCase):
@@ -914,7 +914,7 @@ class TestFtpFsOperations(unittest.TestCase):
         try:
             self.client.sendcmd('mdtm ' + self.tempdir)
         except ftplib.error_perm as err:
-            self.failUnless("not retrievable" in str(err))
+            self.assertTrue("not retrievable" in str(err))
         else:
             self.fail('Exception not raised')
 
@@ -960,7 +960,7 @@ class TestFtpFsOperations(unittest.TestCase):
         try:
             self.client.sendcmd('size ' + self.tempdir)
         except ftplib.error_perm as err:
-            self.failUnless("not retrievable" in str(err))
+            self.assertTrue("not retrievable" in str(err))
         else:
             self.fail('Exception not raised')
 
@@ -1361,7 +1361,7 @@ class TestFtpListingCmds(unittest.TestCase):
             x = []
             self.client.retrlines('%s ' %cmd + TESTFN, x.append)
             self.assertEqual(len(x), 1)
-            self.failUnless(''.join(x).endswith(TESTFN))
+            self.assertTrue(''.join(x).endswith(TESTFN))
         # non-existent path, 550 response is expected
         bogus = os.path.basename(tempfile.mktemp(dir=HOME))
         self.assertRaises(ftplib.error_perm, self.client.retrlines,
@@ -1403,18 +1403,18 @@ class TestFtpListingCmds(unittest.TestCase):
         mlstline = lambda cmd: self.client.voidcmd(cmd).split('\n')[1]
 
         # the fact set must be preceded by a space
-        self.failUnless(mlstline('mlst').startswith(' '))
+        self.assertTrue(mlstline('mlst').startswith(' '))
         # where TVFS is supported, a fully qualified pathname is expected
-        self.failUnless(mlstline('mlst ' + TESTFN).endswith('/' + TESTFN))
-        self.failUnless(mlstline('mlst').endswith('/'))
+        self.assertTrue(mlstline('mlst ' + TESTFN).endswith('/' + TESTFN))
+        self.assertTrue(mlstline('mlst').endswith('/'))
         # assume that no argument has the same meaning of "/"
         self.assertEqual(mlstline('mlst'), mlstline('mlst /'))
         # non-existent path
         bogus = os.path.basename(tempfile.mktemp(dir=HOME))
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'mlst '+bogus)
         # test file/dir notations
-        self.failUnless('type=dir' in mlstline('mlst'))
-        self.failUnless('type=file' in mlstline('mlst ' + TESTFN))
+        self.assertTrue('type=dir' in mlstline('mlst'))
+        self.assertTrue('type=file' in mlstline('mlst ' + TESTFN))
         # let's add some tests for OPTS command
         self.client.sendcmd('opts mlst type;')
         self.assertEqual(mlstline('mlst'), ' type=dir; /')
