@@ -1917,7 +1917,7 @@ class TestConfigurableOptions(unittest.TestCase):
 
         # try to bind a socket on a privileged port
         sock = None
-        for port in range(1, 1024)[::-1]:
+        for port in reversed(range(1, 1024)):
             try:
                 socket.getservbyport(port)
             except socket.error as err:
@@ -2336,7 +2336,7 @@ def test_main(tests=None):
 ##                 ThrottleBandwidth,
 ##                 TestFtpAbort,
                  TestTimeouts,
-##                 TestConfigurableOptions,
+                 TestConfigurableOptions,
                  TestCallbacks,
                  TestCornerCases,
                  ]
