@@ -976,9 +976,11 @@ class ThrottledDTPHandler(DTPHandler):
             if self.read_limit:
                 while self.ac_in_buffer_size > self.read_limit:
                     self.ac_in_buffer_size /= 2
+                    self.ac_in_buffer_size = int(self.ac_in_buffer_size)
             if self.write_limit:
                 while self.ac_out_buffer_size > self.write_limit:
                     self.ac_out_buffer_size /= 2
+                    self.ac_out_buffer_size = int(self.ac_out_buffer_size)
 
     def readable(self):
         return not self._sleeping and DTPHandler.readable(self)
