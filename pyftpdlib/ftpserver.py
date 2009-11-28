@@ -656,12 +656,7 @@ class PassiveDTP(asyncore.dispatcher):
 
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
-        try:
-            raise
-        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
-            raise
-        except:
-            logerror(traceback.format_exc())
+        logerror(traceback.format_exc())
         self.close()
 
     def close(self):
@@ -701,15 +696,6 @@ class ActiveDTP(asyncore.dispatcher):
             self.cmd_channel.respond("425 Can't connect to specified address.")
             self.close()
 
-    # overridden to prevent unhandled read/write event messages to
-    # be printed by asyncore on Python < 2.6
-
-    def handle_write(self):
-        pass
-
-    def handle_read(self):
-        pass
-
     def handle_connect(self):
         """Called when connection is established."""
         if self.idler is not None and not self.idler.cancelled:
@@ -734,12 +720,7 @@ class ActiveDTP(asyncore.dispatcher):
 
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
-        try:
-            raise
-        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
-            raise
-        except:
-            logerror(traceback.format_exc())
+        logerror(traceback.format_exc())
         self.cmd_channel.respond("425 Can't connect to specified address.")
         self.close()
 
@@ -894,8 +875,6 @@ class DTPHandler(asynchat.async_chat):
     def handle_error(self):
         """Called when an exception is raised and not otherwise handled."""
         try:
-            raise
-        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             raise
         except socket.error as err:
             # fixes around various bugs:
@@ -1843,8 +1822,6 @@ class FTPHandler(asynchat.async_chat):
 
     def handle_error(self):
         try:
-            raise
-        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             raise
         except socket.error as err:
             # fixes around various bugs:
@@ -3229,12 +3206,7 @@ class FTPServer(asyncore.dispatcher):
 
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
-        try:
-            raise
-        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
-            raise
-        except:
-            logerror(traceback.format_exc())
+        logerror(traceback.format_exc())
         self.close()
 
     def close_all(self, map=None, ignore_all=False):
