@@ -1504,7 +1504,7 @@ class TestFtpAbort(unittest.TestCase):
     def test_abor_no_data(self):
         # Case 1: ABOR while no data channel is opened: respond with 225.
         resp = self.client.sendcmd('ABOR')
-        self.failUnlessEqual('225 No transfer to abort.', resp)
+        self.assertEqual('225 No transfer to abort.', resp)
         self.client.retrlines('list', [].append)
 
     def test_abor_pasv(self):
@@ -1513,7 +1513,7 @@ class TestFtpAbort(unittest.TestCase):
         # socket, respond with 225.
         self.client.makepasv()
         respcode = self.client.sendcmd('ABOR')[:3]
-        self.failUnlessEqual('225', respcode)
+        self.assertEqual('225', respcode)
         self.client.retrlines('list', [].append)
 
     def test_abor_port(self):
@@ -1523,7 +1523,7 @@ class TestFtpAbort(unittest.TestCase):
         self.client.set_pasv(0)
         self.client.makeport()
         respcode = self.client.sendcmd('ABOR')[:3]
-        self.failUnlessEqual('225', respcode)
+        self.assertEqual('225', respcode)
         self.client.retrlines('list', [].append)
 
     def test_abor_during_transfer(self):
@@ -1549,7 +1549,7 @@ class TestFtpAbort(unittest.TestCase):
             self.assertRaises(ftplib.error_temp, self.client.voidresp)
 
             # transfer successfully aborted, so should now respond with a 226
-            self.failUnlessEqual('226', self.client.voidresp()[:3])
+            self.assertEqual('226', self.client.voidresp()[:3])
         finally:
             # We do not use os.remove() because file could still be
             # locked by ftpd thread.  If DELE through FTP fails try
