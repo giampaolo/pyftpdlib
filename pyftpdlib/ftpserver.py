@@ -214,24 +214,6 @@ for cmd, properties in proto_cmds.items():
 del cmd, properties
 
 
-# hack around format_exc function of traceback module to grant
-# backward compatibility with python < 2.4
-if not hasattr(traceback, 'format_exc'):
-    try:
-        import io as StringIO
-    except ImportError:
-        import io
-
-    def _format_exc():
-        f = io.StringIO()
-        traceback.print_exc(file=f)
-        data = f.getvalue()
-        f.close()
-        return data
-
-    traceback.format_exc = _format_exc
-
-
 def _strerror(err):
     """A wrap around os.strerror() which may be not available on all
     platforms (e.g. pythonCE).
@@ -862,35 +844,6 @@ class DTPHandler(asynchat.async_chat):
         self.tot_bytes_sent += result
         return result
 
-    def refill_buffer (self):
-        """Overridden as a fix around http://bugs.python.org/issue1740572
-        (when the producer is consumed, close() was called instead of
-        handle_close()).
-        """
-        while 1:
-            if len(self.producer_fifo):
-                p = self.producer_fifo.first()
-                # a 'None' in the producer fifo is a sentinel,
-                # telling us to close the channel.
-                if p is None:
-                    if not self.ac_out_buffer:
-                        self.producer_fifo.pop()
-                        #self.close()
-                        self.handle_close()
-                    return
-                elif isinstance(p, str):
-                    self.producer_fifo.pop()
-                    self.ac_out_buffer = self.ac_out_buffer + p
-                    return
-                data = p.more()
-                if data:
-                    self.ac_out_buffer = self.ac_out_buffer + data
-                    return
-                else:
-                    self.producer_fifo.pop()
-            else:
-                return
-
     def handle_read(self):
         """Called when there is data waiting to be read."""
         try:
@@ -1252,10 +1205,6 @@ class AbstractedFS:
             p = '/' + p
         return p
 
-    # XXX - alias for backward compatibility with 0.2.0
-    normalize = ftpnorm
-    translate = ftp2fs
-
     def validpath(self, path):
         """Check whether the path belongs to user's home directory.
         Expected argument is a "real" filesystem pathname.
@@ -1381,20 +1330,7 @@ class AbstractedFS:
         """Return True if path refers to an existing path, including
         a broken or circular symbolic link.
         """
-        if hasattr(os.path, 'lexists'):
-            return os.path.lexists(path)
-        # grant backward compatibility with python 2.3
-        elif hasattr(os, 'lstat'):
-            try:
-                os.lstat(path)
-            except os.error:
-                return False
-            return True
-        # fallback
-        else:
-            return os.path.exists(path)
-
-    exists = lexists  # XXX - alias for backward compatibility with 0.2.0
+        return os.path.lexists(path)
 
     # --- Listing utilities
 
@@ -1715,13 +1651,7 @@ class FTPHandler(asynchat.async_chat):
                 self.handle_error(self)
             return
 
-        if hasattr(self.socket, 'family'):
-            self.af = self.socket.family
-        else:  # python < 2.5
-            ip, port = self.socket.getsockname()[:2]
-            self.af = socket.getaddrinfo(ip, port, socket.AF_UNSPEC,
-                                         socket.SOCK_STREAM)[0][0]
-
+        self.af = self.socket.family
         # try to handle urgent data inline
         try:
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_OOBINLINE, 1)
@@ -3228,9 +3158,6 @@ class FTPServer(asyncore.dispatcher):
         """
         if map is None:
             map = asyncore.socket_map
-        # backward compatibility for python versions < 2.4
-        if not hasattr(self, '_map'):
-            self._map = self.handler._map = map
 
         if use_poll and hasattr(asyncore.select, 'poll'):
             poll_fun = asyncore.poll2

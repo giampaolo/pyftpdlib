@@ -61,10 +61,7 @@ import random
 import warnings
 import sys
 import errno
-try:
-    import io as StringIO
-except ImportError:
-    import io
+import io
 
 from pyftpdlib import ftpserver
 
