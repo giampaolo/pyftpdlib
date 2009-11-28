@@ -56,7 +56,7 @@ new_proto_cmds = {
     }
 
 from pyftpdlib.ftpserver import _CommandProperty
-for cmd, properties in new_proto_cmds.iteritems():
+for cmd, properties in new_proto_cmds.items():
     proto_cmds[cmd] = _CommandProperty(*properties)
 del cmd, properties, new_proto_cmds, _CommandProperty
 
@@ -76,7 +76,7 @@ class SSLConnection(object, asyncore.dispatcher):
     def _do_ssl_handshake(self):
         try:
             self.socket.do_handshake()
-        except ssl.SSLError, err:
+        except ssl.SSLError as err:
             if err.args[0] in (ssl.SSL_ERROR_WANT_READ, ssl.SSL_ERROR_WANT_WRITE):
                 return
             elif err.args[0] == ssl.SSL_ERROR_EOF:
@@ -100,7 +100,7 @@ class SSLConnection(object, asyncore.dispatcher):
     def send(self, data):
         try:
             return super(SSLConnection, self).send(data)
-        except ssl.SSLError, err:
+        except ssl.SSLError as err:
             if err.args[0] in (ssl.SSL_ERROR_EOF, ssl.SSL_ERROR_ZERO_RETURN):
                 return 0
             raise
@@ -108,7 +108,7 @@ class SSLConnection(object, asyncore.dispatcher):
     def recv(self, buffer_size):
         try:
             return super(SSLConnection, self).recv(buffer_size)
-        except ssl.SSLError, err:
+        except ssl.SSLError as err:
             if err.args[0] in (ssl.SSL_ERROR_EOF, ssl.SSL_ERROR_ZERO_RETURN):
                 self.handle_close()
                 return ''
@@ -134,7 +134,7 @@ class TLS_DTPHandler(SSLConnection, DTPHandler):
     def handle_error(self):
         try:
             raise
-        except ssl.SSLError, err:
+        except ssl.SSLError as err:
             if self._ssl_accepting and err.args[0] == ssl.SSL_ERROR_SSL:
                 # TLS/SSL handshake failure, probably client's fault.
                 # RFC-4217, chapter 10.2 expects us to return 522.
@@ -209,7 +209,7 @@ class TLS_FTPHandler(SSLConnection, FTPHandler):
     def handle_error(self):
         try:
             raise
-        except ssl.SSLError, err:
+        except ssl.SSLError as err:
             # TLS/SSL handshake failure, probably client's fault.
             if self._ssl_accepting and err.args[0] == ssl.SSL_ERROR_SSL:
                 proto = ssl.get_protocol_name(self.socket.ssl_version)

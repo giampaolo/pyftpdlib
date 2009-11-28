@@ -62,9 +62,9 @@ import warnings
 import sys
 import errno
 try:
-    import cStringIO as StringIO
+    import io as StringIO
 except ImportError:
-    import StringIO
+    import io
 
 from pyftpdlib import ftpserver
 
@@ -300,14 +300,14 @@ class TestDummyAuthorizer(unittest.TestCase):
     def assertRaisesWithMsg(self, excClass, msg, callableObj, *args, **kwargs):
         try:
             callableObj(*args, **kwargs)
-        except excClass, why:
+        except excClass as why:
             if str(why) == msg:
                 return
             raise self.failureException("%s != %s" %(str(why), msg))
         else:
             if hasattr(excClass,'__name__'): excName = excClass.__name__
             else: excName = str(excClass)
-            raise self.failureException, "%s not raised" % excName
+            raise self.failureException("%s not raised" % excName)
 
     def test_common_methods(self):
         auth = ftpserver.DummyAuthorizer()
@@ -515,7 +515,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.client.connect(self.server.host, self.server.port)
         self.client.sock.settimeout(2)
         self.file = open(TESTFN, 'w+b')
-        self.dummyfile = StringIO.StringIO()
+        self.dummyfile = io.StringIO()
 
     def tearDown(self):
         self.server.handler._auth_failed_timeout = 5
@@ -696,7 +696,7 @@ class TestFtpDummyCmds(unittest.TestCase):
 
     def test_help(self):
         self.client.sendcmd('help')
-        cmd = random.choice(ftpserver.proto_cmds.keys())
+        cmd = random.choice(list(ftpserver.proto_cmds.keys()))
         self.client.sendcmd('help %s' %cmd)
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'help ?!?')
 
@@ -913,7 +913,7 @@ class TestFtpFsOperations(unittest.TestCase):
         # make sure we can't use mdtm against directories
         try:
             self.client.sendcmd('mdtm ' + self.tempdir)
-        except ftplib.error_perm, err:
+        except ftplib.error_perm as err:
             self.failUnless("not retrievable" in str(err))
         else:
             self.fail('Exception not raised')
@@ -959,7 +959,7 @@ class TestFtpFsOperations(unittest.TestCase):
         # make sure we can't use size against directories
         try:
             self.client.sendcmd('size ' + self.tempdir)
-        except ftplib.error_perm, err:
+        except ftplib.error_perm as err:
             self.failUnless("not retrievable" in str(err))
         else:
             self.fail('Exception not raised')
@@ -975,8 +975,8 @@ class TestFtpStoreData(unittest.TestCase):
         self.client.connect(self.server.host, self.server.port)
         self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
-        self.dummy_recvfile = StringIO.StringIO()
-        self.dummy_sendfile = StringIO.StringIO()
+        self.dummy_recvfile = io.StringIO()
+        self.dummy_sendfile = io.StringIO()
 
     def tearDown(self):
         self.client.close()
@@ -1258,7 +1258,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
         self.file = open(TESTFN, 'w+b')
-        self.dummyfile = StringIO.StringIO()
+        self.dummyfile = io.StringIO()
 
     def tearDown(self):
         self.client.close()
@@ -1430,7 +1430,7 @@ class TestFtpListingCmds(unittest.TestCase):
         try:
             try:
                 self.client.retrlines('mlsd ' + TESTFN, lambda x: x)
-            except ftplib.error_perm, resp:
+            except ftplib.error_perm as resp:
                 # if path is a file a 501 response code is expected
                 self.assertEqual(str(resp)[0:3], "501")
             else:
@@ -1589,7 +1589,7 @@ class ThrottleBandwidth(unittest.TestCase):
         self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
 
-        self.dummyfile = StringIO.StringIO()
+        self.dummyfile = io.StringIO()
 
     def tearDown(self):
         self.client.close()
@@ -1898,7 +1898,7 @@ class TestConfigurableOptions(unittest.TestCase):
 
     def test_passive_ports(self):
         # Test FTPHandler.passive_ports attribute
-        _range = range(40000, 60000, 200)
+        _range = list(range(40000, 60000, 200))
         self.server.handler.passive_ports = _range
         self.assert_(self.client.makepasv()[1] in _range)
         self.assert_(self.client.makepasv()[1] in _range)
@@ -1925,13 +1925,13 @@ class TestConfigurableOptions(unittest.TestCase):
             for port in range(1, 1024)[::-1]:
                 try:
                     socket.getservbyport(port)
-                except socket.error, err:
+                except socket.error as err:
                     # not registered port; go on
                     try:
                         sock = socket.socket(self.client.af, socket.SOCK_STREAM)
                         sock.bind((HOST, port))
                         break
-                    except socket.error, err:
+                    except socket.error as err:
                         if err[0] == errno.EACCES:
                             # root privileges needed
                             sock = None
@@ -1972,7 +1972,7 @@ class TestCallbacks(unittest.TestCase):
         self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
         self.file = open(TESTFN, 'w+b')
-        self.dummyfile = StringIO.StringIO()
+        self.dummyfile = io.StringIO()
         self._tearDown = False
 
     def tearDown(self):
@@ -2057,7 +2057,7 @@ class _TestNetworkProtocols(unittest.TestCase):
         """Send a command and return response, also if the command failed."""
         try:
             return self.client.sendcmd(cmd)
-        except ftplib.Error, err:
+        except ftplib.Error as err:
             return str(err)
 
     def test_eprt(self):
@@ -2065,7 +2065,7 @@ class _TestNetworkProtocols(unittest.TestCase):
         try:
             self.client.sendcmd('eprt |%s|%s|%s|' %(self.other_proto,
                                 self.server.host, self.server.port))
-        except ftplib.error_perm, err:
+        except ftplib.error_perm as err:
             self.assertEqual(str(err)[0:3], "522")
         else:
             self.fail("Exception not raised")
@@ -2118,7 +2118,7 @@ class _TestNetworkProtocols(unittest.TestCase):
         # test wrong proto
         try:
             self.client.sendcmd('epsv ' + self.other_proto)
-        except ftplib.error_perm, err:
+        except ftplib.error_perm as err:
             self.assertEqual(str(err)[0:3], "522")
         else:
             self.fail("Exception not raised")

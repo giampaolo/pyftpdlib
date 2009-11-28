@@ -16,16 +16,16 @@ from pyftpdlib import ftpserver
 
 def get_profile_dir(username):
     """Return the user's profile directory."""
-    import _winreg, win32api
+    import winreg, win32api
     sid = win32security.ConvertSidToStringSid(
             win32security.LookupAccountName(None, username)[0])
     try:
-        key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE,
+        key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
           r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList"+"\\"+sid)
     except WindowsError:
         raise ftpserver.AuthorizerError("No profile directory defined for %s "
                                         "user" %username)
-    value = _winreg.QueryValueEx(key, "ProfileImagePath")[0]
+    value = winreg.QueryValueEx(key, "ProfileImagePath")[0]
     return win32api.ExpandEnvironmentStrings(value)
 
 

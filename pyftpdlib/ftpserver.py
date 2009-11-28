@@ -209,7 +209,7 @@ class _CommandProperty:
         self.check_path = check_path
         self.help = help
 
-for cmd, properties in proto_cmds.iteritems():
+for cmd, properties in proto_cmds.items():
     proto_cmds[cmd] = _CommandProperty(*properties)
 del cmd, properties
 
@@ -218,12 +218,12 @@ del cmd, properties
 # backward compatibility with python < 2.4
 if not hasattr(traceback, 'format_exc'):
     try:
-        import cStringIO as StringIO
+        import io as StringIO
     except ImportError:
-        import StringIO
+        import io
 
     def _format_exc():
-        f = StringIO.StringIO()
+        f = io.StringIO()
         traceback.print_exc(file=f)
         data = f.getvalue()
         f.close()
@@ -277,8 +277,8 @@ class CallLater:
          - args: the arguments to call it with
          - kwargs: the keyword arguments to call it with
         """
-        assert callable(target), "%s is not callable" %target
-        assert sys.maxint >= seconds >= 0, "%s is not greater than or equal " \
+        assert hasattr(target, '__call__'), "%s is not callable" %target
+        assert sys.maxsize >= seconds >= 0, "%s is not greater than or equal " \
                                            "to 0 seconds" % (seconds)
         self.__delay = seconds
         self.__target = target
@@ -307,7 +307,7 @@ class CallLater:
     def delay(self, seconds):
         """Reschedule this call for a later time."""
         assert not self.cancelled, "Already cancelled."
-        assert sys.maxint >= seconds >= 0, "%s is not greater than or equal " \
+        assert sys.maxsize >= seconds >= 0, "%s is not greater than or equal " \
                                            "to 0 seconds" %(seconds)
         self.__delay = seconds
         newtime = time.time() + self.__delay
@@ -348,11 +348,11 @@ class AuthorizerError(Error):
 
 def log(msg):
     """Log messages intended for the end user."""
-    print msg
+    print(msg)
 
 def logline(msg):
     """Log commands and responses passing through the command channel."""
-    print msg
+    print(msg)
 
 def logerror(msg):
     """Log traceback outputs occurring in case of errors."""
@@ -501,7 +501,7 @@ class DummyAuthorizer:
             return perm in self.user_table[username]['perm']
 
         path = os.path.normcase(path)
-        for dir in self.user_table[username]['operms'].keys():
+        for dir in list(self.user_table[username]['operms'].keys()):
             operm, recursive = self.user_table[username]['operms'][dir]
             if self._issubpath(path, dir):
                 if recursive:
@@ -584,7 +584,7 @@ class PassiveDTP(asyncore.dispatcher):
                 port = ports.pop(random.randint(0, len(ports) -1))
                 try:
                     self.bind((ip, port))
-                except socket.error, why:
+                except socket.error as why:
                     if why[0] == errno.EADDRINUSE:  # port already in use
                         if ports:
                             continue
@@ -626,7 +626,7 @@ class PassiveDTP(asyncore.dispatcher):
         except TypeError:
             # sometimes accept() might return None (see issue 91)
             return
-        except socket.error, err:
+        except socket.error as err:
             # ECONNABORTED might be thrown on *BSD (see issue 105)
             if err[0] != errno.ECONNABORTED:
                 logerror(traceback.format_exc())
@@ -944,7 +944,7 @@ class DTPHandler(asynchat.async_chat):
             raise
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             raise
-        except socket.error, err:
+        except socket.error as err:
             # fixes around various bugs:
             # - http://bugs.python.org/issue1736101
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=104
@@ -958,7 +958,7 @@ class DTPHandler(asynchat.async_chat):
                 error = str(err[1])
         # an error could occur in case we fail reading / writing
         # from / to file (e.g. file system gets full)
-        except EnvironmentError, err:
+        except EnvironmentError as err:
             error = _strerror(err)
         except:
             # some other exception occurred;  we don't want to provide
@@ -1140,9 +1140,9 @@ class BufferedIteratorProducer:
         its next() method different times.
         """
         buffer = []
-        for x in xrange(self.loops):
+        for x in range(self.loops):
             try:
-                buffer.append(self.iterator.next())
+                buffer.append(next(self.iterator))
             except StopIteration:
                 break
         return ''.join(buffer)
@@ -1555,7 +1555,7 @@ class AbstractedFS:
                     create = ""
             # UNIX only
             if 'unix.mode' in facts:
-                mode = 'unix.mode=%s;' %oct(st.st_mode & 0777)
+                mode = 'unix.mode=%s;' %oct(st.st_mode & 0o777)
             if 'unix.uid' in facts:
                 uid = 'unix.uid=%s;' %st.st_uid
             if 'unix.gid' in facts:
@@ -1705,7 +1705,7 @@ class FTPHandler(asynchat.async_chat):
         # connection properties
         try:
             self.remote_ip, self.remote_port = self.socket.getpeername()[:2]
-        except socket.error, err:
+        except socket.error as err:
             # a race condition  may occur if the other end is closing
             # before we can get the peername (see issue #100)
             self.connected = False
@@ -1902,7 +1902,7 @@ class FTPHandler(asynchat.async_chat):
         if hasattr(socket, 'MSG_OOB'):
             try:
                 data = self.socket.recv(1024, socket.MSG_OOB)
-            except socket.error, why:
+            except socket.error as why:
                 if why[0] == errno.EINVAL:
                     return
             else:
@@ -1916,7 +1916,7 @@ class FTPHandler(asynchat.async_chat):
             raise
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             raise
-        except socket.error, err:
+        except socket.error as err:
             # fixes around various bugs:
             # - http://bugs.python.org/issue1736101
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=104
@@ -2197,7 +2197,7 @@ class FTPHandler(asynchat.async_chat):
         # ...where the client's IP address is h1.h2.h3.h4 and the TCP
         # port number is (p1 * 256) + p2.
         try:
-            addr = map(int, line.split(','))
+            addr = list(map(int, line.split(',')))
             if len(addr) != 6:
                 raise ValueError
             for x in addr[:4]:
@@ -2238,7 +2238,7 @@ class FTPHandler(asynchat.async_chat):
                 self.respond('522 Network protocol not supported (use 2).')
             else:
                 try:
-                    octs = map(int, ip.split('.'))
+                    octs = list(map(int, ip.split('.')))
                     if len(octs) != 4:
                         raise ValueError
                     for x in octs:
@@ -2343,7 +2343,7 @@ class FTPHandler(asynchat.async_chat):
         line = self.fs.fs2ftp(path)
         try:
             iterator = self.run_as_current_user(self.fs.get_list_dir, path)
-        except OSError, err:
+        except OSError as err:
             why = _strerror(err)
             self.log('FAIL LIST "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
@@ -2364,7 +2364,7 @@ class FTPHandler(asynchat.async_chat):
                 # if path is a file we just list its name
                 self.fs.lstat(path)  # raise exc in case of problems
                 listing = [os.path.basename(path)]
-        except OSError, err:
+        except OSError as err:
             why = _strerror(err)
             self.log('FAIL NLST "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
@@ -2394,7 +2394,7 @@ class FTPHandler(asynchat.async_chat):
             iterator = self.run_as_current_user(self.fs.format_mlsx, basedir,
                        [basename], perms, self._current_facts, ignore_err=False)
             data = ''.join(iterator)
-        except OSError, err:
+        except OSError as err:
             why = _strerror(err)
             self.log('FAIL MLST "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
@@ -2421,7 +2421,7 @@ class FTPHandler(asynchat.async_chat):
             return
         try:
             listing = self.run_as_current_user(self.fs.listdir, path)
-        except OSError, err:
+        except OSError as err:
             why = _strerror(err)
             self.log('FAIL MLSD "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
@@ -2442,7 +2442,7 @@ class FTPHandler(asynchat.async_chat):
         self.restart_position = 0
         try:
             fd = self.run_as_current_user(self.fs.open, file, 'rb')
-        except IOError, err:
+        except IOError as err:
             why = _strerror(err)
             self.log('FAIL RETR "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
@@ -2462,7 +2462,7 @@ class FTPHandler(asynchat.async_chat):
                 ok = 1
             except ValueError:
                 why = "Invalid REST parameter"
-            except IOError, err:
+            except IOError as err:
                 why = _strerror(err)
             if not ok:
                 self.respond('554 %s' %why)
@@ -2490,7 +2490,7 @@ class FTPHandler(asynchat.async_chat):
             mode = 'r+'
         try:
             fd = self.run_as_current_user(self.fs.open, file, mode + 'b')
-        except IOError, err:
+        except IOError as err:
             why = _strerror(err)
             self.log('FAIL %s "%s". %s.' %(cmd, line, why))
             self.respond('550 %s.' %why)
@@ -2510,7 +2510,7 @@ class FTPHandler(asynchat.async_chat):
                 ok = 1
             except ValueError:
                 why = "Invalid REST parameter"
-            except IOError, err:
+            except IOError as err:
                 why = _strerror(err)
             if not ok:
                 self.respond('554 %s' %why)
@@ -2553,7 +2553,7 @@ class FTPHandler(asynchat.async_chat):
         try:
             fd = self.run_as_current_user(self.fs.mkstemp, prefix=prefix,
                                           dir=basedir)
-        except IOError, err:
+        except IOError as err:
             # hitted the max number of tries to find out file with
             # unique name
             if err.errno == errno.EEXIST:
@@ -2742,7 +2742,7 @@ class FTPHandler(asynchat.async_chat):
         line = self.fs.fs2ftp(path)
         try:
             self.run_as_current_user(self.fs.chdir, path)
-        except OSError, err:
+        except OSError as err:
             why = _strerror(err)
             self.log('FAIL CWD "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
@@ -2785,7 +2785,7 @@ class FTPHandler(asynchat.async_chat):
             return
         try:
             size = self.run_as_current_user(self.fs.getsize, path)
-        except OSError, err:
+        except OSError as err:
             why = _strerror(err)
             self.log('FAIL SIZE "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
@@ -2806,7 +2806,7 @@ class FTPHandler(asynchat.async_chat):
         try:
             secs = self.run_as_current_user(self.fs.getmtime, path)
             lmt = time.strftime("%Y%m%d%H%M%S", time.localtime(secs))
-        except (OSError, ValueError), err:
+        except (OSError, ValueError) as err:
             if isinstance(err, OSError):
                 why = _strerror(err)
             else:
@@ -2824,7 +2824,7 @@ class FTPHandler(asynchat.async_chat):
         line = self.fs.fs2ftp(path)
         try:
             self.run_as_current_user(self.fs.mkdir, path)
-        except OSError, err:
+        except OSError as err:
             why = _strerror(err)
             self.log('FAIL MKD "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
@@ -2845,7 +2845,7 @@ class FTPHandler(asynchat.async_chat):
             return
         try:
             self.run_as_current_user(self.fs.rmdir, path)
-        except OSError, err:
+        except OSError as err:
             why = _strerror(err)
             self.log('FAIL RMD "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
@@ -2858,7 +2858,7 @@ class FTPHandler(asynchat.async_chat):
         line = self.fs.fs2ftp(path)
         try:
             self.run_as_current_user(self.fs.remove, path)
-        except OSError, err:
+        except OSError as err:
             why = _strerror(err)
             self.log('FAIL DELE "%s". %s.' %(line, why))
             self.respond('550 %s.' %why)
@@ -2888,7 +2888,7 @@ class FTPHandler(asynchat.async_chat):
         self.fs.rnfr = None
         try:
             self.run_as_current_user(self.fs.rename, src, path)
-        except OSError, err:
+        except OSError as err:
             why = _strerror(err)
             self.log('FAIL RNFR/RNTO "%s ==> %s". %s.' \
                      %(self.fs.fs2ftp(src), self.fs.fs2ftp(path), why))
@@ -2994,7 +2994,7 @@ class FTPHandler(asynchat.async_chat):
             line = self.fs.fs2ftp(path)
             try:
                 iterator = self.run_as_current_user(self.fs.get_list_dir, path)
-            except OSError, err:
+            except OSError as err:
                 why = _strerror(err)
                 self.log('FAIL STAT "%s". %s.' %(line, why))
                 self.respond('550 %s.' %why)
@@ -3033,7 +3033,7 @@ class FTPHandler(asynchat.async_chat):
             # actually the only command able to accept options is MLST
             if cmd.upper() != 'MLST':
                 raise ValueError('Unsupported command "%s"' %cmd)
-        except ValueError, err:
+        except ValueError as err:
             self.respond('501 %s.' %err)
         else:
             facts = [x.lower() for x in arg.split(';')]
@@ -3071,7 +3071,7 @@ class FTPHandler(asynchat.async_chat):
             # provide a compact list of recognized commands
             def formatted_help():
                 cmds = []
-                keys = [x for x in proto_cmds.keys() if not x.startswith('SITE ')]
+                keys = [x for x in list(proto_cmds.keys()) if not x.startswith('SITE ')]
                 keys.sort()
                 while keys:
                     elems = tuple((keys[0:8]))
@@ -3101,7 +3101,7 @@ class FTPHandler(asynchat.async_chat):
         else:
             self.push("214-The following SITE commands are recognized:\r\n")
             site_cmds = []
-            keys = proto_cmds.keys()
+            keys = list(proto_cmds.keys())
             keys.sort()
             for cmd in keys:
                 if cmd.startswith('SITE '):
@@ -3192,7 +3192,7 @@ class FTPServer(asyncore.dispatcher):
                     self.create_socket(af, socktype)
                     self.set_reuse_addr()
                     self.bind(sa)
-                except socket.error, msg:
+                except socket.error as msg:
                     if self.socket:
                         self.socket.close()
                     self.socket = None
@@ -3263,7 +3263,7 @@ class FTPServer(asyncore.dispatcher):
         except TypeError:
             # sometimes accept() might return None (see issue 91)
             return
-        except socket.error, err:
+        except socket.error as err:
             # ECONNABORTED might be thrown on *BSD (see issue 105)
             if err[0] != errno.ECONNABORTED:
                 logerror(traceback.format_exc())
@@ -3332,10 +3332,10 @@ class FTPServer(asyncore.dispatcher):
         """
         if map is None:
             map = self._map
-        for x in map.values():
+        for x in list(map.values()):
             try:
                 x.close()
-            except OSError, x:
+            except OSError as x:
                 if x[0] == errno.EBADF:
                     pass
                 elif not ignore_all:

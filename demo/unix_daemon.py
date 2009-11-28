@@ -34,15 +34,15 @@ def _create_daemon():
     """
     try:
         pid = os.fork()
-    except OSError, err:
-        raise Exception, "%s [%d]" % (err.strerror, err.errno)
+    except OSError as err:
+        raise Exception("%s [%d]" % (err.strerror, err.errno))
 
     if (pid == 0):
         os.setsid()
         try:
             pid = os.fork()
-        except OSError, err:
-            raise Exception, "%s [%d]" % (err.strerror, err.errno)
+        except OSError as err:
+            raise Exception("%s [%d]" % (err.strerror, err.errno))
 
         if (pid == 0):
             os.chdir(WORKDIR)
@@ -110,7 +110,7 @@ def daemonize(options):
     def _exit(sig, frame):
         # and close all the timers/other threads that has a cancel method
         for t in threading.enumerate():
-            if hasattr(t, "cancel") and callable(t.cancel):
+            if hasattr(t, "cancel") and hasattr(t.cancel, '__call__'):
                 t.cancel()
 
         # wait for all threads to shutdown
@@ -138,8 +138,8 @@ def main():
     options, args = parser.parse_args()
 
     # option control
-    num_opt = len(filter(lambda x: getattr(options, x), ("daemon", "foreground",
-                                                         "kill")))
+    num_opt = len([x for x in ("daemon", "foreground",
+                                                         "kill") if getattr(options, x)])
     if num_opt == 0:
         parser.error("pass me at least one option")
     elif num_opt > 1:
