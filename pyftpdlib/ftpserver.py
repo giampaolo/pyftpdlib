@@ -1066,8 +1066,9 @@ class BufferedIteratorProducer:
     # returning some data
     loops = 20
 
-    def __init__(self, iterator):
+    def __init__(self, iterator, encoding=None):
         self.iterator = iterator
+        self.encoding = encoding
 
     def more(self):
         """Attempt a chunk of data from iterator by calling
@@ -1079,7 +1080,12 @@ class BufferedIteratorProducer:
                 buffer.append(next(self.iterator))
             except StopIteration:
                 break
-        return ''.join(buffer)
+        if self.encoding is None:
+            return b''.join(buffer)
+        else:
+            data = ''.join(buffer)
+            data = bytes(data, self.encoding)
+            return data
 
 
 # --- filesystem
@@ -2266,7 +2272,7 @@ class FTPHandler(asynchat.async_chat):
             self.respond('550 %s.' %why)
         else:
             self.log('OK LIST "%s". Transfer starting.' %line)
-            producer = BufferedIteratorProducer(iterator)
+            producer = BufferedIteratorProducer(iterator, self.encoding )
             self.push_dtp_data(producer, isproducer=True)
 
     def ftp_NLST(self, path):
@@ -2290,6 +2296,7 @@ class FTPHandler(asynchat.async_chat):
             if listing:
                 listing.sort()
                 data = '\r\n'.join(listing) + '\r\n'
+            data = bytes(data, self.encoding)
             self.log('OK NLST "%s". Transfer starting.' %line)
             self.push_dtp_data(data)
 
@@ -2346,7 +2353,7 @@ class FTPHandler(asynchat.async_chat):
             perms = self.authorizer.get_perms(self.username)
             iterator = self.fs.format_mlsx(path, listing, perms,
                        self._current_facts)
-            producer = BufferedIteratorProducer(iterator)
+            producer = BufferedIteratorProducer(iterator, self.encoding)
             self.log('OK MLSD "%s". Transfer starting.' %line)
             self.push_dtp_data(producer, isproducer=True)
 
@@ -2917,7 +2924,8 @@ class FTPHandler(asynchat.async_chat):
                 self.respond('550 %s.' %why)
             else:
                 self.push('213-Status of "%s":\r\n' %line)
-                self.push_with_producer(BufferedIteratorProducer(iterator))
+                self.push_with_producer(BufferedIteratorProducer(iterator,
+                                                                 self.encoding))
                 self.respond('213 End of status.')
 
     def ftp_FEAT(self, line):
