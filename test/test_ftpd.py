@@ -1608,9 +1608,14 @@ class ThrottleBandwidth(unittest.TestCase):
         faster, but for the underlying code implementing the bandwidth
         throttling that doesn't make any difference.
         """
-        def __le__(self, other):
-            self.timeout = 0
-            return 1
+        def __lt__(self, other):
+            # hack necessary for python 3.x only to avoid other scheduled
+            # callbacks to be fired
+            if self._CallLater__target.__name__ == "unsleep":
+                self.timeout = 0
+                return 1
+            else:
+                return self.timeout <= other.timeout
 
     def test_throttle_send(self):
         # This test doesn't test the actual speed accuracy, just
@@ -2333,7 +2338,7 @@ def test_main(tests=None):
                  TestFtpStoreData,
                  TestFtpRetrieveData,
                  TestFtpListingCmds,
-##                 ThrottleBandwidth,
+                 ThrottleBandwidth,
                  TestFtpAbort,
                  TestTimeouts,
                  TestConfigurableOptions,
