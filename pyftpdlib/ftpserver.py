@@ -1578,7 +1578,7 @@ class FTPHandler(asynchat.async_chat):
 
     #
     use_encoding = True
-    encoding = 'latin1'
+    encoding = "utf-8"
 
     def __init__(self, conn, server):
         """Initialize the command channel.
@@ -1710,6 +1710,21 @@ class FTPHandler(asynchat.async_chat):
             self._in_buffer = []
             self._in_buffer_len = 0
 
+    def decode_received_line(self, line):
+        """Decode the received cmd + arg from bytes to a unicode string.
+        You might want to override this method to attempt to convert the
+        line by using different encodings in case UTF8 fails for some
+        reason (e.g. clients not following RFC-2640).
+
+        Example:
+
+        try:
+            return str(line, 'utf8')
+        except UnicodeDecodeError:
+            return str(line, 'latin1')
+        """
+        return str(line, self.encoding)
+
     def found_terminator(self):
         r"""Called when the incoming data stream matches the \r\n
         terminator.
@@ -1718,9 +1733,15 @@ class FTPHandler(asynchat.async_chat):
             self.idler.reset()
 
         line = b''.join(self._in_buffer)
-        line = str(line, self.encoding)
         self._in_buffer = []
         self._in_buffer_len = 0
+        try:
+            line = self.decode_received_line(line)
+        except UnicodeDecodeError:
+            self.respond("501 Can't decode the received command. This server "
+                         "is using %s encoding. Make sure your client does "
+                         "the same." %self.encoding)
+            return
 
         cmd = line.split(' ')[0].upper()
         arg = line[len(cmd)+1:]
@@ -2931,6 +2952,8 @@ class FTPHandler(asynchat.async_chat):
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
         features = ['EPRT','EPSV','MDTM','MLSD','REST STREAM','SIZE','TVFS']
+        if self.encoding.lower() in ('utf8, utf-8'):
+            features.append('UTF8')
         features.extend(self._extra_feats)
         s = ''
         for fact in self._available_facts:

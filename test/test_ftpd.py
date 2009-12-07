@@ -1567,8 +1567,8 @@ class TestFtpAbort(unittest.TestCase):
             # due to a different SO_OOBINLINE behavior.
             # On some platforms (e.g. Python CE) the test may fail
             # although the MSG_OOB constant is defined.
-            self.client.sock.sendall(bytes(chr(244), 'latin-1'), socket.MSG_OOB)
-            self.client.sock.sendall(bytes(chr(244), 'latin-1'), socket.MSG_OOB)
+            self.client.sock.sendall(bytes(chr(244), 'utf-8'), socket.MSG_OOB)
+            self.client.sock.sendall(bytes(chr(244), 'utf-8'), socket.MSG_OOB)
             self.client.sock.sendall(b'abor\r\n')
             self.client.sock.settimeout(1)
             self.assertEqual(self.client.getresp()[:3], '225')
@@ -2250,6 +2250,42 @@ class TestCornerCases(unittest.TestCase):
         sock.close()
 
 
+class TestEncoding(unittest.TestCase):
+    """Test server encodings."""
+
+    def setUp(self):
+        self.server = FTPd()
+        self.server.start()
+        self.client = ftplib.FTP()
+        self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
+        self.client.login(USER, PASSWD)
+
+    def tearDown(self):
+        self.client.encoding = 'latin1'
+        self.server.server.handler.encoding = 'utf-8'
+        self.client.close()
+        self.server.stop()
+
+    def test_correct_encoding(self):
+        # make sure the server is able to interpret a command containing
+        # non-ascii characters
+        self.client.encoding = 'utf8'
+        self.assertRaisesRegexp(ftplib.error_perm, 'not understood',
+                                self.client.sendcmd, 'nòòp')
+
+    def test_wrong_encoding(self):
+        self.client.encoding = 'latin1'
+        self.assertRaisesRegexp(ftplib.error_perm,
+                                "Can't decode the received command",
+                                self.client.sendcmd, 'nòòp')
+
+    def test_feat(self):
+        self.assertTrue('UTF8' in self.client.sendcmd('feat'))
+        self.server.server.handler.encoding = 'ascii'
+        self.assertFalse('UTF8' in self.client.sendcmd('feat'))
+
+
 class FTPd(threading.Thread):
     """A threaded FTP server used for running tests.
 
@@ -2344,6 +2380,7 @@ def test_main(tests=None):
                  TestConfigurableOptions,
                  TestCallbacks,
                  TestCornerCases,
+                 TestEncoding,
                  ]
         if SUPPORTS_IPV4:
             tests.append(TestIPv4Environment)
