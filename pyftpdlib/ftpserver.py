@@ -1545,6 +1545,9 @@ class FTPHandler(asynchat.async_chat):
         When configured pyftpdlib will no longer use kernel-assigned
         random ports (default None).
 
+     - (string) encoding:
+        the default encoding to use (defualts to UTF-8).
+
 
     All relevant instance attributes initialized when client connects
     are reproduced below.  You may be interested in them in case you
@@ -1575,9 +1578,6 @@ class FTPHandler(asynchat.async_chat):
     permit_privileged_ports = False
     masquerade_address = None
     passive_ports = None
-
-    #
-    use_encoding = True
     encoding = "utf-8"
 
     def __init__(self, conn, server):
@@ -1605,6 +1605,7 @@ class FTPHandler(asynchat.async_chat):
         self.remote_ip = ""
         self.remote_port = ""
         self.af = -1
+        self.use_encoding = True
         if self.timeout:
             self.idler = CallLater(self.timeout, self.handle_timeout)
         else:
@@ -2952,7 +2953,7 @@ class FTPHandler(asynchat.async_chat):
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
         features = ['EPRT','EPSV','MDTM','MLSD','REST STREAM','SIZE','TVFS']
-        if self.encoding.lower() in ('utf8, utf-8'):
+        if self.encoding.lower() in ('utf8', 'utf-8'):
             features.append('UTF8')
         features.extend(self._extra_feats)
         s = ''
