@@ -7,6 +7,11 @@ History
 Version: 0.6.0 - Date: XXXX-XX-XX
 ---------------------------------
 
+Enhancements:
+
+ * Issue 124: pyftpdlib now accepts command line options to configure a stand
+   alone anonymous FTP server when running pyftpdlib with python's -m option.
+
 Bugfixes:
 
  * Issue #120: an ActiveDTP() instance is not garbage collected in case a

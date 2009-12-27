@@ -2249,6 +2249,116 @@ class TestCornerCases(unittest.TestCase):
         sock.close()
 
 
+class TestCommandLineParser(unittest.TestCase):
+    """Test command line parser."""
+    SYSARGV = sys.argv
+    STDERR = sys.stderr
+
+    def setUp(self):
+        class DummyFTPServer(ftpserver.FTPServer):
+            """An overridden version of FTPServer class which forces
+            serve_forever() to return immediately.
+            """
+            def serve_forever(self, *args, **kwargs):
+                return
+
+        self.devnull = StringIO.StringIO()
+        sys.argv = self.SYSARGV[:]
+        sys.stderr = self.STDERR
+        self.original_ftpserver_class = ftpserver.FTPServer
+        ftpserver.FTPServer = DummyFTPServer
+
+    def tearDown(self):
+        self.devnull.close()
+        sys.argv = self.SYSARGV[:]
+        sys.stderr = self.STDERR
+        ftpserver.FTPServer = self.original_ftpserver_class
+        if os.path.isdir(TESTFN):
+            os.rmdir(TESTFN)
+
+    def test_a_option(self):
+        sys.argv += ["-a", "localhost", "-p", "0"]
+        ftpserver.main()
+        sys.argv = self.SYSARGV[:]
+
+        # no argument
+        sys.argv += ["-a"]
+        sys.stderr = self.devnull
+        self.assertRaises(SystemExit, ftpserver.main)
+
+    def test_p_option(self):
+        sys.argv += ["-p", "0"]
+        ftpserver.main()
+
+        # no argument
+        sys.argv = self.SYSARGV[:]
+        sys.argv += ["-p"]
+        sys.stderr = self.devnull
+        self.assertRaises(SystemExit, ftpserver.main)
+
+        # invalid argument
+        sys.argv += ["-p xxx"]
+        self.assertRaises(SystemExit, ftpserver.main)
+
+    def test_w_option(self):
+        sys.argv += ["-w", "-p", "0"]
+        warnings.filterwarnings("error")
+        try:
+            self.assertRaises(RuntimeWarning, ftpserver.main)
+        finally:
+            warnings.resetwarnings()
+
+        # unexpected argument
+        sys.argv = self.SYSARGV[:]
+        sys.argv += ["-w xxx"]
+        sys.stderr = self.devnull
+        self.assertRaises(SystemExit, ftpserver.main)
+
+    def test_d_option(self):
+        sys.argv += ["-d", TESTFN, "-p", "0"]
+        if not os.path.isdir(TESTFN):
+            os.mkdir(TESTFN)
+        ftpserver.main()
+
+        # without argument
+        sys.argv = self.SYSARGV[:]
+        sys.argv += ["-d"]
+        sys.stderr = self.devnull
+        self.assertRaises(SystemExit, ftpserver.main)
+
+        # no such directory
+        sys.argv = self.SYSARGV[:]
+        sys.argv += ["-d %s" %TESTFN]
+        if os.path.isdir(TESTFN):
+            os.rmdir(TESTFN)
+        self.assertRaises(ftpserver.AuthorizerError, ftpserver.main)
+
+    def test_r_option(self):
+        sys.argv += ["-r 60000-61000", "-p", "0"]
+        ftpserver.main()
+
+        # without arg
+        sys.argv = self.SYSARGV[:]
+        sys.argv += ["-r"]
+        sys.stderr = self.devnull
+        self.assertRaises(SystemExit, ftpserver.main)
+
+        # wrong arg
+        sys.argv = self.SYSARGV[:]
+        sys.argv += ["-r xxx-yyy"]
+        self.assertRaises(SystemExit, ftpserver.main)
+
+    def test_v_option(self):
+        sys.argv += ["-v"]
+        self.assertRaises(SystemExit, ftpserver.main)
+
+        # unexpected argument
+        sys.argv = self.SYSARGV[:]
+        sys.argv += ["-v xxx"]
+        sys.stderr = self.devnull
+        self.assertRaises(SystemExit, ftpserver.main)
+
+
 class FTPd(threading.Thread):
     """A threaded FTP server used for running tests.
 
@@ -2343,6 +2453,7 @@ def test_main(tests=None):
                  TestConfigurableOptions,
                  TestCallbacks,
                  TestCornerCases,
+                 TestCommandLineParser,
                  ]
         if SUPPORTS_IPV4:
             tests.append(TestIPv4Environment)

@@ -130,6 +130,7 @@ import warnings
 import random
 import stat
 import heapq
+import optparse
 from tarfile import filemode as _filemode
 
 try:
@@ -3358,15 +3359,65 @@ class FTPServer(asyncore.dispatcher):
         del _tasks[:]
 
 
-def test():
-    # cmd line usage (provide a read-only anonymous ftp server):
-    # python -m pyftpdlib.ftpserver
+def main():
+    """Start a stand alone anonymous FTP server."""
+
+    class CustomizedOptionFormatter(optparse.IndentedHelpFormatter):
+        """Formats options shown in help in a prettier way."""
+
+        def format_option(self, option):
+            result = []
+            opts = self.option_strings[option]
+            result.append('  %s\n' % opts)
+            if option.help:
+                help_text = '     %s\n\n' %self.expand_default(option)
+                result.append(help_text)
+            return ''.join(result)
+
+    usage = "python -m pyftpdlib.ftpserver [options]"
+    parser = optparse.OptionParser(usage=usage, description=main.__doc__,
+                                   formatter=CustomizedOptionFormatter())
+    parser.add_option('-a', '--address', default='', metavar="ADDRESS",
+                      help="specify address to run on (default all interfaces)")
+    parser.add_option('-p', '--port', type="int", default=21, metavar="PORT",
+                      help="specity port number to run on (default 21)")
+    parser.add_option('-w', '--write', action="store_true", default=False,
+                      help="grants write access for the anonymous user "
+                           "(default read-only)")
+    parser.add_option('-d', '--directory', default=os.getcwd(), metavar="FOLDER",
+                      help="specify the directory to share (default current "
+                           "directory)")
+    parser.add_option('-n', '--nat-address', default=None, metavar="ADDRESS",
+                      help="the NAT address to use for passive connections")
+    parser.add_option('-r', '--range',  default=None, metavar="FROM-TO",
+                      help="the range of TCP ports to use for passive "
+                           "connections (e.g. -r 8000-9000)")
+    parser.add_option('-v', '--version', action='store_true',
+                      help="print pyftpdlib version and exit")
+
+    options, args = parser.parse_args()
+    if options.version:
+        sys.exit("pyftpdlib %s" %__ver__)
+    passive_ports = None
+    if options.range:
+        try:
+            start, stop = options.range.split('-')
+            start = int(start)
+            stop = int(stop)
+        except ValueError:
+            parser.error('invalid argument passed to -r option')
+        else:
+            passive_ports = range(start, stop + 1)
+
     authorizer = DummyAuthorizer()
-    authorizer.add_anonymous(os.getcwd())
-    FTPHandler.authorizer = authorizer
-    address = ('', 21)
-    ftpd = FTPServer(address, FTPHandler)
+    perm = options.write and "elradfmw" or "elr"
+    authorizer.add_anonymous(options.directory, perm=perm)
+    handler = FTPHandler
+    handler.authorizer = authorizer
+    handler.masquerade_address = options.nat_address
+    handler.passive_ports = passive_ports
+    ftpd = FTPServer((options.address, options.port), FTPHandler)
     ftpd.serve_forever()
 
 if __name__ == '__main__':
-    test()
+    main()
