@@ -1269,8 +1269,8 @@ class AbstractedFS:
         """
         root = self.realpath(self.root)
         path = self.realpath(path)
-        if not self.root.endswith(os.sep):
-            root = self.root + os.sep
+        if not root.endswith(os.sep):
+            root = root + os.sep
         if not path.endswith(os.sep):
             path = path + os.sep
         if path[0:len(root)] == root:
