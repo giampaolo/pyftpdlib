@@ -716,8 +716,9 @@ class ActiveDTP(asyncore.dispatcher):
         self.create_socket(self.cmd_channel.af, socket.SOCK_STREAM)
         try:
             self.connect((ip, port))
-        except socket.gaierror:
-            self.cmd_channel.respond("425 Can't connect to specified address.")
+        except (socket.gaierror, socket.error), err:
+            self.cmd_channel.respond("425 Can't connecto to specified address. "
+                                     "%s." %_strerror(err))
             self.close()
 
     # overridden to prevent unhandled read/write event messages to
