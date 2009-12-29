@@ -17,6 +17,8 @@ Bugfixes:
  * Issue #120: an ActiveDTP() instance is not garbage collected in case a
    client issuing PORT disconnects before establishing the data connection.
 
+ * Issue #122: a wrong variable name was used in AbstractedFS.validpath method.
+
 API changes since 0.5.2:
 
  * FTPHandler.data_server attribute renamed in FTPHandler._dtp_acceptor.
