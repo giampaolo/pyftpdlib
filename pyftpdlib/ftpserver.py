@@ -696,8 +696,14 @@ class ActiveDTP(asyncore.dispatcher):
 
      - (int) timeout: the timeout for us to establish connection with
        the client's listening data socket.
+
+     - (tuple) source_address: a tuple of a (host, port) to use as the
+        source address the active connection is made from.
+        Leaving the option untouched or specifying an host of '' or port
+        0 tells the OS to use the default.
     """
     timeout = 30
+    source_address = None
 
     def __init__(self, ip, port, cmd_channel):
         """Initialize the active data channel attemping to connect
@@ -714,6 +720,8 @@ class ActiveDTP(asyncore.dispatcher):
         else:
             self.idler = None
         self.create_socket(self.cmd_channel.af, socket.SOCK_STREAM)
+        if self.source_address:
+            self.bind(self.source_address)
         try:
             self.connect((ip, port))
         except (socket.gaierror, socket.error), err:

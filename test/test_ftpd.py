@@ -88,17 +88,25 @@ def try_address(host, port=0, family=socket.AF_INET):
     """Try to bind a socket on the given host:port and return True
     if that has been possible."""
     try:
-        s = socket.socket(family, socket.SOCK_STREAM)
-        s.bind((host, port))
+        sock = socket.socket(family, socket.SOCK_STREAM)
+        sock.bind((host, port))
     except socket.error:
         return False
     else:
-        s.close()
+        sock.close()
         return True
 
 SUPPORTS_IPV4 = try_address('127.0.0.1')
 SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
 
+def find_unused_port(family=socket.AF_INET):
+    """Return an unused port that should be suitable for binding."""
+    sock = socket.socket(family, socket.SOCK_STREAM)
+    sock.bind((HOST, 0))
+    port = sock.getsockname()[1]
+    sock.close()
+    del sock
+    return port
 
 def safe_remove(*files):
     "Convenience function for removing temporary test files"
@@ -1810,6 +1818,7 @@ class TestConfigurableOptions(unittest.TestCase):
         self.server.handler.masquerade_address = None
         self.server.handler.permit_privileged_ports = False
         self.server.handler.passive_ports = None
+        self.server.handler.active_dtp.source_address = None
         self.server.stop()
 
     def test_max_connections(self):
@@ -1959,6 +1968,13 @@ class TestConfigurableOptions(unittest.TestCase):
             finally:
                 if sock is not None:
                     sock.close()
+
+    def test_active_dtp_source_address(self):
+        source_port = find_unused_port()
+        self.server.handler.active_dtp.source_address = ('', source_port)
+        sock = self.client.makeport()
+        conn, sockaddr = sock.accept()
+        self.assertEqual(conn.getpeername()[1], source_port)
 
 
 class TestCallbacks(unittest.TestCase):
