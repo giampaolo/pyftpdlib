@@ -9,6 +9,10 @@ Version: 0.6.0 - Date: XXXX-XX-XX
 
 Enhancements:
 
+ * Issue 86: pyftpdlib now reports all ls and MDTM timestamps as GMT times,
+   as recommended in RFC-3659.  A FTPHandler.use_gmt_times attributed has been
+   added and can be set to False in case local times are desired instead.
+
  * Issue 124: pyftpdlib now accepts command line options to configure a stand
    alone anonymous FTP server when running pyftpdlib with python's -m option.
 
@@ -24,9 +28,11 @@ Bugfixes:
 
 API changes since 0.5.2:
 
- * FTPHandler.data_server attribute renamed in FTPHandler._dtp_acceptor.
+ * FTPHandler.use_gmt_times attribute has been added.
 
  * ActiveDTP.source_address attribute has been added.
+
+ * FTPHandler.data_server attribute renamed in FTPHandler._dtp_acceptor.
 
 
 Version: 0.5.2 - Date: 2009-09-14

@@ -1186,6 +1186,7 @@ class AbstractedFS:
         self.root = None
         self.cwd = '/'
         self.rnfr = None
+        self.cmd_channel = None  # XXX - temporary
 
     # --- Pathname / conversion utilities
 
@@ -1447,6 +1448,10 @@ class AbstractedFS:
         drwxrwxrwx   1 owner   group          0 Aug 31 18:50 e-books
         -rw-rw-rw-   1 owner   group        380 Sep 02  3:40 module.py
         """
+        if self.cmd_channel.use_gmt_times:
+            timefunc = time.gmtime
+        else:
+            timefunc = time.localtime
         for basename in listing:
             file = os.path.join(basedir, basename)
             try:
@@ -1476,12 +1481,12 @@ class AbstractedFS:
                 uname = "owner"
                 gname = "group"
             try:
-                mtime = time.strftime("%b %d %H:%M", time.localtime(st.st_mtime))
+                mtime = time.strftime("%b %d %H:%M", timefunc(st.st_mtime))
             except ValueError:
                 # It could be raised if last mtime happens to be too
                 # old (prior to year 1900) in which case we return
                 # the current time as last mtime.
-                mtime = time.strftime("%b %d %H:%M")
+                mtime = time.strftime("%b %d %H:%M", timefunc())
             # if the file is a symlink, resolve it, e.g. "symlink -> realfile"
             if stat.S_ISLNK(st.st_mode) and hasattr(os, 'readlink'):
                 basename = basename + " -> " + os.readlink(file)
@@ -1516,6 +1521,10 @@ class AbstractedFS:
         type=dir;size=0;perm=el;modify=20071127230206;unique=801e33; ebooks
         type=file;size=211;perm=r;modify=20071103093626;unique=801e32; module.py
         """
+        if self.cmd_channel.use_gmt_times:
+            timefunc = time.gmtime
+        else:
+            timefunc = time.localtime
         permdir = ''.join([x for x in perms if x not in 'arw'])
         permfile = ''.join([x for x in perms if x not in 'celmp'])
         if ('w' in perms) or ('a' in perms) or ('f' in perms):
@@ -1553,7 +1562,7 @@ class AbstractedFS:
             if 'modify' in facts:
                 try:
                     modify = 'modify=%s;' %time.strftime("%Y%m%d%H%M%S",
-                                           time.localtime(st.st_mtime))
+                                           timefunc(st.st_mtime))
                 # it could be raised if last mtime happens to be too old
                 # (prior to year 1900)
                 except ValueError:
@@ -1562,7 +1571,7 @@ class AbstractedFS:
                 # on Windows we can provide also the creation time
                 try:
                     create = 'create=%s;' %time.strftime("%Y%m%d%H%M%S",
-                                           time.localtime(st.st_ctime))
+                                           timefunc(st.st_ctime))
                 except ValueError:
                     create = ""
             # UNIX only
@@ -1634,6 +1643,10 @@ class FTPHandler(asynchat.async_chat):
         When configured pyftpdlib will no longer use kernel-assigned
         random ports (default None).
 
+     - (bool) use_gmt_times:
+        when True causes the server to report all ls and MDTM times in
+        GMT and not local time (default True).
+
 
     All relevant instance attributes initialized when client connects
     are reproduced below.  You may be interested in them in case you
@@ -1664,6 +1677,7 @@ class FTPHandler(asynchat.async_chat):
     permit_privileged_ports = False
     masquerade_address = None
     passive_ports = None
+    use_gmt_times = True
 
     def __init__(self, conn, server):
         """Initialize the command channel.
@@ -1967,6 +1981,8 @@ class FTPHandler(asynchat.async_chat):
             # remove client IP address from ip map
             if self.remote_ip in self.server.ip_map:
                 self.server.ip_map.remove(self.remote_ip)
+
+            self.fs.cmd_channel = None  # XXX - temporary
             self.log("Disconnected.")
 
     def _shutdown_connecting_dtp(self):
@@ -2717,6 +2733,7 @@ class FTPHandler(asynchat.async_chat):
             self.password = line
             self.attempted_logins = 0
             self.fs.root = self.authorizer.get_home_dir(self.username)
+            self.fs.cmd_channel = self  # XXX - temporary
             self.log("User %s logged in." %self.username)
         else:
             self.username = ""
@@ -2815,9 +2832,13 @@ class FTPHandler(asynchat.async_chat):
             self.log('FAIL MDTM "%s". %s.' %(line, why))
             self.respond("550 %s." %why)
             return
+        if self.use_gmt_times:
+            timefunc = time.gmtime
+        else:
+            timefunc = time.localtime
         try:
             secs = self.run_as_current_user(self.fs.getmtime, path)
-            lmt = time.strftime("%Y%m%d%H%M%S", time.localtime(secs))
+            lmt = time.strftime("%Y%m%d%H%M%S", timefunc(secs))
         except (OSError, ValueError), err:
             if isinstance(err, OSError):
                 why = _strerror(err)

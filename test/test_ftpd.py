@@ -1806,6 +1806,7 @@ class TestConfigurableOptions(unittest.TestCase):
     """Test those daemon options which are commonly modified by user."""
 
     def setUp(self):
+        open(TESTFN, 'w').close()
         self.server = FTPd()
         self.server.start()
         self.client = ftplib.FTP()
@@ -1814,6 +1815,7 @@ class TestConfigurableOptions(unittest.TestCase):
         self.client.login(USER, PASSWD)
 
     def tearDown(self):
+        os.remove(TESTFN)
         # set back options to their original value
         self.server.server.max_cons = 0
         self.server.server.max_cons_per_ip = 0
@@ -1823,6 +1825,7 @@ class TestConfigurableOptions(unittest.TestCase):
         self.server.handler.masquerade_address = None
         self.server.handler.permit_privileged_ports = False
         self.server.handler.passive_ports = None
+        self.server.handler.use_gmt_times = True
         self.server.handler.active_dtp.source_address = None
         self.server.stop()
 
@@ -1973,6 +1976,37 @@ class TestConfigurableOptions(unittest.TestCase):
             finally:
                 if sock is not None:
                     sock.close()
+
+    def test_use_gmt_times(self):
+        # use GMT time
+        self.server.handler.use_gmt_times = True
+        gmt1 = self.client.sendcmd('mdtm ' + TESTFN)
+        gmt2 = self.client.sendcmd('mlst ' + TESTFN)
+        gmt3 = self.client.sendcmd('stat ' + TESTFN)
+
+        # use local time
+        self.server.handler.use_gmt_times = False
+
+        self.client.quit()
+        self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
+        self.client.login(USER, PASSWD)
+
+        loc1 = self.client.sendcmd('mdtm ' + TESTFN)
+        loc2 = self.client.sendcmd('mlst ' + TESTFN)
+        loc3 = self.client.sendcmd('stat ' + TESTFN)
+
+        # if we're not in a GMT time zone times are supposed to be
+        # different
+        if time.timezone != 0:
+            self.assertNotEqual(gmt1, loc1)
+            self.assertNotEqual(gmt2, loc2)
+            self.assertNotEqual(gmt3, loc3)
+        # ...otherwise they should be the same
+        else:
+            self.assertEqual(gmt1, loc1)
+            self.assertEqual(gmt2, loc2)
+            self.assertEqual(gmt3, loc3)
 
     def test_active_dtp_source_address(self):
         source_port = find_unused_port()
