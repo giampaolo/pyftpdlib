@@ -14,6 +14,7 @@ if not hasattr(ftplib, 'FTP_TLS'):  # Added in Python 2.7
 else:
     TEST_FTPS = True
 
+    import ssl
     from pyftpdlib.contrib.handlers import TLS_FTPHandler
 
     class FTPSClient(ftplib.FTP_TLS):
@@ -73,7 +74,9 @@ else:
     class TestIPv6EnvironmentTLSMixin(TLSTestMixin, TestIPv6Environment): pass
     class TestCornerCasesTLSMixin(TLSTestMixin, TestCornerCases): pass
 
-    class TestTls(unittest.TestCase):
+    # --- Specific FTPS tests
+
+    class TestFTPS(unittest.TestCase):
 
         def setUp(self):
             self.server = FTPSServer()
@@ -83,8 +86,102 @@ else:
             self.client.sock.settimeout(2)
 
         def tearDown(self):
+            self.client.ssl_version = ssl.PROTOCOL_SSLv23
+            self.server.handler.ssl_version = ssl.PROTOCOL_SSLv23
+            self.server.handler.tls_control_required = False
+            self.server.handler.tls_data_required = False
             self.client.close()
             self.server.stop()
+
+        def assertRaisesWithMsg(self, excClass, msg, callableObj, *args, **kwargs):
+            try:
+                callableObj(*args, **kwargs)
+            except excClass, why:
+                if str(why) == msg:
+                    return
+                raise self.failureException("%s != %s" %(str(why), msg))
+            else:
+                if hasattr(excClass,'__name__'):
+                    excName = excClass.__name__
+                else:
+                    excName = str(excClass)
+                raise self.failureException, "%s not raised" % excName
+
+        def test_auth(self):
+            # unsecured
+            self.client.login(secure=False)
+            self.assertFalse(isinstance(self.client.sock, ssl.SSLSocket))
+            # secured
+            self.client.login()
+            self.assertTrue(isinstance(self.client.sock, ssl.SSLSocket))
+            # AUTH issued twice
+            msg = '503 Already using TLS.'
+            self.assertRaisesWithMsg(ftplib.error_perm, msg,
+                                     self.client.sendcmd, 'auth tls')
+
+        def test_pbsz(self):
+            # unsecured
+            self.client.login(secure=False)
+            msg = "503 PBSZ not allowed on insecure control connection."
+            self.assertRaisesWithMsg(ftplib.error_perm, msg,
+                                     self.client.sendcmd, 'pbsz 0')
+            # secured
+            self.client.login(secure=True)
+            resp = self.client.sendcmd('pbsz 0')
+            self.assertEqual(resp, "200 PBSZ=0 successful.")
+
+        def test_prot(self):
+            self.client.login(secure=False)
+            msg = "503 PROT not allowed on insecure control connection."
+            self.assertRaisesWithMsg(ftplib.error_perm, msg,
+                                     self.client.sendcmd, 'prot p')
+            self.client.login(secure=True)
+            # secured
+            self.client.prot_p()
+            sock = self.client.transfercmd('list')
+            while 1:
+                if not sock.recv(1024):
+                    self.client.voidresp()
+                    break
+            self.assertTrue(isinstance(sock, ssl.SSLSocket))
+            # unsecured
+            self.client.prot_c()
+            sock = self.client.transfercmd('list')
+            while 1:
+                if not sock.recv(1024):
+                    self.client.voidresp()
+                    break
+            self.assertFalse(isinstance(sock, ssl.SSLSocket))
+
+        def test_feat(self):
+            feat = self.client.sendcmd('feat')
+            cmds = ['AUTH TLS', 'AUTH SSL', 'PBSZ', 'PROT']
+            for cmd in cmds:
+                self.assertTrue(cmd in feat)
+
+        def test_unforseen_ssl_shutdown(self):
+            self.client.login()
+            sock = self.client.sock.unwrap()
+            sock.sendall('noop')
+            self.assertRaises(socket.error, sock.recv, 1024)
+
+        def test_tls_control_required(self):
+            self.server.handler.tls_control_required = True
+            msg = "550 SSL/TLS required on the control channel."
+            self.assertRaisesWithMsg(ftplib.error_perm, msg,
+                                     self.client.sendcmd, "user " + USER)
+            self.assertRaisesWithMsg(ftplib.error_perm, msg,
+                                     self.client.sendcmd, "pass " + PASSWD)
+            self.client.login(secure=True)
+
+##        def test_tls_data_required(self):
+##            self.server.handler.tls_data_required = True
+##            self.client.login(secure=True)
+##            msg = "550 SSL/TLS required on the data channel."
+##            self.assertRaisesWithMsg(ftplib.error_perm, msg,
+##                                    self.client.retrlines, 'list', lambda x: x)
+##            print self.client.prot_p()
+##            self.client.retrlines('list', lambda x: x)
 
 
 def test_main():
@@ -105,13 +202,15 @@ def test_main():
                       TestConfigurableOptionsTLSMixin,
                       TestCallbacksTLSMixin,
                       TestCornerCasesTLSMixin,
-                      TestTls,
+                      TestFTPS,
                  ]
         if SUPPORTS_IPV4:
             ftps_tests.append(TestIPv4EnvironmentTLSMixin)
         if SUPPORTS_IPV6:
             ftps_tests.append(TestIPv6EnvironmentTLSMixin)
         tests += ftps_tests
+
+##    tests = [TestFTPS]
 
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))

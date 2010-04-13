@@ -75,6 +75,7 @@ else:
         """An asyncore.dispatcher subclass supporting TLS/SSL."""
 
         _ssl_accepting = False
+        _ssl_established = False
         _ssl_closing = False
 
         def secure_connection(self, certfile, ssl_version):
@@ -96,6 +97,7 @@ else:
                 raise
             else:
                 self._ssl_accepting = False
+                self._ssl_established = True
 
         def _do_ssl_shutdown(self):
             self._ssl_closing = True
@@ -160,26 +162,14 @@ else:
 
         def __init__(self, sock_obj, cmd_channel):
             DTPHandler.__init__(self, sock_obj, cmd_channel)
+            if self.cmd_channel.tls_data_required and not self.cmd_channel._prot:
+                msg = "550 SSL/TLS required on the data channel."
+                self.cmd_channel.respond(msg)
+                DTPHandler.close(self)
+                return
             if self.cmd_channel._prot:
                 self.secure_connection(self.cmd_channel.certfile,
                                        self.cmd_channel.ssl_version)
-
-##        def handle_error(self):
-##            try:
-##                raise
-##            except ssl.SSLError, err:
-##                if self._ssl_accepting and err.args[0] == ssl.SSL_ERROR_SSL:
-##                    # TLS/SSL handshake failure, probably client's fault.
-##                    # RFC-4217, chapter 10.2 expects us to return 522.
-##                    proto = ssl.get_protocol_name(self.socket.ssl_version)
-##                    self.cmd_channel.respond("522 %s handshake failed." %proto)
-##                else:
-##                    # We don't want to provide any confidential message
-##                    self.cmd_channel.respond("426 Internal SSL error. Transfer aborted")
-##                    logerror(str(err))
-##                self.close()
-##            except:
-##                DTPHandler.handle_error(self)
 
         def close(self):
             if isinstance(self.socket, ssl.SSLSocket):
@@ -190,13 +180,44 @@ else:
 
     class TLS_FTPHandler(SSLConnection, FTPHandler):
         """A ftpserver.FTPHandler subclass supporting TLS/SSL.
-
         Implements AUTH, PBSZ and PROT commands (RFC-2228 and RFC-4217).
+
+        Configurable attributes:
+
+         - (string) certfile:
+            the path of the file which contain a certificate to be used
+            to identify the local side of the connection.
+            This must always be set before starting the server.
+
+         - (int) ssl_version:
+            specifies which version of the SSL protocol to use when
+            establishing SSL/TLS sessions. Clients can then only connect
+            using the configured protocol (defaults to SSLv23 for best
+            compatibility).
+
+            Possible values:
+
+            * ssl.PROTOCOL_SSLv2: allow only SSLv2
+            * ssl.PROTOCOL_SSLv3: allow only SSLv3
+            * ssl.PROTOCOL_SSLv23: allow both SSLv3 and TLSv1
+            * ssl.PROTOCOL_TLSv1: allow only TLSv1
+
+         - (bool) tls_control_required:
+            When True requires SSL/TLS to be established on the control
+            channel, before logging in.  This means the user will have
+            to issue AUTH before USER/PASS (default False).
+
+         - (bool) tls_data_required:
+            When True requires SSL/TLS to be established on the data
+            channel.  This means the user will have to issue PROT
+            before PASV or PORT (default False).
         """
 
         # configurable attributes
         certfile = 'keycert.pem'
         ssl_version = ssl.PROTOCOL_SSLv23
+        tls_control_required = False
+        tls_data_required = False
 
         # overridden attributes
         proto_cmds = extended_proto_cmds
@@ -207,6 +228,27 @@ else:
             self._extra_feats = ['AUTH TLS', 'AUTH SSL', 'PBSZ', 'PROT']
             self._pbsz = False
             self._prot = False
+
+        # --- overridden methods
+
+        def flush_account(self):
+            FTPHandler.flush_account(self)
+            self._pbsz = False
+            self._prot = False
+
+        def ftp_USER(self, line):
+            if self.tls_control_required and not self._ssl_established:
+                self.respond("550 SSL/TLS required on the control channel.")
+            else:
+                FTPHandler.ftp_USER(self, line)
+
+        def ftp_PASS(self, line):
+            if self.tls_control_required and not self._ssl_established:
+                self.respond("550 SSL/TLS required on the control channel.")
+            else:
+                FTPHandler.ftp_PASS(self, line)
+
+        # --- new methods
 
         def ftp_AUTH(self, line):
             """Set up secure control channel."""
@@ -228,7 +270,7 @@ else:
             Any other value is accepted but ignored.
             """
             if not isinstance(self.socket, ssl.SSLSocket):
-                self.respond("503 PROT not allowed on insecure control connection")
+                self.respond("503 PBSZ not allowed on insecure control connection.")
             else:
                 self.respond('200 PBSZ=0 successful.')
                 self._pbsz = True
@@ -237,7 +279,7 @@ else:
             """Setup un/secure data channel."""
             arg = line.upper()
             if not isinstance(self.socket, ssl.SSLSocket):
-                self.respond("503 PROT not allowed on insecure control connection")
+                self.respond("503 PROT not allowed on insecure control connection.")
             elif not self._pbsz:
                 self.respond("503 You must issue the PBSZ command prior to PROT.")
             elif arg == 'C':
@@ -250,22 +292,6 @@ else:
                 self.respond('521 PROT %s unsupported (use C or P).' %arg)
             else:
                 self.respond("502 Unrecognized PROT type (use C or P).")
-
-##        def handle_error(self):
-##            try:
-##                raise
-##            except ssl.SSLError, err:
-##                # TLS/SSL handshake failure, probably client's fault.
-##                if self._ssl_accepting and err.args[0] == ssl.SSL_ERROR_SSL:
-##                    proto = ssl.get_protocol_name(self.socket.ssl_version)
-##                    log("%s handshake failed. Disconnecting. %s" %(proto, str(err)))
-##                else:
-##                    logerror(str(err))
-##                # We can't rely on the control channel anymore so we just
-##                # disconnect the client without sending any response.
-##                self.close()
-##            except:
-##                FTPHandler.handle_error(self)
 
     __all__.extend(['SSLConnection', 'TLS_DTPHandler', 'TLS_DTPHandler'])
 
