@@ -1668,6 +1668,7 @@ class FTPHandler(asynchat.async_chat):
     passive_dtp = PassiveDTP
     dtp_handler = DTPHandler
     abstracted_fs = AbstractedFS
+    proto_cmds = proto_cmds
 
     # session attributes (explained in the docstring)
     timeout = 300
@@ -1842,22 +1843,22 @@ class FTPHandler(asynchat.async_chat):
         # Telnet IP/Synch sequence (chr 242 and 255) as OOB data but
         # since many ftp clients don't do it correctly we check the
         # last 4 characters only.
-        if not cmd in proto_cmds:
+        if not cmd in self.proto_cmds:
             if cmd[-4:] in ('ABOR', 'STAT', 'QUIT'):
                 cmd = cmd[-4:]
             else:
                 self.respond('500 Command "%s" not understood.' %cmd)
                 return
 
-        if not arg and proto_cmds[cmd].arg_needed is True:
+        if not arg and self.proto_cmds[cmd].arg_needed is True:
             self.respond("501 Syntax error: command needs an argument.")
             return
-        if arg and proto_cmds[cmd].arg_needed is False:
+        if arg and self.proto_cmds[cmd].arg_needed is False:
             self.respond("501 Syntax error: command does not accept arguments.")
             return
 
         if not self.authenticated:
-            if proto_cmds[cmd].auth_needed or (cmd == 'STAT' and arg):
+            if self.proto_cmds[cmd].auth_needed or (cmd == 'STAT' and arg):
                 self.respond("530 Log in with USER and PASS first.")
             else:
                 # call the proper ftp_* method
@@ -1870,7 +1871,7 @@ class FTPHandler(asynchat.async_chat):
 
             # for file-system related commands check whether real path
             # destination is valid
-            if proto_cmds[cmd].check_path and (cmd != 'STOU'):
+            if self.proto_cmds[cmd].check_path and (cmd != 'STOU'):
                 if cmd in ('CWD', 'XCWD'):
                     arg = self.fs.ftp2fs(arg or '/')
                 elif cmd in ('CDUP', 'XCUP'):
@@ -1897,7 +1898,7 @@ class FTPHandler(asynchat.async_chat):
                     return
 
             # check permission
-            perm = proto_cmds[cmd].perm
+            perm = self.proto_cmds[cmd].perm
             if perm is not None and cmd != 'STOU':
                 if not self.authorizer.has_perm(self.username, perm, arg):
                     self.log('FAIL %s "%s". Not enough privileges.' \
@@ -3096,15 +3097,15 @@ class FTPHandler(asynchat.async_chat):
         """Return help text to the client."""
         if line:
             line = line.upper()
-            if line in proto_cmds:
-                self.respond("214 %s" %proto_cmds[line].help)
+            if line in self.proto_cmds:
+                self.respond("214 %s" %self.proto_cmds[line].help)
             else:
                 self.respond("501 Unrecognized command.")
         else:
             # provide a compact list of recognized commands
             def formatted_help():
                 cmds = []
-                keys = [x for x in proto_cmds.keys() if not x.startswith('SITE ')]
+                keys = [x for x in self.proto_cmds.keys() if not x.startswith('SITE ')]
                 keys.sort()
                 while keys:
                     elems = tuple((keys[0:8]))
@@ -3120,21 +3121,21 @@ class FTPHandler(asynchat.async_chat):
 
     # No SITE commands aside from SITE HELP are implemented by default.
     # The user willing to add support for a specific SITE command must
-    # update proto_cmds dictionary and define a new ftp_SITE_%CMD%
+    # update self.proto_cmds dictionary and define a new ftp_SITE_%CMD%
     # method in the subclass.
 
     def ftp_SITE_HELP(self, line):
         """Return help text to the client for a given SITE command."""
         if line:
             line = line.upper()
-            if line in proto_cmds:
-                self.respond("214 %s" %proto_cmds[line].help)
+            if line in self.proto_cmds:
+                self.respond("214 %s" %self.proto_cmds[line].help)
             else:
                 self.respond("501 Unrecognized SITE command.")
         else:
             self.push("214-The following SITE commands are recognized:\r\n")
             site_cmds = []
-            keys = proto_cmds.keys()
+            keys = self.proto_cmds.keys()
             keys.sort()
             for cmd in keys:
                 if cmd.startswith('SITE '):

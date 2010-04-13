@@ -9,6 +9,9 @@ Version: 0.6.0 - Date: XXXX-XX-XX
 
 Enhancements:
 
+ * Issue 68: added FTPS (FTP over SSL/TLS) support provided by new
+   TLS_FTPHandler class defined in pyftpdlib.contrib.handlers module.
+
  * Issue 86: pyftpdlib now reports all ls and MDTM timestamps as GMT times,
    as recommended in RFC-3659.  A FTPHandler.use_gmt_times attributed has been
    added and can be set to False in case local times are desired instead.
@@ -33,6 +36,13 @@ API changes since 0.5.2:
  * ActiveDTP.source_address attribute has been added.
 
  * FTPHandler.data_server attribute renamed in FTPHandler._dtp_acceptor.
+
+ * FTPHandler.proto_cmds attribute has been added.  The FTPHandler class no
+   longer relies on "ftpserver.proto_cmds" global dictionary but on
+   "ftphandler.FTPHandler.proto_cmds" instead.
+
+ * Added a new package in pyftpdlib namespace: "contrib". Modules defined here:
+   pyftpdlib.contrib.handlers.py
 
 
 Version: 0.5.2 - Date: 2009-09-14
