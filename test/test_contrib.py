@@ -183,6 +183,55 @@ else:
 ##            print self.client.prot_p()
 ##            self.client.retrlines('list', lambda x: x)
 
+        def test_ssl_version_sslv23(self):
+            # By using SSLv23 we expect no failures
+            self.server.handler.ssl_version = ssl.PROTOCOL_SSLv23
+            versions = [ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_TLSv1]
+            self.client.close()
+            for version in versions:
+                self.client = ftplib.FTP_TLS()
+                self.client.connect(self.server.host, self.server.port)
+                self.client.sock.settimeout(2)
+                self.client.ssl_version = version
+                self.client.login()
+                # test also the data channel
+                self.client.retrlines('list', lambda x: x)
+
+        def try_protocol_combo(self, server_protocol, client_protocol,
+                               expected_to_work):
+            self.server.handler.ssl_version = server_protocol
+            self.client.ssl_version = client_protocol
+            self.client.close()
+            self.client.connect(self.server.host, self.server.port)
+            if expected_to_work:
+                self.client.login()
+            else:
+                self.assertRaises(socket.error, self.client.login)
+
+        def test_ssl_version_sslv2(self):
+            self.try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv2, True)
+            self.try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv3, False)
+            self.try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv23, True)
+            self.try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_TLSv1, False)
+
+        def test_ssl_version_sslv3(self):
+            self.try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv2, False)
+            self.try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv3, True)
+            self.try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv23, False)
+            self.try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_TLSv1, False)
+
+        def test_ssl_version_tlsv1(self):
+            self.try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv2, False)
+            self.try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv3, False)
+            self.try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv23, False)
+            self.try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1, True)
+
+        def test_ssl_version_sslv23(self):
+            self.try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_SSLv2, True)
+            self.try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_SSLv3, True)
+            self.try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_SSLv23, True)
+            self.try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_TLSv1, True)
+
 
 def test_main():
     test_suite = unittest.TestSuite()
@@ -210,7 +259,7 @@ def test_main():
             ftps_tests.append(TestIPv6EnvironmentTLSMixin)
         tests += ftps_tests
 
-##    tests = [TestFTPS]
+    #tests = [TestFTPS]
 
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))

@@ -94,7 +94,10 @@ else:
                     return
                 elif err.args[0] == ssl.SSL_ERROR_EOF:
                     return self.handle_close()
-                raise
+                elif err.args[0] == ssl.SSL_ERROR_SSL:
+                    self.handle_failed_ssl_handshake()
+                else:
+                    raise
             else:
                 self._ssl_accepting = False
                 self._ssl_established = True
@@ -119,6 +122,9 @@ else:
                 pass
             self._ssl_closing = False
             super(SSLConnection, self).close()
+
+        def handle_failed_ssl_handshake(self):
+            raise NotImplementedError("must be implemented in subclass")
 
         def handle_read_event(self):
             if self._ssl_accepting:
@@ -170,6 +176,15 @@ else:
             if self.cmd_channel._prot:
                 self.secure_connection(self.cmd_channel.certfile,
                                        self.cmd_channel.ssl_version)
+
+        def handle_failed_ssl_handshake(self):
+            # TLS/SSL handshake failure, probably client's fault which
+            # used a SSL version different from server's.
+            # RFC-4217, chapter 10.2 expects us to return 522 over the
+            # command channel.
+            proto = ssl.get_protocol_name(self.socket.ssl_version)
+            self.cmd_channel.respond("522 %s handshake failed." %proto)
+            self.close()
 
         def close(self):
             if isinstance(self.socket, ssl.SSLSocket):
@@ -249,6 +264,15 @@ else:
                 FTPHandler.ftp_PASS(self, line)
 
         # --- new methods
+
+        def handle_failed_ssl_handshake(self):
+            # TLS/SSL handshake failure, probably client's fault which
+            # used a SSL version different from server's.
+            # We can't rely on the control connection anymore so we just
+            # disconnect the client without sending any response.
+            ssl_version = ssl.get_protocol_name(self.socket.ssl_version)
+            self.log("%s handshake failed." %ssl_version)
+            self.close()
 
         def ftp_AUTH(self, line):
             """Set up secure control channel."""
