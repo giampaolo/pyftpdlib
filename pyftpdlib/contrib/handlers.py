@@ -168,11 +168,6 @@ else:
 
         def __init__(self, sock_obj, cmd_channel):
             DTPHandler.__init__(self, sock_obj, cmd_channel)
-            if self.cmd_channel.tls_data_required and not self.cmd_channel._prot:
-                msg = "550 SSL/TLS required on the data channel."
-                self.cmd_channel.respond(msg)
-                DTPHandler.close(self)
-                return
             if self.cmd_channel._prot:
                 self.secure_connection(self.cmd_channel.certfile,
                                        self.cmd_channel.ssl_version)
@@ -251,17 +246,16 @@ else:
             self._pbsz = False
             self._prot = False
 
-        def ftp_USER(self, line):
-            if self.tls_control_required and not self._ssl_established:
-                self.respond("550 SSL/TLS required on the control channel.")
-            else:
-                FTPHandler.ftp_USER(self, line)
-
-        def ftp_PASS(self, line):
-            if self.tls_control_required and not self._ssl_established:
-                self.respond("550 SSL/TLS required on the control channel.")
-            else:
-                FTPHandler.ftp_PASS(self, line)
+        def process_command(self, cmd, *args, **kwargs):
+            if cmd in ('USER', 'PASS'):
+                if self.tls_control_required and not self._ssl_established:
+                    self.respond("550 SSL/TLS required on the control channel.")
+                    return
+            elif cmd in ('PASV', 'EPSV', 'PORT', 'EPRT'):
+                if self.tls_data_required and not self._prot:
+                    self.respond("550 SSL/TLS required on the data channel.")
+                    return
+            FTPHandler.process_command(self, cmd, *args, **kwargs)
 
         # --- new methods
 

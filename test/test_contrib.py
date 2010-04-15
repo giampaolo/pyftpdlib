@@ -174,14 +174,14 @@ else:
                                      self.client.sendcmd, "pass " + PASSWD)
             self.client.login(secure=True)
 
-##        def test_tls_data_required(self):
-##            self.server.handler.tls_data_required = True
-##            self.client.login(secure=True)
-##            msg = "550 SSL/TLS required on the data channel."
-##            self.assertRaisesWithMsg(ftplib.error_perm, msg,
-##                                    self.client.retrlines, 'list', lambda x: x)
-##            print self.client.prot_p()
-##            self.client.retrlines('list', lambda x: x)
+        def test_tls_data_required(self):
+            self.server.handler.tls_data_required = True
+            self.client.login(secure=True)
+            msg = "550 SSL/TLS required on the data channel."
+            self.assertRaisesWithMsg(ftplib.error_perm, msg,
+                                    self.client.retrlines, 'list', lambda x: x)
+            self.client.prot_p()
+            self.client.retrlines('list', lambda x: x)
 
         def test_ssl_version_sslv23(self):
             # By using SSLv23 we expect no failures
@@ -238,7 +238,8 @@ def test_main():
     tests = []
     # FTPS tests
     if TEST_FTPS:
-        ftps_tests = [TestFtpAuthenticationTLSMixin,
+        ftps_tests = [TestFTPS,
+                      TestFtpAuthenticationTLSMixin,
                       TestTFtpDummyCmdsTLSMixin,
                       TestFtpCmdsSemanticTLSMixin,
                       TestFtpFsOperationsTLSMixin,
@@ -251,15 +252,12 @@ def test_main():
                       TestConfigurableOptionsTLSMixin,
                       TestCallbacksTLSMixin,
                       TestCornerCasesTLSMixin,
-                      TestFTPS,
-                 ]
+                     ]
         if SUPPORTS_IPV4:
             ftps_tests.append(TestIPv4EnvironmentTLSMixin)
         if SUPPORTS_IPV6:
             ftps_tests.append(TestIPv6EnvironmentTLSMixin)
         tests += ftps_tests
-
-    #tests = [TestFTPS]
 
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
