@@ -3,6 +3,7 @@
 
 import ftplib
 import unittest
+import os
 
 from test_ftpd import *
 
@@ -12,10 +13,12 @@ from test_ftpd import *
 if not hasattr(ftplib, 'FTP_TLS'):  # Added in Python 2.7
     TEST_FTPS = False
 else:
-    TEST_FTPS = True
-
     import ssl
     from pyftpdlib.contrib.handlers import TLS_FTPHandler
+
+    TEST_FTPS = True
+    CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__), 
+                                            'keycert.pem'))
 
     class FTPSClient(ftplib.FTP_TLS):
         """A modified version of ftplib.FTP_TLS class which implicitly
@@ -28,6 +31,7 @@ else:
     class FTPSServer(FTPd):
         """A threaded FTPS server used for functional testing."""
         handler = TLS_FTPHandler
+        handler.certfile = CERTFILE
 
     # --- FTPS mixin tests
     # What we're going to do here is repeating the original tests
@@ -161,9 +165,14 @@ else:
 
         def test_unforseen_ssl_shutdown(self):
             self.client.login()
-            sock = self.client.sock.unwrap()
+            try:
+                sock = self.client.sock.unwrap()
+            except socket.error, err:
+                if err.errno == 0:
+                    return
+                raise
             sock.sendall('noop')
-            self.assertRaises(socket.error, sock.recv, 1024)
+            self.assertRaises(socket.error, sock.recv, 1024)   
 
         def test_tls_control_required(self):
             self.server.handler.tls_control_required = True
@@ -179,23 +188,9 @@ else:
             self.client.login(secure=True)
             msg = "550 SSL/TLS required on the data channel."
             self.assertRaisesWithMsg(ftplib.error_perm, msg,
-                                    self.client.retrlines, 'list', lambda x: x)
+                                     self.client.retrlines, 'list', lambda x: x)
             self.client.prot_p()
             self.client.retrlines('list', lambda x: x)
-
-        def test_ssl_version_sslv23(self):
-            # By using SSLv23 we expect no failures
-            self.server.handler.ssl_version = ssl.PROTOCOL_SSLv23
-            versions = [ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_TLSv1]
-            self.client.close()
-            for version in versions:
-                self.client = ftplib.FTP_TLS()
-                self.client.connect(self.server.host, self.server.port)
-                self.client.sock.settimeout(2)
-                self.client.ssl_version = version
-                self.client.login()
-                # test also the data channel
-                self.client.retrlines('list', lambda x: x)
 
         def try_protocol_combo(self, server_protocol, client_protocol,
                                expected_to_work):
@@ -211,23 +206,23 @@ else:
         def test_ssl_version_sslv2(self):
             self.try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv2, True)
             self.try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv3, False)
-            self.try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv23, True)
+            self.try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv23, False)
             self.try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_TLSv1, False)
 
         def test_ssl_version_sslv3(self):
             self.try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv2, False)
             self.try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv3, True)
-            self.try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv23, False)
+            self.try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv23, True)
             self.try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_TLSv1, False)
 
         def test_ssl_version_tlsv1(self):
             self.try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv2, False)
             self.try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv3, False)
-            self.try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv23, False)
+            self.try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv23, True)
             self.try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1, True)
-
+            
         def test_ssl_version_sslv23(self):
-            self.try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_SSLv2, True)
+            self.try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_SSLv2, False)
             self.try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_SSLv3, True)
             self.try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_SSLv23, True)
             self.try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_TLSv1, True)

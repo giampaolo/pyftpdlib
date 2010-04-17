@@ -224,7 +224,7 @@ else:
         """
 
         # configurable attributes
-        certfile = 'keycert.pem'
+        certfile = None
         ssl_version = ssl.PROTOCOL_SSLv23
         tls_control_required = False
         tls_data_required = False
