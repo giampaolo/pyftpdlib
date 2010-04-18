@@ -1199,7 +1199,8 @@ class TestFtpStoreData(unittest.TestCase):
                 if not buf:
                     break
                 conn.sendall(buf)
-            conn.close()
+            sock.close()
+            conn.close()            
             # transfer finished, a 226 response is expected
             self.client.voidresp()
             self.client.retrbinary('retr ' + filename, self.dummy_recvfile.write)
@@ -1625,8 +1626,9 @@ class TestFtpAbort(unittest.TestCase):
         # before a data transfer has been started: close data channel,
         # respond with 225
         self.client.set_pasv(0)
-        self.client.makeport()
+        sock = self.client.makeport()
         respcode = self.client.sendcmd('ABOR')[:3]
+        sock.close()        
         self.assertEqual('225', respcode)
         self.client.retrlines('list', [].append)
 
@@ -1894,9 +1896,10 @@ class TestTimeouts(unittest.TestCase):
 
     def test_disabled_port_timeout(self):
         self._setUp(port_timeout=0)
-        self.client.makeport()
-        s = self.client.makeport()
-        s.close()
+        s1 =self.client.makeport()
+        s2 = self.client.makeport()
+        s1.close()
+        s2.close()
 
 
 class TestConfigurableOptions(unittest.TestCase):
@@ -1953,9 +1956,10 @@ class TestConfigurableOptions(unittest.TestCase):
                               self.server.port)
             # with active data channel established
             c1.login(USER, PASSWD)
-            c1.makeport()
+            sock = c1.makeport()
             self.assertRaises(ftplib.error_temp, c2.connect, self.server.host,
                               self.server.port)
+            sock.close()
         finally:
             c1.close()
             c2.close()
@@ -2113,6 +2117,8 @@ class TestConfigurableOptions(unittest.TestCase):
         sock = self.client.makeport()
         conn, sockaddr = sock.accept()
         self.assertEqual(conn.getpeername()[1], source_port)
+        sock.close()
+        conn.close()
 
 
 class TestCallbacks(unittest.TestCase):
@@ -2323,8 +2329,9 @@ class TestIPv4Environment(_TestNetworkProtocols):
 
     def test_port_v4(self):
         # test connection
-        self.client.makeport()
+        sock = self.client.makeport()
         self.client.sendcmd('abor')
+        sock.close()
         # test bad arguments
         ae = self.assertEqual
         msg = "501 Invalid PORT format."
