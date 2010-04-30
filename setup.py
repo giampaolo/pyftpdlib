@@ -9,6 +9,14 @@ To install pyftpdlib just open a command shell and run:
 
 from distutils.core import setup
 
+# Hack for Python 3 to tell distutils to run 2to3 against the files
+# copied in the build directory before installing.
+try:
+    from distutils.command.build_py import build_py_2to3 as build_py
+except ImportError:
+    from distutils.command.build_py import build_py
+
+
 name = 'pyftpdlib'
 version = '0.5.2'
 download_url = "http://pyftpdlib.googlecode.com/files/" + name + "-" + \
@@ -30,6 +38,7 @@ setup(
     packages=['pyftpdlib', 'pyftpdlib/contrib'],
     keywords=['ftp', 'server', 'ftpd', 'daemon', 'python', 'rfc959', 'rfc1123',
               'rfc2228', 'rfc2428', 'rfc3659'],
+    cmdclass={'build_py' : build_py},
     classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Environment :: Console',
