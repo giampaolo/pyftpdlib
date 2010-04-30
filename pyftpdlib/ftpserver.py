@@ -153,6 +153,8 @@ __author__  = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__     = 'http://code.google.com/p/pyftpdlib/'
 
 
+PY3 = sys.version_info >= (3,)
+
 proto_cmds = {
     # cmd : (perm, auth,  arg,   path,  help)
     'ABOR': (None, True,  False, False, 'Syntax: ABOR (abort transfer).'),
@@ -293,6 +295,9 @@ class CallLater:
 
     def __le__(self, other):
         return self.timeout <= other.timeout
+
+    if PY3: 
+        __lt__ = __le__
 
     def call(self):
         """Call this scheduled function."""
