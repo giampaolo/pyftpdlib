@@ -591,7 +591,7 @@ class PassiveDTP(asyncore.dispatcher):
                 try:
                     self.bind((ip, port))
                 except socket.error, why:
-                    if why[0] == errno.EADDRINUSE:  # port already in use
+                    if why.args[0] == errno.EADDRINUSE:  # port already in use
                         if ports:
                             continue
                         # If cannot use one of the ports in the configured
@@ -634,7 +634,7 @@ class PassiveDTP(asyncore.dispatcher):
             return
         except socket.error, err:
             # ECONNABORTED might be thrown on *BSD (see issue 105)
-            if err[0] != errno.ECONNABORTED:
+            if err.args[0] != errno.ECONNABORTED:
                 logerror(traceback.format_exc())
             return
         else:
@@ -966,7 +966,7 @@ class DTPHandler(asynchat.async_chat):
             # - http://bugs.python.org/issue1736101
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=104
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=109
-            if err[0] in (errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN, \
+            if err.args[0] in (errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN, \
                           errno.ECONNABORTED, errno.EPIPE, errno.EBADF):
                 self.handle_close()
                 return
@@ -1741,7 +1741,7 @@ class FTPHandler(asynchat.async_chat):
             # a race condition  may occur if the other end is closing
             # before we can get the peername (see issue #100)
             self.connected = False
-            if err[0] == errno.ENOTCONN:
+            if err.args[0] == errno.ENOTCONN:
                 self.close()
             else:
                 self.handle_error(self)
@@ -1935,7 +1935,7 @@ class FTPHandler(asynchat.async_chat):
             try:
                 data = self.socket.recv(1024, socket.MSG_OOB)
             except socket.error, why:
-                if why[0] == errno.EINVAL:
+                if why.args[0] == errno.EINVAL:
                     return
             else:
                 self._in_buffer.append(data)
@@ -1953,7 +1953,7 @@ class FTPHandler(asynchat.async_chat):
             # - http://bugs.python.org/issue1736101
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=104
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=109
-            if err[0] in (errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN, \
+            if err.args[0] in (errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN, \
                           errno.ECONNABORTED, errno.EPIPE, errno.EBADF):
                 self.handle_close()
                 return
@@ -3304,7 +3304,7 @@ class FTPServer(asyncore.dispatcher):
             return
         except socket.error, err:
             # ECONNABORTED might be thrown on *BSD (see issue 105)
-            if err[0] != errno.ECONNABORTED:
+            if err.args[0] != errno.ECONNABORTED:
                 logerror(traceback.format_exc())
             return
         else:
