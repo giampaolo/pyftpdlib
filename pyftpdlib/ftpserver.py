@@ -572,7 +572,7 @@ class PassiveDTP(asyncore.dispatcher):
         else:
             self.idler = None
 
-        ip = self.cmd_channel.getsockname()[0]
+        ip = self.cmd_channel.socket.getsockname()[0]
         self.create_socket(self.cmd_channel.af, socket.SOCK_STREAM)
 
         if self.cmd_channel.passive_ports is None:

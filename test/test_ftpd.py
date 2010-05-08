@@ -2426,6 +2426,23 @@ class TestCornerCases(unittest.TestCase):
         sock.accept()
         sock.close()
 
+    def test_stou_max_tries(self):
+        # Emulates case where the max number of tries to find out a 
+        # unique file name when processing STOU command gets hit.
+
+        class TestFS(ftpserver.AbstractedFS):
+            def mkstemp(self, *args, **kwargs):
+                raise IOError(errno.EEXIST, "No usable temporary file name found")
+
+        self.server.handler.abstracted_fs = TestFS
+        try:
+            self.client.quit()
+            self.client.connect(self.server.host, self.server.port)
+            self.client.login(USER, PASSWD)
+            self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'stou')
+        finally:
+            self.server.handler.abstracted_fs = ftpserver.AbstractedFS
+            
 
 class TestCommandLineParser(unittest.TestCase):
     """Test command line parser."""
