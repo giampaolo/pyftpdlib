@@ -19,6 +19,9 @@ Enhancements:
  * Issue 124: pyftpdlib now accepts command line options to configure a stand
    alone anonymous FTP server when running pyftpdlib with python's -m option.
 
+ * Issue 128: added UnixAuthorizer and WindowsAuthorizer classes defined in the
+   new pyftpdlib.contrib.authorizers module.
+
 Bugfixes:
 
  * Issue #120: an ActiveDTP() instance is not garbage collected in case a
@@ -43,6 +46,7 @@ API changes since 0.5.2:
 
  * Added a new package in pyftpdlib namespace: "contrib". Modules defined here:
    pyftpdlib.contrib.handlers.py
+   pyftpdlib.contrib.authorizers.py 
 
 
 Version: 0.5.2 - Date: 2009-09-14
