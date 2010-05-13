@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# test_contrib.py
+# $Id$
 
 """Tests for pyftpdlib.contrib namespace: handlers.py and 
 authorizers.py modules.

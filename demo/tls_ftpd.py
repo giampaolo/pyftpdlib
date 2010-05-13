@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# $Id$
+
 """An RFC-4217 asynchronous FTPS server supporting both SSL and TLS.
 
 Requires ssl module (integrated with Python 2.6 and higher).

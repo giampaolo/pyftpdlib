@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# authorizers.py
+# $Id$
 
 """An "authorizer" is a class handling authentications and permissions
 of the FTP server. It is used by pyftpdlib.ftpserver.FTPHandler 

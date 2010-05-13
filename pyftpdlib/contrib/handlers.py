@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# handlers.py
-#
+# $Id$
+
 #  ======================================================================
 #  Copyright (C) 2007-2010 Giampaolo Rodola' <g.rodola@gmail.com>
 #
