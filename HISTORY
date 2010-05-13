@@ -36,8 +36,6 @@ API changes since 0.5.2:
 
  * FTPHandler.use_gmt_times attribute has been added.
 
- * ActiveDTP.source_address attribute has been added.
-
  * FTPHandler.data_server attribute renamed in FTPHandler._dtp_acceptor.
 
  * FTPHandler.proto_cmds attribute has been added.  The FTPHandler class no

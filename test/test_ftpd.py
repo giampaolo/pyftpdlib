@@ -99,15 +99,6 @@ def try_address(host, port=0, family=socket.AF_INET):
 SUPPORTS_IPV4 = try_address('127.0.0.1')
 SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
 
-def find_unused_port(family=socket.AF_INET):
-    """Return an unused port that should be suitable for binding."""
-    sock = socket.socket(family, socket.SOCK_STREAM)
-    sock.bind((HOST, 0))
-    port = sock.getsockname()[1]
-    sock.close()
-    del sock
-    return port
-
 def safe_remove(*files):
     "Convenience function for removing temporary test files"
     for file in files:
@@ -1928,7 +1919,6 @@ class TestConfigurableOptions(unittest.TestCase):
         self.server.handler.permit_privileged_ports = False
         self.server.handler.passive_ports = None
         self.server.handler.use_gmt_times = True
-        self.server.handler.active_dtp.source_address = None
         self.server.stop()
 
     def test_max_connections(self):
@@ -2110,15 +2100,6 @@ class TestConfigurableOptions(unittest.TestCase):
             self.assertEqual(gmt1, loc1)
             self.assertEqual(gmt2, loc2)
             self.assertEqual(gmt3, loc3)
-
-    def test_active_dtp_source_address(self):
-        source_port = find_unused_port()
-        self.server.handler.active_dtp.source_address = ('', source_port)
-        sock = self.client.makeport()
-        conn, sockaddr = sock.accept()
-        self.assertEqual(conn.getpeername()[1], source_port)
-        sock.close()
-        conn.close()
 
 
 class TestCallbacks(unittest.TestCase):
