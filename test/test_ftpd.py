@@ -1741,6 +1741,7 @@ class ThrottleBandwidth(unittest.TestCase):
         ftpserver.CallLater = self.CallNowInsteadOfLater
         try:
             self.client.storbinary("stor " + TESTFN, self.dummyfile)
+            self.client.quit()  # needed to fix occasional failures
             file_data = open(TESTFN, 'rb').read()
             self.assertEqual(hash(data), hash(file_data))
         finally:

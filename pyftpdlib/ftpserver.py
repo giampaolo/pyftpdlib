@@ -718,7 +718,7 @@ class ActiveDTP(asyncore.dispatcher):
         # Have the active connection come from the same IP address 
         # as the command channel, see:
         # http://code.google.com/p/pyftpdlib/issues/detail?id=123
-        source_ip = self.cmd_channel.getsockname()[0]
+        source_ip = self.cmd_channel.socket.getsockname()[0]
         self.bind((source_ip, 0))
         try:
             self.connect((ip, port))

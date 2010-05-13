@@ -376,9 +376,13 @@ def test_main():
         tests += ftps_tests
 
     # authorizers tests
-    if hasattr(authorizers, "UnixAuthorizer") and os.geteuid() == 0 \
-    or spwd.getspall():
-        tests.append(TestUnixAuthorizer)
+    if hasattr(authorizers, "UnixAuthorizer"):
+        try:
+            authorizer.UnixAuthorizer()
+        except RuntimeError:  # not root
+            pass
+        else:
+            tests.append(TestUnixAuthorizer)
 
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
