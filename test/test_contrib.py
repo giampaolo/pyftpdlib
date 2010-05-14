@@ -203,40 +203,29 @@ class TestFTPS(unittest.TestCase):
         self.client.prot_p()
         self.client.retrlines('list', lambda x: x)
 
-    def try_protocol_combo(self, server_protocol, client_protocol,
-                           expected_to_work):
+    def try_protocol_combo(self, server_protocol, client_protocol):
         self.server.handler.ssl_version = server_protocol
         self.client.ssl_version = client_protocol
         self.client.close()
         self.client.connect(self.server.host, self.server.port)
-        if expected_to_work:
+        try:
             self.client.login()
+        except (ssl.SSLError, socket.error):
+            self.client.close()
         else:
-            self.assertRaises(socket.error, self.client.login)
+            self.client.quit()
 
-    def test_ssl_version_sslv2(self):
-        self.try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv2, True)
-        self.try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv3, False)
-        self.try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv23, False)
-        self.try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_TLSv1, False)
-
-    def test_ssl_version_sslv3(self):
-        self.try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv2, False)
-        self.try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv3, True)
-        self.try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv23, True)
-        self.try_protocol_combo(ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_TLSv1, False)
-
-    def test_ssl_version_tlsv1(self):
-        self.try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv2, False)
-        self.try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv3, False)
-        self.try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv23, True)
-        self.try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1, True)
-        
-    def test_ssl_version_sslv23(self):
-        self.try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_SSLv2, False)
-        self.try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_SSLv3, True)
-        self.try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_SSLv23, True)
-        self.try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_TLSv1, True)
+    def test_ssl_version(self):
+        protos = (ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv3, 
+                  ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_TLSv1)
+        for proto in protos:
+            self.try_protocol_combo(ssl.PROTOCOL_SSLv2, proto)
+        for proto in protos:
+            self.try_protocol_combo(ssl.PROTOCOL_SSLv3, proto)
+        for proto in protos:
+            self.try_protocol_combo(ssl.PROTOCOL_SSLv23, proto)
+        for proto in protos:
+            self.try_protocol_combo(ssl.PROTOCOL_TLSv1, proto)
 
 
 # --- System dependant authorizers tests
@@ -378,7 +367,7 @@ def test_main():
     # authorizers tests
     if hasattr(authorizers, "UnixAuthorizer"):
         try:
-            authorizer.UnixAuthorizer()
+            authorizers.UnixAuthorizer()
         except RuntimeError:  # not root
             pass
         else:
