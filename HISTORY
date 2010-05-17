@@ -19,7 +19,10 @@ Enhancements:
  * Issue 124: pyftpdlib now accepts command line options to configure a stand
    alone anonymous FTP server when running pyftpdlib with python's -m option.
 
- * Issue 128: added UnixAuthorizer and WindowsAuthorizer classes defined in the
+ * Issue 128: files and directories owner and group names and os.readlink are 
+   now resolved via AbstractedFS methods instead of in format_list().
+
+ * Issue 130: added UnixAuthorizer and WindowsAuthorizer classes defined in the
    new pyftpdlib.contrib.authorizers module.
 
 Bugfixes:
@@ -45,6 +48,11 @@ API changes since 0.5.2:
  * Added a new package in pyftpdlib namespace: "contrib". Modules defined here:
    pyftpdlib.contrib.handlers.py
    pyftpdlib.contrib.authorizers.py 
+
+ * AbstractedFS class has 3 new methods: 
+   get_user_by_uid
+   get_group_by_gid 
+   readlink
 
 
 Version: 0.5.2 - Date: 2009-09-14

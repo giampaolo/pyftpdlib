@@ -1407,6 +1407,39 @@ class AbstractedFS:
 
     exists = lexists  # XXX - alias for backward compatibility with 0.2.0
 
+    def get_user_by_uid(self, uid):
+        """Return the username associated with user id.
+        If this can't be determined return raw uid instead.
+        On Windows just return "owner".
+        """
+        if pwd is not None:
+            try:
+                return pwd.getpwuid(uid).pw_name
+            except KeyError:
+                return uid
+        else:
+            return "owner"
+
+    def get_group_by_gid(self, gid):
+        """Return the groupname associated with group id.
+        If this can't be determined return raw gid instead.
+        On Windows just return "group".
+        """
+        if grp is not None:
+            try:
+                return grp.getgrgid(gid).gr_name
+            except KeyError:
+                return gid
+        else:
+            return "group"
+
+    if hasattr(os, 'readlink'):
+        def readlink(self, path):
+            """Return a string representing the path to which a
+            symbolic link points.
+            """
+            return os.readlink(path)
+
     # --- Listing utilities
 
     # note: the following operations are no more blocking
@@ -1463,21 +1496,8 @@ class AbstractedFS:
             if not nlinks:  # non-posix system, let's use a bogus value
                 nlinks = 1
             size = st.st_size  # file size
-            if pwd and grp:
-                # get user and group name, else just use the raw uid/gid
-                try:
-                    uname = pwd.getpwuid(st.st_uid).pw_name
-                except KeyError:
-                    uname = st.st_uid
-                try:
-                    gname = grp.getgrgid(st.st_gid).gr_name
-                except KeyError:
-                    gname = st.st_gid
-            else:
-                # on non-posix systems the only chance we use default
-                # bogus values for owner and group
-                uname = "owner"
-                gname = "group"
+            uname = self.get_user_by_uid(st.st_uid)
+            gname = self.get_group_by_gid(st.st_gid)
             try:
                 mtime = time.strftime("%b %d %H:%M", timefunc(st.st_mtime))
             except ValueError:
@@ -1486,8 +1506,8 @@ class AbstractedFS:
                 # the current time as last mtime.
                 mtime = time.strftime("%b %d %H:%M", timefunc())
             # if the file is a symlink, resolve it, e.g. "symlink -> realfile"
-            if stat.S_ISLNK(st.st_mode) and hasattr(os, 'readlink'):
-                basename = basename + " -> " + os.readlink(file)
+            if stat.S_ISLNK(st.st_mode) and hasattr(self, 'readlink'):
+                basename = basename + " -> " + self.readlink(file)
 
             # formatting is matched with proftpd ls output
             yield "%s %3s %-8s %-8s %8s %s %s\r\n" %(perms, nlinks, uname, gname,
@@ -3049,6 +3069,7 @@ class FTPHandler(asynchat.async_chat):
         features.sort()
         self.push("211-Features supported:\r\n")
         self.push("".join([" %s\r\n" %x for x in features]))
+
         self.respond('211 End FEAT.')
 
     def ftp_OPTS(self, line):
