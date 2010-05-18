@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # $Id$
 
-"""Tests for pyftpdlib.contrib namespace: handlers.py and 
+"""Tests for pyftpdlib.contrib namespace: handlers.py and
 authorizers.py modules.
 """
 
@@ -39,7 +39,7 @@ class FTPSClient(ftplib.FTP_TLS):
 class FTPSServer(FTPd):
     """A threaded FTPS server used for functional testing."""
     handler = handlers.TLS_FTPHandler
-    handler.certfile = os.path.abspath(os.path.join(os.path.dirname(__file__), 
+    handler.certfile = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                        'keycert.pem'))
 
 
@@ -183,7 +183,7 @@ class TestFTPS(unittest.TestCase):
                 return
             raise
         sock.sendall('noop')
-        self.assertRaises(socket.error, sock.recv, 1024)   
+        self.assertRaises(socket.error, sock.recv, 1024)
 
     def test_tls_control_required(self):
         self.server.handler.tls_control_required = True
@@ -216,7 +216,7 @@ class TestFTPS(unittest.TestCase):
             self.client.quit()
 
     def test_ssl_version(self):
-        protos = (ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv3, 
+        protos = (ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv3,
                   ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_TLSv1)
         for proto in protos:
             self.try_protocol_combo(ssl.PROTOCOL_SSLv2, proto)
@@ -232,7 +232,7 @@ class TestFTPS(unittest.TestCase):
 
 class CommonAuthorizersTest(unittest.TestCase):
     """Tests valid for both UnixAuthorizer and WindowsAuthorizer which
-    are supposed to share the same API. 
+    are supposed to share the same API.
     """
 
     def get_users(self):
@@ -252,7 +252,7 @@ class CommonAuthorizersTest(unittest.TestCase):
             if user not in users:
                 return user
 
-    def assertRaisesRegexp(self, excClass, expected_regexp, callableObj, 
+    def assertRaisesRegexp(self, excClass, expected_regexp, callableObj,
                            *args, **kwargs):
         try:
             callableObj(*args, **kwargs)
@@ -309,7 +309,7 @@ class CommonAuthorizersTest(unittest.TestCase):
     def test_impersonate_user(self):
         user = self.find_nonexistent_user()
         authorizer = authorizers.UnixAuthorizer()
-        self.assertRaises(ftpserver.AuthorizerError, authorizer.impersonate_user, 
+        self.assertRaises(ftpserver.AuthorizerError, authorizer.impersonate_user,
                           user, 'passwd')
 
     def test_terminate_impersonation(self):

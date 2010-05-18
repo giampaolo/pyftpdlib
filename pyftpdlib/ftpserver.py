@@ -715,7 +715,7 @@ class ActiveDTP(asyncore.dispatcher):
         else:
             self.idler = None
         self.create_socket(self.cmd_channel.af, socket.SOCK_STREAM)
-        # Have the active connection come from the same IP address 
+        # Have the active connection come from the same IP address
         # as the command channel, see:
         # http://code.google.com/p/pyftpdlib/issues/detail?id=123
         source_ip = self.cmd_channel.socket.getsockname()[0]

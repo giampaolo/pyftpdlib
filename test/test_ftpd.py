@@ -1191,7 +1191,7 @@ class TestFtpStoreData(unittest.TestCase):
                     break
                 conn.sendall(buf)
             sock.close()
-            conn.close()            
+            conn.close()
             # transfer finished, a 226 response is expected
             self.client.voidresp()
             self.client.retrbinary('retr ' + filename, self.dummy_recvfile.write)
@@ -1619,7 +1619,7 @@ class TestFtpAbort(unittest.TestCase):
         self.client.set_pasv(0)
         sock = self.client.makeport()
         respcode = self.client.sendcmd('ABOR')[:3]
-        sock.close()        
+        sock.close()
         self.assertEqual('225', respcode)
         self.client.retrlines('list', [].append)
 
@@ -2409,7 +2409,7 @@ class TestCornerCases(unittest.TestCase):
         sock.close()
 
     def test_stou_max_tries(self):
-        # Emulates case where the max number of tries to find out a 
+        # Emulates case where the max number of tries to find out a
         # unique file name when processing STOU command gets hit.
 
         class TestFS(ftpserver.AbstractedFS):
@@ -2424,7 +2424,7 @@ class TestCornerCases(unittest.TestCase):
             self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'stou')
         finally:
             self.server.handler.abstracted_fs = ftpserver.AbstractedFS
-            
+
 
 class TestCommandLineParser(unittest.TestCase):
     """Test command line parser."""
