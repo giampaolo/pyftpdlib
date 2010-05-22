@@ -2143,10 +2143,17 @@ class TestCallbacks(unittest.TestCase):
         _file = []
 
         class TestHandler(ftpserver.FTPHandler):
+
             def on_file_sent(self, file):
                 _file.append(file)
 
             def on_file_received(self, file):
+                raise Exception
+
+            def on_incomplete_file_sent(self, file):
+                raise Exception
+
+            def on_incomplete_file_received(self, file):
                 raise Exception
 
         self._setUp(TestHandler)
@@ -2162,17 +2169,99 @@ class TestCallbacks(unittest.TestCase):
         _file = []
 
         class TestHandler(ftpserver.FTPHandler):
+
             def on_file_sent(self, file):
                 raise Exception
 
             def on_file_received(self, file):
                 _file.append(file)
 
+            def on_incomplete_file_sent(self, file):
+                raise Exception
+
+            def on_incomplete_file_received(self, file):
+                raise Exception
+
         self._setUp(TestHandler)
         data = 'abcde12345' * 100000
         self.dummyfile.write(data)
         self.dummyfile.seek(0)
         self.client.storbinary('stor ' + TESTFN, self.dummyfile)
+        # shut down the server to avoid race conditions
+        self.tearDown()
+        self.assertEqual(_file.pop(), os.path.abspath(TESTFN))
+
+    def test_on_incomplete_file_sent(self):
+        _file = []
+
+        class TestHandler(ftpserver.FTPHandler):
+
+            def on_file_sent(self, file):
+                raise Exception
+
+            def on_file_received(self, file):
+                raise Exception
+
+            def on_incomplete_file_sent(self, file):
+                _file.append(file)
+
+            def on_incomplete_file_received(self, file):
+                raise Exception
+
+        self._setUp(TestHandler)
+        data = 'abcde12345' * 100000
+        self.file.write(data)
+        self.file.close()
+
+        bytes_recv = 0
+        conn = self.client.transfercmd("retr " + TESTFN, None)
+        while 1:
+            chunk = conn.recv(8192)
+            bytes_recv += len(chunk)
+            if bytes_recv >= 524288 or not chunk:
+                break
+        conn.close()
+        # 426 expected here
+        self.assertRaises(ftplib.error_temp, self.client.voidresp)
+
+        # shut down the server to avoid race conditions
+        self.tearDown()
+        self.assertEqual(_file.pop(), os.path.abspath(TESTFN))
+
+    def test_on_incomplete_file_received(self):
+        _file = []
+
+        class TestHandler(ftpserver.FTPHandler):
+
+            def on_file_sent(self, file):
+                raise Exception
+
+            def on_file_received(self, file):
+                raise Exception
+
+            def on_incomplete_file_sent(self, file):
+                raise Exception
+
+            def on_incomplete_file_received(self, file):
+                _file.append(file)
+
+        self._setUp(TestHandler)
+        data = 'abcde12345' * 100000
+        self.dummyfile.write(data)
+        self.dummyfile.seek(0)
+
+        conn = self.client.transfercmd('stor ' + TESTFN)
+        bytes_sent = 0
+        while 1:
+            chunk = self.dummyfile.read(8192)
+            conn.sendall(chunk)
+            bytes_sent += len(chunk)
+            # stop transfer while it isn't finished yet
+            if bytes_sent >= 524288 or not chunk:
+                self.client.putcmd('abor')
+                break
+        conn.close()
+
         # shut down the server to avoid race conditions
         self.tearDown()
         self.assertEqual(_file.pop(), os.path.abspath(TESTFN))

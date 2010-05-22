@@ -1014,11 +1014,18 @@ class DTPHandler(asynchat.async_chat):
                 self.file_obj.close()
             if self.idler is not None and not self.idler.cancelled:
                 self.idler.cancel()
-            if self.file_obj is not None and self.transfer_finished:
-                if self.receive:
-                    self.cmd_channel.on_file_received(self.file_obj.name)
+            if self.file_obj is not None:
+                filename = self.file_obj.name
+                if self.transfer_finished:
+                    if self.receive:
+                        self.cmd_channel.on_file_received(filename)
+                    else:
+                        self.cmd_channel.on_file_sent(filename)
                 else:
-                    self.cmd_channel.on_file_sent(self.file_obj.name)
+                    if self.receive:
+                        self.cmd_channel.on_incomplete_file_received(filename)
+                    else:
+                        self.cmd_channel.on_incomplete_file_sent(filename)
             self.cmd_channel.on_dtp_close()
 
 
@@ -2016,19 +2023,29 @@ class FTPHandler(asynchat.async_chat):
             self._dtp_connector = None
 
     # --- public callbacks
+    # Note: to run a time consuming task make sure to use a separate
+    # process or thread (see FAQs).
 
     def on_file_sent(self, file):
         """Called every time a file has been succesfully sent.
         "file" is the absolute name of the file just being sent.
-        To run a time consuming task make sure to use a separate
-        process or thread.
         """
 
     def on_file_received(self, file):
         """Called every time a file has been succesfully received.
         "file" is the absolute name of the file just being received.
-        To run a time consuming task make sure to use a separate
-        process or thread.
+        """
+
+    def on_incomplete_file_sent(self, file):
+        """Called every time a file has not been entirely sent.
+        (e.g. ABOR during transfer or client disconnected).
+        "file" is the absolute name of that file.
+        """
+
+    def on_incomplete_file_received(self, file):
+        """Called every time a file has not been entirely received 
+        (e.g. ABOR during transfer or client disconnected).
+        "file" is the absolute name of that file.
         """
 
     # --- internal callbacks
