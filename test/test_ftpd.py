@@ -2266,6 +2266,19 @@ class TestCallbacks(unittest.TestCase):
         self.tearDown()
         self.assertEqual(_file.pop(), os.path.abspath(TESTFN))
 
+    def test_on_login(self):
+        user = []
+
+        class TestHandler(ftpserver.FTPHandler):
+
+            def on_login(self, username):
+                user.append(username)
+
+        self._setUp(TestHandler)
+        # shut down the server to avoid race conditions
+        self.tearDown()
+        self.assertEqual(user.pop(), USER)
+
 
 class _TestNetworkProtocols(unittest.TestCase):
     """Test PASV, EPSV, PORT and EPRT commands.

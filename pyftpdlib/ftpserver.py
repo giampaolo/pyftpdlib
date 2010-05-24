@@ -2048,6 +2048,9 @@ class FTPHandler(asynchat.async_chat):
         "file" is the absolute name of that file.
         """
 
+    def on_login(self, username):
+        """Called on user login."""
+
     # --- internal callbacks
 
     def on_dtp_connection(self):
@@ -2771,6 +2774,7 @@ class FTPHandler(asynchat.async_chat):
             self.fs.root = self.authorizer.get_home_dir(self.username)
             self.fs.cmd_channel = self  # XXX - temporary
             self.log("User %s logged in." %self.username)
+            self.on_login(self.username)
         else:
             self.username = ""
             self.sleeping = True
