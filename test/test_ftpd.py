@@ -2457,17 +2457,62 @@ class TestIPv6Environment(_TestNetworkProtocols):
     HOST = '::1'
 
     def test_port_v6(self):
-        # 425 expected
-        self.assertRaises(ftplib.error_temp, self.client.sendport,
+        # PORT is not supposed to work
+        self.assertRaises(ftplib.error_perm, self.client.sendport,
                           self.server.host, self.server.port)
 
     def test_pasv_v6(self):
-        # 425 expected
-        self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'pasv')
+        # PASV is still supposed to work to support clients using
+        # IPv4 connecting to a server supporting both IPv4 and IPv6
+        self.client.makepasv()
 
     def test_eprt_v6(self):
         self.assertEqual(self.cmdresp('eprt |2|::xxx|2222|'),
                          "501 Can't connect to a foreign address.")
+
+
+class TestIPv6MixedEnvironment(unittest.TestCase):
+    """By running the server by specifying "::" as IP address the
+    server is supposed to listen on all interfaces, supporting both
+    IPv4 and IPv6 by using a single socket.
+
+    What we are going to do here is starting the server in this
+    manner and try to connect by using an IPv4 client.
+    """
+    server_class = FTPd
+    client_class = ftplib.FTP
+    HOST = "::"
+
+    def setUp(self):
+        self.server = self.server_class(self.HOST)
+        self.server.start()
+        self.client = None
+
+    def tearDown(self):
+        if self.client is not None:
+            self.client.close()
+        self.server.stop()
+
+    def test_port_v4(self):
+        noop = lambda x: x
+        self.client = self.client_class()
+        self.client.connect('127.0.0.1', self.server.port)
+        self.client.set_pasv(False)
+        self.client.sock.settimeout(2)
+        self.client.login(USER, PASSWD)
+        self.client.retrlines('list', noop)
+
+    def test_pasv_v4(self):
+        noop = lambda x: x
+        self.client = self.client_class()
+        self.client.connect('127.0.0.1', self.server.port)
+        self.client.set_pasv(True)
+        self.client.sock.settimeout(2)
+        self.client.login(USER, PASSWD)
+        self.client.retrlines('list', noop)
+        # make sure pasv response doesn't return an IPv4-mapped address
+        ip = self.client.makepasv()[0]
+        self.assertFalse(ip.startswith("::ffff:"))
 
 
 class TestCornerCases(unittest.TestCase):
@@ -2664,6 +2709,7 @@ def test_main(tests=None):
             tests.append(TestIPv4Environment)
         if SUPPORTS_IPV6:
             tests.append(TestIPv6Environment)
+            tests.append(TestIPv6MixedEnvironment)
 
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))

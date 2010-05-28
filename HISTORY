@@ -28,6 +28,9 @@ Enhancements:
  * Issue 130: added UnixAuthorizer and WindowsAuthorizer classes defined in the
    new pyftpdlib.contrib.authorizers module.
 
+ * Issue 131: pyftpdlib is now able to serve both IPv4 and IPv6 at the same
+   time by using a single socket.
+
 Bugfixes:
 
  * Issue #120: an ActiveDTP() instance is not garbage collected in case a

@@ -608,8 +608,17 @@ class PassiveDTP(asyncore.dispatcher):
         self.listen(5)
         port = self.socket.getsockname()[1]
         if not extmode:
-            if self.cmd_channel.masquerade_address:
-                ip = self.cmd_channel.masquerade_address
+            ip = self.cmd_channel.masquerade_address or ip
+            if ip.startswith('::ffff:'):
+                # In this scenario, the server has an IPv6 socket, but
+                # the remote client is using IPv4 and its address is
+                # represented as an IPv4-mapped IPv6 address which
+                # looks like this ::ffff:151.12.5.65, see:
+                # http://en.wikipedia.org/wiki/IPv6#IPv4-mapped_addresses
+                # http://tools.ietf.org/html/rfc3493.html#section-3.7
+                # We truncate the first bytes to make it look like a
+                # common IPv4 address.
+                ip = ip[7:]
             # The format of 227 response in not standardized.
             # This is the most expected:
             self.cmd_channel.respond('227 Entering passive mode (%s,%d,%d).' %(
@@ -2043,7 +2052,7 @@ class FTPHandler(asynchat.async_chat):
         """
 
     def on_incomplete_file_received(self, file):
-        """Called every time a file has not been entirely received 
+        """Called every time a file has not been entirely received
         (e.g. ABOR during transfer or client disconnected).
         "file" is the absolute name of that file.
         """
@@ -2195,7 +2204,18 @@ class FTPHandler(asynchat.async_chat):
         # FTP bounce attacks protection: according to RFC-2577 it's
         # recommended to reject PORT if IP address specified in it
         # does not match client IP address.
-        if not self.permit_foreign_addresses and ip != self.remote_ip:
+        remote_ip = self.remote_ip
+        if remote_ip.startswith('::ffff:'):
+            # In this scenario, the server has an IPv6 socket, but
+            # the remote client is using IPv4 and its address is
+            # represented as an IPv4-mapped IPv6 address which
+            # looks like this ::ffff:151.12.5.65, see:
+            # http://en.wikipedia.org/wiki/IPv6#IPv4-mapped_addresses
+            # http://tools.ietf.org/html/rfc3493.html#section-3.7
+            # We truncate the first bytes to make it look like a
+            # common IPv4 address.
+            remote_ip = remote_ip[7:]
+        if not self.permit_foreign_addresses and ip != remote_ip:
             self.log("Rejected data connection to foreign address %s:%s."
                      %(ip, port))
             self.respond("501 Can't connect to a foreign address.")
@@ -2253,10 +2273,6 @@ class FTPHandler(asynchat.async_chat):
         """Start an active data channel by using IPv4."""
         if self._epsvall:
             self.respond("501 PORT not allowed after EPSV ALL.")
-            return
-        if self.af != socket.AF_INET:
-            self.respond("425 You cannot use PORT over IPv6 connection. "
-                         "Use EPRT instead.")
             return
         # Parse PORT request for getting IP and PORT.
         # Request comes in as:
@@ -2331,11 +2347,7 @@ class FTPHandler(asynchat.async_chat):
         if self._epsvall:
             self.respond("501 PASV not allowed after EPSV ALL.")
             return
-        if self.af != socket.AF_INET:
-            self.respond("425 You cannot use PASV over IPv6 connection. "
-                         "Use EPSV instead.")
-        else:
-            self._make_epasv(extmode=False)
+        self._make_epasv(extmode=False)
 
     def ftp_EPSV(self, line):
         """Start a passive data channel by using IPv4 or IPv6 as defined
