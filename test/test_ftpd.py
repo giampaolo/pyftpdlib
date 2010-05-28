@@ -96,8 +96,24 @@ def try_address(host, port=0, family=socket.AF_INET):
         sock.close()
         return True
 
+def support_hybrid_ipv6():
+    """Return True if it is possible to use hibryd IPv6/IPv4 sockets
+    on this platform.
+    """
+    IPV6_V6ONLY = getattr(socket, "IPV6_V6ONLY", 26)
+    sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+    try:
+        try:
+            return not sock.getsockopt(socket.IPPROTO_IPV6, IPV6_V6ONLY)
+        except socket.error:
+            return False
+    finally:
+        sock.close()
+
+
 SUPPORTS_IPV4 = try_address('127.0.0.1')
 SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
+SUPPORTS_HYBRID_IPV6 = SUPPORTS_IPV6 and support_hybrid_ipv6()
 
 def safe_remove(*files):
     "Convenience function for removing temporary test files"
@@ -2709,6 +2725,7 @@ def test_main(tests=None):
             tests.append(TestIPv4Environment)
         if SUPPORTS_IPV6:
             tests.append(TestIPv6Environment)
+        if SUPPORTS_HYBRID_IPV6:
             tests.append(TestIPv6MixedEnvironment)
 
     for test in tests:
