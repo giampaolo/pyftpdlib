@@ -90,14 +90,14 @@ def try_address(host, port=0, family=socket.AF_INET):
     try:
         sock = socket.socket(family, socket.SOCK_STREAM)
         sock.bind((host, port))
-    except socket.error:
+    except (socket.error, socket.gaierror):
         return False
     else:
         sock.close()
         return True
 
 def support_hybrid_ipv6():
-    """Return True if it is possible to use hibryd IPv6/IPv4 sockets
+    """Return True if it is possible to use hybrid IPv6/IPv4 sockets
     on this platform.
     """
     IPV6_V6ONLY = getattr(socket, "IPV6_V6ONLY", 26)
@@ -729,7 +729,7 @@ class TestFtpAuthentication(unittest.TestCase):
                 self.client.sendcmd('user ' + USER)
                 self.assertRaises(ftplib.error_perm, self.client.dir)
 
-        # a 226 response is expected once tranfer finishes
+        # a 226 response is expected once transfer finishes
         self.assertEqual(self.client.voidresp()[:3], '226')
         # account is still flushed, error response is still expected
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'pwd')
