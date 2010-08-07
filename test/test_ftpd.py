@@ -100,11 +100,13 @@ def support_hybrid_ipv6():
     """Return True if it is possible to use hybrid IPv6/IPv4 sockets
     on this platform.
     """
+    # IPPROTO_IPV6 constant is broken, see: http://bugs.python.org/issue6926
+    IPPROTO_IPV6 = getattr(socket, "IPV6_V6ONLY", 41)
     IPV6_V6ONLY = getattr(socket, "IPV6_V6ONLY", 26)
     sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
     try:
         try:
-            return not sock.getsockopt(socket.IPPROTO_IPV6, IPV6_V6ONLY)
+            return not sock.getsockopt(IPPROTO_IPV6, IPV6_V6ONLY)
         except socket.error:
             return False
     finally:

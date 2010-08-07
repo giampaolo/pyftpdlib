@@ -10,7 +10,7 @@ To install pyftpdlib just open a command shell and run:
 from distutils.core import setup
 
 name = 'pyftpdlib'
-version = '0.5.2'
+version = '0.6.0'
 download_url = "http://pyftpdlib.googlecode.com/files/" + name + "-" + \
                                                           version + ".tar.gz"
 
@@ -29,7 +29,7 @@ setup(
     download_url=download_url,
     packages=['pyftpdlib', 'pyftpdlib/contrib'],
     keywords=['ftp', 'server', 'ftpd', 'daemon', 'python', 'rfc959', 'rfc1123',
-              'rfc2228', 'rfc2428', 'rfc3659'],
+              'rfc2228', 'rfc2428', 'rfc3659', 'ftps'],
     classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Environment :: Console',
