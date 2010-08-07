@@ -13,15 +13,10 @@ from pyftpdlib.contrib.authorizers import UnixAuthorizer
 
 
 def main():
-    authorizer = UnixAuthorizer()
-    # add a user (note: user must already exists)
-    authorizer.add_user('giampaolo', perm='elradfmw')
-    # add an anonymous user forcing its home directory
-    authorizer.add_anonymous(realuser="ftp", homedir="/home/ftp")
-
+    authorizer = UnixAuthorizer(rejected_users=["root"])
     ftp_handler = ftpserver.FTPHandler
     ftp_handler.authorizer = authorizer
-    address = ('', 21)
+    address = ('', 8021)
     ftpd = ftpserver.FTPServer(address, ftp_handler)
     ftpd.serve_forever()
 
