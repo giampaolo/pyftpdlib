@@ -1193,13 +1193,11 @@ class AbstractedFS:
     Instance attributes:
      - (str) root: the "real" user home directory.
      - (str) cwd: the "virtual" current working directory.
-     - (str) rnfr: source file to be renamed.
     """
 
     def __init__(self):
         self.root = None
         self.cwd = '/'
-        self.rnfr = None
         self.cmd_channel = None  # XXX - temporary
 
     # --- Pathname / conversion utilities
@@ -1760,6 +1758,7 @@ class FTPHandler(asynchat.async_chat):
         self._closed = False
         self._extra_feats = []
         self._current_facts = ['type', 'perm', 'size', 'modify']
+        self._rnfr = None
         if os.name == 'posix':
             self._current_facts.append('unique')
         self._available_facts = self._current_facts[:]
@@ -2188,7 +2187,6 @@ class FTPHandler(asynchat.async_chat):
                 self.data_channel.close()
                 self.data_channel = None
 
-        self.fs.rnfr = None
         self.authenticated = False
         self.username = ""
         self.password = ""
@@ -2198,6 +2196,7 @@ class FTPHandler(asynchat.async_chat):
         self.quit_pending = False
         self.sleeping = False
         self._in_dtp_queue = None
+        self._rnfr = None
         self._out_dtp_queue = None
 
     def run_as_current_user(self, function, *args, **kwargs):
@@ -2972,18 +2971,18 @@ class FTPHandler(asynchat.async_chat):
         elif self.fs.realpath(path) == self.fs.realpath(self.fs.root):
             self.respond("550 Can't rename the home directory.")
         else:
-            self.fs.rnfr = path
+            self._rnfr = path
             self.respond("350 Ready for destination name.")
 
     def ftp_RNTO(self, path):
         """Rename file (destination name only, source is specified with
         RNFR).
         """
-        if not self.fs.rnfr:
+        if not self._rnfr:
             self.respond("503 Bad sequence of commands: use RNFR first.")
             return
-        src = self.fs.rnfr
-        self.fs.rnfr = None
+        src = self._rnfr
+        self._rnfr = None
         try:
             self.run_as_current_user(self.fs.rename, src, path)
         except OSError, err:

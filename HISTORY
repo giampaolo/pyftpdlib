@@ -65,6 +65,8 @@ API changes since 0.5.2:
    pyftpdlib.contrib.handlers.py
    pyftpdlib.contrib.authorizers.py 
 
+ * AbstractedFS.rnfr attribute moved to FTPHandler._rnfr.
+
  * AbstractedFS class has 3 new methods: 
    get_user_by_uid()
    get_group_by_gid()
