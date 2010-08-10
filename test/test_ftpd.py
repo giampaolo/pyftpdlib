@@ -2639,7 +2639,7 @@ class TestCommandLineParser(unittest.TestCase):
             os.rmdir(TESTFN)
 
     def test_a_option(self):
-        sys.argv += ["-a", "localhost", "-p", "0"]
+        sys.argv += ["-i", "localhost", "-p", "0"]
         ftpserver.main()
         sys.argv = self.SYSARGV[:]
 

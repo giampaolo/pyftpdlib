@@ -3475,8 +3475,9 @@ def main():
     usage = "python -m pyftpdlib.ftpserver [options]"
     parser = optparse.OptionParser(usage=usage, description=main.__doc__,
                                    formatter=CustomizedOptionFormatter())
-    parser.add_option('-a', '--address', default='', metavar="ADDRESS",
-                      help="specify address to run on (default all interfaces)")
+    parser.add_option('-i', '--interface', default='', metavar="ADDRESS",
+                      help="specify the interface to run on (default all "
+                           "interfaces)")
     parser.add_option('-p', '--port', type="int", default=21, metavar="PORT",
                       help="specity port number to run on (default 21)")
     parser.add_option('-w', '--write', action="store_true", default=False,
@@ -3514,7 +3515,7 @@ def main():
     handler.authorizer = authorizer
     handler.masquerade_address = options.nat_address
     handler.passive_ports = passive_ports
-    ftpd = FTPServer((options.address, options.port), FTPHandler)
+    ftpd = FTPServer((options.interface, options.port), FTPHandler)
     ftpd.serve_forever()
 
 if __name__ == '__main__':
