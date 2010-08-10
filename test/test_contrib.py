@@ -346,7 +346,7 @@ class CommonAuthorizersTest(unittest.TestCase):
         this_user = self.get_current_user()
         another_user = self.get_users()[-1]
         nonexistent_user = self.get_nonexistent_user()
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
+        self.assertRaisesWithMsg(ValueError, 
                                 "at least one keyword argument must be specified",
                                 auth.override_user, this_user)
         self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
