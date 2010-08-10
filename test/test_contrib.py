@@ -280,16 +280,19 @@ class CommonAuthorizersTest(unittest.TestCase):
     def test_impersonate_user(self):
         auth = self.authorizer_class()
         nonexistent_user = self.get_nonexistent_user()
-        if self.authorizer_class.__name__ == 'UnixAuthorizer':
-            self.assertRaises(ftpserver.AuthorizerError, 
-                              auth.impersonate_user, nonexistent_user, 'pwd')
-            auth.impersonate_user(self.get_current_user(), '')
-        else:
-            self.assertRaises(Exception, 
-                              auth.impersonate_user, nonexistent_user, 'pwd')
-            self.assertRaises(Exception, 
-                              auth.impersonate_user, self.get_current_user(), '')
-        auth.terminate_impersonation()
+        try:
+            if self.authorizer_class.__name__ == 'UnixAuthorizer':
+                auth.impersonate_user(self.get_current_user(), '')
+                self.assertRaises(ftpserver.AuthorizerError, 
+                                  auth.impersonate_user, nonexistent_user, 'pwd')
+            else:
+                # XXX
+                self.assertRaises(Exception, 
+                                  auth.impersonate_user, nonexistent_user, 'pwd')
+                self.assertRaises(Exception, 
+                                  auth.impersonate_user, self.get_current_user(), '')
+        finally:
+            auth.terminate_impersonation()
 
     def test_terminate_impersonation(self):
         user = self.get_nonexistent_user()
@@ -361,6 +364,8 @@ class CommonAuthorizersTest(unittest.TestCase):
 class TestUnixAuthorizer(CommonAuthorizersTest):
     """Unix authorizer specific tests."""
 
+    authorizer_class = getattr(authorizers, "UnixAuthorizer")
+
     def get_users(self):
         return [entry.pw_name for entry in pwd.getpwall()]
 
@@ -428,7 +433,7 @@ else:
     class TestWindowsAuthorizer(CommonAuthorizersTest):
         """Windows authorizer specific tests."""
 
-        authorizer_class = authorizers.WindowsAuthorizer
+        authorizer_class = getattr(authorizers, "WindowsAuthorizer")
 
         def get_users(self):
             return [entry['name'] for entry in win32net.NetUserEnum(None, 0)[0]]
@@ -497,6 +502,7 @@ def test_main():
     elif hasattr(authorizers, "WindowsAuthorizer"):
         tests.append(TestWindowsAuthorizer)
 
+    tests = [TestUnixAuthorizer]
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
     safe_remove(TESTFN)

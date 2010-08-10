@@ -5,13 +5,13 @@
 of the FTP server. It is used by pyftpdlib.ftpserver.FTPHandler
 class for:
 
-- verifying user's passwords
-- getting user home directories
+- verifying user password
+- getting user home directory
 - checking user permissions when a filesystem read/write event occurs
 - changing user when accessing the filesystem
 
-This module contains a series of classes which implements such
-functionalities in a system-specific way for both Unix and Windows.
+This module contains two classes which implements such functionalities 
+in a system-specific way for both Unix and Windows.
 Both implementations share the same API and functionalities.
 """
 
@@ -134,16 +134,16 @@ else:
             against the FTP server
 
          - (string) anonymous_user:
-           specify it if you intend to provide anonymous access.
-           The value expected is a string representing the system user
-           to use for managing anonymous sessions.
-           Defaults to None (anonymous access disabled).
+            specify it if you intend to provide anonymous access.
+            The value expected is a string representing the system user
+            to use for managing anonymous sessions.
+            Defaults to None (anonymous access disabled).
 
          - (string) msg_login:
-           the string sent when client logs in.
+            the string sent when client logs in.
 
          - (string) msg_quit:
-           the string sent when client quits.
+            the string sent when client quits.
         """
 
         # --- public API
@@ -265,18 +265,15 @@ else:
         "12345" as password those same credentials can be used for 
         accessing the FTP server as well.
 
-        The user home directory will be the one defined /etc/passwd
-        (e.g. /home/username).
+        The user profile directory (which is tipically
+        C:\Documents and settings\<username>) will be used as user home.
 
         Every time a filesystem operation occurs (e.g. a file is
-        created or deleted) the id of the process is temporarily
-        changed to the effective user id and whether the operation will
+        created or deleted) the security context is temporarily changed
+        to reflect the logged in user and whether the operation will
         succeed depends on user and file permissions.
         This is why full read and write permissions are granted by 
         default in the constructor.
-
-        Note: in order to use this class super user (Administrator) 
-        privileges are required.
 
         Parameters:
 
@@ -297,17 +294,20 @@ else:
             specify it if you intend to provide anonymous access.
             The value expected is a string representing the system user
             to use for managing anonymous sessions.
+            As for IIS, it is recommended to use Guest account. 
+            The common practice is to first enable the Guest user, which 
+            is disabled by default and then assign an empty password.
             Defaults to None (anonymous access disabled).
 
          - (string) anonymous_password:
             the password of the user who has been chosen to manage the
-            anonymous sessions.
+            anonymous sessions.  Defaults to None (empty password).
 
          - (string) msg_login:
-           the string sent when client logs in.
+            the string sent when client logs in.
 
          - (string) msg_quit:
-           the string sent when client quits.
+            the string sent when client quits.
         """
 
         # --- public API
@@ -316,7 +316,7 @@ else:
                            allowed_users=[],
                            rejected_users=[],
                            anonymous_user=None,
-                           anonymous_password="",
+                           anonymous_password=None,
                            msg_login="Login successful.",
                            msg_quit="Goodbye."):
             self.global_perm = global_perm
@@ -339,8 +339,11 @@ else:
                 if not self.validate_authentication(anonymous_user,
                                                     anonymous_password):
                     raise AuthorizerError('invalid credentials provided for '
-                                  'anonymous user (username:%s, password:%s)' 
-                                  % (anonymous_user, anonymous_password))
+                           'anonymous user (username:%s, password:%s)' 
+                            % (anonymous_user, anonymous_password or '<empty>'))
+                    # actually try to impersonate the user
+                    self.impersonate_user(anonymous_user, anonymous_password)
+                    self.terminate_impersonation()
                 home = self.get_home_dir(anonymous_user)
                 if not os.path.isdir(home):
                     raise AuthorizerError('no valid home set for user %s'
