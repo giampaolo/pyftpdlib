@@ -238,6 +238,7 @@ class CommonAuthorizersTest(unittest.TestCase):
     """Tests valid for both UnixAuthorizer and WindowsAuthorizer which
     are supposed to share the same API.
     """
+    authorizer_class = None
 
     def assertRaisesWithMsg(self, excClass, msg, callableObj, *args, **kwargs):
         try:
@@ -252,82 +253,72 @@ class CommonAuthorizersTest(unittest.TestCase):
             raise self.failureException, "%s not raised" % excName
 
     def test_get_home_dir(self):
-        auth = authorizers.UnixAuthorizer()
+        auth = self.authorizer_class()
         home = auth.get_home_dir(self.get_current_user())
         nonexistent_user = self.get_nonexistent_user()
         self.assertTrue(os.path.isdir(home))
         if auth.has_user('nobody'):
             home = auth.get_home_dir('nobody')
             self.assertFalse(os.path.isdir(home))
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
-                                 "no such user %s" % nonexistent_user,
-                                 auth.get_home_dir, nonexistent_user)
+        self.assertRaises(ftpserver.AuthorizerError,
+                          auth.get_home_dir, nonexistent_user)
 
     def test_has_user(self):
-        auth = authorizers.UnixAuthorizer()
+        auth = self.authorizer_class()
         self.assertTrue(auth.has_user(self.get_current_user()))
         self.assertFalse(auth.has_user(self.get_nonexistent_user()))
 
     def test_validate_authentication(self):
         # can't test for actual success in case of valid authentication
         # here as we don't have the user password
+        auth = self.authorizer_class()
         current_user = self.get_current_user()
-        auth = authorizers.UnixAuthorizer(anonymous_user=current_user)
-        self.assertFalse(auth.validate_authentication('foo', 'passwd'))
-        self.assertFalse(auth.validate_authentication(current_user, 'passwd'))
-        self.assertTrue(auth.validate_authentication('anonymous', 'passwd'))
+        nonexistent_user = self.get_nonexistent_user()
+        self.assertFalse(auth.validate_authentication(current_user, 'wrongpasswd'))
+        self.assertFalse(auth.validate_authentication(nonexistent_user, 'bar'))
 
     def test_impersonate_user(self):
-        auth = authorizers.UnixAuthorizer()
+        auth = self.authorizer_class()
         nonexistent_user = self.get_nonexistent_user()
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
-                                 "no such user %s" % nonexistent_user,
-                                 auth.impersonate_user, nonexistent_user, 'pwd')
-        auth.impersonate_user(self.get_current_user(), '')
+        if self.authorizer_class.__name__ == 'UnixAuthorizer':
+            self.assertRaises(ftpserver.AuthorizerError, 
+                              auth.impersonate_user, nonexistent_user, 'pwd')
+            auth.impersonate_user(self.get_current_user(), '')
+        else:
+            self.assertRaises(Exception, 
+                              auth.impersonate_user, nonexistent_user, 'pwd')
+            self.assertRaises(Exception, 
+                              auth.impersonate_user, self.get_current_user(), '')
         auth.terminate_impersonation()
 
     def test_terminate_impersonation(self):
         user = self.get_nonexistent_user()
-        auth = authorizers.UnixAuthorizer()
+        auth = self.authorizer_class()
         auth.terminate_impersonation()
 
     def test_get_perms(self):
-        auth = authorizers.UnixAuthorizer(global_perm='elr', 
-                                        anonymous_user=self.get_current_user())
+        auth = self.authorizer_class(global_perm='elr')
         self.assertTrue('r' in auth.get_perms(self.get_current_user()))
         self.assertFalse('w' in auth.get_perms(self.get_current_user()))
-        self.assertTrue('e' in auth.get_perms('anonymous'))
-        self.assertFalse('w' in auth.get_perms('anonymous'))
-        warnings.filterwarnings("ignore")
-        auth.override_user('anonymous', perm='w')
-        warnings.resetwarnings()        
-        self.assertTrue('w' in auth.get_perms('anonymous'))
 
     def test_has_perm(self):
-        auth = authorizers.UnixAuthorizer(global_perm='elr', 
-                                        anonymous_user=self.get_current_user())
+        auth = self.authorizer_class(global_perm='elr')
         self.assertTrue(auth.has_perm(self.get_current_user(), 'r'))
         self.assertFalse(auth.has_perm(self.get_current_user(), 'w'))
-        self.assertTrue(auth.has_perm('anonymous', 'e'))
-        self.assertFalse(auth.has_perm('anonymous', 'w'))
-        warnings.filterwarnings("ignore")
-        auth.override_user('anonymous', perm='w')
-        warnings.resetwarnings()
-        self.assertTrue(auth.has_perm('anonymous', 'w'))
 
     def test_messages(self):
-        auth = authorizers.UnixAuthorizer(msg_login="login", msg_quit="quit")
+        auth = self.authorizer_class(msg_login="login", msg_quit="quit")
         self.assertTrue(auth.get_msg_login, "login")
         self.assertTrue(auth.get_msg_quit, "quit")
 
     def test_access_options(self):
         self.assertRaisesWithMsg(authorizers.AuthorizerError,
              "rejected_users and allowed_users options are mutually exclusive",
-             authorizers.UnixAuthorizer, allowed_users=['foo'], 
+             self.authorizer_class, allowed_users=['foo'], 
                                          rejected_users=['bar'])
 
     def test_override_user(self):
-        auth = authorizers.UnixAuthorizer()
+        auth = self.authorizer_class()
         user = self.get_current_user()
         auth.override_user(user, password='foo')
         self.assertTrue(auth.validate_authentication(user, 'foo'))
@@ -342,7 +333,7 @@ class CommonAuthorizersTest(unittest.TestCase):
         self.assertEqual(auth.get_msg_quit(user), "bar")
 
     def test_override_user_errors(self):
-        auth = authorizers.UnixAuthorizer()
+        auth = self.authorizer_class()
         this_user = self.get_current_user()
         another_user = self.get_users()[-1]
         nonexistent_user = self.get_nonexistent_user()
@@ -352,24 +343,23 @@ class CommonAuthorizersTest(unittest.TestCase):
         self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
                                  'no such user %s' % nonexistent_user,
                                  auth.override_user, nonexistent_user, perm='r')
-        auth = authorizers.UnixAuthorizer(allowed_users=[this_user])
+        auth = self.authorizer_class(allowed_users=[this_user])
         auth.override_user(this_user, perm='r')
         self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
                                  '%s is not an allowed user' % another_user,
                                  auth.override_user, another_user, perm='r')
-        auth = authorizers.UnixAuthorizer(rejected_users=[this_user])
+        auth = self.authorizer_class(rejected_users=[this_user])
         auth.override_user(another_user, perm='r')
         self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
                                  '%s is not an allowed user' % this_user,
                                  auth.override_user, this_user, perm='r')
-        auth = authorizers.UnixAuthorizer(anonymous_user=this_user)
         self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
                                  "can't assign password to anonymous user",
                                  auth.override_user, "anonymous", password='foo')
 
 
 class TestUnixAuthorizer(CommonAuthorizersTest):
-    """UnixAuthorizer specific tests."""
+    """Unix authorizer specific tests."""
 
     def get_users(self):
         return [entry.pw_name for entry in pwd.getpwall()]
@@ -389,9 +379,38 @@ class TestUnixAuthorizer(CommonAuthorizersTest):
             if user not in users:
                 return user
 
+    def test_get_perms_anonymous(self):
+        auth = self.authorizer_class(global_perm='elr', 
+                                        anonymous_user=self.get_current_user())
+        self.assertTrue('e' in auth.get_perms('anonymous'))
+        self.assertFalse('w' in auth.get_perms('anonymous'))
+        warnings.filterwarnings("ignore")
+        auth.override_user('anonymous', perm='w')
+        warnings.resetwarnings()        
+        self.assertTrue('w' in auth.get_perms('anonymous'))
+
+    def test_has_perm_anonymous(self):
+        auth = self.authorizer_class(global_perm='elr', 
+                                        anonymous_user=self.get_current_user())
+        self.assertTrue(auth.has_perm(self.get_current_user(), 'r'))
+        self.assertFalse(auth.has_perm(self.get_current_user(), 'w'))
+        self.assertTrue(auth.has_perm('anonymous', 'e'))
+        self.assertFalse(auth.has_perm('anonymous', 'w'))
+        warnings.filterwarnings("ignore")
+        auth.override_user('anonymous', perm='w')
+        warnings.resetwarnings()
+        self.assertTrue(auth.has_perm('anonymous', 'w'))
+
+    def test_validate_authentication_anonymous(self):
+        current_user = self.get_current_user()
+        auth = self.authorizer_class(anonymous_user=current_user)
+        self.assertFalse(auth.validate_authentication('foo', 'passwd'))
+        self.assertFalse(auth.validate_authentication(current_user, 'passwd'))
+        self.assertTrue(auth.validate_authentication('anonymous', 'passwd'))
+
     def test_not_root(self):
         # UnixAuthorizer is supposed to work only as super user
-        auth = authorizers.UnixAuthorizer()
+        auth = self.authorizer_class()
         try:
             auth.impersonate_user('nobody', '')
             self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
@@ -399,6 +418,45 @@ class TestUnixAuthorizer(CommonAuthorizersTest):
                                      authorizers.UnixAuthorizer)
         finally:
             auth.terminate_impersonation()
+
+
+try:
+    import win32net
+except ImportError:
+    pass
+else:
+    class TestWindowsAuthorizer(CommonAuthorizersTest):
+        """Windows authorizer specific tests."""
+
+        authorizer_class = authorizers.WindowsAuthorizer
+
+        def get_users(self):
+            return [entry['name'] for entry in win32net.NetUserEnum(None, 0)[0]]
+
+        def get_current_user(self):
+            return os.environ['USERNAME']
+
+        def get_current_user_homedir(self):
+            return os.environ['USERPROFILE']
+
+        def get_nonexistent_user(self):
+            # return a user which does not exist on the system
+            users = self.get_users()
+            letters = string.ascii_lowercase
+            while 1:
+                user = ''.join([random.choice(letters) for i in range(10)])
+                if user not in users:
+                    return user
+
+        def test_wrong_anonymous_credentials(self):
+            user = self.get_current_user()
+            try:
+                self.authorizer_class(anonymous_user=user, 
+                                      anonymous_password='$|1wrongpasswd')
+            except ftpserver.AuthorizerError, err:
+                self.assertTrue('invalid credentials' in str(err))
+            else:
+                self.fail('exception not raised')
 
 
 def test_main():
@@ -436,8 +494,9 @@ def test_main():
             pass
         else:
             tests.append(TestUnixAuthorizer)
+    elif hasattr(authorizers, "WindowsAuthorizer"):
+        tests.append(TestWindowsAuthorizer)
 
-    tests = [TestUnixAuthorizer]
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
     safe_remove(TESTFN)
