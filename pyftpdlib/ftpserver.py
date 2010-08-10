@@ -1681,6 +1681,10 @@ class FTPHandler(asynchat.async_chat):
         when True causes the server to report all ls and MDTM times in
         GMT and not local time (default True).
 
+     - (bool) tcp_no_delay: controls the use of the TCP_NODELAY socket 
+        option which disables the Nagle algorithm resulting in 
+        significantly better performances (default True on all systems 
+        where it is supported).
 
     All relevant instance attributes initialized when client connects
     are reproduced below.  You may be interested in them in case you
@@ -1713,6 +1717,7 @@ class FTPHandler(asynchat.async_chat):
     masquerade_address = None
     passive_ports = None
     use_gmt_times = True
+    tcp_no_delay = hasattr(socket, "TCP_NODELAY")
 
     def __init__(self, conn, server):
         """Initialize the command channel.
@@ -1788,6 +1793,14 @@ class FTPHandler(asynchat.async_chat):
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_OOBINLINE, 1)
         except socket.error:
             pass
+
+        # disable Nagle algorithm for the control socket only, resulting
+        # in significantly better performances
+        if self.tcp_no_delay:
+            try:
+                self.socket.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
+            except socket.error:
+                pass
 
     def handle(self):
         """Return a 220 'ready' response to the client over the command

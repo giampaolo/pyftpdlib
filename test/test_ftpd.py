@@ -61,6 +61,7 @@ import random
 import warnings
 import sys
 import errno
+import asyncore
 try:
     import cStringIO as StringIO
 except ImportError:
@@ -1938,6 +1939,7 @@ class TestConfigurableOptions(unittest.TestCase):
         self.server.handler.permit_privileged_ports = False
         self.server.handler.passive_ports = None
         self.server.handler.use_gmt_times = True
+        self.server.handler.tcp_no_delay = hasattr(socket, 'TCP_NODELAY')
         self.server.stop()
 
     def test_max_connections(self):
@@ -2119,6 +2121,24 @@ class TestConfigurableOptions(unittest.TestCase):
             self.assertEqual(gmt1, loc1)
             self.assertEqual(gmt2, loc2)
             self.assertEqual(gmt3, loc3)
+
+    if hasattr(socket, 'TCP_NODELAY'):
+        def test_tcp_no_delay(self):
+            def get_handler_socket():
+                # return the server's handler socket object
+                for fd in asyncore.socket_map:
+                    instance = asyncore.socket_map[fd]
+                    if instance.connected:
+                        break
+                return instance.socket
+
+            s = get_handler_socket()
+            self.assertEqual(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY), 1)
+            self.client.quit()
+            self.server.handler.tcp_no_delay = False
+            self.client.connect(self.server.host, self.server.port)
+            s = get_handler_socket()
+            self.assertEqual(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY), 0)
 
 
 class TestCallbacks(unittest.TestCase):

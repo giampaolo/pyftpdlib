@@ -502,7 +502,7 @@ def test_main():
     elif hasattr(authorizers, "WindowsAuthorizer"):
         tests.append(TestWindowsAuthorizer)
 
-    tests = [TestUnixAuthorizer]
+#    tests = [TestUnixAuthorizer]
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
     safe_remove(TESTFN)

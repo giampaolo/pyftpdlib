@@ -31,6 +31,9 @@ Enhancements:
  * Issue 131: pyftpdlib is now able to serve both IPv4 and IPv6 at the same
    time by using a single socket.
 
+ * Issue 134: enabled TCP_NODELAY socket option for the FTP command channels
+   resulting in pyftpdlib being twice faster.
+
 Bugfixes:
 
  * Issue #120: an ActiveDTP() instance is not garbage collected in case a
@@ -43,7 +46,9 @@ Bugfixes:
 
 API changes since 0.5.2:
 
- * FTPHandler.use_gmt_times attribute has been added.
+ * FTPHandler.use_gmt_times class attribute has been added.
+
+ * FTPHandler.tcp_no_delay class attribute has been added.
 
  * FTPHandler.data_server attribute renamed in FTPHandler._dtp_acceptor.
 
