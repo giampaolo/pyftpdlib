@@ -84,6 +84,7 @@ class _CommonMethods:
             return self._dummy_authorizer.user_table[username][key]
 
 
+# Note: requires python >= 2.5
 try:
     import pwd, spwd, crypt
 except ImportError:
@@ -247,6 +248,7 @@ else:
     __all__.append('UnixAuthorizer')
 
 
+# Note: requires pywin32 extension
 try:
     import _winreg
     import win32security, win32net, pywintypes, win32con, win32api

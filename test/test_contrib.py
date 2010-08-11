@@ -28,20 +28,27 @@ from pyftpdlib.contrib import handlers
 from test_ftpd import *
 
 
-class FTPSClient(ftplib.FTP_TLS):
-    """A modified version of ftplib.FTP_TLS class which implicitly
-    secure the data connection after login().
-    """
-    def login(self, *args, **kwargs):
-        ftplib.FTP_TLS.login(self, *args, **kwargs)
-        self.prot_p()
+if hasattr(ftplib, 'FTP_TLS'):
+    class FTPSClient(ftplib.FTP_TLS):
+        """A modified version of ftplib.FTP_TLS class which implicitly
+        secure the data connection after login().
+        """
+        def login(self, *args, **kwargs):
+            ftplib.FTP_TLS.login(self, *args, **kwargs)
+            self.prot_p()
 
-class FTPSServer(FTPd):
-    """A threaded FTPS server used for functional testing."""
-    handler = handlers.TLS_FTPHandler
-    handler.certfile = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                       'keycert.pem'))
+    class FTPSServer(FTPd):
+        """A threaded FTPS server used for functional testing."""
+        handler = handlers.TLS_FTPHandler
+        handler.certfile = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                           'keycert.pem'))
 
+    class TLSTestMixin:
+        server_class = FTPSServer
+        client_class = FTPSClient
+else:
+    class TLSTestMixin:
+        pass
 
 # --- FTPS mixin tests
 #
@@ -56,10 +63,6 @@ class FTPSServer(FTPd):
 # base which is very large (more than 100 tests) and covers a lot
 # of cases which are supposed to work no matter if the protocol
 # is FTP or FTPS.
-
-class TLSTestMixin:
-    server_class = FTPSServer
-    client_class = FTPSClient
 
 class TestFtpAuthenticationTLSMixin(TLSTestMixin, TestFtpAuthentication): pass
 class TestTFtpDummyCmdsTLSMixin(TLSTestMixin, TestFtpDummyCmds): pass
@@ -364,7 +367,7 @@ class CommonAuthorizersTest(unittest.TestCase):
 class TestUnixAuthorizer(CommonAuthorizersTest):
     """Unix authorizer specific tests."""
 
-    authorizer_class = getattr(authorizers, "UnixAuthorizer")
+    authorizer_class = getattr(authorizers, "UnixAuthorizer", None)
 
     def get_users(self):
         return [entry.pw_name for entry in pwd.getpwall()]
@@ -433,7 +436,7 @@ else:
     class TestWindowsAuthorizer(CommonAuthorizersTest):
         """Windows authorizer specific tests."""
 
-        authorizer_class = getattr(authorizers, "WindowsAuthorizer")
+        authorizer_class = getattr(authorizers, "WindowsAuthorizer", None)
 
         def get_users(self):
             return [entry['name'] for entry in win32net.NetUserEnum(None, 0)[0]]
@@ -467,6 +470,7 @@ else:
 def test_main():
     test_suite = unittest.TestSuite()
     tests = []
+    warns = []
 
     # FTPS tests
     if hasattr(ftplib, 'FTP_TLS'):  # Added in Python 2.7
@@ -490,25 +494,29 @@ def test_main():
         if SUPPORTS_IPV6:
             ftps_tests.append(TestIPv6EnvironmentTLSMixin)
         tests += ftps_tests
+    else:
+        warns.append("FTPS tests skipped (requires python 2.7)")
 
     # authorizers tests
     if hasattr(authorizers, "UnixAuthorizer"):
         try:
             authorizers.UnixAuthorizer()
         except ftpserver.AuthorizerError:  # not root
-            pass
+            warns.append("UnixAuthorizer tests skipped (root privileges are "
+                         "required)")
         else:
+            warn_skip = False
             tests.append(TestUnixAuthorizer)
     elif hasattr(authorizers, "WindowsAuthorizer"):
         tests.append(TestWindowsAuthorizer)
 
-#    tests = [TestUnixAuthorizer]
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
     safe_remove(TESTFN)
     unittest.TextTestRunner(verbosity=2).run(test_suite)
     safe_remove(TESTFN)
-
+    for warn in warns:
+        warnings.warn(warn, RuntimeWarning)
 
 if __name__ == '__main__':
     test_main()
