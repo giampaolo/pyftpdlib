@@ -274,7 +274,7 @@ class CommonAuthorizersTest(unittest.TestCase):
     def test_validate_authentication(self):
         # can't test for actual success in case of valid authentication
         # here as we don't have the user password
-        auth = self.authorizer_class()
+        auth = self.authorizer_class(require_valid_shell=False)
         current_user = self.get_current_user()
         nonexistent_user = self.get_nonexistent_user()
         self.assertFalse(auth.validate_authentication(current_user, 'wrongpasswd'))
@@ -339,7 +339,7 @@ class CommonAuthorizersTest(unittest.TestCase):
         self.assertEqual(auth.get_msg_quit(user), "bar")
 
     def test_override_user_errors(self):
-        auth = self.authorizer_class()
+        auth = self.authorizer_class(require_valid_shell=False)
         this_user = self.get_current_user()
         another_user = self.get_users()[-1]
         nonexistent_user = self.get_nonexistent_user()
@@ -349,12 +349,14 @@ class CommonAuthorizersTest(unittest.TestCase):
         self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
                                  'no such user %s' % nonexistent_user,
                                  auth.override_user, nonexistent_user, perm='r')
-        auth = self.authorizer_class(allowed_users=[this_user])
+        auth = self.authorizer_class(allowed_users=[this_user], 
+                                     require_valid_shell=False)
         auth.override_user(this_user, perm='r')
         self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
                                  '%s is not an allowed user' % another_user,
                                  auth.override_user, another_user, perm='r')
-        auth = self.authorizer_class(rejected_users=[this_user])
+        auth = self.authorizer_class(rejected_users=[this_user],
+                                     require_valid_shell=False)
         auth.override_user(another_user, perm='r')
         self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
                                  '%s is not an allowed user' % this_user,
@@ -388,8 +390,8 @@ class TestUnixAuthorizer(CommonAuthorizersTest):
                 return user
 
     def test_get_perms_anonymous(self):
-        auth = self.authorizer_class(global_perm='elr', 
-                                        anonymous_user=self.get_current_user())
+        auth = authorizers.UnixAuthorizer(global_perm='elr', 
+                                          anonymous_user=self.get_current_user())
         self.assertTrue('e' in auth.get_perms('anonymous'))
         self.assertFalse('w' in auth.get_perms('anonymous'))
         warnings.filterwarnings("ignore")
@@ -398,8 +400,8 @@ class TestUnixAuthorizer(CommonAuthorizersTest):
         self.assertTrue('w' in auth.get_perms('anonymous'))
 
     def test_has_perm_anonymous(self):
-        auth = self.authorizer_class(global_perm='elr', 
-                                        anonymous_user=self.get_current_user())
+        auth = authorizers.UnixAuthorizer(global_perm='elr', 
+                                          anonymous_user=self.get_current_user())
         self.assertTrue(auth.has_perm(self.get_current_user(), 'r'))
         self.assertFalse(auth.has_perm(self.get_current_user(), 'w'))
         self.assertTrue(auth.has_perm('anonymous', 'e'))
@@ -411,10 +413,31 @@ class TestUnixAuthorizer(CommonAuthorizersTest):
 
     def test_validate_authentication_anonymous(self):
         current_user = self.get_current_user()
-        auth = self.authorizer_class(anonymous_user=current_user)
+        auth = authorizers.UnixAuthorizer(anonymous_user=current_user,                      
+                                          require_valid_shell=False)
         self.assertFalse(auth.validate_authentication('foo', 'passwd'))
         self.assertFalse(auth.validate_authentication(current_user, 'passwd'))
         self.assertTrue(auth.validate_authentication('anonymous', 'passwd'))
+
+    def test_require_valid_shell(self):
+
+        def get_fake_shell_user():
+            for user in self.get_users():
+                shell = pwd.getpwnam(user).pw_shell
+                # On linux fake shell is usually /bin/false, on 
+                # freebsd /usr/sbin/nologin;  in case of other
+                # UNIX variants test needs to be adjusted.
+                if '/false' in shell or '/nologin' in shell:  
+                    return user
+            self.fail("no user found")
+
+        auth = authorizers.UnixAuthorizer()
+        user = get_fake_shell_user()
+        self.assertTrue(auth._has_valid_shell(self.get_current_user()))
+        self.assertFalse(auth._has_valid_shell(user))
+        self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
+                                 "user %s has not a valid shell" % user,
+                                 auth.override_user, user, perm='r')
 
     def test_not_root(self):
         # UnixAuthorizer is supposed to work only as super user

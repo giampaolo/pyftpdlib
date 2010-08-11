@@ -12,13 +12,13 @@ class for:
 
 This module contains two classes which implements such functionalities 
 in a system-specific way for both Unix and Windows.
-Both implementations share the same API and functionalities.
 """
 
 __all__ = []
 
 
 import os
+import errno
 
 from pyftpdlib.ftpserver import DummyAuthorizer, AuthorizerError
 
@@ -106,7 +106,7 @@ else:
         "12345" as password those same credentials can be used for 
         accessing the FTP server as well.
 
-        The user home directory will be the one defined /etc/passwd
+        The user home directory will be the one defined in /etc/passwd
         (e.g. /home/username).
 
         Every time a filesystem operation occurs (e.g. a file is
@@ -128,17 +128,25 @@ else:
 
          - (list) allowed_users:
             a list of users which are accepted for authenticating 
-            against the FTP server
+            against the FTP server; defaults to [] (no restrictions).
 
          - (list) rejected_users:
             a list of users which are not accepted for authenticating 
-            against the FTP server
+            against the FTP server; defaults to [] (no restrictions).
+
+         - (bool) require_valid_shell:
+            Deny access for those users which do not have a valid shell
+            binary listed in /etc/shells.
+            If /etc/shells cannot be found this is a no-op.
+            Anonymous user is not subject to this option, and is free
+            to not have a valid shell defined.
+            Defaults to True (a valid shell is required for login).
 
          - (string) anonymous_user:
             specify it if you intend to provide anonymous access.
             The value expected is a string representing the system user
-            to use for managing anonymous sessions.
-            Defaults to None (anonymous access disabled).
+            to use for managing anonymous sessions;  defaults to None 
+            (anonymous access disabled).
 
          - (string) msg_login:
             the string sent when client logs in.
@@ -152,6 +160,7 @@ else:
         def __init__(self, global_perm="elradfmw",
                            allowed_users=[],
                            rejected_users=[],
+                           require_valid_shell=True,
                            anonymous_user=None,
                            msg_login="Login successful.",
                            msg_quit="Goodbye."):
@@ -162,6 +171,7 @@ else:
             self.allowed_users = allowed_users
             self.rejected_users = rejected_users
             self.anonymous_user = anonymous_user
+            self.require_valid_shell = require_valid_shell
             self.msg_login = msg_login
             self.msg_quit = msg_quit
             self._dummy_authorizer = DummyAuthorizer()
@@ -184,6 +194,10 @@ else:
             """Overrides the options specified in the class constructor 
             for a specific user.
             """
+            if self.require_valid_shell and username != 'anonymous':
+                if not self._has_valid_shell(username):
+                    raise AuthorizerError("user %s has not a valid shell"
+                                          % username)
             _CommonMethods.override_user(self, username, password, homedir, 
                                          perm, msg_login, msg_quit)
 
@@ -199,6 +213,10 @@ else:
                 return False
             if self.rejected_users and username in self.rejected_users:
                 return False
+            if self.require_valid_shell and username != 'anonymous':
+                if not self._has_valid_shell(username):
+                    return False
+
             overridden_password = self._get_key(username, 'pwd')
             if overridden_password is not None:
                 return overridden_password == password
@@ -245,6 +263,29 @@ else:
             except KeyError:
                 raise AuthorizerError('no such user %s' % username)
 
+        def _has_valid_shell(self, username):
+            """Return True if the user has a valid shell binary listed 
+            in /etc/shells. If /etc/shells can't be found return True.
+            """
+            try:
+                file = open('/etc/shells', 'r')
+            except IOError, err:
+                if err.errno == errno.ENOENT:
+                    return True
+                raise
+            else:
+                try:
+                    shell = pwd.getpwnam(username).pw_shell
+                    for line in file:
+                        if line.startswith('#'):
+                            continue
+                        line = line.strip()
+                        if line == shell:
+                            return True
+                    return False
+                finally:
+                    file.close()
+
     __all__.append('UnixAuthorizer')
 
 
@@ -286,11 +327,11 @@ else:
 
          - (list) allowed_users:
             a list of users which are accepted for authenticating 
-            against the FTP server
+            against the FTP server; defaults to [] (no restrictions).
 
          - (list) rejected_users:
             a list of users which are not accepted for authenticating 
-            against the FTP server
+            against the FTP server; defaults to [] (no restrictions).
 
          - (string) anonymous_user:
             specify it if you intend to provide anonymous access.
