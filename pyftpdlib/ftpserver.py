@@ -3,7 +3,7 @@
 #
 #  pyftpdlib is released under the MIT license, reproduced below:
 #  ======================================================================
-#  Copyright (C) 2007-2009 Giampaolo Rodola' <g.rodola@gmail.com>
+#  Copyright (C) 2007-2010 Giampaolo Rodola' <g.rodola@gmail.com>
 #
 #                         All Rights Reserved
 #
@@ -213,25 +213,6 @@ class _CommandProperty:
 for cmd, properties in proto_cmds.iteritems():
     proto_cmds[cmd] = _CommandProperty(*properties)
 del cmd, properties
-
-
-# hack around format_exc function of traceback module to grant
-# backward compatibility with python < 2.4
-if not hasattr(traceback, 'format_exc'):
-    try:
-        import cStringIO as StringIO
-    except ImportError:
-        import StringIO
-
-    def _format_exc():
-        f = StringIO.StringIO()
-        traceback.print_exc(file=f)
-        data = f.getvalue()
-        f.close()
-        return data
-
-    traceback.format_exc = _format_exc
-
 
 def _strerror(err):
     """A wrap around os.strerror() which may be not available on all
@@ -1277,10 +1258,6 @@ class AbstractedFS:
             p = '/' + p
         return p
 
-    # XXX - alias for backward compatibility with 0.2.0
-    normalize = ftpnorm
-    translate = ftp2fs
-
     def validpath(self, path):
         """Check whether the path belongs to user's home directory.
         Expected argument is a "real" filesystem pathname.
@@ -1406,20 +1383,7 @@ class AbstractedFS:
         """Return True if path refers to an existing path, including
         a broken or circular symbolic link.
         """
-        if hasattr(os.path, 'lexists'):
-            return os.path.lexists(path)
-        # grant backward compatibility with python 2.3
-        elif hasattr(os, 'lstat'):
-            try:
-                os.lstat(path)
-            except os.error:
-                return False
-            return True
-        # fallback
-        else:
-            return os.path.exists(path)
-
-    exists = lexists  # XXX - alias for backward compatibility with 0.2.0
+        return os.path.lexists(path)
 
     def get_user_by_uid(self, uid):
         """Return the username associated with user id.
@@ -1455,8 +1419,6 @@ class AbstractedFS:
             return os.readlink(path)
 
     # --- Listing utilities
-
-    # note: the following operations are no more blocking
 
     def get_list_dir(self, path):
         """"Return an iterator object that yields a directory listing
@@ -1566,6 +1528,9 @@ class AbstractedFS:
         type = size = perm = modify = create = unique = mode = uid = gid = ""
         for basename in listing:
             file = os.path.join(basedir, basename)
+            # to properly implement 'unique' fact (RFC-3659, chapter 
+            # 7.5.2) we are supposed to follow symlinks, hence use 
+            # os.stat() instead of os.lstat()
             try:
                 st = self.stat(file)
             except OSError:
@@ -3326,10 +3291,6 @@ class FTPServer(asyncore.dispatcher):
         """
         if map is None:
             map = asyncore.socket_map
-        # backward compatibility for python versions < 2.4
-        if not hasattr(self, '_map'):
-            self._map = self.handler._map = map
-
         if use_poll and hasattr(asyncore.select, 'poll'):
             poll_fun = asyncore.poll2
         else:

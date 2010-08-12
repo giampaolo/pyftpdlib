@@ -34,6 +34,8 @@ Enhancements:
  * Issue 134: enabled TCP_NODELAY socket option for the FTP command channels
    resulting in pyftpdlib being twice faster.
 
+ * Issue 135: Python 2.3 support has been removed.
+
 Bugfixes:
 
  * Issue #120: an ActiveDTP() instance is not garbage collected in case a
@@ -45,6 +47,8 @@ Bugfixes:
    is created for the local network interface.
 
 API changes since 0.5.2:
+
+ * removed support for Python 2.3.
 
  * FTPHandler.use_gmt_times class attribute has been added.
 

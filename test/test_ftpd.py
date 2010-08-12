@@ -37,13 +37,12 @@
 # -----------------------------------------------------------
 #  Linux Ubuntu 2.6.20-15          | 2.4, 2.5
 #  Linux Kubuntu 8.04 32 & 64 bits | 2.5.2
-#  Linux Debian 2.4.27-2-386       | 2.3.5
-#  Windows XP prof SP3             | 2.3, 2.4, 2.5, 2.6.1
+#  Windows XP prof SP3             | 2.4, 2.5, 2.6.1
 #  Windows Vista Ultimate 64 bit   | 2.5.1
 #  Windows Vista Business 32 bit   | 2.5.1
 #  Windows Server 2008 64bit       | 2.5.1
 #  Windows Mobile 6.1              | PythonCE 2.5
-#  OS X 10.4.10                    | 2.3, 2.4, 2.5
+#  OS X 10.4.10                    | 2.4, 2.5
 #  FreeBSD 7.0                     | 2.4, 2.5
 # -----------------------------------------------------------
 
@@ -70,7 +69,7 @@ except ImportError:
 from pyftpdlib import ftpserver
 
 
-__release__ = 'pyftpdlib 0.5.1'
+__release__ = 'pyftpdlib 0.6.0'
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
 try:
@@ -198,11 +197,6 @@ class FTPd(threading.Thread):
         self.__serving = False
         self.__stopped = True
         self.join()
-
-# XXX - aliases for backward compatibility with Python 2.3
-if sys.version_info < (2, 4):
-    unittest.TestCase.assertTrue = unittest.TestCase.failUnless
-    unittest.TestCase.assertFalse = unittest.TestCase.failIf
 
 
 class TestAbstractedFS(unittest.TestCase):
@@ -339,7 +333,7 @@ class TestAbstractedFS(unittest.TestCase):
         fs.root = HOME
         self.assertTrue(fs.validpath(HOME))
         self.assertTrue(fs.validpath(HOME + '/'))
-        self.assertFalse(fs.validpath(HOME + 'xxx'))
+        self.assertFalse(fs.validpath(HOME + 'bar'))
 
     if hasattr(os, 'symlink'):
 
@@ -1030,25 +1024,11 @@ class TestFtpFsOperations(unittest.TestCase):
         # returns a negative value referring to a year prior to 1900.
         # It causes time.localtime/gmtime to raise a ValueError exception
         # which is supposed to be handled by server.
-
-        # Python 2.3 on certain posix platforms does not raise
-        # ValueError as expected;
-        # (see http://bugs.python.org/issue874042)
-        try:
-            time.strftime("%Y%m%d%H%M%S", time.localtime(-9000000000))
-        except ValueError:
-            skip = 0
-        else:
-            skip = 1
-
         _getmtime = ftpserver.AbstractedFS.getmtime
         try:
             ftpserver.AbstractedFS.getmtime = lambda x, y: -9000000000
-            if not skip:
-                self.assertRaises(ftplib.error_perm, self.client.sendcmd,
-                                  'mdtm ' + self.tempfile)
-            else:
-                self.client.sendcmd('mdtm ' + self.tempfile)
+            self.assertRaises(ftplib.error_perm, self.client.sendcmd,
+                              'mdtm ' + self.tempfile)
             # make sure client hasn't been disconnected
             self.client.sendcmd('noop')
         finally:
@@ -2046,50 +2026,48 @@ class TestConfigurableOptions(unittest.TestCase):
         resulting_port = self.client.makepasv()[1]
         self.assert_(port != resulting_port)
 
-    if hasattr(socket, 'getservbyport'):   # python > 2.3
+    def test_permit_privileged_ports(self):
+        # Test FTPHandler.permit_privileged_ports_active attribute
 
-        def test_permit_privileged_ports(self):
-            # Test FTPHandler.permit_privileged_ports_active attribute
-
-            # try to bind a socket on a privileged port
-            sock = None
-            for port in range(1, 1024)[::-1]:
+        # try to bind a socket on a privileged port
+        sock = None
+        for port in reversed(range(1, 1024)):
+            try:
+                socket.getservbyport(port)
+            except socket.error, err:
+                # not registered port; go on
                 try:
-                    socket.getservbyport(port)
+                    sock = socket.socket(self.client.af, socket.SOCK_STREAM)
+                    sock.bind((HOST, port))
+                    break
                 except socket.error, err:
-                    # not registered port; go on
-                    try:
-                        sock = socket.socket(self.client.af, socket.SOCK_STREAM)
-                        sock.bind((HOST, port))
+                    if err[0] == errno.EACCES:
+                        # root privileges needed
+                        sock = None
                         break
-                    except socket.error, err:
-                        if err[0] == errno.EACCES:
-                            # root privileges needed
-                            sock = None
-                            break
-                        sock.close()
-                        continue
-                else:
-                    # registered port found; skip to the next one
+                    sock.close()
                     continue
             else:
-                # no usable privileged port was found
-                sock = None
+                # registered port found; skip to the next one
+                continue
+        else:
+            # no usable privileged port was found
+            sock = None
 
-            try:
-                self.server.handler.permit_privileged_ports = False
-                self.assertRaises(ftplib.error_perm, self.client.sendport, HOST,
-                                  port)
-                if sock:
-                    port = sock.getsockname()[1]
-                    self.server.handler.permit_privileged_ports = True
-                    sock.listen(5)
-                    sock.settimeout(2)
-                    self.client.sendport(HOST, port)
-                    sock.accept()
-            finally:
-                if sock is not None:
-                    sock.close()
+        try:
+            self.server.handler.permit_privileged_ports = False
+            self.assertRaises(ftplib.error_perm, self.client.sendport, HOST,
+                              port)
+            if sock:
+                port = sock.getsockname()[1]
+                self.server.handler.permit_privileged_ports = True
+                sock.listen(5)
+                sock.settimeout(2)
+                self.client.sendport(HOST, port)
+                sock.accept()
+        finally:
+            if sock is not None:
+                sock.close()
 
     def test_use_gmt_times(self):
         # use GMT time
@@ -2505,7 +2483,7 @@ class TestIPv6Environment(_TestNetworkProtocols):
         self.client.makepasv()
 
     def test_eprt_v6(self):
-        self.assertEqual(self.cmdresp('eprt |2|::xxx|2222|'),
+        self.assertEqual(self.cmdresp('eprt |2|::foo|2222|'),
                          "501 Can't connect to a foreign address.")
 
 
@@ -2659,7 +2637,7 @@ class TestCommandLineParser(unittest.TestCase):
         self.assertRaises(SystemExit, ftpserver.main)
 
         # invalid argument
-        sys.argv += ["-p xxx"]
+        sys.argv += ["-p foo"]
         self.assertRaises(SystemExit, ftpserver.main)
 
     def test_w_option(self):
@@ -2672,7 +2650,7 @@ class TestCommandLineParser(unittest.TestCase):
 
         # unexpected argument
         sys.argv = self.SYSARGV[:]
-        sys.argv += ["-w xxx"]
+        sys.argv += ["-w foo"]
         sys.stderr = self.devnull
         self.assertRaises(SystemExit, ftpserver.main)
 
@@ -2707,7 +2685,7 @@ class TestCommandLineParser(unittest.TestCase):
 
         # wrong arg
         sys.argv = self.SYSARGV[:]
-        sys.argv += ["-r xxx-yyy"]
+        sys.argv += ["-r yyy-zzz"]
         self.assertRaises(SystemExit, ftpserver.main)
 
     def test_v_option(self):
@@ -2716,7 +2694,7 @@ class TestCommandLineParser(unittest.TestCase):
 
         # unexpected argument
         sys.argv = self.SYSARGV[:]
-        sys.argv += ["-v xxx"]
+        sys.argv += ["-v foo"]
         sys.stderr = self.devnull
         self.assertRaises(SystemExit, ftpserver.main)
 
