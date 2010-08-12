@@ -274,7 +274,10 @@ class CommonAuthorizersTest(unittest.TestCase):
     def test_validate_authentication(self):
         # can't test for actual success in case of valid authentication
         # here as we don't have the user password
-        auth = self.authorizer_class(require_valid_shell=False)
+        if self.authorizer_class.__name__ == 'UnixAuthorizer':
+            auth = self.authorizer_class(require_valid_shell=False)
+        else:
+            auth = self.authorizer_class()
         current_user = self.get_current_user()
         nonexistent_user = self.get_nonexistent_user()
         self.assertFalse(auth.validate_authentication(current_user, 'wrongpasswd'))
@@ -286,13 +289,13 @@ class CommonAuthorizersTest(unittest.TestCase):
         try:
             if self.authorizer_class.__name__ == 'UnixAuthorizer':
                 auth.impersonate_user(self.get_current_user(), '')
-                self.assertRaises(ftpserver.AuthorizerError, 
+                self.assertRaises(ftpserver.AuthorizerError,
                                   auth.impersonate_user, nonexistent_user, 'pwd')
             else:
                 # XXX
-                self.assertRaises(Exception, 
+                self.assertRaises(Exception,
                                   auth.impersonate_user, nonexistent_user, 'pwd')
-                self.assertRaises(Exception, 
+                self.assertRaises(Exception,
                                   auth.impersonate_user, self.get_current_user(), '')
         finally:
             auth.terminate_impersonation()
@@ -320,7 +323,7 @@ class CommonAuthorizersTest(unittest.TestCase):
     def test_access_options(self):
         self.assertRaisesWithMsg(authorizers.AuthorizerError,
              "rejected_users and allowed_users options are mutually exclusive",
-             self.authorizer_class, allowed_users=['foo'], 
+             self.authorizer_class, allowed_users=['foo'],
                                          rejected_users=['bar'])
 
     def test_override_user(self):
@@ -339,29 +342,38 @@ class CommonAuthorizersTest(unittest.TestCase):
         self.assertEqual(auth.get_msg_quit(user), "bar")
 
     def test_override_user_errors(self):
-        auth = self.authorizer_class(require_valid_shell=False)
+        if self.authorizer_class.__name__ == 'UnixAuthorizer':
+            auth = self.authorizer_class(require_valid_shell=False)
+        else:
+            auth = self.authorizer_class()
         this_user = self.get_current_user()
         another_user = self.get_users()[-1]
         nonexistent_user = self.get_nonexistent_user()
-        self.assertRaisesWithMsg(ValueError, 
+        self.assertRaisesWithMsg(ValueError,
                                 "at least one keyword argument must be specified",
                                 auth.override_user, this_user)
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
+        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
                                  'no such user %s' % nonexistent_user,
                                  auth.override_user, nonexistent_user, perm='r')
-        auth = self.authorizer_class(allowed_users=[this_user], 
-                                     require_valid_shell=False)
+        if self.authorizer_class.__name__ == 'UnixAuthorizer':
+            auth = self.authorizer_class(allowed_users=[this_user],
+                                         require_valid_shell=False)
+        else:
+            auth = self.authorizer_class(allowed_users=[this_user])
         auth.override_user(this_user, perm='r')
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
+        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
                                  '%s is not an allowed user' % another_user,
                                  auth.override_user, another_user, perm='r')
-        auth = self.authorizer_class(rejected_users=[this_user],
-                                     require_valid_shell=False)
+        if self.authorizer_class.__name__ == 'UnixAuthorizer':
+            auth = self.authorizer_class(rejected_users=[this_user],
+                                         require_valid_shell=False)
+        else:
+            auth = self.authorizer_class(rejected_users=[this_user])
         auth.override_user(another_user, perm='r')
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
+        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
                                  '%s is not an allowed user' % this_user,
                                  auth.override_user, this_user, perm='r')
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
+        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
                                  "can't assign password to anonymous user",
                                  auth.override_user, "anonymous", password='foo')
 
@@ -390,17 +402,17 @@ class TestUnixAuthorizer(CommonAuthorizersTest):
                 return user
 
     def test_get_perms_anonymous(self):
-        auth = authorizers.UnixAuthorizer(global_perm='elr', 
+        auth = authorizers.UnixAuthorizer(global_perm='elr',
                                           anonymous_user=self.get_current_user())
         self.assertTrue('e' in auth.get_perms('anonymous'))
         self.assertFalse('w' in auth.get_perms('anonymous'))
         warnings.filterwarnings("ignore")
         auth.override_user('anonymous', perm='w')
-        warnings.resetwarnings()        
+        warnings.resetwarnings()
         self.assertTrue('w' in auth.get_perms('anonymous'))
 
     def test_has_perm_anonymous(self):
-        auth = authorizers.UnixAuthorizer(global_perm='elr', 
+        auth = authorizers.UnixAuthorizer(global_perm='elr',
                                           anonymous_user=self.get_current_user())
         self.assertTrue(auth.has_perm(self.get_current_user(), 'r'))
         self.assertFalse(auth.has_perm(self.get_current_user(), 'w'))
@@ -413,7 +425,7 @@ class TestUnixAuthorizer(CommonAuthorizersTest):
 
     def test_validate_authentication_anonymous(self):
         current_user = self.get_current_user()
-        auth = authorizers.UnixAuthorizer(anonymous_user=current_user,                      
+        auth = authorizers.UnixAuthorizer(anonymous_user=current_user,
                                           require_valid_shell=False)
         self.assertFalse(auth.validate_authentication('foo', 'passwd'))
         self.assertFalse(auth.validate_authentication(current_user, 'passwd'))
@@ -424,10 +436,10 @@ class TestUnixAuthorizer(CommonAuthorizersTest):
         def get_fake_shell_user():
             for user in self.get_users():
                 shell = pwd.getpwnam(user).pw_shell
-                # On linux fake shell is usually /bin/false, on 
+                # On linux fake shell is usually /bin/false, on
                 # freebsd /usr/sbin/nologin;  in case of other
                 # UNIX variants test needs to be adjusted.
-                if '/false' in shell or '/nologin' in shell:  
+                if '/false' in shell or '/nologin' in shell:
                     return user
             self.fail("no user found")
 
@@ -435,7 +447,7 @@ class TestUnixAuthorizer(CommonAuthorizersTest):
         user = get_fake_shell_user()
         self.assertTrue(auth._has_valid_shell(self.get_current_user()))
         self.assertFalse(auth._has_valid_shell(user))
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
+        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
                                  "user %s has not a valid shell" % user,
                                  auth.override_user, user, perm='r')
 
@@ -444,7 +456,7 @@ class TestUnixAuthorizer(CommonAuthorizersTest):
         auth = self.authorizer_class()
         try:
             auth.impersonate_user('nobody', '')
-            self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
+            self.assertRaisesWithMsg(ftpserver.AuthorizerError,
                                      "super user privileges are required",
                                      authorizers.UnixAuthorizer)
         finally:
@@ -482,7 +494,7 @@ else:
         def test_wrong_anonymous_credentials(self):
             user = self.get_current_user()
             try:
-                self.authorizer_class(anonymous_user=user, 
+                self.authorizer_class(anonymous_user=user,
                                       anonymous_password='$|1wrongpasswd')
             except ftpserver.AuthorizerError, err:
                 self.assertTrue('invalid credentials' in str(err))

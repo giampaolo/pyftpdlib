@@ -2106,7 +2106,7 @@ class TestConfigurableOptions(unittest.TestCase):
                 # return the server's handler socket object
                 for fd in asyncore.socket_map:
                     instance = asyncore.socket_map[fd]
-                    if instance.connected:
+                    if isinstance(instance, ftpserver.FTPHandler):
                         break
                 return instance.socket
 
@@ -2115,6 +2115,7 @@ class TestConfigurableOptions(unittest.TestCase):
             self.client.quit()
             self.server.handler.tcp_no_delay = False
             self.client.connect(self.server.host, self.server.port)
+            self.client.sendcmd('noop')
             s = get_handler_socket()
             self.assertEqual(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY), 0)
 
