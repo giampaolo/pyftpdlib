@@ -126,7 +126,7 @@ def safe_remove(*files):
             pass
 
 
-class FTPd(object, threading.Thread):
+class FTPd(threading.Thread):
     """A threaded FTP server used for running tests.
 
     This is basically a modified version of the FTPServer class which
