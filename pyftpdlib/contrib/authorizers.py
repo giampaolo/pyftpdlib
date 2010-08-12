@@ -35,7 +35,7 @@ def replace_anonymous(callable):
     return wrapper
 
 
-class _CommonMethods:
+class _CommonMethods(object):
     """Methods common to both Unix and Windows authorizers."""
 
     def override_user(self, username, password=None, homedir=None, perm=None, 

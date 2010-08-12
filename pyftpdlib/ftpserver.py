@@ -244,7 +244,7 @@ def _scheduler():
                 call.cancel()
 
 
-class CallLater:
+class CallLater(object):
     """Calls a function at a later time.
 
     It can be used to asynchronously schedule a call within the polling
@@ -344,7 +344,7 @@ def logerror(msg):
 
 # --- authorizers
 
-class DummyAuthorizer:
+class DummyAuthorizer(object):
     """Basic "dummy" authorizer class, suitable for subclassing to
     create your own custom authorizers.
 
@@ -530,7 +530,7 @@ class DummyAuthorizer:
 
 # --- DTP classes
 
-class PassiveDTP(asyncore.dispatcher):
+class PassiveDTP(object, asyncore.dispatcher):
     """This class is an asyncore.dispatcher subclass. It creates a
     socket listening on a local port, dispatching the resultant
     connection to DTPHandler.
@@ -679,7 +679,7 @@ class PassiveDTP(asyncore.dispatcher):
             self.idler.cancel()
 
 
-class ActiveDTP(asyncore.dispatcher):
+class ActiveDTP(object, asyncore.dispatcher):
     """This class is an asyncore.disptacher subclass. It creates a
     socket resulting from the connection to a remote user-port,
     dispatching it to DTPHandler.
@@ -767,7 +767,7 @@ class ActiveDTP(asyncore.dispatcher):
             self.idler.cancel()
 
 
-class DTPHandler(asynchat.async_chat):
+class DTPHandler(object, asynchat.async_chat):
     """Class handling server-data-transfer-process (server-DTP, see
     RFC-959) managing data-transfer operations involving sending
     and receiving data.
@@ -1098,7 +1098,7 @@ class ThrottledDTPHandler(DTPHandler):
 
 # --- producers
 
-class FileProducer:
+class FileProducer(object):
     """Producer wrapper for file[-like] objects."""
 
     buffer_size = 65536
@@ -1133,7 +1133,7 @@ class FileProducer:
         return data
 
 
-class BufferedIteratorProducer:
+class BufferedIteratorProducer(object):
     """Producer for iterator objects with buffer capabilities."""
     # how many times iterator.next() will be called before
     # returning some data
@@ -1157,7 +1157,7 @@ class BufferedIteratorProducer:
 
 # --- filesystem
 
-class AbstractedFS:
+class AbstractedFS(object):
     """A class used to interact with the file system, providing a
     cross-platform interface compatible with both Windows and
     UNIX style filesystems where all paths use "/" separator.
@@ -1596,7 +1596,7 @@ class AbstractedFS:
 
 # --- FTP
 
-class FTPHandler(asynchat.async_chat):
+class FTPHandler(object, asynchat.async_chat):
     """Implements the FTP server Protocol Interpreter (see RFC-959),
     handling commands received from the client on the control channel.
 
@@ -3200,7 +3200,7 @@ class FTPHandler(asynchat.async_chat):
         self.ftp_RMD(line)
 
 
-class FTPServer(asyncore.dispatcher):
+class FTPServer(object, asyncore.dispatcher):
     """This class is an asyncore.disptacher subclass.  It creates a FTP
     socket listening on <address>, dispatching the requests to a <handler>
     (typically FTPHandler class).
