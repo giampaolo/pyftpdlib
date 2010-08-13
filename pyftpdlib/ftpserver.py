@@ -554,7 +554,7 @@ class PassiveDTP(object, asyncore.dispatcher):
             self.idler = None
 
         ip = self.cmd_channel.socket.getsockname()[0]
-        self.create_socket(self.cmd_channel.af, socket.SOCK_STREAM)
+        self.create_socket(self.cmd_channel._af, socket.SOCK_STREAM)
 
         if self.cmd_channel.passive_ports is None:
             # By using 0 as port number value we let kernel choose a
@@ -704,7 +704,7 @@ class ActiveDTP(object, asyncore.dispatcher):
             self.idler = CallLater(self.timeout, self.handle_timeout)
         else:
             self.idler = None
-        self.create_socket(self.cmd_channel.af, socket.SOCK_STREAM)
+        self.create_socket(self.cmd_channel._af, socket.SOCK_STREAM)
         # Have the active connection come from the same IP address
         # as the command channel, see:
         # http://code.google.com/p/pyftpdlib/issues/detail?id=123
@@ -1044,7 +1044,7 @@ class ThrottledDTPHandler(DTPHandler):
         DTPHandler.__init__(self, sock_obj, cmd_channel)
         self._timenext = 0
         self._datacount = 0
-        self._sleeping = False
+        self.sleeping = False
         self._throttler = None
 
         if self.auto_sized_buffers:
@@ -1056,10 +1056,10 @@ class ThrottledDTPHandler(DTPHandler):
                     self.ac_out_buffer_size /= 2
 
     def readable(self):
-        return not self._sleeping and DTPHandler.readable(self)
+        return not self.sleeping and DTPHandler.readable(self)
 
     def writable(self):
-        return not self._sleeping and DTPHandler.writable(self)
+        return not self.sleeping and DTPHandler.writable(self)
 
     def recv(self, buffer_size):
         chunk = DTPHandler.recv(self, buffer_size)
@@ -1085,8 +1085,8 @@ class ThrottledDTPHandler(DTPHandler):
             if sleepfor > 0:
                 # we've passed bandwidth limits
                 def unsleep():
-                    self._sleeping = False
-                self._sleeping = True
+                    self.sleeping = False
+                self.sleeping = True
                 self._throttler = CallLater(sleepfor * 2, unsleep)
             self._timenext = now + 1
 
@@ -1699,20 +1699,20 @@ class FTPHandler(object, asynchat.async_chat):
         self.username = ""
         self.password = ""
         self.attempted_logins = 0
-        self.current_type = 'a'
-        self.restart_position = 0
-        self.quit_pending = False
         self.sleeping = False
         self.data_channel = None
         self.remote_ip = ""
         self.remote_port = ""
-        self.af = -1
         if self.timeout:
             self.idler = CallLater(self.timeout, self.handle_timeout)
         else:
             self.idler = None
 
         # private session attributes
+        self._current_type = 'a'
+        self._restart_position = 0
+        self._quit_pending = False
+        self._af = -1
         self._in_buffer = []
         self._in_buffer_len = 0
         self._epsvall = False
@@ -1746,10 +1746,10 @@ class FTPHandler(object, asynchat.async_chat):
             return
 
         if hasattr(self.socket, 'family'):
-            self.af = self.socket.family
+            self._af = self.socket.family
         else:  # python < 2.5
             ip, port = self.socket.getsockname()[:2]
-            self.af = socket.getaddrinfo(ip, port, socket.AF_UNSPEC,
+            self._af = socket.getaddrinfo(ip, port, socket.AF_UNSPEC,
                                          socket.SOCK_STREAM)[0][0]
 
         # try to handle urgent data inline
@@ -2079,14 +2079,14 @@ class FTPHandler(object, asynchat.async_chat):
         # check for data to receive
         elif self._in_dtp_queue is not None:
             self.data_channel.file_obj = self._in_dtp_queue
-            self.data_channel.enable_receiving(self.current_type)
+            self.data_channel.enable_receiving(self._current_type)
             self._in_dtp_queue = None
 
     def on_dtp_close(self):
         """Called every time the data channel is closed (internal, not
         supposed to be overridden)."""
         self.data_channel = None
-        if self.quit_pending:
+        if self._quit_pending:
             self.close()
         elif self.timeout:
             # data transfer finished, restart the idle timer
@@ -2156,9 +2156,9 @@ class FTPHandler(object, asynchat.async_chat):
         self.username = ""
         self.password = ""
         self.attempted_logins = 0
-        self.current_type = 'a'
-        self.restart_position = 0
-        self.quit_pending = False
+        self._current_type = 'a'
+        self._restart_position = 0
+        self._quit_pending = False
         self.sleeping = False
         self._in_dtp_queue = None
         self._rnfr = None
@@ -2294,7 +2294,7 @@ class FTPHandler(object, asynchat.async_chat):
             return
 
         if af == "1":
-            if self.af != socket.AF_INET:
+            if self._af != socket.AF_INET:
                 self.respond('522 Network protocol not supported (use 2).')
             else:
                 try:
@@ -2309,12 +2309,12 @@ class FTPHandler(object, asynchat.async_chat):
                 else:
                     self._make_eport(ip, port)
         elif af == "2":
-            if self.af == socket.AF_INET:
+            if self._af == socket.AF_INET:
                 self.respond('522 Network protocol not supported (use 1).')
             else:
                 self._make_eport(ip, port)
         else:
-            if self.af == socket.AF_INET:
+            if self._af == socket.AF_INET:
                 self.respond('501 Unknown network protocol (use 1).')
             else:
                 self.respond('501 Unknown network protocol (use 2).')
@@ -2345,13 +2345,13 @@ class FTPHandler(object, asynchat.async_chat):
             self._make_epasv(extmode=True)
         # IPv4
         elif line == "1":
-            if self.af != socket.AF_INET:
+            if self._af != socket.AF_INET:
                 self.respond('522 Network protocol not supported (use 2).')
             else:
                 self._make_epasv(extmode=True)
         # IPv6
         elif line == "2":
-            if self.af == socket.AF_INET:
+            if self._af == socket.AF_INET:
                 self.respond('522 Network protocol not supported (use 1).')
             else:
                 self._make_epasv(extmode=True)
@@ -2359,7 +2359,7 @@ class FTPHandler(object, asynchat.async_chat):
             self._epsvall = True
             self.respond('220 Other commands other than EPSV are now disabled.')
         else:
-            if self.af == socket.AF_INET:
+            if self._af == socket.AF_INET:
                 self.respond('501 Unknown network protocol (use 1).')
             else:
                 self.respond('501 Unknown network protocol (use 2).')
@@ -2381,7 +2381,7 @@ class FTPHandler(object, asynchat.async_chat):
         # open for result response and the server will then close it.
         # We also stop responding to any further command.
         if self.data_channel:
-            self.quit_pending = True
+            self._quit_pending = True
             self.sleeping = True
         else:
             self._shutdown_connecting_dtp()
@@ -2494,8 +2494,8 @@ class FTPHandler(object, asynchat.async_chat):
         client)
         """
         line = self.fs.fs2ftp(file)
-        rest_pos = self.restart_position
-        self.restart_position = 0
+        rest_pos = self._restart_position
+        self._restart_position = 0
         try:
             fd = self.run_as_current_user(self.fs.open, file, 'rb')
         except IOError, err:
@@ -2525,7 +2525,7 @@ class FTPHandler(object, asynchat.async_chat):
                 self.log('FAIL RETR "%s". %s.' %(line, why))
                 return
         self.log('OK RETR "%s". Download starting.' %line)
-        producer = FileProducer(fd, self.current_type)
+        producer = FileProducer(fd, self._current_type)
         self.push_dtp_data(producer, isproducer=True, file=fd)
 
     def ftp_STOR(self, file, mode='w'):
@@ -2540,8 +2540,8 @@ class FTPHandler(object, asynchat.async_chat):
         else:
             cmd = 'STOR'
         line = self.fs.fs2ftp(file)
-        rest_pos = self.restart_position
-        self.restart_position = 0
+        rest_pos = self._restart_position
+        self._restart_position = 0
         if rest_pos:
             mode = 'r+'
         try:
@@ -2577,7 +2577,7 @@ class FTPHandler(object, asynchat.async_chat):
         if self.data_channel is not None:
             self.respond("125 Data connection already open. Transfer starting.")
             self.data_channel.file_obj = fd
-            self.data_channel.enable_receiving(self.current_type)
+            self.data_channel.enable_receiving(self._current_type)
         else:
             self.respond("150 File status okay. About to open data connection.")
             self._in_dtp_queue = fd
@@ -2596,7 +2596,7 @@ class FTPHandler(object, asynchat.async_chat):
         # file that will be written.
 
         # watch for STOU preceded by REST, which makes no sense.
-        if self.restart_position:
+        if self._restart_position:
             self.respond("450 Can't STOU while REST request is pending.")
             return
 
@@ -2638,7 +2638,7 @@ class FTPHandler(object, asynchat.async_chat):
         if self.data_channel is not None:
             self.respond("125 FILE: %s" %filename)
             self.data_channel.file_obj = fd
-            self.data_channel.enable_receiving(self.current_type)
+            self.data_channel.enable_receiving(self._current_type)
         else:
             self.respond("150 FILE: %s" %filename)
             self._in_dtp_queue = fd
@@ -2647,14 +2647,14 @@ class FTPHandler(object, asynchat.async_chat):
     def ftp_APPE(self, file):
         """Append data to an existing file on the server."""
         # watch for APPE preceded by REST, which makes no sense.
-        if self.restart_position:
+        if self._restart_position:
             self.respond("450 Can't APPE while REST request is pending.")
         else:
             self.ftp_STOR(file, mode='a')
 
     def ftp_REST(self, line):
         """Restart a file transfer from a previous mark."""
-        if self.current_type == 'a':
+        if self._current_type == 'a':
             self.respond('501 Resuming transfers not allowed in ASCII mode.')
             return
         try:
@@ -2665,7 +2665,7 @@ class FTPHandler(object, asynchat.async_chat):
             self.respond("501 Invalid parameter.")
         else:
             self.respond("350 Restarting at position %s." %marker)
-            self.restart_position = marker
+            self._restart_position = marker
 
     def ftp_ABOR(self, line):
         """Abort the current data transfer."""
@@ -2831,7 +2831,7 @@ class FTPHandler(object, asynchat.async_chat):
         # recommended way as specified in RFC-3659.
 
         line = self.fs.fs2ftp(path)
-        if self.current_type == 'a':
+        if self._current_type == 'a':
             why = "SIZE not allowed in ASCII mode"
             self.log('FAIL SIZE "%s". %s.' %(line, why))
             self.respond("550 %s." %why)
@@ -2968,10 +2968,10 @@ class FTPHandler(object, asynchat.async_chat):
         type = line.upper().replace(' ', '')
         if type in ("A", "L7"):
             self.respond("200 Type set to: ASCII.")
-            self.current_type = 'a'
+            self._current_type = 'a'
         elif type in ("I", "L8"):
             self.respond("200 Type set to: Binary.")
-            self.current_type = 'i'
+            self._current_type = 'i'
         else:
             self.respond('504 Unsupported type "%s".' %line)
 
@@ -3032,7 +3032,7 @@ class FTPHandler(object, asynchat.async_chat):
                     s.append("Waiting for username.")
                 else:
                     s.append("Waiting for password.")
-            if self.current_type == 'a':
+            if self._current_type == 'a':
                 type = 'ASCII'
             else:
                 type = 'Binary'

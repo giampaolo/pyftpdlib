@@ -46,18 +46,18 @@ Bugfixes:
  * Issue #123: PORT command doesn't bind to correct address in case an alias
    is created for the local network interface.
 
-API changes since 0.5.2:
+Major API changes since 0.5.2
 
  * removed support for Python 2.3.
+
+ * all classes are now new-style classes
 
  * FTPHandler.use_gmt_times class attribute has been added.
 
  * FTPHandler.tcp_no_delay class attribute has been added.
 
- * FTPHandler.data_server attribute renamed in FTPHandler._dtp_acceptor.
-
- * FTPHandler.proto_cmds attribute has been added.  The FTPHandler class no
-   longer relies on "ftpserver.proto_cmds" global dictionary but on
+ * FTPHandler.proto_cmds class attribute has been added.  The FTPHandler class 
+   no longer relies on "ftpserver.proto_cmds" global dictionary but on
    "ftphandler.FTPHandler.proto_cmds" instead.
 
  * FTPHandler class has 3 new methods:
@@ -67,14 +67,23 @@ API changes since 0.5.2:
 
  * Added a new package in pyftpdlib namespace: "contrib". Modules defined here:
    pyftpdlib.contrib.handlers.py
-   pyftpdlib.contrib.authorizers.py 
-
- * AbstractedFS.rnfr attribute moved to FTPHandler._rnfr.
+   pyftpdlib.contrib.authorizers.py
 
  * AbstractedFS class has 3 new methods: 
    get_user_by_uid()
    get_group_by_gid()
    readlink()
+
+Minor API changes since 0.5.2
+
+ * FTPHandler renamed attributes:
+   data_server -> _dtp_acceptor
+   current_type -> _current_type
+   restart_position -> _restart_position
+   quit_pending -> _quit_pending
+   af -> _af
+
+ * AbstractedFS.rnfr attribute moved to FTPHandler._rnfr.
 
 
 Version: 0.5.2 - Date: 2009-09-14
