@@ -1916,6 +1916,7 @@ class TestConfigurableOptions(unittest.TestCase):
         self.server.handler.max_login_attempts = 3
         self.server.handler._auth_failed_timeout = 5
         self.server.handler.masquerade_address = None
+        self.server.handler.masquerade_address_map = {}
         self.server.handler.permit_privileged_ports = False
         self.server.handler.passive_ports = None
         self.server.handler.use_gmt_times = True
@@ -2006,6 +2007,15 @@ class TestConfigurableOptions(unittest.TestCase):
         self.server.handler.masquerade_address = "256.256.256.256"
         host, port = self.client.makepasv()
         self.assertEqual(host, "256.256.256.256")
+
+    def test_masquerade_address_map(self):
+        # Test FTPHandler.masquerade_address_map attribute
+        host, port = self.client.makepasv()
+        self.assertEqual(host, self.server.host)
+        self.server.handler.masquerade_address_map = {self.server.host : 
+                                                      "128.128.128.128"}
+        host, port = self.client.makepasv()
+        self.assertEqual(host, "128.128.128.128")
 
     def test_passive_ports(self):
         # Test FTPHandler.passive_ports attribute

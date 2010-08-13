@@ -553,19 +553,26 @@ class PassiveDTP(object, asyncore.dispatcher):
         else:
             self.idler = None
 
-        ip = self.cmd_channel.socket.getsockname()[0]
+        local_ip = self.cmd_channel.socket.getsockname()[0]
+        if local_ip in self.cmd_channel.masquerade_address_map:
+            masqueraded_ip = self.cmd_channel.masquerade_address_map[local_ip]
+        elif self.cmd_channel.masquerade_address:
+            masqueraded_ip = self.cmd_channel.masquerade_address
+        else:
+            masqueraded_ip = None
+
         self.create_socket(self.cmd_channel._af, socket.SOCK_STREAM)
 
         if self.cmd_channel.passive_ports is None:
             # By using 0 as port number value we let kernel choose a
             # free unprivileged random port.
-            self.bind((ip, 0))
+            self.bind((local_ip, 0))
         else:
             ports = list(self.cmd_channel.passive_ports)
             while ports:
                 port = ports.pop(random.randint(0, len(ports) -1))
                 try:
-                    self.bind((ip, port))
+                    self.bind((local_ip, port))
                 except socket.error, why:
                     if why[0] == errno.EADDRINUSE:  # port already in use
                         if ports:
@@ -576,7 +583,7 @@ class PassiveDTP(object, asyncore.dispatcher):
                         # By using 0 as port number value we let kernel
                         # choose a free unprivileged random port.
                         else:
-                            self.bind((ip, 0))
+                            self.bind((local_ip, 0))
                             self.cmd_channel.log(
                                 "Can't find a valid passive port in the "
                                 "configured range. A random kernel-assigned "
@@ -587,9 +594,10 @@ class PassiveDTP(object, asyncore.dispatcher):
                 else:
                     break
         self.listen(5)
+
         port = self.socket.getsockname()[1]
         if not extmode:
-            ip = self.cmd_channel.masquerade_address or ip
+            ip = masqueraded_ip or local_ip
             if ip.startswith('::ffff:'):
                 # In this scenario, the server has an IPv6 socket, but
                 # the remote client is using IPv4 and its address is
@@ -603,7 +611,7 @@ class PassiveDTP(object, asyncore.dispatcher):
             # The format of 227 response in not standardized.
             # This is the most expected:
             self.cmd_channel.respond('227 Entering passive mode (%s,%d,%d).' %(
-                    ip.replace('.', ','), port / 256, port % 256))
+                                ip.replace('.', ','), port / 256, port % 256))
         else:
             self.cmd_channel.respond('229 Entering extended passive mode '
                                      '(|||%d|).' %port)
@@ -1634,6 +1642,13 @@ class FTPHandler(object, asynchat.async_chat):
         When configured pyftpdlib will hide its local address and
         instead use the public address of your NAT (default None).
 
+     - (dict) masquerade_address_map:
+        in case the server has multiple IP addresses which are all 
+        behind a NAT router, you may wish to specify individual 
+        masquerade_addresses for each of them. The map expects a 
+        dictionary containing private IP addresses as keys, and their
+        corresponding public (masquerade) addresses as values.
+
      - (list) passive_ports:
         what ports the ftpd will use for its passive data transfers.
         Value expected is a list of integers (e.g. range(60000, 65535)).
@@ -1678,6 +1693,7 @@ class FTPHandler(object, asynchat.async_chat):
     permit_foreign_addresses = False
     permit_privileged_ports = False
     masquerade_address = None
+    masquerade_address_map = {}
     passive_ports = None
     use_gmt_times = True
     tcp_no_delay = hasattr(socket, "TCP_NODELAY")
