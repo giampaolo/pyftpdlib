@@ -654,7 +654,7 @@ class PassiveDTP(object, asyncore.dispatcher):
         # delegate such connection to DTP handler
         handler = self.cmd_channel.dtp_handler(sock, self.cmd_channel)
         self.cmd_channel.data_channel = handler
-        self.cmd_channel.on_dtp_connection()
+        self.cmd_channel._on_dtp_connection()
 
     def handle_timeout(self):
         self.cmd_channel.respond("421 Passive data channel timed out.")
@@ -736,7 +736,7 @@ class ActiveDTP(object, asyncore.dispatcher):
         # delegate such connection to DTP handler
         handler = self.cmd_channel.dtp_handler(self.socket, self.cmd_channel)
         self.cmd_channel.data_channel = handler
-        self.cmd_channel.on_dtp_connection()
+        self.cmd_channel._on_dtp_connection()
         # Can't close right now as the handler would have the socket
         # object disconnected.  This class will be "closed" once the
         # data transfer is completed or the client disconnects.
@@ -1016,7 +1016,7 @@ class DTPHandler(object, asynchat.async_chat):
                         self.cmd_channel.on_incomplete_file_received(filename)
                     else:
                         self.cmd_channel.on_incomplete_file_sent(filename)
-            self.cmd_channel.on_dtp_close()
+            self.cmd_channel._on_dtp_close()
 
 
 class ThrottledDTPHandler(DTPHandler):
@@ -2039,9 +2039,9 @@ class FTPHandler(object, asynchat.async_chat):
 
     # --- internal callbacks
 
-    def on_dtp_connection(self):
+    def _on_dtp_connection(self):
         """Called every time data channel connects, either active or
-        passive (internal, not supposed to be overridden).
+        passive.
 
         Incoming and outgoing queues are checked for pending data.
         If outbound data is pending, it is pushed into the data channel.
@@ -2082,9 +2082,8 @@ class FTPHandler(object, asynchat.async_chat):
             self.data_channel.enable_receiving(self._current_type)
             self._in_dtp_queue = None
 
-    def on_dtp_close(self):
-        """Called every time the data channel is closed (internal, not
-        supposed to be overridden)."""
+    def _on_dtp_close(self):
+        """Called every time the data channel is closed."""
         self.data_channel = None
         if self._quit_pending:
             self.close()
@@ -2106,7 +2105,7 @@ class FTPHandler(object, asynchat.async_chat):
         be sent over the data channel (e.g. RETR).
         If data channel does not exist yet, it queues the data to send
         later; data will then be pushed into data channel when
-        on_dtp_connection() will be called.
+        _on_dtp_connection() will be called.
 
          - (str/classobj) data: the data to send which may be a string
             or a producer object).

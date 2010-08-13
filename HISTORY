@@ -76,12 +76,14 @@ Major API changes since 0.5.2
 
 Minor API changes since 0.5.2
 
- * FTPHandler renamed attributes:
+ * FTPHandler renamed objects:
    data_server -> _dtp_acceptor
    current_type -> _current_type
    restart_position -> _restart_position
    quit_pending -> _quit_pending
    af -> _af
+   on_dtp_connection -> _on_dtp_connection
+   on_dtp_close -> _on_dtp_close
 
  * AbstractedFS.rnfr attribute moved to FTPHandler._rnfr.
 
