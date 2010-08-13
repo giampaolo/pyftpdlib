@@ -268,8 +268,12 @@ class CommonAuthorizersTest(unittest.TestCase):
 
     def test_has_user(self):
         auth = self.authorizer_class()
-        self.assertTrue(auth.has_user(self.get_current_user()))
-        self.assertFalse(auth.has_user(self.get_nonexistent_user()))
+        current_user = self.get_current_user()
+        nonexistent_user = self.get_nonexistent_user()
+        self.assertTrue(auth.has_user(current_user))
+        self.assertFalse(auth.has_user(nonexistent_user))
+        auth = self.authorizer_class(rejected_users=[current_user])
+        self.assertFalse(auth.has_user(current_user))
 
     def test_validate_authentication(self):
         # can't test for actual success in case of valid authentication
@@ -320,11 +324,24 @@ class CommonAuthorizersTest(unittest.TestCase):
         self.assertTrue(auth.get_msg_login, "login")
         self.assertTrue(auth.get_msg_quit, "quit")
 
-    def test_access_options(self):
+    def test_error_options(self):
+        wrong_user = self.get_nonexistent_user()
         self.assertRaisesWithMsg(authorizers.AuthorizerError,
-             "rejected_users and allowed_users options are mutually exclusive",
-             self.authorizer_class, allowed_users=['foo'],
-                                         rejected_users=['bar'])
+           "rejected_users and allowed_users options are mutually exclusive",
+           self.authorizer_class, allowed_users=['foo'], rejected_users=['bar'])
+        self.assertRaisesWithMsg(authorizers.AuthorizerError,
+                             'invalid username "anonymous"',
+                             self.authorizer_class, allowed_users=['anonymous'])
+        self.assertRaisesWithMsg(authorizers.AuthorizerError,
+                            'invalid username "anonymous"',
+                            self.authorizer_class, rejected_users=['anonymous'])
+        self.assertRaisesWithMsg(authorizers.AuthorizerError,
+                            'unknown user %s' % wrong_user,
+                            self.authorizer_class, allowed_users=[wrong_user])
+        self.assertRaisesWithMsg(authorizers.AuthorizerError,
+                            'unknown user %s' % wrong_user,
+                            self.authorizer_class, rejected_users=[wrong_user])
+
 
     def test_override_user(self):
         auth = self.authorizer_class()
@@ -443,8 +460,15 @@ class TestUnixAuthorizer(CommonAuthorizersTest):
                     return user
             self.fail("no user found")
 
-        auth = authorizers.UnixAuthorizer()
         user = get_fake_shell_user()
+        self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
+                             "user %s has not a valid shell" % user,
+                             authorizers.UnixAuthorizer, allowed_users=[user])
+        # commented as it first fails for invalid home
+        #self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
+        #                     "user %s has not a valid shell" % user,
+        #                     authorizers.UnixAuthorizer, anonymous_user=user)
+        auth = authorizers.UnixAuthorizer()        
         self.assertTrue(auth._has_valid_shell(self.get_current_user()))
         self.assertFalse(auth._has_valid_shell(user))
         self.assertRaisesWithMsg(ftpserver.AuthorizerError,
@@ -545,6 +569,7 @@ def test_main():
     elif hasattr(authorizers, "WindowsAuthorizer"):
         tests.append(TestWindowsAuthorizer)
 
+    tests = [TestUnixAuthorizer]
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
     safe_remove(TESTFN)

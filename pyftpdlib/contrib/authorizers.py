@@ -36,10 +36,36 @@ def replace_anonymous(callable):
 
 
 class _CommonMethods(object):
-    """Methods common to both Unix and Windows authorizers."""
+    """Methods common to both Unix and Windows authorizers.
+    Not supposed to be used directly.
+    """
+
+    def __init__(self):
+        """Check for errors in the constructor."""
+        if self.rejected_users and self.allowed_users:
+            raise AuthorizerError("rejected_users and allowed_users options "
+                                  "are mutually exclusive")
+
+        users = self._get_system_users()
+        for user in (self.allowed_users or self.rejected_users):
+            if user == 'anonymous':
+                raise AuthorizerError('invalid username "anonymous"')
+            if user not in users:
+                raise AuthorizerError('unknown user %s' % user)
+
+        if self.anonymous_user is not None:
+            if not self.has_user(self.anonymous_user):
+                raise AuthorizerError('no such user %s' % self.anonymous_user)
+            home = self.get_home_dir(self.anonymous_user)
+            if not os.path.isdir(home):
+                raise AuthorizerError('no valid home set for user %s'
+                                      % self.anonymous_user)
 
     def override_user(self, username, password=None, homedir=None, perm=None, 
                       msg_login=None, msg_quit=None):
+        """Overrides the options specified in the class constructor 
+        for a specific user.
+        """
         if not password and not homedir and not perm and not msg_login \
         and not msg_quit:
             raise ValueError("at least one keyword argument must be specified")
@@ -82,6 +108,18 @@ class _CommonMethods(object):
     def _get_key(self, username, key):
         if self._dummy_authorizer.has_user(username):
             return self._dummy_authorizer.user_table[username][key]
+
+    def _is_rejected_user(self, username):
+        """Return True if the user has been black listed via 
+        allowed_users or rejected_users options.
+        """
+        if self.allowed_users and username not in self.allowed_users:
+            return True
+        if self.rejected_users and username in self.rejected_users:
+            return True
+        return False
+
+
 
 
 # Note: requires python >= 2.5
@@ -164,9 +202,9 @@ else:
                            anonymous_user=None,
                            msg_login="Login successful.",
                            msg_quit="Goodbye."):
+
             if os.geteuid() != 0 or not spwd.getspall():
                 raise AuthorizerError("super user privileges are required")
-
             self.global_perm = global_perm
             self.allowed_users = allowed_users
             self.rejected_users = rejected_users
@@ -176,19 +214,13 @@ else:
             self.msg_quit = msg_quit
             self._dummy_authorizer = DummyAuthorizer()
             self._dummy_authorizer._check_permissions('', global_perm)
-
-            if self.rejected_users and self.allowed_users:
-                raise AuthorizerError("rejected_users and allowed_users options "
-                                      "are mutually exclusive")
-
-            if anonymous_user is not None:
-                if not self.has_user(anonymous_user):
-                    raise AuthorizerError('no such user %s' % anonymous_user)
-                home = self.get_home_dir(anonymous_user)
-                if not os.path.isdir(home):
-                    raise AuthorizerError('no valid home set for user %s'
-                                          % anonymous_user)
-
+            _CommonMethods.__init__(self)
+            if require_valid_shell:
+                for username in self.allowed_users:
+                    if not self._has_valid_shell(username):
+                        raise AuthorizerError("user %s has not a valid shell"
+                                              % username)
+                        
         def override_user(self, username, password=None, homedir=None, perm=None, 
                           msg_login=None, msg_quit=None):
             """Overrides the options specified in the class constructor 
@@ -209,9 +241,7 @@ else:
             """
             if username == "anonymous":
                 return self.anonymous_user is not None
-            if self.allowed_users and username not in self.allowed_users:
-                return False
-            if self.rejected_users and username in self.rejected_users:
+            if self._is_rejected_user(username):
                 return False
             if self.require_valid_shell and username != 'anonymous':
                 if not self._has_valid_shell(username):
@@ -249,8 +279,13 @@ else:
 
         @replace_anonymous
         def has_user(self, username):
-            """Return True if user exists on the Unix system."""
-            return username in [entry.pw_name for entry in pwd.getpwall()]
+            """Return True if user exists on the Unix system.
+            If the user has been black listed via allowed_users or 
+            rejected_users options always return False.
+            """
+            if self._is_rejected_user(username):
+                return False
+            return username in self._get_system_users()
 
         @replace_anonymous
         def get_home_dir(self, username):
@@ -262,6 +297,10 @@ else:
                 return pwd.getpwnam(username).pw_dir
             except KeyError:
                 raise AuthorizerError('no such user %s' % username)
+
+        def _get_system_users(self):
+            """Return all users defined on the UNIX system."""
+            return [entry.pw_name for entry in pwd.getpwall()]
 
         def _has_valid_shell(self, username):
             """Return True if the user has a valid shell binary listed 
@@ -371,26 +410,11 @@ else:
             self.msg_quit = msg_quit
             self._dummy_authorizer = DummyAuthorizer()
             self._dummy_authorizer._check_permissions('', global_perm)
-
-            if self.rejected_users and self.allowed_users:
-                raise AuthorizerError("rejected_users and allowed_users options "
-                                      "are mutually exclusive")
-
-            if anonymous_user is not None:
-                if not self.has_user(anonymous_user):
-                    raise AuthorizerError('no such user %s' % anonymous_user)
-                if not self.validate_authentication(anonymous_user,
-                                                    anonymous_password):
-                    raise AuthorizerError('invalid credentials provided for '
-                           'anonymous user (username:%s, password:%s)' 
-                            % (anonymous_user, anonymous_password or '<empty>'))
-                    # actually try to impersonate the user
-                    self.impersonate_user(anonymous_user, anonymous_password)
-                    self.terminate_impersonation()
-                home = self.get_home_dir(anonymous_user)
-                if not os.path.isdir(home):
-                    raise AuthorizerError('no valid home set for user %s'
-                                          % anonymous_user)
+            _CommonMethods.__init__(self)
+            # actually try to impersonate the user
+            if self.anonymous_user is not None:
+                self.impersonate_user(self.anonymous_user)
+                self.terminate_impersonation
 
         def override_user(self, username, password=None, homedir=None, perm=None, 
                           msg_login=None, msg_quit=None):
@@ -442,9 +466,13 @@ else:
 
         @replace_anonymous
         def has_user(self, username):
-            """Return True if user exists on the Windows system."""
-            users = [entry['name'] for entry in win32net.NetUserEnum(None, 0)[0]]
-            return username in users
+            """Return True if user exists on the Unix system.
+            If the user has been black listed via allowed_users or 
+            rejected_users options always return False.
+            """
+            if self._is_rejected_user(username):
+                return False
+            return username in self._get_system_users()
 
         @replace_anonymous
         def get_home_dir(self, username):
@@ -467,6 +495,10 @@ else:
                                       % username)
             value = _winreg.QueryValueEx(key, "ProfileImagePath")[0]
             return win32api.ExpandEnvironmentStrings(value)
+
+        def _get_system_users(self):
+            """Return all users defined on the Windows system."""
+            return [entry['name'] for entry in win32net.NetUserEnum(None, 0)[0]]
 
     __all__.append('WindowsAuthorizer')
 
