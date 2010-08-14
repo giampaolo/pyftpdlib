@@ -22,6 +22,11 @@ try:
 except ImportError:
     ssl = None
 
+try:
+    from pywintypes import error as Win32ExtError
+except ImportError:
+    pass
+
 from pyftpdlib import ftpserver
 from pyftpdlib.contrib import authorizers
 from pyftpdlib.contrib import handlers
@@ -319,17 +324,16 @@ class SharedAuthorizerTests(unittest.TestCase):
                 self.assertRaises(ftpserver.AuthorizerError,
                                   auth.impersonate_user, nonexistent_user, 'pwd')
             else:
-                # XXX
-                self.assertRaises(Exception,
-                                  auth.impersonate_user, nonexistent_user, 'pwd')
-                self.assertRaises(Exception,
-                                  auth.impersonate_user, self.get_current_user(), '')
+                self.assertRaises(Win32ExtError,
+                            auth.impersonate_user, nonexistent_user, 'pwd')
+                self.assertRaises(Win32ExtError,
+                            auth.impersonate_user, self.get_current_user(), '')
         finally:
             auth.terminate_impersonation()
 
     def test_terminate_impersonation(self):
-        user = self.get_nonexistent_user()
         auth = self.authorizer_class()
+        auth.terminate_impersonation()
         auth.terminate_impersonation()
 
     def test_get_perms(self):
@@ -465,14 +469,14 @@ class TestUnixAuthorizer(SharedAuthorizerTests):
             self.fail("no user found")
 
         user = get_fake_shell_user()
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
+        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
                              "user %s has not a valid shell" % user,
                              authorizers.UnixAuthorizer, allowed_users=[user])
         # commented as it first fails for invalid home
-        #self.assertRaisesWithMsg(ftpserver.AuthorizerError, 
+        #self.assertRaisesWithMsg(ftpserver.AuthorizerError,
         #                     "user %s has not a valid shell" % user,
         #                     authorizers.UnixAuthorizer, anonymous_user=user)
-        auth = authorizers.UnixAuthorizer()        
+        auth = authorizers.UnixAuthorizer()
         self.assertTrue(auth._has_valid_shell(self.get_current_user()))
         self.assertFalse(auth._has_valid_shell(user))
         self.assertRaisesWithMsg(ftpserver.AuthorizerError,
@@ -498,13 +502,8 @@ class TestWindowsAuthorizer(SharedAuthorizerTests):
 
     def test_wrong_anonymous_credentials(self):
         user = self.get_current_user()
-        try:
-            self.authorizer_class(anonymous_user=user,
-                                  anonymous_password='$|1wrongpasswd')
-        except ftpserver.AuthorizerError, err:
-            self.assertTrue('invalid credentials' in str(err))
-        else:
-            self.fail('exception not raised')
+        self.assertRaises(Win32ExtError, self.authorizer_class, 
+                       anonymous_user=user, anonymous_password='$|1wrongpasswd')
 
 
 if os.name == 'posix':
@@ -518,7 +517,7 @@ if os.name == 'posix':
             cdup = os.path.dirname(root)
             self.assertEqual(fs.ftp2fs('..'), cdup)
             self.assertEqual(fs.fs2ftp(root), root)
-            
+
 
 def test_main():
     test_suite = unittest.TestSuite()
@@ -566,7 +565,6 @@ def test_main():
     if os.name == 'posix':
         tests.append(TestUnixFilesystem)
 
-    tests = [TestUnixAuthorizer]
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
     safe_remove(TESTFN)
