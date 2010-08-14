@@ -25,6 +25,7 @@ except ImportError:
 from pyftpdlib import ftpserver
 from pyftpdlib.contrib import authorizers
 from pyftpdlib.contrib import handlers
+from pyftpdlib.contrib import filesystems
 from test_ftpd import *
 
 
@@ -525,6 +526,18 @@ else:
             else:
                 self.fail('exception not raised')
 
+if os.name == 'posix':
+    class TestUnixFilesystem(unittest.TestCase):
+
+        def test_case(self):
+            root = os.getcwd()
+            fs = filesystems.UnixFilesystem(root, None)
+            self.assertEqual(fs.root, root)
+            self.assertEqual(fs.cwd, root)
+            cdup = os.path.dirname(root)
+            self.assertEqual(fs.ftp2fs('..'), cdup)
+            self.assertEqual(fs.fs2ftp(root), root)
+            
 
 def test_main():
     test_suite = unittest.TestSuite()
@@ -569,7 +582,9 @@ def test_main():
     elif hasattr(authorizers, "WindowsAuthorizer"):
         tests.append(TestWindowsAuthorizer)
 
-    tests = [TestUnixAuthorizer]
+    if os.name == 'posix':
+        tests.append(TestUnixFilesystem)
+
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
     safe_remove(TESTFN)

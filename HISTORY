@@ -47,6 +47,10 @@ Enhancements:
 
  * Issue 135: Python 2.3 support has been removed.
 
+ * Issue 137: added new pyftpdlib.contrib.filesystems module within 
+   UnixFilesystem class which permits the client to escape its home directory 
+   and navigate the real filesystem.
+
 Bugfixes:
 
  * Issue #120: an ActiveDTP() instance is not garbage collected in case a
@@ -88,6 +92,7 @@ Major API changes since 0.5.2
    defined here:
    - pyftpdlib.contrib.handlers.py (TLS_FTPHandler)
    - pyftpdlib.contrib.authorizers.py (UnixAuthorizer, WindowsAuthorizer)
+   - pyftpdlib.contrib.filesystems (UnixFilesystem)
 
 Minor API changes since 0.5.2
 
