@@ -36,6 +36,12 @@ Enhancements:
  * Issue 131: pyftpdlib is now able to serve both IPv4 and IPv6 at the same
    time by using a single socket.
 
+ * Issue 133: AbstractedFS constructor now accepts two argumets: root and 
+   cmd_channel breaking compatibility with previous version.  Also, root and and
+   cwd attributes became properties.  The previous bug consisting in re-setting
+   the root from the ftp handler after user login has been fixed to ease the
+   development of subclasses.
+
  * Issue 134: enabled TCP_NODELAY socket option for the FTP command channels
    resulting in pyftpdlib being twice faster.
 
@@ -56,6 +62,10 @@ Major API changes since 0.5.2
  * removed support for Python 2.3.
 
  * all classes are now new-style classes
+
+ * AbstractedFS. __init__ method now accepts two arguments: root and cmd_channel.
+
+ * AbstractedFS root and cwd attributes are now read-only properties.
 
  * FTPHandler.use_gmt_times class attribute has been added.
 

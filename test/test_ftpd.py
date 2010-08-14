@@ -205,9 +205,9 @@ class TestAbstractedFS(unittest.TestCase):
     def test_ftpnorm(self):
         # Tests for ftpnorm method.
         ae = self.assertEquals
-        fs = ftpserver.AbstractedFS()
+        fs = ftpserver.AbstractedFS('/', None)
 
-        fs.cwd = '/'
+        fs._cwd = '/'
         ae(fs.ftpnorm(''), '/')
         ae(fs.ftpnorm('/'), '/')
         ae(fs.ftpnorm('.'), '/')
@@ -219,7 +219,7 @@ class TestAbstractedFS(unittest.TestCase):
         ae(fs.ftpnorm('a/b'), '/a/b')
         ae(fs.ftpnorm('a/b/..'), '/a')
         ae(fs.ftpnorm('a/b/../..'), '/')
-        fs.cwd = '/sub'
+        fs._cwd = '/sub'
         ae(fs.ftpnorm(''), '/sub')
         ae(fs.ftpnorm('/'), '/')
         ae(fs.ftpnorm('.'), '/sub')
@@ -237,12 +237,12 @@ class TestAbstractedFS(unittest.TestCase):
     def test_ftp2fs(self):
         # Tests for ftp2fs method.
         ae = self.assertEquals
-        fs = ftpserver.AbstractedFS()
+        fs = ftpserver.AbstractedFS('/', None)
         join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
 
         def goforit(root):
-            fs.root = root
-            fs.cwd = '/'
+            fs._root = root
+            fs._cwd = '/'
             ae(fs.ftp2fs(''), root)
             ae(fs.ftp2fs('/'), root)
             ae(fs.ftp2fs('.'), root)
@@ -255,7 +255,7 @@ class TestAbstractedFS(unittest.TestCase):
             ae(fs.ftp2fs('/a/b'), join(root, r'a/b'))
             ae(fs.ftp2fs('/a/b/..'), join(root, 'a'))
             ae(fs.ftp2fs('/a/b/../..'), root)
-            fs.cwd = '/sub'
+            fs._cwd = '/sub'
             ae(fs.ftp2fs(''), join(root, 'sub'))
             ae(fs.ftp2fs('/'), root)
             ae(fs.ftp2fs('.'), join(root, 'sub'))
@@ -285,11 +285,11 @@ class TestAbstractedFS(unittest.TestCase):
     def test_fs2ftp(self):
         # Tests for fs2ftp method.
         ae = self.assertEquals
-        fs = ftpserver.AbstractedFS()
+        fs = ftpserver.AbstractedFS('/', None)
         join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
 
         def goforit(root):
-            fs.root = root
+            fs._root = root
             ae(fs.fs2ftp(root), '/')
             ae(fs.fs2ftp(join(root, '/')), '/')
             ae(fs.fs2ftp(join(root, '.')), '/')
@@ -301,7 +301,7 @@ class TestAbstractedFS(unittest.TestCase):
             ae(fs.fs2ftp(join(root, 'a/b')), '/a/b')
             ae(fs.fs2ftp(join(root, 'a/b/..')), '/a')
             ae(fs.fs2ftp(join(root, '/a/b/../..')), '/')
-            fs.cwd = '/sub'
+            fs._cwd = '/sub'
             ae(fs.fs2ftp(join(root, 'a/')), '/a')
 
         if os.sep == '\\':
@@ -310,7 +310,7 @@ class TestAbstractedFS(unittest.TestCase):
             # on DOS-derived filesystems (e.g. Windows) this is the same
             # as specifying the current drive directory (e.g. 'C:\\')
             goforit('\\')
-            fs.root = r'C:\dir'
+            fs._root = r'C:\dir'
             ae(fs.fs2ftp('C:\\'), '/')
             ae(fs.fs2ftp('D:\\'), '/')
             ae(fs.fs2ftp('D:\\dir'), '/')
@@ -319,7 +319,7 @@ class TestAbstractedFS(unittest.TestCase):
             if os.path.realpath('/__home/user') != '/__home/user':
                 self.fail('Test skipped (symlinks not allowed).')
             goforit('/__home/user')
-            fs.root = '/__home/user'
+            fs._root = '/__home/user'
             ae(fs.fs2ftp('/__home'), '/')
             ae(fs.fs2ftp('/'), '/')
             ae(fs.fs2ftp('/__home/userx'), '/')
@@ -329,8 +329,8 @@ class TestAbstractedFS(unittest.TestCase):
 
     def test_validpath(self):
         # Tests for validpath method.
-        fs = ftpserver.AbstractedFS()
-        fs.root = HOME
+        fs = ftpserver.AbstractedFS('/', None)
+        fs._root = HOME
         self.assertTrue(fs.validpath(HOME))
         self.assertTrue(fs.validpath(HOME + '/'))
         self.assertFalse(fs.validpath(HOME + 'bar'))
@@ -340,8 +340,8 @@ class TestAbstractedFS(unittest.TestCase):
         def test_validpath_validlink(self):
             # Test validpath by issuing a symlink pointing to a path
             # inside the root directory.
-            fs = ftpserver.AbstractedFS()
-            fs.root = HOME
+            fs = ftpserver.AbstractedFS('/', None)
+            fs._root = HOME
             TESTFN2 = TESTFN + '1'
             try:
                 open(TESTFN, 'w')
@@ -353,8 +353,8 @@ class TestAbstractedFS(unittest.TestCase):
         def test_validpath_external_symlink(self):
             # Test validpath by issuing a symlink pointing to a path
             # outside the root directory.
-            fs = ftpserver.AbstractedFS()
-            fs.root = HOME
+            fs = ftpserver.AbstractedFS('/', None)
+            fs._root = HOME
             # tempfile should create our file in /tmp directory
             # which should be outside the user root.  If it is
             # not we just skip the test.

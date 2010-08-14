@@ -1178,16 +1178,31 @@ class AbstractedFS(object):
     It also provides some utility methods and wraps around all os.*
     calls involving operations against the filesystem like creating
     files or removing directories.
-
-    Instance attributes:
-     - (str) root: the "real" user home directory.
-     - (str) cwd: the "virtual" current working directory.
     """
 
-    def __init__(self):
-        self.root = None
-        self.cwd = '/'
-        self.cmd_channel = None  # XXX - temporary
+    def __init__(self, root, cmd_channel):
+        """
+         - (str) root: the user "real" home directory (e.g. '/home/user')
+         - (instance) cmd_channel: the FTPHandler class instance
+        """
+        # Set initial current working directory.
+        # By default initial cwd is set to "/" to emulate a chroot jail.
+        # If a different behavior is desired (e.g. initial cwd = root,
+        # to reflect the real filesystem) users overriding this class 
+        # are responsible to set _cwd attribute as necessary.
+        self._cwd = '/'
+        self._root = root
+        self.cmd_channel = cmd_channel
+
+    @property
+    def root(self):
+        """The user home directory."""
+        return self._root
+
+    @property
+    def cwd(self):
+        """The user current working directory."""
+        return self._cwd
 
     # --- Pathname / conversion utilities
 
@@ -1324,7 +1339,7 @@ class AbstractedFS(object):
             raise
         else:
             os.chdir(basedir)
-            self.cwd = self.fs2ftp(path)
+            self._cwd = self.fs2ftp(path)
 
     def mkdir(self, path):
         """Create the specified directory."""
@@ -1710,7 +1725,7 @@ class FTPHandler(object, asynchat.async_chat):
 
         # public session attributes
         self.server = server
-        self.fs = self.abstracted_fs()
+        self.fs = None
         self.authenticated = False
         self.username = ""
         self.password = ""
@@ -2010,7 +2025,8 @@ class FTPHandler(object, asynchat.async_chat):
             if self.remote_ip in self.server.ip_map:
                 self.server.ip_map.remove(self.remote_ip)
 
-            self.fs.cmd_channel = None  # XXX - temporary
+            if self.fs is not None:
+                self.fs.cmd_channel = None  # XXX - temporary
             self.log("Disconnected.")
 
     def _shutdown_connecting_dtp(self):
@@ -2775,8 +2791,9 @@ class FTPHandler(object, asynchat.async_chat):
             self.authenticated = True
             self.password = line
             self.attempted_logins = 0
-            self.fs.root = self.authorizer.get_home_dir(self.username)
-            self.fs.cmd_channel = self  # XXX - temporary
+
+            home = self.authorizer.get_home_dir(self.username)
+            self.fs = self.abstracted_fs(home, self)
             self.log("User %s logged in." %self.username)
             self.on_login(self.username)
         else:
