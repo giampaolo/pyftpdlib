@@ -298,11 +298,13 @@ else:
             except KeyError:
                 raise AuthorizerError('no such user %s' % username)
 
-        def _get_system_users(self):
+        @classmethod
+        def _get_system_users(cls):
             """Return all users defined on the UNIX system."""
             return [entry.pw_name for entry in pwd.getpwall()]
 
-        def _has_valid_shell(self, username):
+        @classmethod
+        def _has_valid_shell(cls, username):
             """Return True if the user has a valid shell binary listed 
             in /etc/shells. If /etc/shells can't be found return True.
             """
@@ -413,7 +415,8 @@ else:
             _CommonMethods.__init__(self)
             # actually try to impersonate the user
             if self.anonymous_user is not None:
-                self.impersonate_user(self.anonymous_user)
+                self.impersonate_user(self.anonymous_user, 
+                                      self.anonymous_password)
                 self.terminate_impersonation
 
         def override_user(self, username, password=None, homedir=None, perm=None, 
@@ -496,6 +499,7 @@ else:
             value = _winreg.QueryValueEx(key, "ProfileImagePath")[0]
             return win32api.ExpandEnvironmentStrings(value)
 
+        @classmethod
         def _get_system_users(self):
             """Return all users defined on the Windows system."""
             return [entry['name'] for entry in win32net.NetUserEnum(None, 0)[0]]

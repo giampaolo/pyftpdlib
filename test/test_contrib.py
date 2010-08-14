@@ -13,9 +13,9 @@ import string
 import warnings
 
 try:
-    import pwd, spwd, crypt
+    import pwd
 except ImportError:
-    pwd = spwd = crypt = None
+    pwd = None
 
 try:
     import ssl
@@ -238,11 +238,31 @@ class TestFTPS(unittest.TestCase):
 
 # --- System dependant authorizers tests
 
-class CommonAuthorizersTest(unittest.TestCase):
-    """Tests valid for both UnixAuthorizer and WindowsAuthorizer which
-    are supposed to share the same API.
+class SharedAuthorizerTests(unittest.TestCase):
+    """Tests valid for both UnixAuthorizer and WindowsAuthorizer for
+    those parts which share the same API.
     """
     authorizer_class = None
+
+    # --- utils
+
+    def get_users(self):
+        return self.authorizer_class._get_system_users()
+
+    def get_current_user(self):
+        return os.environ['USERNAME']
+
+    def get_current_user_homedir(self):
+        return os.environ['USERPROFILE']
+
+    def get_nonexistent_user(self):
+        # return a user which does not exist on the system
+        users = self.get_users()
+        letters = string.ascii_lowercase
+        while 1:
+            user = ''.join([random.choice(letters) for i in range(10)])
+            if user not in users:
+                return user
 
     def assertRaisesWithMsg(self, excClass, msg, callableObj, *args, **kwargs):
         try:
@@ -255,6 +275,8 @@ class CommonAuthorizersTest(unittest.TestCase):
             if hasattr(excClass,'__name__'): excName = excClass.__name__
             else: excName = str(excClass)
             raise self.failureException, "%s not raised" % excName
+
+    # --- /utils
 
     def test_get_home_dir(self):
         auth = self.authorizer_class()
@@ -343,7 +365,6 @@ class CommonAuthorizersTest(unittest.TestCase):
                             'unknown user %s' % wrong_user,
                             self.authorizer_class, rejected_users=[wrong_user])
 
-
     def test_override_user(self):
         auth = self.authorizer_class()
         user = self.get_current_user()
@@ -396,28 +417,10 @@ class CommonAuthorizersTest(unittest.TestCase):
                                  auth.override_user, "anonymous", password='foo')
 
 
-class TestUnixAuthorizer(CommonAuthorizersTest):
+class TestUnixAuthorizer(SharedAuthorizerTests):
     """Unix authorizer specific tests."""
 
     authorizer_class = getattr(authorizers, "UnixAuthorizer", None)
-
-    def get_users(self):
-        return [entry.pw_name for entry in pwd.getpwall()]
-
-    def get_current_user(self):
-        return pwd.getpwuid(os.getuid()).pw_name
-
-    def get_current_user_homedir(self):
-        return pwd.getpwuid(os.getuid()).pw_dir
-
-    def get_nonexistent_user(self):
-        # return a user which does not exist on the system
-        users = self.get_users()
-        letters = string.ascii_lowercase
-        while 1:
-            user = ''.join([random.choice(letters) for i in range(10)])
-            if user not in users:
-                return user
 
     def test_get_perms_anonymous(self):
         auth = authorizers.UnixAuthorizer(global_perm='elr',
@@ -488,43 +491,21 @@ class TestUnixAuthorizer(CommonAuthorizersTest):
             auth.terminate_impersonation()
 
 
-try:
-    import win32net
-except ImportError:
-    pass
-else:
-    class TestWindowsAuthorizer(CommonAuthorizersTest):
-        """Windows authorizer specific tests."""
+class TestWindowsAuthorizer(SharedAuthorizerTests):
+    """Windows authorizer specific tests."""
 
-        authorizer_class = getattr(authorizers, "WindowsAuthorizer", None)
+    authorizer_class = getattr(authorizers, "WindowsAuthorizer", None)
 
-        def get_users(self):
-            return [entry['name'] for entry in win32net.NetUserEnum(None, 0)[0]]
+    def test_wrong_anonymous_credentials(self):
+        user = self.get_current_user()
+        try:
+            self.authorizer_class(anonymous_user=user,
+                                  anonymous_password='$|1wrongpasswd')
+        except ftpserver.AuthorizerError, err:
+            self.assertTrue('invalid credentials' in str(err))
+        else:
+            self.fail('exception not raised')
 
-        def get_current_user(self):
-            return os.environ['USERNAME']
-
-        def get_current_user_homedir(self):
-            return os.environ['USERPROFILE']
-
-        def get_nonexistent_user(self):
-            # return a user which does not exist on the system
-            users = self.get_users()
-            letters = string.ascii_lowercase
-            while 1:
-                user = ''.join([random.choice(letters) for i in range(10)])
-                if user not in users:
-                    return user
-
-        def test_wrong_anonymous_credentials(self):
-            user = self.get_current_user()
-            try:
-                self.authorizer_class(anonymous_user=user,
-                                      anonymous_password='$|1wrongpasswd')
-            except ftpserver.AuthorizerError, err:
-                self.assertTrue('invalid credentials' in str(err))
-            else:
-                self.fail('exception not raised')
 
 if os.name == 'posix':
     class TestUnixFilesystem(unittest.TestCase):
@@ -585,6 +566,7 @@ def test_main():
     if os.name == 'posix':
         tests.append(TestUnixFilesystem)
 
+    tests = [TestUnixAuthorizer]
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
     safe_remove(TESTFN)
