@@ -61,35 +61,33 @@ Major API changes since 0.5.2
 
  * removed support for Python 2.3.
 
- * all classes are now new-style classes
+ * all classes are now new-style classes.
 
- * AbstractedFS. __init__ method now accepts two arguments: root and cmd_channel.
+ * AbstractedFS class:
+   * __init__ now accepts two arguments: root and cmd_channel.
+   * root and cwd attributes are now read-only properties.
+   * 3 new methods have been added: 
+     - get_user_by_uid()
+     - get_group_by_gid()
+     - readlink()
 
- * AbstractedFS root and cwd attributes are now read-only properties.
+ * FTPHandler class:
+   * new class attributes:
+     - use_gmt_times
+     - tcp_no_delay
+     - masquerade_address_map
+   * new methods:
+     - on_incomplete_file_sent()
+     - on_incomplete_file_received()
+     - on_login()
+   * proto_cmds class attribute has been added.  The FTPHandler class  no longer 
+     relies on "ftpserver.proto_cmds" global dictionary but on
+     "ftpserver.FTPHandler.proto_cmds" instead.
 
- * FTPHandler.use_gmt_times class attribute has been added.
-
- * FTPHandler.tcp_no_delay class attribute has been added.
-
- * FTPHandler.masquerade_address_map class attribute has been added.
-
- * FTPHandler.proto_cmds class attribute has been added.  The FTPHandler class 
-   no longer relies on "ftpserver.proto_cmds" global dictionary but on
-   "ftphandler.FTPHandler.proto_cmds" instead.
-
- * FTPHandler class has 3 new methods:
-   on_incomplete_file_sent()
-   on_incomplete_file_received()
-   on_login()
-
- * Added a new package in pyftpdlib namespace: "contrib". Modules defined here:
-   pyftpdlib.contrib.handlers.py
-   pyftpdlib.contrib.authorizers.py
-
- * AbstractedFS class has 3 new methods: 
-   get_user_by_uid()
-   get_group_by_gid()
-   readlink()
+ * Added a new package in pyftpdlib namespace: "contrib". Modules (and classes)
+   defined here:
+   - pyftpdlib.contrib.handlers.py (TLS_FTPHandler)
+   - pyftpdlib.contrib.authorizers.py (UnixAuthorizer, WindowsAuthorizer)
 
 Minor API changes since 0.5.2
 
