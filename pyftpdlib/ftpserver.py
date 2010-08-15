@@ -814,6 +814,7 @@ class DTPHandler(object, asynchat.async_chat):
         self._lastdata = 0
         self._closed = False
         self._had_cr = False
+        self._start_time = time.time()
         if self.timeout:
             self.idler = CallLater(self.timeout, self.handle_timeout)
         else:
@@ -858,6 +859,10 @@ class DTPHandler(object, asynchat.async_chat):
     def get_transmitted_bytes(self):
         "Return the number of transmitted bytes."
         return self.tot_bytes_sent + self.tot_bytes_received
+
+    def get_elapsed_time(self):
+        "Return the transfer elapsed time in seconds."
+        return time.time() - self._start_time
 
     def transfer_in_progress(self):
         "Return True if a transfer is in progress, else False."
@@ -3074,9 +3079,11 @@ class FTPHandler(object, asynchat.async_chat):
             elif self.data_channel is not None:
                 bytes_sent = self.data_channel.tot_bytes_sent
                 bytes_recv = self.data_channel.tot_bytes_received
+                elapsed_time = self.data_channel.get_elapsed_time()
                 s.append('Data connection open:')
                 s.append('Total bytes sent: %s' %bytes_sent)
                 s.append('Total bytes received: %s' %bytes_recv)
+                s.append('Transfer elapsed time: %s secs' %elapsed_time)
             else:
                 s.append('Data connection closed.')
 

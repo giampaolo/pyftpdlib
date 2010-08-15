@@ -51,6 +51,9 @@ Enhancements:
    UnixFilesystem class which permits the client to escape its home directory 
    and navigate the real filesystem.
 
+ * Issue 138: added DTPHandler.get_elapsed_time() method which returns the 
+   transfer elapsed time in seconds.
+
 Bugfixes:
 
  * Issue #120: an ActiveDTP() instance is not garbage collected in case a
@@ -87,6 +90,8 @@ Major API changes since 0.5.2
    * proto_cmds class attribute has been added.  The FTPHandler class  no longer 
      relies on "ftpserver.proto_cmds" global dictionary but on
      "ftpserver.FTPHandler.proto_cmds" instead.
+
+ * DTPHandler.get_elapsed_time() method has been added.
 
  * Added a new package in pyftpdlib namespace: "contrib". Modules (and classes)
    defined here:
