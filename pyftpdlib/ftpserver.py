@@ -2830,7 +2830,11 @@ class FTPHandler(object, asynchat.async_chat):
 
     def ftp_PWD(self, line):
         """Return the name of the current working directory to the client."""
-        self.respond('257 "%s" is the current directory.' %self.fs.cwd)
+        # The 257 response is supposed to include the directory
+        # name and in case it contains embedded double-quotes
+        # they must be doubled (see RFC-959, chapter 7, appendix 2).
+        self.respond('257 "%s" is the current directory.' 
+                     % self.fs.cwd.replace('"', '""'))
 
     def ftp_CWD(self, path):
         """Change the current working directory."""

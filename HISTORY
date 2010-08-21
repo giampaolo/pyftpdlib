@@ -64,6 +64,9 @@ Bugfixes:
  * Issue #123: PORT command doesn't bind to correct address in case an alias
    is created for the local network interface.
 
+ * Issue #140: pathnames returned in PWD response should have double-quotes '"'
+   escaped.
+
 Major API changes since 0.5.2
 
  * removed support for Python 2.3.
