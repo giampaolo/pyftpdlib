@@ -159,7 +159,7 @@ class FTPd(threading.Thread):
             status.append('active')
         else:
             status.append('inactive')
-        status.append('%s:%s' %self.server.socket.getsockname()[:2])
+        status.append('%s:%s' % self.server.socket.getsockname()[:2])
         return '<%s at %#x>' % (' '.join(status), id(self))
 
     def start(self, timeout=0.001, use_poll=False, map=None):
@@ -393,7 +393,7 @@ class TestDummyAuthorizer(unittest.TestCase):
         except excClass, why:
             if str(why) == msg:
                 return
-            raise self.failureException("%s != %s" %(str(why), msg))
+            raise self.failureException("%s != %s" % (str(why), msg))
         else:
             if hasattr(excClass,'__name__'): excName = excClass.__name__
             else: excName = str(excClass)
@@ -414,16 +414,16 @@ class TestDummyAuthorizer(unittest.TestCase):
         self.assertRaises(KeyError, auth.remove_user, USER)
         # raise exc if path does not exist
         self.assertRaisesWithMsg(ftpserver.AuthorizerError,
-                                'no such directory: "%s"' %'?:\\',
+                                'no such directory: "%s"' % '?:\\',
                                  auth.add_user, USER, PASSWD, '?:\\')
         self.assertRaisesWithMsg(ftpserver.AuthorizerError,
-                                'no such directory: "%s"' %'?:\\',
+                                'no such directory: "%s"' % '?:\\',
                                  auth.add_anonymous, '?:\\')
         # raise exc if user already exists
         auth.add_user(USER, PASSWD, HOME)
         auth.add_anonymous(HOME)
         self.assertRaisesWithMsg(ftpserver.AuthorizerError,
-                                'user "%s" already exists' %USER,
+                                'user "%s" already exists' % USER,
                                  auth.add_user, USER, PASSWD, HOME)
         self.assertRaisesWithMsg(ftpserver.AuthorizerError,
                                 'user "anonymous" already exists',
@@ -450,10 +450,10 @@ class TestDummyAuthorizer(unittest.TestCase):
         self.assertRaises(KeyError, auth.override_perm, USER+'w', HOME, 'elr')
         # raise exc if path does not exist or it's not a directory
         self.assertRaisesWithMsg(ftpserver.AuthorizerError,
-                                'no such directory: "%s"' %'?:\\',
+                                'no such directory: "%s"' % '?:\\',
                                 auth.override_perm, USER, '?:\\', 'elr')
         self.assertRaisesWithMsg(ftpserver.AuthorizerError,
-                                'no such directory: "%s"' %self.tempfile,
+                                'no such directory: "%s"' % self.tempfile,
                                 auth.override_perm, USER, self.tempfile, 'elr')
         # raise on wrong permission
         self.assertRaisesWithMsg(ftpserver.AuthorizerError,
@@ -791,7 +791,7 @@ class TestFtpDummyCmds(unittest.TestCase):
     def test_help(self):
         self.client.sendcmd('help')
         cmd = random.choice(ftpserver.proto_cmds.keys())
-        self.client.sendcmd('help %s' %cmd)
+        self.client.sendcmd('help %s' % cmd)
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'help ?!?')
 
     def test_site(self):
@@ -946,11 +946,11 @@ class TestFtpFsOperations(unittest.TestCase):
         subfolder = os.path.basename(tempfile.mkdtemp(dir=self.tempdir))
         self.assertEqual(self.client.pwd(), '/')
         self.client.cwd(self.tempdir)
-        self.assertEqual(self.client.pwd(), '/%s' %self.tempdir)
+        self.assertEqual(self.client.pwd(), '/%s' % self.tempdir)
         self.client.cwd(subfolder)
-        self.assertEqual(self.client.pwd(), '/%s/%s' %(self.tempdir, subfolder))
+        self.assertEqual(self.client.pwd(), '/%s/%s' % (self.tempdir, subfolder))
         self.client.sendcmd('cdup')
-        self.assertEqual(self.client.pwd(), '/%s' %self.tempdir)
+        self.assertEqual(self.client.pwd(), '/%s' % self.tempdir)
         self.client.sendcmd('cdup')
         self.assertEqual(self.client.pwd(), '/')
 
@@ -1288,10 +1288,10 @@ class TestFtpStoreData(unittest.TestCase):
         # on stor
         file_size = self.client.size(TESTFN)
         self.assertEqual(file_size, bytes_sent)
-        self.client.sendcmd('rest %s' %((file_size + 1)))
+        self.client.sendcmd('rest %s' % ((file_size + 1)))
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'stor ' + TESTFN)
 
-        self.client.sendcmd('rest %s' %bytes_sent)
+        self.client.sendcmd('rest %s' % bytes_sent)
         self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
 
         self.client.retrbinary('retr ' + TESTFN, self.dummy_recvfile.write)
@@ -1410,11 +1410,11 @@ class TestFtpRetrieveData(unittest.TestCase):
         # file size stored on the server should result in an error
         # on retr (RFC-1123)
         file_size = self.client.size(TESTFN)
-        self.client.sendcmd('rest %s' %((file_size + 1)))
+        self.client.sendcmd('rest %s' % ((file_size + 1)))
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'retr ' + TESTFN)
 
         # test resume
-        self.client.sendcmd('rest %s' %len(chunk))
+        self.client.sendcmd('rest %s' % len(chunk))
         self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
         self.dummyfile.seek(0)
         self.assertEqual(hash(data), hash (self.dummyfile.read()))
@@ -1449,7 +1449,7 @@ class TestFtpListingCmds(unittest.TestCase):
         if cmd.lower() != 'mlsd':
             # if pathname is a file one line is expected
             x = []
-            self.client.retrlines('%s ' %cmd + TESTFN, x.append)
+            self.client.retrlines('%s ' % cmd + TESTFN, x.append)
             self.assertEqual(len(x), 1)
             self.assertTrue(''.join(x).endswith(TESTFN))
         # non-existent path, 550 response is expected
@@ -1461,7 +1461,7 @@ class TestFtpListingCmds(unittest.TestCase):
         x = []
         tempdir = os.path.basename(tempfile.mkdtemp(dir=HOME))
         try:
-            self.client.retrlines('%s %s' %(cmd, tempdir), x.append)
+            self.client.retrlines('%s %s' % (cmd, tempdir), x.append)
             self.assertEqual(x, [])
         finally:
             try:
@@ -1912,7 +1912,7 @@ class TestConfigurableOptions(unittest.TestCase):
         # set back options to their original value
         self.server.server.max_cons = 0
         self.server.server.max_cons_per_ip = 0
-        self.server.handler.banner = "pyftpdlib %s ready." %ftpserver.__ver__
+        self.server.handler.banner = "pyftpdlib %s ready." % ftpserver.__ver__
         self.server.handler.max_login_attempts = 3
         self.server.handler._auth_failed_timeout = 5
         self.server.handler.masquerade_address = None
@@ -2345,7 +2345,7 @@ class _TestNetworkProtocols(unittest.TestCase):
     def test_eprt(self):
         # test wrong proto
         try:
-            self.client.sendcmd('eprt |%s|%s|%s|' %(self.other_proto,
+            self.client.sendcmd('eprt |%s|%s|%s|' % (self.other_proto,
                                 self.server.host, self.server.port))
         except ftplib.error_perm, err:
             self.assertEqual(str(err)[0:3], "522")
@@ -2359,16 +2359,16 @@ class _TestNetworkProtocols(unittest.TestCase):
         # len('|') < 3
         self.assertEqual(self.cmdresp('eprt ||'), msg)
         # port > 65535
-        self.assertEqual(self.cmdresp('eprt |%s|%s|65536|' %(self.proto,
+        self.assertEqual(self.cmdresp('eprt |%s|%s|65536|' % (self.proto,
                                                              self.HOST)), msg)
         # port < 0
-        self.assertEqual(self.cmdresp('eprt |%s|%s|-1|' %(self.proto,
+        self.assertEqual(self.cmdresp('eprt |%s|%s|-1|' % (self.proto,
                                                           self.HOST)), msg)
         # port < 1024
-        self.assertEqual(self.cmdresp('eprt |%s|%s|222|' %(self.proto,
+        self.assertEqual(self.cmdresp('eprt |%s|%s|222|' % (self.proto,
                        self.HOST)), "501 Can't connect over a privileged port.")
         # proto > 2
-        _cmd = 'eprt |3|%s|%s|' %(self.server.host, self.server.port)
+        _cmd = 'eprt |3|%s|%s|' % (self.server.host, self.server.port)
         self.assertRaises(ftplib.error_perm,  self.client.sendcmd, _cmd)
 
 
@@ -2387,7 +2387,7 @@ class _TestNetworkProtocols(unittest.TestCase):
         sock.listen(5)
         sock.settimeout(2)
         ip, port =  sock.getsockname()[:2]
-        self.client.sendcmd('eprt |%s|%s|%s|' %(self.proto, ip, port))
+        self.client.sendcmd('eprt |%s|%s|%s|' % (self.proto, ip, port))
         try:
             try:
                 sock.accept()
@@ -2425,7 +2425,7 @@ class _TestNetworkProtocols(unittest.TestCase):
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'pasv')
         self.assertRaises(ftplib.error_perm, self.client.sendport, self.HOST, 2000)
         self.assertRaises(ftplib.error_perm, self.client.sendcmd,
-                          'eprt |%s|%s|%s|' %(self.proto, self.HOST, 2000))
+                          'eprt |%s|%s|%s|' % (self.proto, self.HOST, 2000))
 
 
 class TestIPv4Environment(_TestNetworkProtocols):
@@ -2454,7 +2454,7 @@ class TestIPv4Environment(_TestNetworkProtocols):
         ae(self.cmdresp('port 127,0,0,1,256,1'), msg)  # port > 65535
         ae(self.cmdresp('port 127,0,0,1,-1,0'), msg)   # port < 0
         msg = "501 Can't connect over a privileged port."
-        ae(self.cmdresp('port %s,1,1' %self.HOST.replace('.',',')),msg) # port < 1024
+        ae(self.cmdresp('port %s,1,1' % self.HOST.replace('.',',')),msg) # port < 1024
         if "1.2.3.4" != self.HOST:
             msg = "501 Can't connect to a foreign address."
             ae(self.cmdresp('port 1,2,3,4,4,4'), msg)
@@ -2574,7 +2574,7 @@ class TestCornerCases(unittest.TestCase):
         host, port =  sock.getsockname()[:2]
 
         hbytes = host.split('.')
-        pbytes = [repr(port//256), repr(port%256)]
+        pbytes = [repr(port // 256), repr(port % 256)]
         bytes = hbytes + pbytes
         cmd = 'PORT ' + ','.join(bytes)
         self.client.sock.sendall(cmd + '\r\n')
@@ -2679,7 +2679,7 @@ class TestCommandLineParser(unittest.TestCase):
 
         # no such directory
         sys.argv = self.SYSARGV[:]
-        sys.argv += ["-d %s" %TESTFN]
+        sys.argv += ["-d %s" % TESTFN]
         if os.path.isdir(TESTFN):
             os.rmdir(TESTFN)
         self.assertRaises(ftpserver.AuthorizerError, ftpserver.main)

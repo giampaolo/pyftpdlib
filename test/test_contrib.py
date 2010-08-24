@@ -127,7 +127,7 @@ class TestFTPS(unittest.TestCase):
         except excClass, why:
             if str(why) == msg:
                 return
-            raise self.failureException("%s != %s" %(str(why), msg))
+            raise self.failureException("%s != %s" % (str(why), msg))
         else:
             if hasattr(excClass,'__name__'):
                 excName = excClass.__name__
@@ -275,7 +275,7 @@ class SharedAuthorizerTests(unittest.TestCase):
         except excClass, why:
             if str(why) == msg:
                 return
-            raise self.failureException("%s != %s" %(str(why), msg))
+            raise self.failureException("%s != %s" % (str(why), msg))
         else:
             if hasattr(excClass,'__name__'): excName = excClass.__name__
             else: excName = str(excClass)
