@@ -392,9 +392,9 @@ class DummyAuthorizer(object):
         provide customized response strings when user log-in and quit.
         """
         if self.has_user(username):
-            raise AuthorizerError('User "%s" already exists' %username)
+            raise AuthorizerError('user "%s" already exists' %username)
         if not os.path.isdir(homedir):
-            raise AuthorizerError('No such directory: "%s"' %homedir)
+            raise AuthorizerError('no such directory: "%s"' %homedir)
         homedir = os.path.realpath(homedir)
         self._check_permissions(username, perm)
         dic = {'pwd': str(password),
@@ -432,13 +432,13 @@ class DummyAuthorizer(object):
         """Override permissions for a given directory."""
         self._check_permissions(username, perm)
         if not os.path.isdir(directory):
-            raise AuthorizerError('No such directory: "%s"' %directory)
+            raise AuthorizerError('no such directory: "%s"' %directory)
         directory = os.path.normcase(os.path.realpath(directory))
         home = os.path.normcase(self.get_home_dir(username))
         if directory == home:
-            raise AuthorizerError("Can't override home directory permissions")
+            raise AuthorizerError("can't override home directory permissions")
         if not self._issubpath(directory, home):
-            raise AuthorizerError("Path escapes user home directory")
+            raise AuthorizerError("path escapes user home directory")
         self.user_table[username]['operms'][directory] = perm, recursive
 
     def validate_authentication(self, username, password):
@@ -514,9 +514,9 @@ class DummyAuthorizer(object):
         warned = 0
         for p in perm:
             if p not in self.read_perms + self.write_perms:
-                raise AuthorizerError('No such permission "%s"' %p)
+                raise AuthorizerError('no such permission "%s"' %p)
             if (username == 'anonymous') and (p in self.write_perms) and not warned:
-                warnings.warn("Write permissions assigned to anonymous user.",
+                warnings.warn("write permissions assigned to anonymous user.",
                               RuntimeWarning)
                 warned = 1
 
@@ -853,7 +853,7 @@ class DTPHandler(object, asynchat.async_chat):
         elif type == 'i':
             self.data_wrapper = lambda x: x
         else:
-            raise TypeError("Unsupported type")
+            raise TypeError("unsupported type")
         self.receive = True
 
     def get_transmitted_bytes(self):
@@ -1132,7 +1132,7 @@ class FileProducer(object):
         elif type == 'i':
             self.data_wrapper = lambda x: x
         else:
-            raise TypeError("Unsupported type")
+            raise TypeError("unsupported type")
 
     def more(self):
         """Attempt a chunk of data of size self.buffer_size."""

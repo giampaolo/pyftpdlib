@@ -414,33 +414,33 @@ class TestDummyAuthorizer(unittest.TestCase):
         self.assertRaises(KeyError, auth.remove_user, USER)
         # raise exc if path does not exist
         self.assertRaisesWithMsg(ftpserver.AuthorizerError,
-                                'No such directory: "%s"' %'?:\\',
+                                'no such directory: "%s"' %'?:\\',
                                  auth.add_user, USER, PASSWD, '?:\\')
         self.assertRaisesWithMsg(ftpserver.AuthorizerError,
-                                'No such directory: "%s"' %'?:\\',
+                                'no such directory: "%s"' %'?:\\',
                                  auth.add_anonymous, '?:\\')
         # raise exc if user already exists
         auth.add_user(USER, PASSWD, HOME)
         auth.add_anonymous(HOME)
         self.assertRaisesWithMsg(ftpserver.AuthorizerError,
-                                'User "%s" already exists' %USER,
+                                'user "%s" already exists' %USER,
                                  auth.add_user, USER, PASSWD, HOME)
         self.assertRaisesWithMsg(ftpserver.AuthorizerError,
-                                'User "anonymous" already exists',
+                                'user "anonymous" already exists',
                                  auth.add_anonymous, HOME)
         auth.remove_user(USER)
         auth.remove_user('anonymous')
         # raise on wrong permission
         self.assertRaisesWithMsg(ftpserver.AuthorizerError,
-                                 'No such permission "?"',
+                                 'no such permission "?"',
                                  auth.add_user, USER, PASSWD, HOME, perm='?')
         self.assertRaisesWithMsg(ftpserver.AuthorizerError,
-                                 'No such permission "?"',
+                                 'no such permission "?"',
                                  auth.add_anonymous, HOME, perm='?')
         # expect warning on write permissions assigned to anonymous user
         for x in "adfmw":
             self.assertRaisesWithMsg(RuntimeWarning,
-                                "Write permissions assigned to anonymous user.",
+                                "write permissions assigned to anonymous user.",
                                 auth.add_anonymous, HOME, perm=x)
 
     def test_override_perm_interface(self):
@@ -450,29 +450,29 @@ class TestDummyAuthorizer(unittest.TestCase):
         self.assertRaises(KeyError, auth.override_perm, USER+'w', HOME, 'elr')
         # raise exc if path does not exist or it's not a directory
         self.assertRaisesWithMsg(ftpserver.AuthorizerError,
-                                'No such directory: "%s"' %'?:\\',
+                                'no such directory: "%s"' %'?:\\',
                                 auth.override_perm, USER, '?:\\', 'elr')
         self.assertRaisesWithMsg(ftpserver.AuthorizerError,
-                                'No such directory: "%s"' %self.tempfile,
+                                'no such directory: "%s"' %self.tempfile,
                                 auth.override_perm, USER, self.tempfile, 'elr')
         # raise on wrong permission
         self.assertRaisesWithMsg(ftpserver.AuthorizerError,
-                                 'No such permission "?"', auth.override_perm,
+                                 'no such permission "?"', auth.override_perm,
                                  USER, HOME, perm='?')
         # expect warning on write permissions assigned to anonymous user
         auth.add_anonymous(HOME)
         for p in "adfmw":
             self.assertRaisesWithMsg(RuntimeWarning,
-                                "Write permissions assigned to anonymous user.",
+                                "write permissions assigned to anonymous user.",
                                 auth.override_perm, 'anonymous', HOME, p)
         # raise on attempt to override home directory permissions
         self.assertRaisesWithMsg(ftpserver.AuthorizerError,
-                                 "Can't override home directory permissions",
+                                 "can't override home directory permissions",
                                  auth.override_perm, USER, HOME, perm='w')
         # raise on attempt to override a path escaping home directory
         if os.path.dirname(HOME) != HOME:
             self.assertRaisesWithMsg(ftpserver.AuthorizerError,
-                                     "Path escapes user home directory",
+                                     "path escapes user home directory",
                                      auth.override_perm, USER,
                                      os.path.dirname(HOME), perm='w')
         # try to re-set an overridden permission
