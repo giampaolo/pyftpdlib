@@ -11,6 +11,13 @@ see: http://pypi.python.org/pypi/ssl/
 from pyftpdlib import ftpserver
 from pyftpdlib.contrib.handlers import TLS_FTPHandler
 
+
+class SSLHandler(TLS_FTPHandler):
+
+    def get_context(self):
+        
+
+
 if __name__ == '__main__':
     authorizer = ftpserver.DummyAuthorizer()
     authorizer.add_user('user', '12345', '.', perm='elradfmw')

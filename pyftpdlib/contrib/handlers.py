@@ -224,7 +224,6 @@ else:
         """
 
         # configurable attributes
-        certfile = None
         ssl_version = ssl.PROTOCOL_SSLv23
         tls_control_required = False
         tls_data_required = False
@@ -233,8 +232,9 @@ else:
         proto_cmds = extended_proto_cmds
         dtp_handler = TLS_DTPHandler
 
-        def __init__(self, conn, server):
+        def __init__(self, conn, server, certfile):
             FTPHandler.__init__(self, conn, server)
+            self.certfile = certfile
             self._extra_feats = ['AUTH TLS', 'AUTH SSL', 'PBSZ', 'PROT']
             self._pbsz = False
             self._prot = False
@@ -311,15 +311,30 @@ else:
             else:
                 self.respond("502 Unrecognized PROT type (use C or P).")
 
-    __all__.extend(['SSLConnection', 'TLS_DTPHandler', 'TLS_DTPHandler'])
+
+    class TLS_FTPHandlerFactory(object):
+        """Factory class to use as wrapper for TLS_FTPHandler."""
+        handler = TLS_FTPHandler
+
+        def __init__(self, certfile):
+            if not os.path.isfile(certfile):
+                raise ValueError("%s does not exist" %certfile)
+            object.__setattr__(self, "_certfile", certfile)
+
+        def __call__(self, conn, server):
+            handler = self.handler(conn, server, self._certfile)
+            return handler
+
+        def __getattr__(self, name):
+            return getattr(self.handler, name)
+
+        def __delattr__(self, name):
+            return delattr(self.handler, name)
+
+        def __setattr__(self, name, value):
+            return setattr(self.handler, name, value)
 
 
-if __name__ == '__main__':
-    authorizer = DummyAuthorizer()
-    authorizer.add_user('user', '12345', os.getcwd(), perm='elradfmw')
-    authorizer.add_anonymous(os.getcwd())
-    ftp_handler = TLS_FTPHandler
-    ftp_handler.authorizer = authorizer
-    address = ('', 21)
-    ftpd = FTPServer(address, ftp_handler)
-    ftpd.serve_forever()
+    __all__.extend(['SSLConnection', 'TLS_FTPHandler', 'TLS_DTPHandler', 
+                    'TLS_FTPHandlerFactory'])
+

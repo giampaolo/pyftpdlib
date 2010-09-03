@@ -34,6 +34,8 @@ from pyftpdlib.contrib import filesystems
 from test_ftpd import *
 
 
+CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__), 'keycert.pem'))
+
 if hasattr(ftplib, 'FTP_TLS'):
     class FTPSClient(ftplib.FTP_TLS):
         """A modified version of ftplib.FTP_TLS class which implicitly
@@ -45,9 +47,7 @@ if hasattr(ftplib, 'FTP_TLS'):
 
     class FTPSServer(FTPd):
         """A threaded FTPS server used for functional testing."""
-        handler = handlers.TLS_FTPHandler
-        handler.certfile = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                           'keycert.pem'))
+        handler = handlers.TLS_FTPHandlerFactory(CERTFILE)
 
     class TLSTestMixin:
         server_class = FTPSServer
