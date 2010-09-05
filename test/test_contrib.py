@@ -34,9 +34,10 @@ from pyftpdlib.contrib import filesystems
 from test_ftpd import *
 
 
+FTPS_SUPPORT = hasattr(ftplib, 'FTP_TLS') and hasattr(handlers, 'TLS_FTPHandlerFactory')
 CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__), 'keycert.pem'))
 
-if hasattr(ftplib, 'FTP_TLS'):
+if FTPS_SUPPORT:
     class FTPSClient(ftplib.FTP_TLS):
         """A modified version of ftplib.FTP_TLS class which implicitly
         secure the data connection after login().
@@ -530,7 +531,7 @@ def test_main():
     warns = []
 
     # FTPS tests
-    if hasattr(ftplib, 'FTP_TLS'):  # Added in Python 2.7
+    if FTPS_SUPPORT:
         ftps_tests = [TestFTPS,
                       TestFtpAuthenticationTLSMixin,
                       TestTFtpDummyCmdsTLSMixin,

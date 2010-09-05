@@ -2129,13 +2129,13 @@ class TestConfigurableOptions(unittest.TestCase):
                 return instance.socket
 
             s = get_handler_socket()
-            self.assertEqual(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY), 1)
+            self.assertTrue(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
             self.client.quit()
             self.server.handler.tcp_no_delay = False
             self.client.connect(self.server.host, self.server.port)
             self.client.sendcmd('noop')
             s = get_handler_socket()
-            self.assertEqual(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY), 0)
+            self.assertFalse(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
 
 
 class TestCallbacks(unittest.TestCase):
