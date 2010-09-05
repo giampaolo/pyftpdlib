@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # $Id$
 
-"""Tests for pyftpdlib.contrib namespace: handlers.py and
-authorizers.py modules.
+"""Tests for pyftpdlib.contrib namespace: handlers.py, authorizers.py
+and filesystems.py modules.
 """
 
 import ftplib
@@ -237,6 +237,13 @@ class TestFTPS(unittest.TestCase):
             self.try_protocol_combo(ssl.PROTOCOL_SSLv23, proto)
         for proto in protos:
             self.try_protocol_combo(ssl.PROTOCOL_TLSv1, proto)
+
+    def test_sslv2(self):
+        self.client.ssl_version = ssl.PROTOCOL_SSLv2
+        self.client.close()
+        self.client.connect(self.server.host, self.server.port)
+        self.assertRaises(socket.error, self.client.login)
+        self.client.ssl_version = ssl.PROTOCOL_SSLv2
 
 
 # --- System dependant authorizers tests

@@ -37,7 +37,7 @@ As for now only one class is provided: TLS_FTPHandler.
 It is supposed to provide basic support for FTPS (FTP over SSL/TLS) as
 described in RFC-4217.
 
-Requires ssl module (integrated with Python 2.6 and higher).
+Requires PyOpenSSL module (http://pypi.python.org/pypi/pyOpenSSL).
 For Python versions prior to 2.6 ssl module must be installed separately,
 see: http://pypi.python.org/pypi/ssl/
 
@@ -48,12 +48,17 @@ Development status: experimental.
 import os
 import asyncore
 import socket
+import warnings
+from errno import EWOULDBLOCK, ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, \
+                  EPIPE, EBADF, EINTR, ENOBUFS
+
 from pyftpdlib.ftpserver import *
 
 __all__ = []
 
+# requires PyOpenSSL - http://pypi.python.org/pypi/pyOpenSSL
 try:
-    import ssl
+    from OpenSSL import SSL
 except ImportError:
     pass
 else:
@@ -70,58 +75,40 @@ else:
         extended_proto_cmds[cmd] = _CommandProperty(*properties)
     del cmd, properties, new_proto_cmds, _CommandProperty
 
+    DISCONNECTED = frozenset((ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED,
+                              EPIPE, EBADF))
 
     class SSLConnection(object, asyncore.dispatcher):
         """An asyncore.dispatcher subclass supporting TLS/SSL."""
-
         _ssl_accepting = False
         _ssl_established = False
         _ssl_closing = False
 
-        def secure_connection(self, certfile, ssl_version):
-            """Setup encrypted connection."""
-            self.socket = ssl.wrap_socket(self.socket, suppress_ragged_eofs=False,
-                                          certfile=certfile, server_side=True,
-                                          do_handshake_on_connect=False,
-                                          ssl_version=ssl_version)
+        def secure_connection(self, ssl_context):
+            """Secure the connection switching from plain-text to 
+            SSL/TLS.
+            """
+            self.socket = SSL.Connection(ssl_context, self.socket)
+            self.socket.set_accept_state()
             self._ssl_accepting = True
 
         def _do_ssl_handshake(self):
+            self._ssl_accepting = True
             try:
                 self.socket.do_handshake()
-            except ssl.SSLError, err:
-                if err.args[0] in (ssl.SSL_ERROR_WANT_READ, ssl.SSL_ERROR_WANT_WRITE):
-                    return
-                elif err.args[0] == ssl.SSL_ERROR_EOF:
+            except (SSL.WantReadError, SSL.WantWriteError):
+                return
+            except SSL.SysCallError, (retval, desc):
+                if (retval == -1 and desc == 'Unexpected EOF') or retval > 0:
                     return self.handle_close()
-                elif err.args[0] == ssl.SSL_ERROR_SSL:
-                    self.handle_failed_ssl_handshake()
-                else:
-                    raise
+                raise
+            except SSL.Error, err:
+                return self.handle_failed_ssl_handshake()
+            except:
+                raise
             else:
                 self._ssl_accepting = False
                 self._ssl_established = True
-
-        def _do_ssl_shutdown(self):
-            self._ssl_closing = True
-            try:
-                self.socket = self.socket.unwrap()
-            except ssl.SSLError, err:
-                if err.args[0] in (ssl.SSL_ERROR_WANT_READ,
-                                   ssl.SSL_ERROR_WANT_WRITE):
-                    return
-                elif err.args[0] == ssl.SSL_ERROR_SSL:
-                    pass
-                else:
-                    raise
-            except socket.error, err:
-                # Any "socket error" corresponds to a SSL_ERROR_SYSCALL
-                # return from OpenSSL's SSL_shutdown(), corresponding to
-                # a closed socket condition. See also:
-                # http://www.mail-archive.com/openssl-users@openssl.org/msg60710.html
-                pass
-            self._ssl_closing = False
-            super(SSLConnection, self).close()
 
         def handle_failed_ssl_handshake(self):
             raise NotImplementedError("must be implemented in subclass")
@@ -145,22 +132,68 @@ else:
         def send(self, data):
             try:
                 return super(SSLConnection, self).send(data)
-            except ssl.SSLError, err:
-                if err.args[0] in (ssl.SSL_ERROR_EOF, ssl.SSL_ERROR_ZERO_RETURN):
+            except (SSL.WantReadError, SSL.WantWriteError):
+                return 0
+            except SSL.ZeroReturnError:
+                self.handle_close()
+                return 0
+            except SSL.SysCallError, (errnum, errstr):
+                if errstr == 'Unexpected EOF' or errnum == EWOULDBLOCK:
                     return 0
-                raise
+                elif errnum in DISCONNECTED:
+                    self.handle_close()
+                    return 0
+                else:
+                    raise
 
         def recv(self, buffer_size):
             try:
                 return super(SSLConnection, self).recv(buffer_size)
-            except ssl.SSLError, err:
-                if err.args[0] in (ssl.SSL_ERROR_EOF, ssl.SSL_ERROR_ZERO_RETURN):
+            except (SSL.WantReadError, SSL.WantWriteError):
+                return ''
+            except SSL.ZeroReturnError:
+                self.handle_close()
+                return ''
+            except SSL.SysCallError, (errnum, errstr):
+                if errstr == 'Unexpected EOF' or errnum in DISCONNECTED:
                     self.handle_close()
                     return ''
-                if err.args[0] in (ssl.SSL_ERROR_WANT_READ,
-                                   ssl.SSL_ERROR_WANT_WRITE):
-                    return ''
-                raise
+                else:
+                    raise
+
+        def _do_ssl_shutdown(self):
+            """Executes a SSL_shutdown() call to revert the connection
+            back to clear-text.
+            twisted/internet/tcp.py code has been used as an example.
+            """
+            self._ssl_closing = True
+            # since SSL_shutdown() doesn't report errors, an empty 
+            # write call is done first, to try to detect if the 
+            # connection has gone away
+            try:
+                os.write(self.socket.fileno(), '')
+            except OSError, err:
+                if err[0] in (EINTR, EWOULDBLOCK, ENOBUFS):
+                    return
+                elif err[0] in DISCONNECTED:
+                    super(SSLConnection, self).close()
+                    return 
+                else:
+                    raise
+            # see twisted/internet/tcp.py
+            laststate = self.socket.get_shutdown()
+            self.socket.set_shutdown(laststate | SSL.RECEIVED_SHUTDOWN)
+            done = self.socket.shutdown()
+            if not (laststate & SSL.RECEIVED_SHUTDOWN):
+                self.socket.set_shutdown(SSL.SENT_SHUTDOWN)
+            if done:
+                super(SSLConnection, self).close()            
+
+        def close(self):
+            self._ssl_accepting = False
+            self._ssl_established = False
+            self._ssl_closing = False
+            return super(SSLConnection, self).close()
 
 
     class TLS_DTPHandler(SSLConnection, DTPHandler):
@@ -169,22 +202,19 @@ else:
         def __init__(self, sock_obj, cmd_channel):
             DTPHandler.__init__(self, sock_obj, cmd_channel)
             if self.cmd_channel._prot:
-                self.secure_connection(self.cmd_channel.certfile,
-                                       self.cmd_channel.ssl_version)
+                self.secure_connection(self.cmd_channel.ssl_context)
 
         def handle_failed_ssl_handshake(self):
             # TLS/SSL handshake failure, probably client's fault which
             # used a SSL version different from server's.
             # RFC-4217, chapter 10.2 expects us to return 522 over the
             # command channel.
-            proto = ssl.get_protocol_name(self.socket.ssl_version)
-            self.cmd_channel.respond("522 %s handshake failed." %proto)
+            self.cmd_channel.respond("522 SSL handshake failed.")
             self.close()
 
         def close(self):
-            if isinstance(self.socket, ssl.SSLSocket):
-                if self.socket._sslobj is not None:
-                    return self._do_ssl_shutdown()
+            if self._ssl_established:
+                return self._do_ssl_shutdown()
             DTPHandler.close(self)
 
 
@@ -193,24 +223,6 @@ else:
         Implements AUTH, PBSZ and PROT commands (RFC-2228 and RFC-4217).
 
         Configurable attributes:
-
-         - (string) certfile:
-            the path of the file which contain a certificate to be used
-            to identify the local side of the connection.
-            This must always be set before starting the server.
-
-         - (int) ssl_version:
-            specifies which version of the SSL protocol to use when
-            establishing SSL/TLS sessions. Clients can then only connect
-            using the configured protocol (defaults to SSLv23 for best
-            compatibility).
-
-            Possible values:
-
-            * ssl.PROTOCOL_SSLv2: allow only SSLv2
-            * ssl.PROTOCOL_SSLv3: allow only SSLv3
-            * ssl.PROTOCOL_SSLv23: allow both SSLv3 and TLSv1
-            * ssl.PROTOCOL_TLSv1: allow only TLSv1
 
          - (bool) tls_control_required:
             When True requires SSL/TLS to be established on the control
@@ -224,7 +236,6 @@ else:
         """
 
         # configurable attributes
-        ssl_version = ssl.PROTOCOL_SSLv23
         tls_control_required = False
         tls_data_required = False
 
@@ -232,9 +243,9 @@ else:
         proto_cmds = extended_proto_cmds
         dtp_handler = TLS_DTPHandler
 
-        def __init__(self, conn, server, certfile):
+        def __init__(self, conn, server, ssl_context):
             FTPHandler.__init__(self, conn, server)
-            self.certfile = certfile
+            self.ssl_context = ssl_context
             self._extra_feats = ['AUTH TLS', 'AUTH SSL', 'PBSZ', 'PROT']
             self._pbsz = False
             self._prot = False
@@ -264,21 +275,20 @@ else:
             # used a SSL version different from server's.
             # We can't rely on the control connection anymore so we just
             # disconnect the client without sending any response.
-            ssl_version = ssl.get_protocol_name(self.socket.ssl_version)
-            self.log("%s handshake failed." %ssl_version)
+            self.log("SSL handshake failed.")
             self.close()
 
         def ftp_AUTH(self, line):
             """Set up secure control channel."""
             arg = line.upper()
-            if isinstance(self.socket, ssl.SSLSocket):
+            if isinstance(self.socket, SSL.Connection):
                 self.respond("503 Already using TLS.")
             elif arg in ('TLS', 'TLS-C', 'SSL', 'TLS-P'):
                 # From RFC-4217: "As the SSL/TLS protocols self-negotiate
                 # their levels, there is no need to distinguish between SSL
                 # and TLS in the application layer".
                 self.respond('234 AUTH %s successful.' %arg)
-                self.secure_connection(self.certfile, self.ssl_version)
+                self.secure_connection(self.ssl_context)
             else:
                 self.respond("502 Unrecognized encryption type (use TLS or SSL).")
 
@@ -287,7 +297,7 @@ else:
             For TLS/SSL the only valid value for the parameter is '0'.
             Any other value is accepted but ignored.
             """
-            if not isinstance(self.socket, ssl.SSLSocket):
+            if not isinstance(self.socket, SSL.Connection):
                 self.respond("503 PBSZ not allowed on insecure control connection.")
             else:
                 self.respond('200 PBSZ=0 successful.')
@@ -296,7 +306,7 @@ else:
         def ftp_PROT(self, line):
             """Setup un/secure data channel."""
             arg = line.upper()
-            if not isinstance(self.socket, ssl.SSLSocket):
+            if not isinstance(self.socket, SSL.Connection):
                 self.respond("503 PROT not allowed on insecure control connection.")
             elif not self._pbsz:
                 self.respond("503 You must issue the PBSZ command prior to PROT.")
@@ -316,13 +326,48 @@ else:
         """Factory class to use as wrapper for TLS_FTPHandler."""
         handler = TLS_FTPHandler
 
-        def __init__(self, certfile):
-            if not os.path.isfile(certfile):
-                raise ValueError("%s does not exist" %certfile)
-            object.__setattr__(self, "_certfile", certfile)
+        def __init__(self, certfile, keyfile=None, protocol=SSL.SSLv23_METHOD):
+            """Arguments:
+
+             - (string) certfile:
+                the path of the file which contains a certificate to be
+                used to identify the local side of the connection.
+
+             - (string) keyfile:
+                the path of the file containing the private RSA key;
+                can be omittetted if certfile already contains the 
+                private key (defaults: None).
+
+             - (int) protocol:
+                specifies which version of the SSL protocol to use when
+                establishing SSL/TLS sessions; clients can then only 
+                connect using the configured protocol (defaults to SSLv23,
+                allowing SSLv3 and TLSv1 protocols).
+
+                Possible values:
+                * SSL.SSLv2_METHOD - allow only SSLv2
+                * SSL.SSLv3_METHOD - allow only SSLv3
+                * SSL.SSLv23_METHOD - allow both SSLv3 and TLSv1
+                * SSL.TLSv1_METHOD - allow only TLSv1
+
+              - (instance) context:
+                a SSL Context object previously configured; if specified
+                all other parameters will be ignored.
+                (default None).
+            """
+            ssl_context = SSL.Context(protocol)
+            if protocol != SSL.SSLv2_METHOD:
+                ssl_context.set_options(SSL.OP_NO_SSLv2)
+            else:
+                warnings.warn("SSLv2 protocol is insecure", RuntimeWarning)
+            ssl_context.use_certificate_file(certfile)
+            if not keyfile:
+                keyfile = certfile
+            ssl_context.use_privatekey_file(keyfile)
+            object.__setattr__(self, "ssl_context", ssl_context)
 
         def __call__(self, conn, server):
-            handler = self.handler(conn, server, self._certfile)
+            handler = self.handler(conn, server, self.ssl_context)
             return handler
 
         def __getattr__(self, name):
