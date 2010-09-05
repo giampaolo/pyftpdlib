@@ -74,9 +74,7 @@ class TestFtpAuthenticationTLSMixin(TLSTestMixin, TestFtpAuthentication): pass
 class TestTFtpDummyCmdsTLSMixin(TLSTestMixin, TestFtpDummyCmds): pass
 class TestFtpCmdsSemanticTLSMixin(TLSTestMixin, TestFtpCmdsSemantic): pass
 class TestFtpFsOperationsTLSMixin(TLSTestMixin, TestFtpFsOperations): pass
-class TestFtpStoreDataTLSMixin(TLSTestMixin, TestFtpStoreData):
-    def test_stou(self): pass
-
+class TestFtpStoreDataTLSMixin(TLSTestMixin, TestFtpStoreData): pass
 class TestFtpRetrieveDataTLSMixin(TLSTestMixin, TestFtpRetrieveData): pass
 class TestFtpListingCmdsTLSMixin(TLSTestMixin, TestFtpListingCmds): pass
 class TestFtpAbortTLSMixin(TLSTestMixin, TestFtpAbort):
@@ -86,7 +84,7 @@ class TestThrottleBandwidthTLSMixin(TLSTestMixin, ThrottleBandwidth):
     def test_throttle_recv(self): pass
     def test_throttle_send(self): pass
 
-class TestTimeoutsTLSMixin(TLSTestMixin, TestTimeouts):
+class TestTimeoutsTLSMixin(TLSTestMixin, TestTimeouts): 
     def test_data_timeout_not_reached(self): pass
 
 class TestConfigurableOptionsTLSMixin(TLSTestMixin, TestConfigurableOptions): pass

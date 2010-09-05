@@ -65,6 +65,10 @@ try:
     import cStringIO as StringIO
 except ImportError:
     import StringIO
+try:
+    import ssl
+except ImportError:
+    ssl = None
 
 from pyftpdlib import ftpserver
 
@@ -1184,6 +1188,8 @@ class TestFtpStoreData(unittest.TestCase):
         try:
             sock = self.client.makeport()
             conn, sockaddr = sock.accept()
+            if hasattr(self.client_class, 'ssl_version'):
+                conn = ssl.wrap_socket(conn)
             while 1:
                 buf = self.dummy_sendfile.read(8192)
                 if not buf:
@@ -1813,6 +1819,8 @@ class TestTimeouts(unittest.TestCase):
         # whether the transfer stalled for with no progress is executed.
         self._setUp(data_timeout=0.1)
         sock = self.client.transfercmd('stor ' + TESTFN)
+        if hasattr(self.client_class, 'ssl_version'):
+            sock = ssl.wrap_socket(sock)
         try:
             stop_at = time.time() + 0.2
             while time.time() < stop_at:
