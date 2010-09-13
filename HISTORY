@@ -1,4 +1,4 @@
-Issue tracker at http://code.google.com/p/pyftpdlib/issues/list
+Bug tracker at http://code.google.com/p/pyftpdlib/issues/list
 
 
 History
@@ -9,49 +9,49 @@ Version: 0.6.0 - Date: XXXX-XX-XX
 
 Enhancements:
 
- * Issue 68: added FTPS (FTP over SSL/TLS) support provided by new
+ * Issue #68: added full FTPS (FTP over SSL/TLS) support provided by new
    TLS_FTPHandler class defined in pyftpdlib.contrib.handlers module.
 
- * Issue 86: pyftpdlib now reports all ls and MDTM timestamps as GMT times,
+ * Issue #86: pyftpdlib now reports all ls and MDTM timestamps as GMT times,
    as recommended in RFC-3659.  A FTPHandler.use_gmt_times attributed has been
    added and can be set to False in case local times are desired instead.
 
- * Issue 124: pyftpdlib now accepts command line options to configure a stand
+ * Issue #124: pyftpdlib now accepts command line options to configure a stand
    alone anonymous FTP server when running pyftpdlib with python's -m option.
 
- * Issue 127: added FTPHandler.masquerade_address_map option which allows you 
+ * Issue #127: added FTPHandler.masquerade_address_map option which allows you 
    to define multiple 1 to 1 mappings in case you run a FTP server with 
    multiple private IP addresses behind a NAT firewall with multiple public
    IP addresses. 
 
- * Issue 128: files and directories owner and group names and os.readlink are 
+ * Issue #128: files and directories owner and group names and os.readlink are 
    now resolved via AbstractedFS methods instead of in format_list().
 
- * Issue 129: added 3 new callbacks to FTPHandler class: 
+ * Issue #129: added 3 new callbacks to FTPHandler class: 
    on_incomplete_file_sent(), on_incomplete_file_received() and on_login().
 
- * Issue 130: added UnixAuthorizer and WindowsAuthorizer classes defined in the
+ * Issue #130: added UnixAuthorizer and WindowsAuthorizer classes defined in the
    new pyftpdlib.contrib.authorizers module.
 
- * Issue 131: pyftpdlib is now able to serve both IPv4 and IPv6 at the same
+ * Issue #131: pyftpdlib is now able to serve both IPv4 and IPv6 at the same
    time by using a single socket.
 
- * Issue 133: AbstractedFS constructor now accepts two argumets: root and 
+ * Issue #133: AbstractedFS constructor now accepts two argumets: root and 
    cmd_channel breaking compatibility with previous version.  Also, root and and
    cwd attributes became properties.  The previous bug consisting in re-setting
    the root from the ftp handler after user login has been fixed to ease the
    development of subclasses.
 
- * Issue 134: enabled TCP_NODELAY socket option for the FTP command channels
+ * Issue #134: enabled TCP_NODELAY socket option for the FTP command channels
    resulting in pyftpdlib being twice faster.
 
- * Issue 135: Python 2.3 support has been removed.
+ * Issue #135: Python 2.3 support has been removed.
 
- * Issue 137: added new pyftpdlib.contrib.filesystems module within 
+ * Issue #137: added new pyftpdlib.contrib.filesystems module within 
    UnixFilesystem class which permits the client to escape its home directory 
    and navigate the real filesystem.
 
- * Issue 138: added DTPHandler.get_elapsed_time() method which returns the 
+ * Issue #138: added DTPHandler.get_elapsed_time() method which returns the 
    transfer elapsed time in seconds.
 
 Bugfixes:

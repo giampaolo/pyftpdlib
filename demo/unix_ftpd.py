@@ -13,7 +13,7 @@ from pyftpdlib.contrib.filesystems import UnixFilesystem
 
 
 def main():
-    authorizer = UnixAuthorizer(rejected_users=["root"])
+    authorizer = UnixAuthorizer(rejected_users=["root"], require_valid_shell=True)
     ftp_handler = ftpserver.FTPHandler
     ftp_handler.authorizer = authorizer
     ftp_handler.abstracted_fs = UnixFilesystem
