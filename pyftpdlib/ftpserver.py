@@ -1194,7 +1194,7 @@ class AbstractedFS(object):
         # Set initial current working directory.
         # By default initial cwd is set to "/" to emulate a chroot jail.
         # If a different behavior is desired (e.g. initial cwd = root,
-        # to reflect the real filesystem) users overriding this class 
+        # to reflect the real filesystem) users overriding this class
         # are responsible to set _cwd attribute as necessary.
         self._cwd = '/'
         self._root = root
@@ -1557,8 +1557,8 @@ class AbstractedFS(object):
         type = size = perm = modify = create = unique = mode = uid = gid = ""
         for basename in listing:
             file = os.path.join(basedir, basename)
-            # to properly implement 'unique' fact (RFC-3659, chapter 
-            # 7.5.2) we are supposed to follow symlinks, hence use 
+            # to properly implement 'unique' fact (RFC-3659, chapter
+            # 7.5.2) we are supposed to follow symlinks, hence use
             # os.stat() instead of os.lstat()
             try:
                 st = self.stat(file)
@@ -1619,8 +1619,8 @@ class AbstractedFS(object):
             if 'unique' in facts:
                 unique = "unique=%x%x;" % (st.st_dev, st.st_ino)
 
-            yield "%s%s%s%s%s%s%s%s%s %s\r\n" % (type, size, perm, modify, 
-                                                 create, mode, uid, gid, unique, 
+            yield "%s%s%s%s%s%s%s%s%s %s\r\n" % (type, size, perm, modify,
+                                                 create, mode, uid, gid, unique,
                                                  basename)
 
 
@@ -1665,9 +1665,9 @@ class FTPHandler(object, asynchat.async_chat):
         instead use the public address of your NAT (default None).
 
      - (dict) masquerade_address_map:
-        in case the server has multiple IP addresses which are all 
-        behind a NAT router, you may wish to specify individual 
-        masquerade_addresses for each of them. The map expects a 
+        in case the server has multiple IP addresses which are all
+        behind a NAT router, you may wish to specify individual
+        masquerade_addresses for each of them. The map expects a
         dictionary containing private IP addresses as keys, and their
         corresponding public (masquerade) addresses as values.
 
@@ -1681,9 +1681,9 @@ class FTPHandler(object, asynchat.async_chat):
         when True causes the server to report all ls and MDTM times in
         GMT and not local time (default True).
 
-     - (bool) tcp_no_delay: controls the use of the TCP_NODELAY socket 
-        option which disables the Nagle algorithm resulting in 
-        significantly better performances (default True on all systems 
+     - (bool) tcp_no_delay: controls the use of the TCP_NODELAY socket
+        option which disables the Nagle algorithm resulting in
+        significantly better performances (default True on all systems
         where it is supported).
 
     All relevant instance attributes initialized when client connects
@@ -2835,7 +2835,7 @@ class FTPHandler(object, asynchat.async_chat):
         # The 257 response is supposed to include the directory
         # name and in case it contains embedded double-quotes
         # they must be doubled (see RFC-959, chapter 7, appendix 2).
-        self.respond('257 "%s" is the current directory.' 
+        self.respond('257 "%s" is the current directory.'
                      % self.fs.cwd.replace('"', '""'))
 
     def ftp_CWD(self, path):
@@ -3512,6 +3512,11 @@ def main():
             parser.error('invalid argument passed to -r option')
         else:
             passive_ports = range(start, stop + 1)
+    # On recent Windows versions, if address is not specified and IPv6
+    # is installed the socket will listen on IPv6 by default; in this
+    # case we force IPv4 instead.
+    if os.name in ('nt', 'ce') and not options.interface:
+        options.interface = '0.0.0.0'
 
     authorizer = DummyAuthorizer()
     perm = options.write and "elradfmw" or "elr"
