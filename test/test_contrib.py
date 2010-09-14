@@ -85,7 +85,7 @@ class TestThrottleBandwidthTLSMixin(TLSTestMixin, ThrottleBandwidth):
     def test_throttle_recv(self): pass
     def test_throttle_send(self): pass
 
-class TestTimeoutsTLSMixin(TLSTestMixin, TestTimeouts): 
+class TestTimeoutsTLSMixin(TLSTestMixin, TestTimeouts):
     def test_data_timeout_not_reached(self): pass
 
 class TestConfigurableOptionsTLSMixin(TLSTestMixin, TestConfigurableOptions): pass
@@ -395,7 +395,10 @@ class SharedAuthorizerTests(unittest.TestCase):
         else:
             auth = self.authorizer_class()
         this_user = self.get_current_user()
-        another_user = self.get_users()[-1]
+        for x in self.get_users():
+            if x != this_user:
+                another_user = x
+                break
         nonexistent_user = self.get_nonexistent_user()
         self.assertRaisesWithMsg(ValueError,
                                 "at least one keyword argument must be specified",
@@ -507,7 +510,7 @@ class TestWindowsAuthorizer(SharedAuthorizerTests):
 
     def test_wrong_anonymous_credentials(self):
         user = self.get_current_user()
-        self.assertRaises(Win32ExtError, self.authorizer_class, 
+        self.assertRaises(Win32ExtError, self.authorizer_class,
                        anonymous_user=user, anonymous_password='$|1wrongpasswd')
 
 
@@ -555,17 +558,35 @@ def test_main():
         warns.append("FTPS tests skipped (requires python 2.7)")
 
     # authorizers tests
-    if hasattr(authorizers, "UnixAuthorizer"):
-        try:
-            authorizers.UnixAuthorizer()
-        except ftpserver.AuthorizerError:  # not root
-            warns.append("UnixAuthorizer tests skipped (root privileges are "
-                         "required)")
+    if os.name == 'posix':
+        if hasattr(authorizers, "UnixAuthorizer"):
+            try:
+                authorizers.UnixAuthorizer()
+            except ftpserver.AuthorizerError:  # not root
+                warns.append("UnixAuthorizer tests skipped (root privileges are "
+                             "required)")
+            else:
+                warn_skip = False
+                tests.append(TestUnixAuthorizer)
         else:
-            warn_skip = False
-            tests.append(TestUnixAuthorizer)
-    elif hasattr(authorizers, "WindowsAuthorizer"):
-        tests.append(TestWindowsAuthorizer)
+            try:
+                import spwd
+            except ImportError:
+                warns.append("UnixAuthorizer tests skipped (spwd module is "
+                             "missing (added in Python 2.5)")
+            else:
+                warns.append("UnixAuthorizer tests skipped")
+    elif os.name in ('nt', 'ce'):
+        if hasattr(authorizers, "WindowsAuthorizer"):
+            tests.append(TestWindowsAuthorizer)
+        else:
+            try:
+                import win32api
+            except ImportError:
+                warns.append("WindowsAuthorizer tests skipped (pywin32 extension "
+                             "is required)")
+            else:
+                warns.append("WindowsAuthorizer tests skipped")
 
     if os.name == 'posix':
         tests.append(TestUnixFilesystem)
