@@ -392,9 +392,9 @@ class DummyAuthorizer(object):
         provide customized response strings when user log-in and quit.
         """
         if self.has_user(username):
-            raise AuthorizerError('user "%s" already exists' % username)
+            raise ValueError('user "%s" already exists' % username)
         if not os.path.isdir(homedir):
-            raise AuthorizerError('no such directory: "%s"' % homedir)
+            raise ValueError('no such directory: "%s"' % homedir)
         homedir = os.path.realpath(homedir)
         self._check_permissions(username, perm)
         dic = {'pwd': str(password),
@@ -432,13 +432,13 @@ class DummyAuthorizer(object):
         """Override permissions for a given directory."""
         self._check_permissions(username, perm)
         if not os.path.isdir(directory):
-            raise AuthorizerError('no such directory: "%s"' % directory)
+            raise ValueError('no such directory: "%s"' % directory)
         directory = os.path.normcase(os.path.realpath(directory))
         home = os.path.normcase(self.get_home_dir(username))
         if directory == home:
-            raise AuthorizerError("can't override home directory permissions")
+            raise ValueError("can't override home directory permissions")
         if not self._issubpath(directory, home):
-            raise AuthorizerError("path escapes user home directory")
+            raise ValueError("path escapes user home directory")
         self.user_table[username]['operms'][directory] = perm, recursive
 
     def validate_authentication(self, username, password):
@@ -514,7 +514,7 @@ class DummyAuthorizer(object):
         warned = 0
         for p in perm:
             if p not in self.read_perms + self.write_perms:
-                raise AuthorizerError('no such permission "%s"' % p)
+                raise ValueError('no such permission "%s"' % p)
             if (username == 'anonymous') and (p in self.write_perms) and not warned:
                 warnings.warn("write permissions assigned to anonymous user.",
                               RuntimeWarning)

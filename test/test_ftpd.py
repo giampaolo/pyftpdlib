@@ -417,28 +417,28 @@ class TestDummyAuthorizer(unittest.TestCase):
         # raise exc if user does not exists
         self.assertRaises(KeyError, auth.remove_user, USER)
         # raise exc if path does not exist
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
                                 'no such directory: "%s"' % '?:\\',
                                  auth.add_user, USER, PASSWD, '?:\\')
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
                                 'no such directory: "%s"' % '?:\\',
                                  auth.add_anonymous, '?:\\')
         # raise exc if user already exists
         auth.add_user(USER, PASSWD, HOME)
         auth.add_anonymous(HOME)
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
                                 'user "%s" already exists' % USER,
                                  auth.add_user, USER, PASSWD, HOME)
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
                                 'user "anonymous" already exists',
                                  auth.add_anonymous, HOME)
         auth.remove_user(USER)
         auth.remove_user('anonymous')
         # raise on wrong permission
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
                                  'no such permission "?"',
                                  auth.add_user, USER, PASSWD, HOME, perm='?')
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
                                  'no such permission "?"',
                                  auth.add_anonymous, HOME, perm='?')
         # expect warning on write permissions assigned to anonymous user
@@ -453,14 +453,14 @@ class TestDummyAuthorizer(unittest.TestCase):
         # raise exc if user does not exists
         self.assertRaises(KeyError, auth.override_perm, USER+'w', HOME, 'elr')
         # raise exc if path does not exist or it's not a directory
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
                                 'no such directory: "%s"' % '?:\\',
                                 auth.override_perm, USER, '?:\\', 'elr')
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
                                 'no such directory: "%s"' % self.tempfile,
                                 auth.override_perm, USER, self.tempfile, 'elr')
         # raise on wrong permission
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
                                  'no such permission "?"', auth.override_perm,
                                  USER, HOME, perm='?')
         # expect warning on write permissions assigned to anonymous user
@@ -470,12 +470,12 @@ class TestDummyAuthorizer(unittest.TestCase):
                                 "write permissions assigned to anonymous user.",
                                 auth.override_perm, 'anonymous', HOME, p)
         # raise on attempt to override home directory permissions
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
                                  "can't override home directory permissions",
                                  auth.override_perm, USER, HOME, perm='w')
         # raise on attempt to override a path escaping home directory
         if os.path.dirname(HOME) != HOME:
-            self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+            self.assertRaisesWithMsg(ValueError,
                                      "path escapes user home directory",
                                      auth.override_perm, USER,
                                      os.path.dirname(HOME), perm='w')
@@ -2690,7 +2690,7 @@ class TestCommandLineParser(unittest.TestCase):
         sys.argv += ["-d %s" % TESTFN]
         if os.path.isdir(TESTFN):
             os.rmdir(TESTFN)
-        self.assertRaises(ftpserver.AuthorizerError, ftpserver.main)
+        self.assertRaises(ValueError, ftpserver.main)
 
     def test_r_option(self):
         sys.argv += ["-r 60000-61000", "-p", "0"]

@@ -359,20 +359,19 @@ class SharedAuthorizerTests(unittest.TestCase):
 
     def test_error_options(self):
         wrong_user = self.get_nonexistent_user()
-        self.assertRaisesWithMsg(authorizers.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
            "rejected_users and allowed_users options are mutually exclusive",
            self.authorizer_class, allowed_users=['foo'], rejected_users=['bar'])
-        self.assertRaisesWithMsg(authorizers.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
                              'invalid username "anonymous"',
                              self.authorizer_class, allowed_users=['anonymous'])
-        self.assertRaisesWithMsg(authorizers.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
                             'invalid username "anonymous"',
                             self.authorizer_class, rejected_users=['anonymous'])
-        self.assertRaisesWithMsg(authorizers.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
                             'unknown user %s' % wrong_user,
                             self.authorizer_class, allowed_users=[wrong_user])
-        self.assertRaisesWithMsg(authorizers.AuthorizerError,
-                            'unknown user %s' % wrong_user,
+        self.assertRaisesWithMsg(ValueError, 'unknown user %s' % wrong_user,
                             self.authorizer_class, rejected_users=[wrong_user])
 
     def test_override_user(self):
@@ -401,7 +400,7 @@ class SharedAuthorizerTests(unittest.TestCase):
         self.assertRaisesWithMsg(ValueError,
                                 "at least one keyword argument must be specified",
                                 auth.override_user, this_user)
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
                                  'no such user %s' % nonexistent_user,
                                  auth.override_user, nonexistent_user, perm='r')
         if self.authorizer_class.__name__ == 'UnixAuthorizer':
@@ -410,7 +409,7 @@ class SharedAuthorizerTests(unittest.TestCase):
         else:
             auth = self.authorizer_class(allowed_users=[this_user])
         auth.override_user(this_user, perm='r')
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
                                  '%s is not an allowed user' % another_user,
                                  auth.override_user, another_user, perm='r')
         if self.authorizer_class.__name__ == 'UnixAuthorizer':
@@ -419,10 +418,10 @@ class SharedAuthorizerTests(unittest.TestCase):
         else:
             auth = self.authorizer_class(rejected_users=[this_user])
         auth.override_user(another_user, perm='r')
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
                                  '%s is not an allowed user' % this_user,
                                  auth.override_user, this_user, perm='r')
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
                                  "can't assign password to anonymous user",
                                  auth.override_user, "anonymous", password='foo')
 
@@ -475,17 +474,17 @@ class TestUnixAuthorizer(SharedAuthorizerTests):
             self.fail("no user found")
 
         user = get_fake_shell_user()
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
                              "user %s has not a valid shell" % user,
                              authorizers.UnixAuthorizer, allowed_users=[user])
         # commented as it first fails for invalid home
-        #self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+        #self.assertRaisesWithMsg(ValueError,
         #                     "user %s has not a valid shell" % user,
         #                     authorizers.UnixAuthorizer, anonymous_user=user)
         auth = authorizers.UnixAuthorizer()
         self.assertTrue(auth._has_valid_shell(self.get_current_user()))
         self.assertFalse(auth._has_valid_shell(user))
-        self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+        self.assertRaisesWithMsg(ValueError,
                                  "user %s has not a valid shell" % user,
                                  auth.override_user, user, perm='r')
 

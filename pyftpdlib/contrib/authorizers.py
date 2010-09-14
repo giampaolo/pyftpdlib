@@ -43,23 +43,23 @@ class _CommonMethods(object):
     def __init__(self):
         """Check for errors in the constructor."""
         if self.rejected_users and self.allowed_users:
-            raise AuthorizerError("rejected_users and allowed_users options "
-                                  "are mutually exclusive")
+            raise ValueError("rejected_users and allowed_users options are "
+                             "mutually exclusive")
 
         users = self._get_system_users()
         for user in (self.allowed_users or self.rejected_users):
             if user == 'anonymous':
-                raise AuthorizerError('invalid username "anonymous"')
+                raise ValueError('invalid username "anonymous"')
             if user not in users:
-                raise AuthorizerError('unknown user %s' % user)
+                raise ValueError('unknown user %s' % user)
 
         if self.anonymous_user is not None:
             if not self.has_user(self.anonymous_user):
-                raise AuthorizerError('no such user %s' % self.anonymous_user)
+                raise ValueError('no such user %s' % self.anonymous_user)
             home = self.get_home_dir(self.anonymous_user)
             if not os.path.isdir(home):
-                raise AuthorizerError('no valid home set for user %s'
-                                      % self.anonymous_user)
+                raise ValueError('no valid home set for user %s' 
+                                 % self.anonymous_user)
 
     def override_user(self, username, password=None, homedir=None, perm=None, 
                       msg_login=None, msg_quit=None):
@@ -70,13 +70,13 @@ class _CommonMethods(object):
         and not msg_quit:
             raise ValueError("at least one keyword argument must be specified")
         if self.allowed_users and username not in self.allowed_users:
-            raise AuthorizerError('%s is not an allowed user' % username)
+            raise ValueError('%s is not an allowed user' % username)
         if self.rejected_users and username in self.rejected_users:
-            raise AuthorizerError('%s is not an allowed user' % username)
+            raise ValueError('%s is not an allowed user' % username)
         if username == "anonymous" and password:
-            raise AuthorizerError("can't assign password to anonymous user")
+            raise ValueError("can't assign password to anonymous user")
         if not self.has_user(username):
-            raise AuthorizerError('no such user %s' % username)
+            raise ValueError('no such user %s' % username)
 
         if username in self._dummy_authorizer.user_table:
             del self._dummy_authorizer.user_table[username]
@@ -218,8 +218,8 @@ else:
             if require_valid_shell:
                 for username in self.allowed_users:
                     if not self._has_valid_shell(username):
-                        raise AuthorizerError("user %s has not a valid shell"
-                                              % username)
+                        raise ValueError("user %s has not a valid shell"
+                                         % username)
                         
         def override_user(self, username, password=None, homedir=None, perm=None, 
                           msg_login=None, msg_quit=None):
@@ -228,8 +228,8 @@ else:
             """
             if self.require_valid_shell and username != 'anonymous':
                 if not self._has_valid_shell(username):
-                    raise AuthorizerError("user %s has not a valid shell"
-                                          % username)
+                    raise ValueError("user %s has not a valid shell"
+                                     % username)
             _CommonMethods.override_user(self, username, password, homedir, 
                                          perm, msg_login, msg_quit)
 
@@ -254,7 +254,7 @@ else:
                 try:
                     pw1 = spwd.getspnam(username).sp_pwd
                     pw2 = crypt.crypt(password, pw1)
-                except KeyError:
+                except KeyError:  # no such username
                     return False
                 else:
                     return pw1 == pw2

@@ -94,6 +94,9 @@ Major API changes since 0.5.2
      relies on "ftpserver.proto_cmds" global dictionary but on
      "ftpserver.FTPHandler.proto_cmds" instead.
 
+ * DummyAuthorizer:
+   - ValueError exceptions are now raised instead of AuthorizerError
+
  * DTPHandler.get_elapsed_time() method has been added.
 
  * Added a new package in pyftpdlib namespace: "contrib". Modules (and classes)
