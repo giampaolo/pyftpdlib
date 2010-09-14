@@ -998,8 +998,9 @@ class DTPHandler(object, asynchat.async_chat):
         if self.transfer_finished:
             self.cmd_channel.respond("226 Transfer complete.")
             if self.file_obj:
-                fname = self.cmd_channel.fs.fs2ftp(self.file_obj.name)
-                self.cmd_channel.log('"%s" %s.' % (fname, action))
+                secs = self.get_elapsed_time()
+                self.cmd_channel.log('%s %s in %0.3f seconds.' \
+                                     % (self.file_obj.name, action, secs))
         else:
             tot_bytes = self.get_transmitted_bytes()
             msg = "Transfer aborted; %d bytes transmitted." % tot_bytes
@@ -3524,3 +3525,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
