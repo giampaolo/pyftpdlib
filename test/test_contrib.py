@@ -555,7 +555,14 @@ def test_main():
             ftps_tests.append(TestIPv6EnvironmentTLSMixin)
         tests += ftps_tests
     else:
-        warns.append("FTPS tests skipped (requires python 2.7)")
+        if sys.version_info < (2.7):
+            warns.append("FTPS tests skipped (requires python 2.7)")
+        elif ssl is None:
+            warns.append("FTPS tests skipped (requires ssl module)")
+        elif not hasattr(handlers, 'TLS_FTPHandlerFactory'):
+            warns.append("FTPS tests skipped (requires PyOpenSSL module)")
+        else:
+            warns.append("FTPS tests skipped")
 
     # authorizers tests
     if os.name == 'posix':
