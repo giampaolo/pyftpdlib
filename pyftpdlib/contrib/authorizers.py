@@ -24,7 +24,7 @@ from pyftpdlib.ftpserver import DummyAuthorizer, AuthorizerError
 
 
 def replace_anonymous(callable):
-    """Decorator to replace anonymous user string passed to authorizer
+    """A decorator to replace anonymous user string passed to authorizer
     methods as first arugument with the actual user used to handle
     anonymous sessions.
     """
@@ -35,7 +35,7 @@ def replace_anonymous(callable):
     return wrapper
 
 
-class _CommonMethods(object):
+class _Base(object):
     """Methods common to both Unix and Windows authorizers.
     Not supposed to be used directly.
     """
@@ -120,8 +120,6 @@ class _CommonMethods(object):
         return False
 
 
-
-
 # Note: requires python >= 2.5
 try:
     import pwd, spwd, crypt
@@ -132,7 +130,7 @@ else:
     PROCESS_UID = os.getuid()
     PROCESS_GID = os.getgid()
 
-    class UnixAuthorizer(_CommonMethods):
+    class UnixAuthorizer(_Base):
         """An authorizer compatible with Unix user account and password
         database.
 
@@ -157,40 +155,20 @@ else:
         Note: in order to use this class super user (root) privileges
         are required.
 
-        Parameters:
+        Example usages:
 
-         - (string) global_perm:
-            a series of letters referencing the users permissions;
-            defaults to "elradfmw" which means full read and write
-            access for everybody (except anonymous).
-
-         - (list) allowed_users:
-            a list of users which are accepted for authenticating 
-            against the FTP server; defaults to [] (no restrictions).
-
-         - (list) rejected_users:
-            a list of users which are not accepted for authenticating 
-            against the FTP server; defaults to [] (no restrictions).
-
-         - (bool) require_valid_shell:
-            Deny access for those users which do not have a valid shell
-            binary listed in /etc/shells.
-            If /etc/shells cannot be found this is a no-op.
-            Anonymous user is not subject to this option, and is free
-            to not have a valid shell defined.
-            Defaults to True (a valid shell is required for login).
-
-         - (string) anonymous_user:
-            specify it if you intend to provide anonymous access.
-            The value expected is a string representing the system user
-            to use for managing anonymous sessions;  defaults to None 
-            (anonymous access disabled).
-
-         - (string) msg_login:
-            the string sent when client logs in.
-
-         - (string) msg_quit:
-            the string sent when client quits.
+         >>> from pyftpdlib.contrib.authorizers import UnixAuthorizer
+         >>> # accept all except root
+         >>> auth = UnixAuthorizer(rejected_users=["root"])
+         >>>
+         >>> # accept some users only
+         >>> auth = UnixAuthorizer(allowed_users=["matt", "jay"])
+         >>>
+         >>> # accept everybody and don't care if they have not a valid shell
+         >>> auth = UnixAuthorizer(require_valid_shell=False)
+         >>>
+         >>> # set specific options for a user
+         >>> auth.override_user("matt", password="foo", perm="elr")
         """
 
         # --- public API
@@ -202,7 +180,41 @@ else:
                            anonymous_user=None,
                            msg_login="Login successful.",
                            msg_quit="Goodbye."):
+            """Parameters:
 
+             - (string) global_perm:
+                a series of letters referencing the users permissions;
+                defaults to "elradfmw" which means full read and write
+                access for everybody (except anonymous).
+
+             - (list) allowed_users:
+                a list of users which are accepted for authenticating 
+                against the FTP server; defaults to [] (no restrictions).
+
+             - (list) rejected_users:
+                a list of users which are not accepted for authenticating 
+                against the FTP server; defaults to [] (no restrictions).
+
+             - (bool) require_valid_shell:
+                Deny access for those users which do not have a valid shell
+                binary listed in /etc/shells.
+                If /etc/shells cannot be found this is a no-op.
+                Anonymous user is not subject to this option, and is free
+                to not have a valid shell defined.
+                Defaults to True (a valid shell is required for login).
+
+             - (string) anonymous_user:
+                specify it if you intend to provide anonymous access.
+                The value expected is a string representing the system user
+                to use for managing anonymous sessions;  defaults to None 
+                (anonymous access disabled).
+
+             - (string) msg_login:
+                the string sent when client logs in.
+
+             - (string) msg_quit:
+                the string sent when client quits.
+            """
             if os.geteuid() != 0 or not spwd.getspall():
                 raise AuthorizerError("super user privileges are required")
             self.global_perm = global_perm
@@ -214,7 +226,7 @@ else:
             self.msg_quit = msg_quit
             self._dummy_authorizer = DummyAuthorizer()
             self._dummy_authorizer._check_permissions('', global_perm)
-            _CommonMethods.__init__(self)
+            _Base.__init__(self)
             if require_valid_shell:
                 for username in self.allowed_users:
                     if not self._has_valid_shell(username):
@@ -230,8 +242,8 @@ else:
                 if not self._has_valid_shell(username):
                     raise ValueError("user %s has not a valid shell"
                                      % username)
-            _CommonMethods.override_user(self, username, password, homedir, 
-                                         perm, msg_login, msg_quit)
+            _Base.override_user(self, username, password, homedir, perm, 
+                                msg_login, msg_quit)
 
         # --- overridden / private API
 
@@ -337,7 +349,7 @@ try:
 except ImportError:
     pass
 else:
-    class WindowsAuthorizer(_CommonMethods):
+    class WindowsAuthorizer(_Base):
         """An authorizer compatible with Windows user account and 
         password database.
 
@@ -358,40 +370,6 @@ else:
         succeed depends on user and file permissions.
         This is why full read and write permissions are granted by 
         default in the constructor.
-
-        Parameters:
-
-         - (string) global_perm:
-            a series of letters referencing the users permissions;
-            defaults to "elradfmw" which means full read and write
-            access for everybody (except anonymous).
-
-         - (list) allowed_users:
-            a list of users which are accepted for authenticating 
-            against the FTP server; defaults to [] (no restrictions).
-
-         - (list) rejected_users:
-            a list of users which are not accepted for authenticating 
-            against the FTP server; defaults to [] (no restrictions).
-
-         - (string) anonymous_user:
-            specify it if you intend to provide anonymous access.
-            The value expected is a string representing the system user
-            to use for managing anonymous sessions.
-            As for IIS, it is recommended to use Guest account. 
-            The common practice is to first enable the Guest user, which 
-            is disabled by default and then assign an empty password.
-            Defaults to None (anonymous access disabled).
-
-         - (string) anonymous_password:
-            the password of the user who has been chosen to manage the
-            anonymous sessions.  Defaults to None (empty password).
-
-         - (string) msg_login:
-            the string sent when client logs in.
-
-         - (string) msg_quit:
-            the string sent when client quits.
         """
 
         # --- public API
@@ -403,6 +381,40 @@ else:
                            anonymous_password=None,
                            msg_login="Login successful.",
                            msg_quit="Goodbye."):
+            """Parameters:
+
+             - (string) global_perm:
+                a series of letters referencing the users permissions;
+                defaults to "elradfmw" which means full read and write
+                access for everybody (except anonymous).
+
+             - (list) allowed_users:
+                a list of users which are accepted for authenticating 
+                against the FTP server; defaults to [] (no restrictions).
+
+             - (list) rejected_users:
+                a list of users which are not accepted for authenticating 
+                against the FTP server; defaults to [] (no restrictions).
+
+             - (string) anonymous_user:
+                specify it if you intend to provide anonymous access.
+                The value expected is a string representing the system user
+                to use for managing anonymous sessions.
+                As for IIS, it is recommended to use Guest account. 
+                The common practice is to first enable the Guest user, which 
+                is disabled by default and then assign an empty password.
+                Defaults to None (anonymous access disabled).
+
+             - (string) anonymous_password:
+                the password of the user who has been chosen to manage the
+                anonymous sessions.  Defaults to None (empty password).
+
+             - (string) msg_login:
+                the string sent when client logs in.
+
+             - (string) msg_quit:
+                the string sent when client quits.
+            """
             self.global_perm = global_perm
             self.allowed_users = allowed_users
             self.rejected_users = rejected_users
@@ -412,7 +424,7 @@ else:
             self.msg_quit = msg_quit
             self._dummy_authorizer = DummyAuthorizer()
             self._dummy_authorizer._check_permissions('', global_perm)
-            _CommonMethods.__init__(self)
+            _Base.__init__(self)
             # actually try to impersonate the user
             if self.anonymous_user is not None:
                 self.impersonate_user(self.anonymous_user, 
@@ -424,8 +436,8 @@ else:
             """Overrides the options specified in the class constructor 
             for a specific user.
             """
-            _CommonMethods.override_user(self, username, password, homedir, 
-                                         perm, msg_login, msg_quit)
+            _Base.override_user(self, username, password, homedir, perm, 
+                                msg_login, msg_quit)
 
         # --- overridden / private API
 
@@ -480,7 +492,8 @@ else:
         @replace_anonymous
         def get_home_dir(self, username):
             """Return the user's profile directory, the closest thing
-            to a user home directory we have on Windows."""
+            to a user home directory we have on Windows.
+            """
             overridden_home = self._get_key(username, 'home')
             if overridden_home is not None:
                 return overridden_home
@@ -500,11 +513,9 @@ else:
             return win32api.ExpandEnvironmentStrings(value)
 
         @classmethod
-        def _get_system_users(self):
+        def _get_system_users(cls):
             """Return all users defined on the Windows system."""
             return [entry['name'] for entry in win32net.NetUserEnum(None, 0)[0]]
 
     __all__.append('WindowsAuthorizer')
-
-
 
