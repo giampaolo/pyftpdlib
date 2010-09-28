@@ -296,7 +296,6 @@ class SharedAuthorizerTests(unittest.TestCase):
         self.assertTrue(os.path.isdir(home))
         if auth.has_user('nobody'):
             home = auth.get_home_dir('nobody')
-            self.assertFalse(os.path.isdir(home))
         self.assertRaises(ftpserver.AuthorizerError,
                           auth.get_home_dir, nonexistent_user)
 
