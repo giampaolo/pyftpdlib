@@ -15,9 +15,10 @@ if __name__ == '__main__':
     authorizer.add_user('user', '12345', '.', perm='elradfmw')
     authorizer.add_anonymous('.')
     ftp_handler = TLS_FTPHandlerFactory('demo/keycert.pem')
+    ftp_handler.authorizer = authorizer
     # requires SSL for both control and data channel
     #ftp_handler.tls_control_required = True
     #ftp_handler.tls_data_required = True
-    ftpd = ftpserver.FTPServer(('localhost', 8021), ftp_handler)
+    ftpd = ftpserver.FTPServer(('', 8021), ftp_handler)
     ftpd.serve_forever()
 
