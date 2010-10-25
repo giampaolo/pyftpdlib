@@ -310,19 +310,20 @@ else:
             except KeyError:
                 raise AuthorizerError('no such user %s' % username)
 
-        @classmethod
-        def _get_system_users(cls):
+        @staticmethod
+        def _get_system_users():
             """Return all users defined on the UNIX system."""
             return [entry.pw_name for entry in pwd.getpwall()]
 
-        @classmethod
-        def _has_valid_shell(cls, username):
+        @staticmethod
+        def _has_valid_shell(username):
             """Return True if the user has a valid shell binary listed 
             in /etc/shells. If /etc/shells can't be found return True.
             """
             try:
                 file = open('/etc/shells', 'r')
             except IOError, err:
+                file.close()
                 if err.errno == errno.ENOENT:
                     return True
                 raise
