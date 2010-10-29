@@ -41,5 +41,11 @@ setup(
           'Topic :: Internet :: File Transfer Protocol (FTP)',
           'Topic :: Software Development :: Libraries :: Python Modules',
           'Topic :: System :: Filesystems',
+          'Programming Language :: Python',
+          'Programming Language :: Python :: 2',
+          'Programming Language :: Python :: 2.4',
+          'Programming Language :: Python :: 2.5',
+          'Programming Language :: Python :: 2.6',
+          'Programming Language :: Python :: 2.7',
           ],
     )
