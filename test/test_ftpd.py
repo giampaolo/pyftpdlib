@@ -666,7 +666,7 @@ class TestFtpAuthentication(unittest.TestCase):
         # Test REIN while already authenticated and a transfer is
         # in progress.
         self.client.login(user=USER, passwd=PASSWD)
-        data = 'abcde12345' * 100000
+        data = 'abcde12345' * 1000000
         self.file.write(data)
         self.file.close()
 
@@ -710,7 +710,7 @@ class TestFtpAuthentication(unittest.TestCase):
         # Test USER while already authenticated and a transfer is
         # in progress.
         self.client.login(user=USER, passwd=PASSWD)
-        data = 'abcde12345' * 100000
+        data = 'abcde12345' * 1000000
         self.file.write(data)
         self.file.close()
 
@@ -1400,7 +1400,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.assertEqual(hash(expected), hash(self.dummyfile.read()))
 
     def test_restore_on_retr(self):
-        data = 'abcde12345' * 100000
+        data = 'abcde12345' * 1000000
         self.file.write(data)
         self.file.close()
 
@@ -1632,7 +1632,7 @@ class TestFtpAbort(unittest.TestCase):
         # Case 4: ABOR while a data transfer on DTP channel is in
         # progress: close data channel, respond with 426, respond
         # with 226.
-        data = 'abcde12345' * 100000
+        data = 'abcde12345' * 1000000
         f = open(TESTFN, 'w+b')
         f.write(data)
         f.close()
