@@ -1789,10 +1789,11 @@ class FTPHandler(object, asynchat.async_chat):
         try:
             self.remote_ip, self.remote_port = self.socket.getpeername()[:2]
         except socket.error, err:
-            # a race condition  may occur if the other end is closing
-            # before we can get the peername (see issue #100)
+            # A race condition  may occur if the other end is closing
+            # before we can get the peername, hence ENOTCONN (see issue
+            # #100) while EINVAL can occur on OSX (see issue #143).
             self.connected = False
-            if err[0] == errno.ENOTCONN:
+            if err[0] in (errno.ENOTCONN, errno.EINVAL):
                 self.close()
             else:
                 self.handle_error()
