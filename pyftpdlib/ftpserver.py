@@ -546,7 +546,14 @@ class PassiveDTP(object, asyncore.dispatcher):
          - (instance) cmd_channel: the command channel class instance.
          - (bool) extmode: wheter use extended passive mode response type.
         """
-        asyncore.dispatcher.__init__(self)
+        try:
+            asyncore.dispatcher.__init__(self)
+        except socket.error, err:
+            # http://code.google.com/p/pyftpdlib/issues/detail?id=143
+            self.close()
+            if err[0] == errno.EINVAL:
+                return
+            raise
         self.cmd_channel = cmd_channel
         if self.timeout:
             self.idler = CallLater(self.timeout, self.handle_timeout)
@@ -1727,7 +1734,14 @@ class FTPHandler(object, asynchat.async_chat):
             established connection.
          - (instance) server: the ftp server class instance.
         """
-        asynchat.async_chat.__init__(self, conn)
+        try:
+            asynchat.async_chat.__init__(self, conn)
+        except socket.error, err:
+            self.close()
+            if err[0] == errno.EINVAL:
+                # http://code.google.com/p/pyftpdlib/issues/detail?id=143
+                return
+            raise
         self.set_terminator("\r\n")
 
         # public session attributes
@@ -1780,7 +1794,7 @@ class FTPHandler(object, asynchat.async_chat):
             if err[0] == errno.ENOTCONN:
                 self.close()
             else:
-                self.handle_error(self)
+                self.handle_error()
             return
 
         if hasattr(self.socket, 'family'):
@@ -3258,8 +3272,8 @@ class FTPServer(object, asyncore.dispatcher):
 
      - (int) max_cons:
         number of maximum simultaneous connections accepted (defaults
-        to 512). Can be set to 0 for unlimited but it is recommended 
-        to always have a limit to avoid running out of file descriptors 
+        to 512). Can be set to 0 for unlimited but it is recommended
+        to always have a limit to avoid running out of file descriptors
         (DoS).
 
      - (int) max_cons_per_ip:
@@ -3381,7 +3395,13 @@ class FTPServer(object, asyncore.dispatcher):
             if addr == None:
                 return
 
-        handler = self.handler(sock, self)
+        try:
+            handler = self.handler(sock, self)
+        except socket.error, err:
+            # safety measure in case of undiscovered asyncore bugs, see:
+            # http://code.google.com/p/pyftpdlib/issues/detail?id=143
+            logerror(str(err))
+            return
         if not handler.connected:
             return
         log("[]%s:%s Connected." % addr[:2])
