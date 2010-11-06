@@ -93,9 +93,12 @@ Major API changes since 0.5.2
    * proto_cmds class attribute has been added.  The FTPHandler class  no longer 
      relies on "ftpserver.proto_cmds" global dictionary but on
      "ftpserver.FTPHandler.proto_cmds" instead.
+     
+ * FTPServer class:
+   - max_cons attribute defaults to 512 by default instead of 0 (unlimited).
 
  * DummyAuthorizer:
-   - ValueError exceptions are now raised instead of AuthorizerError
+   - ValueError exceptions are now raised instead of AuthorizerError.
 
  * DTPHandler.get_elapsed_time() method has been added.
 

@@ -238,13 +238,13 @@ else:
         SSL-specific options:            
 
          - (string) certfile:
-            the path of the file which contains a certificate to be
+            the path to the file which contains a certificate to be
             used to identify the local side of the connection. 
             This  must always be specified, unless context is provided 
             instead.
 
          - (string) keyfile:
-            the path of the file containing the private RSA key;
+            the path to the file containing the private RSA key;
             can be omittetted if certfile already contains the 
             private key (defaults: None).
             

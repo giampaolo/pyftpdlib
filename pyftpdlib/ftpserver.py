@@ -3255,19 +3255,19 @@ class FTPServer(object, asyncore.dispatcher):
 
     All relevant session information is stored in class attributes
     described below.
-    Overriding them is strongly recommended to avoid running out of
-    file descriptors (DoS)!
 
      - (int) max_cons:
         number of maximum simultaneous connections accepted (defaults
-        to 0 == unlimited).
+        to 512). Can be set to 0 for unlimited but it is recommended 
+        to always have a limit to avoid running out of file descriptors 
+        (DoS).
 
      - (int) max_cons_per_ip:
         number of maximum connections accepted for the same IP address
         (defaults to 0 == unlimited).
     """
 
-    max_cons = 0
+    max_cons = 512
     max_cons_per_ip = 0
 
     def __init__(self, address, handler):
