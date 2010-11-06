@@ -546,14 +546,7 @@ class PassiveDTP(object, asyncore.dispatcher):
          - (instance) cmd_channel: the command channel class instance.
          - (bool) extmode: wheter use extended passive mode response type.
         """
-        try:
-            asyncore.dispatcher.__init__(self)
-        except socket.error, err:
-            # http://code.google.com/p/pyftpdlib/issues/detail?id=143
-            self.close()
-            if err[0] == errno.EINVAL:
-                return
-            return self.handle_error()
+        asyncore.dispatcher.__init__(self)
         self.cmd_channel = cmd_channel
         if self.timeout:
             self.idler = CallLater(self.timeout, self.handle_timeout)
@@ -668,8 +661,9 @@ class PassiveDTP(object, asyncore.dispatcher):
         self.close()
         # delegate such connection to DTP handler
         handler = self.cmd_channel.dtp_handler(sock, self.cmd_channel)
-        self.cmd_channel.data_channel = handler
-        self.cmd_channel._on_dtp_connection()
+        if handler.connected:
+            self.cmd_channel.data_channel = handler
+            self.cmd_channel._on_dtp_connection()
 
     def handle_timeout(self):
         self.cmd_channel.respond("421 Passive data channel timed out.")
@@ -810,7 +804,6 @@ class DTPHandler(object, asynchat.async_chat):
             established connection.
          - (instance) cmd_channel: the command channel class instance.
         """
-        asynchat.async_chat.__init__(self, sock_obj)
         self.cmd_channel = cmd_channel
         self.file_obj = None
         self.receive = False
@@ -826,6 +819,14 @@ class DTPHandler(object, asynchat.async_chat):
             self.idler = CallLater(self.timeout, self.handle_timeout)
         else:
             self.idler = None
+        try:
+            asynchat.async_chat.__init__(self, sock_obj)
+        except socket.error, err:
+            # http://code.google.com/p/pyftpdlib/issues/detail?id=143
+            self.close()
+            if err[0] == errno.EINVAL:
+                return
+            return self.handle_error()
 
     # --- utility methods
 
