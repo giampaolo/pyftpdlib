@@ -80,10 +80,11 @@ else:
 
     class SSLConnection(object, asyncore.dispatcher):
         """An asyncore.dispatcher subclass supporting TLS/SSL."""
+
         _ssl_accepting = False
         _ssl_established = False
         _ssl_closing = False
-
+        
         def secure_connection(self, ssl_context):
             """Secure the connection switching from plain-text to 
             SSL/TLS.
@@ -233,22 +234,75 @@ else:
             When True requires SSL/TLS to be established on the data
             channel.  This means the user will have to issue PROT
             before PASV or PORT (default False).
+
+        SSL-specific options:            
+
+         - (string) certfile:
+            the path of the file which contains a certificate to be
+            used to identify the local side of the connection. 
+            This  must always be specified, unless context is provided 
+            instead.
+
+         - (string) keyfile:
+            the path of the file containing the private RSA key;
+            can be omittetted if certfile already contains the 
+            private key (defaults: None).
+            
+         - (int) protocol:
+            specifies which version of the SSL protocol to use when
+            establishing SSL/TLS sessions; clients can then only 
+            connect using the configured protocol (defaults to SSLv23,
+            allowing SSLv3 and TLSv1 protocols).
+
+            Possible values:
+            * SSL.SSLv2_METHOD - allow only SSLv2
+            * SSL.SSLv3_METHOD - allow only SSLv3
+            * SSL.SSLv23_METHOD - allow both SSLv3 and TLSv1
+            * SSL.TLSv1_METHOD - allow only TLSv1
+            
+          - (instance) context:
+            a SSL Context object previously configured; if specified
+            all other parameters will be ignored.
+            (default None).
         """
 
         # configurable attributes
         tls_control_required = False
         tls_data_required = False
+        certfile = None
+        keyfile = None
+        ssl_protocol = SSL.SSLv23_METHOD
+        ssl_context = None
 
         # overridden attributes
         proto_cmds = extended_proto_cmds
         dtp_handler = TLS_DTPHandler
 
-        def __init__(self, conn, server, ssl_context):
+        def __init__(self, conn, server):
             FTPHandler.__init__(self, conn, server)
-            self.ssl_context = ssl_context
+            if not self.connected:
+                return
             self._extra_feats = ['AUTH TLS', 'AUTH SSL', 'PBSZ', 'PROT']
             self._pbsz = False
             self._prot = False
+            self.ssl_context = self.get_ssl_context()
+
+        @classmethod    
+        def get_ssl_context(cls):
+            if cls.ssl_context is None:
+                if cls.certfile is None:
+                    raise ValueError("at least certfile must be specified")
+                cls.ssl_context = SSL.Context(cls.ssl_protocol)
+                if cls.ssl_protocol != SSL.SSLv2_METHOD:
+                    cls.ssl_context.set_options(SSL.OP_NO_SSLv2)
+                else:
+                    warnings.warn("SSLv2 protocol is insecure", RuntimeWarning)
+                cls.ssl_context.use_certificate_file(cls.certfile)
+                if not cls.keyfile:
+                    cls.keyfile = cls.certfile
+                cls.ssl_context.use_privatekey_file(cls.keyfile)
+                TLS_FTPHandler.ssl_context = cls.ssl_context
+            return cls.ssl_context
 
         # --- overridden methods
 
@@ -322,64 +376,5 @@ else:
                 self.respond("502 Unrecognized PROT type (use C or P).")
 
 
-    class TLS_FTPHandlerFactory(object):
-        """Factory class to use as wrapper for TLS_FTPHandler."""
-        handler = TLS_FTPHandler
-
-        def __init__(self, certfile, keyfile=None, protocol=SSL.SSLv23_METHOD):
-            """Arguments:
-
-             - (string) certfile:
-                the path of the file which contains a certificate to be
-                used to identify the local side of the connection.
-
-             - (string) keyfile:
-                the path of the file containing the private RSA key;
-                can be omittetted if certfile already contains the 
-                private key (defaults: None).
-
-             - (int) protocol:
-                specifies which version of the SSL protocol to use when
-                establishing SSL/TLS sessions; clients can then only 
-                connect using the configured protocol (defaults to SSLv23,
-                allowing SSLv3 and TLSv1 protocols).
-
-                Possible values:
-                * SSL.SSLv2_METHOD - allow only SSLv2
-                * SSL.SSLv3_METHOD - allow only SSLv3
-                * SSL.SSLv23_METHOD - allow both SSLv3 and TLSv1
-                * SSL.TLSv1_METHOD - allow only TLSv1
-
-              - (instance) context:
-                a SSL Context object previously configured; if specified
-                all other parameters will be ignored.
-                (default None).
-            """
-            ssl_context = SSL.Context(protocol)
-            if protocol != SSL.SSLv2_METHOD:
-                ssl_context.set_options(SSL.OP_NO_SSLv2)
-            else:
-                warnings.warn("SSLv2 protocol is insecure", RuntimeWarning)
-            ssl_context.use_certificate_file(certfile)
-            if not keyfile:
-                keyfile = certfile
-            ssl_context.use_privatekey_file(keyfile)
-            object.__setattr__(self, "ssl_context", ssl_context)
-
-        def __call__(self, conn, server):
-            handler = self.handler(conn, server, self.ssl_context)
-            return handler
-
-        def __getattr__(self, name):
-            return getattr(self.handler, name)
-
-        def __delattr__(self, name):
-            return delattr(self.handler, name)
-
-        def __setattr__(self, name, value):
-            return setattr(self.handler, name, value)
-
-
-    __all__.extend(['SSLConnection', 'TLS_FTPHandler', 'TLS_DTPHandler', 
-                    'TLS_FTPHandlerFactory'])
+    __all__.extend(['SSLConnection', 'TLS_FTPHandler', 'TLS_DTPHandler'])
 

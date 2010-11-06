@@ -3282,6 +3282,10 @@ class FTPServer(object, asyncore.dispatcher):
         self.handler = handler
         self.ip_map = []
         host, port = address
+        # in case of FTPS class not properly configured we want errors
+        # to be raised here rather than later, when client connects
+        if hasattr(handler, 'get_ssl_context'):
+            handler.get_ssl_context()
 
         # AF_INET or AF_INET6 socket
         # Get the correct address family for our host (allows IPv6 addresses)

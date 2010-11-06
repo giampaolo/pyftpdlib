@@ -7,14 +7,15 @@ Requires PyOpenSSL module (http://pypi.python.org/pypi/pyOpenSSL).
 """
 
 from pyftpdlib import ftpserver
-from pyftpdlib.contrib.handlers import TLS_FTPHandlerFactory
+from pyftpdlib.contrib.handlers import TLS_FTPHandler
 
 
 if __name__ == '__main__':
     authorizer = ftpserver.DummyAuthorizer()
     authorizer.add_user('user', '12345', '.', perm='elradfmw')
     authorizer.add_anonymous('.')
-    ftp_handler = TLS_FTPHandlerFactory('demo/keycert.pem')
+    ftp_handler = TLS_FTPHandler
+    ftp_handler.certfile = 'demo/keycert.pem'
     ftp_handler.authorizer = authorizer
     # requires SSL for both control and data channel
     #ftp_handler.tls_control_required = True

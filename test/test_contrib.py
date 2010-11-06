@@ -34,7 +34,7 @@ from pyftpdlib.contrib import filesystems
 from test_ftpd import *
 
 
-FTPS_SUPPORT = hasattr(ftplib, 'FTP_TLS') and hasattr(handlers, 'TLS_FTPHandlerFactory')
+FTPS_SUPPORT = hasattr(ftplib, 'FTP_TLS') and hasattr(handlers, 'TLS_FTPHandler')
 CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__), 'keycert.pem'))
 
 if FTPS_SUPPORT:
@@ -48,7 +48,8 @@ if FTPS_SUPPORT:
 
     class FTPSServer(FTPd):
         """A threaded FTPS server used for functional testing."""
-        handler = handlers.TLS_FTPHandlerFactory(CERTFILE)
+        handler = handlers.TLS_FTPHandler
+        handler.certfile = CERTFILE
 
     class TLSTestMixin:
         server_class = FTPSServer
@@ -558,7 +559,7 @@ def test_main():
             warns.append("FTPS tests skipped (requires python 2.7)")
         elif ssl is None:
             warns.append("FTPS tests skipped (requires ssl module)")
-        elif not hasattr(handlers, 'TLS_FTPHandlerFactory'):
+        elif not hasattr(handlers, 'TLS_FTPHandler'):
             warns.append("FTPS tests skipped (requires PyOpenSSL module)")
         else:
             warns.append("FTPS tests skipped")
