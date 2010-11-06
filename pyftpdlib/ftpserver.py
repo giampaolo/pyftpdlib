@@ -553,7 +553,7 @@ class PassiveDTP(object, asyncore.dispatcher):
             self.close()
             if err[0] == errno.EINVAL:
                 return
-            raise
+            return self.handle_error()
         self.cmd_channel = cmd_channel
         if self.timeout:
             self.idler = CallLater(self.timeout, self.handle_timeout)
@@ -1734,16 +1734,6 @@ class FTPHandler(object, asynchat.async_chat):
             established connection.
          - (instance) server: the ftp server class instance.
         """
-        try:
-            asynchat.async_chat.__init__(self, conn)
-        except socket.error, err:
-            self.close()
-            if err[0] == errno.EINVAL:
-                # http://code.google.com/p/pyftpdlib/issues/detail?id=143
-                return
-            raise
-        self.set_terminator("\r\n")
-
         # public session attributes
         self.server = server
         self.fs = None
@@ -1783,6 +1773,16 @@ class FTPHandler(object, asynchat.async_chat):
             self._available_facts += ['unix.mode', 'unix.uid', 'unix.gid']
         if os.name == 'nt':
             self._available_facts.append('create')
+
+        try:
+            asynchat.async_chat.__init__(self, conn)
+        except socket.error, err:
+            if err[0] == errno.EINVAL:
+                # http://code.google.com/p/pyftpdlib/issues/detail?id=143
+                return
+            self.handle_error()
+            return
+        self.set_terminator("\r\n")
 
         # connection properties
         try:

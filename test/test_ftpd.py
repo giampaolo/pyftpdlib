@@ -2020,7 +2020,7 @@ class TestConfigurableOptions(unittest.TestCase):
         # Test FTPHandler.masquerade_address_map attribute
         host, port = self.client.makepasv()
         self.assertEqual(host, self.server.host)
-        self.server.handler.masquerade_address_map = {self.server.host : 
+        self.server.handler.masquerade_address_map = {self.server.host :
                                                       "128.128.128.128"}
         host, port = self.client.makepasv()
         self.assertEqual(host, "128.128.128.128")
@@ -2614,12 +2614,16 @@ class TestCornerCases(unittest.TestCase):
         # Tracked in issues #91, #104 and #105.
         # See also https://bugs.launchpad.net/zodb/+bug/135108
         import struct
-        
+
         def connect(addr):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, 
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
                          struct.pack('ii', 1, 0))
-            s.connect(addr)
+            try:
+                s.connect(addr)
+            except socket.error, err:
+                if err[0] != errno.ECONNREFUSED:
+                    raise
             s.close()
 
         for x in xrange(10):
