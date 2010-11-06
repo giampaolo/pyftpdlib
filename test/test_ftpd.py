@@ -2607,6 +2607,27 @@ class TestCornerCases(unittest.TestCase):
         finally:
             self.server.handler.abstracted_fs = ftpserver.AbstractedFS
 
+    def test_quick_connect(self):
+        # Clients that connected and disconnected quickly could cause
+        # the server to crash, due to a failure to catch errors in the
+        # initial part of the connection process.
+        # Tracked in issues #91, #104 and #105.
+        # See also https://bugs.launchpad.net/zodb/+bug/135108
+        import struct
+        
+        def connect(addr):
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, 
+                         struct.pack('ii', 1, 0))
+            s.connect(addr)
+            s.close()
+
+        for x in xrange(10):
+            connect((self.server.host, self.server.port))
+        for x in xrange(10):
+            addr = self.client.makepasv()
+            connect(addr)
+
 
 class TestCommandLineParser(unittest.TestCase):
     """Test command line parser."""
