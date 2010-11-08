@@ -11,7 +11,8 @@ users every time they are going to perform filesystem operations.
 from pyftpdlib import ftpserver
 from pyftpdlib.contrib.authorizers import WindowsAuthorizer
 
-if __name__ == "__main__":
+
+def main():
     authorizer = WindowsAuthorizer()
     # Use Guest user with empty password to handle anonymous sessions.
     # Guest user must be enabled first, empty password set and profile
@@ -23,3 +24,5 @@ if __name__ == "__main__":
     ftpd = ftpserver.FTPServer(address, ftp_handler)
     ftpd.serve_forever()
 
+if __name__ == "__main__":
+    main()

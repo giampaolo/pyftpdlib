@@ -10,7 +10,7 @@ from pyftpdlib import ftpserver
 from pyftpdlib.contrib.handlers import TLS_FTPHandler
 
 
-if __name__ == '__main__':
+def main():
     authorizer = ftpserver.DummyAuthorizer()
     authorizer.add_user('user', '12345', '.', perm='elradfmw')
     authorizer.add_anonymous('.')
@@ -23,3 +23,5 @@ if __name__ == '__main__':
     ftpd = ftpserver.FTPServer(('', 8021), ftp_handler)
     ftpd.serve_forever()
 
+if __name__ == '__main__':
+    main()
