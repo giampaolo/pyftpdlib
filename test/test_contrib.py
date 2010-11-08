@@ -600,9 +600,13 @@ def test_main():
 
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
-    safe_remove(TESTFN)
-    unittest.TextTestRunner(verbosity=2).run(test_suite)
-    safe_remove(TESTFN)
+    try:
+        unittest.TextTestRunner(verbosity=2).run(test_suite)
+    except:
+        # in case of KeyboardInterrupt grant that the threaded FTP
+        # server running in background gets stopped
+        asyncore.socket_map.clear()
+        raise
     for warn in warns:
         warnings.warn(warn, RuntimeWarning)
 

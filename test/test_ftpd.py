@@ -197,7 +197,7 @@ class FTPd(threading.Thread):
     def run(self):
         self.__serving = True
         self.__flag.set()
-        while self.__serving:
+        while self.__serving and asyncore.socket_map:
             self.__lock.acquire()
             self.server.serve_forever(timeout=self.__timeout, count=1,
                                       use_poll=self.__use_poll, map=self.__map)
@@ -2786,9 +2786,13 @@ def test_main(tests=None):
 
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
-    safe_remove(TESTFN)
-    unittest.TextTestRunner(verbosity=2).run(test_suite)
-    safe_remove(TESTFN)
+    try:
+        unittest.TextTestRunner(verbosity=2).run(test_suite)
+    except:
+        # in case of KeyboardInterrupt grant that the threaded FTP
+        # server running in background gets stopped
+        asyncore.socket_map.clear()
+        raise
 
 
 if __name__ == '__main__':
