@@ -61,6 +61,7 @@ import warnings
 import sys
 import errno
 import asyncore
+import atexit
 try:
     import cStringIO as StringIO
 except ImportError:
@@ -83,10 +84,7 @@ except socket.error:
 USER = 'user'
 PASSWD = '12345'
 HOME = os.getcwd()
-try:
-    from test.test_support import TESTFN
-except ImportError:
-    TESTFN = 'temp-fname'
+TESTFN = 'tmp-pyftpdlib'
 
 def try_address(host, port=0, family=socket.AF_INET):
     """Try to bind a socket on the given host:port and return True
@@ -128,6 +126,21 @@ def safe_remove(*files):
             os.remove(file)
         except os.error:
             pass
+
+def onexit():
+    """Convenience function for removing temporary files and
+    directories on interpreter exit.
+    """
+    for name in os.listdir('.'):
+        if name.startswith(tempfile.template):
+            if os.path.isdir(name):
+                shutil.rmtree(name)
+            else:
+                os.remove(name)
+
+# commented out as per bug http://bugs.python.org/issue10354
+#tempfile.template = 'tmp-pyftpdlib'
+atexit.register(onexit)
 
 
 class FTPd(threading.Thread):
