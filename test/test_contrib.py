@@ -580,7 +580,7 @@ def test_main():
                 import spwd
             except ImportError:
                 warns.append("UnixAuthorizer tests skipped (spwd module is "
-                             "missing (added in Python 2.5)")
+                             "missing")
             else:
                 warns.append("UnixAuthorizer tests skipped")
     elif os.name in ('nt', 'ce'):
