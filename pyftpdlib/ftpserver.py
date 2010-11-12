@@ -3462,7 +3462,16 @@ class FTPServer(object, asyncore.dispatcher):
         """
         if map is None:
             map = self._map
-        for x in map.values():
+        values = map.values()
+        # We sort the list so that we close all FTP handler instances
+        # first since FTPHandler.close() has the peculiarity of
+        # automatically closing all its children (DTPHandler, ActiveDTP
+        # and PassiveDTP).
+        # This should minimize the possibility to incur in race
+        # conditions or memory leaks caused by orphaned references
+        # left behind in case of error.
+        values.sort(key=lambda inst: isinstance(inst, FTPHandler), reverse=True)
+        for x in values:
             try:
                 x.close()
             except OSError, x:
