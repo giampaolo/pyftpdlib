@@ -130,6 +130,8 @@ def safe_remove(*files):
 def onexit():
     """Convenience function for removing temporary files and
     directories on interpreter exit.
+    Also closes all sockets/instances left behind in asyncore
+    socket map (if any).
     """
     for name in os.listdir('.'):
         if name.startswith(tempfile.template):
@@ -137,6 +139,15 @@ def onexit():
                 shutil.rmtree(name)
             else:
                 os.remove(name)
+    map = asyncore.socket_map
+    for x in map.values():
+        try:
+            sys.stderr.write("garbage: %s\n" % repr(x))
+            x.close()
+        except:
+            pass
+    map.clear()
+
 
 # commented out as per bug http://bugs.python.org/issue10354
 #tempfile.template = 'tmp-pyftpdlib'
@@ -202,7 +213,7 @@ class FTPd(threading.Thread):
             self.server.serve_forever(timeout=self.__timeout, count=1,
                                       use_poll=self.__use_poll, map=self.__map)
             self.__lock.release()
-        self.server.close_all(ignore_all=True)
+        self.server.close_all()
 
     def stop(self):
         """Stop serving (also disconnecting all currently connected
