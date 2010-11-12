@@ -459,7 +459,7 @@ class DummyAuthorizer(object):
         current user.
         """
 
-    def terminate_impersonation(self):
+    def terminate_impersonation(self, username):
         """Terminate impersonation (noop).
 
         It is always called after having accessed the filesystem.
@@ -2224,7 +2224,7 @@ class FTPHandler(object, asynchat.async_chat):
         try:
             return function(*args, **kwargs)
         finally:
-            self.authorizer.terminate_impersonation()
+            self.authorizer.terminate_impersonation(self.username)
 
     # --- connection
 
