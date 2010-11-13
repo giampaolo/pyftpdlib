@@ -70,6 +70,10 @@ Bugfixes:
  * Issue #140: pathnames returned in PWD response should have double-quotes '"'
    escaped.
 
+ * Issue #146: SIZE and MDTM commands are now rejected unless the "l" permission
+   has been specified for the user.
+
+
 Major API changes since 0.5.2
 
  * removed support for Python 2.3.

@@ -166,7 +166,7 @@ proto_cmds = {
     'FEAT': (None, False, False, False, 'Syntax: FEAT (list all new features supported).'),
     'HELP': (None, False, None,  False, 'Syntax: HELP [<SP> cmd] (show help).'),
     'LIST': ('l',  True,  None,  True,  'Syntax: LIST [<SP> path-name] (list files).'),
-    'MDTM': (None, True,  True,  True,  'Syntax: MDTM [<SP> file-name] (get last modification time).'),
+    'MDTM': ('l', True,  True,  True,   'Syntax: MDTM [<SP> file-name] (get last modification time).'),
     'MLSD': ('l',  True,  None,  True,  'Syntax: MLSD [<SP> dir-name] (list files in a machine-processable form)'),
     'MLST': ('l',  True,  None,  True,  'Syntax: MLST [<SP> path-name] (show a path in a machine-processable form)'),
     'MODE': (None, True,  True,  False, 'Syntax: MODE <SP> mode (noop; set data transfer mode).'),
@@ -187,7 +187,7 @@ proto_cmds = {
     'RNTO': (None, True,  True,  True,  'Syntax: RNTO <SP> file-name (file renaming (destination name)).'),
     'SITE': (None, False, True, False,  'Syntax: SITE <SP> site-command (execute the specified SITE command).'),
     'SITE HELP' : (None, False, None, False, 'Syntax: SITE HELP [<SP> site-command] (show SITE command help).'),
-    'SIZE': (None, True,  True,  True,  'Syntax: HELP <SP> file-name (get file size).'),
+    'SIZE': ('l', True,  True,  True,   'Syntax: HELP <SP> file-name (get file size).'),
     'STAT': ('l',  False, None,  True,  'Syntax: STAT [<SP> path name] (status information [list files]).'),
     'STOR': ('w',  True,  True,  True,  'Syntax: STOR <SP> file-name (store a file).'),
     'STOU': ('w',  True,  None,  True,  'Syntax: STOU [<SP> file-name] (store a file with a unique name).'),
@@ -378,7 +378,7 @@ class DummyAuthorizer(object):
 
         Read permissions:
          - "e" = change directory (CWD command)
-         - "l" = list files (LIST, NLST, STAT, MLSD, MLST commands)
+         - "l" = list files (LIST, NLST, STAT, MLSD, MLST, SIZE, MDTM commands)
          - "r" = retrieve file from the server (RETR command)
 
         Write permissions:
