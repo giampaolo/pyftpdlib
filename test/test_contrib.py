@@ -262,10 +262,16 @@ class SharedAuthorizerTests(unittest.TestCase):
         return self.authorizer_class._get_system_users()
 
     def get_current_user(self):
-        return os.environ['USERNAME']
+        if os.name == 'posix':
+            return pwd.getpwuid(os.getuid()).pw_name
+        else:
+            return os.environ['USERPROFILE']
 
     def get_current_user_homedir(self):
-        return os.environ['USERPROFILE']
+        if os.name == 'posix':
+            return pwd.getpwuid(os.getuid()).pw_dir
+        else:
+            return os.environ['HOME']
 
     def get_nonexistent_user(self):
         # return a user which does not exist on the system
@@ -374,20 +380,54 @@ class SharedAuthorizerTests(unittest.TestCase):
         self.assertRaisesWithMsg(ValueError, 'unknown user %s' % wrong_user,
                             self.authorizer_class, rejected_users=[wrong_user])
 
-    def test_override_user(self):
+    def test_override_user_password(self):
         auth = self.authorizer_class()
         user = self.get_current_user()
         auth.override_user(user, password='foo')
         self.assertTrue(auth.validate_authentication(user, 'foo'))
         self.assertFalse(auth.validate_authentication(user, 'bar'))
-        auth.override_user(user, homedir=os.getcwd())
-        self.assertEqual(auth.get_home_dir(user), os.getcwd())
-        auth.override_user(user, perm="r")
-        self.assertEqual(auth.get_perms(user), "r")
-        auth.override_user(user, msg_login="foo")
+        # make sure other settings keep using default values
+        self.assertEqual(auth.get_home_dir(user), self.get_current_user_homedir())
+        self.assertEqual(auth.get_perms(user), "elradfmw")
+        self.assertEqual(auth.get_msg_login(user), "Login successful.")
+        self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
+        
+    def test_override_user_homedir(self):
+        auth = self.authorizer_class()
+        user = self.get_current_user()
+        dir = os.path.dirname(os.getcwd())
+        auth.override_user(user, homedir=dir)
+        self.assertEqual(auth.get_home_dir(user), dir)
+        # make sure other settings keep using default values
+        #self.assertEqual(auth.get_home_dir(user), self.get_current_user_homedir())
+        self.assertEqual(auth.get_perms(user), "elradfmw")
+        self.assertEqual(auth.get_msg_login(user), "Login successful.")
+        self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
+
+    def test_override_user_perm(self):
+        auth = self.authorizer_class()
+        user = self.get_current_user()
+        dir = os.path.dirname(os.getcwd())
+        auth.override_user(user, perm="elr")
+        self.assertEqual(auth.get_perms(user), "elr")
+        # make sure other settings keep using default values
+        self.assertEqual(auth.get_home_dir(user), self.get_current_user_homedir())
+        #self.assertEqual(auth.get_perms(user), "elradfmw")
+        self.assertEqual(auth.get_msg_login(user), "Login successful.")
+        self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
+
+    def test_override_user_msg_login_quit(self):
+        auth = self.authorizer_class()
+        user = self.get_current_user()
+        dir = os.path.dirname(os.getcwd())
+        auth.override_user(user, msg_login="foo", msg_quit="bar")
         self.assertEqual(auth.get_msg_login(user), "foo")
-        auth.override_user(user, msg_quit="bar")
         self.assertEqual(auth.get_msg_quit(user), "bar")
+        # make sure other settings keep using default values
+        self.assertEqual(auth.get_home_dir(user), self.get_current_user_homedir())
+        self.assertEqual(auth.get_perms(user), "elradfmw")
+        #self.assertEqual(auth.get_msg_login(user), "Login successful.")
+        #self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
 
     def test_override_user_errors(self):
         if self.authorizer_class.__name__ == 'UnixAuthorizer':

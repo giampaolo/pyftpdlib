@@ -79,9 +79,10 @@ class _Base(object):
             raise ValueError('no such user %s' % username)
 
         if username in self._dummy_authorizer.user_table:
+            # re-set parameters
             del self._dummy_authorizer.user_table[username]
         self._dummy_authorizer.add_user(username, password or "", 
-                                                  homedir or "/", 
+                                                  homedir or os.getcwd(), 
                                                   perm or "",
                                                   msg_login or "", 
                                                   msg_quit or "")
@@ -96,7 +97,7 @@ class _Base(object):
 
     def get_perms(self, username):
         overridden_perms = self._get_key(username, 'perm')
-        if overridden_perms is not None:
+        if overridden_perms:
             return overridden_perms
         if username == 'anonymous':
             return 'elr'
@@ -260,7 +261,7 @@ else:
                     return False
 
             overridden_password = self._get_key(username, 'pwd')
-            if overridden_password is not None:
+            if overridden_password:
                 return overridden_password == password
             else:
                 try:
@@ -303,7 +304,7 @@ else:
         def get_home_dir(self, username):
             """Return user home directory."""
             overridden_home = self._get_key(username, 'home')
-            if overridden_home is not None:
+            if overridden_home:
                 return overridden_home
             try:
                 return pwd.getpwnam(username).pw_dir
@@ -453,7 +454,7 @@ else:
             if self.rejected_users and username in self.rejected_users:
                 return False
             overridden_password = self._get_key(username, 'pwd')
-            if overridden_password is not None:
+            if overridden_password:
                 return overridden_password == password
             else:
                 try:
@@ -496,7 +497,7 @@ else:
             to a user home directory we have on Windows.
             """
             overridden_home = self._get_key(username, 'home')
-            if overridden_home is not None:
+            if overridden_home:
                 return overridden_home
             try:
                 sid = win32security.ConvertSidToStringSid(
