@@ -60,7 +60,7 @@ class _Base(object):
             if not os.path.isdir(home):
                 raise ValueError('no valid home set for user %s' 
                                  % self.anonymous_user)
-
+                                 
     def override_user(self, username, password=None, homedir=None, perm=None, 
                       msg_login=None, msg_quit=None):
         """Overrides the options specified in the class constructor 
@@ -130,32 +130,101 @@ else:
     # the uid/gid the server runs under
     PROCESS_UID = os.getuid()
     PROCESS_GID = os.getgid()
-
-    class UnixAuthorizer(_Base):
+    
+    
+    class BaseUnixAuthorizer(object):
         """An authorizer compatible with Unix user account and password
         database.
+        This class should not be used directly unless for subclassing.
+        Use higher-level UnixAuthorizer class instead.
+        """
 
-        Users are no longer supposed to be explicitly added as when
-        using DummyAuthorizer.
+        def __init__(self, anonymous_user=None):
+            if os.geteuid() != 0 or not spwd.getspall():
+                raise AuthorizerError("super user privileges are required")
+            self.anonymous_user = anonymous_user
+            
+            if self.anonymous_user is not None:
+                if not self.anonymous_user in self._get_system_users():
+                    raise ValueError('no such user %s' % self.anonymous_user)
+                try:
+                    return pwd.getpwnam(self.anonymous_user).pw_dir
+                except KeyError:
+                    raise ValueError('no such user %s' % username)
 
-        All FTP users are the same defined on the UNIX system so if 
-        you access on your system by using "john" as username and 
-        "12345" as password those same credentials can be used for 
-        accessing the FTP server as well.
+        # --- overridden / private API
 
-        The user home directory will be the one defined in /etc/passwd
-        (e.g. /home/username).
+        def validate_authentication(self, username, password):
+            """Authenticates against shadow password db; return
+            True on success.
+            """
+            if username == "anonymous":
+                return self.anonymous_user is not None
+            try:
+                pw1 = spwd.getspnam(username).sp_pwd
+                pw2 = crypt.crypt(password, pw1)
+            except KeyError:  # no such username
+                return False
+            else:
+                return pw1 == pw2
 
-        Every time a filesystem operation occurs (e.g. a file is
-        created or deleted) the id of the process is temporarily
-        changed to the effective user id and whether the operation will
-        succeed depends on user and file permissions.
-        This is why full read and write permissions are granted by 
-        default in the constructor.
+        @replace_anonymous
+        def impersonate_user(self, username, password):
+            """Change process effective user/group ids to reflect
+            logged in user.
+            """            
+            try:
+                pwdstruct = pwd.getpwnam(username)
+            except KeyError:
+                raise AuthorizerError('no such user %s' % username)
+            else:
+                os.setegid(pwdstruct.pw_gid)
+                os.seteuid(pwdstruct.pw_uid)
+        
+        def terminate_impersonation(self, username):
+            """Revert process effective user/group IDs."""
+            os.setegid(PROCESS_GID)
+            os.seteuid(PROCESS_UID)
 
-        Note: in order to use this class super user (root) privileges
-        are required.
+        @replace_anonymous
+        def has_user(self, username):
+            """Return True if user exists on the Unix system.
+            If the user has been black listed via allowed_users or 
+            rejected_users options always return False.
+            """
+            return username in self._get_system_users()
 
+        @replace_anonymous
+        def get_home_dir(self, username):
+            """Return user home directory."""
+            try:
+                return pwd.getpwnam(username).pw_dir
+            except KeyError:
+                raise AuthorizerError('no such user %s' % username)
+
+        @staticmethod
+        def _get_system_users():
+            """Return all users defined on the UNIX system."""
+            return [entry.pw_name for entry in pwd.getpwall()]
+            
+        def get_msg_login(self, username):
+            return "Login successful."
+
+        def get_msg_quit(self, username):
+            return "Goodbye."
+
+        def get_perms(self, username):
+            return "elradfmw"
+
+        def has_perm(self, username, perm, path=None):
+            return perm in self.get_perms(username)
+    
+    
+    class UnixAuthorizer(_Base, BaseUnixAuthorizer):
+        """A wrapper on top of BaseUnixAuthorizer providing options
+        to specify what users should be allowed to login, per-user
+        options, etc.
+        
         Example usages:
 
          >>> from pyftpdlib.contrib.authorizers import UnixAuthorizer
@@ -216,8 +285,7 @@ else:
              - (string) msg_quit:
                 the string sent when client quits.
             """
-            if os.geteuid() != 0 or not spwd.getspall():
-                raise AuthorizerError("super user privileges are required")
+            BaseUnixAuthorizer.__init__(self, anonymous_user)
             self.global_perm = global_perm
             self.allowed_users = allowed_users
             self.rejected_users = rejected_users
@@ -225,6 +293,7 @@ else:
             self.require_valid_shell = require_valid_shell
             self.msg_login = msg_login
             self.msg_quit = msg_quit
+
             self._dummy_authorizer = DummyAuthorizer()
             self._dummy_authorizer._check_permissions('', global_perm)
             _Base.__init__(self)
@@ -249,9 +318,6 @@ else:
         # --- overridden / private API
 
         def validate_authentication(self, username, password):
-            """Authenticates against shadow password db; return
-            True on success.
-            """
             if username == "anonymous":
                 return self.anonymous_user is not None
             if self._is_rejected_user(username):
@@ -259,62 +325,24 @@ else:
             if self.require_valid_shell and username != 'anonymous':
                 if not self._has_valid_shell(username):
                     return False
-
             overridden_password = self._get_key(username, 'pwd')
             if overridden_password:
                 return overridden_password == password
-            else:
-                try:
-                    pw1 = spwd.getspnam(username).sp_pwd
-                    pw2 = crypt.crypt(password, pw1)
-                except KeyError:  # no such username
-                    return False
-                else:
-                    return pw1 == pw2
 
-        @replace_anonymous
-        def impersonate_user(self, username, password):
-            """Change process effective user/group ids to reflect
-            logged in user.
-            """            
-            try:
-                pwdstruct = pwd.getpwnam(username)
-            except KeyError:
-                raise AuthorizerError('no such user %s' % username)
-            else:
-                os.setegid(pwdstruct.pw_gid)
-                os.seteuid(pwdstruct.pw_uid)
-        
-        def terminate_impersonation(self):
-            """Revert process effective user/group IDs."""
-            os.setegid(PROCESS_GID)
-            os.seteuid(PROCESS_UID)
+            return BaseUnixAuthorizer.validate_authentication(self, username, password)
 
         @replace_anonymous
         def has_user(self, username):
-            """Return True if user exists on the Unix system.
-            If the user has been black listed via allowed_users or 
-            rejected_users options always return False.
-            """
             if self._is_rejected_user(username):
                 return False
             return username in self._get_system_users()
 
         @replace_anonymous
         def get_home_dir(self, username):
-            """Return user home directory."""
             overridden_home = self._get_key(username, 'home')
             if overridden_home:
                 return overridden_home
-            try:
-                return pwd.getpwnam(username).pw_dir
-            except KeyError:
-                raise AuthorizerError('no such user %s' % username)
-
-        @staticmethod
-        def _get_system_users():
-            """Return all users defined on the UNIX system."""
-            return [entry.pw_name for entry in pwd.getpwall()]
+            return BaseUnixAuthorizer.get_home_dir(self, username)
 
         @staticmethod
         def _has_valid_shell(username):
@@ -324,7 +352,6 @@ else:
             try:
                 file = open('/etc/shells', 'r')
             except IOError, err:
-                file.close()
                 if err.errno == errno.ENOENT:
                     return True
                 raise
@@ -341,7 +368,7 @@ else:
                 finally:
                     file.close()
 
-    __all__.append('UnixAuthorizer')
+    __all__.extend(['BaseUnixAuthorizer', 'UnixAuthorizer'])
 
 
 # Note: requires pywin32 extension
@@ -453,6 +480,7 @@ else:
                 return False
             if self.rejected_users and username in self.rejected_users:
                 return False
+                
             overridden_password = self._get_key(username, 'pwd')
             if overridden_password:
                 return overridden_password == password
@@ -477,7 +505,7 @@ else:
             win32security.ImpersonateLoggedOnUser(handler)
             handler.Close()
 
-        def terminate_impersonation(self):
+        def terminate_impersonation(self, username):
             """Terminate the imporsonation of another user."""
             win32security.RevertToSelf()
 
@@ -520,4 +548,5 @@ else:
             return [entry['name'] for entry in win32net.NetUserEnum(None, 0)[0]]
 
     __all__.append('WindowsAuthorizer')
+
 
