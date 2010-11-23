@@ -722,11 +722,11 @@ class ActiveDTP(object, asyncore.dispatcher):
         try:
             self.connect((ip, port))
         except (socket.gaierror, socket.error), err:
+            self.close()
             msg = "425 Can't connect to specified address."
             if hasattr(err, 'errno'):
                 msg += " %s." % _strerror(err)
             self.cmd_channel.respond(msg)
-            self.close()
 
     # overridden to prevent unhandled read/write event messages to
     # be printed by asyncore on Python < 2.6
@@ -827,6 +827,9 @@ class DTPHandler(object, asynchat.async_chat):
             if err[0] == errno.EINVAL:
                 return
             return self.handle_error()
+        # remove this instance from asyncore socket map
+        if not self.connected:
+            self.close()
 
     # --- utility methods
 
@@ -1819,6 +1822,10 @@ class FTPHandler(object, asynchat.async_chat):
                 self.socket.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
             except socket.error:
                 pass
+
+        # remove this instance from asyncore socket_map
+        if not self.connected:
+            self.close()
 
     def handle(self):
         """Return a 220 'ready' response to the client over the command
