@@ -243,6 +243,13 @@ def _scheduler():
             if not call.cancelled:
                 call.cancel()
 
+def _socket_for_fd(fd):
+    # Unfortunately there is no way to tell if the file descriptor
+    # represents an IPv6 socket without making the socket object
+    ss = socket.fromfd(fd,socket.AF_INET, socket.SOCK_STREAM)
+    if len(ss.getsockname()) == 4:
+        ss = socket.fromfd(fd,socket.AF_INET6, socket.SOCK_STREAM)
+    return ss
 
 class CallLater(object):
     """Calls a function at a later time.
@@ -3297,37 +3304,44 @@ class FTPServer(object, asyncore.dispatcher):
         asyncore.dispatcher.__init__(self)
         self.handler = handler
         self.ip_map = []
-        host, port = address
+
         # in case of FTPS class not properly configured we want errors
         # to be raised here rather than later, when client connects
         if hasattr(handler, 'get_ssl_context'):
             handler.get_ssl_context()
 
-        # AF_INET or AF_INET6 socket
-        # Get the correct address family for our host (allows IPv6 addresses)
-        try:
-            info = socket.getaddrinfo(host, port, socket.AF_UNSPEC,
-                                      socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
-        except socket.gaierror:
-            # Probably a DNS issue. Assume IPv4.
-            self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.set_reuse_addr()
-            self.bind((host, port))
-        else:
-            for res in info:
-                af, socktype, proto, canonname, sa = res
-                try:
-                    self.create_socket(af, socktype)
-                    self.set_reuse_addr()
-                    self.bind(sa)
-                except socket.error, msg:
-                    if self.socket:
-                        self.socket.close()
-                    self.socket = None
-                    continue
-                break
-            if not self.socket:
-                raise socket.error(msg)
+        if address is not None:
+            host, port = address
+
+            # AF_INET or AF_INET6 socket
+            # Get the correct address family for our host (allows IPv6 addresses)
+            try:
+                info = socket.getaddrinfo(host, port, socket.AF_UNSPEC,
+                                          socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+            except socket.gaierror:
+                # Probably a DNS issue. Assume IPv4.
+                self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.set_reuse_addr()
+                self.bind((host, port))
+            else:
+                for res in info:
+                    af, socktype, proto, canonname, sa = res
+                    try:
+                        self.create_socket(af, socktype)
+                        self.set_reuse_addr()
+                        self.bind(sa)
+                    except socket.error, msg:
+                        if self.socket:
+                            self.socket.close()
+                        self.socket = None
+                        continue
+                    break
+                if not self.socket:
+                    raise socket.error(msg)
+            self.listen(5)
+
+    def set_server_socket(self, sock):
+        asyncore.dispatcher.__init__(self, sock, self._map)
         self.listen(5)
 
     def set_reuse_addr(self):
@@ -3336,7 +3350,7 @@ class FTPServer(object, asyncore.dispatcher):
             return
         asyncore.dispatcher.set_reuse_addr(self)
 
-    def serve_forever(self, timeout=1.0, use_poll=False, map=None, count=None):
+    def serve_forever(self, timeout=1.0, use_poll=False, map=None, count=None, idle_timeout=None):
         """A wrap around asyncore.loop(); starts the asyncore polling
         loop including running the scheduler.
         The arguments are the same expected by original asyncore.loop()
@@ -3361,14 +3375,33 @@ class FTPServer(object, asyncore.dispatcher):
         else:
             poll_fun = asyncore.poll
 
-        if count is None:
-            log("Serving FTP on %s:%s" % self.socket.getsockname()[:2])
+        if count is None and idle_timeout is None:
+            log("Serving FTP on %s:%s" % (self.socket.getsockname()[:2] if self.socket else (None,None)))
             try:
                 while map or _tasks:
                     if map:
                         poll_fun(timeout, map)
                     if _tasks:
                         _scheduler()
+            except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
+                log("Shutting down FTP server.")
+                self.close_all()
+        elif idle_timeout:
+            log("Serving FTP on %s:%s" % (self.socket.getsockname()[:2] if self.socket else (None,None)))
+            idle_keys = set(map.keys())
+            end_time = time.time() + idle_timeout
+            try:
+                while time.time() < end_time:
+                    busy = False
+                    if map:
+                        poll_fun(timeout, map)
+                        if (set(map.keys()) - idle_keys):
+                            busy = True
+                    if _tasks:
+                        _scheduler()
+                        busy = True
+                    if busy:
+                        end_time = time.time() + idle_timeout
             except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
                 log("Shutting down FTP server.")
                 self.close_all()
@@ -3518,8 +3551,14 @@ def main():
     parser.add_option('-i', '--interface', default='', metavar="ADDRESS",
                       help="specify the interface to run on (default all "
                            "interfaces)")
-    parser.add_option('-p', '--port', type="int", default=21, metavar="PORT",
+    parser.add_option('-p', '--port', type="int", default=None, metavar="PORT",
                       help="specity port number to run on (default 21)")
+    parser.add_option('-I', '--inetd', action="store_true", default=False,
+                      help="handle a single FTP session deliverd on the socket"
+                           "attached to stdin")
+    parser.add_option('-W', '--inetd-wait', action="store_true", default=False,
+                      help="use stdin as a pre-bound server socket rather "
+                           "than creating a new socket")
     parser.add_option('-w', '--write', action="store_true", default=False,
                       help="grants write access for the anonymous user "
                            "(default read-only)")
@@ -3531,6 +3570,9 @@ def main():
     parser.add_option('-r', '--range',  default=None, metavar="FROM-TO",
                       help="the range of TCP ports to use for passive "
                            "connections (e.g. -r 8000-9000)")
+    parser.add_option('-t', '--idle-timeout', type="int", default=None, metavar="SECONDS",
+                      help="exit if server is inactive for more than the "
+                           "given amount of time (default Never)")
     parser.add_option('-v', '--version', action='store_true',
                       help="print pyftpdlib version and exit")
 
@@ -3560,9 +3602,30 @@ def main():
     handler.authorizer = authorizer
     handler.masquerade_address = options.nat_address
     handler.passive_ports = passive_ports
-    ftpd = FTPServer((options.interface, options.port), FTPHandler)
-    ftpd.serve_forever()
+
+    if (options.inetd or options.inetd_wait) and (options.interface or options.port):
+        parser.error('--inetd and --inetd-wait are mutually exclusive with both --port and --interface')
+
+    if options.inetd and options.inetd_wait:
+        parser.error('--inetd and --inetd-wait are mutually exclusive')
+
+    if options.inetd_wait:
+        # The original stdout is a copy of the server socket; bad things happen if you print to it
+        sys.stdout = sys.stderr
+        ftpd = FTPServer(None, FTPHandler)
+        ftpd.set_server_socket(_socket_for_fd(sys.stdin.fileno()))
+    elif options.inetd:
+        sys.stdout = sys.stderr
+        ftpd = FTPServer(None, FTPHandler)
+        ftp_connection = handler(_socket_for_fd(sys.stdin.fileno()),ftpd)
+        ftp_connection.handle()
+    else:
+        if not options.port:
+            options.port = 21
+        ftpd = FTPServer((options.interface, options.port), FTPHandler)
+    log("About to start serving")
+    ftpd.serve_forever(idle_timeout=options.idle_timeout)
+    log("FTP Service exiting")
 
 if __name__ == '__main__':
     main()
-
