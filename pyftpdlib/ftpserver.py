@@ -143,7 +143,7 @@ except ImportError:
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer',
            'AuthorizerError', 'FTPHandler', 'FTPServer', 'PassiveDTP',
            'ActiveDTP', 'DTPHandler', 'ThrottledDTPHandler', 'FileProducer',
-           'BufferedIteratorProducer', 'AbstractedFS', 'CallLater']
+           'BufferedIteratorProducer', 'AbstractedFS', 'CallLater', 'socket_for_file']
 
 
 __pname__   = 'Python FTP server library (pyftpdlib)'
@@ -243,9 +243,10 @@ def _scheduler():
             if not call.cancelled:
                 call.cancel()
 
-def _socket_for_fd(fd):
+def socket_for_file(f):
     # Unfortunately there is no way to tell if the file descriptor
     # represents an IPv6 socket without making the socket object
+    fd = f.fileno()
     ss = socket.fromfd(fd,socket.AF_INET, socket.SOCK_STREAM)
     if len(ss.getsockname()) == 4:
         ss = socket.fromfd(fd,socket.AF_INET6, socket.SOCK_STREAM)
@@ -3613,11 +3614,11 @@ def main():
         # The original stdout is a copy of the server socket; bad things happen if you print to it
         sys.stdout = sys.stderr
         ftpd = FTPServer(None, FTPHandler)
-        ftpd.set_server_socket(_socket_for_fd(sys.stdin.fileno()))
+        ftpd.set_server_socket(socket_for_file(sys.stdin))
     elif options.inetd:
         sys.stdout = sys.stderr
         ftpd = FTPServer(None, FTPHandler)
-        ftp_connection = handler(_socket_for_fd(sys.stdin.fileno()),ftpd)
+        ftp_connection = handler(socket_for_file(sys.stdin),ftpd)
         ftp_connection.handle()
     else:
         if not options.port:
