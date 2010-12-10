@@ -414,7 +414,7 @@ else:
             win32security.ImpersonateLoggedOnUser(handler)
             handler.Close()
 
-        def terminate_impersonation(self, username, password):
+        def terminate_impersonation(self, username):
             """Terminate the impersonation of another user."""
             win32security.RevertToSelf()
 

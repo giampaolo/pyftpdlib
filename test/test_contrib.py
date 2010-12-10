@@ -341,12 +341,12 @@ class SharedAuthorizerTests(unittest.TestCase):
                 self.assertRaises(Win32ExtError,
                             auth.impersonate_user, self.get_current_user(), '')
         finally:
-            auth.terminate_impersonation('', '')
+            auth.terminate_impersonation('')
 
     def test_terminate_impersonation(self):
         auth = self.authorizer_class()
-        auth.terminate_impersonation('', '')
-        auth.terminate_impersonation('', '')
+        auth.terminate_impersonation('')
+        auth.terminate_impersonation('')
 
     def test_get_perms(self):
         auth = self.authorizer_class(global_perm='elr')
