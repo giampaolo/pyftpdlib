@@ -265,13 +265,13 @@ class SharedAuthorizerTests(unittest.TestCase):
         if os.name == 'posix':
             return pwd.getpwuid(os.getuid()).pw_name
         else:
-            return os.environ['USERPROFILE']
+            return os.environ['USERNAME']
 
     def get_current_user_homedir(self):
         if os.name == 'posix':
             return pwd.getpwuid(os.getuid()).pw_dir
         else:
-            return os.environ['HOME']
+            return os.environ['USERPROFILE']
 
     def get_nonexistent_user(self):
         # return a user which does not exist on the system
@@ -341,12 +341,12 @@ class SharedAuthorizerTests(unittest.TestCase):
                 self.assertRaises(Win32ExtError,
                             auth.impersonate_user, self.get_current_user(), '')
         finally:
-            auth.terminate_impersonation('')
+            auth.terminate_impersonation('', '')
 
     def test_terminate_impersonation(self):
         auth = self.authorizer_class()
-        auth.terminate_impersonation('')
-        auth.terminate_impersonation('')
+        auth.terminate_impersonation('', '')
+        auth.terminate_impersonation('', '')
 
     def test_get_perms(self):
         auth = self.authorizer_class(global_perm='elr')
@@ -391,7 +391,7 @@ class SharedAuthorizerTests(unittest.TestCase):
         self.assertEqual(auth.get_perms(user), "elradfmw")
         self.assertEqual(auth.get_msg_login(user), "Login successful.")
         self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
-        
+
     def test_override_user_homedir(self):
         auth = self.authorizer_class()
         user = self.get_current_user()
@@ -595,7 +595,7 @@ def test_main():
             ftps_tests.append(TestIPv6EnvironmentTLSMixin)
         tests += ftps_tests
     else:
-        if sys.version_info < (2.7):
+        if sys.version_info < (2, 7):
             warns.append("FTPS tests skipped (requires python 2.7)")
         elif ssl is None:
             warns.append("FTPS tests skipped (requires ssl module)")
