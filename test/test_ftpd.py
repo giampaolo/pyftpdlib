@@ -2338,6 +2338,37 @@ class TestCallbacks(unittest.TestCase):
         self.tearDown()
         self.assertEqual(user.pop(), USER)
 
+    def test_on_logout(self):
+        user = []
+
+        class TestHandler(ftpserver.FTPHandler):
+
+            def on_logout(self, username):
+                user.append(username)
+
+        self._setUp(TestHandler)
+        self.client.quit()
+        # shut down the server to avoid race conditions
+        self.tearDown()
+        self.assertEqual(user.pop(), USER)
+
+    def test_on_logout_user_twice(self):
+        users = []
+
+        class TestHandler(ftpserver.FTPHandler):
+
+            def on_logout(self, username):
+                users.append(username)
+
+        self._setUp(TestHandler)
+        # At this point user "user" is logged in. Re-login as anonymous,
+        # then quit and expect queue == ["user", "anonymous"]
+        self.client.login("anonymous")
+        self.client.quit()
+        # shut down the server to avoid race conditions
+        self.tearDown()
+        self.assertEqual(users, [USER, 'anonymous'])
+
 
 class _TestNetworkProtocols(unittest.TestCase):
     """Test PASV, EPSV, PORT and EPRT commands.

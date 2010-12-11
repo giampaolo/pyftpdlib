@@ -30,8 +30,9 @@ Enhancements:
  * Issue #128: files and directories owner and group names and os.readlink are
    now resolved via AbstractedFS methods instead of in format_list().
 
- * Issue #129: added 3 new callbacks to FTPHandler class:
-   on_incomplete_file_sent(), on_incomplete_file_received() and on_login().
+ * Issue #129 and #139: added 4 new callbacks to FTPHandler class:
+   on_incomplete_file_sent(), on_incomplete_file_received(), on_login() and
+   on_logout().
 
  * Issue #130: added UnixAuthorizer and WindowsAuthorizer classes defined in the
    new pyftpdlib.contrib.authorizers module.
@@ -100,6 +101,7 @@ Major API changes since 0.5.2
      - on_incomplete_file_sent()
      - on_incomplete_file_received()
      - on_login()
+     - on_logout()
      - log_fs_cmd()
      - log_transfer()
    * proto_cmds class attribute has been added.  The FTPHandler class  no longer

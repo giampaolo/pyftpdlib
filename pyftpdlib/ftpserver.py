@@ -2097,6 +2097,10 @@ class FTPHandler(object, asynchat.async_chat):
     def on_login(self, username):
         """Called on user login."""
 
+    def on_logout(self, username):
+        """Called when user logs out due to QUIT or USER issued twice."""
+
+
     # --- internal callbacks
 
     def _on_dtp_connection(self):
@@ -2462,6 +2466,7 @@ class FTPHandler(object, asynchat.async_chat):
         else:
             self._shutdown_connecting_dtp()
             self.close_when_done()
+        self.on_logout(self.username)
 
         # --- data transferring
 
@@ -2794,7 +2799,9 @@ class FTPHandler(object, asynchat.async_chat):
             # to change the access control flushing any user, password,
             # and account information already supplied and beginning the
             # login sequence again.
+            username = self.username
             self.flush_account()
+            self.on_logout(username)
             msg = 'Previous account information was flushed'
             self.log(msg)
             self.respond('331 %s, send password.' % msg)
