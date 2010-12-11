@@ -2466,7 +2466,8 @@ class FTPHandler(object, asynchat.async_chat):
         else:
             self._shutdown_connecting_dtp()
             self.close_when_done()
-        self.on_logout(self.username)
+        if self.username:
+            self.on_logout(self.username)
 
         # --- data transferring
 
@@ -2801,7 +2802,8 @@ class FTPHandler(object, asynchat.async_chat):
             # login sequence again.
             username = self.username
             self.flush_account()
-            self.on_logout(username)
+            if username:
+                self.on_logout(username)
             msg = 'Previous account information was flushed'
             self.log(msg)
             self.respond('331 %s, send password.' % msg)
