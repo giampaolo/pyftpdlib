@@ -1,156 +1,163 @@
 #!/usr/bin/env python
 # $Id$
 
-'''A unix FTP daemon. This daemon has the ability to:
+"""A basic unix daemon based on a Chad J. Schroeder recipe:
+http://code.activestate.com/recipes/278731
 
- - Spawn multiple worker processes (ala pre-fork).
- - Drop privileges after privileged operations.
- - Close gracefully when signaled.
+Author: Michele Petrazzo, Italy. mail: michele.petrazzo <at> gmail.com
+"""
 
-For more information on the daemonizing technique used here, visit:
+import os
+import sys
+import time
+import signal
+import optparse
+import resource
+import threading
 
-http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
 
-Author: Ben Timby, <btimby@gmail.com>'''
+DAEMON_NAME = "pyftplib"
+DAEMON_PID_FILE = "/var/run/%s.pid"% DAEMON_NAME
+UMASK = 0
+WORKDIR = os.getcwd()
+MAXFD = 1024
 
-import os, sys, signal
-from pyftpdlib.ftpserver import FTPServer, FTPHandler
+if (hasattr(os, "devnull")):
+   REDIRECT_TO = os.devnull
+else:
+   REDIRECT_TO = "/dev/null"
 
-class UnixFTPDaemon(object):
-    def __init__(self, addr, port, ServerClass=FTPServer, HandlerClass=FTPHandler, worker_num=0, uid=None, gid=None, pidfile=None):
-        self.ServerClass = ServerClass
-        self.HandlerClass = HandlerClass
-        self.addrport = (addr, port)
-        self.worker_num = worker_num
-        self.uid = uid
-        self.gid = gid
-        self.pidfile = pidfile
-        self.worker_pids = []
-        self.server = None
 
-    def start(self):
-        '''Start the daemon by fork()ing a background process.
-        If more than one worker is desired, also start multiple other
-        child processes. Each worker process will drop privileges if
-        a uid/gid is provided.'''
-        # We are still root, so let's go ahead and bind to our address/port
-        # combo. Once we drop privileges, we may not be able to.
-        self.server = self.ServerClass(self.addrport, self.HandlerClass)
-        # We are done with our privileged operations, so let's drop
-        # root privileges. We are not yet in the background, so we can
-        # print error messages if need be.
-        if self.gid:
-            try:
-                os.setgid(self.gid)
-            except OSError, e:
-                print >> sys.stderr, 'Could not set effective group id: %s' % e
-        if self.uid:
-            try:
-                os.setuid(self.uid)
-            except OSError, e:
-                print >> sys.stderr, 'Could not set effective user id: %s' % e
-        # Now, let's go into the background using a pair of fork()s.
+def _create_daemon():
+    """Detach a process from the controlling terminal and run it in the
+    background as a daemon.
+    """
+    try:
         pid = os.fork()
-        if pid > 0:
-            # We are the main process, we have done our job...
-            return
-        # The child process continues, it will distance itself from the parent.
-        os.chdir("/")
+    except OSError, err:
+        raise Exception, "%s [%d]" % (err.strerror, err.errno)
+
+    if (pid == 0):
         os.setsid()
-        os.umask(0)
-        # Now fork again, this new child will be our daemon.
-        pid = os.fork()
-        if pid > 0:
-            # The second master can exit.
-            sys.exit(0)
-        # Record our pid so we can be killed later...
-        if self.pidfile:
-            try:
-                with file(self.pidfile, 'w') as pf:
-                    pf.write(str(os.getpid()))
-            except:
-                # Don't die just because we can't write to the pid file.
-                pass
-        # We don't need these anymore... Set stdin/stdout/stderr to /dev/null
-        sys.stdout.flush()
-        sys.stderr.flush()
-        si = file('/dev/null', 'r')
-        so = file('/dev/null', 'a+')
-        se = file('/dev/null', 'a+', 0)
-        os.dup2(si.fileno(), sys.stdin.fileno())
-        os.dup2(so.fileno(), sys.stdout.fileno())
-        os.dup2(se.fileno(), sys.stderr.fileno())
-        # Set up our signal handler, workers inherit this.
-        signal.signal(signal.SIGTERM, self.signal)
-        # Let's spawn our worker processes (if any).
-        for i in range(self.worker_num):
+        try:
             pid = os.fork()
-            if pid == 0:
-                # The child process (pid==0) can exit the for loop.
-                break
-            # We are master, so save the child's pid.
-            self.worker_pids.append(pid)
-        # All processes can now enter into the asyncore event loop to
-        # start handling connections.
-        self.server.serve_forever()
+        except OSError, err:
+            raise Exception, "%s [%d]" % (err.strerror, err.errno)
 
-    def signal(self, signum, frame):
-        '''This method is registered as the SIGTERM handler in the
-        start() method. This will ensure that the signal is propagated
-        to the child processes and that we exit cleanly.'''
-        # Propagate the same signal to our children.
-        for pid in self.worker_pids:
-            try:
-                os.kill(pid, signum)
-            except:
-                # At least try to kill the rest...
-                pass
-        # And then let's exit gracefully.
-        self.stop()
-        # Always clean up after yourself. But only if master process.
-        if self.worker_pids and self.pidfile and \
-           os.path.exists(self.pidfile):
-            try:
-                os.remove(self.pidfile)
-            except:
-                # Don't die just because we can't remove the pid file.
-                pass
+        if (pid == 0):
+            os.chdir(WORKDIR)
+            os.umask(UMASK)
+        else:
+            os._exit(0)
+    else:
+        os._exit(0)
+    maxfd = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
+    if (maxfd == resource.RLIM_INFINITY):
+        maxfd = MAXFD
+    for fd in range(0, maxfd):
+      try:
+         os.close(fd)
+      except OSError:
+         pass
+    os.open(REDIRECT_TO, os.O_RDWR)
 
-    def stop(self):
-        '''This method is provided to cleanly exit the daemon. It is
-        intended to be called from a signal handler. This way the daemon
-        process can handle the TERM signal to exit smoothly.'''
-        if self.server is not None:
-            self.server.close()
+    os.dup2(0, 1)
+    os.dup2(0, 2)
+
+    return(0)
+
+def _ctrl_daemon_exists(pid):
+    """Control if the the previous daemon exists,otherwise raise."""
+    t = 0
+    while os.path.exists("/proc/%s" % pid):
+        if t > 50:
+            raise RuntimeError("Waited for too long for process to kill")
+        time.sleep(0.1)
+        t += 1
+
+def _kill_daemon():
+    """Kill the daemon, if found."""
+    if os.path.exists(DAEMON_PID_FILE):
+        pid = int(open(DAEMON_PID_FILE).read().strip())
+        if os.path.exists("/proc/%s" % pid):
+            # kill the given pid
+            os.kill(pid, signal.SIGTERM)
+
+        _ctrl_daemon_exists(pid)
+
+        # and clean the old pid file
+        os.remove(DAEMON_PID_FILE)
+
+def daemonize(options):
+    """Control if I'm already in execution and kill the process.
+    In any case, execute daemonize code.
+    """
+    if options.outputfile:
+        global REDIRECT_TO
+        REDIRECT_TO = options.outputfile
+
+        open(REDIRECT_TO, "wb").write("")
+
+    if options.foreground:
+        # do nothing in foreground
+        return
+
+    _create_daemon()
+
+    # create the pid path
+    open(DAEMON_PID_FILE, "wb").write("%s" % os.getpid())
+
+    def _exit(sig, frame):
+        # and close all the timers/other threads that has a cancel method
+        for t in threading.enumerate():
+            if hasattr(t, "cancel") and callable(t.cancel):
+                t.cancel()
+
+        # wait for all threads to shutdown
+        time.sleep(0.5)
+
+        sys.exit(0)
+
+    signal.signal(signal.SIGTERM, _exit)
+
 
 def main():
-    '''Demonstrates a basic FTP daemon using the stock FTPServer and FTPHandler.'''
-    # ServerClass - Here you can customize the FTPServer class to use any
-    #               authorizers/abstractfs you desire. This example uses
-    #               the stock FTPServer.
-    # HandlerClass - You can customize the FTPHandler that will be used for
-    #                each client connection. This example uses the stock
-    #                FTPHandler.
-    # addr - The IP address to bind to.
-    # port - The TCP port to bind to.
-    # worker_num - The number of workers is useful if you are running on an
-    #              SMP system. This will allow a worker process on each CPU
-    #              rather than only CPU0.
-    # uid - The unix user to become after privileged operations.
-    # gid - The unix group to become after privileged operations.
-    # **************************************************************************
-    # * if providing a uid/gid, the AbstractedFS will not work, as it attempts *
-    # * to set the uid/gid to the connecting user. Only root can do this, so   *
-    # * If you wish to drop privileges, you will need to find another way to   *
-    # * enforce permissions.                                                   *
-    # **************************************************************************
-    # pidfile - A file in which to record the pid of the master process. This pid
-    #           can be used to later shut down the daemon.
-    # Daemon Shutdown:
-    #
-    # kill `cat /path/to/pidfile`
-    daemon = UnixFTPDaemon('0.0.0.0', 21, worker_num=4)
-    daemon.start()
+    usage = "python %s -d|-f|-k [-o outputfile]" %sys.argv[0]
+    parser = optparse.OptionParser(usage=usage)
+    parser.add_option('-d', '--daemon', dest='daemon',
+                      default=False, action='store_true',
+                      help='create a pyftplib daemon that runs in background')
+    parser.add_option('-f', '--foreground', dest='foreground',
+                      default=False, action='store_true',
+                      help='interactive mode, do the work in foreground')
+    parser.add_option('-k', '--kill', dest='kill',
+                      default=False, action='store_true',
+                      help='check for existance of a pyftplib daemon and kill it')
+    parser.add_option('-o', '--outputfile', dest='outputfile',
+                      help='save stdout to a file')
+    options, args = parser.parse_args()
+
+    # option control
+    num_opt = len(filter(lambda x: getattr(options, x), ("daemon", "foreground",
+                                                         "kill")))
+    if num_opt == 0:
+        parser.error("pass me at least one option")
+    elif num_opt > 1:
+        parser.error("options are mutually exclusive, use one at a time")
+
+    if options.kill:
+        _kill_daemon()
+    else:
+        daemonize(options)
+
+    return options
+
+def start_demo():
+    # use the basic example to show how we work
+    import basic_ftpd
+    basic_ftpd.main()
 
 if __name__ == '__main__':
-    main()
+    options = main()
+    if not options.kill:
+        start_demo()
