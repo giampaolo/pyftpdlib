@@ -65,9 +65,13 @@ class UnixFTPDaemon(object):
             sys.exit(0)
         # Record our pid so we can be killed later...
         if self.pidfile:
-            with file(self.pidfile, 'w') as pf:
-                pf.write(str(os.getpid()))
-        # we don't need these anymore...
+            try:
+                with file(self.pidfile, 'w') as pf:
+                    pf.write(str(os.getpid()))
+            except:
+                # Don't die just because we can't write to the pid file.
+                pass
+        # We don't need these anymore... Set stdin/stdout/stderr to /dev/null
         sys.stdout.flush()
         sys.stderr.flush()
         si = file('/dev/null', 'r')
@@ -76,7 +80,7 @@ class UnixFTPDaemon(object):
         os.dup2(si.fileno(), sys.stdin.fileno())
         os.dup2(so.fileno(), sys.stdout.fileno())
         os.dup2(se.fileno(), sys.stderr.fileno())
-        # Set up our signal handler:
+        # Set up our signal handler, workers inherit this.
         signal.signal(signal.SIGTERM, self.signal)
         # Let's spawn our worker processes (if any).
         for i in range(self.worker_num):
@@ -103,12 +107,13 @@ class UnixFTPDaemon(object):
                 pass
         # And then let's exit gracefully.
         self.stop()
-        # Always clean up after yourself.
+        # Always clean up after yourself. But only if master process.
         if self.worker_pids and self.pidfile and \
            os.path.exists(self.pidfile):
             try:
                 os.remove(self.pidfile)
             except:
+                # Don't die just because we can't remove the pid file.
                 pass
 
     def stop(self):
