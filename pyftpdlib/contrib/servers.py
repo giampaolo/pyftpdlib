@@ -1,17 +1,7 @@
 #!/usr/bin/env python
-# $Id$
 
-'''A unix FTP daemon. This daemon has the ability to:
-
- - Spawn multiple worker processes (ala pre-fork).
- - Drop privileges after privileged operations.
- - Close gracefully when signaled.
-
-For more information on the daemonizing technique used here, visit:
-
-http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
-
-Author: Ben Timby, <btimby@gmail.com>'''
+'''A collection of classes useful for building FTP servers. These classes
+are generally used to orchestrate the FTPServer/FTPHandler classes.'''
 
 import os, sys, signal
 from pyftpdlib.ftpserver import FTPServer, FTPHandler
@@ -54,6 +44,17 @@ def daemonize(pidfile=None):
     os.dup2(se.fileno(), sys.stderr.fileno())
 
 class UnixFTPDaemon(object):
+    '''A unix FTP daemon. This daemon has the ability to:
+
+     - Spawn multiple worker processes (ala pre-fork).
+     - Drop privileges after privileged operations.
+     - Close gracefully when signaled.
+
+    For more information on the daemonizing technique used here, visit:
+
+    http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
+
+    Author: Ben Timby, <btimby@gmail.com>'''
     def __init__(self, addr, port, ServerClass=FTPServer, HandlerClass=FTPHandler, worker_num=0, uid=None, gid=None, pidfile=None):
         self.ServerClass = ServerClass
         self.HandlerClass = HandlerClass
@@ -130,35 +131,3 @@ class UnixFTPDaemon(object):
         process can handle the TERM signal to exit smoothly.'''
         if self.server is not None:
             self.server.close()
-
-def main():
-    '''Demonstrates a basic FTP daemon using the stock FTPServer and FTPHandler.'''
-    # ServerClass - Here you can customize the FTPServer class to use any
-    #               authorizers/abstractfs you desire. This example uses
-    #               the stock FTPServer.
-    # HandlerClass - You can customize the FTPHandler that will be used for
-    #                each client connection. This example uses the stock
-    #                FTPHandler.
-    # addr - The IP address to bind to.
-    # port - The TCP port to bind to.
-    # worker_num - The number of workers is useful if you are running on an
-    #              SMP system. This will allow a worker process on each CPU
-    #              rather than only CPU0.
-    # uid - The unix user to become after privileged operations.
-    # gid - The unix group to become after privileged operations.
-    # **************************************************************************
-    # * if providing a uid/gid, the AbstractedFS will not work, as it attempts *
-    # * to set the uid/gid to the connecting user. Only root can do this, so   *
-    # * If you wish to drop privileges, you will need to find another way to   *
-    # * enforce permissions.                                                   *
-    # **************************************************************************
-    # pidfile - A file in which to record the pid of the master process. This pid
-    #           can be used to later shut down the daemon.
-    # Daemon Shutdown:
-    #
-    # kill `cat /path/to/pidfile`
-    daemon = UnixFTPDaemon('0.0.0.0', 21, worker_num=4)
-    daemon.start()
-
-if __name__ == '__main__':
-    main()
