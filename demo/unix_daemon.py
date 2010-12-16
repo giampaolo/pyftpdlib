@@ -7,6 +7,10 @@
  - Drop privileges after privileged operations.
  - Close gracefully when signaled.
 
+For more information on the daemonizing technique used here, visit:
+
+http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
+
 Author: Ben Timby, <btimby@gmail.com>'''
 
 import os, sys, signal
@@ -49,20 +53,20 @@ class UnixFTPDaemon(object):
         pid = os.fork()
         if pid > 0:
             # We are the main process, we have done our job...
-            return pid
-        # The child process continues
+            return
+        # The child process continues, it will distance itself from the parent.
         os.chdir("/")
         os.setsid()
-        # Set a safe umask.
         os.umask(0)
+        # Now fork again, this new child will be our daemon.
         pid = os.fork()
         if pid > 0:
-            # The second master can also exit, it's child will be our daemon.
+            # The second master can exit.
             sys.exit(0)
         # Record our pid so we can be killed later...
         if self.pidfile:
-            with pf as file(self.pidfile, 'w'):
-                pf.write(str(pid))
+            with file(self.pidfile, 'w') as pf:
+                pf.write(str(os.getpid()))
         # we don't need these anymore...
         sys.stdout.flush()
         sys.stderr.flush()
@@ -86,17 +90,22 @@ class UnixFTPDaemon(object):
         # start handling connections.
         self.server.serve_forever()
 
-    def signal(self, signum):
+    def signal(self, signum, frame):
         '''This method is registered as the SIGTERM handler in the
         start() method. This will ensure that the signal is propagated
         to the child processes and that we exit cleanly.'''
         # Propagate the same signal to our children.
         for pid in self.worker_pids:
-            os.kill(pid, signum)
+            try:
+                os.kill(pid, signum)
+            except:
+                # At least try to kill the rest...
+                pass
         # And then let's exit gracefully.
         self.stop()
         # Always clean up after yourself.
-        if self.pidfile and os.path.exists(self.pidfile):
+        if self.worker_pids and self.pidfile and \
+           os.path.exists(self.pidfile):
             try:
                 os.remove(self.pidfile)
             except:
@@ -135,7 +144,7 @@ def main():
     # Daemon Shutdown:
     #
     # kill `cat /path/to/pidfile`
-    daemon = UnixFTPDaemon('0.0.0.0', 21, worker_num=4)
+    daemon = UnixFTPDaemon('0.0.0.0', 21, worker_num=4, pidfile='/var/run/pyftpd.pid')
     daemon.start()
 
 if __name__ == '__main__':
