@@ -16,6 +16,43 @@ Author: Ben Timby, <btimby@gmail.com>'''
 import os, sys, signal
 from pyftpdlib.ftpserver import FTPServer, FTPHandler
 
+def daemonize(pidfile=None):
+    '''This function will use two fork() system calls to go into the background.
+    The calling process will be exit()ed. The child (daemon) will return from this
+    function. An optional pidfile argument will cause the function to record the
+    child (daemon's) pid into that file.'''
+    # Now, let's go into the background using a pair of fork()s.
+    pid = os.fork()
+    if pid > 0:
+        # We are the main process, we have done our job...
+        sys.exit(0)
+    # The child process continues, it will distance itself from the parent.
+    os.chdir("/")
+    os.setsid()
+    os.umask(0)
+    # Now fork again, this new child will be our daemon.
+    pid = os.fork()
+    if pid > 0:
+        # The second master can exit.
+        sys.exit(0)
+    # Record our pid so we can be killed later...
+    if pidfile:
+        try:
+            with file(pidfile, 'w') as pf:
+                pf.write(str(os.getpid()))
+        except:
+            # Don't die just because we can't write to the pid file.
+            pass
+    # We don't need these anymore... Set stdin/stdout/stderr to /dev/null
+    sys.stdout.flush()
+    sys.stderr.flush()
+    si = file('/dev/null', 'r')
+    so = file('/dev/null', 'a+')
+    se = file('/dev/null', 'a+', 0)
+    os.dup2(si.fileno(), sys.stdin.fileno())
+    os.dup2(so.fileno(), sys.stdout.fileno())
+    os.dup2(se.fileno(), sys.stderr.fileno())
+
 class UnixFTPDaemon(object):
     def __init__(self, addr, port, ServerClass=FTPServer, HandlerClass=FTPHandler, worker_num=0, uid=None, gid=None, pidfile=None):
         self.ServerClass = ServerClass
@@ -49,37 +86,8 @@ class UnixFTPDaemon(object):
                 os.setuid(self.uid)
             except OSError, e:
                 print >> sys.stderr, 'Could not set effective user id: %s' % e
-        # Now, let's go into the background using a pair of fork()s.
-        pid = os.fork()
-        if pid > 0:
-            # We are the main process, we have done our job...
-            return
-        # The child process continues, it will distance itself from the parent.
-        os.chdir("/")
-        os.setsid()
-        os.umask(0)
-        # Now fork again, this new child will be our daemon.
-        pid = os.fork()
-        if pid > 0:
-            # The second master can exit.
-            sys.exit(0)
-        # Record our pid so we can be killed later...
-        if self.pidfile:
-            try:
-                with file(self.pidfile, 'w') as pf:
-                    pf.write(str(os.getpid()))
-            except:
-                # Don't die just because we can't write to the pid file.
-                pass
-        # We don't need these anymore... Set stdin/stdout/stderr to /dev/null
-        sys.stdout.flush()
-        sys.stderr.flush()
-        si = file('/dev/null', 'r')
-        so = file('/dev/null', 'a+')
-        se = file('/dev/null', 'a+', 0)
-        os.dup2(si.fileno(), sys.stdin.fileno())
-        os.dup2(so.fileno(), sys.stdout.fileno())
-        os.dup2(se.fileno(), sys.stderr.fileno())
+        # Become a daemon
+        daemonize(self.pidfile)
         # Set up our signal handler, workers inherit this.
         signal.signal(signal.SIGTERM, self.signal)
         # Let's spawn our worker processes (if any).
