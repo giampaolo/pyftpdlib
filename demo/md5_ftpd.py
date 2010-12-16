@@ -20,7 +20,8 @@ class DummyMD5Authorizer(ftpserver.DummyAuthorizer):
         hash = md5(password).hexdigest()
         return self.user_table[username]['pwd'] == hash
 
-if __name__ == "__main__":
+
+def main():
     # get a hash digest from a clear-text password
     hash = md5('12345').hexdigest()
     authorizer = DummyMD5Authorizer()
@@ -31,3 +32,6 @@ if __name__ == "__main__":
     address = ('', 21)
     ftpd = ftpserver.FTPServer(address, ftp_handler)
     ftpd.serve_forever()
+
+if __name__ == "__main__":
+    main()

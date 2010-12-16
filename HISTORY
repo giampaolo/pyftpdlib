@@ -1,4 +1,4 @@
-Issue tracker at http://code.google.com/p/pyftpdlib/issues/list
+Bug tracker at http://code.google.com/p/pyftpdlib/issues/list
 
 
 History
@@ -9,8 +9,57 @@ Version: 0.6.0 - Date: XXXX-XX-XX
 
 Enhancements:
 
- * Issue 124: pyftpdlib now accepts command line options to configure a stand
+ * Issue #68: added full FTPS (FTP over SSL/TLS) support provided by new
+   TLS_FTPHandler class defined in pyftpdlib.contrib.handlers module.
+
+ * Issue #86: pyftpdlib now reports all ls and MDTM timestamps as GMT times,
+   as recommended in RFC-3659.  A FTPHandler.use_gmt_times attributed has been
+   added and can be set to False in case local times are desired instead.
+
+ * Issue #124: pyftpdlib now accepts command line options to configure a stand
    alone anonymous FTP server when running pyftpdlib with python's -m option.
+
+ * Issue #125: FTPHandler class now provides two new methods to standardize
+   filesystem commands and transfers logging.
+
+ * Issue #127: added FTPHandler.masquerade_address_map option which allows you
+   to define multiple 1 to 1 mappings in case you run a FTP server with
+   multiple private IP addresses behind a NAT firewall with multiple public
+   IP addresses.
+
+ * Issue #128: files and directories owner and group names and os.readlink are
+   now resolved via AbstractedFS methods instead of in format_list().
+
+ * Issue #129 and #139: added 4 new callbacks to FTPHandler class:
+   on_incomplete_file_sent(), on_incomplete_file_received(), on_login() and
+   on_logout().
+
+ * Issue #130: added UnixAuthorizer and WindowsAuthorizer classes defined in the
+   new pyftpdlib.contrib.authorizers module.
+
+ * Issue #131: pyftpdlib is now able to serve both IPv4 and IPv6 at the same
+   time by using a single socket.
+
+ * Issue #133: AbstractedFS constructor now accepts two argumets: root and
+   cmd_channel breaking compatibility with previous version.  Also, root and and
+   cwd attributes became properties.  The previous bug consisting in re-setting
+   the root from the ftp handler after user login has been fixed to ease the
+   development of subclasses.
+
+ * Issue #134: enabled TCP_NODELAY socket option for the FTP command channels
+   resulting in pyftpdlib being twice faster.
+
+ * Issue #135: Python 2.3 support has been removed.
+
+ * Issue #137: added new pyftpdlib.contrib.filesystems module within
+   UnixFilesystem class which permits the client to escape its home directory
+   and navigate the real filesystem.
+
+ * Issue #138: added DTPHandler.get_elapsed_time() method which returns the
+   transfer elapsed time in seconds.
+
+ * Issue #144: a "username" parameter is now passed to authorizer's
+   terminate_impersonation() method.
 
 Bugfixes:
 
@@ -19,9 +68,73 @@ Bugfixes:
 
  * Issue #122: a wrong variable name was used in AbstractedFS.validpath method.
 
-API changes since 0.5.2:
+ * Issue #123: PORT command doesn't bind to correct address in case an alias
+   is created for the local network interface.
 
- * FTPHandler.data_server attribute renamed in FTPHandler._dtp_acceptor.
+ * Issue #140: pathnames returned in PWD response should have double-quotes '"'
+   escaped.
+
+ * Issue #146: SIZE and MDTM commands are now rejected unless the "l" permission
+   has been specified for the user.
+
+
+Major API changes since 0.5.2
+
+ * removed support for Python 2.3.
+
+ * all classes are now new-style classes.
+
+ * AbstractedFS class:
+   * __init__ now accepts two arguments: root and cmd_channel.
+   * root and cwd attributes are now read-only properties.
+   * 3 new methods have been added:
+     - get_user_by_uid()
+     - get_group_by_gid()
+     - readlink()
+
+ * FTPHandler class:
+   * new class attributes:
+     - use_gmt_times
+     - tcp_no_delay
+     - masquerade_address_map
+   * new methods:
+     - on_incomplete_file_sent()
+     - on_incomplete_file_received()
+     - on_login()
+     - on_logout()
+     - log_fs_cmd()
+     - log_transfer()
+   * proto_cmds class attribute has been added.  The FTPHandler class  no longer
+     relies on "ftpserver.proto_cmds" global dictionary but on
+     "ftpserver.FTPHandler.proto_cmds" instead.
+
+ * FTPServer class:
+   - max_cons attribute defaults to 512 by default instead of 0 (unlimited).
+
+ * DummyAuthorizer:
+   - ValueError exceptions are now raised instead of AuthorizerError.
+   - terminate_impersonation() method now expects a "username" parameter.
+
+ * DTPHandler.get_elapsed_time() method has been added.
+
+ * Added a new package in pyftpdlib namespace: "contrib". Modules (and classes)
+   defined here:
+   - pyftpdlib.contrib.handlers.py (TLS_FTPHandler)
+   - pyftpdlib.contrib.authorizers.py (UnixAuthorizer, WindowsAuthorizer)
+   - pyftpdlib.contrib.filesystems (UnixFilesystem)
+
+Minor API changes since 0.5.2
+
+ * FTPHandler renamed objects:
+   data_server -> _dtp_acceptor
+   current_type -> _current_type
+   restart_position -> _restart_position
+   quit_pending -> _quit_pending
+   af -> _af
+   on_dtp_connection -> _on_dtp_connection
+   on_dtp_close -> _on_dtp_close
+
+ * AbstractedFS.rnfr attribute moved to FTPHandler._rnfr.
 
 
 Version: 0.5.2 - Date: 2009-09-14

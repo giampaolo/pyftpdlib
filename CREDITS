@@ -126,3 +126,8 @@ N: Wentao Han
 D: Bug report #104 (socket.accept() might return None instead of a valid address
    and EPIPE might be thrown by asyncore on OS X).
 
+N: Ben Timby
+E: btimby@gmail.com
+C: USA
+D: (issue #127) multiple masqueraded IP addresses patch.
+

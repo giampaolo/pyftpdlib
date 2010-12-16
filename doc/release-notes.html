@@ -1,124 +1,63 @@
-<title>pyftpdlib 0.5.x Release notes</title>
-<a href="http://code.google.com/p/pyftpdlib"><img id="logo" src="logo.png" /></a>
 
-<h1>0.5.x Release notes </h1>
-<h1>Version: 0.5.2 - Date: 2009-09-14</h1>
-<h2>Enhancements</h2>
-<ul>
-  <li>Issue <a href="http://code.google.com/p/pyftpdlib/issues/detail?id=103">103</a>: 
-    added new demo/unix_ftpd.py daemon script.</li>
-  <li>Issue <a href="http://code.google.com/p/pyftpdlib/issues/detail?id=108">108</a>: 
-    added native data channel bandwidth throttling (new ThrottledDTPHandler class).</li>
-</ul>
-<h2>Bugfixes</h2>
-<ul>
-  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=100">Issue 
-    100</a>: fixed a race condition in FTPHandler constructor which could throw 
-    an exception in case of connection bashing (DoS). (thanks Bram Neijt)</li>
-  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=102">Issue 
-    102</a>: FTPServer.close_all() now removes any unfired delayed call left behind 
-    to prevent potential memory leaks.</li>
-  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=104">Issue 
-    104</a>: fixed a bug in FTPServer.handle_accept() where socket.accept() could 
-    return None instead of a valid address causing the server to crash. (OS X 
-    only, reported by Wentao Han)</li>
-  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=104">Issue 
-    104</a>: an unhandled EPIPE exception might be thrown by asyncore.recv() when 
-    dealing with ill-behaved clients on OS X . (reported by Wentao Han)</li>
-  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=105">Issue 
-    105</a>: ECONNABORTED might be thrown by socket.accept() on FreeBSD causing 
-    the server to crash.</li>
-  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=109">Issue 
-    109</a>: an unhandled EBADF exception might be thrown when using poll() on 
-    OS X and FreeBSD.</li>
-  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=111">Issue 
-    111</a>: the license used was not MIT as stated in source files.</li>
-  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=112">Issue 
-    112</a>: fixed a MDTM related test case failure occurring on 64 bit OSes.</li>
-  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=113">Issue 
-    113</a>: fixed unix_ftp.py which was treating anonymous as a normal user.</li>
-  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=114">Issue 
-    114</a>: MLST is now denied unless the &quot;l&quot; permission has been specified 
-    for the user.</li>
-  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=115">Issue 
-    115</a>: asyncore.dispatcher.close() is now called before doing any other 
-    cleanup operation when client disconnects. This way we avoid an endless loop 
-    which</li>
-  <li>hangs the server in case an exception is raised in close() method. (thanks 
-    Arkadiusz Wahlig)</li>
-  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=116">Issue 
-    116</a>: extra carriage returns were added to files transferred in ASCII mode.</li>
-  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=118">Issue 
-    118</a>: CDUP always changes to &quot;/&quot;.</li>
-  <li><a href="http://code.google.com/p/pyftpdlib/issues/detail?id=119">Issue 
-    119</a>: QUIT sent during a transfer caused a memory leak.</li>
-</ul>
-<h2>API changes since 0.5.1</h2>
-<ul>
-  <li>ThrottledDTPHandler class has been added.</li>
-  <li>FTPHandler.process_command() method has been added.</li>
-</ul>
-<hr />
-<h1><a name="Version:_0.5.1_-_Date:_2009-01-21" id="Version:_0.5.1_-_Date:_2009-01-16">Version: 0.5.1 - Date: 2009-01-16</a></h1>
-<h2><a name="Enhancements" id="Enhancements">Enhancements</a></h2>
-<ul>
-  <li><a title="Add callbacks for " sent="" and="" file="" received="" events="" href="http://code.google.com/p/pyftpdlib/issues/detail?id=79">Issue 79</a>: added two new callback methods to FTPHandler class to handle on_file_sent and on_file_received events. </li>
-  <li><a title="Add table of contents in the documentation" href="http://code.google.com/p/pyftpdlib/issues/detail?id=82">Issue 82</a>: added table of contents in documentation. </li>
-  <li><a title="Patch to speed up ASCII transfers" href="http://code.google.com/p/pyftpdlib/issues/detail?id=92">Issue 92</a>: ASCII transfers are now 200% faster on those systems using &quot;\r\n&quot; as line separator (typically Windows). </li>
-  <li><a title="Set bigger buffer sizes to speedup data transfers" href="http://code.google.com/p/pyftpdlib/issues/detail?id=94">Issue 94</a>: a bigger buffer size for send() and recv() has been set resulting in a considerable speedup for both incoming and outgoing data transfers. </li>
-  <li><a title="Add preliminary support for SITE command" href="http://code.google.com/p/pyftpdlib/issues/detail?id=98">Issue 98</a>: added preliminary support for SITE command. </li>
-  <li><a title="Add a script implementing FTPS (FTP over TLS/SSL) in the demo directory" href="http://code.google.com/p/pyftpdlib/issues/detail?id=99">Issue 99</a>: a new script implementing FTPS (FTP over TLS/SSL) has been added to the demo directory (<a href="http://code.google.com/p/pyftpdlib/source/browse/trunk/demo/tls_ftpd.py" rel="nofollow">link</a>). </li>
-</ul>
-<h2><a name="Bugfixes" id="Bugfixes">Bugfixes</a></h2>
-<ul>
-  <li><a title="The idle timeout of passive data connections shouldn't be stopped in case of rejected " site-to-site="" connections="" href="http://code.google.com/p/pyftpdlib/issues/detail?id=78">Issue 78</a>: the idle timeout of passive data connections gets stopped in case of rejected &quot;site-to-site&quot; connections. </li>
-  <li><a title="demo/md5_ftpd.py should use hashlib module instead of the deprecated md5 module" href="http://code.google.com/p/pyftpdlib/issues/detail?id=80">Issue 80</a>: demo/md5_ftpd.py should use hashlib module instead of the deprecated md5 module. </li>
-  <li><a title="Failing tests on SunOS" href="http://code.google.com/p/pyftpdlib/issues/detail?id=81">Issue 81</a>: fixed some tests which were failing on SunOS. </li>
-  <li><a title="A very rare unhandled exception can occur when retrieving the first bytes of a corrupted file" href="http://code.google.com/p/pyftpdlib/issues/detail?id=84">Issue 84</a>: fixed a very rare unhandled exception which could occur when retrieving the first bytes of a corrupted file. </li>
-  <li><a title="MKD response is supposed to include the directory name." href="http://code.google.com/p/pyftpdlib/issues/detail?id=85">Issue 85</a>: a positive MKD response is supposed to include the name of the new directory. </li>
-  <li><a title="SIZE should be rejected when the current TYPE is ASCII" href="http://code.google.com/p/pyftpdlib/issues/detail?id=87">Issue 87</a>: SIZE should be rejected when the current TYPE is ASCII. </li>
-  <li><a title="REST should be rejected when the current TYPE is ASCII" href="http://code.google.com/p/pyftpdlib/issues/detail?id=88">Issue 88</a>: REST should be rejected when the current TYPE is ASCII. </li>
-  <li><a title="" an="" is="" erroneously="" treated="" as="" synonym="" for="" type="" a="" href="http://code.google.com/p/pyftpdlib/issues/detail?id=89">Issue 89</a>: &quot;TYPE AN&quot; was erroneously treated as synonym for &quot;TYPE A&quot; when &quot;TYPE L7&quot; should have been used instead. </li>
-  <li><a title="Unhandled exception can occur when using MDTM against a file modified before year 1900" href="http://code.google.com/p/pyftpdlib/issues/detail?id=90">Issue 90</a>: an unhandled exception can occur when using MDTM against a file modified before year 1900. </li>
-  <li><a title="pyftpdlib should handle the case when accept() returns None instead of a socket" href="http://code.google.com/p/pyftpdlib/issues/detail?id=91">Issue 91</a>: an unhandled exception can occur in case accept() returns None instead of a socket (it happens sometimes). </li>
-  <li><a title="Anonymous should be treated as a case-sensitive user" href="http://code.google.com/p/pyftpdlib/issues/detail?id=95">Issue 95</a>: anonymous is now treated as any other case-sensitive user. </li>
-</ul>
-<h2><a name="API_changes_since_0.5.0" id="API_changes_since_0.5.0">API changes since 0.5.0</a></h2>
-<ul>
-  <li><a name="API_changes_since_0.5.0" id="API_changes_since_0.5.0">FTPHandler gained a new _extra_feats private attribute. </a></li>
-  <li><a name="API_changes_since_0.5.0" id="API_changes_since_0.5.0">FTPHandler gained two new methods: on_file_sent and on_file_received. </a></li>
-</ul>
-<hr />
-<h1><a name="Version:_0.5.0_-_Date:_2008-09-20" id="Version:_0.5.0_-_Date:_2008-09-20">Version: 0.5.0 - Date: 2008-09-20</a></h1>
-<h2><a name="Enhancements" id="Enhancements">Enhancements</a></h2>
-<ul>
-  <li><a title="Implement idle-timeouts" href="http://code.google.com/p/pyftpdlib/issues/detail?id=72">&nbsp;Issue 72&nbsp;</a>: pyftpdlib now provides configurable idle timeouts to disconnect client after a long time of inactivity. </li>
-  <li><a title="pyftpdlib should impose a delay before replying for invalid credentials" href="http://code.google.com/p/pyftpdlib/issues/detail?id=73">&nbsp;Issue 73&nbsp;</a>: impose a delay before replying for invalid credentials to minimize the risk of brute force password guessing. </li>
-  <li><a title="Implement permissions overriding" href="http://code.google.com/p/pyftpdlib/issues/detail?id=74">&nbsp;Issue 74&nbsp;</a>:  it is now possible to define permission exceptions for certain  directories (e.g. creating a user which does not have write permission  except for one sub-directory in FTP root). </li>
-  <li>Improved bandwidth throttling capabilities of <a href="http://code.google.com/p/pyftpdlib/source/browse/tags/release-0.5.0/demo/throttled_ftpd.py" rel="nofollow">demo/throttled_ftpd.py</a> script by having used the new CallLater class which drastically reduces the number of calls to time.time(). </li>
-</ul>
-<h2><a name="Bugfixes" id="Bugfixes">Bugfixes</a></h2>
-<ul>
-  <li><a title="Some unit tests failing on dual core machines" href="http://code.google.com/p/pyftpdlib/issues/detail?id=62">&nbsp;Issue 62&nbsp;</a>: some unit tests were failing on dual core machines. </li>
-  <li><a title="Socket handles are leaked when a data transfer is in progress and user QUITs" href="http://code.google.com/p/pyftpdlib/issues/detail?id=71">&nbsp;Issue 71&nbsp;</a>: socket handles are leaked when a data transfer is in progress and user QUITs. </li>
-  <li><a title="Orphaned file is left behind in case STOU fails for insufficient user permissions" href="http://code.google.com/p/pyftpdlib/issues/detail?id=75">&nbsp;Issue 75&nbsp;</a>: orphaned file was left behind in case STOU failed for insufficient user permissions. </li>
-  <li><a title="Incorrect OOB data management on FreeBSD" href="http://code.google.com/p/pyftpdlib/issues/detail?id=77">&nbsp;Issue 77&nbsp;</a>: incorrect OOB data management on FreeBSD. </li>
-</ul>
-<h2><a name="API_changes_since_0.4.0" id="API_changes_since_0.4.0">API changes since 0.4.0</a></h2>
-<ul>
-  <li><a name="API_changes_since_0.4.0" id="API_changes_since_0.4.0">FTPHandler, DTPHandler, PassiveDTP and ActiveDTP classes gained a new timeout class attribute. </a></li>
-  <li><a name="API_changes_since_0.4.0" id="API_changes_since_0.4.0">DummyAuthorizer class gained a new override_perm method. </a></li>
-  <li><a name="API_changes_since_0.4.0" id="API_changes_since_0.4.0">A new class called CallLater has been added. </a></li>
-  <li><a name="API_changes_since_0.4.0" id="API_changes_since_0.4.0">AbstractedFS.get_stat_dir method has been removed. </a></li>
-</ul>
-<h2><a name="Migration_notes" id="Migration_notes">Migration notes</a></h2>
-<p><a name="Migration_notes" id="Migration_notes">Changes  applied to the 0.5.0 trunk should be fully compatible with the previous  0.4.0 version. Your existing 0.4.0 based code will most likely work  without need to be modified. The new features in this release are  detailed below. </a></p>
-<h3><a name="Idle_timeouts_and_new_class" id="Idle_timeouts_and_new_class">Idle timeouts and new CallLater</a> class</h3>
-<p>The  previous version suffered the problem of not having a mechanism to  disconnect clients after a long time of inactivity. This posed the risk  for the FTP server to be easily vulnerable to DoS attacks in which a  lot of connected clients could clump system's resources and sockets. </p>
-<p>0.5.0  version solved this problem by implementing a brand new polling loop  which, other than serving the connected clients, also checks if it is  the proper time for scheduled functions to be called (if any). Thanks  to the new loop and the new CallLater class implementing <a href="http://code.google.com/p/pyftpdlib/issues/detail?id=72" rel="nofollow">timeouts</a> and <a href="http://code.google.com/p/pyftpdlib/issues/detail?id=73" rel="nofollow">delays to invalid credential replies</a> have been possible. </p>
-<p>FTPHandler class gained a new timeout attribute defaulting to 300 seconds which is the maximum time of inactivity a remote client may spend before being disconnected. </p>
-<p>Also DTPHandler class gained a new timeout attribute defaulting to 300 seconds which roughly is the maximum time the data transfers can stall for with no progress. </p>
-<h3><a name="Permission_exceptions" id="Permission_exceptions">Permission exceptions</a></h3>
-<p><a name="Permission_exceptions" id="Permission_exceptions">The DummyAuthorizer  now gives the possibility to define permission exceptions for  directories. For example, if you want to create a user which does not  have write permission except for one sub-directory in FTP root, you can  now do as follows: </a></p>
-<pre><a name="Permission_exceptions" id="Permission_exceptions">&gt;&gt;&gt; from pyftpdlib import ftpserver<br />&gt;&gt;&gt; authorizer = ftpserver.DummyAuthorizer()<br />&gt;&gt;&gt; authorizer.add_user('user', 'password', '/home/ftp', perm='elr')<br />&gt;&gt;&gt; authorizer.override_perm('user', '/home/ftp/pub', 'elradfmw', recursive=True)</a></pre>
-<p>&nbsp;</p>
+<!-- saved from url=(0067)http://code.google.com/p/pyftpdlib/wiki/ReleaseNotes06?show=content -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+ <title>ReleaseNotes06</title>
+ </head>
+ <body>
+<style>
+.section_anchor {
+    font-size:0px;
+}
+</style>
+
+
+
+
+ <div id="wikicontent">
+ <table width="100%" border="0" cellspacing="0" cellpadding="0">
+ <tbody><tr>
+
+ <td class="vt" id="wikimaincol" width="100%">
+
+ <div id="wikiheader" style="margin-bottom:1em">
+
+ <img width="15" height="15" id="star_img" src="./release-notes_files/star_off.gif" style="cursor:pointer" onclick="_CS_toggleStar(this,
+ &#39;&#39;,
+ {&#39;scope&#39;: &#39;wiki&#39;,
+ &#39;user&#39;: &#39;_CURRENT_USER&#39;,
+ &#39;item&#39;: &#39;pyftpdlib:ReleaseNotes06&#39;,
+ &#39;token&#39;: codesite_token
+ });">
+
+ &nbsp;
+ <span style="font-size:120%;font-weight:bold">ReleaseNotes06</span>
+ &nbsp;
+
+
+ <div style="font-style:italic; margin-top: 3px">pyftpdlib 0.6.x series release notes.</div>
+
+ </div>
+ <h1><a name="Version:_0.6.0_-_Date:_XXXX-XX-XX"></a>Version: 0.6.0 - Date: XXXX-XX-XX<a href="http://code.google.com/p/pyftpdlib/wiki/ReleaseNotes06?show=content#Version:_0.6.0_-_Date:_XXXX-XX-XX" class="section_anchor">¶</a></h1><h2><a name="Enhancements"></a>Enhancements<a href="http://code.google.com/p/pyftpdlib/wiki/ReleaseNotes06?show=content#Enhancements" class="section_anchor">¶</a></h2><ul><li><a title="Add SSL/TLS support to pyftpdlib [RFCs 2228 &amp; 4217]" href="http://code.google.com/p/pyftpdlib/issues/detail?id=68">Issue 68</a>: added full FTPS (FTP over SSL/TLS) support. </li><li><a title="MDTM should return time in GMT" href="http://code.google.com/p/pyftpdlib/issues/detail?id=86">Issue 86</a>: pyftpdlib now reports all ls and MDTM timestamps as GMT times, as recommended in RFC-3659.  A <tt>FTPHandler.use_gmt_times</tt> attributed has been added and can be set to False in case local times are desired instead. </li><li><a title="Provide a command line parser to configure the FTP server when run with python&#39;s -m option" href="http://code.google.com/p/pyftpdlib/issues/detail?id=124">Issue 124</a>: pyftpdlib now accepts command line options to configure a stand alone anonymous FTP server when running pyftpdlib with python's -m option. </li><li><a title="ECONNREFUSED when using masquerade_address with multiple listening IPs." href="http://code.google.com/p/pyftpdlib/issues/detail?id=127">Issue 127</a>: <tt>added FTPHandler.masquerade_address_map</tt> option which allows you to define multiple 1 to 1 mappings in case you run a FTP server with multiple private IP addresses behind a NAT firewall with multiple public IP addresses.  </li><li><a title="user name and group name should be resolved via AbstractedFS." href="http://code.google.com/p/pyftpdlib/issues/detail?id=128">Issue 128</a>: files and directories owner and group names and <tt>os.readlink</tt> are now resolved via <tt>AbstractedFS</tt> methods instead of in <tt>format_list()</tt>. </li><li><a title="Callbacks for incomplete file transfers and user login" href="http://code.google.com/p/pyftpdlib/issues/detail?id=129">Issue 129</a>: added 3 new callbacks to <tt>FTPHandler</tt> class: <tt>on_incomplete_file_sent()</tt>, <tt>on_incomplete_file_received()</tt> and <tt>on_login()</tt>. </li><li><a title="Move Unix and Windows authorizers from demo directory to pyftpdlib/contrib" href="http://code.google.com/p/pyftpdlib/issues/detail?id=130">Issue 130</a>: added <tt>UnixAuthorizer</tt> and <tt>WindowsAuthorizer</tt> classes defined in the new <tt>pyftpdlib.contrib.authorizers</tt> module. </li><li><a title="Support both IPv4 and IPv6 by using a single socket" href="http://code.google.com/p/pyftpdlib/issues/detail?id=131">Issue 131</a>: pyftpdlib is now able to serve both IPv4 and IPv6 at the same time by using a single socket. </li><li><a title="AbstractedFS changes" href="http://code.google.com/p/pyftpdlib/issues/detail?id=133">Issue 133</a>: <tt>AbstractedFS</tt> constructor now accepts two argumets: <tt>root</tt> and <tt>cmd_channel</tt> breaking compatibility with previous version.  Also, <tt>root</tt> and <tt>cwd</tt> attributes became properties.  The previous bug consisting in re-setting the root from the ftp handler after user login has been fixed to ease the development of subclasses. </li><li><a title="Enable TCP_NODELAY socket option" href="http://code.google.com/p/pyftpdlib/issues/detail?id=134">Issue 134</a>: enabled TCP_NODELAY socket option for the FTP command channels resulting in pyftpdlib being twice faster. </li><li><a title="Remove python 2.3 support" href="http://code.google.com/p/pyftpdlib/issues/detail?id=135">Issue 135</a>: Python 2.3 support has been removed. </li><li><a title="Implement UnixFilesystem class" href="http://code.google.com/p/pyftpdlib/issues/detail?id=137">Issue 137</a>: added new <tt>pyftpdlib.contrib.filesystems</tt> module within <tt>UnixFilesystem</tt> class which permits the client to escape its home directory and navigate the real filesystem. </li><li><a title="Calculate data transfer elapsed time" href="http://code.google.com/p/pyftpdlib/issues/detail?id=138">Issue 138</a>: added <tt>DTPHandler.get_elapsed_time()</tt> method which returns the transfer elapsed time in seconds. </li></ul><h2><a name="Bugfixes"></a>Bugfixes<a href="http://code.google.com/p/pyftpdlib/wiki/ReleaseNotes06?show=content#Bugfixes" class="section_anchor">¶</a></h2><ul><li><a title="race condition on PORT connections" href="http://code.google.com/p/pyftpdlib/issues/detail?id=120">Issue 120</a>: an <tt>ActiveDTP</tt> instance is not garbage collected in case a client issuing PORT disconnects before establishing the data connection. </li><li><a title="a bug in verifying path" href="http://code.google.com/p/pyftpdlib/issues/detail?id=122">Issue 122</a>: a wrong variable name was used in <tt>AbstractedFS.validpath</tt> method. </li><li><a title="PORT commands fail to bind to command channel ip address" href="http://code.google.com/p/pyftpdlib/issues/detail?id=123">Issue 123</a>: PORT command doesn't bind to correct address in case an alias is created for the local network interface. </li><li><a title="PWD response should escape double quotes" href="http://code.google.com/p/pyftpdlib/issues/detail?id=140">Issue 140</a>: pathnames returned in PWD response should have double-quotes '"' escaped. </li></ul><h2><a name="API_changes_since_0.5.2"></a>API changes since 0.5.2<a href="http://code.google.com/p/pyftpdlib/wiki/ReleaseNotes06?show=content#API_changes_since_0.5.2" class="section_anchor">¶</a></h2><ul><li>removed support for Python 2.3. </li><li>all classes are now new-style classes. </li><li>Added a new package in pyftpdlib namespace: "contrib". Modules (and classes) defined here: </li><ul><li><tt>pyftpdlib.contrib.handlers.py</tt> (<tt>TLS_FTPHandler</tt>, <tt>TLS_FTPHandlerFactory</tt>) </li><li><tt>pyftpdlib.contrib.authorizers.py</tt> (<tt>UnixAuthorizer</tt>, <tt>WindowsAuthorizer</tt>) </li><li><tt>pyftpdlib.contrib.filesystems</tt> (<tt>UnixFilesystem</tt>) </li></ul><li><tt>AbstractedFS</tt> class: </li><ul><li><tt>__init__</tt> method now accepts two arguments: <tt>root</tt> and <tt>cmd_channel</tt>. </li><li><tt>root</tt> and <tt>cwd</tt> attributes are now read-only properties. </li><li>3 new methods have been added:  </li><ul><li><tt>get_user_by_uid()</tt> </li><li><tt>get_group_by_gid()</tt> </li><li><tt>readlink()</tt> </li></ul></ul><li><tt>FTPHandler</tt> class: </li><ul><li>new class attributes: </li><ul><li><tt>use_gmt_times</tt> </li><li><tt>tcp_no_delay</tt> </li><li><tt>masquerade_address_map</tt> </li></ul><li>new methods: </li><ul><li><tt>on_incomplete_file_sent()</tt> </li><li><tt>on_incomplete_file_received()</tt> </li><li><tt>on_login()</tt> </li></ul><li><tt>proto_cmds</tt> class attribute has been added.  The <tt>FTPHandler</tt> class  no longer relies on <tt>ftpserver.proto_cmds</tt> global dictionary but on <tt>ftpserver.FTPHandler.proto_cmds</tt> instead. </li></ul><li><tt>FTPServer</tt> class: </li><ul><li><tt>max_cons</tt> attribute defaults to 512 by default instead of 0 (unlimited). </li></ul><li><tt>DummyAuthorizer</tt> class: </li><ul><li><tt>ValueError</tt> exceptions are now raised instead of <tt>AuthorizerError</tt> </li></ul><li><tt>DTPHandler</tt> class: </li><ul><li><tt>get_elapsed_time()</tt> method has been added. </li></ul></ul><h2><a name="Migration_notes"></a>Migration notes<a href="http://code.google.com/p/pyftpdlib/wiki/ReleaseNotes06?show=content#Migration_notes" class="section_anchor">¶</a></h2><p>Some of the changes introduced in 0.6.0 break compatibility with previous 0.5.x serie. In particular you should be careful in case you're using a customized file system class defining an <tt>__init__</tt> method since <tt>AbstractedFS</tt> constructor now expects two arguments. </p>
+ </td>
+ </tr>
+ </tbody></table>
+ </div>
+
+
+
+
+<script type="text/javascript" src="./release-notes_files/dit_scripts.js"></script>
+
+
+ <script type="text/javascript">
+ _fetchOptions(
+ "", "pyftpdlib", "wikiOptions",
+ codesite_token, 1240514232);
+ _onload();
+ </script>
+
+
+
+
+
+</body></html>
