@@ -144,7 +144,7 @@ def main():
     # Daemon Shutdown:
     #
     # kill `cat /path/to/pidfile`
-    daemon = UnixFTPDaemon('0.0.0.0', 21, worker_num=4, pidfile='/var/run/pyftpd.pid')
+    daemon = UnixFTPDaemon('0.0.0.0', 21, worker_num=4)
     daemon.start()
 
 if __name__ == '__main__':
