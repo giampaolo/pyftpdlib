@@ -33,7 +33,12 @@ def main():
     # Daemon Shutdown:
     #
     # kill `cat /path/to/pidfile`
-    daemon = UnixFTPDaemon('0.0.0.0', 21, worker_num=4)
+    #
+    # Below we are using 3 workers, this will result in 4 total processes (1 master,
+    # and 3 workers). It is recommended to use one process per core, to take advantage
+    # of multiple CPUs. Any more than one process per core will simply consume more
+    # memory without spreading the load any more evenly.
+    daemon = UnixFTPDaemon('0.0.0.0', 21, worker_num=3)
     daemon.start()
 
 if __name__ == '__main__':
