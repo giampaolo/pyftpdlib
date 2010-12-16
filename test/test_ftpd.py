@@ -2338,7 +2338,7 @@ class TestCallbacks(unittest.TestCase):
         self.tearDown()
         self.assertEqual(user.pop(), USER)
 
-    def test_on_logout(self):
+    def test_on_logout_quit(self):
         user = []
 
         class TestHandler(ftpserver.FTPHandler):
@@ -2352,7 +2352,21 @@ class TestCallbacks(unittest.TestCase):
         self.tearDown()
         self.assertEqual(user.pop(), USER)
 
-    def test_on_logout_user_twice(self):
+    def test_on_logout_rein(self):
+        user = []
+
+        class TestHandler(ftpserver.FTPHandler):
+
+            def on_logout(self, username):
+                user.append(username)
+
+        self._setUp(TestHandler)
+        self.client.sendcmd('rein')
+        # shut down the server to avoid race conditions
+        self.tearDown()
+        self.assertEqual(user.pop(), USER)
+
+    def test_on_logout_user_issued_twice(self):
         users = []
 
         class TestHandler(ftpserver.FTPHandler):

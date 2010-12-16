@@ -2232,6 +2232,7 @@ class FTPHandler(object, asynchat.async_chat):
                 self.data_channel.close()
                 self.data_channel = None
 
+        username = self.username
         self.authenticated = False
         self.username = ""
         self.password = ""
@@ -2243,6 +2244,8 @@ class FTPHandler(object, asynchat.async_chat):
         self._in_dtp_queue = None
         self._rnfr = None
         self._out_dtp_queue = None
+        if username:
+            self.on_logout(username)
 
     def run_as_current_user(self, function, *args, **kwargs):
         """Execute a function impersonating the current logged-in user."""
@@ -2800,10 +2803,7 @@ class FTPHandler(object, asynchat.async_chat):
             # to change the access control flushing any user, password,
             # and account information already supplied and beginning the
             # login sequence again.
-            username = self.username
             self.flush_account()
-            if username:
-                self.on_logout(username)
             msg = 'Previous account information was flushed'
             self.log(msg)
             self.respond('331 %s, send password.' % msg)
