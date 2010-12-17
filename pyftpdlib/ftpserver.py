@@ -549,9 +549,9 @@ class PassiveDTP(object, asyncore.dispatcher):
         asyncore.dispatcher.__init__(self)
         self.cmd_channel = cmd_channel
         if self.timeout:
-            self.idler = CallLater(self.timeout, self.handle_timeout)
+            self._idler = CallLater(self.timeout, self.handle_timeout)
         else:
-            self.idler = None
+            self._idler = None
 
         local_ip = self.cmd_channel.socket.getsockname()[0]
         if local_ip in self.cmd_channel.masquerade_address_map:
@@ -684,8 +684,8 @@ class PassiveDTP(object, asyncore.dispatcher):
 
     def close(self):
         asyncore.dispatcher.close(self)
-        if self.idler is not None and not self.idler.cancelled:
-            self.idler.cancel()
+        if self._idler is not None and not self._idler.cancelled:
+            self._idler.cancel()
 
 
 class ActiveDTP(object, asyncore.dispatcher):
@@ -697,7 +697,6 @@ class ActiveDTP(object, asyncore.dispatcher):
        the client's listening data socket.
     """
     timeout = 30
-    source_address = None
 
     def __init__(self, ip, port, cmd_channel):
         """Initialize the active data channel attemping to connect
@@ -710,9 +709,9 @@ class ActiveDTP(object, asyncore.dispatcher):
         asyncore.dispatcher.__init__(self)
         self.cmd_channel = cmd_channel
         if self.timeout:
-            self.idler = CallLater(self.timeout, self.handle_timeout)
+            self._idler = CallLater(self.timeout, self.handle_timeout)
         else:
-            self.idler = None
+            self._idler = None
         self.create_socket(self.cmd_channel._af, socket.SOCK_STREAM)
         # Have the active connection come from the same IP address
         # as the command channel, see:
@@ -739,8 +738,8 @@ class ActiveDTP(object, asyncore.dispatcher):
 
     def handle_connect(self):
         """Called when connection is established."""
-        if self.idler is not None and not self.idler.cancelled:
-            self.idler.cancel()
+        if self._idler is not None and not self._idler.cancelled:
+            self._idler.cancel()
         self.cmd_channel.respond('200 Active data connection established.')
         # delegate such connection to DTP handler
         handler = self.cmd_channel.dtp_handler(self.socket, self.cmd_channel)
@@ -772,8 +771,8 @@ class ActiveDTP(object, asyncore.dispatcher):
 
     def close(self):
         asyncore.dispatcher.close(self)
-        if self.idler is not None and not self.idler.cancelled:
-            self.idler.cancel()
+        if self._idler is not None and not self._idler.cancelled:
+            self._idler.cancel()
 
 
 class DTPHandler(object, asynchat.async_chat):
@@ -810,15 +809,15 @@ class DTPHandler(object, asynchat.async_chat):
         self.transfer_finished = False
         self.tot_bytes_sent = 0
         self.tot_bytes_received = 0
-        self.data_wrapper = lambda x: x
+        self._data_wrapper = lambda x: x
         self._lastdata = 0
         self._closed = False
         self._had_cr = False
         self._start_time = time.time()
         if self.timeout:
-            self.idler = CallLater(self.timeout, self.handle_timeout)
+            self._idler = CallLater(self.timeout, self.handle_timeout)
         else:
-            self.idler = None
+            self._idler = None
         try:
             asynchat.async_chat.__init__(self, sock_obj)
         except socket.error, err:
@@ -858,11 +857,11 @@ class DTPHandler(object, asynchat.async_chat):
         """
         if type == 'a':
             if os.linesep == '\r\n':
-                self.data_wrapper = lambda x: x
+                self._data_wrapper = lambda x: x
             else:
-                self.data_wrapper = self._posix_ascii_data_wrapper
+                self._data_wrapper = self._posix_ascii_data_wrapper
         elif type == 'i':
-            self.data_wrapper = lambda x: x
+            self._data_wrapper = lambda x: x
         else:
             raise TypeError("unsupported type")
         self.receive = True
@@ -931,7 +930,7 @@ class DTPHandler(object, asynchat.async_chat):
             # in case  that filesystem gets full;  if this happens we
             # let handle_error() method handle this exception, providing
             # a detailed error message.
-            self.file_obj.write(self.data_wrapper(chunk))
+            self.file_obj.write(self._data_wrapper(chunk))
 
     def readable(self):
         """Predicate for inclusion in the readable for select()."""
@@ -949,7 +948,7 @@ class DTPHandler(object, asynchat.async_chat):
         """
         if self.get_transmitted_bytes() > self._lastdata:
             self._lastdata = self.get_transmitted_bytes()
-            self.idler = CallLater(self.timeout, self.handle_timeout)
+            self._idler = CallLater(self.timeout, self.handle_timeout)
         else:
             msg = "Data connection timed out."
             self.cmd_channel.log(msg)
@@ -1020,8 +1019,8 @@ class DTPHandler(object, asynchat.async_chat):
             asyncore.dispatcher.close(self)
             if self.file_obj is not None and not self.file_obj.closed:
                 self.file_obj.close()
-            if self.idler is not None and not self.idler.cancelled:
-                self.idler.cancel()
+            if self._idler is not None and not self._idler.cancelled:
+                self._idler.cancel()
             if self.file_obj is not None:
                 filename = self.file_obj.name
                 elapsed_time = round(self.get_elapsed_time(), 3)
@@ -1137,11 +1136,11 @@ class FileProducer(object):
         self.file = file
         if type == 'a':
             if os.linesep == '\r\n':
-                self.data_wrapper = lambda x: x
+                self._data_wrapper = lambda x: x
             else:
-                self.data_wrapper = lambda x: x.replace(os.linesep, '\r\n')
+                self._data_wrapper = lambda x: x.replace(os.linesep, '\r\n')
         elif type == 'i':
-            self.data_wrapper = lambda x: x
+            self._data_wrapper = lambda x: x
         else:
             raise TypeError("unsupported type")
 
@@ -1149,7 +1148,7 @@ class FileProducer(object):
         """Attempt a chunk of data of size self.buffer_size."""
         if self.done:
             return ''
-        data = self.data_wrapper(self.file.read(self.buffer_size))
+        data = self._data_wrapper(self.file.read(self.buffer_size))
         if not data:
             self.done = True
             if not self.file.closed:
@@ -1748,10 +1747,6 @@ class FTPHandler(object, asynchat.async_chat):
         self.data_channel = None
         self.remote_ip = ""
         self.remote_port = ""
-        if self.timeout:
-            self.idler = CallLater(self.timeout, self.handle_timeout)
-        else:
-            self.idler = None
 
         # private session attributes
         self._current_type = 'a'
@@ -1769,6 +1764,10 @@ class FTPHandler(object, asynchat.async_chat):
         self._extra_feats = []
         self._current_facts = ['type', 'perm', 'size', 'modify']
         self._rnfr = None
+        if self.timeout:
+            self._idler = CallLater(self.timeout, self.handle_timeout)
+        else:
+            self._idler = None
         if os.name == 'posix':
             self._current_facts.append('unique')
         self._available_facts = self._current_facts[:]
@@ -1891,8 +1890,8 @@ class FTPHandler(object, asynchat.async_chat):
         r"""Called when the incoming data stream matches the \r\n
         terminator.
         """
-        if self.idler is not None and not self.idler.cancelled:
-            self.idler.reset()
+        if self._idler is not None and not self._idler.cancelled:
+            self._idler.reset()
 
         line = ''.join(self._in_buffer)
         self._in_buffer = []
@@ -2046,8 +2045,8 @@ class FTPHandler(object, asynchat.async_chat):
             del self._out_dtp_queue
             del self._in_dtp_queue
 
-            if self.idler is not None and not self.idler.cancelled:
-                self.idler.cancel()
+            if self._idler is not None and not self._idler.cancelled:
+                self._idler.cancel()
 
             # remove client IP address from ip map
             if self.remote_ip in self.server.ip_map:
@@ -2120,8 +2119,8 @@ class FTPHandler(object, asynchat.async_chat):
             self._dtp_acceptor = None
 
         # stop the idle timer as long as the data transfer is not finished
-        if self.idler is not None and not self.idler.cancelled:
-            self.idler.cancel()
+        if self._idler is not None and not self._idler.cancelled:
+            self._idler.cancel()
 
         # check for data to send
         if self._out_dtp_queue is not None:
@@ -2153,7 +2152,7 @@ class FTPHandler(object, asynchat.async_chat):
             self.close()
         elif self.timeout:
             # data transfer finished, restart the idle timer
-            self.idler = CallLater(self.timeout, self.handle_timeout)
+            self._idler = CallLater(self.timeout, self.handle_timeout)
 
     # --- utility
 
@@ -2194,32 +2193,6 @@ class FTPHandler(object, asynchat.async_chat):
             self.respond("150 File status okay. About to open data connection.")
             self._out_dtp_queue = (data, isproducer, file)
 
-    # --- logging wrappers
-
-    def log(self, msg):
-        """Log a message, including additional identifying session data."""
-        log("[%s]@%s:%s %s" % (self.username, self.remote_ip,
-                              self.remote_port, msg))
-
-    def logline(self, msg):
-        """Log a line including additional indentifying session data."""
-        logline("%s:%s %s" % (self.remote_ip, self.remote_port, msg))
-
-    def log_fs_cmd(self, cmd, path, respcode, respstr):
-        """Log all command involving the filesystem (MKD, DELE, etc...)
-        in a standardized format.
-        """
-        outcome = str(respcode)[0] in ("4", "5") and "FAIL" or "OK"
-        msg = "%s %s %s %s" % (outcome, cmd, repr(path), respstr)
-        self.log(msg)
-
-    def log_transfer(self, receive, filename, completed, elapsed, bytes):
-        """Log all transfers (RETR, STOR, STOU) in a standardized format."""
-        action = receive and "receiving" or "sending"
-        outcome = completed and "completed" or "aborted"
-        self.log("Transfer %s (%s) file=%s bytes=%s seconds=%s" \
-                 % (outcome, action, repr(filename), bytes, elapsed))
-
     def flush_account(self):
         """Flush account information by clearing attributes that need
         to be reset on a REIN or new USER command.
@@ -2254,6 +2227,32 @@ class FTPHandler(object, asynchat.async_chat):
             return function(*args, **kwargs)
         finally:
             self.authorizer.terminate_impersonation(self.username)
+
+    # --- logging wrappers
+
+    def log(self, msg):
+        """Log a message, including additional identifying session data."""
+        log("[%s]@%s:%s %s" % (self.username, self.remote_ip,
+                              self.remote_port, msg))
+
+    def logline(self, msg):
+        """Log a line including additional indentifying session data."""
+        logline("%s:%s %s" % (self.remote_ip, self.remote_port, msg))
+
+    def log_fs_cmd(self, cmd, path, respcode, respstr):
+        """Log all command involving the filesystem (MKD, DELE, etc...)
+        in a standardized format.
+        """
+        outcome = str(respcode)[0] in ("4", "5") and "FAIL" or "OK"
+        msg = "%s %s %s %s" % (outcome, cmd, repr(path), respstr)
+        self.log(msg)
+
+    def log_transfer(self, receive, filename, completed, elapsed, bytes):
+        """Log all transfers (RETR, STOR, STOU) in a standardized format."""
+        action = receive and "receiving" or "sending"
+        outcome = completed and "completed" or "aborted"
+        self.log("Transfer %s (%s) file=%s bytes=%s seconds=%s" \
+                 % (outcome, action, repr(filename), bytes, elapsed))
 
     # --- connection
 

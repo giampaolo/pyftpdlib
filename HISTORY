@@ -133,6 +133,7 @@ Minor API changes since 0.5.2
    af -> _af
    on_dtp_connection -> _on_dtp_connection
    on_dtp_close -> _on_dtp_close
+   idler -> _idler
 
  * AbstractedFS.rnfr attribute moved to FTPHandler._rnfr.
 
