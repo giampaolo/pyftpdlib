@@ -61,6 +61,9 @@ Enhancements:
  * Issue #144: a "username" parameter is now passed to authorizer's
    terminate_impersonation() method.
 
+ * Issue #149: ftpserver.proto_cmds dictionary refactoring and get rid of
+   _CommandProperty class.
+
 Bugfixes:
 
  * Issue #120: an ActiveDTP() instance is not garbage collected in case a
@@ -104,7 +107,7 @@ Major API changes since 0.5.2
      - on_logout()
      - log_fs_cmd()
      - log_transfer()
-   * proto_cmds class attribute has been added.  The FTPHandler class  no longer
+   * proto_cmds class attribute has been added.  The FTPHandler class no longer
      relies on "ftpserver.proto_cmds" global dictionary but on
      "ftpserver.FTPHandler.proto_cmds" instead.
 

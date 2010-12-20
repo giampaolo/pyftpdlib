@@ -62,21 +62,16 @@ try:
 except ImportError:
     pass
 else:
-    extended_proto_cmds = proto_cmds.copy()
-    new_proto_cmds = {
-        # cmd : (perm, auth,  arg,  path,  help)
-        'AUTH': (None, False, True, False, 'Syntax: AUTH <SP> TLS|SSL (set up secure control connection).'),
-        'PBSZ': (None, True,  True, False, 'Syntax: PBSZ <SP> 0 (negotiate size of buffer for secure data transfer).'),
-        'PROT': (None, True,  True, False, 'Syntax: PROT <SP> [C|P] (set up un/secure data channel).'),
-        }
-
-    from pyftpdlib.ftpserver import _CommandProperty
-    for cmd, properties in new_proto_cmds.iteritems():
-        extended_proto_cmds[cmd] = _CommandProperty(*properties)
-    del cmd, properties, new_proto_cmds, _CommandProperty
-
     DISCONNECTED = frozenset((ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED,
                               EPIPE, EBADF))
+
+    new_proto_cmds = proto_cmds.copy()
+    new_proto_cmds.update({
+        'AUTH': dict(perm=None, auth=False, arg=True, fs=False, help='Syntax: AUTH <SP> TLS|SSL (set up secure control connection).'),
+        'PBSZ': dict(perm=None, auth=True,  arg=True, fs=False, help='Syntax: PBSZ <SP> 0 (negotiate size of buffer for secure data transfer).'),
+        'PROT': dict(perm=None, auth=True,  arg=True, fs=False, help='Syntax: PROT <SP> [C|P] (set up un/secure data channel).'),
+        })
+
 
     class SSLConnection(object, asyncore.dispatcher):
         """An asyncore.dispatcher subclass supporting TLS/SSL."""
@@ -84,9 +79,9 @@ else:
         _ssl_accepting = False
         _ssl_established = False
         _ssl_closing = False
-        
+
         def secure_connection(self, ssl_context):
-            """Secure the connection switching from plain-text to 
+            """Secure the connection switching from plain-text to
             SSL/TLS.
             """
             self.socket = SSL.Connection(ssl_context, self.socket)
@@ -168,8 +163,8 @@ else:
             twisted/internet/tcp.py code has been used as an example.
             """
             self._ssl_closing = True
-            # since SSL_shutdown() doesn't report errors, an empty 
-            # write call is done first, to try to detect if the 
+            # since SSL_shutdown() doesn't report errors, an empty
+            # write call is done first, to try to detect if the
             # connection has gone away
             try:
                 os.write(self.socket.fileno(), '')
@@ -178,7 +173,7 @@ else:
                     return
                 elif err[0] in DISCONNECTED:
                     super(SSLConnection, self).close()
-                    return 
+                    return
                 else:
                     raise
             # see twisted/internet/tcp.py
@@ -188,7 +183,7 @@ else:
             if not (laststate & SSL.RECEIVED_SHUTDOWN):
                 self.socket.set_shutdown(SSL.SENT_SHUTDOWN)
             if done:
-                super(SSLConnection, self).close()            
+                super(SSLConnection, self).close()
 
         def close(self):
             self._ssl_accepting = False
@@ -235,22 +230,22 @@ else:
             channel.  This means the user will have to issue PROT
             before PASV or PORT (default False).
 
-        SSL-specific options:            
+        SSL-specific options:
 
          - (string) certfile:
             the path to the file which contains a certificate to be
-            used to identify the local side of the connection. 
-            This  must always be specified, unless context is provided 
+            used to identify the local side of the connection.
+            This  must always be specified, unless context is provided
             instead.
 
          - (string) keyfile:
             the path to the file containing the private RSA key;
-            can be omittetted if certfile already contains the 
+            can be omittetted if certfile already contains the
             private key (defaults: None).
-            
+
          - (int) protocol:
             specifies which version of the SSL protocol to use when
-            establishing SSL/TLS sessions; clients can then only 
+            establishing SSL/TLS sessions; clients can then only
             connect using the configured protocol (defaults to SSLv23,
             allowing SSLv3 and TLSv1 protocols).
 
@@ -259,7 +254,7 @@ else:
             * SSL.SSLv3_METHOD - allow only SSLv3
             * SSL.SSLv23_METHOD - allow both SSLv3 and TLSv1
             * SSL.TLSv1_METHOD - allow only TLSv1
-            
+
           - (instance) context:
             a SSL Context object previously configured; if specified
             all other parameters will be ignored.
@@ -275,7 +270,7 @@ else:
         ssl_context = None
 
         # overridden attributes
-        proto_cmds = extended_proto_cmds
+        proto_cmds = new_proto_cmds
         dtp_handler = TLS_DTPHandler
 
         def __init__(self, conn, server):
@@ -287,7 +282,7 @@ else:
             self._prot = False
             self.ssl_context = self.get_ssl_context()
 
-        @classmethod    
+        @classmethod
         def get_ssl_context(cls):
             if cls.ssl_context is None:
                 if cls.certfile is None:

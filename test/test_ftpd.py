@@ -911,10 +911,10 @@ class TestFtpCmdsSemantic(unittest.TestCase):
         # Test those commands requiring client to be authenticated.
         expected = "530 Log in with USER and PASS first."
         self.client.sendcmd('rein')
-        for cmd in ftpserver.proto_cmds:
+        for cmd in self.server.handler.proto_cmds:
             cmd = cmd.lower()
             if cmd in ('feat','help','noop','user','pass','stat','syst','quit',
-                       'site', 'site help'):
+                       'site', 'site help', 'pbsz', 'auth', 'prot'):
                 continue
             if cmd in self.arg_cmds:
                 cmd = cmd + ' arg'

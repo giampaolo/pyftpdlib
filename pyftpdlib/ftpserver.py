@@ -154,65 +154,53 @@ __web__     = 'http://code.google.com/p/pyftpdlib/'
 
 
 proto_cmds = {
-    # cmd : (perm, auth,  arg,   path,  help)
-    'ABOR': (None, True,  False, False, 'Syntax: ABOR (abort transfer).'),
-    'ALLO': (None, True,  True,  False, 'Syntax: ALLO <SP> bytes (noop; allocate storage).'),
-    'APPE': ('a',  True,  True,  True,  'Syntax: APPE <SP> file-name (append data to an existent file).'),
-    'CDUP': ('e',  True,  False, True,  'Syntax: CDUP (go to parent directory).'),
-    'CWD' : ('e',  True,  None,  True,  'Syntax: CWD [<SP> dir-name] (change current working directory).'),
-    'DELE': ('d',  True,  True,  True,  'Syntax: DELE <SP> file-name (delete file).'),
-    'EPRT': (None, True,  True,  False, 'Syntax: EPRT <SP> |proto|ip|port| (set server in extended active mode).'),
-    'EPSV': (None, True,  None,  False, 'Syntax: EPSV [<SP> proto/"ALL"] (set server in extended passive mode).'),
-    'FEAT': (None, False, False, False, 'Syntax: FEAT (list all new features supported).'),
-    'HELP': (None, False, None,  False, 'Syntax: HELP [<SP> cmd] (show help).'),
-    'LIST': ('l',  True,  None,  True,  'Syntax: LIST [<SP> path-name] (list files).'),
-    'MDTM': ('l', True,  True,  True,   'Syntax: MDTM [<SP> file-name] (get last modification time).'),
-    'MLSD': ('l',  True,  None,  True,  'Syntax: MLSD [<SP> dir-name] (list files in a machine-processable form)'),
-    'MLST': ('l',  True,  None,  True,  'Syntax: MLST [<SP> path-name] (show a path in a machine-processable form)'),
-    'MODE': (None, True,  True,  False, 'Syntax: MODE <SP> mode (noop; set data transfer mode).'),
-    'MKD' : ('m',  True,  True,  True,  'Syntax: MDK <SP> dir-name (create directory).'),
-    'NLST': ('l',  True,  None,  True,  'Syntax: NLST [<SP> path-name] (list files in a compact form).'),
-    'NOOP': (None, False, False, False, 'Syntax: NOOP (just do nothing).'),
-    'OPTS': (None, True,  True,  False, 'Syntax: OPTS <SP> ftp-command [<SP> option] (specify options for FTP commands)'),
-    'PASS': (None, False, True,  False, 'Syntax: PASS <SP> user-name (set user password).'),
-    'PASV': (None, True,  False, False, 'Syntax: PASV (set server in passive mode).'),
-    'PORT': (None, True,  True,  False, 'Syntax: PORT <sp> h1,h2,h3,h4,p1,p2 (set server in active mode).'),
-    'PWD' : (None, True,  False, False, 'Syntax: PWD (get current working directory).'),
-    'QUIT': (None, False, False, False, 'Syntax: QUIT (quit current session).'),
-    'REIN': (None, True,  False, False, 'Syntax: REIN (reinitialize / flush account).'),
-    'REST': (None, True,  True,  False, 'Syntax: REST <SP> marker (restart file position).'),
-    'RETR': ('r',  True,  True,  True,  'Syntax: RETR <SP> file-name (retrieve a file).'),
-    'RMD' : ('d',  True,  True,  True,  'Syntax: RMD <SP> dir-name (remove directory).'),
-    'RNFR': ('f',  True,  True,  True,  'Syntax: RNFR <SP> file-name (file renaming (source name)).'),
-    'RNTO': (None, True,  True,  True,  'Syntax: RNTO <SP> file-name (file renaming (destination name)).'),
-    'SITE': (None, False, True, False,  'Syntax: SITE <SP> site-command (execute the specified SITE command).'),
-    'SITE HELP' : (None, False, None, False, 'Syntax: SITE HELP [<SP> site-command] (show SITE command help).'),
-    'SIZE': ('l', True,  True,  True,   'Syntax: HELP <SP> file-name (get file size).'),
-    'STAT': ('l',  False, None,  True,  'Syntax: STAT [<SP> path name] (status information [list files]).'),
-    'STOR': ('w',  True,  True,  True,  'Syntax: STOR <SP> file-name (store a file).'),
-    'STOU': ('w',  True,  None,  True,  'Syntax: STOU [<SP> file-name] (store a file with a unique name).'),
-    'STRU': (None, True,  True,  False, 'Syntax: STRU <SP> type (noop; set file structure).'),
-    'SYST': (None, False, False, False, 'Syntax: SYST (get operating system type).'),
-    'TYPE': (None, True,  True,  False, 'Syntax: TYPE <SP> [A | I] (set transfer type).'),
-    'USER': (None, False, True,  False, 'Syntax: USER <SP> user-name (set username).'),
-    'XCUP': ('e',  True,  False, True,  'Syntax: XCUP (obsolete; go to parent directory).'),
-    'XCWD': ('e',  True,  None,  True,  'Syntax: XCWD [<SP> dir-name] (obsolete; change current directory).'),
-    'XMKD': ('m',  True,  True,  True,  'Syntax: XMDK <SP> dir-name (obsolete; create directory).'),
-    'XPWD': (None, True,  False, False, 'Syntax: XPWD (obsolete; get current dir).'),
-    'XRMD': ('d',  True,  True,  True,  'Syntax: XRMD <SP> dir-name (obsolete; remove directory).'),
+    'ABOR' : dict(perm=None, auth=True,  arg=False, fs=False, help='Syntax: ABOR (abort transfer).'),
+    'ALLO' : dict(perm=None, auth=True,  arg=True,  fs=False, help='Syntax: ALLO <SP> bytes (noop; allocate storage).'),
+    'APPE' : dict(perm='a',  auth=True,  arg=True,  fs=True,  help='Syntax: APPE <SP> file-name (append data to an existent file).'),
+    'CDUP' : dict(perm='e',  auth=True,  arg=False, fs=True,  help='Syntax: CDUP (go to parent directory).'),
+    'CWD'  : dict(perm='e',  auth=True,  arg=None,  fs=True,  help='Syntax: CWD [<SP> dir-name] (change current working directory).'),
+    'DELE' : dict(perm='d',  auth=True,  arg=True,  fs=True,  help='Syntax: DELE <SP> file-name (delete file).'),
+    'EPRT' : dict(perm=None, auth=True,  arg=True,  fs=False, help='Syntax: EPRT <SP> |proto|ip|port| (set server in extended active mode).'),
+    'EPSV' : dict(perm=None, auth=True,  arg=None,  fs=False, help='Syntax: EPSV [<SP> proto/"ALL"] (set server in extended passive mode).'),
+    'FEAT' : dict(perm=None, auth=False, arg=False, fs=False, help='Syntax: FEAT (list all new features supported).'),
+    'HELP' : dict(perm=None, auth=False, arg=None,  fs=False, help='Syntax: HELP [<SP> cmd] (show help).'),
+    'LIST' : dict(perm='l',  auth=True,  arg=None,  fs=True,  help='Syntax: LIST [<SP> path-name] (list files).'),
+    'MDTM' : dict(perm='l',  auth=True,  arg=True,  fs=True,  help='Syntax: MDTM [<SP> file-name] (get last modification time).'),
+    'MLSD' : dict(perm='l',  auth=True,  arg=None,  fs=True,  help='Syntax: MLSD [<SP> dir-name] (list files in a machine-processable form)'),
+    'MLST' : dict(perm='l',  auth=True,  arg=None,  fs=True,  help='Syntax: MLST [<SP> path-name] (show a path in a machine-processable form)'),
+    'MODE' : dict(perm=None, auth=True,  arg=True,  fs=False, help='Syntax: MODE <SP> mode (noop; set data transfer mode).'),
+    'MKD'  : dict(perm='m',  auth=True,  arg=True,  fs=True,  help='Syntax: MDK <SP> dir-name (create directory).'),
+    'NLST' : dict(perm='l',  auth=True,  arg=None,  fs=True,  help='Syntax: NLST [<SP> path-name] (list files in a compact form).'),
+    'NOOP' : dict(perm=None, auth=False, arg=False, fs=False, help='Syntax: NOOP (just do nothing).'),
+    'OPTS' : dict(perm=None, auth=True,  arg=True,  fs=False, help='Syntax: OPTS <SP> ftp-command [<SP> option] (specify options for FTP commands)'),
+    'PASS' : dict(perm=None, auth=False, arg=True,  fs=False, help='Syntax: PASS <SP> user-name (set user password).'),
+    'PASV' : dict(perm=None, auth=True,  arg=False, fs=False, help='Syntax: PASV (set server in passive mode).'),
+    'PORT' : dict(perm=None, auth=True,  arg=True,  fs=False, help='Syntax: PORT <sp> h1,h2,h3,h4,p1,p2 (set server in active mode).'),
+    'PWD'  : dict(perm=None, auth=True,  arg=False, fs=False, help='Syntax: PWD (get current working directory).'),
+    'QUIT' : dict(perm=None, auth=False, arg=False, fs=False, help='Syntax: QUIT (quit current session).'),
+    'REIN' : dict(perm=None, auth=True,  arg=False, fs=False, help='Syntax: REIN (reinitialize / flush account).'),
+    'REST' : dict(perm=None, auth=True,  arg=True,  fs=False, help='Syntax: REST <SP> marker (restart file position).'),
+    'RETR' : dict(perm='r',  auth=True,  arg=True,  fs=True,  help='Syntax: RETR <SP> file-name (retrieve a file).'),
+    'RMD'  : dict(perm='d',  auth=True,  arg=True,  fs=True,  help='Syntax: RMD <SP> dir-name (remove directory).'),
+    'RNFR' : dict(perm='f',  auth=True,  arg=True,  fs=True,  help='Syntax: RNFR <SP> file-name (file renaming (source name)).'),
+    'RNTO' : dict(perm=None, auth=True,  arg=True,  fs=True,  help='Syntax: RNTO <SP> file-name (file renaming (destination name)).'),
+    'SITE' : dict(perm=None, auth=False, arg=True, fs=False,  help='Syntax: SITE <SP> site-command (execute the specified SITE command).'),
+    'SITE HELP' : dict(perm=None, auth=False, arg=None, fs=False, help='Syntax: SITE HELP [<SP> site-command] (show SITE command help).'),
+    'SIZE' : dict(perm='l',  auth=True,  arg=True,  fs=True,  help='Syntax: HELP <SP> file-name (get file size).'),
+    'STAT' : dict(perm='l',  auth=False, arg=None,  fs=True,  help='Syntax: STAT [<SP> path name] (status information [list files]).'),
+    'STOR' : dict(perm='w',  auth=True,  arg=True,  fs=True,  help='Syntax: STOR <SP> file-name (store a file).'),
+    'STOU' : dict(perm='w',  auth=True,  arg=None,  fs=True,  help='Syntax: STOU [<SP> file-name] (store a file with a unique name).'),
+    'STRU' : dict(perm=None, auth=True,  arg=True,  fs=False, help='Syntax: STRU <SP> type (noop; set file structure).'),
+    'SYST' : dict(perm=None, auth=False, arg=False, fs=False, help='Syntax: SYST (get operating system type).'),
+    'TYPE' : dict(perm=None, auth=True,  arg=True,  fs=False, help='Syntax: TYPE <SP> [A | I] (set transfer type).'),
+    'USER' : dict(perm=None, auth=False, arg=True,  fs=False, help='Syntax: USER <SP> user-name (set username).'),
+    'XCUP' : dict(perm='e',  auth=True,  arg=False, fs=True,  help='Syntax: XCUP (obsolete; go to parent directory).'),
+    'XCWD' : dict(perm='e',  auth=True,  arg=None,  fs=True,  help='Syntax: XCWD [<SP> dir-name] (obsolete; change current directory).'),
+    'XMKD' : dict(perm='m',  auth=True,  arg=True,  fs=True,  help='Syntax: XMDK <SP> dir-name (obsolete; create directory).'),
+    'XPWD' : dict(perm=None, auth=True,  arg=False, fs=False, help='Syntax: XPWD (obsolete; get current dir).'),
+    'XRMD' : dict(perm='d',  auth=True,  arg=True,  fs=True,  help='Syntax: XRMD <SP> dir-name (obsolete; remove directory).'),
     }
 
-class _CommandProperty:
-    def __init__(self, perm, auth_needed, arg_needed, check_path, help):
-        self.perm = perm
-        self.auth_needed = auth_needed
-        self.arg_needed = arg_needed
-        self.check_path = check_path
-        self.help = help
-
-for cmd, properties in proto_cmds.iteritems():
-    proto_cmds[cmd] = _CommandProperty(*properties)
-del cmd, properties
 
 def _strerror(err):
     """A wrap around os.strerror() which may be not available on all
@@ -1920,15 +1908,15 @@ class FTPHandler(object, asynchat.async_chat):
                 self.respond('500 Command "%s" not understood.' % cmd)
                 return
 
-        if not arg and self.proto_cmds[cmd].arg_needed is True:
+        if not arg and self.proto_cmds[cmd]['arg'] == True:
             self.respond("501 Syntax error: command needs an argument.")
             return
-        if arg and self.proto_cmds[cmd].arg_needed is False:
+        if arg and self.proto_cmds[cmd]['arg'] == False:
             self.respond("501 Syntax error: command does not accept arguments.")
             return
 
         if not self.authenticated:
-            if self.proto_cmds[cmd].auth_needed or (cmd == 'STAT' and arg):
+            if self.proto_cmds[cmd]['auth'] or (cmd == 'STAT' and arg):
                 self.respond("530 Log in with USER and PASS first.")
             else:
                 # call the proper ftp_* method
@@ -1941,7 +1929,7 @@ class FTPHandler(object, asynchat.async_chat):
 
             # for file-system related commands check whether real path
             # destination is valid
-            if self.proto_cmds[cmd].check_path and (cmd != 'STOU'):
+            if self.proto_cmds[cmd]['fs'] and (cmd != 'STOU'):
                 if cmd in ('CWD', 'XCWD'):
                     arg = self.fs.ftp2fs(arg or '/')
                 elif cmd in ('CDUP', 'XCUP'):
@@ -1968,7 +1956,7 @@ class FTPHandler(object, asynchat.async_chat):
                     return
 
             # check permission
-            perm = self.proto_cmds[cmd].perm
+            perm = self.proto_cmds[cmd]['perm']
             if perm is not None and cmd != 'STOU':
                 if not self.authorizer.has_perm(self.username, perm, arg):
                     self.log_fs_cmd(cmd, arg, 550, "insufficient privileges")
@@ -3217,7 +3205,7 @@ class FTPHandler(object, asynchat.async_chat):
         if line:
             line = line.upper()
             if line in self.proto_cmds:
-                self.respond("214 %s" % self.proto_cmds[line].help)
+                self.respond("214 %s" % self.proto_cmds[line]['help'])
             else:
                 self.respond("501 Unrecognized command.")
         else:
@@ -3248,7 +3236,7 @@ class FTPHandler(object, asynchat.async_chat):
         if line:
             line = line.upper()
             if line in self.proto_cmds:
-                self.respond("214 %s" % self.proto_cmds[line].help)
+                self.respond("214 %s" % self.proto_cmds[line]['help'])
             else:
                 self.respond("501 Unrecognized SITE command.")
         else:
