@@ -52,7 +52,7 @@ import warnings
 from errno import EWOULDBLOCK, ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, \
                   EPIPE, EBADF, EINTR, ENOBUFS
 
-from pyftpdlib.ftpserver import *
+from pyftpdlib.ftpserver import FTPHandler, DTPHandler, proto_cmds
 
 __all__ = []
 
@@ -62,6 +62,8 @@ try:
 except ImportError:
     pass
 else:
+    __all__.extend(['SSLConnection', 'TLS_FTPHandler', 'TLS_DTPHandler'])
+
     DISCONNECTED = frozenset((ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED,
                               EPIPE, EBADF))
 
@@ -370,6 +372,4 @@ else:
             else:
                 self.respond("502 Unrecognized PROT type (use C or P).")
 
-
-    __all__.extend(['SSLConnection', 'TLS_FTPHandler', 'TLS_DTPHandler'])
 
