@@ -20,7 +20,7 @@ Enhancements:
    alone anonymous FTP server when running pyftpdlib with python's -m option.
 
  * Issue #125: FTPHandler class now provides two new methods to standardize
-   filesystem commands and transfers logging.
+   commands and transfers logging: log_cmd() and log_transfer().
 
  * Issue #127: added FTPHandler.masquerade_address_map option which allows you
    to define multiple 1 to 1 mappings in case you run a FTP server with
@@ -105,7 +105,7 @@ Major API changes since 0.5.2
      - on_incomplete_file_received()
      - on_login()
      - on_logout()
-     - log_fs_cmd()
+     - log_cmd()
      - log_transfer()
    * proto_cmds class attribute has been added.  The FTPHandler class no longer
      relies on "ftpserver.proto_cmds" global dictionary but on

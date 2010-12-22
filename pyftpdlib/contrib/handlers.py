@@ -208,6 +208,7 @@ else:
             # RFC-4217, chapter 10.2 expects us to return 522 over the
             # command channel.
             self.cmd_channel.respond("522 SSL handshake failed.")
+            self.cmd_channel.log_cmd("PROT", "P", 522, "SSL handshake failed.")
             self.close()
 
         def close(self):
@@ -311,11 +312,15 @@ else:
         def process_command(self, cmd, *args, **kwargs):
             if cmd in ('USER', 'PASS'):
                 if self.tls_control_required and not self._ssl_established:
-                    self.respond("550 SSL/TLS required on the control channel.")
+                    msg = "SSL/TLS required on the control channel."
+                    self.respond("550 " + msg)
+                    self.log_cmd(cmd, args[0], 550, msg)
                     return
             elif cmd in ('PASV', 'EPSV', 'PORT', 'EPRT'):
                 if self.tls_data_required and not self._prot:
-                    self.respond("550 SSL/TLS required on the data channel.")
+                    msg = "SSL/TLS required on the data channel."
+                    self.respond("550 " + msg)
+                    self.log_cmd(cmd, args[0], 550, msg)
                     return
             FTPHandler.process_command(self, cmd, *args, **kwargs)
 
