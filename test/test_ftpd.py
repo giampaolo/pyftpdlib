@@ -190,7 +190,7 @@ class FTPd(threading.Thread):
         status.append('%s:%s' % self.server.socket.getsockname()[:2])
         return '<%s at %#x>' % (' '.join(status), id(self))
 
-    def start(self, timeout=0.001, use_poll=False, map=None):
+    def start(self, timeout=0.001, use_poll=False):
         """Start serving until an explicit stop() request.
         Polls for shutdown every 'timeout' seconds.
         """
@@ -201,7 +201,6 @@ class FTPd(threading.Thread):
             FTPd.__init__(self, self.server.socket.getsockname(), self.handler)
         self.__timeout = timeout
         self.__use_poll = use_poll
-        self.__map = map
         threading.Thread.start(self)
         self.__flag.wait()
 
@@ -211,7 +210,7 @@ class FTPd(threading.Thread):
         while self.__serving and asyncore.socket_map:
             self.__lock.acquire()
             self.server.serve_forever(timeout=self.__timeout, count=1,
-                                      use_poll=self.__use_poll, map=self.__map)
+                                      use_poll=self.__use_poll)
             self.__lock.release()
         self.server.close_all()
 

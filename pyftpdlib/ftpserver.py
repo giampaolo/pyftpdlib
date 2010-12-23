@@ -2363,11 +2363,12 @@ class FTPHandler(object, asynchat.async_chat):
             self.data_channel = None
 
         # make sure we are not hitting the max connections limit
-        if self.server.max_cons and len(self._map) >= self.server.max_cons:
-            msg = "Too many connections. Can't open data channel."
-            self.respond("425 %s" %msg)
-            self.log(msg)
-            return
+        if self.server.max_cons:
+            if len(asyncore.socket_map) >= self.server.max_cons:
+                msg = "Too many connections. Can't open data channel."
+                self.respond("425 %s" %msg)
+                self.log(msg)
+                return
 
         # open data channel
         self._dtp_connector = self.active_dtp(ip, port, self)
@@ -2387,11 +2388,12 @@ class FTPHandler(object, asynchat.async_chat):
             self.data_channel = None
 
         # make sure we are not hitting the max connections limit
-        if self.server.max_cons and len(self._map) >= self.server.max_cons:
-            msg = "Too many connections. Can't open data channel."
-            self.respond("425 %s" %msg)
-            self.log(msg)
-            return
+        if self.server.max_cons:
+            if len(asyncore.socket_map) >= self.server.max_cons:
+                msg = "Too many connections. Can't open data channel."
+                self.respond("425 %s" %msg)
+                self.log(msg)
+                return
 
         # open data channel
         self._dtp_acceptor = self.passive_dtp(self, extmode)
@@ -3389,7 +3391,7 @@ class FTPServer(object, asyncore.dispatcher):
             return
         asyncore.dispatcher.set_reuse_addr(self)
 
-    def serve_forever(self, timeout=1.0, use_poll=False, map=None, count=None):
+    def serve_forever(self, timeout=1.0, use_poll=False, count=None):
         """A wrap around asyncore.loop(); starts the asyncore polling
         loop including running the scheduler.
         The arguments are the same expected by original asyncore.loop()
@@ -3401,14 +3403,9 @@ class FTPServer(object, asyncore.dispatcher):
          - (bool) use_poll: when True use poll() instead of select()
            (default False).
 
-         - (dict) map: a dictionary whose items are the channels to
-           watch.
-
          - (int) count: how many times the polling loop gets called
            before returning.  If None loops forever (default None).
         """
-        if map is None:
-            map = asyncore.socket_map
         if use_poll and hasattr(asyncore.select, 'poll'):
             poll_fun = asyncore.poll2
         else:
@@ -3417,18 +3414,16 @@ class FTPServer(object, asyncore.dispatcher):
         if count is None:
             log("Serving FTP on %s:%s" % self.socket.getsockname()[:2])
             try:
-                while map or _tasks:
-                    if map:
-                        poll_fun(timeout, map)
-                    if _tasks:
-                        _scheduler()
+                while asyncore.socket_map or _tasks:
+                    poll_fun(timeout)
+                    _scheduler()
             except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
                 log("Shutting down FTP server.")
                 self.close_all()
         else:
-            while (map or _tasks) and count > 0:
-                if map:
-                    poll_fun(timeout, map)
+            while (asyncore.socket_map or _tasks) and count > 0:
+                if asyncore.socket_map:
+                    poll_fun(timeout)
                 if _tasks:
                     _scheduler()
                 count = count - 1
@@ -3468,7 +3463,7 @@ class FTPServer(object, asyncore.dispatcher):
         # should contain.  When we're running out of such limit we'll
         # use the last available channel for sending a 421 response
         # to the client before disconnecting it.
-        if self.max_cons and (len(self._map) > self.max_cons):
+        if self.max_cons and (len(asyncore.socket_map) > self.max_cons):
             handler.handle_max_cons()
             return
 
@@ -3493,13 +3488,9 @@ class FTPServer(object, asyncore.dispatcher):
             logerror(traceback.format_exc())
         self.close()
 
-    def close_all(self, map=None, ignore_all=False):
+    def close_all(self, ignore_all=False):
         """Stop serving and also disconnects all currently connected
         clients.
-
-         - (dict) map:
-            A dictionary whose items are the channels to close.
-            If map is omitted, the default asyncore.socket_map is used.
 
          - (bool) ignore_all:
             having it set to False results in raising exception in case
@@ -3513,9 +3504,7 @@ class FTPServer(object, asyncore.dispatcher):
         all opened channels and calling close() method for each one
         of them only closed sockets generating memory leaks.
         """
-        if map is None:
-            map = self._map
-        values = map.values()
+        values = asyncore.socket_map.values()
         # We sort the list so that we close all FTP handler instances
         # first since FTPHandler.close() has the peculiarity of
         # automatically closing all its children (DTPHandler, ActiveDTP
@@ -3537,7 +3526,7 @@ class FTPServer(object, asyncore.dispatcher):
             except:
                 if not ignore_all:
                     raise
-        map.clear()
+        asyncore.socket_map.clear()
 
         for x in _tasks:
             try:
