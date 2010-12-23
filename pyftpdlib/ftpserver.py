@@ -810,6 +810,7 @@ class DTPHandler(object, asynchat.async_chat):
         self.transfer_finished = False
         self.tot_bytes_sent = 0
         self.tot_bytes_received = 0
+        self.cmd = None
         self._data_wrapper = lambda x: x
         self._lastdata = 0
         self._closed = False
@@ -849,13 +850,14 @@ class DTPHandler(object, asynchat.async_chat):
 
         return chunk.replace('\r\n', os.linesep)
 
-    def enable_receiving(self, type):
+    def enable_receiving(self, type, cmd):
         """Enable receiving of data over the channel. Depending on the
         TYPE currently in use it creates an appropriate wrapper for the
         incoming data.
 
          - (str) type: current transfer type, 'a' (ASCII) or 'i' (binary).
         """
+        self.cmd = cmd
         if type == 'a':
             if os.linesep == '\r\n':
                 self._data_wrapper = lambda x: x
@@ -1025,7 +1027,7 @@ class DTPHandler(object, asynchat.async_chat):
             if self.file_obj is not None:
                 filename = self.file_obj.name
                 elapsed_time = round(self.get_elapsed_time(), 3)
-                self.cmd_channel.log_transfer(receive=self.receive,
+                self.cmd_channel.log_transfer(cmd=self.cmd,
                                               filename=self.file_obj.name,
                                               completed=self.transfer_finished,
                                               elapsed=elapsed_time,
@@ -2143,8 +2145,9 @@ class FTPHandler(object, asynchat.async_chat):
 
         # check for data to send
         if self._out_dtp_queue is not None:
-            data, isproducer, file = self._out_dtp_queue
+            data, isproducer, file, cmd = self._out_dtp_queue
             self._out_dtp_queue = None
+            self.data_channel.cmd = cmd
             if file:
                 self.data_channel.file_obj = file
             try:
@@ -2160,9 +2163,10 @@ class FTPHandler(object, asynchat.async_chat):
 
         # check for data to receive
         elif self._in_dtp_queue is not None:
-            self.data_channel.file_obj = self._in_dtp_queue
-            self.data_channel.enable_receiving(self._current_type)
+            file, cmd = self._in_dtp_queue
+            self.data_channel.file_obj = file
             self._in_dtp_queue = None
+            self.data_channel.enable_receiving(self._current_type, cmd)
 
     def _on_dtp_close(self):
         """Called every time the data channel is closed."""
@@ -2181,7 +2185,7 @@ class FTPHandler(object, asynchat.async_chat):
         self.push(resp + '\r\n')
         self.logline('==> %s' % resp)
 
-    def push_dtp_data(self, data, isproducer=False, file=None):
+    def push_dtp_data(self, data, isproducer=False, file=None, cmd=None):
         """Pushes data into the data channel.
 
         It is usually called for those commands requiring some data to
@@ -2205,13 +2209,14 @@ class FTPHandler(object, asynchat.async_chat):
                 else:
                     self.data_channel.push_with_producer(data)
                 if self.data_channel is not None:
+                    self.data_channel.cmd = cmd
                     self.data_channel.close_when_done()
             except:
                 # dealing with this exception is up to DTP (see bug #84)
                 self.data_channel.handle_error()
         else:
             self.respond("150 File status okay. About to open data connection.")
-            self._out_dtp_queue = (data, isproducer, file)
+            self._out_dtp_queue = (data, isproducer, file, cmd)
 
     def flush_account(self):
         """Flush account information by clearing attributes that need
@@ -2262,12 +2267,22 @@ class FTPHandler(object, asynchat.async_chat):
     def log_cmd(self, cmd, arg, respcode, respstr):
         """Log commands and responses in a standardized format.
 
-        cmd/arg represent the string sent by client, respcode/respstr
-        the response as being sent by server.
+         - (str) cmd:
+            the command sent by client
 
-        For filesystem commands such as DELE, MKD, etc. "arg" argument
-        is already represented as an absolute real filesystem path like
-        "/home/user/file.ext".
+         - (str) arg:
+            the command argument sent by client.
+            For filesystem commands such as DELE, MKD, etc. this is
+            already represented as an absolute real filesystem path
+            like "/home/user/file.ext".
+
+         - (int) respcode:
+            the response code as being sent by server. Response codes
+            starting with 4xx or 5xx are returned if the command has
+            been rejected for some reason.
+
+         - (str) respstr:
+            the response string as being sent by server.
 
         By default only DELE, RMD, RNFR, RNTO, MKD commands are logged
         and the output is redirected to self.log method (the main logger).
@@ -2276,15 +2291,32 @@ class FTPHandler(object, asynchat.async_chat):
         further commands.
         """
         if cmd in ("DELE", "RMD", "RNFR", "RNTO", "MKD"):
-            line = '"%s" %s' %(' '.join([cmd, arg]).strip(), respcode)
+            line = '"%s" %s' % (' '.join([cmd, arg]).strip(), respcode)
             self.log(line)
 
-    def log_transfer(self, receive, filename, completed, elapsed, bytes):
-        """Log all transfers in a standardized format."""
-        action = receive and "receiving" or "sending"
-        outcome = completed and "completed" or "aborted"
-        self.log("Transfer %s (%s) file=%s bytes=%s seconds=%s" \
-                 % (outcome, action, repr(filename), bytes, elapsed))
+    def log_transfer(self, cmd, filename, completed, elapsed, bytes):
+        """Log all file transfers in a standardized format.
+
+         - (str) cmd:
+            the original command who caused the tranfer. Can be either
+            "RETR" (client download) or "STOR", "STOU", "APPE" (client
+            upload).
+
+         - (str) filename:
+            the absolutized name of the file on disk.
+
+         - (bool) completed:
+            True if the file has been entirely sent, else False.
+
+         - (float) elapsed:
+            transfer elapsed time in seconds.
+
+         - (int) bytes:
+            number of bytes transmitted.
+        """
+        line = '"%s %s" completed=%s bytes=%s seconds=%s' % \
+                (cmd, filename, completed and 1 or 0, bytes, elapsed)
+        self.log(line)
 
 
     # --- connection
@@ -2521,7 +2553,7 @@ class FTPHandler(object, asynchat.async_chat):
             self.respond('550 %s.' % why)
         else:
             producer = BufferedIteratorProducer(iterator)
-            self.push_dtp_data(producer, isproducer=True)
+            self.push_dtp_data(producer, isproducer=True, cmd="LIST")
 
     def ftp_NLST(self, path):
         """Return a list of files in the specified directory in a
@@ -2542,7 +2574,7 @@ class FTPHandler(object, asynchat.async_chat):
             if listing:
                 listing.sort()
                 data = '\r\n'.join(listing) + '\r\n'
-            self.push_dtp_data(data)
+            self.push_dtp_data(data, cmd="NLST")
 
         # --- MLST and MLSD commands
 
@@ -2593,7 +2625,7 @@ class FTPHandler(object, asynchat.async_chat):
             iterator = self.fs.format_mlsx(path, listing, perms,
                        self._current_facts)
             producer = BufferedIteratorProducer(iterator)
-            self.push_dtp_data(producer, isproducer=True)
+            self.push_dtp_data(producer, isproducer=True, cmd="MLSD")
 
     def ftp_RETR(self, file):
         """Retrieve the specified file (transfer from the server to the
@@ -2629,7 +2661,7 @@ class FTPHandler(object, asynchat.async_chat):
                 self.respond('554 %s' %why)
                 return
         producer = FileProducer(fd, self._current_type)
-        self.push_dtp_data(producer, isproducer=True, file=fd)
+        self.push_dtp_data(producer, isproducer=True, file=fd, cmd="RETR")
 
     def ftp_STOR(self, file, mode='w'):
         """Store a file (transfer from the client to the server)."""
@@ -2678,11 +2710,11 @@ class FTPHandler(object, asynchat.async_chat):
             resp = "Data connection already open. Transfer starting."
             self.respond("125" + resp)
             self.data_channel.file_obj = fd
-            self.data_channel.enable_receiving(self._current_type)
+            self.data_channel.enable_receiving(self._current_type, cmd)
         else:
             resp = "File status okay. About to open data connection."
             self.respond("150 " + resp)
-            self._in_dtp_queue = fd
+            self._in_dtp_queue = (fd, cmd)
 
 
     def ftp_STOU(self, line):
@@ -2736,10 +2768,10 @@ class FTPHandler(object, asynchat.async_chat):
         if self.data_channel is not None:
             self.respond("125 FILE: %s" % filename)
             self.data_channel.file_obj = fd
-            self.data_channel.enable_receiving(self._current_type)
+            self.data_channel.enable_receiving(self._current_type, "STOU")
         else:
             self.respond("150 FILE: %s" % filename)
-            self._in_dtp_queue = fd
+            self._in_dtp_queue = (fd, "STOU")
 
     def ftp_APPE(self, file):
         """Append data to an existing file on the server."""

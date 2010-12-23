@@ -19,7 +19,8 @@ Enhancements:
  * Issue #124: pyftpdlib now accepts command line options to configure a stand
    alone anonymous FTP server when running pyftpdlib with python's -m option.
 
- * Issue #125: FTPHandler class now provides two new methods to standardize
+ * Issue #125: logs are now provided in a standardized format parsable by log
+   analyzers. FTPHandler class provides two new methods to standardize both
    commands and transfers logging: log_cmd() and log_transfer().
 
  * Issue #127: added FTPHandler.masquerade_address_map option which allows you
