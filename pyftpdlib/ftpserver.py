@@ -1029,6 +1029,7 @@ class DTPHandler(object, asynchat.async_chat):
                 elapsed_time = round(self.get_elapsed_time(), 3)
                 self.cmd_channel.log_transfer(cmd=self.cmd,
                                               filename=self.file_obj.name,
+                                              receive=self.receive,
                                               completed=self.transfer_finished,
                                               elapsed=elapsed_time,
                                               bytes=self.get_transmitted_bytes())
@@ -2294,16 +2295,18 @@ class FTPHandler(object, asynchat.async_chat):
             line = '"%s" %s' % (' '.join([cmd, arg]).strip(), respcode)
             self.log(line)
 
-    def log_transfer(self, cmd, filename, completed, elapsed, bytes):
+    def log_transfer(self, cmd, filename, receive, completed, elapsed, bytes):
         """Log all file transfers in a standardized format.
 
          - (str) cmd:
-            the original command who caused the tranfer. Can be either
-            "RETR" (client download) or "STOR", "STOU", "APPE" (client
-            upload).
+            the original command who caused the tranfer.
 
          - (str) filename:
             the absolutized name of the file on disk.
+
+         - (bool) receive:
+            True if the transfer was used for client uploading (STOR,
+            STOU, APPE), False otherwise (RETR).
 
          - (bool) completed:
             True if the file has been entirely sent, else False.
