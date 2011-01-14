@@ -183,7 +183,7 @@ proto_cmds = {
     'RETR' : dict(perm='r',  auth=True,  arg=True,  help='Syntax: RETR <SP> file-name (retrieve a file).'),
     'RMD'  : dict(perm='d',  auth=True,  arg=True,  help='Syntax: RMD <SP> dir-name (remove directory).'),
     'RNFR' : dict(perm='f',  auth=True,  arg=True,  help='Syntax: RNFR <SP> file-name (file renaming (source name)).'),
-    'RNTO' : dict(perm=None, auth=True,  arg=True,  help='Syntax: RNTO <SP> file-name (file renaming (destination name)).'),
+    'RNTO' : dict(perm='f',  auth=True,  arg=True,  help='Syntax: RNTO <SP> file-name (file renaming (destination name)).'),
     'SITE' : dict(perm=None, auth=False, arg=True,  help='Syntax: SITE <SP> site-command (execute the specified SITE command).'),
     'SITE HELP' : dict(perm=None, auth=False, arg=None, help='Syntax: SITE HELP [<SP> site-command] (show SITE command help).'),
     'SIZE' : dict(perm='l',  auth=True,  arg=True,  help='Syntax: HELP <SP> file-name (get file size).'),

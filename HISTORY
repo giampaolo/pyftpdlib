@@ -81,6 +81,8 @@ Bugfixes:
  * Issue #146: SIZE and MDTM commands are now rejected unless the "l" permission
    has been specified for the user.
 
+ * Issue #150: path traversal bug: it is possible to move/rename a file outside
+   of the user home directory.
 
 Major API changes since 0.5.2
 
