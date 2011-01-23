@@ -1360,7 +1360,7 @@ class TestFtpStoreData(unittest.TestCase):
         # socket.error (Windows) or EOFError (Linux) exception is supposed
         # to be raised in such a case.
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
-        
+
     def test_stor_empty_file(self):
         self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
         self.client.quit()
@@ -1454,7 +1454,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
         self.dummyfile.seek(0)
         self.assertEqual(hash(data), hash (self.dummyfile.read()))
-        
+
     def test_retr_empty_file(self):
         self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
         self.dummyfile.seek(0)

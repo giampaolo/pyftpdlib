@@ -11,8 +11,8 @@ __all__ = ['UnixFilesystem']
 class UnixFilesystem(AbstractedFS):
     """Represents the real UNIX filesystem.
 
-    Differently from AbstractedFS the client will login into 
-    /home/<username> and will be able to escape its home directory 
+    Differently from AbstractedFS the client will login into
+    /home/<username> and will be able to escape its home directory
     and navigate the real filesystem.
     """
 
