@@ -3,7 +3,7 @@
 #
 #  pyftpdlib is released under the MIT license, reproduced below:
 #  ======================================================================
-#  Copyright (C) 2007-2010 Giampaolo Rodola' <g.rodola@gmail.com>
+#  Copyright (C) 2007-2011 Giampaolo Rodola' <g.rodola@gmail.com>
 #
 #                         All Rights Reserved
 #
@@ -148,7 +148,7 @@ __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer
 
 __pname__   = 'Python FTP server library (pyftpdlib)'
 __ver__     = '0.6.0'
-__date__    = 'XXXX-XX-XX'
+__date__    = '2011-01-24'
 __author__  = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__     = 'http://code.google.com/p/pyftpdlib/'
 
@@ -2074,8 +2074,7 @@ class FTPHandler(object, asynchat.async_chat):
             if self.remote_ip in self.server.ip_map:
                 self.server.ip_map.remove(self.remote_ip)
 
-            if self.fs is not None:
-                self.fs.cmd_channel = None  # XXX - temporary
+            self.fs.cmd_channel = None
             self.log("Disconnected.")
 
     def _shutdown_connecting_dtp(self):

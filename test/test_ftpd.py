@@ -2,7 +2,7 @@
 # $Id$
 
 #  ======================================================================
-#  Copyright (C) 2007-2009 Giampaolo Rodola' <g.rodola@gmail.com>
+#  Copyright (C) 2007-2011 Giampaolo Rodola' <g.rodola@gmail.com>
 #
 #                         All Rights Reserved
 #
@@ -35,15 +35,14 @@
 # -----------------------------------------------------------
 #  System                          | Python version
 # -----------------------------------------------------------
-#  Linux Ubuntu 2.6.20-15          | 2.4, 2.5
+#  Linux Ubuntu 2.6.20-15          | 2.4, 2.5, 2.6, 2.7
 #  Linux Kubuntu 8.04 32 & 64 bits | 2.5.2
 #  Windows XP prof SP3             | 2.4, 2.5, 2.6.1
-#  Windows Vista Ultimate 64 bit   | 2.5.1
-#  Windows Vista Business 32 bit   | 2.5.1
+#  Windows Vista Ultimate 64 bit   | 2.6, 2.7
 #  Windows Server 2008 64bit       | 2.5.1
 #  Windows Mobile 6.1              | PythonCE 2.5
-#  OS X 10.4.10                    | 2.4, 2.5
-#  FreeBSD 7.0                     | 2.4, 2.5
+#  OS X 10.4.10                    | 2.4, 2.5, 2.7
+#  FreeBSD 7.0                     | 2.4, 2.5, 2.7
 # -----------------------------------------------------------
 
 
