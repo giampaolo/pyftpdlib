@@ -3557,7 +3557,7 @@ def main():
     usage = "python -m pyftpdlib.ftpserver [options]"
     parser = optparse.OptionParser(usage=usage, description=main.__doc__,
                                    formatter=CustomizedOptionFormatter())
-    parser.add_option('-i', '--interface', default='', metavar="ADDRESS",
+    parser.add_option('-i', '--interface', default='0.0.0.0', metavar="ADDRESS",
                       help="specify the interface to run on (default all "
                            "interfaces)")
     parser.add_option('-p', '--port', type="int", default=21, metavar="PORT",
