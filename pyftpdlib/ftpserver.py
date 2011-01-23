@@ -2074,7 +2074,8 @@ class FTPHandler(object, asynchat.async_chat):
             if self.remote_ip in self.server.ip_map:
                 self.server.ip_map.remove(self.remote_ip)
 
-            self.fs.cmd_channel = None
+            if self.fs is not None:
+                self.fs.cmd_channel = None
             self.log("Disconnected.")
 
     def _shutdown_connecting_dtp(self):
