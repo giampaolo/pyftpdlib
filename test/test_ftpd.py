@@ -1226,7 +1226,7 @@ class TestFtpStoreData(unittest.TestCase):
             sock.close()
             conn.close()
             # transfer finished, a 226 response is expected
-            self.client.voidresp()
+            self.assertEqual('226', self.client.voidresp()[:3])
             self.client.retrbinary('retr ' + filename, self.dummy_recvfile.write)
             self.dummy_recvfile.seek(0)
             self.assertEqual(hash(data), hash (self.dummy_recvfile.read()))
@@ -1314,8 +1314,9 @@ class TestFtpStoreData(unittest.TestCase):
                 break
 
         conn.close()
-        # transfer wasn't finished yet so we expect a 426 response
-        self.client.voidresp()
+        # transfer wasn't finished yet but server can't know this,
+        # hence expect a 226 response
+        self.assertEqual('226', self.client.voidresp()[:3])
 
         # resuming transfer by using a marker value greater than the
         # file size stored on the server should result in an error
@@ -1360,7 +1361,7 @@ class TestFtpStoreData(unittest.TestCase):
         conn.sendall('abcde12345' * 50000)
         conn.close()
         # expect the response (transfer ok)
-        self.client.voidresp()
+        self.assertEqual('226', self.client.voidresp()[:3])
         # Make sure client has been disconnected.
         # socket.error (Windows) or EOFError (Linux) exception is supposed
         # to be raised in such a case.
@@ -1453,7 +1454,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         conn.close()
 
         # transfer wasn't finished yet so we expect a 426 response
-        self.assertRaises(ftplib.error_temp, self.client.voidresp)
+        self.assertEqual(self.client.getline()[:3], "426")
 
         # resuming transfer by using a marker value greater than the
         # file size stored on the server should result in an error
@@ -1696,7 +1697,7 @@ class TestFtpAbort(unittest.TestCase):
             self.client.putcmd('ABOR')
 
             # transfer isn't finished yet so ftpd should respond with 426
-            self.assertRaises(ftplib.error_temp, self.client.voidresp)
+            self.assertEqual(self.client.getline()[:3], "426")
 
             # transfer successfully aborted, so should now respond with a 226
             self.assertEqual('226', self.client.voidresp()[:3])
@@ -2304,8 +2305,7 @@ class TestCallbacks(unittest.TestCase):
             if bytes_recv >= 524288 or not chunk:
                 break
         conn.close()
-        # 426 expected here
-        self.assertRaises(ftplib.error_temp, self.client.voidresp)
+        self.assertEqual(self.client.getline()[:3], "426")
 
         # shut down the server to avoid race conditions
         self.tearDown()
