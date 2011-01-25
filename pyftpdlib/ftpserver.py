@@ -2713,7 +2713,7 @@ class FTPHandler(object, asynchat.async_chat):
 
         if self.data_channel is not None:
             resp = "Data connection already open. Transfer starting."
-            self.respond("125" + resp)
+            self.respond("125 " + resp)
             self.data_channel.file_obj = fd
             self.data_channel.enable_receiving(self._current_type, cmd)
         else:
