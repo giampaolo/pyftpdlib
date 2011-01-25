@@ -228,6 +228,12 @@ class FTPd(threading.Thread):
 class TestAbstractedFS(unittest.TestCase):
     """Test for conversion utility methods of AbstractedFS class."""
 
+    def setUp(self):
+        if os.path.isfile(TESTFN):
+            os.remove(TESTFN)
+
+    tearDown = setUp
+
     def test_ftpnorm(self):
         # Tests for ftpnorm method.
         ae = self.assertEquals
@@ -1433,11 +1439,19 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.file.write(data)
         self.file.close()
 
+        received_bytes = 0
         self.client.voidcmd('TYPE I')
         conn = self.client.transfercmd('retr ' + TESTFN)
-        chunk = conn.recv(len(data) / 2)
-        self.dummyfile.write(chunk)
+        while 1:
+            chunk = conn.recv(8192)
+            if not chunk:
+                break
+            self.dummyfile.write(chunk)
+            received_bytes += len(chunk)
+            if received_bytes >= len(data) / 2:
+                break
         conn.close()
+
         # transfer wasn't finished yet so we expect a 426 response
         self.assertRaises(ftplib.error_temp, self.client.voidresp)
 
@@ -1449,7 +1463,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'retr ' + TESTFN)
 
         # test resume
-        self.client.sendcmd('rest %s' % len(chunk))
+        self.client.sendcmd('rest %s' % received_bytes)
         self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
         self.dummyfile.seek(0)
         self.assertEqual(hash(data), hash (self.dummyfile.read()))
