@@ -2292,7 +2292,7 @@ class FTPHandler(object, asynchat.async_chat):
         further commands.
         """
         if cmd in ("DELE", "RMD", "RNFR", "RNTO", "MKD"):
-            line = '"%s" %s' % (' '.join([cmd, arg]).strip(), respcode)
+            line = '"%s" %s' % (' '.join([cmd, str(arg)]).strip(), respcode)
             self.log(line)
 
     def log_transfer(self, cmd, filename, receive, completed, elapsed, bytes):
@@ -2713,7 +2713,7 @@ class FTPHandler(object, asynchat.async_chat):
 
         if self.data_channel is not None:
             resp = "Data connection already open. Transfer starting."
-            self.respond("125" + resp)
+            self.respond("125 " + resp)
             self.data_channel.file_obj = fd
             self.data_channel.enable_receiving(self._current_type, cmd)
         else:
@@ -3607,4 +3607,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
