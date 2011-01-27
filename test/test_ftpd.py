@@ -173,6 +173,12 @@ class FTPd(threading.Thread):
 
         if not verbose:
             ftpserver.log = ftpserver.logline = lambda x: x
+
+        # this makes the threaded server raise an actual exception
+        # instead of just logging its traceback
+        def logerror(msg):
+            raise
+        ftpserver.logerror = logerror
         authorizer = ftpserver.DummyAuthorizer()
         authorizer.add_user(USER, PASSWD, HOME, perm='elradfmw')  # full perms
         authorizer.add_anonymous(HOME)
