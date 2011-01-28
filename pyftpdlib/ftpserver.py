@@ -313,6 +313,9 @@ class Error(Exception):
 class AuthorizerError(Error):
     """Base class for authorizer exceptions."""
 
+class _FileReadWriteError(OSError):
+    """Exception raised when reading or writing a file during a transfer."""
+
 
 # --- loggers
 
@@ -929,11 +932,10 @@ class DTPHandler(object, asynchat.async_chat):
                 self.transfer_finished = True
                 #self.close()  # <-- asyncore.recv() already do that...
                 return
-            # while we're writing on the file an exception could occur
-            # in case  that filesystem gets full;  if this happens we
-            # let handle_error() method handle this exception, providing
-            # a detailed error message.
-            self.file_obj.write(self._data_wrapper(chunk))
+            try:
+                self.file_obj.write(self._data_wrapper(chunk))
+            except OSError, err:
+                raise _FileReadWriteError(err)
 
     def readable(self):
         """Predicate for inclusion in the readable for select()."""
@@ -984,8 +986,8 @@ class DTPHandler(object, asynchat.async_chat):
                 error = str(err[1])
         # an error could occur in case we fail reading / writing
         # from / to file (e.g. file system gets full)
-        except EnvironmentError, err:
-            error = _strerror(err)
+        except _FileReadWriteError, err:
+            error = _strerror(err[0])
         except:
             # some other exception occurred;  we don't want to provide
             # confidential error messages
@@ -1125,6 +1127,7 @@ class ThrottledDTPHandler(DTPHandler):
 
 # --- producers
 
+
 class FileProducer(object):
     """Producer wrapper for file[-like] objects."""
 
@@ -1152,7 +1155,10 @@ class FileProducer(object):
         """Attempt a chunk of data of size self.buffer_size."""
         if self.done:
             return ''
-        data = self._data_wrapper(self.file.read(self.buffer_size))
+        try:
+            data = self._data_wrapper(self.file.read(self.buffer_size))
+        except OSError, err:
+            raise _FileReadWriteError(err)
         if not data:
             self.done = True
             if not self.file.closed:
