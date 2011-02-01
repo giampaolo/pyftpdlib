@@ -19,7 +19,7 @@ class UnixFilesystem(AbstractedFS):
     def __init__(self, root, cmd_channel):
         AbstractedFS.__init__(self, root, cmd_channel)
         # initial cwd was set to "/" to emulate a chroot jail
-        self._cwd = root
+        self.cwd = root
 
     def ftp2fs(self, ftppath):
         return self.ftpnorm(ftppath)

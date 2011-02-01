@@ -231,6 +231,18 @@ def _scheduler():
             if not call.cancelled:
                 call.cancel()
 
+# dirty hack to support property.setter on python < 2.6
+if not hasattr(property, "setter"):
+    class property(property):
+        def setter(self, value):
+            cls_ns = sys._getframe(1).f_locals
+            for k, v in cls_ns.iteritems():
+                if v == self:
+                    name = k
+                    break
+            cls_ns[name] = property(self.fget, value, self.fdel, self.__doc__)
+            return cls_ns[name]
+
 
 class CallLater(object):
     """Calls a function at a later time.
@@ -1228,6 +1240,14 @@ class AbstractedFS(object):
     def cwd(self):
         """The user current working directory."""
         return self._cwd
+
+    @root.setter
+    def root(self, path):
+        self._root = path
+
+    @cwd.setter
+    def cwd(self, path):
+        self._cwd = path
 
     # --- Pathname / conversion utilities
 

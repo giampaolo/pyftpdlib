@@ -4,6 +4,19 @@ Bug tracker at http://code.google.com/p/pyftpdlib/issues/list
 History
 =======
 
+Version: 0.6.1 - Date: XXXX-XX-XX
+---------------------------------
+
+Enhancements:
+
+ * Issue #155: AbstractedFS "root" and "cwd" are no longer read-only properties
+   but can be set via setattr().
+
+Major API changes since 0.6.0
+
+ * AbstractedFS root and cwd properties can now be set via setattr().
+
+
 Version: 0.6.0 - Date: 2010-01-24
 ---------------------------------
 
