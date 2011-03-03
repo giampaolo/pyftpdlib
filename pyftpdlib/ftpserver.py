@@ -831,6 +831,7 @@ class DTPHandler(object, asynchat.async_chat):
         self._closed = False
         self._had_cr = False
         self._start_time = time.time()
+        self._resp = None
         if self.timeout:
             self._idler = CallLater(self.timeout, self.handle_timeout)
         else:
@@ -969,9 +970,9 @@ class DTPHandler(object, asynchat.async_chat):
         else:
             msg = "Data connection timed out."
             self.cmd_channel.log(msg)
-            self.cmd_channel.respond("421 " + msg)
-            self.cmd_channel.close_when_done()
+            self._resp = "421 " + msg
             self.close()
+            self.cmd_channel.close_when_done()
 
     def handle_expt(self):
         """Called on "exceptional" data events."""
@@ -1005,7 +1006,7 @@ class DTPHandler(object, asynchat.async_chat):
             # confidential error messages
             logerror(traceback.format_exc())
             error = "Internal error"
-        self.cmd_channel.respond("426 %s; transfer aborted." % error)
+        self._resp = "426 %s; transfer aborted." % error
         self.close()
 
     def handle_close(self):
@@ -1021,11 +1022,10 @@ class DTPHandler(object, asynchat.async_chat):
         else:
             self.transfer_finished = len(self.producer_fifo) == 0
         if self.transfer_finished:
-            self.cmd_channel.respond("226 Transfer complete.")
+            self._resp = "226 Transfer complete."
         else:
             tot_bytes = self.get_transmitted_bytes()
-            msg = "Transfer aborted; %d bytes transmitted." % tot_bytes
-            self.cmd_channel.respond("426 " + msg)
+            self._resp = "426 Transfer aborted; %d bytes transmitted." % tot_bytes
         self.close()
 
     def close(self):
@@ -1033,7 +1033,11 @@ class DTPHandler(object, asynchat.async_chat):
         file handles."""
         if not self._closed:
             self._closed = True
+            # RFC-959 says we must close the connection before replying
             asyncore.dispatcher.close(self)
+            if self._resp:
+                self.cmd_channel.respond(self._resp)
+
             if self.file_obj is not None and not self.file_obj.closed:
                 self.file_obj.close()
             if self._idler is not None and not self._idler.cancelled:
