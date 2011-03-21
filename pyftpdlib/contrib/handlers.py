@@ -107,6 +107,10 @@ else:
             else:
                 self._ssl_accepting = False
                 self._ssl_established = True
+                self.handle_ssl_established()
+
+        def handle_ssl_established(self):
+            pass
 
         def handle_failed_ssl_handshake(self):
             raise NotImplementedError("must be implemented in subclass")
