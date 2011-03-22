@@ -1660,7 +1660,7 @@ class AbstractedFS(object):
             # platforms should use some platform-specific method (e.g.
             # on Windows NTFS filesystems MTF records could be used).
             if 'unique' in facts:
-                unique = "unique=%x%x;" % (st.st_dev, st.st_ino)
+                unique = "unique=%xg%x;" % (st.st_dev, st.st_ino)
 
             yield "%s%s%s%s%s%s%s%s%s %s\r\n" % (type, size, perm, modify,
                                                  create, mode, uid, gid, unique,

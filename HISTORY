@@ -14,8 +14,11 @@ Enhancements:
 
 Bugfixes:
 
- * Issue 156: data connection must be closed before sending 226/426 reply.
+ * Issue #156: data connection must be closed before sending 226/426 reply.
    This was against RFC-959 and was causing problems with older FTP clients.
+
+ * Issue #161: MLSD 'unique' fact can provide the same value for files having a
+   similar device/inode but that in fact are different.
 
  * Issue 162: (FTPS) SSL shutdown() is not invoked for the control connection.
 
