@@ -29,7 +29,7 @@ Major API changes since 0.6.0:
  * AbstractedFS root and cwd properties can now be set via setattr().
 
 
-Version: 0.6.0 - Date: 2010-01-24
+Version: 0.6.0 - Date: 2011-01-24
 ---------------------------------
 
 Enhancements:
