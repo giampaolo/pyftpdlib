@@ -199,7 +199,12 @@ class TestFTPS(unittest.TestCase):
                 return
             raise
         sock.sendall('noop')
-        self.assertRaises(socket.error, sock.recv, 1024)
+        try:
+            chunk = sock.recv(1024)
+        except socket.error:
+            pass
+        else:
+            self.assertEqual(chunk, "")
 
     def test_tls_control_required(self):
         self.server.handler.tls_control_required = True

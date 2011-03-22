@@ -110,7 +110,12 @@ else:
                 self.handle_ssl_established()
 
         def handle_ssl_established(self):
+            """Called when SSL handshake has completed."""
             pass
+
+        def handle_ssl_shutdown(self):
+            """Called when SSL shutdown() has completed."""
+            super(SSLConnection, self).close()
 
         def handle_failed_ssl_handshake(self):
             raise NotImplementedError("must be implemented in subclass")
@@ -169,33 +174,42 @@ else:
             twisted/internet/tcp.py code has been used as an example.
             """
             self._ssl_closing = True
-            # since SSL_shutdown() doesn't report errors, an empty
-            # write call is done first, to try to detect if the
-            # connection has gone away
             try:
-                os.write(self.socket.fileno(), '')
-            except OSError, err:
-                if err[0] in (EINTR, EWOULDBLOCK, ENOBUFS):
-                    return
-                elif err[0] in DISCONNECTED:
-                    super(SSLConnection, self).close()
-                    return
-                else:
-                    raise
-            # see twisted/internet/tcp.py
-            laststate = self.socket.get_shutdown()
-            self.socket.set_shutdown(laststate | SSL.RECEIVED_SHUTDOWN)
-            done = self.socket.shutdown()
-            if not (laststate & SSL.RECEIVED_SHUTDOWN):
-                self.socket.set_shutdown(SSL.SENT_SHUTDOWN)
-            if done:
-                super(SSLConnection, self).close()
+                # since SSL_shutdown() doesn't report errors, an empty
+                # write call is done first, to try to detect if the
+                # connection has gone away
+                try:
+                    os.write(self.socket.fileno(), '')
+                except (OSError, socket.error), err:
+                    if err[0] in (EINTR, EWOULDBLOCK, ENOBUFS):
+                        return
+                    elif err[0] in DISCONNECTED:
+                        super(SSLConnection, self).close()
+                        return
+                    else:
+                        raise
+                # see twisted/internet/tcp.py
+                laststate = self.socket.get_shutdown()
+                self.socket.set_shutdown(laststate | SSL.RECEIVED_SHUTDOWN)
+                done = self.socket.shutdown()
+                if not (laststate & SSL.RECEIVED_SHUTDOWN):
+                    self.socket.set_shutdown(SSL.SENT_SHUTDOWN)
+                if done:
+                    self._ssl_established = False
+                    self._ssl_closing = False
+                    self.handle_ssl_shutdown()
+            except:
+                self._ssl_closing = False
+                raise
 
         def close(self):
-            self._ssl_accepting = False
-            self._ssl_established = False
-            self._ssl_closing = False
-            return super(SSLConnection, self).close()
+            if self._ssl_established:
+                self._do_ssl_shutdown()
+            else:
+                self._ssl_accepting = False
+                self._ssl_established = False
+                self._ssl_closing = False
+                super(SSLConnection, self).close()
 
 
     class TLS_DTPHandler(SSLConnection, DTPHandler):
@@ -214,11 +228,6 @@ else:
             self.cmd_channel.respond("522 SSL handshake failed.")
             self.cmd_channel.log_cmd("PROT", "P", 522, "SSL handshake failed.")
             self.close()
-
-        def close(self):
-            if self._ssl_established:
-                return self._do_ssl_shutdown()
-            DTPHandler.close(self)
 
 
     class TLS_FTPHandler(SSLConnection, FTPHandler):
