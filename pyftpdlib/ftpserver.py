@@ -3213,7 +3213,7 @@ class FTPHandler(object, asynchat.async_chat):
 
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
-        features = ['EPRT','EPSV','MDTM','MLSD','REST STREAM','SIZE','TVFS']
+        features = ['EPRT','EPSV','MDTM','REST STREAM','SIZE','TVFS']
         features.extend(self._extra_feats)
         s = ''
         for fact in self._available_facts:
