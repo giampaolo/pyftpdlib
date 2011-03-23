@@ -1664,8 +1664,7 @@ class AbstractedFS(object):
 
             # facts can be in any order but we sort them by name
             factstring = "".join(["%s=%s;" % (x, retfacts[x]) \
-                                              for x in sorted(retfacts.keys())])
-            print factstring
+                                  for x in sorted(retfacts.keys())])
             yield "%s %s\r\n" % (factstring, basename)
 
 
