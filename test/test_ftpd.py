@@ -1592,23 +1592,31 @@ class TestFtpListingCmds(unittest.TestCase):
             except OSError:
                 pass
 
-    def test_mlsd_specific_platform_opts(self):
+    def test_mlsd_all_facts(self):
         opts = []
-        feats = self.client.sendcmd('feat')
-        if 'unique' in feats:
-            opts.append('unique;')
-        if 'create' in feats:
-            opts.append('create;')
-        if 'unix.mode' in feats:
-            opts.append('unix.mode;')
-        if 'unix.uid' in feats:
-            opts.append('unix.uid;')
-        if 'unix.gid' in feats:
-            opts.append('unix.gid;')
-        if opts:
-            lines = []
-            self.client.sendcmd('opts mlst ' + ''.join(opts))
-            self.client.retrlines('mlsd .', lines.append)
+        feat = self.client.sendcmd('feat')
+        # all the facts
+        facts = re.search(r'^\s*MLST\s+(\S+)$', feat, re.MULTILINE).group(1)
+        facts = facts.replace("*;", ";")
+        self.client.sendcmd('opts mlst ' + facts)
+        resp = self.client.sendcmd('mlst')
+
+        local = facts[:-1].split(";")
+        returned = resp.split("\n")[1].strip().partition(" ")[0][:-1]
+        returned = [x.split("=")[0] for x in returned.split(";")]
+        self.assertEqual(sorted(local), sorted(returned))
+
+        self.assertTrue("type" in resp)
+        self.assertTrue("size" in resp)
+        self.assertTrue("perm" in resp)
+        self.assertTrue("modify" in resp)
+        if os.name == 'posix':
+            self.assertTrue("unique" in resp)
+            self.assertTrue("unix.mode" in resp)
+            self.assertTrue("unix.uid" in resp)
+            self.assertTrue("unix.gid" in resp)
+        elif os.name == 'nt':
+            self.assertTrue("create" in resp)
 
     def test_stat(self):
         # Test STAT provided with argument which is equal to LIST
