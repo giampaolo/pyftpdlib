@@ -1660,7 +1660,7 @@ class AbstractedFS(object):
             # platforms should use some platform-specific method (e.g.
             # on Windows NTFS filesystems MTF records could be used).
             if 'unique' in facts:
-                retfacts['unique'] = "%x%x" % (st.st_dev, st.st_ino)
+                retfacts['unique'] = "%xg%x" % (st.st_dev, st.st_ino)
 
             # facts can be in any order but we sort them by name
             factstring = "".join(["%s=%s;" % (x, retfacts[x]) \
