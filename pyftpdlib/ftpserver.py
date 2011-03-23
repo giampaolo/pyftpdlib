@@ -1597,12 +1597,12 @@ class AbstractedFS(object):
             permdir += 'c'
         if 'd' in perms:
             permdir += 'p'
-        type = size = perm = modify = create = unique = mode = uid = gid = ""
         for basename in listing:
             file = os.path.join(basedir, basename)
-            # to properly implement 'unique' fact (RFC-3659, chapter
-            # 7.5.2) we are supposed to follow symlinks, hence use
-            # os.stat() instead of os.lstat()
+            retfacts = dict()
+            # in order to properly implement 'unique' fact (RFC-3659,
+            # chapter 7.5.2) we are supposed to follow symlinks, hence
+            # use os.stat() instead of os.lstat()
             try:
                 st = self.stat(file)
             except OSError:
@@ -1613,43 +1613,43 @@ class AbstractedFS(object):
             if stat.S_ISDIR(st.st_mode):
                 if 'type' in facts:
                     if basename == '.':
-                        type = 'type=cdir;'
+                        retfacts['type'] = 'cdir'
                     elif basename == '..':
-                        type = 'type=pdir;'
+                        retfacts['type'] = 'pdir'
                     else:
-                        type = 'type=dir;'
+                        retfacts['type'] = 'dir'
                 if 'perm' in facts:
-                    perm = 'perm=%s;' % permdir
+                    retfacts['perm'] = permdir
             else:
                 if 'type' in facts:
-                    type = 'type=file;'
+                    retfacts['type'] = 'file'
                 if 'perm' in facts:
-                    perm = 'perm=%s;' % permfile
+                    retfacts['perm'] = permfile
             if 'size' in facts:
-                size = 'size=%s;' %st.st_size  # file size
+                retfacts['size'] = st.st_size  # file size
             # last modification time
             if 'modify' in facts:
                 try:
-                    modify = 'modify=%s;' % time.strftime("%Y%m%d%H%M%S",
-                                            timefunc(st.st_mtime))
+                    retfacts['modify'] = time.strftime("%Y%m%d%H%M%S",
+                                                        timefunc(st.st_mtime))
                 # it could be raised if last mtime happens to be too old
                 # (prior to year 1900)
                 except ValueError:
-                    modify = ""
+                    pass
             if 'create' in facts:
                 # on Windows we can provide also the creation time
                 try:
-                    create = 'create=%s;' % time.strftime("%Y%m%d%H%M%S",
-                                            timefunc(st.st_ctime))
+                    retfacts['create'] = time.strftime("%Y%m%d%H%M%S",
+                                                        timefunc(st.st_ctime))
                 except ValueError:
-                    create = ""
+                    pass
             # UNIX only
             if 'unix.mode' in facts:
-                mode = 'unix.mode=%s;' % oct(st.st_mode & 0777)
+                retfacts['unix.mode'] = oct(st.st_mode & 0777)
             if 'unix.uid' in facts:
-                uid = 'unix.uid=%s;' % st.st_uid
+                retfacts['unix.uid'] = st.st_uid
             if 'unix.gid' in facts:
-                gid = 'unix.gid=%s;' % st.st_gid
+                retfacts['unix.gid'] = st.st_gid
 
             # We provide unique fact (see RFC-3659, chapter 7.5.2) on
             # posix platforms only; we get it by mixing st_dev and
@@ -1660,11 +1660,13 @@ class AbstractedFS(object):
             # platforms should use some platform-specific method (e.g.
             # on Windows NTFS filesystems MTF records could be used).
             if 'unique' in facts:
-                unique = "unique=%xg%x;" % (st.st_dev, st.st_ino)
+                retfacts['unique'] = "%x%x" % (st.st_dev, st.st_ino)
 
-            yield "%s%s%s%s%s%s%s%s%s %s\r\n" % (type, size, perm, modify,
-                                                 create, mode, uid, gid, unique,
-                                                 basename)
+            # facts can be in any order but we sort them by name
+            factstring = "".join(["%s=%s;" % (x, retfacts[x]) \
+                                              for x in sorted(retfacts.keys())])
+            print factstring
+            yield "%s %s\r\n" % (factstring, basename)
 
 
 # --- FTP

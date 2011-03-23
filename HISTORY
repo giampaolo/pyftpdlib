@@ -19,10 +19,11 @@ Bugfixes:
 
  * Issue #161: MLSD 'unique' fact can provide the same value for files having a
    similar device/inode but that in fact are different.
+   (patch by Andrew Scheller)
 
  * Issue #162: (FTPS) SSL shutdown() is not invoked for the control connection.
 
- * Issue #163: FEAT erroneously reports MLSD.
+ * Issue #163: FEAT erroneously reports MLSD. (patch by Andrew Scheller)
 
 Major API changes since 0.6.0:
 
