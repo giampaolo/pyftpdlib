@@ -631,7 +631,7 @@ class PassiveDTP(object, asyncore.dispatcher):
         except socket.error, err:
             # ECONNABORTED might be thrown on *BSD (see issue 105)
             if err[0] != errno.ECONNABORTED:
-                logerror(traceback.format_exc())
+                self.cmd_channel.logerror(traceback.format_exc())
             return
         else:
             # sometimes addr == None instead of (ip, port) (see issue 104)
@@ -782,7 +782,7 @@ class ActiveDTP(object, asyncore.dispatcher):
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             raise
         except:
-            logerror(traceback.format_exc())
+            self.cmd_channel.logerror(traceback.format_exc())
         self.handle_expt()
 
     def close(self):
@@ -995,7 +995,7 @@ class DTPHandler(object, asynchat.async_chat):
                 self.handle_close()
                 return
             else:
-                logerror(traceback.format_exc())
+                self.cmd_channel.logerror(traceback.format_exc())
                 error = str(err[1])
         # an error could occur in case we fail reading / writing
         # from / to file (e.g. file system gets full)
@@ -1004,7 +1004,7 @@ class DTPHandler(object, asynchat.async_chat):
         except:
             # some other exception occurred;  we don't want to provide
             # confidential error messages
-            logerror(traceback.format_exc())
+            self.cmd_channel.logerror(traceback.format_exc())
             error = "Internal error"
         self._resp = "426 %s; transfer aborted." % error
         self.close()
@@ -2075,9 +2075,9 @@ class FTPHandler(object, asynchat.async_chat):
                 self.handle_close()
                 return
             else:
-                logerror(traceback.format_exc())
+                self.logerror(traceback.format_exc())
         except:
-            logerror(traceback.format_exc())
+            self.logerror(traceback.format_exc())
         self.close()
 
     def handle_close(self):
@@ -2295,6 +2295,10 @@ class FTPHandler(object, asynchat.async_chat):
     def logline(self, msg):
         """Log a line including additional indentifying session data."""
         logline("%s:%s %s" % (self.remote_ip, self.remote_port, msg))
+
+    def logerror(self, msg):
+        """Log unhandled exceptions."""
+        logerror(msg)
 
     def log_cmd(self, cmd, arg, respcode, respstr):
         """Log commands and responses in a standardized format.
