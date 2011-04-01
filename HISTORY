@@ -28,6 +28,8 @@ Bugfixes:
 
  * Issue #163: FEAT erroneously reports MLSD. (patch by Andrew Scheller)
 
+ * Issue #167: fix some typos returned on HELP.
+
 Major API changes since 0.6.0:
 
  * AbstractedFS root and cwd properties can now be set via setattr().
