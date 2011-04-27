@@ -228,6 +228,8 @@ def _scheduler():
         try:
             try:
                 call.call()
+            except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
+                raise
             except:
                 logerror(traceback.format_exc())
         finally:
@@ -286,6 +288,8 @@ class CallLater(object):
         assert not self.cancelled, "Already cancelled"
         try:
             self.__target(*self.__args, **self.__kwargs)
+        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
+            raise
         except:
             if self.__errback is not None:
                 self.__errback()
@@ -3501,35 +3505,49 @@ class FTPServer(object, asyncore.dispatcher):
             if addr == None:
                 return
 
+        handler = None
+        ip = None
         try:
             handler = self.handler(sock, self)
-        except socket.error, err:
-            # safety measure in case of undiscovered asyncore bugs, see:
-            # http://code.google.com/p/pyftpdlib/issues/detail?id=143
-            logerror(str(err))
-            return
-        if not handler.connected:
-            return
-        log("[]%s:%s Connected." % addr[:2])
-        ip = addr[0]
-        self.ip_map.append(ip)
+            if not handler.connected:
+                return
+            log("[]%s:%s Connected." % addr[:2])
+            ip = addr[0]
+            self.ip_map.append(ip)
 
-        # For performance and security reasons we should always set a
-        # limit for the number of file descriptors that socket_map
-        # should contain.  When we're running out of such limit we'll
-        # use the last available channel for sending a 421 response
-        # to the client before disconnecting it.
-        if self.max_cons and (len(asyncore.socket_map) > self.max_cons):
-            handler.handle_max_cons()
-            return
+            # For performance and security reasons we should always set a
+            # limit for the number of file descriptors that socket_map
+            # should contain.  When we're running out of such limit we'll
+            # use the last available channel for sending a 421 response
+            # to the client before disconnecting it.
+            if self.max_cons and (len(asyncore.socket_map) > self.max_cons):
+                handler.handle_max_cons()
+                return
 
-        # accept only a limited number of connections from the same
-        # source address.
-        if self.max_cons_per_ip and (self.ip_map.count(ip) > self.max_cons_per_ip):
-            handler.handle_max_cons_per_ip()
-            return
+            # accept only a limited number of connections from the same
+            # source address.
+            if self.max_cons_per_ip:
+                if (self.ip_map.count(ip) > self.max_cons_per_ip):
+                    handler.handle_max_cons_per_ip()
+                    return
 
-        handler.handle()
+            handler.handle()
+        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
+            raise
+        except:
+            # This is supposed to be an application bug that should
+            # be fixed. We do not want to tear down the server though
+            # (DoS). We just log the exception, hoping that someone
+            # will eventually file a bug. References:
+            # - http://code.google.com/p/pyftpdlib/issues/detail?id=143
+            # - http://code.google.com/p/pyftpdlib/issues/detail?id=166
+            # - https://groups.google.com/forum/#!topic/pyftpdlib/h7pPybzAx14
+            if handler is not None:
+                handler.close()
+            else:
+                if ip is not None and ip in self.ip_map:
+                    self.ip_map.remove(ip)
+            logerror(traceback.format_exc())
 
     def writable(self):
         return 0
