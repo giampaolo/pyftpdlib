@@ -257,7 +257,9 @@ class CallLater(object):
          - (int) seconds: the number of seconds to wait
          - (obj) target: the callable object to call later
          - args: the arguments to call it with
-         - kwargs: the keyword arguments to call it with
+         - kwargs: the keyword arguments to call it with; a special
+           '_errback' parameter can be passed: it is a callable
+           called in case target function raises an exception.
         """
         assert callable(target), "%s is not callable" % target
         assert sys.maxint >= seconds >= 0, "%s is not greater than or equal " \
@@ -266,6 +268,7 @@ class CallLater(object):
         self.__target = target
         self.__args = args
         self.__kwargs = kwargs
+        self.__errback = kwargs.pop('_errback', None)
         # seconds from the epoch at which to call the function
         self.timeout = time.time() + self.__delay
         self.repush = False
@@ -278,7 +281,13 @@ class CallLater(object):
     def call(self):
         """Call this scheduled function."""
         assert not self.cancelled, "Already cancelled"
-        self.__target(*self.__args, **self.__kwargs)
+        try:
+            self.__target(*self.__args, **self.__kwargs)
+        except:
+            if self.__errback is not None:
+                self.__errback()
+            else:
+                raise
 
     def reset(self):
         """Reschedule this call resetting the current countdown."""
@@ -305,7 +314,7 @@ class CallLater(object):
         """Unschedule this call."""
         assert not self.cancelled, "Already cancelled"
         self.cancelled = True
-        del self.__target, self.__args, self.__kwargs
+        del self.__target, self.__args, self.__kwargs, self.__errback
         if self in _tasks:
             pos = _tasks.index(self)
             if pos == 0:
@@ -552,7 +561,8 @@ class PassiveDTP(object, asyncore.dispatcher):
         asyncore.dispatcher.__init__(self)
         self.cmd_channel = cmd_channel
         if self.timeout:
-            self._idler = CallLater(self.timeout, self.handle_timeout)
+            self._idler = CallLater(self.timeout, self.handle_timeout,
+                                    _errback=self.handle_error)
         else:
             self._idler = None
 
@@ -712,7 +722,8 @@ class ActiveDTP(object, asyncore.dispatcher):
         asyncore.dispatcher.__init__(self)
         self.cmd_channel = cmd_channel
         if self.timeout:
-            self._idler = CallLater(self.timeout, self.handle_timeout)
+            self._idler = CallLater(self.timeout, self.handle_timeout,
+                                    _errback=self.handle_error)
         else:
             self._idler = None
         if ip.count('.') == 4:
@@ -833,7 +844,8 @@ class DTPHandler(object, asynchat.async_chat):
         self._start_time = time.time()
         self._resp = None
         if self.timeout:
-            self._idler = CallLater(self.timeout, self.handle_timeout)
+            self._idler = CallLater(self.timeout, self.handle_timeout,
+                                    _errback=self.handle_error)
         else:
             self._idler = None
         try:
@@ -966,7 +978,8 @@ class DTPHandler(object, asynchat.async_chat):
         """
         if self.get_transmitted_bytes() > self._lastdata:
             self._lastdata = self.get_transmitted_bytes()
-            self._idler = CallLater(self.timeout, self.handle_timeout)
+            self._idler = CallLater(self.timeout, self.handle_timeout,
+                                    _errback=self.handle_error)
         else:
             msg = "Data connection timed out."
             self.cmd_channel.log(msg)
@@ -1132,7 +1145,8 @@ class ThrottledDTPHandler(DTPHandler):
                 def unsleep():
                     self.sleeping = False
                 self.sleeping = True
-                self._throttler = CallLater(sleepfor * 2, unsleep)
+                self._throttler = CallLater(sleepfor * 2, unsleep,
+                                            _errback=self.handle_error)
             self._timenext = now + 1
 
     def close(self):
@@ -1801,7 +1815,8 @@ class FTPHandler(object, asynchat.async_chat):
         self._current_facts = ['type', 'perm', 'size', 'modify']
         self._rnfr = None
         if self.timeout:
-            self._idler = CallLater(self.timeout, self.handle_timeout)
+            self._idler = CallLater(self.timeout, self.handle_timeout,
+                                    _errback=self.handle_error)
         else:
             self._idler = None
         if os.name == 'posix':
@@ -2207,7 +2222,8 @@ class FTPHandler(object, asynchat.async_chat):
             self.close()
         elif self.timeout:
             # data transfer finished, restart the idle timer
-            self._idler = CallLater(self.timeout, self.handle_timeout)
+            self._idler = CallLater(self.timeout, self.handle_timeout,
+                                    _errback=self.handle_error)
 
     # --- utility
 
@@ -2936,9 +2952,11 @@ class FTPHandler(object, asynchat.async_chat):
             self.sleeping = True
             if self.username == 'anonymous':
                 CallLater(self._auth_failed_timeout, auth_failed,
-                          "Anonymous access not allowed.")
+                          "Anonymous access not allowed.",
+                          _errback=self.handle_error)
             else:
-                CallLater(self._auth_failed_timeout, auth_failed)
+                CallLater(self._auth_failed_timeout, auth_failed,
+                          _errback=self.handle_error)
 
     def ftp_REIN(self, line):
         """Reinitialize user's current session."""

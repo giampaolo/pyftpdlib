@@ -631,6 +631,12 @@ class TestCallLater(unittest.TestCase):
         self.scheduler()
         self.assertEqual(l, [0.02, 0.03, 0.04])
 
+    def test_errback(self):
+        l = []
+        ftpserver.CallLater(0.0, lambda: 1/0, _errback=lambda: l.append(True))
+        self.scheduler()
+        self.assertEqual(l, [True])
+
 
 class TestFtpAuthentication(unittest.TestCase):
     "test: USER, PASS, REIN."
