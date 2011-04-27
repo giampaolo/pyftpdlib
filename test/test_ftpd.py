@@ -195,6 +195,10 @@ class FTPd(threading.Thread):
         status.append('%s:%s' % self.server.socket.getsockname()[:2])
         return '<%s at %#x>' % (' '.join(status), id(self))
 
+    @property
+    def running(self):
+        return self.__serving
+
     def start(self, timeout=0.001, use_poll=False):
         """Start serving until an explicit stop() request.
         Polls for shutdown every 'timeout' seconds.
@@ -2680,7 +2684,8 @@ class TestCornerCases(unittest.TestCase):
 
     def tearDown(self):
         self.client.close()
-        self.server.stop()
+        if self.server.running:
+            self.server.stop()
 
     def test_port_race_condition(self):
         # Refers to bug #120, first sends PORT, then disconnects the
@@ -2747,7 +2752,7 @@ class TestCornerCases(unittest.TestCase):
     def test_error_on_callback(self):
         # test that the server do not crash in case an error occurs
         # while firing a scheduled function
-        self.client.quit()
+        self.tearDown()
         flag = []
         original_logerror = ftpserver.logerror
         ftpserver.logerror = lambda msg: flag.append(msg)
