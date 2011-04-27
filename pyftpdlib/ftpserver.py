@@ -226,7 +226,10 @@ def _scheduler():
             call.repush = False
             continue
         try:
-            call.call()
+            try:
+                call.call()
+            except:
+                logerror(traceback.format_exc())
         finally:
             if not call.cancelled:
                 call.cancel()

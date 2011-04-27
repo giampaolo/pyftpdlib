@@ -2744,6 +2744,26 @@ class TestCornerCases(unittest.TestCase):
             addr = self.client.makepasv()
             connect(addr)
 
+    def test_error_on_callback(self):
+        # test that the server do not crash in case an error occurs
+        # while firing a scheduled function
+        self.client.quit()
+        flag = []
+        original_logerror = ftpserver.logerror
+        ftpserver.logerror = lambda msg: flag.append(msg)
+        server = ftpserver.FTPServer((HOST, 0), ftpserver.FTPHandler)
+        try:
+            len1 = len(asyncore.socket_map)
+            ftpserver.CallLater(0, lambda: 1 / 0)
+            server.serve_forever(timeout=0, count=1)
+            len2 = len(asyncore.socket_map)
+            self.assertEqual(len1, len2)
+            self.assertTrue(flag)
+        finally:
+            ftpserver.logerror = original_logerror
+            server.close()
+
+
 
 class TestCommandLineParser(unittest.TestCase):
     """Test command line parser."""
