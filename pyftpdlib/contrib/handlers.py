@@ -49,10 +49,11 @@ import os
 import asyncore
 import socket
 import warnings
+import traceback
 from errno import EWOULDBLOCK, ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, \
                   EPIPE, EBADF, EINTR, ENOBUFS
 
-from pyftpdlib.ftpserver import FTPHandler, DTPHandler, proto_cmds
+from pyftpdlib.ftpserver import FTPHandler, DTPHandler, proto_cmds, logerror
 
 __all__ = []
 
@@ -136,19 +137,31 @@ else:
             else:
                 super(SSLConnection, self).handle_write_event()
 
+        def handle_error(self):
+            try:
+                raise
+            except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
+                raise
+            except:
+                logerror(traceback.format_exc())
+            # when facing an unhandled exception in here it's better
+            # to rely on base class (FTPHandler or DTPHandler)
+            # close() method as it does not imply SSL shutdown logic
+            super(SSLConnection, self).close()
+
         def send(self, data):
             try:
                 return super(SSLConnection, self).send(data)
             except (SSL.WantReadError, SSL.WantWriteError):
                 return 0
             except SSL.ZeroReturnError:
-                self.handle_close()
+                super(SSLConnection, self).handle_close()
                 return 0
             except SSL.SysCallError, (errnum, errstr):
                 if errstr == 'Unexpected EOF' or errnum == EWOULDBLOCK:
                     return 0
                 elif errnum in DISCONNECTED:
-                    self.handle_close()
+                    super(SSLConnection, self).handle_close()
                     return 0
                 else:
                     raise
@@ -159,11 +172,11 @@ else:
             except (SSL.WantReadError, SSL.WantWriteError):
                 return ''
             except SSL.ZeroReturnError:
-                self.handle_close()
+                super(SSLConnection, self).handle_close()
                 return ''
             except SSL.SysCallError, (errnum, errstr):
                 if errstr == 'Unexpected EOF' or errnum in DISCONNECTED:
-                    self.handle_close()
+                    super(SSLConnection, self).handle_close()
                     return ''
                 else:
                     raise
