@@ -28,6 +28,8 @@ Bugfixes:
 
  * Issue #163: FEAT erroneously reports MLSD. (patch by Andrew Scheller)
 
+ * Issue #166: (FTPS) an exception on send() can cause server to crash (DoS).
+
  * Issue #167: fix some typos returned on HELP.
 
  * Issue #171: (FTPS) an exception when shutting down the SSL layer can cause
