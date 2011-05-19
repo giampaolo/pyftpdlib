@@ -61,6 +61,7 @@ import sys
 import errno
 import asyncore
 import atexit
+import stat
 try:
     import cStringIO as StringIO
 except ImportError:
@@ -180,7 +181,7 @@ class FTPd(threading.Thread):
             raise
         ftpserver.logerror = logerror
         authorizer = ftpserver.DummyAuthorizer()
-        authorizer.add_user(USER, PASSWD, HOME, perm='elradfmw')  # full perms
+        authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwM')  # full perms
         authorizer.add_anonymous(HOME)
         self.handler.authorizer = authorizer
         self.server = ftpserver.FTPServer((host, port), self.handler)
@@ -894,9 +895,9 @@ class TestFtpDummyCmds(unittest.TestCase):
 class TestFtpCmdsSemantic(unittest.TestCase):
     server_class = FTPd
     client_class = ftplib.FTP
-    arg_cmds = ('allo','appe','dele','eprt','mdtm','mode','mkd','opts','port',
+    arg_cmds = ['allo','appe','dele','eprt','mdtm','mode','mkd','opts','port',
                 'rest','retr','rmd','rnfr','rnto','site','size','stor','stru',
-                'type','user','xmkd','xrmd')
+                'type','user','xmkd','xrmd','site chmod']
 
     def setUp(self):
         self.server = self.server_class()
@@ -1094,6 +1095,36 @@ class TestFtpFsOperations(unittest.TestCase):
             self.assertTrue("not retrievable" in str(err))
         else:
             self.fail('Exception not raised')
+
+    if not hasattr(os, 'chmod'):
+        def test_site_chmod(self):
+            self.assertRaises(ftplib.error_perm, self.client.sendcmd,
+                              'site chmod 777 ' + self.tempfile)
+    else:
+        def test_site_chmod(self):
+            # not enough args
+            self.assertRaises(ftplib.error_perm,
+                              self.client.sendcmd, 'site chmod 777')
+            # bad args
+            self.assertRaises(ftplib.error_perm, self.client.sendcmd,
+                              'site chmod -177 ' + self.tempfile)
+            self.assertRaises(ftplib.error_perm, self.client.sendcmd,
+                              'site chmod 778 ' + self.tempfile)
+            self.assertRaises(ftplib.error_perm, self.client.sendcmd,
+                              'site chmod foo ' + self.tempfile)
+
+            self.client.sendcmd('site chmod 777 ' + self.tempfile)
+            mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
+            self.assertEqual(mode, '0777')
+
+            self.client.sendcmd('site chmod 755 ' + self.tempfile)
+            mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
+            self.assertEqual(mode, '0755')
+
+            self.client.sendcmd('site chmod 555 ' + self.tempfile)
+            mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
+            self.assertEqual(mode, '0555')
+
 
 
 class TestFtpStoreData(unittest.TestCase):

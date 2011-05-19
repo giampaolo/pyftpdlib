@@ -217,7 +217,9 @@ proto_cmds = {
     'SITE' : dict(perm=None, auth=False, arg=True,
                   help='Syntax: SITE <SP> site-command (execute SITE command).'),
     'SITE HELP' : dict(perm=None, auth=False, arg=None,
-                  help='Syntax: SITE HELP [<SP> site-command] (show SITE command help).'),
+                       help='Syntax: SITE HELP [<SP> site-command] (show SITE command help).'),
+    'SITE CHMOD': dict(perm='M', auth=True, arg=True,
+                       help='Syntax: SITE CHMOD <SP> mode path (change file mode).'),
     'SIZE' : dict(perm='l', auth=True, arg=True,
                   help='Syntax: SIZE <SP> file-name (get file size).'),
     'STAT' : dict(perm='l', auth=False, arg=None,
@@ -246,6 +248,8 @@ proto_cmds = {
                   help='Syntax: XRMD <SP> dir-name (obsolete; remove directory).'),
     }
 
+if os.name != 'posix' or not hasattr(os, 'chmod'):
+    del proto_cmds['SITE CHMOD']
 
 
 def _strerror(err):
@@ -426,7 +430,7 @@ class DummyAuthorizer(object):
     """
 
     read_perms = "elr"
-    write_perms = "adfmw"
+    write_perms = "adfmwM"
 
     def __init__(self):
         self.user_table = {}
@@ -452,6 +456,7 @@ class DummyAuthorizer(object):
          - "f" = rename file or directory (RNFR, RNTO commands)
          - "m" = create directory (MKD command)
          - "w" = store a file to the server (STOR, STOU commands)
+         - "M" = change file mode (SITE CHMOD command)
 
         Optional msg_login and msg_quit arguments can be specified to
         provide customized response strings when user log-in and quit.
@@ -484,7 +489,7 @@ class DummyAuthorizer(object):
         The optional "perm" keyword argument is a string defaulting to
         "elr" referencing "read-only" anonymous user's permissions.
 
-        Using write permission values ("adfmw") results in a
+        Using write permission values ("adfmwM") results in a
         RuntimeWarning.
         """
         DummyAuthorizer.add_user(self, 'anonymous', '', homedir, **kwargs)
@@ -542,7 +547,7 @@ class DummyAuthorizer(object):
         pathname of a file or a directory).
 
         Expected perm argument is one of the following letters:
-        "elradfmw".
+        "elradfmwM".
         """
         if path is None:
             return perm in self.user_table[username]['perm']
@@ -1477,6 +1482,12 @@ class AbstractedFS(object):
         """Rename the specified src file to the dst filename."""
         os.rename(src, dst)
 
+    def chmod(self, path, mode):
+        """Change file/directory mode."""
+        if not hasattr(os, 'chmod'):
+            raise NotImplementedError
+        os.chmod(path, mode)
+
     def stat(self, path):
         """Perform a stat() system call on the given path."""
         return os.stat(path)
@@ -2003,6 +2014,7 @@ class FTPHandler(object, asynchat.async_chat):
 
         cmd = line.split(' ')[0].upper()
         arg = line[len(cmd)+1:]
+        kwargs = {}
         if cmd == "SITE" and arg:
             cmd = "SITE %s" % arg.split(' ')[0].upper()
             arg = line[len(cmd)+1:]
@@ -2071,6 +2083,16 @@ class FTPHandler(object, asynchat.async_chat):
                         self.log_cmd(cmd, arg, 550, msg)
                         return
                     arg = self.fs.ftp2fs(arg or self.fs.cwd)
+                elif cmd == 'SITE CHMOD':
+                    if not ' ' in arg:
+                        msg = "Syntax error: command needs two arguments."
+                        self.respond("501 " + msg)
+                        self.log_cmd(cmd, "", 501, msg)
+                        return
+                    else:
+                        mode, arg = arg.split(' ', 1)
+                        arg = self.fs.ftp2fs(arg)
+                        kwargs = dict(mode=mode)
                 else:  # LIST, NLST, MLSD, MLST
                     arg = self.fs.ftp2fs(arg or self.fs.cwd)
 
@@ -2092,7 +2114,7 @@ class FTPHandler(object, asynchat.async_chat):
                     return
 
             # call the proper ftp_* method
-            self.process_command(cmd, arg)
+            self.process_command(cmd, arg, **kwargs)
 
     def process_command(self, cmd, *args, **kwargs):
         """Process command by calling the corresponding ftp_* class
@@ -3370,10 +3392,30 @@ class FTPHandler(object, asynchat.async_chat):
 
         # --- site commands
 
-    # No SITE commands aside from SITE HELP are implemented by default.
     # The user willing to add support for a specific SITE command must
     # update self.proto_cmds dictionary and define a new ftp_SITE_%CMD%
     # method in the subclass.
+
+    def ftp_SITE_CHMOD(self, path, mode):
+        """Change file mode."""
+        # Note: although most UNIX servers implement it, SITE CHMOD is not
+        # defined in any official RFC.
+        try:
+            assert len(mode) == 3
+            for x in mode:
+                assert 0 <= int(x) <= 7
+            mode = int(mode, 8)
+        except (AssertionError, ValueError):
+            self.respond("501 Invalid SITE CHMOD format.")
+            return
+        else:
+            try:
+                self.run_as_current_user(self.fs.chmod, path, mode)
+            except OSError, err:
+                why = _strerror(err)
+                self.respond('550 %s.' % why)
+            else:
+                self.respond('200 SITE CHMOD successful.')
 
     def ftp_SITE_HELP(self, line):
         """Return help text to the client for a given SITE command."""
@@ -3716,7 +3758,7 @@ def main():
         options.interface = '0.0.0.0'
 
     authorizer = DummyAuthorizer()
-    perm = options.write and "elradfmw" or "elr"
+    perm = options.write and "elradfmwM" or "elr"
     authorizer.add_anonymous(options.directory, perm=perm)
     handler = FTPHandler
     handler.authorizer = authorizer

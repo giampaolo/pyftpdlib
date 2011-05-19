@@ -15,6 +15,8 @@ Enhancements:
  * Issue #168: added FTPHandler.logerror() method. It can be overridden to
    provide more information (e.g. username) when logging exception tracebacks.
 
+ * Issue #174: added support for SITE CHMOD command (change file mode).
+
 Bugfixes:
 
  * Issue #156: data connection must be closed before sending 226/426 reply.
