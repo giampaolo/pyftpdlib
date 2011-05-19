@@ -70,9 +70,12 @@ else:
 
     new_proto_cmds = proto_cmds.copy()
     new_proto_cmds.update({
-        'AUTH': dict(perm=None, auth=False, arg=True, help='Syntax: AUTH <SP> TLS|SSL (set up secure control connection).'),
-        'PBSZ': dict(perm=None, auth=True,  arg=True, help='Syntax: PBSZ <SP> 0 (negotiate size of buffer for secure data transfer).'),
-        'PROT': dict(perm=None, auth=True,  arg=True, help='Syntax: PROT <SP> [C|P] (set up un/secure data channel).'),
+        'AUTH': dict(perm=None, auth=False, arg=True,
+                     help='Syntax: AUTH <SP> TLS|SSL (set up secure control channel).'),
+        'PBSZ': dict(perm=None, auth=True,  arg=True,
+                     help='Syntax: PBSZ <SP> 0 (negotiate TLS buffer).'),
+        'PROT': dict(perm=None, auth=True,  arg=True,
+                     help='Syntax: PROT <SP> [C|P] (set up un/secure data channel).'),
         })
 
 
