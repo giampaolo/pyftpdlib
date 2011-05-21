@@ -15,6 +15,9 @@ Enhancements:
  * Issue #168: added FTPHandler.logerror() method. It can be overridden to
    provide more information (e.g. username) when logging exception tracebacks.
 
+ * Issue #172: (FTPS) added CCC command support to switch back from a secured
+   to a clear-text control connection.
+
  * Issue #174: added support for SITE CHMOD command (change file mode).
 
 Bugfixes:

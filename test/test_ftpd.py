@@ -935,7 +935,7 @@ class TestFtpCmdsSemantic(unittest.TestCase):
         for cmd in self.server.handler.proto_cmds:
             cmd = cmd.lower()
             if cmd in ('feat','help','noop','user','pass','stat','syst','quit',
-                       'site', 'site help', 'pbsz', 'auth', 'prot'):
+                       'site', 'site help', 'pbsz', 'auth', 'prot', 'ccc'):
                 continue
             if cmd in self.arg_cmds:
                 cmd = cmd + ' arg'

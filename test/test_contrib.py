@@ -150,6 +150,30 @@ class TestFTPS(unittest.TestCase):
         self.assertRaisesWithMsg(ftplib.error_perm, msg,
                                  self.client.sendcmd, 'auth tls')
 
+    def test_ccc(self):
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'ccc')
+        self.client.login(secure=True)
+        self.assertTrue(isinstance(self.client.sock, ssl.SSLSocket))
+        self.client.sendcmd('ccc')
+        self.client.sock = self.client.sock.unwrap()
+        self.client.sendcmd('noop')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'ccc')
+        self.client.dir(lambda x:None)
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'auth tls')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'pbsz')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'prot p')
+        resp = self.client.quit()
+        self.assertEqual(resp[:3], "221")
+
+    def test_ccc_force_openssl_error(self):
+        # see https://bugs.launchpad.net/pyopenssl/+bug/785985
+        self.client.login()
+        self.client.sendcmd('ccc')
+        self.client.sock.sendall('x' * 10000)
+        self.client.sock = self.client.sock.unwrap()
+        self.client.sendcmd('noop')
+        self.client.dir(lambda x:None)
+
     def test_pbsz(self):
         # unsecured
         self.client.login(secure=False)
