@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # $Id$
 
-import os
-
 from pyftpdlib.ftpserver import AbstractedFS
 
 __all__ = ['UnixFilesystem']
