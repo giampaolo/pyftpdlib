@@ -3311,19 +3311,23 @@ class FTPHandler(object, asynchat.async_chat):
 
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
-        features = ['EPRT','EPSV','MDTM','REST STREAM','SIZE','TVFS']
+        features = ['TVFS']
+        features += [feat for feat in ('EPRT', 'EPSV', 'MDTM', 'SIZE') \
+                     if feat in self.proto_cmds]
         features.extend(self._extra_feats)
-        s = ''
-        for fact in self._available_facts:
-            if fact in self._current_facts:
-                s += fact + '*;'
-            else:
-                s += fact + ';'
-        features.append('MLST ' + s)
+        if 'MLST' in self.proto_cmds or 'MLSD' in self.proto_cmds:
+            facts = ''
+            for fact in self._available_facts:
+                if fact in self._current_facts:
+                    facts += fact + '*;'
+                else:
+                    facts += fact + ';'
+            features.append('MLST ' + facts)
+        if 'REST' in self.proto_cmds:
+            features.append('REST STREAM')
         features.sort()
         self.push("211-Features supported:\r\n")
         self.push("".join([" %s\r\n" % x for x in features]))
-
         self.respond('211 End FEAT.')
 
     def ftp_OPTS(self, line):
@@ -3338,7 +3342,7 @@ class FTPHandler(object, asynchat.async_chat):
             else:
                 cmd, arg = line, ''
             # actually the only command able to accept options is MLST
-            if cmd.upper() != 'MLST':
+            if cmd.upper() != 'MLST' or 'MLST' not in self.proto_cmds:
                 raise ValueError('Unsupported command "%s"' % cmd)
         except ValueError, err:
             self.respond('501 %s.' % err)

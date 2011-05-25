@@ -40,6 +40,9 @@ Bugfixes:
  * Issue #171: (FTPS) an exception when shutting down the SSL layer can cause
    server to crash (DoS).
 
+ * Issue #175: FEAT response now omits to show those commands which are removed
+   from proto_cmds map.
+
 Major API changes since 0.6.0:
 
  * AbstractedFS root and cwd properties can now be set via setattr().
