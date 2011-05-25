@@ -1634,7 +1634,6 @@ class TestFtpListingCmds(unittest.TestCase):
                 pass
 
     def test_mlsd_all_facts(self):
-        opts = []
         feat = self.client.sendcmd('feat')
         # all the facts
         facts = re.search(r'^\s*MLST\s+(\S+)$', feat, re.MULTILINE).group(1)
@@ -2770,7 +2769,7 @@ class TestCornerCases(unittest.TestCase):
                          struct.pack('ii', 1, 0))
             try:
                 s.connect(addr)
-            except socket.error, err:
+            except socket.error:
                 pass
             s.close()
 

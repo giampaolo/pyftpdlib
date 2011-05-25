@@ -439,7 +439,6 @@ class SharedAuthorizerTests(unittest.TestCase):
     def test_override_user_perm(self):
         auth = self.authorizer_class()
         user = self.get_current_user()
-        dir = os.path.dirname(os.getcwd())
         auth.override_user(user, perm="elr")
         self.assertEqual(auth.get_perms(user), "elr")
         # make sure other settings keep using default values
@@ -451,7 +450,6 @@ class SharedAuthorizerTests(unittest.TestCase):
     def test_override_user_msg_login_quit(self):
         auth = self.authorizer_class()
         user = self.get_current_user()
-        dir = os.path.dirname(os.getcwd())
         auth.override_user(user, msg_login="foo", msg_quit="bar")
         self.assertEqual(auth.get_msg_login(user), "foo")
         self.assertEqual(auth.get_msg_quit(user), "bar")
@@ -645,7 +643,6 @@ def test_main():
                 warns.append("UnixAuthorizer tests skipped (root privileges are "
                              "required)")
             else:
-                warn_skip = False
                 tests.append(TestUnixAuthorizer)
         else:
             try:
