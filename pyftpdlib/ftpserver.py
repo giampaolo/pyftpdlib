@@ -682,7 +682,7 @@ class PassiveDTP(object, asyncore.dispatcher):
             # The format of 227 response in not standardized.
             # This is the most expected:
             self.cmd_channel.respond('227 Entering passive mode (%s,%d,%d).' % (
-                                ip.replace('.', ','), port / 256, port % 256))
+                                ip.replace('.', ','), port // 256, port % 256))
         else:
             self.cmd_channel.respond('229 Entering extended passive mode '
                                      '(|||%d|).' % port)
@@ -2197,6 +2197,7 @@ class FTPHandler(object, asynchat.async_chat):
 
             if self.fs is not None:
                 self.fs.cmd_channel = None
+                self.fs = None
             self.log("Disconnected.")
 
     def _shutdown_connecting_dtp(self):
