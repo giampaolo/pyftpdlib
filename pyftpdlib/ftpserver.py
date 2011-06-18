@@ -3544,7 +3544,8 @@ class FTPServer(object, asyncore.dispatcher):
             return
         asyncore.dispatcher.set_reuse_addr(self)
 
-    def serve_forever(self, timeout=1.0, use_poll=False, count=None):
+    @classmethod
+    def serve_forever(cls, timeout=1.0, use_poll=False, count=None):
         """A wrap around asyncore.loop(); starts the asyncore polling
         loop including running the scheduler.
         The arguments are the same expected by original asyncore.loop()
@@ -3565,7 +3566,8 @@ class FTPServer(object, asyncore.dispatcher):
             poll_fun = asyncore.poll
 
         if count is None:
-            log("Serving FTP on %s:%s" % self.socket.getsockname()[:2])
+            if hasattr(cls, 'socket'):
+                log("Serving FTP on %s:%s" % self.socket.getsockname()[:2])
             try:
                 while asyncore.socket_map or _tasks:
                     poll_fun(timeout)
@@ -3655,7 +3657,8 @@ class FTPServer(object, asyncore.dispatcher):
             logerror(traceback.format_exc())
         self.close()
 
-    def close_all(self, ignore_all=False):
+    @staticmethod
+    def close_all(ignore_all=False):
         """Stop serving and also disconnects all currently connected
         clients.
 
