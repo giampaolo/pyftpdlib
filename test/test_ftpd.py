@@ -74,8 +74,6 @@ except ImportError:
 from pyftpdlib import ftpserver
 
 
-__release__ = 'pyftpdlib 0.6.0'
-
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
 try:
     HOST = socket.gethostbyname('localhost')

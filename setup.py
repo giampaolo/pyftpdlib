@@ -13,7 +13,7 @@ except ImportError:
     from distutils.core import setup
 
 name = 'pyftpdlib'
-version = '0.6.0'
+version = '0.6.1'
 download_url = "http://pyftpdlib.googlecode.com/files/" + name + "-" + \
                                                           version + ".tar.gz"
 
