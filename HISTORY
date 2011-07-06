@@ -20,6 +20,8 @@ Enhancements:
 
  * Issue #174: added support for SITE CHMOD command (change file mode).
 
+ * Issue #177: setuptools is now used in setup.py
+
 Bugfixes:
 
  * Issue #156: data connection must be closed before sending 226/426 reply.

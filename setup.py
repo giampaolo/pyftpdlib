@@ -7,7 +7,10 @@ To install pyftpdlib just open a command shell and run:
 > python setup.py install
 """
 
-from distutils.core import setup
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
 
 name = 'pyftpdlib'
 version = '0.6.0'
