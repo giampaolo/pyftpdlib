@@ -642,6 +642,7 @@ class PassiveDTP(object, asyncore.dispatcher):
             ports = list(self.cmd_channel.passive_ports)
             while ports:
                 port = ports.pop(random.randint(0, len(ports) -1))
+                self.set_reuse_addr()
                 try:
                     self.bind((local_ip, port))
                 except socket.error, why:
@@ -686,6 +687,12 @@ class PassiveDTP(object, asyncore.dispatcher):
         else:
             self.cmd_channel.respond('229 Entering extended passive mode '
                                      '(|||%d|).' % port)
+
+    def set_reuse_addr(self):
+        # overridden for convenience; avoid to reuse address on Windows
+        if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
+            return
+        asyncore.dispatcher.set_reuse_addr(self)
 
     # --- connection / overridden
 

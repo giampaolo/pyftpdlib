@@ -43,6 +43,9 @@ Bugfixes:
  * Issue #175: FEAT response now omits to show those commands which are removed
    from proto_cmds map.
 
+ * Issue #176: SO_REUSEADDR option is now used for passive data sockets to
+   prevent server running out of free ports when using passive_ports directive.
+
 Major API changes since 0.6.0:
 
  * AbstractedFS root and cwd properties can now be set via setattr().
