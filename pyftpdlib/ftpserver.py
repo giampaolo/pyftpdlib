@@ -3545,6 +3545,10 @@ class FTPServer(object, asyncore.dispatcher):
                 raise socket.error(msg)
         self.listen(5)
 
+    @property
+    def address(self):
+        return self.socket.getsockname()[:2]
+
     def set_reuse_addr(self):
         # Overridden for convenience. Avoid to reuse address on Windows.
         if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
@@ -3573,15 +3577,12 @@ class FTPServer(object, asyncore.dispatcher):
             poll_fun = asyncore.poll
 
         if count is None:
-            if hasattr(cls, 'socket'):
-                log("Serving FTP on %s:%s" % self.socket.getsockname()[:2])
             try:
                 while asyncore.socket_map or _tasks:
                     poll_fun(timeout)
                     _scheduler()
             except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
-                log("Shutting down FTP server.")
-                self.close_all()
+                cls.close_all()
         else:
             while (asyncore.socket_map or _tasks) and count > 0:
                 if asyncore.socket_map:
@@ -3664,8 +3665,8 @@ class FTPServer(object, asyncore.dispatcher):
             logerror(traceback.format_exc())
         self.close()
 
-    @staticmethod
-    def close_all(ignore_all=False):
+    @classmethod
+    def close_all(cls, ignore_all=False):
         """Stop serving and also disconnects all currently connected
         clients.
 
@@ -3780,6 +3781,7 @@ def main():
     handler.masquerade_address = options.nat_address
     handler.passive_ports = passive_ports
     ftpd = FTPServer((options.interface, options.port), FTPHandler)
+    print "Serving FTP on %s:%s" % ftpd.address
     ftpd.serve_forever()
 
 if __name__ == '__main__':
