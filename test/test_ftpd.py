@@ -1111,18 +1111,27 @@ class TestFtpFsOperations(unittest.TestCase):
             self.assertRaises(ftplib.error_perm, self.client.sendcmd,
                               'site chmod foo ' + self.tempfile)
 
-            self.client.sendcmd('site chmod 777 ' + self.tempfile)
-            mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
-            self.assertEqual(mode, '0777')
-
-            self.client.sendcmd('site chmod 755 ' + self.tempfile)
-            mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
-            self.assertEqual(mode, '0755')
-
-            self.client.sendcmd('site chmod 555 ' + self.tempfile)
-            mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
-            self.assertEqual(mode, '0555')
-
+            # on Windows it is possible to set read-only flag only
+            if os.name == 'nt':
+                self.client.sendcmd('site chmod 777 ' + self.tempfile)
+                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
+                self.assertEqual(mode, '0666')
+                self.client.sendcmd('site chmod 444 ' + self.tempfile)
+                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
+                self.assertEqual(mode, '0444')
+                self.client.sendcmd('site chmod 666 ' + self.tempfile)
+                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
+                self.assertEqual(mode, '0666')
+            else:
+                self.client.sendcmd('site chmod 777 ' + self.tempfile)
+                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
+                self.assertEqual(mode, '0777')
+                self.client.sendcmd('site chmod 755 ' + self.tempfile)
+                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
+                self.assertEqual(mode, '0755')
+                self.client.sendcmd('site chmod 555 ' + self.tempfile)
+                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
+                self.assertEqual(mode, '0555')
 
 
 class TestFtpStoreData(unittest.TestCase):

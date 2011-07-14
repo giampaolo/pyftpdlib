@@ -248,7 +248,7 @@ proto_cmds = {
                   help='Syntax: XRMD <SP> dir-name (obsolete; remove directory).'),
     }
 
-if os.name != 'posix' or not hasattr(os, 'chmod'):
+if not hasattr(os, 'chmod'):
     del proto_cmds['SITE CHMOD']
 
 
@@ -3413,13 +3413,12 @@ class FTPHandler(object, asynchat.async_chat):
         # Note: although most UNIX servers implement it, SITE CHMOD is not
         # defined in any official RFC.
         try:
-            assert len(mode) == 3
+            assert len(mode) in (3, 4)
             for x in mode:
                 assert 0 <= int(x) <= 7
             mode = int(mode, 8)
         except (AssertionError, ValueError):
             self.respond("501 Invalid SITE CHMOD format.")
-            return
         else:
             try:
                 self.run_as_current_user(self.fs.chmod, path, mode)
