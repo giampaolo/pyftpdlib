@@ -668,6 +668,13 @@ class TestCallEvery(unittest.TestCase):
 
         self.assertTrue(len(l1) > len(l2))
 
+    def test_0_secs(self):
+        l = []
+        fun = lambda: l.append(None)
+        ftpserver.CallEvery(0, fun)
+        self.scheduler(count=100)
+        self.assertEqual(len(l), 100)
+
     def test_cancel(self):
         l = []
         fun = lambda: l.append(None)
