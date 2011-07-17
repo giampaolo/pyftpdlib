@@ -143,7 +143,7 @@ except ImportError:
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer',
            'AuthorizerError', 'FTPHandler', 'FTPServer', 'PassiveDTP',
            'ActiveDTP', 'DTPHandler', 'ThrottledDTPHandler', 'FileProducer',
-           'BufferedIteratorProducer', 'AbstractedFS', 'CallLater']
+           'BufferedIteratorProducer', 'AbstractedFS', 'CallLater', 'CallEvery']
 
 
 __pname__   = 'Python FTP server library (pyftpdlib)'
@@ -271,20 +271,16 @@ def _scheduler():
     now = time.time()
     while _tasks and now >= _tasks[0].timeout:
         call = heapq.heappop(_tasks)
-        if call.repush:
+        if call._repush:
             heapq.heappush(_tasks, call)
-            call.repush = False
+            call._repush = False
             continue
         try:
-            try:
-                call.call()
-            except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
-                raise
-            except:
-                logerror(traceback.format_exc())
-        finally:
-            if not call.cancelled:
-                call.cancel()
+            call.call()
+        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
+            raise
+        except:
+            logerror(traceback.format_exc())
 
 # dirty hack to support property.setter on python < 2.6
 if not hasattr(property, "setter"):
@@ -319,14 +315,14 @@ class CallLater(object):
         assert callable(target), "%s is not callable" % target
         assert sys.maxint >= seconds >= 0, "%s is not greater than or equal " \
                                            "to 0 seconds" % seconds
-        self.__delay = seconds
-        self.__target = target
-        self.__args = args
-        self.__kwargs = kwargs
-        self.__errback = kwargs.pop('_errback', None)
+        self._delay = seconds
+        self._target = target
+        self._args = args
+        self._kwargs = kwargs
+        self._errback = kwargs.pop('_errback', None)
+        self._repush = False
         # seconds from the epoch at which to call the function
-        self.timeout = time.time() + self.__delay
-        self.repush = False
+        self.timeout = time.time() + self._delay
         self.cancelled = False
         heapq.heappush(_tasks, self)
 
@@ -337,31 +333,35 @@ class CallLater(object):
         """Call this scheduled function."""
         assert not self.cancelled, "Already cancelled"
         try:
-            self.__target(*self.__args, **self.__kwargs)
-        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
-            raise
-        except:
-            if self.__errback is not None:
-                self.__errback()
-            else:
+            try:
+                self._target(*self._args, **self._kwargs)
+            except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
                 raise
+            except:
+                if self._errback is not None:
+                    self._errback()
+                else:
+                    raise
+        finally:
+            if not self.cancelled:
+                self.cancel()
 
     def reset(self):
         """Reschedule this call resetting the current countdown."""
         assert not self.cancelled, "Already cancelled"
-        self.timeout = time.time() + self.__delay
-        self.repush = True
+        self.timeout = time.time() + self._delay
+        self._repush = True
 
     def delay(self, seconds):
         """Reschedule this call for a later time."""
         assert not self.cancelled, "Already cancelled."
         assert sys.maxint >= seconds >= 0, "%s is not greater than or equal " \
                                            "to 0 seconds" % seconds
-        self.__delay = seconds
-        newtime = time.time() + self.__delay
+        self._delay = seconds
+        newtime = time.time() + self._delay
         if newtime > self.timeout:
             self.timeout = newtime
-            self.repush = True
+            self._repush = True
         else:
             # XXX - slow, can be improved
             self.timeout = newtime
@@ -371,7 +371,7 @@ class CallLater(object):
         """Unschedule this call."""
         assert not self.cancelled, "Already cancelled"
         self.cancelled = True
-        del self.__target, self.__args, self.__kwargs, self.__errback
+        del self._target, self._args, self._kwargs, self._errback
         if self in _tasks:
             pos = _tasks.index(self)
             if pos == 0:
@@ -381,6 +381,36 @@ class CallLater(object):
             else:
                 _tasks[pos] = _tasks.pop()
                 heapq._siftup(_tasks, pos)
+
+
+class CallEvery(CallLater):
+    """Calls a function every x seconds.
+    It accepts the same arguments as CallLater and shares the same API.
+    """
+
+    def call(self):
+        # call this scheduled function and reschedule it right after
+        assert not self.cancelled, "Already cancelled"
+        exc = False
+        try:
+            try:
+                self._target(*self._args, **self._kwargs)
+            except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
+                exc = True
+                raise
+            except:
+                if self._errback is not None:
+                    self._errback()
+                else:
+                    exc = True
+                    raise
+        finally:
+            if not self.cancelled:
+                if exc:
+                    self.cancel()
+                else:
+                    self.timeout = time.time() + self._delay
+                    heapq.heappush(_tasks, self)
 
 
 # --- library defined exceptions

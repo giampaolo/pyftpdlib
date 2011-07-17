@@ -641,6 +641,50 @@ class TestCallLater(unittest.TestCase):
         self.assertEqual(l, [True])
 
 
+class TestCallEvery(unittest.TestCase):
+    """Tests for CallEvery class."""
+
+    def setUp(self):
+        for task in ftpserver._tasks:
+            if not task.cancelled:
+                task.cancel()
+        del ftpserver._tasks[:]
+
+    def scheduler(self, timeout=0.0001, count=100):
+        for x in range(100):
+            ftpserver._scheduler()
+            time.sleep(timeout)
+
+    def test_base(self):
+        l1 = []
+        fun = lambda: l1.append(None)
+        ftpserver.CallEvery(0.001, fun)
+        self.scheduler()
+
+        l2 = []
+        fun = lambda: l2.append(None)
+        ftpserver.CallEvery(0.01, fun)
+        self.scheduler()
+
+        self.assertTrue(len(l1) > len(l2))
+
+    def test_cancel(self):
+        l = []
+        fun = lambda: l.append(None)
+        call = ftpserver.CallEvery(0.001, fun)
+        self.scheduler()
+        len_l = len(l)
+        call.cancel()
+        self.scheduler()
+        self.assertEqual(len_l, len(l))
+
+    def test_errback(self):
+        l = []
+        ftpserver.CallEvery(0.0, lambda: 1/0, _errback=lambda: l.append(True))
+        self.scheduler()
+        self.assertTrue(l)
+
+
 class TestFtpAuthentication(unittest.TestCase):
     "test: USER, PASS, REIN."
     server_class = FTPd
@@ -2924,6 +2968,7 @@ def test_main(tests=None):
                  TestAbstractedFS,
                  TestDummyAuthorizer,
                  TestCallLater,
+                 TestCallEvery,
                  TestFtpAuthentication,
                  TestFtpDummyCmds,
                  TestFtpCmdsSemantic,
