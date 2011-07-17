@@ -939,7 +939,7 @@ class DTPHandler(object, asynchat.async_chat):
         self._start_time = time.time()
         self._resp = None
         if self.timeout:
-            self._idler = CallLater(self.timeout, self.handle_timeout,
+            self._idler = CallEvery(self.timeout, self.handle_timeout,
                                     _errback=self.handle_error)
         else:
             self._idler = None
@@ -1073,8 +1073,6 @@ class DTPHandler(object, asynchat.async_chat):
         """
         if self.get_transmitted_bytes() > self._lastdata:
             self._lastdata = self.get_transmitted_bytes()
-            self._idler = CallLater(self.timeout, self.handle_timeout,
-                                    _errback=self.handle_error)
         else:
             msg = "Data connection timed out."
             self.cmd_channel.log(msg)

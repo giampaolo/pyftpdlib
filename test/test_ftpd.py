@@ -1837,7 +1837,7 @@ class TestFtpAbort(unittest.TestCase):
             self.assertEqual(self.client.getresp()[:3], '225')
 
 
-class ThrottleBandwidth(unittest.TestCase):
+class TestThrottleBandwidth(unittest.TestCase):
     """Test ThrottledDTPHandler class."""
     server_class = FTPd
     client_class = ftplib.FTP
@@ -1877,6 +1877,12 @@ class ThrottleBandwidth(unittest.TestCase):
             self.timeout = 0
             return 1
 
+    class CallNowInsteadOfEvery(ftpserver.CallEvery):
+        # same as above but for CallEvery class
+        def __le__(self, other):
+            self.timeout = 0
+            return 1
+
     def test_throttle_send(self):
         # This test doesn't test the actual speed accuracy, just
         # awakes all that code which implements the throttling.
@@ -1887,13 +1893,16 @@ class ThrottleBandwidth(unittest.TestCase):
         file.close()
 
         original_call_later = ftpserver.CallLater
+        original_call_every = ftpserver.CallEvery
         ftpserver.CallLater = self.CallNowInsteadOfLater
+        ftpserver.CallEvery = self.CallNowInsteadOfEvery
         try:
             self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
             self.dummyfile.seek(0)
             self.assertEqual(hash(data), hash(self.dummyfile.read()))
         finally:
             ftpserver.CallLater = original_call_later
+            ftpserver.CallEvery = original_call_every
 
     def test_throttle_recv(self):
         # This test doesn't test the actual speed accuracy, just
@@ -1904,7 +1913,9 @@ class ThrottleBandwidth(unittest.TestCase):
         self.dummyfile.seek(0)
 
         original_call_later = ftpserver.CallLater
+        original_call_every = ftpserver.CallEvery
         ftpserver.CallLater = self.CallNowInsteadOfLater
+        ftpserver.CallEvery = self.CallNowInsteadOfEvery
         try:
             self.client.storbinary("stor " + TESTFN, self.dummyfile)
             self.client.quit()  # needed to fix occasional failures
@@ -1912,6 +1923,7 @@ class ThrottleBandwidth(unittest.TestCase):
             self.assertEqual(hash(data), hash(file_data))
         finally:
             ftpserver.CallLater = original_call_later
+            ftpserver.CallEvery = original_call_every
 
 
 class TestTimeouts(unittest.TestCase):
@@ -2983,7 +2995,7 @@ def test_main(tests=None):
                  TestFtpStoreData,
                  TestFtpRetrieveData,
                  TestFtpListingCmds,
-                 ThrottleBandwidth,
+                 TestThrottleBandwidth,
                  TestFtpAbort,
                  TestTimeouts,
                  TestConfigurableOptions,
