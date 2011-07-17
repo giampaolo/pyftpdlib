@@ -1194,7 +1194,7 @@ class ThrottledDTPHandler(DTPHandler):
     auto_sized_buffers = True
 
     def __init__(self, sock_obj, cmd_channel):
-        DTPHandler.__init__(self, sock_obj, cmd_channel)
+        super(ThrottledDTPHandler, self).__init__(sock_obj, cmd_channel)
         self._timenext = 0
         self._datacount = 0
         self.sleeping = False
@@ -1209,19 +1209,19 @@ class ThrottledDTPHandler(DTPHandler):
                     self.ac_out_buffer_size /= 2
 
     def readable(self):
-        return not self.sleeping and DTPHandler.readable(self)
+        return not self.sleeping and super(ThrottledDTPHandler, self).readable()
 
     def writable(self):
-        return not self.sleeping and DTPHandler.writable(self)
+        return not self.sleeping and super(ThrottledDTPHandler, self).writable()
 
     def recv(self, buffer_size):
-        chunk = DTPHandler.recv(self, buffer_size)
+        chunk = super(ThrottledDTPHandler, self).recv(buffer_size)
         if self.read_limit:
             self._throttle_bandwidth(len(chunk), self.read_limit)
         return chunk
 
     def send(self, data):
-        num_sent = DTPHandler.send(self, data)
+        num_sent = super(ThrottledDTPHandler, self).send(data)
         if self.write_limit:
             self._throttle_bandwidth(num_sent, self.write_limit)
         return num_sent
@@ -1247,7 +1247,7 @@ class ThrottledDTPHandler(DTPHandler):
     def close(self):
         if self._throttler is not None and not self._throttler.cancelled:
             self._throttler.cancel()
-        DTPHandler.close(self)
+        super(ThrottledDTPHandler, self).close()
 
 
 # --- producers
