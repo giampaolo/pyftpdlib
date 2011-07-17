@@ -294,6 +294,9 @@ if not hasattr(property, "setter"):
             cls_ns[name] = property(self.fget, value, self.fdel, self.__doc__)
             return cls_ns[name]
 
+_months_map = {1:'Jan', 2:'Feb', 3:'Mar', 4:'Apr', 5:'May', 6:'Jun', 7:'Jul',
+               8:'Aug', 9:'Sep', 10:'Oct', 11:'Nov', 12:'Dec'}
+
 
 class CallLater(object):
     """Calls a function at a later time.
@@ -1659,20 +1662,25 @@ class AbstractedFS(object):
             size = st.st_size  # file size
             uname = self.get_user_by_uid(st.st_uid)
             gname = self.get_group_by_gid(st.st_gid)
+            mtime = timefunc(st.st_mtime)
             try:
-                mtime = time.strftime("%b %d %H:%M", timefunc(st.st_mtime))
+                mtimestr = "%s %s" % (_months_map[mtime.tm_mon],
+                                      time.strftime("%d %H:%M", mtime))
             except ValueError:
                 # It could be raised if last mtime happens to be too
                 # old (prior to year 1900) in which case we return
                 # the current time as last mtime.
-                mtime = time.strftime("%b %d %H:%M", timefunc())
+                mtime = timefunc()
+                mtimestr = "%s %s" % (_months_map[mtime.tm_mon],
+                                      time.strftime("%d %H:%M", mtime))
+
             # if the file is a symlink, resolve it, e.g. "symlink -> realfile"
             if stat.S_ISLNK(st.st_mode) and hasattr(self, 'readlink'):
                 basename = basename + " -> " + self.readlink(file)
 
             # formatting is matched with proftpd ls output
             yield "%s %3s %-8s %-8s %8s %s %s\r\n" % (perms, nlinks, uname, gname,
-                                                      size, mtime, basename)
+                                                      size, mtimestr, basename)
 
     def format_mlsx(self, basedir, listing, perms, facts, ignore_err=True):
         """Return an iterator object that yields the entries of a given
