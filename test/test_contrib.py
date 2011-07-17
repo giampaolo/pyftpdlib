@@ -82,7 +82,7 @@ class TestFtpListingCmdsTLSMixin(TLSTestMixin, TestFtpListingCmds): pass
 class TestFtpAbortTLSMixin(TLSTestMixin, TestFtpAbort):
     def test_oob_abor(self): pass
 
-class TestThrottleBandwidthTLSMixin(TLSTestMixin, ThrottleBandwidth):
+class TestThrottleBandwidthTLSMixin(TLSTestMixin, TestThrottleBandwidth):
     def test_throttle_recv(self): pass
     def test_throttle_send(self): pass
 
