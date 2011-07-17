@@ -2,13 +2,13 @@
 # $Id$
 
 """
-A FTP server banning clients in case of command flood.
+A FTP server banning clients in case of commands flood.
 
 If client sends more than 300 requests per-second it will be
 disconnected and won't be able to re-connect for 1 hour.
 """
 
-from pyftpdlib.ftpserver import FTPHandler, FTPServer, DummyAuthorizer, CallLater
+from pyftpdlib.ftpserver import FTPHandler, FTPServer, DummyAuthorizer, CallEvery
 
 
 class AntiFloodHandler(FTPHandler):
@@ -20,7 +20,7 @@ class AntiFloodHandler(FTPHandler):
     def __init__(self, *args, **kwargs):
         super(AntiFloodHandler, self).__init__(*args, **kwargs)
         self.processed_cmds = 0
-        self.pcmds_callback = CallLater(1, self.check_processed_cmds)
+        self.pcmds_callback = CallEvery(1, self.check_processed_cmds)
 
     def handle(self):
         # called when client connects.
@@ -47,7 +47,6 @@ class AntiFloodHandler(FTPHandler):
         # ban ip and schedule next un-ban
         if ip not in self.banned_ips:
             self.log('banned IP %s for command flooding' % ip)
-            CallLater(self.ban_for, self.unban, ip)
         self.respond('550 you are banned for %s seconds' % self.ban_for)
         self.close()
         self.banned_ips.append(ip)
