@@ -3808,7 +3808,7 @@ def main():
     handler.masquerade_address = options.nat_address
     handler.passive_ports = passive_ports
     ftpd = FTPServer((options.interface, options.port), FTPHandler)
-    print "Serving FTP on %s:%s" % ftpd.address
+    log("Serving FTP on %s:%s" % ftpd.address)
     ftpd.serve_forever()
 
 if __name__ == '__main__':
