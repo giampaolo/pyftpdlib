@@ -3738,16 +3738,20 @@ class FTPServer(object, asyncore.dispatcher):
                 raise
             except:
                 if not ignore_all:
+                    asyncore.socket_map.clear()
+                    del _tasks[:]
                     raise
         asyncore.socket_map.clear()
 
         for x in _tasks:
             try:
-                x.cancel()
+                if not x.cancelled:
+                    x.cancel()
             except (asyncore.ExitNow, KeyboardInterrupt, SystemExit):
                 raise
             except:
                 if not ignore_all:
+                    del _tasks[:]
                     raise
         del _tasks[:]
 
