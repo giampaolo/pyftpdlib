@@ -3617,6 +3617,8 @@ class FTPServer(object, asyncore.dispatcher):
                     poll_fun(timeout)
                     _scheduler()
             except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
+                pass
+            finally:
                 cls.close_all()
         else:
             while (asyncore.socket_map or _tasks) and count > 0:
