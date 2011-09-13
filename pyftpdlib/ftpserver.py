@@ -1995,7 +1995,7 @@ class FTPHandler(object, asynchat.async_chat):
 
     def handle_max_cons(self):
         """Called when limit for maximum number of connections is reached."""
-        msg = "Too many connections. Service temporary unavailable."
+        msg = "Too many connections. Service temporarily unavailable."
         self.respond("421 %s" % msg)
         self.log(msg)
         # If self.push is used, data could not be sent immediately in
