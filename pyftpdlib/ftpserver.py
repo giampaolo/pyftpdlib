@@ -332,22 +332,26 @@ class CallLater(object):
     def __le__(self, other):
         return self.timeout <= other.timeout
 
+    def _post_call(self, exc):
+        if not self.cancelled:
+            self.cancel()
+
     def call(self):
         """Call this scheduled function."""
         assert not self.cancelled, "Already cancelled"
+        exc = None
         try:
             try:
                 self._target(*self._args, **self._kwargs)
             except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
                 raise
-            except:
+            except Exception, exc:
                 if self._errback is not None:
                     self._errback()
                 else:
                     raise
         finally:
-            if not self.cancelled:
-                self.cancel()
+            self._post_call(exc)
 
     def reset(self):
         """Reschedule this call resetting the current countdown."""
@@ -391,29 +395,13 @@ class CallEvery(CallLater):
     It accepts the same arguments as CallLater and shares the same API.
     """
 
-    def call(self):
-        # call this scheduled function and reschedule it right after
-        assert not self.cancelled, "Already cancelled"
-        exc = False
-        try:
-            try:
-                self._target(*self._args, **self._kwargs)
-            except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
-                exc = True
-                raise
-            except:
-                if self._errback is not None:
-                    self._errback()
-                else:
-                    exc = True
-                    raise
-        finally:
-            if not self.cancelled:
-                if exc:
-                    self.cancel()
-                else:
-                    self.timeout = time.time() + self._delay
-                    heapq.heappush(_tasks, self)
+    def _post_call(self, exc):
+        if not self.cancelled:
+            if exc:
+                self.cancel()
+            else:
+                self.timeout = time.time() + self._delay
+                heapq.heappush(_tasks, self)
 
 
 # --- library defined exceptions
