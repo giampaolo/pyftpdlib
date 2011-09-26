@@ -655,7 +655,26 @@ class TestCallEvery(unittest.TestCase):
             ftpserver._scheduler()
             time.sleep(timeout)
 
-    def test_base(self):
+    def test_only_once(self):
+        # make sure that callback is called only once per-loop
+        l1 = []
+        fun = lambda: l1.append(None)
+        ftpserver.CallEvery(0, fun)
+        ftpserver._scheduler()
+        self.assertEqual(l1, [None])
+
+    def test_multi_0_timeout(self):
+        # make sure a 0 timeout callback is called as many times
+        # as the number of loops
+        l = []
+        fun = lambda: l.append(None)
+        ftpserver.CallEvery(0, fun)
+        self.scheduler(count=100)
+        self.assertEqual(len(l), 100)
+
+    def test_low_and_high_timeouts(self):
+        # make sure a callback with a lower timeout is called more
+        # frequently than another with a greater timeout
         l1 = []
         fun = lambda: l1.append(None)
         ftpserver.CallEvery(0.001, fun)
@@ -668,14 +687,8 @@ class TestCallEvery(unittest.TestCase):
 
         self.assertTrue(len(l1) > len(l2))
 
-    def test_0_secs(self):
-        l = []
-        fun = lambda: l.append(None)
-        ftpserver.CallEvery(0, fun)
-        self.scheduler(count=100)
-        self.assertEqual(len(l), 100)
-
     def test_cancel(self):
+        # make sure a cancelled callback doesn't get called anymore
         l = []
         fun = lambda: l.append(None)
         call = ftpserver.CallEvery(0.001, fun)
