@@ -655,6 +655,19 @@ class TestCallEvery(unittest.TestCase):
             ftpserver._scheduler()
             time.sleep(timeout)
 
+    def test_interface(self):
+        fun = lambda: 0
+        self.assertRaises(AssertionError, ftpserver.CallEvery, -1, fun)
+        x = ftpserver.CallEvery(3, fun)
+        self.assertRaises(AssertionError, x.delay, -1)
+        self.assertEqual(x.cancelled, False)
+        x.cancel()
+        self.assertEqual(x.cancelled, True)
+        self.assertRaises(AssertionError, x.call)
+        self.assertRaises(AssertionError, x.reset)
+        self.assertRaises(AssertionError, x.delay, 2)
+        self.assertRaises(AssertionError, x.cancel)
+
     def test_only_once(self):
         # make sure that callback is called only once per-loop
         l1 = []
