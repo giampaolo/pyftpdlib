@@ -1728,7 +1728,7 @@ class TestFtpListingCmds(unittest.TestCase):
         resp = self.client.sendcmd('mlst')
 
         local = facts[:-1].split(";")
-        returned = resp.split("\n")[1].strip().partition(" ")[0][:-1]
+        returned = resp.split("\n")[1].strip()[:-3]
         returned = [x.split("=")[0] for x in returned.split(";")]
         self.assertEqual(sorted(local), sorted(returned))
 

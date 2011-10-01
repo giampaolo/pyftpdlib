@@ -3604,11 +3604,12 @@ class FTPServer(object, asyncore.dispatcher):
 
         if count is None:
             try:
-                while asyncore.socket_map or _tasks:
-                    poll_fun(timeout)
-                    _scheduler()
-            except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
-                pass
+                try:
+                    while asyncore.socket_map or _tasks:
+                        poll_fun(timeout)
+                        _scheduler()
+                except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
+                    pass
             finally:
                 cls.close_all()
         else:
