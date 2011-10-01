@@ -685,20 +685,22 @@ class TestCallEvery(unittest.TestCase):
         self.scheduler(count=100)
         self.assertEqual(len(l), 100)
 
-    def test_low_and_high_timeouts(self):
-        # make sure a callback with a lower timeout is called more
-        # frequently than another with a greater timeout
-        l1 = []
-        fun = lambda: l1.append(None)
-        ftpserver.CallEvery(0.001, fun)
-        self.scheduler()
+    # run it on systems where time.time() has a higher precision
+    if os.name == 'posix':
+        def test_low_and_high_timeouts(self):
+            # make sure a callback with a lower timeout is called more
+            # frequently than another with a greater timeout
+            l1 = []
+            fun = lambda: l1.append(None)
+            ftpserver.CallEvery(0.001, fun)
+            self.scheduler()
 
-        l2 = []
-        fun = lambda: l2.append(None)
-        ftpserver.CallEvery(0.01, fun)
-        self.scheduler()
+            l2 = []
+            fun = lambda: l2.append(None)
+            ftpserver.CallEvery(0.01, fun)
+            self.scheduler()
 
-        self.assertTrue(len(l1) > len(l2))
+            self.assertTrue(len(l1) > len(l2))
 
     def test_cancel(self):
         # make sure a cancelled callback doesn't get called anymore

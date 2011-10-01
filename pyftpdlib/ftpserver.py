@@ -269,8 +269,11 @@ _tasks = []
 def _scheduler():
     """Run the scheduled functions due to expire soonest (if any)."""
     now = time.time()
+    calls = []
     while _tasks and now >= _tasks[0].timeout:
         call = heapq.heappop(_tasks)
+        calls.append(call)
+    for call in calls:
         if call._repush:
             heapq.heappush(_tasks, call)
             call._repush = False
