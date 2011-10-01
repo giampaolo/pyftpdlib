@@ -199,58 +199,63 @@ else:
             back to clear-text.
             twisted/internet/tcp.py code has been used as an example.
             """
+            def completed():
+                self._ssl_established = False
+                self._ssl_closing = False
+                self.handle_ssl_shutdown()
+
             self._ssl_closing = True
             try:
-                # since SSL_shutdown() doesn't report errors, an empty
-                # write call is done first, to try to detect if the
-                # connection has gone away
-                try:
-                    os.write(self.socket.fileno(), '')
-                except (OSError, socket.error), err:
-                    if err[0] in (EINTR, EWOULDBLOCK, ENOBUFS):
-                        return
-                    elif err[0] in DISCONNECTED:
-                        super(SSLConnection, self).close()
-                        return
-                    else:
-                        raise
 
-                def completed():
-                    self._ssl_established = False
-                    self._ssl_closing = False
-                    self.handle_ssl_shutdown()
+                if getattr(self, '_ccc', False) == False:
+                    # since SSL_shutdown() doesn't report errors, an empty
+                    # write call is done first, to try to detect if the
+                    # connection has gone away
+                    try:
+                        os.write(self.socket.fileno(), '')
+                    except (OSError, socket.error), err:
+                        if err[0] in (EINTR, EWOULDBLOCK, ENOBUFS):
+                            return
+                        elif err[0] in DISCONNECTED:
+                            super(SSLConnection, self).close()
+                            return
+                        else:
+                            raise
 
-                try:
                     # Here we just want to shutdown() the SSL layer and then
                     # close() the connection so we're not interested in a
                     # complete SSL shutdown() handshake so let's pretend
                     # we already received a RECEIVED shutdown notification
                     # from client. Once the client received our shutdown
                     # notification then we close() the connection.
-                    if getattr(self, '_ccc', False) == False:
-                        laststate = self.socket.get_shutdown()
-                        self.socket.set_shutdown(laststate | SSL.RECEIVED_SHUTDOWN)
-                        done = self.socket.shutdown()
-                        if not (laststate & SSL.RECEIVED_SHUTDOWN):
-                            self.socket.set_shutdown(SSL.SENT_SHUTDOWN)
-                        if done:
-                            return completed()
+                    laststate = self.socket.get_shutdown()
+                    self.socket.set_shutdown(laststate | SSL.RECEIVED_SHUTDOWN)
+                    done = self.socket.shutdown()
+                    if not (laststate & SSL.RECEIVED_SHUTDOWN):
+                        self.socket.set_shutdown(SSL.SENT_SHUTDOWN)
+                    if done:
+                        return completed()
+                else:
                     # Ok, we're dealing with CCC. To get back to clear-text
                     # we need a full SENT/RECEIVED handshake.
+                    laststate = self.socket.get_shutdown()
+                    if laststate == 0:
+                        self.socket.shutdown()
                     else:
-                        laststate = self.socket.get_shutdown()
-                        if laststate == 0:
-                            self.socket.shutdown()
-                        else:
-                            done = self.socket.shutdown()
-                            if done:
-                                return completed()
-                except (SSL.WantReadError, SSL.WantWriteError):
+                        done = self.socket.shutdown()
+                        if done:
+                            return completed()
+            except (SSL.WantReadError, SSL.WantWriteError):
+                return
+            except SSL.Error, err:
+                if err.args and not err.args[0]:
+                    # see https://bugs.launchpad.net/pyopenssl/+bug/785985
                     return
-                except SSL.Error, err:
-                    if err.args and not err.args[0]:
-                        # see https://bugs.launchpad.net/pyopenssl/+bug/785985
-                        return
+                raise
+            except socket.error, err:
+                if err[0] in DISCONNECTED:
+                    super(SSLConnection, self).close()
+                else:
                     raise
             except:
                 self._ssl_closing = False
