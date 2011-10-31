@@ -1638,6 +1638,7 @@ class AbstractedFS(object):
             timefunc = time.gmtime
         else:
             timefunc = time.localtime
+        now = time.time()
         for basename in listing:
             file = os.path.join(basedir, basename)
             try:
@@ -1654,9 +1655,16 @@ class AbstractedFS(object):
             uname = self.get_user_by_uid(st.st_uid)
             gname = self.get_group_by_gid(st.st_gid)
             mtime = timefunc(st.st_mtime)
-            try:
+            # if modificaton time > 6 months shows "month year"
+            # else "month hh:mm";  this matches proftpd format, see:
+            # http://code.google.com/p/pyftpdlib/issues/detail?id=187
+            if (now - st.st_mtime) > 180 * 24 * 60 * 60:
+                fmtstr = "%d  %Y"
+            else:
+                fmtstr = "%d %H:%M"
+            try:                
                 mtimestr = "%s %s" % (_months_map[mtime.tm_mon],
-                                      time.strftime("%d %H:%M", mtime))
+                                      time.strftime(fmtstr, mtime))
             except ValueError:
                 # It could be raised if last mtime happens to be too
                 # old (prior to year 1900) in which case we return
