@@ -25,7 +25,6 @@ def main():
     #ftp_handler.tls_control_required = True
     #ftp_handler.tls_data_required = True
     ftpd = ftpserver.FTPServer(('', 8021), ftp_handler)
-    print "Serving FTPS on %s:%s" % ftpd.address
     ftpd.serve_forever()
 
 if __name__ == '__main__':

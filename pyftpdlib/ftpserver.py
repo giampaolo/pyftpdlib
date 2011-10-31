@@ -3588,7 +3588,7 @@ class FTPServer(object, asyncore.dispatcher):
         if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
             return
         asyncore.dispatcher.set_reuse_addr(self)
-
+        
     @classmethod
     def serve_forever(cls, timeout=1.0, use_poll=False, count=None):
         """A wrap around asyncore.loop(); starts the asyncore polling
@@ -3611,6 +3611,7 @@ class FTPServer(object, asyncore.dispatcher):
             poll_fun = asyncore.poll
 
         if count is None:
+            log("starting FTP server")
             try:
                 try:
                     while asyncore.socket_map or _tasks:
@@ -3619,6 +3620,7 @@ class FTPServer(object, asyncore.dispatcher):
                 except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
                     pass
             finally:
+                log("shutting down FTP server")
                 cls.close_all()
         else:
             while (asyncore.socket_map or _tasks) and count > 0:
@@ -3822,7 +3824,6 @@ def main():
     handler.masquerade_address = options.nat_address
     handler.passive_ports = passive_ports
     ftpd = FTPServer((options.interface, options.port), FTPHandler)
-    log("Serving FTP on %s:%s" % ftpd.address)
     ftpd.serve_forever()
 
 if __name__ == '__main__':

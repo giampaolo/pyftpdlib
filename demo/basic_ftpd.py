@@ -40,7 +40,6 @@ def main():
     ftpd.max_cons_per_ip = 5
 
     # start ftp server
-    print "Serving FTP on %s:%s" % ftpd.address
     ftpd.serve_forever()
 
 if __name__ == '__main__':
