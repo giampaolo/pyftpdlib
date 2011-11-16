@@ -61,6 +61,9 @@ Bugfixes:
  * Issue #187: match proftpd LIST format for files having last modification time
    > 6 months.
 
+ * Issue #188: fix maximum recursion depth exceeded exception occurring if 
+   client quickly connects and disconnects data channel.
+
 Major API changes since 0.6.0:
 
  * AbstractedFS root and cwd properties can now be set via setattr().

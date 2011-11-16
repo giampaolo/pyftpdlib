@@ -940,6 +940,10 @@ class DTPHandler(object, asynchat.async_chat):
         try:
             asynchat.async_chat.__init__(self, sock_obj)
         except socket.error, err:
+            # if we get an exception here we want the dispatcher
+            # instance to set socket attribute before closing, see:
+            # http://code.google.com/p/pyftpdlib/issues/detail?id=188
+            asynchat.async_chat.__init__(self, socket.socket())
             # http://code.google.com/p/pyftpdlib/issues/detail?id=143
             self.close()
             if err[0] == errno.EINVAL:
@@ -1936,6 +1940,11 @@ class FTPHandler(object, asynchat.async_chat):
         try:
             asynchat.async_chat.__init__(self, conn)
         except socket.error, err:
+            # if we get an exception here we want the dispatcher
+            # instance to set socket attribute before closing, see:
+            # http://code.google.com/p/pyftpdlib/issues/detail?id=188
+            asynchat.async_chat.__init__(self, socket.socket())
+            self.close()
             if err[0] == errno.EINVAL:
                 # http://code.google.com/p/pyftpdlib/issues/detail?id=143
                 return
