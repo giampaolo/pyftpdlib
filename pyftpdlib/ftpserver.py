@@ -3682,7 +3682,10 @@ class FTPServer(object, asyncore.dispatcher):
                     handler.handle_max_cons_per_ip()
                     return
 
-            handler.handle()
+            try:
+                handler.handle()
+            except:
+                handler.handle_error()
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             raise
         except:
@@ -3693,12 +3696,12 @@ class FTPServer(object, asyncore.dispatcher):
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=143
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=166
             # - https://groups.google.com/forum/#!topic/pyftpdlib/h7pPybzAx14
+            logerror(traceback.format_exc())
             if handler is not None:
                 handler.close()
             else:
                 if ip is not None and ip in self.ip_map:
                     self.ip_map.remove(ip)
-            logerror(traceback.format_exc())
 
     def writable(self):
         return 0
