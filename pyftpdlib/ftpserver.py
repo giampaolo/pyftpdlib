@@ -263,27 +263,55 @@ def _strerror(err):
     else:
         return err.strerror
 
-# the heap used for the scheduled tasks
-_tasks = []
 
-def _scheduler():
+class _Scheduler(object):
     """Run the scheduled functions due to expire soonest (if any)."""
-    now = time.time()
-    calls = []
-    while _tasks and now >= _tasks[0].timeout:
-        call = heapq.heappop(_tasks)
-        calls.append(call)
-    for call in calls:
-        if call._repush:
-            heapq.heappush(_tasks, call)
-            call._repush = False
-            continue
-        try:
-            call.call()
-        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
-            raise
-        except:
-            logerror(traceback.format_exc())
+
+    cancellations_threshold = 512
+
+    def __init__(self):
+        # the heap used for the scheduled tasks
+        self._tasks = []
+        self._cancellations = 0
+
+    def __call__(self):
+        now = time.time()
+        calls = []
+        while self._tasks and now >= self._tasks[0].timeout:
+            call = heapq.heappop(self._tasks)
+            if not call.cancelled:
+                calls.append(call)
+            else:
+                self._cancellations -= 1
+
+        for call in calls:
+            if call._repush:
+                heapq.heappush(self._tasks, call)
+                call._repush = False
+                continue
+            try:
+                call.call()
+            except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
+                raise
+            except:
+                logerror(traceback.format_exc())
+
+        if self._cancellations > self.cancellations_threshold:
+            self._cancellations = 0
+            self._tasks = [x for x in self._tasks if not x.cancelled]
+            self.reheapify()
+
+    def register(self, what):
+        heapq.heappush(self._tasks, what)
+
+    def unregister(self, what):
+        self._cancellations += 1
+
+    def reheapify(self):
+        heapq.heapify(self._tasks)
+
+
+_scheduler = _Scheduler()
 
 # dirty hack to support property.setter on python < 2.6
 if not hasattr(property, "setter"):
@@ -330,7 +358,7 @@ class CallLater(object):
         # seconds from the epoch at which to call the function
         self.timeout = time.time() + self._delay
         self.cancelled = False
-        heapq.heappush(_tasks, self)
+        _scheduler.register(self)
 
     def __le__(self, other):
         return self.timeout <= other.timeout
@@ -375,22 +403,14 @@ class CallLater(object):
         else:
             # XXX - slow, can be improved
             self.timeout = newtime
-            heapq.heapify(_tasks)
+            _scheduler.reheapify()
 
     def cancel(self):
         """Unschedule this call."""
         assert not self.cancelled, "Already cancelled"
         self.cancelled = True
         del self._target, self._args, self._kwargs, self._errback
-        if self in _tasks:
-            pos = _tasks.index(self)
-            if pos == 0:
-                heapq.heappop(_tasks)
-            elif pos == len(_tasks) - 1:
-                _tasks.pop(pos)
-            else:
-                _tasks[pos] = _tasks.pop()
-                heapq._siftup(_tasks, pos)
+        _scheduler.unregister(self)
 
 
 class CallEvery(CallLater):
@@ -404,7 +424,7 @@ class CallEvery(CallLater):
                 self.cancel()
             else:
                 self.timeout = time.time() + self._delay
-                heapq.heappush(_tasks, self)
+                _scheduler.register(self)
 
 
 # --- library defined exceptions
@@ -1666,7 +1686,7 @@ class AbstractedFS(object):
                 fmtstr = "%d  %Y"
             else:
                 fmtstr = "%d %H:%M"
-            try:                
+            try:
                 mtimestr = "%s %s" % (_months_map[mtime.tm_mon],
                                       time.strftime(fmtstr, mtime))
             except ValueError:
@@ -3597,7 +3617,7 @@ class FTPServer(object, asyncore.dispatcher):
         if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
             return
         asyncore.dispatcher.set_reuse_addr(self)
-        
+
     @classmethod
     def serve_forever(cls, timeout=1.0, use_poll=False, count=None):
         """A wrap around asyncore.loop(); starts the asyncore polling
@@ -3623,7 +3643,7 @@ class FTPServer(object, asyncore.dispatcher):
             log("starting FTP server")
             try:
                 try:
-                    while asyncore.socket_map or _tasks:
+                    while asyncore.socket_map or _scheduler._tasks:
                         poll_fun(timeout)
                         _scheduler()
                 except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
@@ -3632,10 +3652,10 @@ class FTPServer(object, asyncore.dispatcher):
                 log("shutting down FTP server")
                 cls.close_all()
         else:
-            while (asyncore.socket_map or _tasks) and count > 0:
+            while (asyncore.socket_map or _scheduler._tasks) and count > 0:
                 if asyncore.socket_map:
                     poll_fun(timeout)
-                if _tasks:
+                if _scheduler._tasks:
                     _scheduler()
                 count = count - 1
 
@@ -3755,11 +3775,11 @@ class FTPServer(object, asyncore.dispatcher):
             except:
                 if not ignore_all:
                     asyncore.socket_map.clear()
-                    del _tasks[:]
+                    del _scheduler._tasks[:]
                     raise
         asyncore.socket_map.clear()
 
-        for x in _tasks:
+        for x in _scheduler._tasks:
             try:
                 if not x.cancelled:
                     x.cancel()
@@ -3767,9 +3787,9 @@ class FTPServer(object, asyncore.dispatcher):
                 raise
             except:
                 if not ignore_all:
-                    del _tasks[:]
+                    del _scheduler._tasks[:]
                     raise
-        del _tasks[:]
+        del _scheduler._tasks[:]
 
 
 def main():
@@ -3840,4 +3860,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

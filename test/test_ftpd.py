@@ -151,6 +151,10 @@ def onexit():
 #tempfile.template = 'tmp-pyftpdlib'
 atexit.register(onexit)
 
+# lower this threshold so that the scheduler internal queue
+# gets re-heapified more often
+ftpserver._scheduler.cancellations_threshold = 5
+
 
 class FTPd(threading.Thread):
     """A threaded FTP server used for running tests.
@@ -563,13 +567,13 @@ class TestCallLater(unittest.TestCase):
     """Tests for CallLater class."""
 
     def setUp(self):
-        for task in ftpserver._tasks:
+        for task in ftpserver._scheduler._tasks:
             if not task.cancelled:
                 task.cancel()
-        del ftpserver._tasks[:]
+        del ftpserver._scheduler._tasks[:]
 
     def scheduler(self, timeout=0.01, count=100):
-        while ftpserver._tasks and count > 0:
+        while ftpserver._scheduler._tasks and count > 0:
             ftpserver._scheduler()
             count -= 1
             time.sleep(timeout)
@@ -645,10 +649,10 @@ class TestCallEvery(unittest.TestCase):
     """Tests for CallEvery class."""
 
     def setUp(self):
-        for task in ftpserver._tasks:
+        for task in ftpserver._scheduler._tasks:
             if not task.cancelled:
                 task.cancel()
-        del ftpserver._tasks[:]
+        del ftpserver._scheduler._tasks[:]
 
     def scheduler(self, timeout=0.0001, count=100):
         for x in range(100):
@@ -1865,95 +1869,6 @@ class TestFtpAbort(unittest.TestCase):
             self.assertEqual(self.client.getresp()[:3], '225')
 
 
-class TestThrottleBandwidth(unittest.TestCase):
-    """Test ThrottledDTPHandler class."""
-    server_class = FTPd
-    client_class = ftplib.FTP
-
-    def setUp(self):
-        self.server = self.server_class()
-        self.server.handler.dtp_handler = ftpserver.ThrottledDTPHandler
-        self.server.start()
-        self.client = self.client_class()
-        self.client.connect(self.server.host, self.server.port)
-        self.client.sock.settimeout(2)
-        self.client.login(USER, PASSWD)
-
-        self.dummyfile = StringIO.StringIO()
-
-    def tearDown(self):
-        self.client.close()
-        self.server.handler.dtp_handler.read_limit = 0
-        self.server.handler.dtp_handler.write_limit = 0
-        self.server.handler.dtp_handler = ftpserver.DTPHandler
-        self.server.stop()
-
-        if not self.dummyfile.closed:
-            self.dummyfile.close()
-        if os.path.exists(TESTFN):
-            os.remove(TESTFN)
-
-    class CallNowInsteadOfLater(ftpserver.CallLater):
-        """A dirty hack I'm really ashamed of.
-        Force the original CallLater class to immediately "fire" any
-        callback, no matter what its actual timeout is.
-        This way we *don't* limit the transfer speed and run our test
-        faster, but for the underlying code implementing the bandwidth
-        throttling that doesn't make any difference.
-        """
-        def __le__(self, other):
-            self.timeout = 0
-            return 1
-
-    class CallNowInsteadOfEvery(ftpserver.CallEvery):
-        # same as above but for CallEvery class
-        def __le__(self, other):
-            self.timeout = 0
-            return 1
-
-    def test_throttle_send(self):
-        # This test doesn't test the actual speed accuracy, just
-        # awakes all that code which implements the throttling.
-        self.server.handler.dtp_handler.write_limit = 32768
-        data = 'abcde12345' * 100000
-        file = open(TESTFN, 'wb')
-        file.write(data)
-        file.close()
-
-        original_call_later = ftpserver.CallLater
-        original_call_every = ftpserver.CallEvery
-        ftpserver.CallLater = self.CallNowInsteadOfLater
-        ftpserver.CallEvery = self.CallNowInsteadOfEvery
-        try:
-            self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
-            self.dummyfile.seek(0)
-            self.assertEqual(hash(data), hash(self.dummyfile.read()))
-        finally:
-            ftpserver.CallLater = original_call_later
-            ftpserver.CallEvery = original_call_every
-
-    def test_throttle_recv(self):
-        # This test doesn't test the actual speed accuracy, just
-        # awakes all that code which implements the throttling.
-        self.server.handler.dtp_handler.read_limit = 32768
-        data = 'abcde12345' * 100000
-        self.dummyfile.write(data)
-        self.dummyfile.seek(0)
-
-        original_call_later = ftpserver.CallLater
-        original_call_every = ftpserver.CallEvery
-        ftpserver.CallLater = self.CallNowInsteadOfLater
-        ftpserver.CallEvery = self.CallNowInsteadOfEvery
-        try:
-            self.client.storbinary("stor " + TESTFN, self.dummyfile)
-            self.client.quit()  # needed to fix occasional failures
-            file_data = open(TESTFN, 'rb').read()
-            self.assertEqual(hash(data), hash(file_data))
-        finally:
-            ftpserver.CallLater = original_call_later
-            ftpserver.CallEvery = original_call_every
-
-
 class TestTimeouts(unittest.TestCase):
     """Test idle-timeout capabilities of control and data channels.
     Some tests may fail on slow machines.
@@ -3023,7 +2938,6 @@ def test_main(tests=None):
                  TestFtpStoreData,
                  TestFtpRetrieveData,
                  TestFtpListingCmds,
-                 TestThrottleBandwidth,
                  TestFtpAbort,
                  TestTimeouts,
                  TestConfigurableOptions,

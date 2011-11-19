@@ -82,10 +82,6 @@ class TestFtpListingCmdsTLSMixin(TLSTestMixin, TestFtpListingCmds): pass
 class TestFtpAbortTLSMixin(TLSTestMixin, TestFtpAbort):
     def test_oob_abor(self): pass
 
-class TestThrottleBandwidthTLSMixin(TLSTestMixin, TestThrottleBandwidth):
-    def test_throttle_recv(self): pass
-    def test_throttle_send(self): pass
-
 class TestTimeoutsTLSMixin(TLSTestMixin, TestTimeouts):
     def test_data_timeout_not_reached(self): pass
 
@@ -613,7 +609,6 @@ def test_main():
                       TestFtpRetrieveDataTLSMixin,
                       TestFtpListingCmdsTLSMixin,
                       TestFtpAbortTLSMixin,
-                      TestThrottleBandwidthTLSMixin,
                       TestTimeoutsTLSMixin,
                       TestConfigurableOptionsTLSMixin,
                       TestCallbacksTLSMixin,

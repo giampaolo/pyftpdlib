@@ -26,6 +26,8 @@ Enhancements:
 
  * Issue #181: added CallEvery class to call a function every x seconds.
 
+ * Issue #189: scheduled functions' cancel() method is now 2x faster.
+
 Bugfixes:
 
  * Issue #156: data connection must be closed before sending 226/426 reply.
@@ -57,11 +59,11 @@ Bugfixes:
 
  * Issue #176: SO_REUSEADDR option is now used for passive data sockets to
    prevent server running out of free ports when using passive_ports directive.
-   
+
  * Issue #187: match proftpd LIST format for files having last modification time
    > 6 months.
 
- * Issue #188: fix maximum recursion depth exceeded exception occurring if 
+ * Issue #188: fix maximum recursion depth exceeded exception occurring if
    client quickly connects and disconnects data channel.
 
 Major API changes since 0.6.0:
