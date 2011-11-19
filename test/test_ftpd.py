@@ -2936,6 +2936,42 @@ class TestCommandLineParser(unittest.TestCase):
         self.assertRaises(SystemExit, ftpserver.main)
 
 
+class TestXXX(unittest.TestCase):
+    """Tests for any kind of strange situation for the server to be in,
+    mainly referring to bugs signaled on the bug tracker.
+    """
+    server_class = FTPd
+    client_class = ftplib.FTP
+
+    def setUp(self):
+        self.server = self.server_class()
+        self.server.start()
+        self.client = self.client_class()
+        self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
+        self.client.login(USER, PASSWD)
+
+    def tearDown(self):
+        self.client.close()
+        if self.server.running:
+            self.server.stop()
+
+    def test_active_conn_error(self):
+        # we open a socket() but avoid to invoke accept() to
+        # reproduce this error condition:
+        # http://code.google.com/p/pyftpdlib/source/detail?r=905
+        sock = socket.socket()
+        sock.bind((HOST, 0))
+        port = sock.getsockname()[1]
+        try:
+            self.client.sendport(HOST, port)
+        except ftplib.error_temp, err:
+            self.assertEqual(str(err)[:3], '425')
+        else:
+            self.fail("exception not raised")
+
+
+
 def test_main(tests=None):
     test_suite = unittest.TestSuite()
     if tests is None:
@@ -2965,6 +3001,7 @@ def test_main(tests=None):
         if SUPPORTS_HYBRID_IPV6:
             tests.append(TestIPv6MixedEnvironment)
 
+#    tests = [TestXXX]
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
     try:

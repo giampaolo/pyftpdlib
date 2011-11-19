@@ -742,6 +742,8 @@ class PassiveDTP(object, asyncore.dispatcher):
 
     def handle_accept(self):
         """Called when remote client initiates a connection."""
+        if not self.cmd_channel.connected:
+            return self.close()
         try:
             sock, addr = self.accept()
         except TypeError:
@@ -782,13 +784,15 @@ class PassiveDTP(object, asyncore.dispatcher):
         # limit.
         self.close()
         # delegate such connection to DTP handler
-        handler = self.cmd_channel.dtp_handler(sock, self.cmd_channel)
-        if handler.connected:
-            self.cmd_channel.data_channel = handler
-            self.cmd_channel._on_dtp_connection()
+        if self.cmd_channel.connected:
+            handler = self.cmd_channel.dtp_handler(sock, self.cmd_channel)
+            if handler.connected:
+                self.cmd_channel.data_channel = handler
+                self.cmd_channel._on_dtp_connection()
 
     def handle_timeout(self):
-        self.cmd_channel.respond("421 Passive data channel timed out.")
+        if self.cmd_channel.connected:
+            self.cmd_channel.respond("421 Passive data channel timed out.")
         self.close()
 
     def writable(self):
@@ -866,9 +870,15 @@ class ActiveDTP(object, asyncore.dispatcher):
         """Called when connection is established."""
         if self._idler is not None and not self._idler.cancelled:
             self._idler.cancel()
+        if not self.cmd_channel.connected:
+            return self.close()
+        #
         msg = 'Active data connection established.'
         self.cmd_channel.respond('200 ' + msg)
         self.cmd_channel.log_cmd(self._cmd, self._normalized_addr, 200, msg)
+        #
+        if not self.cmd_channel.connected:
+            return self.close()
         # delegate such connection to DTP handler
         handler = self.cmd_channel.dtp_handler(self.socket, self.cmd_channel)
         self.cmd_channel.data_channel = handler
@@ -879,15 +889,17 @@ class ActiveDTP(object, asyncore.dispatcher):
         #self.close()
 
     def handle_timeout(self):
-        msg = "Active data channel timed out."
-        self.cmd_channel.respond("421 " +  msg)
-        self.cmd_channel.log_cmd(self._cmd, self._normalized_addr, 421, msg)
+        if self.cmd_channel.connected:
+            msg = "Active data channel timed out."
+            self.cmd_channel.respond("421 " +  msg)
+            self.cmd_channel.log_cmd(self._cmd, self._normalized_addr, 421, msg)
         self.close()
 
     def handle_expt(self):
-        msg = "Can't connect to specified address."
-        self.cmd_channel.respond("425 " + msg)
-        self.cmd_channel.log_cmd(self._cmd, self._normalized_addr, 425, msg)
+        if self.cmd_channel.connected:
+            msg = "Can't connect to specified address."
+            self.cmd_channel.respond("425 " + msg)
+            self.cmd_channel.log_cmd(self._cmd, self._normalized_addr, 425, msg)
         self.close()
 
     def handle_error(self):
@@ -2246,6 +2258,7 @@ class FTPHandler(object, asynchat.async_chat):
         if not self._closed:
             self._closed = True
             asynchat.async_chat.close(self)
+            self.connected = False
 
             self._shutdown_connecting_dtp()
 
