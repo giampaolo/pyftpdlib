@@ -897,7 +897,7 @@ class ActiveDTP(object, asyncore.dispatcher):
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             raise
         except (socket.gaierror, socket.error):
-            self.handle_expt()
+            pass
         except:
             self.cmd_channel.logerror(traceback.format_exc())
         self.handle_expt()
