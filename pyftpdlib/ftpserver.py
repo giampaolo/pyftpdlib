@@ -851,12 +851,7 @@ class ActiveDTP(object, asyncore.dispatcher):
         try:
             self.connect((ip, port))
         except (socket.gaierror, socket.error), err:
-            self.close()
-            msg = "Can't connect to specified address."
-            if hasattr(err, 'errno'):
-                msg += " %s." % _strerror(err)
-            self.cmd_channel.respond("425 " + msg)
-            self.cmd_channel.log_cmd(self._cmd, self._normalized_addr, 425, msg)
+            self.handle_expt()
 
     # overridden to prevent unhandled read/write event messages to
     # be printed by asyncore on Python < 2.6
@@ -901,6 +896,8 @@ class ActiveDTP(object, asyncore.dispatcher):
             raise
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             raise
+        except (socket.gaierror, socket.error):
+            self.handle_expt()
         except:
             self.cmd_channel.logerror(traceback.format_exc())
         self.handle_expt()
