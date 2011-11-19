@@ -2812,6 +2812,9 @@ class TestCornerCases(unittest.TestCase):
             server.close()
 
     def test_active_conn_error(self):
+        # we open a socket() but avoid to invoke accept() to
+        # reproduce this error condition:
+        # http://code.google.com/p/pyftpdlib/source/detail?r=905
         sock = socket.socket()
         sock.bind((HOST, 0))
         port = sock.getsockname()[1]
