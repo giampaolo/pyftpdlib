@@ -153,6 +153,9 @@ __author__  = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__     = 'http://code.google.com/p/pyftpdlib/'
 
 
+_DISCONNECTED = frozenset((errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN,
+                           errno.ECONNABORTED, errno.EPIPE, errno.EBADF))
+
 proto_cmds = {
     'ABOR' : dict(perm=None, auth=True, arg=False,
                   help='Syntax: ABOR (abort transfer).'),
@@ -1123,8 +1126,7 @@ class DTPHandler(object, asynchat.async_chat):
             # - http://bugs.python.org/issue1736101
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=104
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=109
-            if err[0] in (errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN, \
-                          errno.ECONNABORTED, errno.EPIPE, errno.EBADF):
+            if err[0] in _DISCONNECTED:
                 self.handle_close()
                 return
             else:
@@ -2240,8 +2242,7 @@ class FTPHandler(object, asynchat.async_chat):
             # - http://bugs.python.org/issue1736101
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=104
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=109
-            if err[0] in (errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN, \
-                          errno.ECONNABORTED, errno.EPIPE, errno.EBADF):
+            if err[0] in _DISCONNECTED:
                 self.handle_close()
                 return
             else:

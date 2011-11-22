@@ -50,10 +50,10 @@ import asyncore
 import socket
 import warnings
 import traceback
-from errno import EWOULDBLOCK, ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, \
-                  EPIPE, EBADF, EINTR, ENOBUFS
+import errno
 
-from pyftpdlib.ftpserver import FTPHandler, DTPHandler, proto_cmds, logerror
+from pyftpdlib.ftpserver import (FTPHandler, DTPHandler, proto_cmds, logerror,
+                                 _DISCONNECTED)
 
 __all__ = []
 
@@ -65,8 +65,6 @@ except ImportError:
 else:
     __all__.extend(['SSLConnection', 'TLS_FTPHandler', 'TLS_DTPHandler'])
 
-    DISCONNECTED = frozenset((ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED,
-                              EPIPE, EBADF))
 
     new_proto_cmds = proto_cmds.copy()
     new_proto_cmds.update({
@@ -171,9 +169,9 @@ else:
                 super(SSLConnection, self).handle_close()
                 return 0
             except SSL.SysCallError, (errnum, errstr):
-                if errstr == 'Unexpected EOF' or errnum == EWOULDBLOCK:
+                if errstr == 'Unexpected EOF' or errnum == errno.EWOULDBLOCK:
                     return 0
-                elif errnum in DISCONNECTED:
+                elif errnum in _DISCONNECTED:
                     super(SSLConnection, self).handle_close()
                     return 0
                 else:
@@ -188,7 +186,7 @@ else:
                 super(SSLConnection, self).handle_close()
                 return ''
             except SSL.SysCallError, (errnum, errstr):
-                if errstr == 'Unexpected EOF' or errnum in DISCONNECTED:
+                if errstr == 'Unexpected EOF' or errnum in _DISCONNECTED:
                     super(SSLConnection, self).handle_close()
                     return ''
                 else:
@@ -214,9 +212,10 @@ else:
                     try:
                         os.write(self.socket.fileno(), '')
                     except (OSError, socket.error), err:
-                        if err[0] in (EINTR, EWOULDBLOCK, ENOBUFS):
+                        if err[0] in (errno.EINTR, errno.EWOULDBLOCK,
+                                      errno.ENOBUFS):
                             return
-                        elif err[0] in DISCONNECTED:
+                        elif err[0] in _DISCONNECTED:
                             super(SSLConnection, self).close()
                             return
                         else:
@@ -253,7 +252,7 @@ else:
                     return
                 raise
             except socket.error, err:
-                if err[0] in DISCONNECTED:
+                if err[0] in _DISCONNECTED:
                     super(SSLConnection, self).close()
                 else:
                     raise
@@ -464,4 +463,3 @@ else:
                 self.respond('521 PROT %s unsupported (use C or P).' %arg)
             else:
                 self.respond("502 Unrecognized PROT type (use C or P).")
-
