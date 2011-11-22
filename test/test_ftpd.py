@@ -2819,11 +2819,11 @@ class TestCornerCases(unittest.TestCase):
         sock.bind((HOST, 0))
         port = sock.getsockname()[1]
         try:
-            self.client.sendport(HOST, port)
+            resp = self.client.sendport(HOST, port)
         except ftplib.error_temp, err:
             self.assertEqual(str(err)[:3], '425')
         else:
-            self.fail("exception not raised")
+            self.fail("exception not raised, resp=%r" % resp)
 
 
 class TestCommandLineParser(unittest.TestCase):
