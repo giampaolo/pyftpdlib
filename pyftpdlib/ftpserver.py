@@ -280,7 +280,9 @@ class _Scheduler(object):
     def __call__(self):
         now = time.time()
         calls = []
-        while self._tasks and now >= self._tasks[0].timeout:
+        while self._tasks:
+            if now < self._tasks[0].timeout:
+                break
             call = heapq.heappop(self._tasks)
             if not call.cancelled:
                 calls.append(call)
@@ -363,8 +365,8 @@ class CallLater(object):
         self.cancelled = False
         _scheduler.register(self)
 
-    def __le__(self, other):
-        return self.timeout <= other.timeout
+    def __lt__(self, other):
+        return self.timeout < other.timeout
 
     def _post_call(self, exc):
         if not self.cancelled:
