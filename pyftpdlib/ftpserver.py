@@ -368,6 +368,9 @@ class CallLater(object):
     def __lt__(self, other):
         return self.timeout < other.timeout
 
+    def __le__(self, other):
+        return self.timeout <= other.timeout
+
     def _post_call(self, exc):
         if not self.cancelled:
             self.cancel()
