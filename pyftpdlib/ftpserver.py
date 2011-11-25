@@ -270,8 +270,6 @@ def _strerror(err):
 class _Scheduler(object):
     """Run the scheduled functions due to expire soonest (if any)."""
 
-    cancellations_threshold = 512
-
     def __init__(self):
         # the heap used for the scheduled tasks
         self._tasks = []
@@ -301,7 +299,11 @@ class _Scheduler(object):
             except:
                 logerror(traceback.format_exc())
 
-        if self._cancellations > self.cancellations_threshold:
+        # remove cancelled tasks and re-heapify the queue if the
+        # number of cancelled tasks is more than the half of the
+        # entire queue
+        if self._cancellations > 512 \
+          and self._cancellations > (len(self._tasks) >> 1):
             self._cancellations = 0
             self._tasks = [x for x in self._tasks if not x.cancelled]
             self.reheapify()
