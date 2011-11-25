@@ -26,7 +26,11 @@ Enhancements:
 
  * Issue #181: added CallEvery class to call a function every x seconds.
 
- * Issue #189: scheduled functions' cancel() method is now 2x faster.
+ * Issue #189: cancel() operation for scheduled functions now marks items as
+   "cancelled" and pops them out of the heap queue "later" rather than
+   immediately. This results in a drastical speedup (223x faster on 10.000
+   items) when it comes to disconnecting clients.
+
 
 Bugfixes:
 
