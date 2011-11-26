@@ -343,6 +343,8 @@ class CallLater(object):
     loop without blocking it. The instance returned is an object that
     can be used to cancel or reschedule the call.
     """
+    __slots__ = ('_delay', '_target', '_args', '_kwargs', '_errback',
+                 '_repush', 'timeout', 'cancelled')
 
     def __init__(self, seconds, target, *args, **kwargs):
         """
