@@ -2079,6 +2079,10 @@ class FTPHandler(object, asynchat.async_chat):
     # --- asyncore / asynchat overridden methods
 
     def readable(self):
+        # Checking for self.connected seems to be necessary as per:
+        # http://code.google.com/p/pyftpdlib/issues/detail?id=188#c18
+        # In contrast to DTPHandler, here we are not interested in
+        # attempting to receive any further data from a closed socket.
         return not self.sleeping and self.connected \
                                  and asynchat.async_chat.readable(self)
 
