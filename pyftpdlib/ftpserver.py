@@ -2102,6 +2102,11 @@ class FTPHandler(object, asynchat.async_chat):
         r"""Called when the incoming data stream matches the \r\n
         terminator.
         """
+        # fix around issue 188; asyncore erroneously calls handle_read()
+        # after the the connection has already been lost
+        # http://code.google.com/p/pyftpdlib/issues/detail?id=188#c16
+        if not self.connected:
+            return
         if self._idler is not None and not self._idler.cancelled:
             self._idler.reset()
 
