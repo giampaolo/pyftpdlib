@@ -2087,7 +2087,8 @@ class FTPHandler(object, asynchat.async_chat):
                                  and asynchat.async_chat.readable(self)
 
     def writable(self):
-        return not self.sleeping and asynchat.async_chat.writable(self)
+        return not self.sleeping and self.connected \
+                                 and asynchat.async_chat.writable(self)
 
     def collect_incoming_data(self, data):
         """Read incoming data and append to the input buffer."""
