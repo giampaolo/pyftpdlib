@@ -89,6 +89,7 @@ else:
         def __init__(self, *args, **kwargs):
             SSLConnection(self).__init__(*args, **kwargs)
             self._plain_socket = None
+            self._error = False
 
         def secure_connection(self, ssl_context):
             """Secure the connection switching from plain-text to
@@ -149,6 +150,7 @@ else:
                 super(SSLConnection, self).handle_write_event()
 
         def handle_error(self):
+            self._error = True
             try:
                 raise
             except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
@@ -261,7 +263,7 @@ else:
                 raise
 
         def close(self):
-            if self._ssl_established:
+            if self._ssl_established and not self._error:
                 self._do_ssl_shutdown()
             else:
                 self._ssl_accepting = False
