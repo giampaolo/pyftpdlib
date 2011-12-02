@@ -276,7 +276,7 @@ else:
         """A ftpserver.DTPHandler subclass supporting TLS/SSL."""
 
         def __init__(self, sock_obj, cmd_channel):
-            DTPHandler.__init__(self, sock_obj, cmd_channel)
+            super(TLS_DTPHandler, self).__init__(sock_obj, cmd_channel)
             if self.cmd_channel._prot:
                 self.secure_connection(self.cmd_channel.ssl_context)
 
