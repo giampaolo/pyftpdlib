@@ -87,7 +87,7 @@ else:
         _ssl_closing = False
 
         def __init__(self, *args, **kwargs):
-            SSLConnection(self).__init__(*args, **kwargs)
+            super(SSLConnection, self).__init__(*args, **kwargs)
             self._plain_socket = None
             self._error = False
 
@@ -350,7 +350,7 @@ else:
         dtp_handler = TLS_DTPHandler
 
         def __init__(self, conn, server):
-            FTPHandler.__init__(self, conn, server)
+            super(TLS_FTPHandler, self).__init__(conn, server)
             if not self.connected:
                 return
             self._extra_feats = ['AUTH TLS', 'AUTH SSL', 'PBSZ', 'PROT']
