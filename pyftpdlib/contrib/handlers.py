@@ -96,7 +96,12 @@ else:
             SSL/TLS.
             """
             self._plain_socket = self.socket
-            self.socket = SSL.Connection(ssl_context, self.socket)
+            try:
+                self.socket = SSL.Connection(ssl_context, self.socket)
+            except socket.error, err:
+                if err.errno == errno.EBADF:
+                    return self.close()
+                raise
             self.socket.set_accept_state()
             self._ssl_accepting = True
 
