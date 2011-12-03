@@ -257,10 +257,11 @@ class TestFTPS(unittest.TestCase):
             self.client.quit()
 
     def test_ssl_version(self):
-        protos = (ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv3,
-                  ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_TLSv1)
-        for proto in protos:
-            self.try_protocol_combo(ssl.PROTOCOL_SSLv2, proto)
+        protos = [ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_TLSv1]
+        if hasattr(ssl, "PROTOCOL_SSLv2"):
+            protos.append(ssl.PROTOCOL_SSLv2)
+            for proto in protos:
+                self.try_protocol_combo(ssl.PROTOCOL_SSLv2, proto)
         for proto in protos:
             self.try_protocol_combo(ssl.PROTOCOL_SSLv3, proto)
         for proto in protos:
@@ -268,12 +269,13 @@ class TestFTPS(unittest.TestCase):
         for proto in protos:
             self.try_protocol_combo(ssl.PROTOCOL_TLSv1, proto)
 
-    def test_sslv2(self):
-        self.client.ssl_version = ssl.PROTOCOL_SSLv2
-        self.client.close()
-        self.client.connect(self.server.host, self.server.port)
-        self.assertRaises(socket.error, self.client.login)
-        self.client.ssl_version = ssl.PROTOCOL_SSLv2
+    if hasattr(ssl, "PROTOCOL_SSLv2"):
+        def test_sslv2(self):
+            self.client.ssl_version = ssl.PROTOCOL_SSLv2
+            self.client.close()
+            self.client.connect(self.server.host, self.server.port)
+            self.assertRaises(socket.error, self.client.login)
+            self.client.ssl_version = ssl.PROTOCOL_SSLv2
 
 
 # --- System dependant authorizers tests
@@ -676,4 +678,3 @@ def test_main():
 
 if __name__ == '__main__':
     test_main()
-
