@@ -98,12 +98,11 @@ else:
             self._plain_socket = self.socket
             try:
                 self.socket = SSL.Connection(ssl_context, self.socket)
-            except socket.error, err:
-                if err.errno == errno.EBADF:
-                    return self.close()
-                raise
-            self.socket.set_accept_state()
-            self._ssl_accepting = True
+            except socket.error:
+                self.close()
+            else:
+                self.socket.set_accept_state()
+                self._ssl_accepting = True
 
         def _do_ssl_handshake(self):
             self._ssl_accepting = True
