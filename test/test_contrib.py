@@ -82,10 +82,6 @@ class TestFtpListingCmdsTLSMixin(TLSTestMixin, TestFtpListingCmds): pass
 class TestFtpAbortTLSMixin(TLSTestMixin, TestFtpAbort):
     def test_oob_abor(self): pass
 
-class TestThrottleBandwidthTLSMixin(TLSTestMixin, ThrottleBandwidth):
-    def test_throttle_recv(self): pass
-    def test_throttle_send(self): pass
-
 class TestTimeoutsTLSMixin(TLSTestMixin, TestTimeouts):
     def test_data_timeout_not_reached(self): pass
 
@@ -96,6 +92,9 @@ class TestCallbacksTLSMixin(TLSTestMixin, TestCallbacks):
     def test_on_incomplete_file_received(self): pass
     def test_on_incomplete_file_sent(self): pass
     def test_on_login(self): pass
+    def test_on_logout_quit(self): pass
+    def test_on_logout_rein(self): pass
+    def test_on_logout_user_issued_twice(self): pass
 
 
 class TestIPv4EnvironmentTLSMixin(TLSTestMixin, TestIPv4Environment): pass
@@ -147,6 +146,30 @@ class TestFTPS(unittest.TestCase):
         self.assertRaisesWithMsg(ftplib.error_perm, msg,
                                  self.client.sendcmd, 'auth tls')
 
+    def test_ccc(self):
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'ccc')
+        self.client.login(secure=True)
+        self.assertTrue(isinstance(self.client.sock, ssl.SSLSocket))
+        self.client.sendcmd('ccc')
+        self.client.sock = self.client.sock.unwrap()
+        self.client.sendcmd('noop')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'ccc')
+        self.client.dir(lambda x:None)
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'auth tls')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'pbsz')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'prot p')
+        resp = self.client.quit()
+        self.assertEqual(resp[:3], "221")
+
+    def test_ccc_force_openssl_error(self):
+        # see https://bugs.launchpad.net/pyopenssl/+bug/785985
+        self.client.login()
+        self.client.sendcmd('ccc')
+        self.client.sock.sendall('x' * 10000)
+        self.client.sock = self.client.sock.unwrap()
+        self.client.sendcmd('noop')
+        self.client.dir(lambda x:None)
+
     def test_pbsz(self):
         # unsecured
         self.client.login(secure=False)
@@ -196,7 +219,12 @@ class TestFTPS(unittest.TestCase):
                 return
             raise
         sock.sendall('noop')
-        self.assertRaises(socket.error, sock.recv, 1024)
+        try:
+            chunk = sock.recv(1024)
+        except socket.error:
+            pass
+        else:
+            self.assertEqual(chunk, "")
 
     def test_tls_control_required(self):
         self.server.handler.tls_control_required = True
@@ -229,10 +257,11 @@ class TestFTPS(unittest.TestCase):
             self.client.quit()
 
     def test_ssl_version(self):
-        protos = (ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv3,
-                  ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_TLSv1)
-        for proto in protos:
-            self.try_protocol_combo(ssl.PROTOCOL_SSLv2, proto)
+        protos = [ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_TLSv1]
+        if hasattr(ssl, "PROTOCOL_SSLv2"):
+            protos.append(ssl.PROTOCOL_SSLv2)
+            for proto in protos:
+                self.try_protocol_combo(ssl.PROTOCOL_SSLv2, proto)
         for proto in protos:
             self.try_protocol_combo(ssl.PROTOCOL_SSLv3, proto)
         for proto in protos:
@@ -240,12 +269,13 @@ class TestFTPS(unittest.TestCase):
         for proto in protos:
             self.try_protocol_combo(ssl.PROTOCOL_TLSv1, proto)
 
-    def test_sslv2(self):
-        self.client.ssl_version = ssl.PROTOCOL_SSLv2
-        self.client.close()
-        self.client.connect(self.server.host, self.server.port)
-        self.assertRaises(socket.error, self.client.login)
-        self.client.ssl_version = ssl.PROTOCOL_SSLv2
+    if hasattr(ssl, "PROTOCOL_SSLv2"):
+        def test_sslv2(self):
+            self.client.ssl_version = ssl.PROTOCOL_SSLv2
+            self.client.close()
+            self.client.connect(self.server.host, self.server.port)
+            self.assertRaises(socket.error, self.client.login)
+            self.client.ssl_version = ssl.PROTOCOL_SSLv2
 
 
 # --- System dependant authorizers tests
@@ -407,7 +437,6 @@ class SharedAuthorizerTests(unittest.TestCase):
     def test_override_user_perm(self):
         auth = self.authorizer_class()
         user = self.get_current_user()
-        dir = os.path.dirname(os.getcwd())
         auth.override_user(user, perm="elr")
         self.assertEqual(auth.get_perms(user), "elr")
         # make sure other settings keep using default values
@@ -419,7 +448,6 @@ class SharedAuthorizerTests(unittest.TestCase):
     def test_override_user_msg_login_quit(self):
         auth = self.authorizer_class()
         user = self.get_current_user()
-        dir = os.path.dirname(os.getcwd())
         auth.override_user(user, msg_login="foo", msg_quit="bar")
         self.assertEqual(auth.get_msg_login(user), "foo")
         self.assertEqual(auth.get_msg_quit(user), "bar")
@@ -583,7 +611,6 @@ def test_main():
                       TestFtpRetrieveDataTLSMixin,
                       TestFtpListingCmdsTLSMixin,
                       TestFtpAbortTLSMixin,
-                      TestThrottleBandwidthTLSMixin,
                       TestTimeoutsTLSMixin,
                       TestConfigurableOptionsTLSMixin,
                       TestCallbacksTLSMixin,
@@ -613,7 +640,6 @@ def test_main():
                 warns.append("UnixAuthorizer tests skipped (root privileges are "
                              "required)")
             else:
-                warn_skip = False
                 tests.append(TestUnixAuthorizer)
         else:
             try:
@@ -652,4 +678,3 @@ def test_main():
 
 if __name__ == '__main__':
     test_main()
-

@@ -151,7 +151,7 @@ else:
                 try:
                     return pwd.getpwnam(self.anonymous_user).pw_dir
                 except KeyError:
-                    raise ValueError('no such user %s' % username)
+                    raise ValueError('no such user %s' % anonymous_user)
 
         # --- overridden / private API
 

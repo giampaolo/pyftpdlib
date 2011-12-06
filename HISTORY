@@ -4,7 +4,83 @@ Bug tracker at http://code.google.com/p/pyftpdlib/issues/list
 History
 =======
 
-Version: 0.6.0 - Date: XXXX-XX-XX
+Version: 0.6.1 - Date: XXXX-XX-XX
+---------------------------------
+
+Enhancements:
+
+ * Issue #155: AbstractedFS "root" and "cwd" are no longer read-only properties
+   but can be set via setattr().
+
+ * Issue #168: added FTPHandler.logerror() method. It can be overridden to
+   provide more information (e.g. username) when logging exception tracebacks.
+
+ * Issue #172: (FTPS) added CCC command support to switch back from a secured
+   to a clear-text control connection.
+
+ * Issue #174: added support for SITE CHMOD command (change file mode).
+
+ * Issue #177: setuptools is now used in setup.py
+
+ * Issue #178: added anti flood script in demo directory.
+
+ * Issue #181: added CallEvery class to call a function every x seconds.
+
+ * Issue #189: the internal scheduler has been rewritten from scratch and it is
+   an order of magnitue faster, especially for operations like cancel() which
+   are involved when clients are disconnected (hence invoked very often).
+   Some benchmaks:
+       schedule   : +0.5x
+       reschedule : +1.7x
+       cancel     : +477x  (with 1 milion scheduled functions)
+       run:       : +8x
+    Also, a single scheduled function now consumes 1/3 of the memory.
+
+Bugfixes:
+
+ * Issue #156: data connection must be closed before sending 226/426 reply.
+   This was against RFC-959 and was causing problems with older FTP clients.
+
+ * Issue #161: MLSD 'unique' fact can provide the same value for files having a
+   similar device/inode but that in fact are different.
+   (patch by Andrew Scheller)
+
+ * Issue #162: (FTPS) SSL shutdown() is not invoked for the control connection.
+
+ * Issue #163: FEAT erroneously reports MLSD. (patch by Andrew Scheller)
+
+ * Issue #166: (FTPS) an exception on send() can cause server to crash (DoS).
+
+ * Issue #167: fix some typos returned on HELP.
+
+ * Issue #170: PBSZ and PROT commands are now allowed before authentication
+   fixing problems with non-compliant FTPS clients.
+
+ * Issue #171: (FTPS) an exception when shutting down the SSL layer can cause
+   server to crash (DoS).
+
+ * Issue #173: file last modification time shown in LIST response might be in a
+   language different than English causing problems with some clients.
+
+ * Issue #175: FEAT response now omits to show those commands which are removed
+   from proto_cmds map.
+
+ * Issue #176: SO_REUSEADDR option is now used for passive data sockets to
+   prevent server running out of free ports when using passive_ports directive.
+
+ * Issue #187: match proftpd LIST format for files having last modification time
+   > 6 months.
+
+ * Issue #188: fix maximum recursion depth exceeded exception occurring if
+   client quickly connects and disconnects data channel.
+
+Major API changes since 0.6.0:
+
+ * AbstractedFS root and cwd properties can now be set via setattr().
+ * New CallLater class.
+
+
+Version: 0.6.0 - Date: 2011-01-24
 ---------------------------------
 
 Enhancements:
@@ -19,8 +95,9 @@ Enhancements:
  * Issue #124: pyftpdlib now accepts command line options to configure a stand
    alone anonymous FTP server when running pyftpdlib with python's -m option.
 
- * Issue #125: FTPHandler class now provides two new methods to standardize
-   filesystem commands and transfers logging.
+ * Issue #125: logs are now provided in a standardized format parsable by log
+   analyzers. FTPHandler class provides two new methods to standardize both
+   commands and transfers logging: log_cmd() and log_transfer().
 
  * Issue #127: added FTPHandler.masquerade_address_map option which allows you
    to define multiple 1 to 1 mappings in case you run a FTP server with
@@ -61,6 +138,9 @@ Enhancements:
  * Issue #144: a "username" parameter is now passed to authorizer's
    terminate_impersonation() method.
 
+ * Issue #149: ftpserver.proto_cmds dictionary refactoring and get rid of
+   _CommandProperty class.
+
 Bugfixes:
 
  * Issue #120: an ActiveDTP() instance is not garbage collected in case a
@@ -74,9 +154,13 @@ Bugfixes:
  * Issue #140: pathnames returned in PWD response should have double-quotes '"'
    escaped.
 
+ * Issue #143: EINVAL not properly handled causes server crash on OSX.
+
  * Issue #146: SIZE and MDTM commands are now rejected unless the "l" permission
    has been specified for the user.
 
+ * Issue #150: path traversal bug: it is possible to move/rename a file outside
+   of the user home directory.
 
 Major API changes since 0.5.2
 
@@ -102,14 +186,15 @@ Major API changes since 0.5.2
      - on_incomplete_file_received()
      - on_login()
      - on_logout()
-     - log_fs_cmd()
+     - log_cmd()
      - log_transfer()
-   * proto_cmds class attribute has been added.  The FTPHandler class  no longer
+   * proto_cmds class attribute has been added.  The FTPHandler class no longer
      relies on "ftpserver.proto_cmds" global dictionary but on
      "ftpserver.FTPHandler.proto_cmds" instead.
 
  * FTPServer class:
    - max_cons attribute defaults to 512 by default instead of 0 (unlimited).
+   - server_forever()'s map argument is gone.
 
  * DummyAuthorizer:
    - ValueError exceptions are now raised instead of AuthorizerError.
@@ -133,6 +218,7 @@ Minor API changes since 0.5.2
    af -> _af
    on_dtp_connection -> _on_dtp_connection
    on_dtp_close -> _on_dtp_close
+   idler -> _idler
 
  * AbstractedFS.rnfr attribute moved to FTPHandler._rnfr.
 
