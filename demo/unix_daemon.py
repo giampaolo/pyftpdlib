@@ -7,21 +7,20 @@ Author: Michele Petrazzo, Italy. mail: michele.petrazzo <at> gmail.com
 Author: Ben Timby, US. mail: btimby <at> gmail.com
 """
 
+from __future__ import with_statement
+
 import os
-import fcntl
 import errno
 import sys
 import time
-import signal
 import optparse
-import resource
-import threading
+import signal
 import basic_ftpd
-try:
-    import daemon
-    import daemon.pidfile
-except ImportError:
-    daemon = None
+
+# http://pypi.python.org/pypi/python-daemon
+import daemon
+import daemon.pidfile
+
 
 DAEMON_NAME = "pyftplib"
 DAEMON_PID_FILE = "/var/run/%s.pid"% DAEMON_NAME
@@ -47,11 +46,8 @@ def kill(pidfile):
             time.sleep(0.1)
 
 
-def daemonize(pidfile=None, redirect=None, workdir=None, umask=0):
-    if daemon is None:
-        raise SystemExit("python-daemon library required for daemonizing")
-    if not workdir:
-        workdir = os.getcwd()
+def daemonize(pidfile=None, redirect=None, workdir=os.getcwd(), umask=0):
+    """A wrapper around pytho-daemonize context manager."""
     ctx = daemon.DaemonContext(working_directory=workdir, umask=umask)
     if pidfile:
         ctx.pidfile = daemon.pidfile.TimeoutPIDLockFile(pidfile)
