@@ -1,124 +1,64 @@
 #!/usr/bin/env python
 # $Id$
 
-"""A basic unix daemon based on a Chad J. Schroeder recipe:
-http://code.activestate.com/recipes/278731
+"""A basic unix daemon using the python-daemon library.
 
 Author: Michele Petrazzo, Italy. mail: michele.petrazzo <at> gmail.com
+Author: Ben Timby, US. mail: btimby <at> gmail.com
 """
 
 import os
+import fcntl
+import errno
 import sys
 import time
 import signal
 import optparse
 import resource
 import threading
-
+import basic_ftpd
+try:
+    import daemon
+    import daemon.pidfile
+except ImportError:
+    daemon = None
 
 DAEMON_NAME = "pyftplib"
 DAEMON_PID_FILE = "/var/run/%s.pid"% DAEMON_NAME
-UMASK = 0
-WORKDIR = os.getcwd()
-MAXFD = 1024
-
-if (hasattr(os, "devnull")):
-   REDIRECT_TO = os.devnull
-else:
-   REDIRECT_TO = "/dev/null"
 
 
-def _create_daemon():
-    """Detach a process from the controlling terminal and run it in the
-    background as a daemon.
-    """
-    try:
-        pid = os.fork()
-    except OSError, err:
-        raise Exception, "%s [%d]" % (err.strerror, err.errno)
+def kill(pidfile):
+    if os.path.exists(pidfile):
+        pid = int(open(pidfile).read().strip())
+        sig = signal.SIGTERM
+        i = 0
+        while True:
+            try:
+                os.kill(pid, sig)
+            except OSError, e:
+                if e.errno == errno.ESRCH:
+                    return
+                raise
+            i += 1
+            if i >= 2:
+                sig = signal.SIGKILL
+            if i >= 50:
+                raise SystemExit("could not kill the daemon")
+            time.sleep(0.1)
 
-    if (pid == 0):
-        os.setsid()
-        try:
-            pid = os.fork()
-        except OSError, err:
-            raise Exception, "%s [%d]" % (err.strerror, err.errno)
 
-        if (pid == 0):
-            os.chdir(WORKDIR)
-            os.umask(UMASK)
-        else:
-            os._exit(0)
-    else:
-        os._exit(0)
-    maxfd = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
-    if (maxfd == resource.RLIM_INFINITY):
-        maxfd = MAXFD
-    for fd in range(0, maxfd):
-      try:
-         os.close(fd)
-      except OSError:
-         pass
-    os.open(REDIRECT_TO, os.O_RDWR)
-
-    os.dup2(0, 1)
-    os.dup2(0, 2)
-
-    return(0)
-
-def _ctrl_daemon_exists(pid):
-    """Control if the the previous daemon exists,otherwise raise."""
-    t = 0
-    while os.path.exists("/proc/%s" % pid):
-        if t > 50:
-            raise RuntimeError("Waited for too long for process to kill")
-        time.sleep(0.1)
-        t += 1
-
-def _kill_daemon():
-    """Kill the daemon, if found."""
-    if os.path.exists(DAEMON_PID_FILE):
-        pid = int(open(DAEMON_PID_FILE).read().strip())
-        if os.path.exists("/proc/%s" % pid):
-            # kill the given pid
-            os.kill(pid, signal.SIGTERM)
-
-        _ctrl_daemon_exists(pid)
-
-        # and clean the old pid file
-        os.remove(DAEMON_PID_FILE)
-
-def daemonize(options):
-    """Control if I'm already in execution and kill the process.
-    In any case, execute daemonize code.
-    """
-    if options.outputfile:
-        global REDIRECT_TO
-        REDIRECT_TO = options.outputfile
-
-        open(REDIRECT_TO, "wb").write("")
-
-    if options.foreground:
-        # do nothing in foreground
-        return
-
-    _create_daemon()
-
-    # create the pid path
-    open(DAEMON_PID_FILE, "wb").write("%s" % os.getpid())
-
-    def _exit(sig, frame):
-        # and close all the timers/other threads that has a cancel method
-        for t in threading.enumerate():
-            if hasattr(t, "cancel") and callable(t.cancel):
-                t.cancel()
-
-        # wait for all threads to shutdown
-        time.sleep(0.5)
-
-        sys.exit(0)
-
-    signal.signal(signal.SIGTERM, _exit)
+def daemonize(pidfile=None, redirect=None, workdir=None, umask=0):
+    if daemon is None:
+        raise SystemExit("python-daemon library required for daemonizing")
+    if not workdir:
+        workdir = os.getcwd()
+    ctx = daemon.DaemonContext(working_directory=workdir, umask=umask)
+    if pidfile:
+        ctx.pidfile = daemon.pidfile.TimeoutPIDLockFile(pidfile)
+    if redirect:
+        ctx.stdout = ctx.stderr = file(redirect, 'wb')
+    with ctx:
+        basic_ftpd.main()
 
 
 def main():
@@ -135,6 +75,8 @@ def main():
                       help='check for existance of a pyftplib daemon and kill it')
     parser.add_option('-o', '--outputfile', dest='outputfile',
                       help='save stdout to a file')
+    parser.add_option('-p', '--pidfile', dest='pidfile', default=DAEMON_PID_FILE,
+                      help='File to store/retreive daemon pid.')
     options, args = parser.parse_args()
 
     # option control
@@ -146,18 +88,12 @@ def main():
         parser.error("options are mutually exclusive, use one at a time")
 
     if options.kill:
-        _kill_daemon()
+        kill(options.pidfile)
+    elif options.daemon:
+        daemonize(options.pidfile, options.outputfile)
     else:
-        daemonize(options)
+        basic_ftpd.main()
 
-    return options
-
-def start_demo():
-    # use the basic example to show how we work
-    import basic_ftpd
-    basic_ftpd.main()
 
 if __name__ == '__main__':
-    options = main()
-    if not options.kill:
-        start_demo()
+    main()
