@@ -1,10 +1,30 @@
 #!/usr/bin/env python
 # $Id$
 
-"""A basic unix daemon using the python-daemon library.
+"""A basic unix daemon using the python-daemon library:
+http://pypi.python.org/pypi/python-daemon
 
-Author: Michele Petrazzo, Italy. mail: michele.petrazzo <at> gmail.com
-Author: Ben Timby, US. mail: btimby <at> gmail.com
+Example usages:
+
+ $ python unix_daemon.py start
+ $ python unix_daemon.py stop
+ $ python unix_daemon.py status
+ $ python unix_daemon.py --logfile /var/log/ftpd.log start
+ $ python unix_daemon.py --pidfile /var/run/ftpd.pid start
+
+This is just a proof of concept which demonstrates how to daemonize
+the FTP server.
+You might want to use this as an example and provide the necessary
+customizations.
+
+Parts you might want to customize are:
+ - the global constants (PID_FILE, LOG_FILE, UMASK, WORKDIR)
+ - get_server() function
+
+Authors:
+ - Michele Petrazzo - michele.petrazzo <at> gmail.com
+ - Ben Timby - btimby <at> gmail.com
+ - Giampaolo Rodola' - g.rodola <at> gmail.com
 """
 
 from __future__ import with_statement
@@ -15,81 +35,136 @@ import sys
 import time
 import optparse
 import signal
-import basic_ftpd
+
+from pyftpdlib import ftpserver
 
 # http://pypi.python.org/pypi/python-daemon
 import daemon
 import daemon.pidfile
 
 
-DAEMON_NAME = "pyftplib"
-DAEMON_PID_FILE = "/var/run/%s.pid"% DAEMON_NAME
+# overridable options
+PID_FILE = "/var/run/pyftpdlib.pid"
+LOG_FILE = None
+UMASK = 0
+WORKDIR = os.getcwd()
 
 
-def kill(pidfile):
-    if os.path.exists(pidfile):
-        pid = int(open(pidfile).read().strip())
-        sig = signal.SIGTERM
-        i = 0
-        while True:
-            try:
-                os.kill(pid, sig)
-            except OSError, e:
-                if e.errno == errno.ESRCH:
-                    return
+def pid_exists(pid):
+    """Return True if a process with the given PID is currently running."""
+    try:
+        os.kill(pid, 0)
+    except OSError, e:
+        return e.errno == errno.EPERM
+    else:
+        return True
+
+def get_pid():
+    """Return PID saved in the pid file as an if possible, else None."""
+    try:
+        with open(PID_FILE) as f:
+            return int(f.read().strip())
+    except IOError, err:
+        if err.errno != errno.ENOENT:
+            raise
+
+def kill():
+    """Keep attempting to kill the daemon for 5 seconds, first using
+    SIGTERM, then using SIGKILL.
+    """
+    pid = get_pid()
+    if not pid or not pid_exists(pid):
+        print "daemon not running"
+        return
+    sig = signal.SIGTERM
+    i = 0
+    while True:
+        sys.stdout.write('.')
+        sys.stdout.flush()
+        try:
+            os.kill(pid, sig)
+        except OSError, e:
+            if e.errno == errno.ESRCH:
+                print "\nstopped (pid %s)" % pid
+                return
+            else:
                 raise
-            i += 1
-            if i >= 2:
-                sig = signal.SIGKILL
-            if i >= 50:
-                raise SystemExit("could not kill the daemon")
-            time.sleep(0.1)
+        i += 1
+        if i == 25:
+            sig = signal.SIGKILL
+        elif i == 50:
+            sys.exit("\ncould not kill daemon (pid %s)" % pid)
+        time.sleep(0.1)
 
+def status():
+    """Print daemon status and exit."""
+    pid = get_pid()
+    if not pid or not pid_exists(pid):
+        print "daemon not running"
+    else:
+        print "daemon running with pid %s" % pid
+    sys.exit(0)
 
-def daemonize(pidfile=None, redirect=None, workdir=os.getcwd(), umask=0):
+def get_server():
+    """Return a pre-configured FTP server instance."""
+    authorizer = ftpserver.DummyAuthorizer()
+    authorizer.add_user('user', '12345', os.getcwd(), perm='elradfmwM')
+    authorizer.add_anonymous(os.getcwd())
+    ftp_handler = ftpserver.FTPHandler
+    ftp_handler.authorizer = authorizer
+    server = ftpserver.FTPServer(('', 21), ftp_handler)
+    return server
+
+def daemonize():
     """A wrapper around pytho-daemonize context manager."""
-    ctx = daemon.DaemonContext(working_directory=workdir, umask=umask)
-    if pidfile:
-        ctx.pidfile = daemon.pidfile.TimeoutPIDLockFile(pidfile)
-    if redirect:
-        ctx.stdout = ctx.stderr = file(redirect, 'wb')
-    with ctx:
-        basic_ftpd.main()
+    pid = get_pid()
+    if pid and pid_exists(pid):
+        sys.exit('daemon already running (pid %s)' % pid)
+    ctx = daemon.DaemonContext(
+        working_directory=WORKDIR,
+        umask=UMASK,
+        pidfile=daemon.pidfile.TimeoutPIDLockFile(PID_FILE)
+    )
+    if LOG_FILE is not None:
+        ctx.stdout = ctx.stderr = open(LOG_FILE, 'wb')
 
+    # instance FTPd before daemonizing, so that in case of problems we
+    # get an exception here and exit immediately
+    get_server().close_all()
+    with ctx:
+        server = get_server()
+        server.serve_forever()
 
 def main():
-    usage = "python %s -d|-f|-k [-o outputfile]" %sys.argv[0]
-    parser = optparse.OptionParser(usage=usage)
-    parser.add_option('-d', '--daemon', dest='daemon',
-                      default=False, action='store_true',
-                      help='create a pyftplib daemon that runs in background')
-    parser.add_option('-f', '--foreground', dest='foreground',
-                      default=False, action='store_true',
-                      help='interactive mode, do the work in foreground')
-    parser.add_option('-k', '--kill', dest='kill',
-                      default=False, action='store_true',
-                      help='check for existance of a pyftplib daemon and kill it')
-    parser.add_option('-o', '--outputfile', dest='outputfile',
+    global PID_FILE, LOG_FILE
+    USAGE = "python [-d PIDFILE] [-o LOGFILE]\n\n" \
+            "Commands:\n  - start\n  - stop\n  - status"
+    parser = optparse.OptionParser(usage=USAGE)
+    parser.add_option('-l', '--logfile', dest='logfile',
                       help='save stdout to a file')
-    parser.add_option('-p', '--pidfile', dest='pidfile', default=DAEMON_PID_FILE,
-                      help='File to store/retreive daemon pid.')
+    parser.add_option('-p', '--pidfile', dest='pidfile', default=PID_FILE,
+                      help='file to store/retreive daemon pid')
     options, args = parser.parse_args()
 
-    # option control
-    num_opt = len(filter(lambda x: getattr(options, x), ("daemon", "foreground",
-                                                         "kill")))
-    if num_opt == 0:
-        parser.error("pass me at least one option")
-    elif num_opt > 1:
-        parser.error("options are mutually exclusive, use one at a time")
+    if options.pidfile:
+        PID_FILE = options.pidfile
+    if options.pidfile:
+        LOG_FILE = options.logfile
 
-    if options.kill:
-        kill(options.pidfile)
-    elif options.daemon:
-        daemonize(options.pidfile, options.outputfile)
+    if not args:
+        server = get_server()
+        server.serve_forever()
     else:
-        basic_ftpd.main()
-
+        if len(args) != 1:
+            sys.exit('too many commands')
+        elif args[0] == 'start':
+            daemonize()
+        elif args[0] == 'stop':
+            kill()
+        elif args[0] == 'status':
+            status()
+        else:
+            sys.exit('invalid command')
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
