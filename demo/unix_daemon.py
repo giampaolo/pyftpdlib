@@ -60,7 +60,7 @@ def pid_exists(pid):
         return True
 
 def get_pid():
-    """Return PID saved in the pid file as an if possible, else None."""
+    """Return PID saved in the pid file if possible, else None."""
     try:
         with open(PID_FILE) as f:
             return int(f.read().strip())
@@ -68,8 +68,8 @@ def get_pid():
         if err.errno != errno.ENOENT:
             raise
 
-def kill():
-    """Keep attempting to kill the daemon for 5 seconds, first using
+def stop():
+    """Keep attempting to stop the daemon for 5 seconds, first using
     SIGTERM, then using SIGKILL.
     """
     pid = get_pid()
@@ -160,7 +160,7 @@ def main():
         elif args[0] == 'start':
             daemonize()
         elif args[0] == 'stop':
-            kill()
+            stop()
         elif args[0] == 'status':
             status()
         else:
