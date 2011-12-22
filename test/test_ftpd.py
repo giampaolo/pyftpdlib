@@ -2315,7 +2315,7 @@ class TestCallbacks(unittest.TestCase):
         self.client.retrbinary("retr " + TESTFN, lambda x: x)
         # shut down the server to avoid race conditions
         self.tearDown()
-        self.assertEqual(_file.pop(), os.path.abspath(TESTFN))
+        self.assertEqual(_file, [os.path.abspath(TESTFN)])
 
     def test_on_file_received(self):
         _file = []
@@ -2341,7 +2341,7 @@ class TestCallbacks(unittest.TestCase):
         self.client.storbinary('stor ' + TESTFN, self.dummyfile)
         # shut down the server to avoid race conditions
         self.tearDown()
-        self.assertEqual(_file.pop(), os.path.abspath(TESTFN))
+        self.assertEqual(_file, [os.path.abspath(TESTFN)])
 
     def test_on_incomplete_file_sent(self):
         _file = []
@@ -2377,7 +2377,7 @@ class TestCallbacks(unittest.TestCase):
 
         # shut down the server to avoid race conditions
         self.tearDown()
-        self.assertEqual(_file.pop(), os.path.abspath(TESTFN))
+        self.assertEqual(_file, [os.path.abspath(TESTFN)])
 
     def test_on_incomplete_file_received(self):
         _file = []
@@ -2415,7 +2415,7 @@ class TestCallbacks(unittest.TestCase):
 
         # shut down the server to avoid race conditions
         self.tearDown()
-        self.assertEqual(_file.pop(), os.path.abspath(TESTFN))
+        self.assertEqual(_file, [os.path.abspath(TESTFN)])
 
     def test_on_login(self):
         user = []
@@ -2484,7 +2484,7 @@ class TestCallbacks(unittest.TestCase):
         self.client.quit()
         # shut down the server to avoid race conditions
         self.tearDown()
-        self.assertEqual(user.pop(), USER)
+        self.assertEqual(user, [USER])
 
     def test_on_logout_rein(self):
         user = []
@@ -2498,7 +2498,7 @@ class TestCallbacks(unittest.TestCase):
         self.client.sendcmd('rein')
         # shut down the server to avoid race conditions
         self.tearDown()
-        self.assertEqual(user.pop(), USER)
+        self.assertEqual(user, [USER])
 
     def test_on_logout_user_issued_twice(self):
         users = []
