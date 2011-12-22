@@ -73,6 +73,9 @@ Bugfixes:
  * Issue #188: fix maximum recursion depth exceeded exception occurring if
    client quickly connects and disconnects data channel.
 
+ * Issue #191: (FTPS) during SSL shutdown() operation the server can end up in
+   an infinite loop hogging CPU resources.
+
 Major API changes since 0.6.0:
 
  * AbstractedFS root and cwd properties can now be set via setattr().
