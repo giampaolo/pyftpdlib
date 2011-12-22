@@ -2343,6 +2343,12 @@ class FTPHandler(object, asynchat.async_chat):
     def on_login(self, username):
         """Called on user login."""
 
+    def on_login_failed(self, username, password):
+        """Called on failed user login.
+        At this point client might have already been disconnected if it
+        failed too many times.
+        """
+
     def on_logout(self, username):
         """Called when user logs out due to QUIT or USER issued twice."""
 
@@ -3100,7 +3106,7 @@ class FTPHandler(object, asynchat.async_chat):
             self.respond("503 Login with USER first.")
             return
 
-        def auth_failed(msg="Authentication failed."):
+        def auth_failed(username, password, msg):
             self.sleeping = False
             if hasattr(self, '_closed') and not self._closed:
                 self.attempted_logins += 1
@@ -3111,6 +3117,7 @@ class FTPHandler(object, asynchat.async_chat):
                 else:
                     self.respond("530 " + msg)
                 self.log_cmd("PASS", line, 530, msg)
+            self.on_login_failed(username, password)
 
         if self.authorizer.validate_authentication(self.username, line):
             msg_login = self.authorizer.get_msg_login(self.username)
@@ -3127,15 +3134,14 @@ class FTPHandler(object, asynchat.async_chat):
             self.fs = self.abstracted_fs(home, self)
             self.on_login(self.username)
         else:
-            self.username = ""
             self.sleeping = True
             if self.username == 'anonymous':
-                CallLater(self._auth_failed_timeout, auth_failed,
-                          "Anonymous access not allowed.",
-                          _errback=self.handle_error)
+                msg = "Anonymous access not allowed."
             else:
-                CallLater(self._auth_failed_timeout, auth_failed,
-                          _errback=self.handle_error)
+                msg = "Authentication failed."
+            CallLater(self._auth_failed_timeout, auth_failed, self.username,
+                      line, msg, _errback=self.handle_error)
+            self.username = ""
 
     def ftp_REIN(self, line):
         """Reinitialize user's current session."""

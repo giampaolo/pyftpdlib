@@ -2264,14 +2264,15 @@ class TestCallbacks(unittest.TestCase):
         self.server = None
         self._tearDown = True
 
-    def _setUp(self, handler):
+    def _setUp(self, handler, login=True):
         FTPd.handler = handler
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class()
         self.client.connect(self.server.host, self.server.port)
         self.client.sock.settimeout(2)
-        self.client.login(USER, PASSWD)
+        if login:
+            self.client.login(USER, PASSWD)
         self.file = open(TESTFN, 'w+b')
         self.dummyfile = StringIO.StringIO()
         self._tearDown = False
@@ -2420,14 +2421,56 @@ class TestCallbacks(unittest.TestCase):
         user = []
 
         class TestHandler(ftpserver.FTPHandler):
+            _auth_failed_timeout = 0
 
             def on_login(self, username):
                 user.append(username)
 
+            def on_login_failed(self, username, password):
+                raise Exception
+
+
         self._setUp(TestHandler)
         # shut down the server to avoid race conditions
         self.tearDown()
-        self.assertEqual(user.pop(), USER)
+        self.assertEqual(user, [USER])
+
+    def test_on_login_failed(self):
+        pair = []
+
+        class TestHandler(ftpserver.FTPHandler):
+            _auth_failed_timeout = 0
+
+            def on_login(self, username):
+                raise Exception
+
+            def on_login_failed(self, username, password):
+                pair.append((username, password))
+
+        self._setUp(TestHandler, login=False)
+        self.assertRaises(ftplib.error_perm, self.client.login, 'foo', 'bar')
+        # shut down the server to avoid race conditions
+        self.tearDown()
+        self.assertEqual(pair, [('foo', 'bar')])
+
+    def test_on_login_failed(self):
+        pair = []
+
+        class TestHandler(ftpserver.FTPHandler):
+            _auth_failed_timeout = 0
+
+            def on_login(self, username):
+                raise Exception
+
+            def on_login_failed(self, username, password):
+                pair.append((username, password))
+
+        self._setUp(TestHandler, login=False)
+        self.assertRaises(ftplib.error_perm, self.client.login, 'foo', 'bar')
+        # shut down the server to avoid race conditions
+        self.tearDown()
+        self.assertEqual(pair, [('foo', 'bar')])
+
 
     def test_on_logout_quit(self):
         user = []
