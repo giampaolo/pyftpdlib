@@ -46,8 +46,8 @@ import daemon.pidfile
 # overridable options
 PID_FILE = "/var/run/pyftpdlib.pid"
 LOG_FILE = None
+WORKDIR = None
 UMASK = 0
-WORKDIR = os.getcwd()
 
 
 def pid_exists(pid):
@@ -60,7 +60,7 @@ def pid_exists(pid):
         return True
 
 def get_pid():
-    """Return PID saved in the pid file if possible, else None."""
+    """Return the PID saved in the pid file if possible, else None."""
     try:
         with open(PID_FILE) as f:
             return int(f.read().strip())
