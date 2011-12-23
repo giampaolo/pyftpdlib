@@ -81,6 +81,8 @@ Major API changes since 0.6.0:
  * AbstractedFS root and cwd properties can now be set via setattr().
  * New CallLater class.
  * New FTPHandler.on_login_failed(username, password) method.
+ * New FTPHandler.logerror(msg) method.
+ * New FTPHandler.log_exception(instance) method.
 
 
 Version: 0.6.0 - Date: 2011-01-24

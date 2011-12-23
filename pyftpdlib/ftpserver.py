@@ -672,8 +672,10 @@ class PassiveDTP(object, asyncore.dispatcher):
          - (instance) cmd_channel: the command channel class instance.
          - (bool) extmode: wheter use extended passive mode response type.
         """
-        asyncore.dispatcher.__init__(self)
         self.cmd_channel = cmd_channel
+        self.log = cmd_channel.log
+        self.log_exception = cmd_channel.log_exception
+        asyncore.dispatcher.__init__(self)
         if self.timeout:
             self._idler = CallLater(self.timeout, self.handle_timeout,
                                     _errback=self.handle_error)
@@ -712,7 +714,7 @@ class PassiveDTP(object, asyncore.dispatcher):
                         # choose a free unprivileged random port.
                         else:
                             self.bind((local_ip, 0))
-                            self.cmd_channel.log(
+                            self.log(
                                 "Can't find a valid passive port in the "
                                 "configured range. A random kernel-assigned "
                                 "port will be used."
@@ -764,7 +766,7 @@ class PassiveDTP(object, asyncore.dispatcher):
         except socket.error, err:
             # ECONNABORTED might be thrown on *BSD (see issue 105)
             if err[0] != errno.ECONNABORTED:
-                self.cmd_channel.logerror(traceback.format_exc())
+                self.log_exception(self)
             return
         else:
             # sometimes addr == None instead of (ip, port) (see issue 104)
@@ -783,14 +785,14 @@ class PassiveDTP(object, asyncore.dispatcher):
                 msg = 'Rejected data connection from foreign address %s:%s.' \
                         %(addr[0], addr[1])
                 self.cmd_channel.respond("425 %s" % msg)
-                self.cmd_channel.log(msg)
+                self.log(msg)
                 # do not close listening socket: it couldn't be client's blame
                 return
             else:
                 # site-to-site FTP allowed
                 msg = 'Established data connection with foreign address %s:%s.'\
                         % (addr[0], addr[1])
-                self.cmd_channel.log(msg)
+                self.log(msg)
         # Immediately close the current channel (we accept only one
         # connection at time) and avoid running out of max connections
         # limit.
@@ -844,8 +846,10 @@ class ActiveDTP(object, asyncore.dispatcher):
          - (int) port: the remote port.
          - (instance) cmd_channel: the command channel class instance.
         """
-        asyncore.dispatcher.__init__(self)
         self.cmd_channel = cmd_channel
+        self.log = cmd_channel.log
+        self.log_exception = cmd_channel.log_exception
+        asyncore.dispatcher.__init__(self)
         if self.timeout:
             self._idler = CallLater(self.timeout, self.handle_timeout,
                                     _errback=self.handle_error)
@@ -929,7 +933,7 @@ class ActiveDTP(object, asyncore.dispatcher):
         except (socket.gaierror, socket.error):
             pass
         except:
-            self.cmd_channel.logerror(traceback.format_exc())
+            self.log_exception(self)
         self.handle_expt()
 
     def close(self):
@@ -973,6 +977,8 @@ class DTPHandler(object, asynchat.async_chat):
         self.tot_bytes_sent = 0
         self.tot_bytes_received = 0
         self.cmd = None
+        self.log = cmd_channel.log
+        self.log_exception = cmd_channel.log_exception
         self._data_wrapper = lambda x: x
         self._lastdata = 0
         self._closed = False
@@ -1120,7 +1126,7 @@ class DTPHandler(object, asynchat.async_chat):
             self._lastdata = self.get_transmitted_bytes()
         else:
             msg = "Data connection timed out."
-            self.cmd_channel.log(msg)
+            self.log(msg)
             self._resp = "421 " + msg
             self.close()
             self.cmd_channel.close_when_done()
@@ -1145,7 +1151,7 @@ class DTPHandler(object, asynchat.async_chat):
                 self.handle_close()
                 return
             else:
-                self.cmd_channel.logerror(traceback.format_exc())
+                self.log_exception(self)
                 error = str(err[1])
         # an error could occur in case we fail reading / writing
         # from / to file (e.g. file system gets full)
@@ -1154,7 +1160,7 @@ class DTPHandler(object, asynchat.async_chat):
         except:
             # some other exception occurred;  we don't want to provide
             # confidential error messages
-            self.cmd_channel.logerror(traceback.format_exc())
+            self.log_exception(self)
             error = "Internal error"
         self._resp = "426 %s; transfer aborted." % error
         self.close()
@@ -2267,9 +2273,9 @@ class FTPHandler(object, asynchat.async_chat):
                 self.handle_close()
                 return
             else:
-                self.logerror(traceback.format_exc())
+                self.log_exception(self)
         except:
-            self.logerror(traceback.format_exc())
+            self.log_exception(self)
         self.close()
 
     def handle_close(self):
@@ -2491,15 +2497,23 @@ class FTPHandler(object, asynchat.async_chat):
     def log(self, msg):
         """Log a message, including additional identifying session data."""
         log("[%s]@%s:%s %s" % (self.username, self.remote_ip,
-                              self.remote_port, msg))
+                               self.remote_port, msg))
 
     def logline(self, msg):
         """Log a line including additional indentifying session data."""
         logline("%s:%s %s" % (self.remote_ip, self.remote_port, msg))
 
     def logerror(self, msg):
-        """Log unhandled exceptions."""
-        logerror(msg)
+        """Log an error including additional indentifying session data."""
+        logerror("[%s]@%s:%s %s" % (self.username, self.remote_ip,
+                                    self.remote_port, msg))
+
+    def log_exception(self, instance):
+        """Log an unhandled exception. 'instance' is the instance
+        where the exception was generated.
+        """
+        self.logerror("unhandled exception in instance %r\n%s" \
+                      % (instance, traceback.format_exc()))
 
     def log_cmd(self, cmd, arg, respcode, respstr):
         """Log commands and responses in a standardized format.

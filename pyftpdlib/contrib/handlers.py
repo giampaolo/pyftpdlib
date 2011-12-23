@@ -52,8 +52,7 @@ import warnings
 import traceback
 import errno
 
-from pyftpdlib.ftpserver import (FTPHandler, DTPHandler, proto_cmds, logerror,
-                                 _DISCONNECTED)
+from pyftpdlib.ftpserver import FTPHandler, DTPHandler, proto_cmds, _DISCONNECTED
 
 __all__ = []
 
@@ -151,7 +150,7 @@ else:
             except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
                 raise
             except:
-                logerror(traceback.format_exc())
+                self.log_exception(self)
             # when facing an unhandled exception in here it's better
             # to rely on base class (FTPHandler or DTPHandler)
             # close() method as it does not imply SSL shutdown logic
