@@ -275,6 +275,9 @@ else:
             if self.cmd_channel._prot:
                 self.secure_connection(self.cmd_channel.ssl_context)
 
+        def _use_sendfile(self, producer):
+            return False
+
         def handle_failed_ssl_handshake(self):
             # TLS/SSL handshake failure, probably client's fault which
             # used a SSL version different from server's.

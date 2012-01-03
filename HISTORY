@@ -9,6 +9,9 @@ Version: 0.6.1 - Date: XXXX-XX-XX
 
 Enhancements:
 
+ * Issue #152: uploads (from server to client) on UNIX are now from 2x to 4x
+   faster because of sendfile(2) system call usage.
+
  * Issue #155: AbstractedFS "root" and "cwd" are no longer read-only properties
    but can be set via setattr().
 
@@ -78,6 +81,9 @@ Bugfixes:
 
 Major API changes since 0.6.0:
 
+ * New FTPHandler.use_sendfile attribute.
+    * sendfile() is now automatically used instead of plain send() if
+      py-sendfile module is installed.
  * AbstractedFS root and cwd properties can now be set via setattr().
  * New CallLater class.
  * New FTPHandler.on_login_failed(username, password) method.

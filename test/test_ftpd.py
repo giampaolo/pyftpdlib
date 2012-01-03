@@ -70,6 +70,10 @@ try:
     import ssl
 except ImportError:
     ssl = None
+try:
+    import sendfile
+except ImportError:
+    sendfile = None
 
 from pyftpdlib import ftpserver
 
@@ -116,6 +120,7 @@ def support_hybrid_ipv6():
 SUPPORTS_IPV4 = try_address('127.0.0.1')
 SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
 SUPPORTS_HYBRID_IPV6 = SUPPORTS_IPV6 and support_hybrid_ipv6()
+SUPPORTS_SENDFILE = sendfile is not None
 
 def safe_remove(*files):
     "Convenience function for removing temporary test files"
@@ -1512,6 +1517,19 @@ class TestFtpStoreData(unittest.TestCase):
         f.close()
 
 
+if SUPPORTS_SENDFILE:
+    class TestFtpStoreDataNoSendfile(TestFtpStoreData):
+        """Test STOR, STOU, APPE, REST, TYPE not using sendfile()."""
+
+        def setUp(self):
+            TestFtpStoreData.setUp(self)
+            self.server.handler.use_sendfile = False
+
+        def tearDown(self):
+            TestFtpStoreData.tearDown(self)
+            self.server.handler.use_sendfile = True
+
+
 class TestFtpRetrieveData(unittest.TestCase):
     "Test RETR, REST, TYPE"
     server_class = FTPd
@@ -1610,6 +1628,19 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
         self.dummyfile.seek(0)
         self.assertEqual(self.dummyfile.read(), "")
+
+
+if SUPPORTS_SENDFILE:
+    class TestFtpRetrieveDataNoSendfile(TestFtpRetrieveData):
+        """Test RETR, REST, TYPE by not using sendfile()."""
+
+        def setUp(self):
+            TestFtpRetrieveData.setUp(self)
+            self.server.handler.use_sendfile = False
+
+        def tearDown(self):
+            TestFtpRetrieveData.tearDown(self)
+            self.server.handler.use_sendfile = True
 
 
 class TestFtpListingCmds(unittest.TestCase):
@@ -3008,6 +3039,12 @@ def test_main(tests=None):
             tests.append(TestIPv6Environment)
         if SUPPORTS_HYBRID_IPV6:
             tests.append(TestIPv6MixedEnvironment)
+        if SUPPORTS_SENDFILE:
+            tests.append(TestFtpRetrieveDataNoSendfile)
+            tests.append(TestFtpStoreDataNoSendfile)
+        else:
+            atexit.register(warnings.warn, "couldn't run sendfile() tests",
+                            RuntimeWarning)
 
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))

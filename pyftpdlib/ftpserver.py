@@ -139,6 +139,12 @@ try:
 except ImportError:
     pwd = grp = None
 
+# http://code.google.com/p/py-sendfile/
+try:
+    from sendfile import sendfile
+except ImportError:
+    sendfile = None
+
 
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer',
            'AuthorizerError', 'FTPHandler', 'FTPServer', 'PassiveDTP',
@@ -985,6 +991,8 @@ class DTPHandler(object, asynchat.async_chat):
         self._had_cr = False
         self._start_time = time.time()
         self._resp = None
+        self._offset = None
+        self._filefd = None
         if self.timeout:
             self._idler = CallEvery(self.timeout, self.handle_timeout,
                                     _errback=self.handle_error)
@@ -1005,6 +1013,51 @@ class DTPHandler(object, asynchat.async_chat):
         # remove this instance from asyncore socket map
         if not self.connected:
             self.close()
+
+    def _use_sendfile(self, producer):
+        return self.cmd_channel.use_sendfile \
+           and isinstance(producer, FileProducer) \
+           and producer.type == 'i'
+
+    def push_with_producer(self, producer):
+        if self._use_sendfile(producer):
+            try:
+                self._offset = producer.file.tell()
+                self._filefd = self.file_obj.fileno()
+                self.initiate_sendfile()
+                self.initiate_send = self.initiate_sendfile
+            except OSError, err:
+                if err.errno in (errno.EINVAL, errno.EBADF):
+                    self.log_exception(self)
+                    self.log("can't use sendfile() for uploads; "
+                             "falling back on plain send()")
+                    asynchat.async_chat.push_with_producer(self, producer)
+                else:
+                    raise
+        else:
+            asynchat.async_chat.push_with_producer(self, producer)
+
+    def initiate_sendfile(self):
+        """A wrapper around sendfile."""
+        try:
+            sent = sendfile(self._fileno, self._filefd, self._offset,
+                            self.ac_out_buffer_size)
+        except OSError, err:
+            if err.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
+                return
+            elif err.errno in (errno.ECONNRESET, errno.ENOTCONN,
+                               errno.ESHUTDOWN, errno.ECONNABORTED):
+                self.handle_close()
+            else:
+                raise
+        else:
+            if sent == 0:
+                # this signals the channel that the transfer is completed
+                self.producer_fifo = []
+                self.handle_close()
+            else:
+                self._offset += sent
+                self.tot_bytes_sent += sent
 
     # --- utility methods
 
@@ -1256,6 +1309,9 @@ class ThrottledDTPHandler(DTPHandler):
                 while self.ac_out_buffer_size > self.write_limit:
                     self.ac_out_buffer_size /= 2
 
+    def _use_sendfile(self, producer):
+        return False
+
     def readable(self):
         return not self.sleeping and super(ThrottledDTPHandler, self).readable()
 
@@ -1314,6 +1370,7 @@ class FileProducer(object):
         """
         self.done = False
         self.file = file
+        self.type = type
         if type == 'a':
             if os.linesep == '\r\n':
                 self._data_wrapper = lambda x: x
@@ -1901,6 +1958,14 @@ class FTPHandler(object, asynchat.async_chat):
         when True causes the server to report all ls and MDTM times in
         GMT and not local time (default True).
 
+     - (bool) use_sendfile: when True uses sendfile() system call to
+        send a file resulting in faster uploads (from server to client).
+        Works on UNIX only and requires py-sendfile module to be
+        installed separately:
+        http://code.google.com/p/py-sendfile/
+        Automatically defaults to True if py-sendfile module is
+        installed.
+
      - (bool) tcp_no_delay: controls the use of the TCP_NODELAY socket
         option which disables the Nagle algorithm resulting in
         significantly better performances (default True on all systems
@@ -1938,6 +2003,7 @@ class FTPHandler(object, asynchat.async_chat):
     masquerade_address_map = {}
     passive_ports = None
     use_gmt_times = True
+    use_sendfile = sendfile is not None
     tcp_no_delay = hasattr(socket, "TCP_NODELAY")
 
     def __init__(self, conn, server):

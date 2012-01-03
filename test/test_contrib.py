@@ -92,6 +92,7 @@ class TestCallbacksTLSMixin(TLSTestMixin, TestCallbacks):
     def test_on_incomplete_file_received(self): pass
     def test_on_incomplete_file_sent(self): pass
     def test_on_login(self): pass
+    def test_on_login_failed(self): pass
     def test_on_logout_quit(self): pass
     def test_on_logout_rein(self): pass
     def test_on_logout_user_issued_twice(self): pass

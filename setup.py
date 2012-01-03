@@ -7,6 +7,8 @@ To install pyftpdlib just open a command shell and run:
 > python setup.py install
 """
 
+import os
+import sys
 try:
     from setuptools import setup
 except ImportError:
@@ -52,3 +54,14 @@ setup(
           'Programming Language :: Python :: 2.7',
           ],
     )
+
+if os.name == 'posix':
+    try:
+        import sendfile
+    except ImportError:
+        msg = "\nYou might want to install py-sendfile module to speedup " \
+              "transfers:\nhttp://code.google.com/p/py-sendfile/\n"
+        if sys.stderr.isatty():
+            sys.stderr.write('\x1b[1m%s\x1b[0m' % msg)
+        else:
+            sys.stderr.write(msg)
