@@ -116,7 +116,7 @@ def get_server():
     return server
 
 def daemonize():
-    """A wrapper around pytho-daemonize context manager."""
+    """A wrapper around python-daemonize context manager."""
     pid = get_pid()
     if pid and pid_exists(pid):
         sys.exit('daemon already running (pid %s)' % pid)
@@ -130,9 +130,9 @@ def daemonize():
 
     # instance FTPd before daemonizing, so that in case of problems we
     # get an exception here and exit immediately
-    get_server().close_all()
+    server = get_server()
+    ctx.files_preserve = [server]
     with ctx:
-        server = get_server()
         server.serve_forever()
 
 def main():
