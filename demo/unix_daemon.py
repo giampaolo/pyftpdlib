@@ -137,7 +137,7 @@ def daemonize():
 
 def main():
     global PID_FILE, LOG_FILE
-    USAGE = "python [-d PIDFILE] [-o LOGFILE]\n\n" \
+    USAGE = "python [-p PIDFILE] [-l LOGFILE]\n\n" \
             "Commands:\n  - start\n  - stop\n  - status"
     parser = optparse.OptionParser(usage=USAGE)
     parser.add_option('-l', '--logfile', dest='logfile',
@@ -148,7 +148,7 @@ def main():
 
     if options.pidfile:
         PID_FILE = options.pidfile
-    if options.pidfile:
+    if options.logfile:
         LOG_FILE = options.logfile
 
     if not args:
