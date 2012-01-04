@@ -782,7 +782,7 @@ class PassiveDTP(object, asyncore.dispatcher):
         # Check the origin of data connection.  If not expressively
         # configured we drop the incoming data connection if remote
         # IP address does not match the client's IP address.
-        if (self.cmd_channel.remote_ip != addr[0]):
+        if self.cmd_channel.remote_ip != addr[0]:
             if not self.cmd_channel.permit_foreign_addresses:
                 try:
                     sock.close()
@@ -876,7 +876,7 @@ class ActiveDTP(object, asyncore.dispatcher):
         self.bind((source_ip, 0))
         try:
             self.connect((ip, port))
-        except (socket.gaierror, socket.error), err:
+        except (socket.gaierror, socket.error):
             self.handle_expt()
 
     # overridden to prevent unhandled read/write event messages to
@@ -1009,7 +1009,8 @@ class DTPHandler(object, asynchat.async_chat):
             self.close()
             if err[0] == errno.EINVAL:
                 return
-            return self.handle_error()
+            self.handle_error()
+            return
         # remove this instance from asyncore socket map
         if not self.connected:
             self.close()
@@ -1133,7 +1134,7 @@ class DTPHandler(object, asynchat.async_chat):
                     return
                 elif isinstance(p, str):
                     self.producer_fifo.pop()
-                    self.ac_out_buffer = self.ac_out_buffer + p
+                    self.ac_out_buffer += p
                     return
                 data = p.more()
                 if data:
@@ -1598,7 +1599,7 @@ class AbstractedFS(object):
         basedir = os.getcwd()
         try:
             os.chdir(path)
-        except os.error:
+        except OSError:
             raise
         else:
             os.chdir(basedir)
@@ -1756,7 +1757,7 @@ class AbstractedFS(object):
             file = os.path.join(basedir, basename)
             try:
                 st = self.lstat(file)
-            except os.error:
+            except OSError:
                 if ignore_err:
                     continue
                 raise
@@ -2172,7 +2173,7 @@ class FTPHandler(object, asynchat.async_chat):
         buflimit = 2048
         if self._in_buffer_len > buflimit:
             self.respond('500 Command too long.')
-            self.log('Command received exceeded buffer limit of %s.' % (buflimit))
+            self.log('Command received exceeded buffer limit of %s.' % buflimit)
             self._in_buffer = []
             self._in_buffer_len = 0
 
@@ -2866,7 +2867,6 @@ class FTPHandler(object, asynchat.async_chat):
         # - If no argument, fall back on cwd as default.
         # - Some older FTP clients erroneously issue /bin/ls-like LIST
         #   formats in which case we fall back on cwd as default.
-        line = self.fs.fs2ftp(path)
         try:
             iterator = self.run_as_current_user(self.fs.get_list_dir, path)
         except OSError, err:
@@ -2880,7 +2880,6 @@ class FTPHandler(object, asynchat.async_chat):
         """Return a list of files in the specified directory in a
         compact form to the client.
         """
-        line = self.fs.fs2ftp(path)
         try:
             if self.fs.isdir(path):
                 listing = self.run_as_current_user(self.fs.listdir, path)
@@ -2931,7 +2930,6 @@ class FTPHandler(object, asynchat.async_chat):
         """Return contents of a directory in a machine-processable form
         as defined in RFC-3659.
         """
-        line = self.fs.fs2ftp(path)
         # RFC-3659 requires 501 response code if path is not a directory
         if not self.fs.isdir(path):
             self.respond("501 No such directory.")
@@ -2952,7 +2950,6 @@ class FTPHandler(object, asynchat.async_chat):
         """Retrieve the specified file (transfer from the server to the
         client)
         """
-        line = self.fs.fs2ftp(file)
         rest_pos = self._restart_position
         self._restart_position = 0
         try:
@@ -2979,7 +2976,7 @@ class FTPHandler(object, asynchat.async_chat):
             except IOError, err:
                 why = _strerror(err)
             if not ok:
-                self.respond('554 %s' %why)
+                self.respond('554 %s' % why)
                 return
         producer = FileProducer(fd, self._current_type)
         self.push_dtp_data(producer, isproducer=True, file=fd, cmd="RETR")
@@ -2995,7 +2992,6 @@ class FTPHandler(object, asynchat.async_chat):
             cmd = 'APPE'
         else:
             cmd = 'STOR'
-        line = self.fs.fs2ftp(file)
         rest_pos = self._restart_position
         self._restart_position = 0
         if rest_pos:
@@ -3079,7 +3075,7 @@ class FTPHandler(object, asynchat.async_chat):
             try:
                 fd.close()
                 self.run_as_current_user(self.fs.remove, fd.name)
-            except os.error:
+            except OSError:
                 pass
             self.respond("550 Not enough privileges.")
             return
@@ -3251,7 +3247,6 @@ class FTPHandler(object, asynchat.async_chat):
 
     def ftp_CWD(self, path):
         """Change the current working directory."""
-        line = self.fs.fs2ftp(path)
         try:
             self.run_as_current_user(self.fs.chdir, path)
         except OSError, err:
@@ -3341,7 +3336,6 @@ class FTPHandler(object, asynchat.async_chat):
 
     def ftp_RMD(self, path):
         """Remove the specified directory."""
-        line = self.fs.fs2ftp(path)
         if self.fs.realpath(path) == self.fs.realpath(self.fs.root):
             msg = "Can't remove root directory."
             self.respond("550 %s" % msg)
@@ -3356,7 +3350,6 @@ class FTPHandler(object, asynchat.async_chat):
 
     def ftp_DELE(self, path):
         """Delete the specified file."""
-        line = self.fs.fs2ftp(path)
         try:
             self.run_as_current_user(self.fs.remove, path)
         except OSError, err:
@@ -3775,7 +3768,7 @@ class FTPServer(object, asyncore.dispatcher):
                     poll_fun(timeout)
                 if _scheduler._tasks:
                     _scheduler()
-                count = count - 1
+                count -= 1
 
     def handle_accept(self):
         """Called when remote client initiates a connection."""
@@ -3791,7 +3784,7 @@ class FTPServer(object, asyncore.dispatcher):
             return
         else:
             # sometimes addr == None instead of (ip, port) (see issue 104)
-            if addr == None:
+            if addr is None:
                 return
 
         handler = None
@@ -3816,7 +3809,7 @@ class FTPServer(object, asyncore.dispatcher):
             # accept only a limited number of connections from the same
             # source address.
             if self.max_cons_per_ip:
-                if (self.ip_map.count(ip) > self.max_cons_per_ip):
+                if self.ip_map.count(ip) > self.max_cons_per_ip:
                     handler.handle_max_cons_per_ip()
                     return
 
