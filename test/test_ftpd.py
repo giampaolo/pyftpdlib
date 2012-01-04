@@ -2897,6 +2897,8 @@ class TestCornerCases(unittest.TestCase):
             resp = self.client.sendport(HOST, port)
         except ftplib.error_temp, err:
             self.assertEqual(str(err)[:3], '425')
+        except socket.timeout:
+            pass
         else:
             self.assertNotEqual(str(err)[:3], '200')
 
@@ -3043,8 +3045,9 @@ def test_main(tests=None):
             tests.append(TestFtpRetrieveDataNoSendfile)
             tests.append(TestFtpStoreDataNoSendfile)
         else:
-            atexit.register(warnings.warn, "couldn't run sendfile() tests",
-                            RuntimeWarning)
+            if os.name == 'posix':
+                atexit.register(warnings.warn, "couldn't run sendfile() tests",
+                                RuntimeWarning)
 
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
