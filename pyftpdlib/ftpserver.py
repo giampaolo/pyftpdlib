@@ -1054,7 +1054,7 @@ class DTPHandler(object, asynchat.async_chat):
         else:
             if sent == 0:
                 # this signals the channel that the transfer is completed
-                self.producer_fifo = []
+                self.discard_buffers()
                 self.handle_close()
             else:
                 self._offset += sent
