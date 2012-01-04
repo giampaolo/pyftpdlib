@@ -49,7 +49,6 @@ import os
 import asyncore
 import socket
 import warnings
-import traceback
 import errno
 
 from pyftpdlib.ftpserver import FTPHandler, DTPHandler, proto_cmds, _DISCONNECTED

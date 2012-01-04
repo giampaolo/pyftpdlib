@@ -26,7 +26,7 @@ setup(
     long_description="Python FTP server library provides an high-level portable "
                      "interface to easily write asynchronous FTP servers with "
                      "Python.",
-    license='MIT License',
+    license='License :: OSI Approved :: MIT License',
     platforms='Platform Independent',
     author="Giampaolo Rodola'",
     author_email='g.rodola@gmail.com',

@@ -9,8 +9,8 @@ Version: 0.7.0 - Date: XXXX-XX-XX
 
 Enhancements:
 
- * Issue #152: uploads (from server to client) on UNIX are now from 2x to 4x
-   faster because of sendfile(2) system call usage.
+ * Issue #152: uploads (from server to client) on UNIX are now from 2x (Linux)
+   to 3x (OSX) faster because of sendfile(2) system call usage.
 
  * Issue #155: AbstractedFS "root" and "cwd" are no longer read-only properties
    but can be set via setattr().
@@ -34,7 +34,8 @@ Enhancements:
        reschedule : +1.7x
        cancel     : +477x  (with 1 milion scheduled functions)
        run:       : +8x
-    Also, a single scheduled function now consumes 1/3 of the memory.
+    Also, a single scheduled function now consumes 1/3 of the memory thanks
+    to __slots__ usage.
 
  * Issue #196: added callback for failed login attempt.
 

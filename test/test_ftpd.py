@@ -92,7 +92,7 @@ def try_address(host, port=0, family=socket.AF_INET):
     """Try to bind a socket on the given host:port and return True
     if that has been possible."""
     try:
-        sock = socket.socket(family, socket.SOCK_STREAM)
+        sock = socket.socket(family)
         sock.bind((host, port))
     except (socket.error, socket.gaierror):
         return False
@@ -107,7 +107,7 @@ def support_hybrid_ipv6():
     # IPPROTO_IPV6 constant is broken, see: http://bugs.python.org/issue6926
     IPPROTO_IPV6 = getattr(socket, "IPV6_V6ONLY", 41)
     IPV6_V6ONLY = getattr(socket, "IPV6_V6ONLY", 26)
-    sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+    sock = socket.socket(socket.AF_INET6)
     try:
         try:
             return not sock.getsockopt(IPPROTO_IPV6, IPV6_V6ONLY)
@@ -659,7 +659,7 @@ class TestCallEvery(unittest.TestCase):
                 task.cancel()
         del ftpserver._scheduler._tasks[:]
 
-    def scheduler(self, timeout=0.0001, count=100):
+    def scheduler(self, timeout=0.0001):
         for x in range(100):
             ftpserver._scheduler()
             time.sleep(timeout)
@@ -691,7 +691,7 @@ class TestCallEvery(unittest.TestCase):
         l = []
         fun = lambda: l.append(None)
         ftpserver.CallEvery(0, fun)
-        self.scheduler(count=100)
+        self.scheduler()
         self.assertEqual(len(l), 100)
 
     # run it on systems where time.time() has a higher precision
@@ -973,8 +973,8 @@ class TestFtpDummyCmds(unittest.TestCase):
 
         self.assertEqual(self.client.sendcmd('opts mlst fish;cakes;'), '200 MLST OPTS ')
         self.assertTrue(not '*' in mlst())
-        self.assertEqual(self.client.sendcmd('opts mlst fish;cakes;type;'), \
-                                     '200 MLST OPTS type;')
+        self.assertEqual(self.client.sendcmd('opts mlst fish;cakes;type;'),
+                         '200 MLST OPTS type;')
         self.assertTrue('type*;perm;size;modify;' in mlst())
 
 
@@ -2624,7 +2624,7 @@ class _TestNetworkProtocols(unittest.TestCase):
             self.assert_("Network protocol not supported" in resp)
 
         # test connection
-        sock = socket.socket(self.client.af, socket.SOCK_STREAM)
+        sock = socket.socket(self.client.af)
         sock.bind((self.client.sock.getsockname()[0], 0))
         sock.listen(5)
         sock.settimeout(2)
@@ -2810,7 +2810,7 @@ class TestCornerCases(unittest.TestCase):
         # The original server behavior was to reply with "200 Active
         # data connection established" *after* the client had already
         # disconnected the control connection.
-        sock = socket.socket(self.client.af, socket.SOCK_STREAM)
+        sock = socket.socket(self.client.af)
         sock.bind((self.client.sock.getsockname()[0], 0))
         sock.listen(5)
         sock.settimeout(2)
@@ -2851,7 +2851,7 @@ class TestCornerCases(unittest.TestCase):
         import struct
 
         def connect(addr):
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s = socket.socket()
             s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
                          struct.pack('ii', 1, 0))
             try:
@@ -2900,7 +2900,7 @@ class TestCornerCases(unittest.TestCase):
         except socket.timeout:
             pass
         else:
-            self.assertNotEqual(str(err)[:3], '200')
+            self.assertNotEqual(str(resp)[:3], '200')
 
 
 class TestCommandLineParser(unittest.TestCase):

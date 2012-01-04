@@ -149,7 +149,7 @@ else:
                 if not self.anonymous_user in self._get_system_users():
                     raise ValueError('no such user %s' % self.anonymous_user)
                 try:
-                    return pwd.getpwnam(self.anonymous_user).pw_dir
+                    pwd.getpwnam(self.anonymous_user).pw_dir
                 except KeyError:
                     raise ValueError('no such user %s' % anonymous_user)
 
@@ -388,10 +388,12 @@ else:
 
         def __init__(self, anonymous_user=None, anonymous_password=None):
             # actually try to impersonate the user
+            self.anonymous_user = anonymous_user
+            self.anonymous_password = anonymous_password
             if self.anonymous_user is not None:
                 self.impersonate_user(self.anonymous_user,
                                       self.anonymous_password)
-                self.terminate_impersonation
+                self.terminate_impersonation()
 
         def validate_authentication(self, username, password):
             if username == "anonymous":
@@ -535,7 +537,7 @@ else:
             if self.anonymous_user is not None:
                 self.impersonate_user(self.anonymous_user,
                                       self.anonymous_password)
-                self.terminate_impersonation
+                self.terminate_impersonation()
 
         def override_user(self, username, password=None, homedir=None, perm=None,
                           msg_login=None, msg_quit=None):
