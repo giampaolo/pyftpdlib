@@ -1043,7 +1043,7 @@ class DTPHandler(object, asynchat.async_chat):
             sent = sendfile(self._fileno, self._filefd, self._offset,
                             self.ac_out_buffer_size)
         except OSError, err:
-            if err.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
+            if err.errno in (errno.EAGAIN, errno.EWOULDBLOCK, errno.EBUSY):
                 return
             elif err.errno in (errno.ECONNRESET, errno.ENOTCONN,
                                errno.ESHUTDOWN, errno.ECONNABORTED):
