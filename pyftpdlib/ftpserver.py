@@ -272,6 +272,14 @@ def _strerror(err):
     else:
         return err.strerror
 
+# A wrapper around os.strerror() which may be not available 
+# on all platforms (e.g. pythonCE). Expected arg is a 
+# EnvironmentError or derived class instance.
+if hasattr(os, 'strerror'):
+    _strerror = lambda err: os.strerror(err.errno)
+else:
+    _strerror = lambda err: err.strerror
+
 
 class _Scheduler(object):
     """Run the scheduled functions due to expire soonest (if any)."""
@@ -709,8 +717,8 @@ class PassiveDTP(object, asyncore.dispatcher):
                 self.set_reuse_addr()
                 try:
                     self.bind((local_ip, port))
-                except socket.error, why:
-                    if why[0] == errno.EADDRINUSE:  # port already in use
+                except socket.error, err:
+                    if err[0] == errno.EADDRINUSE:  # port already in use
                         if ports:
                             continue
                         # If cannot use one of the ports in the configured
@@ -2317,8 +2325,8 @@ class FTPHandler(object, asynchat.async_chat):
         if hasattr(socket, 'MSG_OOB'):
             try:
                 data = self.socket.recv(1024, socket.MSG_OOB)
-            except socket.error, why:
-                if why[0] == errno.EINVAL:
+            except socket.error, err:
+                if err[0] == errno.EINVAL:
                     return
             else:
                 self._in_buffer.append(data)
