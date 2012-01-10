@@ -261,17 +261,6 @@ if not hasattr(os, 'chmod'):
     del proto_cmds['SITE CHMOD']
 
 
-def _strerror(err):
-    """A wrap around os.strerror() which may be not available on all
-    platforms (e.g. pythonCE).
-
-     - (instance) err: an EnvironmentError or derived class instance.
-    """
-    if hasattr(os, 'strerror'):
-        return os.strerror(err.errno)
-    else:
-        return err.strerror
-
 # A wrapper around os.strerror() which may be not available 
 # on all platforms (e.g. pythonCE). Expected arg is a 
 # EnvironmentError or derived class instance.
