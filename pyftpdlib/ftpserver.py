@@ -1043,8 +1043,7 @@ class DTPHandler(object, asynchat.async_chat):
         except OSError, err:
             if err.errno in (errno.EAGAIN, errno.EWOULDBLOCK, errno.EBUSY):
                 return
-            elif err.errno in (errno.ECONNRESET, errno.ENOTCONN,
-                               errno.ESHUTDOWN, errno.ECONNABORTED):
+            elif err.errno in _DISCONNECTED:
                 self.handle_close()
             else:
                 raise
