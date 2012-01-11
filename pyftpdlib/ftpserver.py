@@ -1019,19 +1019,10 @@ class DTPHandler(object, asynchat.async_chat):
 
     def push_with_producer(self, producer):
         if self._use_sendfile(producer):
-            try:
-                self._offset = producer.file.tell()
-                self._filefd = self.file_obj.fileno()
-                self.initiate_sendfile()
-                self.initiate_send = self.initiate_sendfile
-            except OSError, err:
-                if err.errno in (errno.EINVAL, errno.EBADF):
-                    self.log_exception(self)
-                    self.log("can't use sendfile() for uploads; "
-                             "falling back on plain send()")
-                    asynchat.async_chat.push_with_producer(self, producer)
-                else:
-                    raise
+            self._offset = producer.file.tell()
+            self._filefd = self.file_obj.fileno()
+            self.initiate_sendfile()
+            self.initiate_send = self.initiate_sendfile
         else:
             asynchat.async_chat.push_with_producer(self, producer)
 
