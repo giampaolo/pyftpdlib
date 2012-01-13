@@ -139,7 +139,7 @@ try:
 except ImportError:
     pwd = grp = None
 
-# http://code.google.com/p/py-sendfile/
+# http://code.google.com/p/pysendfile/
 try:
     from sendfile import sendfile
 except ImportError:
@@ -261,8 +261,8 @@ if not hasattr(os, 'chmod'):
     del proto_cmds['SITE CHMOD']
 
 
-# A wrapper around os.strerror() which may be not available 
-# on all platforms (e.g. pythonCE). Expected arg is a 
+# A wrapper around os.strerror() which may be not available
+# on all platforms (e.g. pythonCE). Expected arg is a
 # EnvironmentError or derived class instance.
 if hasattr(os, 'strerror'):
     _strerror = lambda err: os.strerror(err.errno)
@@ -1948,10 +1948,10 @@ class FTPHandler(object, asynchat.async_chat):
 
      - (bool) use_sendfile: when True uses sendfile() system call to
         send a file resulting in faster uploads (from server to client).
-        Works on UNIX only and requires py-sendfile module to be
+        Works on UNIX only and requires pysendfile module to be
         installed separately:
-        http://code.google.com/p/py-sendfile/
-        Automatically defaults to True if py-sendfile module is
+        http://code.google.com/p/pysendfile/
+        Automatically defaults to True if pysendfile module is
         installed.
 
      - (bool) tcp_no_delay: controls the use of the TCP_NODELAY socket

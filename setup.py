@@ -59,8 +59,8 @@ if os.name == 'posix':
     try:
         import sendfile
     except ImportError:
-        msg = "\nYou might want to install py-sendfile module to speedup " \
-              "transfers:\nhttp://code.google.com/p/py-sendfile/\n"
+        msg = "\nYou might want to install pysendfile module to speedup " \
+              "transfers:\nhttp://code.google.com/p/pysendfile/\n"
         if sys.stderr.isatty():
             sys.stderr.write('\x1b[1m%s\x1b[0m' % msg)
         else:

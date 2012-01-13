@@ -84,7 +84,7 @@ Major API changes since 0.6.0:
 
  * New FTPHandler.use_sendfile attribute.
     * sendfile() is now automatically used instead of plain send() if
-      py-sendfile module is installed.
+      pysendfile module is installed.
  * AbstractedFS root and cwd properties can now be set via setattr().
  * New CallLater class.
  * New FTPHandler.on_login_failed(username, password) method.
