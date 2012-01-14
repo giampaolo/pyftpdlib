@@ -2968,7 +2968,6 @@ class TestUnicodePathNames(unittest.TestCase):
             self.assertTrue(os.path.isfile(tempname))
             self.client.rename(tempname, self.tempfile)
             # rename dir
-            tempname = os.path.basename(tempfile.mktemp(dir=HOME, suffix='♥'))
             self.client.rename(self.tempdir, tempname)
             self.assertTrue(os.path.isdir(tempname))
             self.client.rename(tempname, self.tempdir)
@@ -2997,23 +2996,20 @@ class TestUnicodePathNames(unittest.TestCase):
 
     # --- listing cmds
 
-    def test_list(self):
+    def _test_listing_cmds(self, cmd):
         ls = []
         touch(os.path.join(self.tempdir, self.tempfile))
-        self.client.retrlines("list " + self.tempdir, ls.append)
+        self.client.retrlines("%s %s" % (cmd, self.tempdir), ls.append)
         self.assertTrue(self.tempfile in ls[0])
+
+    def test_list(self):
+        self._test_listing_cmds('list')
 
     def test_nlst(self):
-        ls = []
-        touch(os.path.join(self.tempdir, self.tempfile))
-        self.client.retrlines("nlst " + self.tempdir, ls.append)
-        self.assertTrue(self.tempfile in ls[0])
+        self._test_listing_cmds('nlst')
 
     def test_mlsd(self):
-        ls = []
-        touch(os.path.join(self.tempdir, self.tempfile))
-        self.client.retrlines("mlsd " + self.tempdir, ls.append)
-        self.assertTrue(self.tempfile in ls[0])
+        self._test_listing_cmds('mlsd')
 
     def test_mlst(self):
         # utility function for extracting the line of interest
