@@ -129,15 +129,17 @@ def safe_remove(*files):
     for file in files:
         try:
             os.remove(file)
-        except os.error:
-            pass
+        except OSError, err:
+            if err.errno != errno.ENOENT:
+                raise
 
 def safe_rmdir(dir):
     "Convenience function for removing temporary test directories"
     try:
         os.rmdir(dir)
-    except os.error:
-        pass
+    except OSError, err:
+        if err.errno != errno.ENOENT:
+            raise
 
 def onexit():
     """Convenience function for removing temporary files and
@@ -256,8 +258,7 @@ class TestAbstractedFS(unittest.TestCase):
     """Test for conversion utility methods of AbstractedFS class."""
 
     def setUp(self):
-        if os.path.isfile(TESTFN):
-            os.remove(TESTFN)
+        safe_remove(TESTFN)
 
     tearDown = setUp
 
@@ -1067,8 +1068,7 @@ class TestFtpFsOperations(unittest.TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
-        if os.path.exists(self.tempfile):
-            os.remove(self.tempfile)
+        safe_remove(self.tempfile)
         if os.path.exists(self.tempdir):
             shutil.rmtree(self.tempdir)
 
@@ -1251,8 +1251,7 @@ class TestFtpStoreData(unittest.TestCase):
         self.server.stop()
         self.dummy_recvfile.close()
         self.dummy_sendfile.close()
-        if os.path.isfile(TESTFN):
-            os.remove(TESTFN)
+        safe_remove(TESTFN)
 
     def test_stor(self):
         try:
@@ -1405,8 +1404,7 @@ class TestFtpStoreData(unittest.TestCase):
         # directory before and after STOU has been issued.
         # Assuming that TESTFN is supposed to be a "reserved" file
         # name we shouldn't get false positives.
-        if os.path.isfile(TESTFN):
-            os.remove(TESTFN)
+        safe_remove(TESTFN)
         # login as a limited user to let STOU fail
         self.client.login('anonymous', '@nopasswd')
         before = os.listdir(HOME)
@@ -1561,7 +1559,7 @@ class TestFtpRetrieveData(unittest.TestCase):
             self.file.close()
         if not self.dummyfile.closed:
             self.dummyfile.close()
-        os.remove(TESTFN)
+        safe_remove(TESTFN)
 
     def test_retr(self):
         data = 'abcde12345' * 100000
@@ -1758,10 +1756,7 @@ class TestFtpListingCmds(unittest.TestCase):
             else:
                 self.fail("Exception not raised")
         finally:
-            try:
-                os.rmdir(dir)
-            except OSError:
-                pass
+            safe_rmdir(dir)
 
     def test_mlsd_all_facts(self):
         feat = self.client.sendcmd('feat')
@@ -2932,8 +2927,7 @@ class TestUnicodePathNames(unittest.TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
-        if os.path.exists(self.tempfile):
-            os.remove(self.tempfile)
+        safe_remove(self.tempfile)
         if os.path.exists(self.tempdir):
             shutil.rmtree(self.tempdir)
 
@@ -3073,8 +3067,7 @@ class TestCommandLineParser(unittest.TestCase):
         sys.argv = self.SYSARGV[:]
         sys.stderr = self.STDERR
         ftpserver.FTPServer = self.original_ftpserver_class
-        if os.path.isdir(TESTFN):
-            os.rmdir(TESTFN)
+        safe_rmdir(TESTFN)
 
     def test_a_option(self):
         sys.argv += ["-i", "localhost", "-p", "0"]
@@ -3129,8 +3122,7 @@ class TestCommandLineParser(unittest.TestCase):
         # no such directory
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-d %s" % TESTFN]
-        if os.path.isdir(TESTFN):
-            os.rmdir(TESTFN)
+        safe_rmdir(TESTFN)
         self.assertRaises(ValueError, ftpserver.main)
 
     def test_r_option(self):
