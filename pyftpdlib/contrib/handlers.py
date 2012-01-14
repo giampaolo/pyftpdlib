@@ -199,9 +199,9 @@ else:
             try:
                 os.write(self.socket.fileno(), '')
             except (OSError, socket.error), err:
-                if err[0] in (errno.EINTR, errno.EWOULDBLOCK, errno.ENOBUFS):
+                if err.args[0] in (errno.EINTR, errno.EWOULDBLOCK, errno.ENOBUFS):
                     return
-                elif err[0] in _DISCONNECTED:
+                elif err.args[0] in _DISCONNECTED:
                     return super(SSLConnection, self).close()
                 else:
                     raise
@@ -246,7 +246,7 @@ else:
                 else:
                     raise
             except socket.error, err:
-                if err[0] in _DISCONNECTED:
+                if err.args[0] in _DISCONNECTED:
                     super(SSLConnection, self).close()
                 else:
                     raise

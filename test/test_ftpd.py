@@ -2219,7 +2219,7 @@ class TestConfigurableOptions(unittest.TestCase):
                     sock.bind((HOST, port))
                     break
                 except socket.error, err:
-                    if err[0] == errno.EACCES:
+                    if err.args[0] == errno.EACCES:
                         # root privileges needed
                         sock = None
                         break
