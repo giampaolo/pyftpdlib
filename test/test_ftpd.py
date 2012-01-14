@@ -141,6 +141,15 @@ def safe_rmdir(dir):
         if err.errno != errno.ENOENT:
             raise
 
+def touch(name):
+    """Create a file and return its name."""
+    assert not os.path.isfile(name), name
+    f = open(name, 'w')
+    try:
+        return f.name
+    finally:
+        f.close()
+
 def onexit():
     """Convenience function for removing temporary files and
     directories on interpreter exit.
@@ -404,7 +413,7 @@ class TestAbstractedFS(unittest.TestCase):
             fs._root = HOME
             TESTFN2 = TESTFN + '1'
             try:
-                open(TESTFN, 'w')
+                touch(TESTFN)
                 os.symlink(TESTFN, TESTFN2)
                 self.assertTrue(fs.validpath(TESTFN))
             finally:
@@ -436,8 +445,8 @@ class TestDummyAuthorizer(unittest.TestCase):
     def setUp(self):
         self.tempdir = tempfile.mkdtemp(dir=HOME)
         self.subtempdir = tempfile.mkdtemp(dir=os.path.join(HOME, self.tempdir))
-        self.tempfile = open(os.path.join(self.tempdir, TESTFN), 'w').name
-        self.subtempfile = open(os.path.join(self.subtempdir, TESTFN), 'w').name
+        self.tempfile = touch(os.path.join(self.tempdir, TESTFN))
+        self.subtempfile = touch(os.path.join(self.subtempdir, TESTFN))
         warnings.filterwarnings("error")
 
     def tearDown(self):
@@ -1062,7 +1071,7 @@ class TestFtpFsOperations(unittest.TestCase):
         self.client.connect(self.server.host, self.server.port)
         self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
-        self.tempfile = os.path.basename(open(TESTFN, 'w+b').name)
+        self.tempfile = os.path.basename(touch(TESTFN))
         self.tempdir = os.path.basename(tempfile.mkdtemp(dir=HOME))
 
     def tearDown(self):
@@ -1662,7 +1671,7 @@ class TestFtpListingCmds(unittest.TestCase):
         self.client.connect(self.server.host, self.server.port)
         self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
-        open(TESTFN, 'w').close()
+        touch(TESTFN)
 
     def tearDown(self):
         self.client.close()
@@ -2058,7 +2067,7 @@ class TestConfigurableOptions(unittest.TestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
-        open(TESTFN, 'w').close()
+        touch(TESTFN)
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class()
@@ -2921,7 +2930,7 @@ class TestUnicodePathNames(unittest.TestCase):
         self.client.connect(self.server.host, self.server.port)
         self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
-        self.tempfile = os.path.basename(open(TESTFN + '☃', 'w+b').name)
+        self.tempfile = os.path.basename(touch(TESTFN + '☃'))
         self.tempdir = os.path.basename(tempfile.mkdtemp(suffix='☺', dir=HOME))
 
     def tearDown(self):
@@ -2989,19 +2998,19 @@ class TestUnicodePathNames(unittest.TestCase):
 
     def test_list(self):
         ls = []
-        open(os.path.join(self.tempdir, self.tempfile), 'wb').close()
+        touch(os.path.join(self.tempdir, self.tempfile))
         self.client.retrlines("list " + self.tempdir, ls.append)
         self.assertTrue(self.tempfile in ls[0])
 
     def test_nlst(self):
         ls = []
-        open(os.path.join(self.tempdir, self.tempfile), 'wb').close()
+        touch(os.path.join(self.tempdir, self.tempfile))
         self.client.retrlines("nlst " + self.tempdir, ls.append)
         self.assertTrue(self.tempfile in ls[0])
 
     def test_mlsd(self):
         ls = []
-        open(os.path.join(self.tempdir, self.tempfile), 'wb').close()
+        touch(os.path.join(self.tempdir, self.tempfile))
         self.client.retrlines("mlsd " + self.tempdir, ls.append)
         self.assertTrue(self.tempfile in ls[0])
 
