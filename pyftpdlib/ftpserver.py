@@ -707,7 +707,7 @@ class PassiveDTP(object, asyncore.dispatcher):
                 try:
                     self.bind((local_ip, port))
                 except socket.error, err:
-                    if err[0] == errno.EADDRINUSE:  # port already in use
+                    if err.args[0] == errno.EADDRINUSE:  # port already in use
                         if ports:
                             continue
                         # If cannot use one of the ports in the configured
@@ -768,7 +768,7 @@ class PassiveDTP(object, asyncore.dispatcher):
             return
         except socket.error, err:
             # ECONNABORTED might be thrown on *BSD (see issue 105)
-            if err[0] != errno.ECONNABORTED:
+            if err.args[0] != errno.ECONNABORTED:
                 self.log_exception(self)
             return
         else:
@@ -1004,7 +1004,7 @@ class DTPHandler(object, asynchat.async_chat):
             asynchat.async_chat.__init__(self, socket.socket())
             # http://code.google.com/p/pyftpdlib/issues/detail?id=143
             self.close()
-            if err[0] == errno.EINVAL:
+            if err.args[0] == errno.EINVAL:
                 return
             self.handle_error()
             return
@@ -1188,16 +1188,16 @@ class DTPHandler(object, asynchat.async_chat):
             # - http://bugs.python.org/issue1736101
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=104
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=109
-            if err[0] in _DISCONNECTED:
+            if err.args[0] in _DISCONNECTED:
                 self.handle_close()
                 return
             else:
                 self.log_exception(self)
-                error = str(err[1])
+                error = str(err.args[1])
         # an error could occur in case we fail reading / writing
         # from / to file (e.g. file system gets full)
         except _FileReadWriteError, err:
-            error = _strerror(err[0])
+            error = _strerror(err.args[0])
         except:
             # some other exception occurred;  we don't want to provide
             # confidential error messages
@@ -2051,7 +2051,7 @@ class FTPHandler(object, asynchat.async_chat):
             # http://code.google.com/p/pyftpdlib/issues/detail?id=188
             asynchat.async_chat.__init__(self, socket.socket())
             self.close()
-            if err[0] == errno.EINVAL:
+            if err.args[0] == errno.EINVAL:
                 # http://code.google.com/p/pyftpdlib/issues/detail?id=143
                 return
             self.handle_error()
@@ -2066,7 +2066,7 @@ class FTPHandler(object, asynchat.async_chat):
             # before we can get the peername, hence ENOTCONN (see issue
             # #100) while EINVAL can occur on OSX (see issue #143).
             self.connected = False
-            if err[0] in (errno.ENOTCONN, errno.EINVAL):
+            if err.args[0] in (errno.ENOTCONN, errno.EINVAL):
                 self.close()
             else:
                 self.handle_error()
@@ -2305,7 +2305,7 @@ class FTPHandler(object, asynchat.async_chat):
             try:
                 data = self.socket.recv(1024, socket.MSG_OOB)
             except socket.error, err:
-                if err[0] == errno.EINVAL:
+                if err.args[0] == errno.EINVAL:
                     return
             else:
                 self._in_buffer.append(data)
@@ -2323,7 +2323,7 @@ class FTPHandler(object, asynchat.async_chat):
             # - http://bugs.python.org/issue1736101
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=104
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=109
-            if err[0] in _DISCONNECTED:
+            if err.args[0] in _DISCONNECTED:
                 self.handle_close()
                 return
             else:
@@ -3766,7 +3766,7 @@ class FTPServer(object, asyncore.dispatcher):
             return
         except socket.error, err:
             # ECONNABORTED might be thrown on *BSD (see issue 105)
-            if err[0] != errno.ECONNABORTED:
+            if err.args[0] != errno.ECONNABORTED:
                 logerror(traceback.format_exc())
             return
         else:
