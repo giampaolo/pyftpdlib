@@ -664,7 +664,7 @@ class TestCallLater(unittest.TestCase):
 
     def test_errback(self):
         l = []
-        ftpserver.CallLater(0.0, lambda: 1/0, _errback=lambda: l.append(True))
+        ftpserver.CallLater(0.0, lambda: 1//0, _errback=lambda: l.append(True))
         self.scheduler()
         self.assertEqual(l, [True])
 
@@ -743,7 +743,7 @@ class TestCallEvery(unittest.TestCase):
 
     def test_errback(self):
         l = []
-        ftpserver.CallEvery(0.0, lambda: 1/0, _errback=lambda: l.append(True))
+        ftpserver.CallEvery(0.0, lambda: 1//0, _errback=lambda: l.append(True))
         self.scheduler()
         self.assertTrue(l)
 
@@ -1620,7 +1620,7 @@ class TestFtpRetrieveData(unittest.TestCase):
                 break
             self.dummyfile.write(chunk)
             received_bytes += len(chunk)
-            if received_bytes >= len(data) / 2:
+            if received_bytes >= len(data) // 2:
                 break
         conn.close()
 
@@ -2889,7 +2889,7 @@ class TestCornerCases(unittest.TestCase):
         server = ftpserver.FTPServer((HOST, 0), ftpserver.FTPHandler)
         try:
             len1 = len(asyncore.socket_map)
-            ftpserver.CallLater(0, lambda: 1 / 0)
+            ftpserver.CallLater(0, lambda: 1 // 0)
             server.serve_forever(timeout=0, count=1)
             len2 = len(asyncore.socket_map)
             self.assertEqual(len1, len2)
