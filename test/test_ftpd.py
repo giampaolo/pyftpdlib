@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # $Id$
 
 #  ======================================================================
@@ -129,6 +131,13 @@ def safe_remove(*files):
             os.remove(file)
         except os.error:
             pass
+
+def safe_rmdir(dir):
+    "Convenience function for removing temporary test directories"
+    try:
+        os.rmdir(dir)
+    except os.error:
+        pass
 
 def onexit():
     """Convenience function for removing temporary files and
@@ -2903,6 +2912,142 @@ class TestCornerCases(unittest.TestCase):
             self.assertNotEqual(str(resp)[:3], '200')
 
 
+class TestUnicodePathNames(unittest.TestCase):
+    """Test FTP commands and responses by using path names with non
+    ASCII characters.
+    """
+    server_class = FTPd
+    client_class = ftplib.FTP
+
+    def setUp(self):
+        self.server = self.server_class()
+        self.server.start()
+        self.client = self.client_class()
+        self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
+        self.client.login(USER, PASSWD)
+        self.tempfile = os.path.basename(open(TESTFN + '☃', 'w+b').name)
+        self.tempdir = os.path.basename(tempfile.mkdtemp(suffix='☺', dir=HOME))
+
+    def tearDown(self):
+        self.client.close()
+        self.server.stop()
+        if os.path.exists(self.tempfile):
+            os.remove(self.tempfile)
+        if os.path.exists(self.tempdir):
+            shutil.rmtree(self.tempdir)
+
+    # --- fs operations
+
+    def test_cwd(self):
+        resp = self.client.cwd(self.tempdir)
+        self.assertTrue(self.tempdir in resp)
+
+    def test_mkd(self):
+        os.rmdir(self.tempdir)
+        dirname = self.client.mkd(self.tempdir)
+        self.assertEqual(dirname, '/' + self.tempdir)
+        self.assertTrue(os.path.isdir(self.tempdir))
+
+    def test_rmdir(self):
+        self.client.rmd(self.tempdir)
+
+    def test_dele(self):
+        self.client.delete(self.tempfile)
+        self.assertFalse(os.path.exists(self.tempfile))
+
+    def test_rnfr_rnto(self):
+        tempname = os.path.basename(tempfile.mktemp(dir=HOME, suffix='♥'))
+        try:
+            # rename file
+            self.client.rename(self.tempfile, tempname)
+            self.assertTrue(os.path.isfile(tempname))
+            self.client.rename(tempname, self.tempfile)
+            # rename dir
+            tempname = os.path.basename(tempfile.mktemp(dir=HOME, suffix='♥'))
+            self.client.rename(self.tempdir, tempname)
+            self.assertTrue(os.path.isdir(tempname))
+            self.client.rename(tempname, self.tempdir)
+        finally:
+            safe_remove(tempname)
+            safe_rmdir(tempname)
+
+    def test_size(self):
+        self.client.sendcmd('type i')
+        self.client.sendcmd('size ' + self.tempfile)
+
+    def test_mdtm(self):
+        self.client.sendcmd('mdtm ' + self.tempfile)
+
+    def test_stou(self):
+        resp = self.client.sendcmd('stou ' + self.tempfile)
+        try:
+            self.assertTrue(self.tempfile in resp)
+        finally:
+            os.remove(resp.rsplit(' ', 1)[1])
+
+    if hasattr(os, 'chmod'):
+        def test_site_chmod(self):
+            self.client.sendcmd('site chmod 777 ' + self.tempfile)
+
+    # --- listing cmds
+
+    def test_list(self):
+        ls = []
+        open(os.path.join(self.tempdir, self.tempfile), 'wb').close()
+        self.client.retrlines("list " + self.tempdir, ls.append)
+        self.assertTrue(self.tempfile in ls[0])
+
+    def test_nlst(self):
+        ls = []
+        open(os.path.join(self.tempdir, self.tempfile), 'wb').close()
+        self.client.retrlines("nlst " + self.tempdir, ls.append)
+        self.assertTrue(self.tempfile in ls[0])
+
+    def test_mlsd(self):
+        ls = []
+        open(os.path.join(self.tempdir, self.tempfile), 'wb').close()
+        self.client.retrlines("mlsd " + self.tempdir, ls.append)
+        self.assertTrue(self.tempfile in ls[0])
+
+    def test_mlst(self):
+        # utility function for extracting the line of interest
+        mlstline = lambda cmd: self.client.voidcmd(cmd).split('\n')[1]
+        self.assertTrue('type=dir' in mlstline('mlst ' + self.tempdir))
+        self.assertTrue('/' + self.tempdir in mlstline('mlst ' + self.tempdir))
+        self.assertTrue('type=file' in mlstline('mlst ' + self.tempfile))
+        self.assertTrue('/' + self.tempfile in mlstline('mlst ' + self.tempfile))
+
+    # --- file transfer
+
+    def test_stor(self):
+        data = 'abcde12345' * 500
+        os.remove(self.tempfile)
+        dummy = StringIO.StringIO()
+        dummy.write(data)
+        dummy.seek(0)
+        self.client.storbinary('stor ' + self.tempfile, dummy)
+        dummy_recv = StringIO.StringIO()
+        self.client.retrbinary('retr ' + self.tempfile, dummy_recv.write)
+        dummy_recv.seek(0)
+        self.assertEqual(dummy_recv.read(), data)
+
+    def test_retr(self):
+        data = 'abcd1234' * 500
+        f = open(self.tempfile, 'wb')
+        f.write(data)
+        f.close()
+        dummy = StringIO.StringIO()
+        self.client.retrbinary('retr ' + self.tempfile, dummy.write)
+        dummy.seek(0)
+        self.assertEqual(dummy.read(), data)
+
+    # XXX - provisional
+    def test_encode_decode(self):
+        self.client.sendcmd('type i')
+        self.client.sendcmd('size ' + self.tempfile.decode('utf8').encode('utf8'))
+
+
 class TestCommandLineParser(unittest.TestCase):
     """Test command line parser."""
     SYSARGV = sys.argv
@@ -3033,6 +3178,7 @@ def test_main(tests=None):
                  TestConfigurableOptions,
                  TestCallbacks,
                  TestCornerCases,
+                 TestUnicodePathNames,
                  TestCommandLineParser,
                  ]
         if SUPPORTS_IPV4:
