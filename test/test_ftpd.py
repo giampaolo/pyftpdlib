@@ -2931,7 +2931,8 @@ class TestUnicodePathNames(unittest.TestCase):
         self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
         self.tempfile = os.path.basename(touch(TESTFN + '☃'))
-        self.tempdir = os.path.basename(tempfile.mkdtemp(suffix='☺', dir=HOME))
+        self.tempdir = TESTFN + '☺'
+        os.mkdir(self.tempdir)
 
     def tearDown(self):
         self.client.close()
@@ -2960,7 +2961,7 @@ class TestUnicodePathNames(unittest.TestCase):
         self.assertFalse(os.path.exists(self.tempfile))
 
     def test_rnfr_rnto(self):
-        tempname = os.path.basename(tempfile.mktemp(dir=HOME, suffix='♥'))
+        tempname = TESTFN + '♥'
         try:
             # rename file
             self.client.rename(self.tempfile, tempname)
