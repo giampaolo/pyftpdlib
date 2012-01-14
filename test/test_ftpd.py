@@ -2983,6 +2983,7 @@ class TestUnicodePathNames(unittest.TestCase):
         resp = self.client.sendcmd('stou ' + self.tempfile)
         try:
             self.assertTrue(self.tempfile in resp)
+            self.client.quit()
         finally:
             os.remove(resp.rsplit(' ', 1)[1])
 
