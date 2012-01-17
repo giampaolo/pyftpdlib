@@ -9,6 +9,7 @@ Example usages:
  $ python unix_daemon.py start
  $ python unix_daemon.py stop
  $ python unix_daemon.py status
+ $ python unix_daemon.py  # foreground (no daemon)
  $ python unix_daemon.py --logfile /var/log/ftpd.log start
  $ python unix_daemon.py --pidfile /var/run/ftpd.pid start
 
@@ -18,11 +19,10 @@ You might want to use this as an example and provide the necessary
 customizations.
 
 Parts you might want to customize are:
- - the global constants (PID_FILE, LOG_FILE, UMASK, WORKDIR)
- - get_server() function
+ - UMASK, WORKDIR, HOST, PORT constants
+ - get_server() function (to define users and customize FTP handler)
 
 Authors:
- - Michele Petrazzo - michele.petrazzo <at> gmail.com
  - Ben Timby - btimby <at> gmail.com
  - Giampaolo Rodola' - g.rodola <at> gmail.com
 """
@@ -44,9 +44,11 @@ import daemon.pidfile
 
 
 # overridable options
+HOST = ""
+PORT = 21
 PID_FILE = "/var/run/pyftpdlib.pid"
-LOG_FILE = None
-WORKDIR = None
+LOG_FILE = "/var/log/pyftpdlib.log"
+WORKDIR = os.getcwd()
 UMASK = 0
 
 
@@ -107,12 +109,18 @@ def status():
 
 def get_server():
     """Return a pre-configured FTP server instance."""
+    # when daemonized, it seems we need to flush() stdout explicitly
+    # in order to get the log file written in real time
+    def log(s):
+        sys.stdout.write(s + "\n")
+        sys.stdout.flush()
+    ftpserver.log = ftpserver.logline = log
     authorizer = ftpserver.DummyAuthorizer()
     authorizer.add_user('user', '12345', os.getcwd(), perm='elradfmwM')
     authorizer.add_anonymous(os.getcwd())
     ftp_handler = ftpserver.FTPHandler
     ftp_handler.authorizer = authorizer
-    server = ftpserver.FTPServer(('', 21), ftp_handler)
+    server = ftpserver.FTPServer((HOST, PORT), ftp_handler)
     return server
 
 def daemonize():
@@ -120,18 +128,18 @@ def daemonize():
     pid = get_pid()
     if pid and pid_exists(pid):
         sys.exit('daemon already running (pid %s)' % pid)
-    ctx = daemon.DaemonContext(
-        working_directory=WORKDIR,
-        umask=UMASK,
-        pidfile=daemon.pidfile.TimeoutPIDLockFile(PID_FILE)
-    )
-    if LOG_FILE is not None:
-        ctx.stdout = ctx.stderr = open(LOG_FILE, 'wb')
-
     # instance FTPd before daemonizing, so that in case of problems we
     # get an exception here and exit immediately
     server = get_server()
-    ctx.files_preserve = [server]
+    logfile = open(LOG_FILE, 'a+')
+    ctx = daemon.DaemonContext(
+        stdout=logfile,
+        stderr=logfile,
+        working_directory=WORKDIR,
+        umask=UMASK,
+        pidfile=daemon.pidfile.TimeoutPIDLockFile(PID_FILE),
+        files_preserve=[server],
+    )
     with ctx:
         server.serve_forever()
 
@@ -141,7 +149,7 @@ def main():
             "Commands:\n  - start\n  - stop\n  - status"
     parser = optparse.OptionParser(usage=USAGE)
     parser.add_option('-l', '--logfile', dest='logfile',
-                      help='save stdout to a file')
+                      help='the log file location')
     parser.add_option('-p', '--pidfile', dest='pidfile', default=PID_FILE,
                       help='file to store/retreive daemon pid')
     options, args = parser.parse_args()
