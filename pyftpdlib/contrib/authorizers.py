@@ -358,7 +358,10 @@ else:
                 raise
             else:
                 try:
-                    shell = pwd.getpwnam(username).pw_shell
+                    try:
+                        shell = pwd.getpwnam(username).pw_shell
+                    except KeyError:  # invalid user
+                        return False
                     for line in file:
                         if line.startswith('#'):
                             continue
@@ -586,4 +589,3 @@ else:
             if overridden_home:
                 return overridden_home
             return BaseWindowsAuthorizer.get_home_dir(self, username)
-

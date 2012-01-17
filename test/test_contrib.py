@@ -501,6 +501,15 @@ class TestUnixAuthorizer(SharedAuthorizerTests):
         warnings.resetwarnings()
         self.assertTrue(auth.has_perm('anonymous', 'w'))
 
+    def test_validate_authentication(self):
+        # we can only test for invalid credentials
+        auth = authorizers.UnixAuthorizer(require_valid_shell=False)
+        ret = auth.validate_authentication('?!foo', '?!foo')
+        self.assertFalse(ret)
+        auth = authorizers.UnixAuthorizer(require_valid_shell=True)
+        ret = auth.validate_authentication('?!foo', '?!foo')
+        self.assertFalse(ret)
+
     def test_validate_authentication_anonymous(self):
         current_user = self.get_current_user()
         auth = authorizers.UnixAuthorizer(anonymous_user=current_user,
