@@ -27,9 +27,9 @@ Enhancements:
  * Issue #181: added CallEvery class to call a function every x seconds.
 
  * Issue #189: the internal scheduler has been rewritten from scratch and it is
-   an order of magnitue faster, especially for operations like cancel() which
+   an order of magnitude faster, especially for operations like cancel() which
    are involved when clients are disconnected (hence invoked very often).
-   Some benchmaks:
+   Some benchmarks:
        schedule   : +0.5x
        reschedule : +1.7x
        cancel     : +477x  (with 1 milion scheduled functions)
