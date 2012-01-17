@@ -164,9 +164,9 @@ else:
                 super(SSLConnection, self).handle_close()
                 return 0
             except SSL.SysCallError, (errnum, errstr):
-                if errstr == 'Unexpected EOF' or errnum == errno.EWOULDBLOCK:
+                if errnum == errno.EWOULDBLOCK:
                     return 0
-                elif errnum in _DISCONNECTED:
+                elif errnum in _DISCONNECTED or errstr == 'Unexpected EOF':
                     super(SSLConnection, self).handle_close()
                     return 0
                 else:
@@ -181,7 +181,7 @@ else:
                 super(SSLConnection, self).handle_close()
                 return ''
             except SSL.SysCallError, (errnum, errstr):
-                if errstr == 'Unexpected EOF' or errnum in _DISCONNECTED:
+                if errnum in _DISCONNECTED or errstr == 'Unexpected EOF':
                     super(SSLConnection, self).handle_close()
                     return ''
                 else:
@@ -233,7 +233,7 @@ else:
             except SSL.ZeroReturnError:
                 super(SSLConnection, self).close()
             except SSL.SysCallError, (errnum, errstr):
-                if errstr == 'Unexpected EOF' or errnum in _DISCONNECTED:
+                if errnum in _DISCONNECTED or errstr == 'Unexpected EOF':
                     super(SSLConnection, self).close()
                 else:
                     raise
