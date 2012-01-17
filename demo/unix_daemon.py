@@ -37,6 +37,7 @@ import optparse
 import signal
 
 from pyftpdlib import ftpserver
+from pyftpdlib.contrib.authorizers import UnixAuthorizer
 
 # http://pypi.python.org/pypi/python-daemon
 import daemon
@@ -115,11 +116,8 @@ def get_server():
         sys.stdout.write(s + "\n")
         sys.stdout.flush()
     ftpserver.log = ftpserver.logline = log
-    authorizer = ftpserver.DummyAuthorizer()
-    authorizer.add_user('user', '12345', os.getcwd(), perm='elradfmwM')
-    authorizer.add_anonymous(os.getcwd())
     ftp_handler = ftpserver.FTPHandler
-    ftp_handler.authorizer = authorizer
+    ftp_handler.authorizer = UnixAuthorizer()
     server = ftpserver.FTPServer((HOST, PORT), ftp_handler)
     return server
 
