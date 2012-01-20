@@ -39,6 +39,8 @@ Enhancements:
 
  * Issue #196: added callback for failed login attempt.
 
+ * Issue #200: FTPServer.server_forever() is now a class method.
+
 Bugfixes:
 
  * Issue #156: data connection must be closed before sending 226/426 reply.
@@ -80,11 +82,14 @@ Bugfixes:
  * Issue #191: (FTPS) during SSL shutdown() operation the server can end up in
    an infinite loop hogging CPU resources.
 
+ * Issue #199: UnixAuthorizer with require_valid_shell option is broken.
+
 Major API changes since 0.6.0:
 
  * New FTPHandler.use_sendfile attribute.
     * sendfile() is now automatically used instead of plain send() if
       pysendfile module is installed.
+ * FTPServer.serve_forever() is a classmethod.
  * AbstractedFS root and cwd properties can now be set via setattr().
  * New CallLater class.
  * New FTPHandler.on_login_failed(username, password) method.
