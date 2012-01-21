@@ -678,6 +678,7 @@ class PassiveDTP(object, asyncore.dispatcher):
         self.cmd_channel = cmd_channel
         self.log = cmd_channel.log
         self.log_exception = cmd_channel.log_exception
+        self._closed = False
         asyncore.dispatcher.__init__(self)
         if self.timeout:
             self._idler = CallLater(self.timeout, self.handle_timeout,
@@ -826,9 +827,11 @@ class PassiveDTP(object, asyncore.dispatcher):
         self.close()
 
     def close(self):
-        asyncore.dispatcher.close(self)
-        if self._idler is not None and not self._idler.cancelled:
-            self._idler.cancel()
+        if not self._closed:
+            self._closed = True
+            asyncore.dispatcher.close(self)
+            if self._idler is not None and not self._idler.cancelled:
+                self._idler.cancel()
 
 
 class ActiveDTP(object, asyncore.dispatcher):
@@ -852,6 +855,7 @@ class ActiveDTP(object, asyncore.dispatcher):
         self.cmd_channel = cmd_channel
         self.log = cmd_channel.log
         self.log_exception = cmd_channel.log_exception
+        self._closed = True
         asyncore.dispatcher.__init__(self)
         if self.timeout:
             self._idler = CallLater(self.timeout, self.handle_timeout,
@@ -940,9 +944,11 @@ class ActiveDTP(object, asyncore.dispatcher):
         self.handle_expt()
 
     def close(self):
-        asyncore.dispatcher.close(self)
-        if self._idler is not None and not self._idler.cancelled:
-            self._idler.cancel()
+        if not self._closed:
+            self._closed = True
+            asyncore.dispatcher.close(self)
+            if self._idler is not None and not self._idler.cancelled:
+                self._idler.cancel()
 
 
 class DTPHandler(object, asynchat.async_chat):
