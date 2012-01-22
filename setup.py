@@ -33,8 +33,8 @@ setup(
     url='http://code.google.com/p/pyftpdlib/',
     download_url=download_url,
     packages=['pyftpdlib', 'pyftpdlib/contrib'],
-    keywords=['ftp', 'server', 'ftpd', 'daemon', 'python', 'rfc959', 'rfc1123',
-              'rfc2228', 'rfc2428', 'rfc3659', 'ftps'],
+    keywords=['ftp', 'ftps', 'server', 'ftpd', 'daemon', 'python', 'ssl',
+              'sendfile', 'rfc959', 'rfc1123', 'rfc2228', 'rfc2428', 'rfc3659'],
     classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Environment :: Console',
