@@ -26,6 +26,8 @@ Enhancements:
 
  * Issue #181: added CallEvery class to call a function every x seconds.
 
+ * Issue #185: pass Debian licenscheck tool.
+
  * Issue #189: the internal scheduler has been rewritten from scratch and it is
    an order of magnitude faster, especially for operations like cancel() which
    are involved when clients are disconnected (hence invoked very often).
