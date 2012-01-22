@@ -84,6 +84,8 @@ Bugfixes:
 
  * Issue #199: UnixAuthorizer with require_valid_shell option is broken.
 
+ * Issue #202: added benchmark script.
+
 Major API changes since 0.6.0:
 
  * New FTPHandler.use_sendfile attribute.
