@@ -85,6 +85,10 @@ import optparse
 import contextlib
 import asyncore
 import asynchat
+try:
+    import resource
+except ImportError:
+    resource = None
 
 
 HOST = 'localhost'
@@ -354,6 +358,9 @@ def main():
     def bench_multi():
         howmany = options.clients
         FILE_SIZE = 1024 * 1024 * 10  # 10MB
+
+        if howmany > 200 and resource is not None:
+            resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 4096))
 
         def bench_multi_connect():
             with timethis("%i concurrent clients (connect, login)" % howmany):
