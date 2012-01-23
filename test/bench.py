@@ -73,6 +73,15 @@ Example usages:
 #   200 concurrent clients (RETR 10M file)         2.76 secs
 #   200 concurrent clients (STOR 10M file)         6.39 secs
 #   200 concurrent clients (quit)                  0.23 secs
+#
+# vsftpd 2.3.2
+#
+#   STOR (client -> server)                      648.48 MB/sec
+#   RETR (server -> client)                     1505.18 MB/sec
+#   200 concurrent clients (connect, login)       14.54 secs
+#   200 concurrent clients (RETR 10M file)         2.88 secs
+#   200 concurrent clients (STOR 10M file)          N/A
+#   200 concurrent clients (quit)                  0.01
 
 
 from __future__ import with_statement, division
