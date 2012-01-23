@@ -379,14 +379,15 @@ else:
             """Return True if the user has a valid shell binary listed
             in /etc/shells. If /etc/shells can't be found return True.
             """
+            file = None
             try:
-                file = open('/etc/shells', 'r')
-            except IOError, err:
-                if err.errno == errno.ENOENT:
-                    return True
-                raise
-            else:
                 try:
+                    file = open('/etc/shells', 'r')
+                except IOError, err:
+                    if err.errno == errno.ENOENT:
+                        return True
+                    raise
+                else:
                     try:
                         shell = pwd.getpwnam(username).pw_shell
                     except KeyError:  # invalid user
@@ -398,7 +399,8 @@ else:
                         if line == shell:
                             return True
                     return False
-                finally:
+            finally:
+                if file is not None:
                     file.close()
 
 
