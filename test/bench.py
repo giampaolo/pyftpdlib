@@ -384,23 +384,23 @@ def main():
 
         def bench_multi_retr(clients):
             stor(clients[0], FILE_SIZE)
-            for ftp in clients:
-                ftp.voidcmd('TYPE I')
-                conn = ftp.transfercmd("RETR " + TESTFN)
-                AsyncReader(conn)
             with timethis("%s concurrent clients (RETR %s file)" \
                           % (howmany, bytes2human(FILE_SIZE))):
+                for ftp in clients:
+                    ftp.voidcmd('TYPE I')
+                    conn = ftp.transfercmd("RETR " + TESTFN)
+                    AsyncReader(conn)
                 asyncore.loop(use_poll=True)
             for ftp in clients:
                 ftp.voidresp()
 
         def bench_multi_stor(clients):
-            for ftp in clients:
-                ftp.voidcmd('TYPE I')
-                conn = ftp.transfercmd("STOR " + TESTFN)
-                AsyncWriter(conn, 1024 * 1024 * 5)
             with timethis("%s concurrent clients (STOR %s file)" \
                           % (howmany, bytes2human(FILE_SIZE))):
+                for ftp in clients:
+                    ftp.voidcmd('TYPE I')
+                    conn = ftp.transfercmd("STOR " + TESTFN)
+                    AsyncWriter(conn, 1024 * 1024 * 5)
                 asyncore.loop(use_poll=True)
             for ftp in clients:
                 ftp.voidresp()
