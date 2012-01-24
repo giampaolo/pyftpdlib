@@ -368,8 +368,12 @@ def main():
         howmany = options.clients
         FILE_SIZE = 1024 * 1024 * 10  # 10MB
 
-        if howmany > 200 and resource is not None:
-            resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 4096))
+        # The OS usually sets a limit of 1024 as the maximum number of
+        # open file descriptors for the current process.
+        # Let's set the highest number possible, just to be sure.
+        if howmany > 500 and resource is not None:
+            soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+            resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard))
 
         def bench_multi_connect():
             with timethis("%i concurrent clients (connect, login)" % howmany):
