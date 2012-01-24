@@ -38,11 +38,12 @@ with writing permissions configured.
 
 Example usages:
   python bench.py -u USER -p PASSWORD
-  python bench.py -u USER -p PASSWORD -H 127.0.0.1 -P 21
+  python bench.py -u USER -p PASSWORD -H ftp.domain.com -P 21   # host / port
   python bench.py -u USER -p PASSWORD -b transfer
   python bench.py -u USER -p PASSWORD -b concurrence
   python bench.py -u USER -p PASSWORD -b all
-  python bench.py -u USER -p PASSWORD -b concurrence -n 500
+  python bench.py -u USER -p PASSWORD -b concurrence -n 500     # 500 clients
+  python bench.py -u USER -p PASSWORD -b concurrence -s 20M     # file size
 """
 
 # Some benchmarks (Linux 3.0.0, Intel core duo - 3.1 Ghz).
@@ -150,6 +151,24 @@ def bytes2human(n, format="%(value)i%(symbol)s"):
             value = float(n) / prefix[symbol]
             return format % locals()
     return format % dict(symbol=symbols[0], value=n)
+
+# http://goo.gl/zeJZl
+def human2bytes(s):
+    """
+    >>> human2bytes('1M')
+    1048576
+    >>> human2bytes('1G')
+    1073741824
+    """
+    symbols = ('B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
+    letter = s[-1:].strip().upper()
+    num = s[:-1]
+    assert num.isdigit() and letter in symbols
+    num = float(num)
+    prefix = {symbols[0]:1}
+    for i, s in enumerate(symbols[1:]):
+        prefix[s] = 1 << (i+1)*10
+    return int(num * prefix[letter])
 
 def timethis(what):
     """"Utility function for making simple benchmarks (calculates time calls).
@@ -332,7 +351,7 @@ class OptFormatter(optparse.IndentedHelpFormatter):
 
 def main():
     global HOST, PORT, USER, PASSWORD
-    USAGE = "%s -u USERNAME -p PASSWORD [-H] [-P] [-b] [-n]" % __file__
+    USAGE = "%s -u USERNAME -p PASSWORD [-H] [-P] [-b] [-n] [-s]" % __file__
     parser = optparse.OptionParser(usage=USAGE,
                                    epilog=__doc__[__doc__.find('Example'):],
                                    formatter=OptFormatter())
@@ -345,6 +364,12 @@ def main():
     parser.add_option('-n', '--clients', dest='clients', default=200, type="int",
                       help="number of concurrent clients used by 'concurrence' "
                            "benchmark")
+    parser.add_option('-s', '--filesize', dest='filesize', default="10M",
+                      help="file size used by 'concurrence' benchmark "
+                           "(e.g. '10M')")
+
+
+
     options, args = parser.parse_args()
     if not options.user or not options.password:
         sys.exit(USAGE)
@@ -353,6 +378,10 @@ def main():
         PASSWORD = options.password
         HOST = options.host
         PORT = options.port
+        try:
+            FILE_SIZE = human2bytes(options.filesize)
+        except (ValueError, AssertionError):
+            parser.error("invalid file size %r" % options.filesize)
 
     def bench_stor():
         bytes = bytes_per_second(connect(), retr=False)
@@ -366,7 +395,6 @@ def main():
 
     def bench_multi():
         howmany = options.clients
-        FILE_SIZE = 1024 * 1024 * 10  # 10MB
 
         # The OS usually sets a limit of 1024 as the maximum number of
         # open file descriptors for the current process.
