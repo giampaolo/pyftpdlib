@@ -54,7 +54,7 @@ class AntiFloodHandler(FTPHandler):
     def handle(self):
         # called when client connects.
         if self.remote_ip in self.banned_ips:
-            self.respond('550 you are banned')
+            self.respond('550 You are banned.')
             self.close()
         else:
             super(AntiFloodHandler, self).handle()
@@ -76,7 +76,7 @@ class AntiFloodHandler(FTPHandler):
         # ban ip and schedule next un-ban
         if ip not in self.banned_ips:
             self.log('banned IP %s for command flooding' % ip)
-        self.respond('550 you are banned for %s seconds' % self.ban_for)
+        self.respond('550 You are banned for %s seconds.' % self.ban_for)
         self.close()
         self.banned_ips.append(ip)
 
