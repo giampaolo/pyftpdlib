@@ -44,6 +44,7 @@ Example usages:
   python bench.py -u USER -p PASSWORD -b all
   python bench.py -u USER -p PASSWORD -b concurrence -n 500     # 500 clients
   python bench.py -u USER -p PASSWORD -b concurrence -s 20M     # file size
+  python bench.py -u USER -p PASSWORD -b concurrence -p 3521    # memory usage
 """
 
 # Some benchmarks (Linux 3.0.0, Intel core duo - 3.1 Ghz).
@@ -100,14 +101,18 @@ try:
 except ImportError:
     resource = None
 
+try:
+    import psutil
+except ImportError:
+    psutil = None
 
 HOST = 'localhost'
 PORT = 21
 USER = None
 PASSWORD = None
 TESTFN = "$testfile"
-TESTFILE_SIZE = 1024 * 1024 * 100  # 100 MB
 BUFFER_LEN = 8192
+SERVER_PROC = None
 
 
 # http://goo.gl/6V8Rm
@@ -128,10 +133,14 @@ if not sys.stdout.isatty() or os.name != 'posix':
     def hilite(s, *args, **kwargs):
         return s
 
+server_memory = []
+
 def print_bench(what, value, unit=""):
-    s = "%s %s %s" % (hilite("%-42s" % what, ok=None, bold=0),
+    s = "%s %s %-8s" % (hilite("%-42s" % what, ok=None, bold=0),
                       hilite("%8.2f" % value),
                       unit)
+    if server_memory:
+        s += "%s RSS" % hilite(server_memory.pop())
     print s.strip()
 
 # http://goo.gl/zeJZl
@@ -163,12 +172,20 @@ def human2bytes(s):
     symbols = ('B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
     letter = s[-1:].strip().upper()
     num = s[:-1]
-    assert num.isdigit() and letter in symbols
+    assert num.isdigit() and letter in symbols, s
     num = float(num)
     prefix = {symbols[0]:1}
     for i, s in enumerate(symbols[1:]):
         prefix[s] = 1 << (i+1)*10
     return int(num * prefix[letter])
+
+def register_memory():
+    """Register RSS memory used by server process and its children."""
+    if SERVER_PROC is not None:
+        mem = SERVER_PROC.get_memory_info().rss
+        for child in SERVER_PROC.get_children():
+            mem += child.get_memory_info().rss
+        server_memory.append(bytes2human(mem))
 
 def timethis(what):
     """"Utility function for making simple benchmarks (calculates time calls).
@@ -229,7 +246,6 @@ def stor(ftp, size):
 
 def bytes_per_second(ftp, retr=True):
     """Return the number of bytes transmitted in 1 second."""
-    stop_at = time.time() + 1.0
     bytes = 0
     if retr:
         def request_file():
@@ -238,6 +254,8 @@ def bytes_per_second(ftp, retr=True):
             return conn
 
         conn = request_file()
+        register_memory()
+        stop_at = time.time() + 1.0
         while stop_at > time.time():
             chunk = conn.recv(BUFFER_LEN)
             if not chunk:
@@ -257,6 +275,7 @@ def bytes_per_second(ftp, retr=True):
     else:
         ftp.voidcmd('TYPE I')
         conn = ftp.transfercmd("STOR " + TESTFN)
+        register_memory()
         chunk = 'x' * BUFFER_LEN
         stop_at = time.time() + 1
         while stop_at > time.time():
@@ -350,8 +369,8 @@ class OptFormatter(optparse.IndentedHelpFormatter):
         return ''.join(result)
 
 def main():
-    global HOST, PORT, USER, PASSWORD
-    USAGE = "%s -u USERNAME -p PASSWORD [-H] [-P] [-b] [-n] [-s]" % __file__
+    global HOST, PORT, USER, PASSWORD, SERVER_PROC
+    USAGE = "%s -u USERNAME -p PASSWORD [-H] [-P] [-b] [-n] [-s] [-k]" % __file__
     parser = optparse.OptionParser(usage=USAGE,
                                    epilog=__doc__[__doc__.find('Example'):],
                                    formatter=OptFormatter())
@@ -367,7 +386,8 @@ def main():
     parser.add_option('-s', '--filesize', dest='filesize', default="10M",
                       help="file size used by 'concurrence' benchmark "
                            "(e.g. '10M')")
-
+    parser.add_option('-k', '--pid', dest='pid', default=None, type="int",
+                      help="the PID of the server process to bench memory usage")
 
 
     options, args = parser.parse_args()
@@ -382,6 +402,10 @@ def main():
             FILE_SIZE = human2bytes(options.filesize)
         except (ValueError, AssertionError):
             parser.error("invalid file size %r" % options.filesize)
+        if options.pid is not None:
+            if psutil is None:
+                raise ImportError("-p option requires psutil module")
+            SERVER_PROC = psutil.Process(options.pid)
 
     def bench_stor():
         bytes = bytes_per_second(connect(), retr=False)
@@ -408,6 +432,7 @@ def main():
                 clients = []
                 for x in range(howmany):
                     clients.append(connect())
+                register_memory()
             return clients
 
         def bench_multi_retr(clients):
@@ -418,6 +443,7 @@ def main():
                     ftp.voidcmd('TYPE I')
                     conn = ftp.transfercmd("RETR " + TESTFN)
                     AsyncReader(conn)
+                register_memory()
                 asyncore.loop(use_poll=True)
             for ftp in clients:
                 ftp.voidresp()
@@ -429,6 +455,7 @@ def main():
                     ftp.voidcmd('TYPE I')
                     conn = ftp.transfercmd("STOR " + TESTFN)
                     AsyncWriter(conn, 1024 * 1024 * 5)
+                register_memory()
                 asyncore.loop(use_poll=True)
             for ftp in clients:
                 ftp.voidresp()
@@ -454,6 +481,10 @@ def main():
     atexit.register(cleanup)
 
     # start benchmark
+    if SERVER_PROC is not None:
+        register_memory()
+        print "(starting with %s of RSS memory being used)" \
+               % hilite(server_memory.pop())
     if options.benchmark == 'transfer':
         bench_stor()
         bench_retr()
