@@ -63,7 +63,8 @@ setup(
     download_url=download_url,
     packages=['pyftpdlib', 'pyftpdlib/contrib'],
     keywords=['ftp', 'ftps', 'server', 'ftpd', 'daemon', 'python', 'ssl',
-              'sendfile', 'rfc959', 'rfc1123', 'rfc2228', 'rfc2428', 'rfc3659'],
+              'sendfile', 'asynchronous', 'nonblocking', 'eventdriven',
+              'rfc959', 'rfc1123', 'rfc2228', 'rfc2428', 'rfc3659'],
     classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Environment :: Console',

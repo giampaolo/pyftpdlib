@@ -154,7 +154,7 @@ __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer
 
 __pname__   = 'Python FTP server library (pyftpdlib)'
 __ver__     = '0.7.0'
-__date__    = 'XXXX-XX-XX'
+__date__    = '2012-01-25'
 __author__  = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__     = 'http://code.google.com/p/pyftpdlib/'
 
@@ -3744,7 +3744,7 @@ class FTPServer(object, asyncore.dispatcher):
             poll_fun = asyncore.poll
 
         if count is None:
-            log("starting FTP server")
+            log("Starting FTP server")
             try:
                 try:
                     while asyncore.socket_map or _scheduler._tasks:
@@ -3753,7 +3753,7 @@ class FTPServer(object, asyncore.dispatcher):
                 except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
                     pass
             finally:
-                log("shutting down FTP server")
+                log("Shutting down FTP server")
                 cls.close_all()
         else:
             while (asyncore.socket_map or _scheduler._tasks) and count > 0:
