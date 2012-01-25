@@ -51,37 +51,40 @@ Example usages:
 #
 # pyftpdlib 0.6.0:
 #
-#   STOR (client -> server)                      512.70 MB/sec
-#   RETR (server -> client)                      689.49 MB/sec
-#   200 concurrent clients (connect, login)        0.26 secs
-#   200 concurrent clients (RETR 10M file)         3.24 secs
-#   200 concurrent clients (STOR 10M file)         3.80 secs
-#   200 concurrent clients (quit)                  0.04 secs
+# (starting with 9M of RSS memory being used)
+# STOR (client -> server)                      528.02 MB/sec  9M RSS
+# RETR (server -> client)                      693.41 MB/sec  10M RSS
+# 200 concurrent clients (connect, login)        0.25 secs    10M RSS
+# 200 concurrent clients (RETR 10M file)         3.68 secs    11M RSS
+# 200 concurrent clients (STOR 10M file)         6.11 secs    11M RSS
+# 200 concurrent clients (quit)                  0.02 secs
 #
 # pyftpdlib 0.7.0:
-#
-#   STOR (client -> server)                      508.80 MB/sec
-#   RETR (server -> client)                     1635.14 MB/sec
-#   200 concurrent clients (connect, login)        0.22 secs
-#   200 concurrent clients (RETR 10M file)         2.33 secs
-#   200 concurrent clients (STOR 10M file)         3.83 secs
+#  (starting with 6M of RSS memory being used)
+#   STOR (client -> server)                      512.80 MB/sec  9M RSS
+#   RETR (server -> client)                     1694.14 MB/sec  9M RSS
+#   200 concurrent clients (connect, login)        0.95 secs    11M RSS
+#   200 concurrent clients (RETR 10M file)         2.80 secs    12M RSS
+#   200 concurrent clients (STOR 10M file)         6.30 secs    13M RSS
 #   200 concurrent clients (quit)                  0.02 secs
 #
 # proftpd 1.3.4rc2:
 #
-#   STOR (client -> server)                      609.22 MB/sec
-#   RETR (server -> client)                     1313.77 MB/sec
-#   200 concurrent clients (connect, login)        7.53 secs
-#   200 concurrent clients (RETR 10M file)         2.76 secs
-#   200 concurrent clients (STOR 10M file)         6.39 secs
+#   (starting with 2M of RSS memory being used)
+#   STOR (client -> server)                      609.22 MB/sec  6M RSS
+#   RETR (server -> client)                     1313.77 MB/sec  6M RSS
+#   200 concurrent clients (connect, login)        7.53 secs    862M RSS
+#   200 concurrent clients (RETR 10M file)         2.76 secs    862M RSS
+#   200 concurrent clients (STOR 10M file)         6.39 secs    862M RSS
 #   200 concurrent clients (quit)                  0.23 secs
 #
 # vsftpd 2.3.2
 #
-#   STOR (client -> server)                      648.48 MB/sec
-#   RETR (server -> client)                     1505.18 MB/sec
-#   200 concurrent clients (connect, login)       14.54 secs
-#   200 concurrent clients (RETR 10M file)         2.88 secs
+#   (starting with 1M of RSS memory being used)
+#   STOR (client -> server)                      670.48 MB/sec  2M RSS
+#   RETR (server -> client)                     1505.18 MB/sec  2M RSS
+#   200 concurrent clients (connect, login)       12.61 secs    289M RSS
+#   200 concurrent clients (RETR 10M file)         2.30 secs    289M RSS
 #   200 concurrent clients (STOR 10M file)          N/A
 #   200 concurrent clients (quit)                  0.01
 
