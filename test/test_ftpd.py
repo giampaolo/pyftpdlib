@@ -2456,6 +2456,7 @@ class TestCallbacks(unittest.TestCase):
                 self.client.putcmd('abor')
                 break
         conn.close()
+        self.assertRaises(ftplib.error_temp, self.client.getresp)  # 426
 
         # shut down the server to avoid race conditions
         self.tearDown()
