@@ -139,7 +139,7 @@ if not sys.stdout.isatty() or os.name != 'posix':
 server_memory = []
 
 def print_bench(what, value, unit=""):
-    s = "%s %s %-8s" % (hilite("%-42s" % what, ok=None, bold=0),
+    s = "%s %s %-8s" % (hilite("%-50s" % what, ok=None, bold=0),
                       hilite("%8.2f" % value),
                       unit)
     if server_memory:
@@ -410,15 +410,13 @@ def main():
                 raise ImportError("-p option requires psutil module")
             SERVER_PROC = psutil.Process(options.pid)
 
-    def bench_stor():
+    def bench_stor(title="STOR (client -> server)"):
         bytes = bytes_per_second(connect(), retr=False)
-        print_bench("STOR (client -> server)",
-                    round(bytes / 1024.0 / 1024.0, 2), "MB/sec")
+        print_bench(title, round(bytes / 1024.0 / 1024.0, 2), "MB/sec")
 
-    def bench_retr():
+    def bench_retr(title="RETR (server -> client)"):
         bytes = bytes_per_second(connect(), retr=True)
-        print_bench("RETR (server -> client)",
-                    round(bytes / 1024.0 / 1024.0, 2), "MB/sec")
+        print_bench(title, round(bytes / 1024.0 / 1024.0, 2), "MB/sec")
 
     def bench_multi():
         howmany = options.clients
@@ -466,10 +464,12 @@ def main():
         def bench_multi_quit(clients):
             for ftp in clients:
                 AsyncQuit(ftp.sock)
-            with timethis("%i concurrent clients (quit)" % howmany):
+            with timethis("%i concurrent clients (QUIT)" % howmany):
                 asyncore.loop(use_poll=True)
 
         clients = bench_multi_connect()
+        bench_stor("STOR (1 file with %s idle clients)" % len(clients))
+        bench_retr("RETR (1 file with %s idle clients)" % len(clients))
         bench_multi_retr(clients)
         bench_multi_stor(clients)
         bench_multi_quit(clients)
