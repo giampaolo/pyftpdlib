@@ -7,7 +7,10 @@ History
 Version: 1.0.0 - Date: XXXX-XX-XX
 ---------------------------------
 
-...
+Bugfixes:
+
+ * Issue 206: can't change directory (CWD) when using UnixAuthorizer and process
+   cwd is == "/root".
 
 
 Version: 0.7.0 - Date: 2012-01-25

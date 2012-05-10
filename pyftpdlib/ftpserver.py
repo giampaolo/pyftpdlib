@@ -1587,16 +1587,9 @@ class AbstractedFS(object):
 
     def chdir(self, path):
         """Change the current directory."""
-        # temporarily join the specified directory to see if we have
-        # permissions to do so
-        basedir = os.getcwd()
-        try:
-            os.chdir(path)
-        except OSError:
-            raise
-        else:
-            os.chdir(basedir)
-            self._cwd = self.fs2ftp(path)
+        # note: process cwd will be reset by the caller
+        os.chdir(path)
+        self._cwd = self.fs2ftp(path)
 
     def mkdir(self, path):
         """Create the specified directory."""
@@ -3240,6 +3233,14 @@ class FTPHandler(object, asynchat.async_chat):
 
     def ftp_CWD(self, path):
         """Change the current working directory."""
+        # Temporarily join the specified directory to see if we have
+        # permissions to do so, then get back to original process's
+        # current working directory.
+        # Note that if for some reason os.getcwd() gets removed after
+        # the process is started we'll get into troubles (os.getcwd()
+        # will fail with ENOENT) but we can't do anything about that
+        # except logging an error.
+        init_cwd = os.getcwd()
         try:
             self.run_as_current_user(self.fs.chdir, path)
         except OSError, err:
@@ -3247,6 +3248,8 @@ class FTPHandler(object, asynchat.async_chat):
             self.respond('550 %s.' % why)
         else:
             self.respond('250 "%s" is the current directory.' % self.fs.cwd)
+            if os.getcwd() != init_cwd:
+                os.chdir(init_cwd)
 
     def ftp_CDUP(self, path):
         """Change into the parent directory."""
