@@ -260,14 +260,17 @@ proto_cmds = {
 if not hasattr(os, 'chmod'):
     del proto_cmds['SITE CHMOD']
 
-
-# A wrapper around os.strerror() which may be not available
-# on all platforms (e.g. pythonCE). Expected arg is a
-# EnvironmentError or derived class instance.
-if hasattr(os, 'strerror'):
-    _strerror = lambda err: os.strerror(err.errno)
-else:
-    _strerror = lambda err: err.strerror
+def _strerror(err):
+    if isinstance(err, EnvironmentError):
+        try:
+            return os.strerror(err.errno)
+        except AttributeError:
+            # not available on PythonCE
+            if not hasattr(os, 'strerror'):
+                return err.strerror
+            raise
+    else:
+        return str(err)
 
 
 class _Scheduler(object):
@@ -449,6 +452,9 @@ class Error(Exception):
 
 class AuthorizerError(Error):
     """Base class for authorizer exceptions."""
+
+class FilesystemError(Error):
+    """Base class for filesystem-related exceptions."""
 
 class _FileReadWriteError(OSError):
     """Exception raised when reading or writing a file during a transfer."""
@@ -1743,7 +1749,7 @@ class AbstractedFS(object):
             file = os.path.join(basedir, basename)
             try:
                 st = self.lstat(file)
-            except OSError:
+            except (OSError, FilesystemError):
                 if ignore_err:
                     continue
                 raise
@@ -1825,7 +1831,7 @@ class AbstractedFS(object):
             # use os.stat() instead of os.lstat()
             try:
                 st = self.stat(file)
-            except OSError:
+            except (OSError, FilesystemError):
                 if ignore_err:
                     continue
                 raise
@@ -2855,7 +2861,7 @@ class FTPHandler(object, asynchat.async_chat):
         #   formats in which case we fall back on cwd as default.
         try:
             iterator = self.run_as_current_user(self.fs.get_list_dir, path)
-        except OSError, err:
+        except (OSError, FilesystemError), err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -2873,7 +2879,7 @@ class FTPHandler(object, asynchat.async_chat):
                 # if path is a file we just list its name
                 self.fs.lstat(path)  # raise exc in case of problems
                 listing = [os.path.basename(path)]
-        except OSError, err:
+        except (OSError, FilesystemError), err:
             self.respond('550 %s.' % _strerror(err))
         else:
             data = ''
@@ -2900,7 +2906,7 @@ class FTPHandler(object, asynchat.async_chat):
             iterator = self.run_as_current_user(self.fs.format_mlsx, basedir,
                        [basename], perms, self._current_facts, ignore_err=False)
             data = ''.join(iterator)
-        except OSError, err:
+        except (OSError, FilesystemError), err:
             self.respond('550 %s.' % _strerror(err))
         else:
             # since TVFS is supported (see RFC-3659 chapter 6), a fully
@@ -2922,7 +2928,7 @@ class FTPHandler(object, asynchat.async_chat):
             return
         try:
             listing = self.run_as_current_user(self.fs.listdir, path)
-        except OSError, err:
+        except (OSError, FilesystemError), err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -2940,7 +2946,7 @@ class FTPHandler(object, asynchat.async_chat):
         self._restart_position = 0
         try:
             fd = self.run_as_current_user(self.fs.open, file, 'rb')
-        except IOError, err:
+        except (EnvironmentError, FilesystemError), err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
             return
@@ -2959,7 +2965,7 @@ class FTPHandler(object, asynchat.async_chat):
                 ok = 1
             except ValueError:
                 why = "Invalid REST parameter"
-            except IOError, err:
+            except (EnvironmentError, FilesystemError), err:
                 why = _strerror(err)
             if not ok:
                 self.respond('554 %s' % why)
@@ -2984,7 +2990,7 @@ class FTPHandler(object, asynchat.async_chat):
             mode = 'r+'
         try:
             fd = self.run_as_current_user(self.fs.open, file, mode + 'b')
-        except IOError, err:
+        except (EnvironmentError, FilesystemError), err:
             why = _strerror(err)
             self.respond('550 %s.' %why)
             return
@@ -3003,7 +3009,7 @@ class FTPHandler(object, asynchat.async_chat):
                 ok = 1
             except ValueError:
                 why = "Invalid REST parameter"
-            except IOError, err:
+            except (EnvironmentError, FilesystemError), err:
                 why = _strerror(err)
             if not ok:
                 self.respond('554 %s' %why)
@@ -3046,10 +3052,10 @@ class FTPHandler(object, asynchat.async_chat):
         try:
             fd = self.run_as_current_user(self.fs.mkstemp, prefix=prefix,
                                           dir=basedir)
-        except IOError, err:
+        except (EnvironmentError, FilesystemError), err:
             # hitted the max number of tries to find out file with
             # unique name
-            if err.errno == errno.EEXIST:
+            if getattr(err, "errno", -1) == errno.EEXIST:
                 why = 'No usable unique file name found'
             # something else happened
             else:
@@ -3061,7 +3067,7 @@ class FTPHandler(object, asynchat.async_chat):
             try:
                 fd.close()
                 self.run_as_current_user(self.fs.remove, fd.name)
-            except OSError:
+            except (OSError, FilesystemError):
                 pass
             self.respond("550 Not enough privileges.")
             return
@@ -3243,7 +3249,7 @@ class FTPHandler(object, asynchat.async_chat):
         init_cwd = os.getcwd()
         try:
             self.run_as_current_user(self.fs.chdir, path)
-        except OSError, err:
+        except (OSError, FilesystemError), err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -3284,7 +3290,7 @@ class FTPHandler(object, asynchat.async_chat):
             return
         try:
             size = self.run_as_current_user(self.fs.getsize, path)
-        except OSError, err:
+        except (OSError, FilesystemError), err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -3305,13 +3311,13 @@ class FTPHandler(object, asynchat.async_chat):
         try:
             secs = self.run_as_current_user(self.fs.getmtime, path)
             lmt = time.strftime("%Y%m%d%H%M%S", timefunc(secs))
-        except (OSError, ValueError), err:
-            if isinstance(err, OSError):
-                why = _strerror(err)
-            else:
+        except (ValueError, OSError, FilesystemError), err:
+            if isinstance(err, ValueError):
                 # It could happen if file's last modification time
                 # happens to be too old (prior to year 1900)
                 why = "Can't determine file's last modification time"
+            else:
+                why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
             self.respond("213 %s" % lmt)
@@ -3321,7 +3327,7 @@ class FTPHandler(object, asynchat.async_chat):
         line = self.fs.fs2ftp(path)
         try:
             self.run_as_current_user(self.fs.mkdir, path)
-        except OSError, err:
+        except (OSError, FilesystemError), err:
             why = _strerror(err)
             self.respond('550 %s.' %why)
         else:
@@ -3338,7 +3344,7 @@ class FTPHandler(object, asynchat.async_chat):
             return
         try:
             self.run_as_current_user(self.fs.rmdir, path)
-        except OSError, err:
+        except (OSError, FilesystemError), err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -3348,7 +3354,7 @@ class FTPHandler(object, asynchat.async_chat):
         """Delete the specified file."""
         try:
             self.run_as_current_user(self.fs.remove, path)
-        except OSError, err:
+        except (OSError, FilesystemError), err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -3376,7 +3382,7 @@ class FTPHandler(object, asynchat.async_chat):
         self._rnfr = None
         try:
             self.run_as_current_user(self.fs.rename, src, path)
-        except OSError, err:
+        except (OSError, FilesystemError), err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -3480,7 +3486,7 @@ class FTPHandler(object, asynchat.async_chat):
             line = self.fs.fs2ftp(path)
             try:
                 iterator = self.run_as_current_user(self.fs.get_list_dir, path)
-            except OSError, err:
+            except (OSError, FilesystemError), err:
                 why = _strerror(err)
                 self.respond('550 %s.' %why)
             else:
@@ -3593,7 +3599,7 @@ class FTPHandler(object, asynchat.async_chat):
         else:
             try:
                 self.run_as_current_user(self.fs.chmod, path, mode)
-            except OSError, err:
+            except (OSError, FilesystemError), err:
                 why = _strerror(err)
                 self.respond('550 %s.' % why)
             else:

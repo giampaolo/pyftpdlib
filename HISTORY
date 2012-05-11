@@ -7,10 +7,19 @@ History
 Version: 1.0.0 - Date: XXXX-XX-XX
 ---------------------------------
 
+Enhancements:
+
+ * Issue 204: a new FilesystemError exception class is available in order send
+   custom error strings to client from an AbstracteFS subclass.
+
 Bugfixes:
 
  * Issue 206: can't change directory (CWD) when using UnixAuthorizer and process
    cwd is == "/root".
+
+Major API changes since 0.7.0:
+
+ * New FilesystemError exception class.
 
 
 Version: 0.7.0 - Date: 2012-01-25
