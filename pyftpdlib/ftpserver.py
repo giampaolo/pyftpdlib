@@ -454,7 +454,10 @@ class AuthorizerError(Error):
     """Base class for authorizer exceptions."""
 
 class FilesystemError(Error):
-    """Base class for filesystem-related exceptions."""
+    """Custom class for filesystem-related exceptions.
+    You can raise this from an AbstractedFS subclass in order to
+    send a customized error string to the client.
+    """
 
 class _FileReadWriteError(OSError):
     """Exception raised when reading or writing a file during a transfer."""
@@ -1433,6 +1436,10 @@ class AbstractedFS(object):
     It also provides some utility methods and wraps around all os.*
     calls involving operations against the filesystem like creating
     files or removing directories.
+
+    FilesystemError exception can be raised from within any of
+    the methods below in order to send a customized error string
+    to the client.
     """
 
     def __init__(self, root, cmd_channel):
