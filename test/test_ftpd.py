@@ -2308,15 +2308,16 @@ class TestCallbacks(unittest.TestCase):
         self.server = None
         self._tearDown = True
 
-    def _setUp(self, handler, login=True):
+    def _setUp(self, handler, connect=True, login=True):
         FTPd.handler = handler
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class()
-        self.client.connect(self.server.host, self.server.port)
-        self.client.sock.settimeout(2)
-        if login:
-            self.client.login(USER, PASSWD)
+        if connect:
+            self.client.connect(self.server.host, self.server.port)
+            self.client.sock.settimeout(2)
+            if login:
+                self.client.login(USER, PASSWD)
         self.file = open(TESTFN, 'w+b')
         self.dummyfile = StringIO.StringIO()
         self._tearDown = False
@@ -2462,6 +2463,39 @@ class TestCallbacks(unittest.TestCase):
         self.tearDown()
         self.assertEqual(_file, [os.path.abspath(TESTFN)])
 
+    def test_on_connect(self):
+        flag = []
+
+        class TestHandler(ftpserver.FTPHandler):
+            def on_connect(self):
+                flag.append(None)
+
+        self._setUp(TestHandler, connect=False)
+        self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
+        self.client.sendcmd('noop')
+        self.assertTrue(flag)
+
+    def test_on_disconnect(self):
+        flag = []
+
+        class TestHandler(ftpserver.FTPHandler):
+            def on_disconnect(self):
+                flag.append(None)
+
+        self._setUp(TestHandler, connect=False)
+        self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
+        self.assertFalse(flag)
+        self.client.sendcmd('quit')
+        try:
+            self.client.sendcmd('noop')
+        except (socket.error, EOFError):
+            pass
+        else:
+            self.fail('still connected')
+        self.assertTrue(flag)
+
     def test_on_login(self):
         user = []
 
@@ -2515,7 +2549,6 @@ class TestCallbacks(unittest.TestCase):
         # shut down the server to avoid race conditions
         self.tearDown()
         self.assertEqual(pair, [('foo', 'bar')])
-
 
     def test_on_logout_quit(self):
         user = []

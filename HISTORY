@@ -12,6 +12,9 @@ Enhancements:
  * Issue 204: a new FilesystemError exception class is available in order send
    custom error strings to client from an AbstracteFS subclass.
 
+ * Issue 207: added on_connect() and on_disconnect() callback methods to
+   FTPHandler class.
+
 Bugfixes:
 
  * Issue 206: can't change directory (CWD) when using UnixAuthorizer and process
@@ -20,6 +23,7 @@ Bugfixes:
 Major API changes since 0.7.0:
 
  * New FilesystemError exception class.
+ * New FTPHandler's on_connect() and on_disconnect() callbacks.
 
 
 Version: 0.7.0 - Date: 2012-01-25

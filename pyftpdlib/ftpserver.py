@@ -371,7 +371,10 @@ class CallLater(object):
         self._errback = kwargs.pop('_errback', None)
         self._repush = False
         # seconds from the epoch at which to call the function
-        self.timeout = time.time() + self._delay
+        if not seconds:
+            self.timeout = 0
+        else:
+            self.timeout = time.time() + self._delay
         self.cancelled = False
         _scheduler.register(self)
 
@@ -2118,6 +2121,8 @@ class FTPHandler(object, asynchat.async_chat):
         else:
             self.push('220-%s\r\n' % str(self.banner))
             self.respond('220 ')
+        if not self._closed:
+            self.on_connect()
 
     def handle_max_cons(self):
         """Called when limit for maximum number of connections is reached."""
@@ -2374,6 +2379,11 @@ class FTPHandler(object, asynchat.async_chat):
                 self.fs.cmd_channel = None
                 self.fs = None
             self.log("Disconnected.")
+            # Having self.remote_ip not set means that no connection
+            # actually took place, hence we're not interested in
+            # invoking the callback.
+            if self.remote_ip:
+                CallLater(0, self.on_disconnect, _errback=self.handle_error)
 
     def _shutdown_connecting_dtp(self):
         """Close any ActiveDTP or PassiveDTP instance waiting to
@@ -2389,6 +2399,12 @@ class FTPHandler(object, asynchat.async_chat):
     # --- public callbacks
     # Note: to run a time consuming task make sure to use a separate
     # process or thread (see FAQs).
+
+    def on_connect(self):
+        """Called when client connects."""
+
+    def on_disconnect(self):
+        """Called when client disconnects."""
 
     def on_file_sent(self, file):
         """Called every time a file has been succesfully sent.
