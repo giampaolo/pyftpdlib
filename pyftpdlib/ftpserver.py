@@ -1644,6 +1644,13 @@ class AbstractedFS(object):
     if not hasattr(os, 'lstat'):
         lstat = stat
 
+    if hasattr(os, 'readlink'):
+        def readlink(self, path):
+            """Return a string representing the path to which a
+            symbolic link points.
+            """
+            return os.readlink(path)
+
     # --- Wrapper methods around os.path.* calls
 
     def isfile(self, path):
@@ -1685,33 +1692,23 @@ class AbstractedFS(object):
         If this can't be determined return raw uid instead.
         On Windows just return "owner".
         """
-        if pwd is not None:
-            try:
-                return pwd.getpwuid(uid).pw_name
-            except KeyError:
-                return uid
-        else:
-            return "owner"
+        try:
+            return pwd.getpwuid(uid).pw_name
+        except KeyError:
+            return uid
 
     def get_group_by_gid(self, gid):
         """Return the groupname associated with group id.
         If this can't be determined return raw gid instead.
         On Windows just return "group".
         """
-        if grp is not None:
-            try:
-                return grp.getgrgid(gid).gr_name
-            except KeyError:
-                return gid
-        else:
-            return "group"
+        try:
+            return grp.getgrgid(gid).gr_name
+        except KeyError:
+            return gid
 
-    if hasattr(os, 'readlink'):
-        def readlink(self, path):
-            """Return a string representing the path to which a
-            symbolic link points.
-            """
-            return os.readlink(path)
+    if pwd is None: get_user_by_uid = lambda: "owner"
+    if grp is None: get_group_by_gid = lambda: "group"
 
     # --- Listing utilities
 
@@ -1754,6 +1751,7 @@ class AbstractedFS(object):
             timefunc = time.gmtime
         else:
             timefunc = time.localtime
+        readlink = getattr(self, 'readlink', None)
         now = time.time()
         for basename in listing:
             file = os.path.join(basedir, basename)
@@ -1790,8 +1788,12 @@ class AbstractedFS(object):
                                       time.strftime("%d %H:%M", mtime))
 
             # if the file is a symlink, resolve it, e.g. "symlink -> realfile"
-            if stat.S_ISLNK(st.st_mode) and hasattr(self, 'readlink'):
-                basename = basename + " -> " + self.readlink(file)
+            if stat.S_ISLNK(st.st_mode) and readlink is not None:
+                try:
+                    basename = basename + " -> " + readlink(file)
+                except (OSError, FilesystemError):
+                    if not ignore_err:
+                        raise
 
             # formatting is matched with proftpd ls output
             yield "%s %3s %-8s %-8s %8s %s %s\r\n" % (perms, nlinks, uname, gname,
@@ -1867,7 +1869,7 @@ class AbstractedFS(object):
             if 'modify' in facts:
                 try:
                     retfacts['modify'] = time.strftime("%Y%m%d%H%M%S",
-                                                        timefunc(st.st_mtime))
+                                                       timefunc(st.st_mtime))
                 # it could be raised if last mtime happens to be too old
                 # (prior to year 1900)
                 except ValueError:
@@ -1876,7 +1878,7 @@ class AbstractedFS(object):
                 # on Windows we can provide also the creation time
                 try:
                     retfacts['create'] = time.strftime("%Y%m%d%H%M%S",
-                                                        timefunc(st.st_ctime))
+                                                       timefunc(st.st_ctime))
                 except ValueError:
                     pass
             # UNIX only
