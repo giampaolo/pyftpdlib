@@ -2404,7 +2404,22 @@ class FTPHandler(object, asynchat.async_chat):
         """Called when client connects."""
 
     def on_disconnect(self):
-        """Called when client disconnects."""
+        """Called when connection is closed."""
+
+    def on_login(self, username):
+        """Called on user login."""
+
+    def on_login_failed(self, username, password):
+        """Called on failed login attempt.
+        At this point client might have already been disconnected if it
+        failed too many times.
+        """
+
+    def on_logout(self, username):
+        """Called when user "cleanly" logs out due to QUIT or USER
+        issued twice (re-login). This is not called if the connection
+        is simply closed by client.
+        """
 
     def on_file_sent(self, file):
         """Called every time a file has been succesfully sent.
@@ -2427,19 +2442,6 @@ class FTPHandler(object, asynchat.async_chat):
         (e.g. ABOR during transfer or client disconnected).
         "file" is the absolute name of that file.
         """
-
-    def on_login(self, username):
-        """Called on user login."""
-
-    def on_login_failed(self, username, password):
-        """Called on failed user login.
-        At this point client might have already been disconnected if it
-        failed too many times.
-        """
-
-    def on_logout(self, username):
-        """Called when user logs out due to QUIT or USER issued twice."""
-
 
     # --- internal callbacks
 
