@@ -460,9 +460,8 @@ class TestDummyAuthorizer(unittest.TestCase):
         try:
             callableObj(*args, **kwargs)
         except excClass, why:
-            if str(why) == msg:
-                return
-            raise self.failureException("%s != %s" % (str(why), msg))
+            if msg not in str(why):
+                raise self.failureException("%s != %s" % (str(why), msg))
         else:
             if hasattr(excClass,'__name__'): excName = excClass.__name__
             else: excName = str(excClass)
@@ -483,10 +482,10 @@ class TestDummyAuthorizer(unittest.TestCase):
         self.assertRaises(KeyError, auth.remove_user, USER)
         # raise exc if path does not exist
         self.assertRaisesWithMsg(ValueError,
-                                'no such directory: %r' % '?:\\',
+                                'no such directory',
                                  auth.add_user, USER, PASSWD, '?:\\')
         self.assertRaisesWithMsg(ValueError,
-                                'no such directory: %r' % '?:\\',
+                                'no such directory',
                                  auth.add_anonymous, '?:\\')
         # raise exc if user already exists
         auth.add_user(USER, PASSWD, HOME)
@@ -501,10 +500,10 @@ class TestDummyAuthorizer(unittest.TestCase):
         auth.remove_user('anonymous')
         # raise on wrong permission
         self.assertRaisesWithMsg(ValueError,
-                                 "no such permission '?'",
+                                 "no such permission",
                                  auth.add_user, USER, PASSWD, HOME, perm='?')
         self.assertRaisesWithMsg(ValueError,
-                                 "no such permission '?'",
+                                 "no such permission",
                                  auth.add_anonymous, HOME, perm='?')
         # expect warning on write permissions assigned to anonymous user
         for x in "adfmw":
@@ -519,14 +518,14 @@ class TestDummyAuthorizer(unittest.TestCase):
         self.assertRaises(KeyError, auth.override_perm, USER+'w', HOME, 'elr')
         # raise exc if path does not exist or it's not a directory
         self.assertRaisesWithMsg(ValueError,
-                                'no such directory: %r' % '?:\\',
+                                'no such directory',
                                 auth.override_perm, USER, '?:\\', 'elr')
         self.assertRaisesWithMsg(ValueError,
-                                'no such directory: %r' % self.tempfile,
+                                'no such directory',
                                 auth.override_perm, USER, self.tempfile, 'elr')
         # raise on wrong permission
         self.assertRaisesWithMsg(ValueError,
-                                 "no such permission '?'", auth.override_perm,
+                                 "no such permission", auth.override_perm,
                                  USER, HOME, perm='?')
         # expect warning on write permissions assigned to anonymous user
         auth.add_anonymous(HOME)
