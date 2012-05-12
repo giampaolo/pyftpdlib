@@ -1751,6 +1751,7 @@ class AbstractedFS(object):
             timefunc = time.gmtime
         else:
             timefunc = time.localtime
+        SIX_MONTHS = 180 * 24 * 60 * 60
         readlink = getattr(self, 'readlink', None)
         now = time.time()
         for basename in listing:
@@ -1772,7 +1773,7 @@ class AbstractedFS(object):
             # if modificaton time > 6 months shows "month year"
             # else "month hh:mm";  this matches proftpd format, see:
             # http://code.google.com/p/pyftpdlib/issues/detail?id=187
-            if (now - st.st_mtime) > 180 * 24 * 60 * 60:
+            if (now - st.st_mtime) > SIX_MONTHS:
                 fmtstr = "%d  %Y"
             else:
                 fmtstr = "%d %H:%M"
@@ -1787,8 +1788,11 @@ class AbstractedFS(object):
                 mtimestr = "%s %s" % (_months_map[mtime.tm_mon],
                                       time.strftime("%d %H:%M", mtime))
 
-            # if the file is a symlink, resolve it, e.g. "symlink -> realfile"
-            if stat.S_ISLNK(st.st_mode) and readlink is not None:
+            # same as stat.S_ISLNK(st.st_mode) but slighlty faster
+            islink = (st.st_mode & 61440) == stat.S_IFLNK
+            if islink and readlink is not None:
+                # if the file is a symlink, resolve it, e.g.
+                # "symlink -> realfile"
                 try:
                     basename = basename + " -> " + readlink(file)
                 except (OSError, FilesystemError):
@@ -1848,7 +1852,9 @@ class AbstractedFS(object):
                     continue
                 raise
             # type + perm
-            if stat.S_ISDIR(st.st_mode):
+            # same as stat.S_ISDIR(st.st_mode) but slighlty faster
+            isdir = (st.st_mode & 61440) == stat.S_IFDIR
+            if isdir:
                 if 'type' in facts:
                     if basename == '.':
                         retfacts['type'] = 'cdir'
