@@ -2042,6 +2042,7 @@ class FTPHandler(object, asynchat.async_chat):
         self._in_dtp_queue = None
         self._out_dtp_queue = None
         self._closed = False
+        self._closing = False
         self._extra_feats = []
         self._current_facts = ['type', 'perm', 'size', 'modify']
         self._rnfr = None
@@ -2116,13 +2117,13 @@ class FTPHandler(object, asynchat.async_chat):
         """Return a 220 'ready' response to the client over the command
         channel.
         """
-        if len(self.banner) <= 75:
-            self.respond("220 %s" % str(self.banner))
-        else:
-            self.push('220-%s\r\n' % str(self.banner))
-            self.respond('220 ')
-        if not self._closed:
-            self.on_connect()
+        self.on_connect()
+        if not self._closed and not self._closing:
+            if len(self.banner) <= 75:
+                self.respond("220 %s" % str(self.banner))
+            else:
+                self.push('220-%s\r\n' % str(self.banner))
+                self.respond('220 ')
 
     def handle_max_cons(self):
         """Called when limit for maximum number of connections is reached."""
@@ -2166,6 +2167,10 @@ class FTPHandler(object, asynchat.async_chat):
     def writable(self):
         return not self.sleeping and self.connected \
                                  and asynchat.async_chat.writable(self)
+
+    def close_when_done(self):
+        self._closing = True
+        asynchat.async_chat.close_when_done(self)
 
     def collect_incoming_data(self, data):
         """Read incoming data and append to the input buffer."""
@@ -2356,8 +2361,9 @@ class FTPHandler(object, asynchat.async_chat):
         """Close the current channel disconnecting the client."""
         if not self._closed:
             self._closed = True
-            asynchat.async_chat.close(self)
+            self._closing = False
             self.connected = False
+            asynchat.async_chat.close(self)
 
             self._shutdown_connecting_dtp()
 
@@ -2401,7 +2407,9 @@ class FTPHandler(object, asynchat.async_chat):
     # process or thread (see FAQs).
 
     def on_connect(self):
-        """Called when client connects."""
+        """Called when client connects, *before* sending the initial
+        220 reply.
+        """
 
     def on_disconnect(self):
         """Called when connection is closed."""

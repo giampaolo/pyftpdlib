@@ -51,13 +51,11 @@ class AntiFloodHandler(FTPHandler):
         self.processed_cmds = 0
         self.pcmds_callback = CallEvery(1, self.check_processed_cmds)
 
-    def handle(self):
+    def on_connect(self):
         # called when client connects.
         if self.remote_ip in self.banned_ips:
             self.respond('550 You are banned.')
-            self.close()
-        else:
-            super(AntiFloodHandler, self).handle()
+            self.close_when_done()
 
     def check_processed_cmds(self):
         # called every second; checks for the number of commands
