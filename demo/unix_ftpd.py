@@ -43,12 +43,11 @@ from pyftpdlib.contrib.filesystems import UnixFilesystem
 
 def main():
     authorizer = UnixAuthorizer(rejected_users=["root"], require_valid_shell=True)
-    ftp_handler = ftpserver.FTPHandler
-    ftp_handler.authorizer = authorizer
-    ftp_handler.abstracted_fs = UnixFilesystem
-    address = ('', 21)
-    ftpd = ftpserver.FTPServer(address, ftp_handler)
-    ftpd.serve_forever()
+    handler = ftpserver.FTPHandler
+    handler.authorizer = authorizer
+    handler.abstracted_fs = UnixFilesystem
+    server = ftpserver.FTPServer(('', 21), handler)
+    server.serve_forever()
 
 if __name__ == "__main__":
     main()

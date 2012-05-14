@@ -49,20 +49,20 @@ def main():
     authorizer.add_anonymous(os.getcwd())
 
     # Instantiate FTP handler class
-    ftp_handler = ftpserver.FTPHandler
-    ftp_handler.authorizer = authorizer
+    handler = ftpserver.FTPHandler
+    handler.authorizer = authorizer
 
     # Define a customized banner (string returned when client connects)
-    ftp_handler.banner = "pyftpdlib %s based ftpd ready." %ftpserver.__ver__
+    handler.banner = "pyftpdlib %s based ftpd ready." %ftpserver.__ver__
 
     # Specify a masquerade address and the range of ports to use for
     # passive connections.  Decomment in case you're behind a NAT.
-    #ftp_handler.masquerade_address = '151.25.42.11'
-    #ftp_handler.passive_ports = range(60000, 65535)
+    #handler.masquerade_address = '151.25.42.11'
+    #handler.passive_ports = range(60000, 65535)
 
-    # Instantiate FTP server class and listen to 0.0.0.0:21
+    # Instantiate FTP server class and listen on 0.0.0.0:21
     address = ('', 21)
-    ftpd = ftpserver.FTPServer(address, ftp_handler)
+    ftpd = ftpserver.FTPServer(address, handler)
 
     # set a limit for connections
     ftpd.max_cons = 256

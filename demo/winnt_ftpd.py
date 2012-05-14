@@ -47,10 +47,9 @@ def main():
     # Guest user must be enabled first, empty password set and profile
     # directory specified.
     #authorizer = WindowsAuthorizer(anonymous_user="Guest", anonymous_password="")
-    ftp_handler = ftpserver.FTPHandler
-    ftp_handler.authorizer = authorizer
-    address = ('', 21)
-    ftpd = ftpserver.FTPServer(address, ftp_handler)
+    handler = ftpserver.FTPHandler
+    handler.authorizer = authorizer
+    ftpd = ftpserver.FTPServer(('', 21), handler)
     ftpd.serve_forever()
 
 if __name__ == "__main__":

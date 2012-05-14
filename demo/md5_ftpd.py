@@ -56,10 +56,9 @@ def main():
     authorizer = DummyMD5Authorizer()
     authorizer.add_user('user', hash, os.getcwd(), perm='elradfmw')
     authorizer.add_anonymous(os.getcwd())
-    ftp_handler = ftpserver.FTPHandler
-    ftp_handler.authorizer = authorizer
-    address = ('', 21)
-    ftpd = ftpserver.FTPServer(address, ftp_handler)
+    handler = ftpserver.FTPHandler
+    handler.authorizer = authorizer
+    ftpd = ftpserver.FTPServer(('', 21), handler)
     ftpd.serve_forever()
 
 if __name__ == "__main__":

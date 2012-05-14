@@ -146,10 +146,10 @@ def get_server():
         sys.stdout.write(s + "\n")
         sys.stdout.flush()
     ftpserver.log = ftpserver.logline = log
-    ftp_handler = ftpserver.FTPHandler
-    ftp_handler.authorizer = UnixAuthorizer()
-    ftp_handler.abstracted_fs = UnixFilesystem
-    server = ftpserver.FTPServer((HOST, PORT), ftp_handler)
+    handler = ftpserver.FTPHandler
+    handler.authorizer = UnixAuthorizer()
+    handler.abstracted_fs = UnixFilesystem
+    server = ftpserver.FTPServer((HOST, PORT), handler)
     return server
 
 def daemonize():

@@ -47,13 +47,13 @@ def main():
     authorizer = ftpserver.DummyAuthorizer()
     authorizer.add_user('user', '12345', '.', perm='elradfmw')
     authorizer.add_anonymous('.')
-    ftp_handler = TLS_FTPHandler
-    ftp_handler.certfile = CERTFILE
-    ftp_handler.authorizer = authorizer
+    handler = TLS_FTPHandler
+    handler.certfile = CERTFILE
+    handler.authorizer = authorizer
     # requires SSL for both control and data channel
-    #ftp_handler.tls_control_required = True
-    #ftp_handler.tls_data_required = True
-    ftpd = ftpserver.FTPServer(('', 8021), ftp_handler)
+    #handler.tls_control_required = True
+    #handler.tls_data_required = True
+    ftpd = ftpserver.FTPServer(('', 21), handler)
     ftpd.serve_forever()
 
 if __name__ == '__main__':

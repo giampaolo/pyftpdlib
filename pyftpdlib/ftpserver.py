@@ -88,10 +88,10 @@ Usage example:
 >>> authorizer = ftpserver.DummyAuthorizer()
 >>> authorizer.add_user('user', 'password', '/home/user', perm='elradfmw')
 >>> authorizer.add_anonymous('/home/nobody')
->>> ftp_handler = ftpserver.FTPHandler
->>> ftp_handler.authorizer = authorizer
+>>> handler = ftpserver.FTPHandler
+>>> handler.authorizer = authorizer
 >>> address = ("127.0.0.1", 21)
->>> ftpd = ftpserver.FTPServer(address, ftp_handler)
+>>> ftpd = ftpserver.FTPServer(address, handler)
 >>> ftpd.serve_forever()
 Serving FTP on 127.0.0.1:21
 []127.0.0.1:2503 connected.
