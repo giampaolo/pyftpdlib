@@ -78,6 +78,7 @@ except ImportError:
     sendfile = None
 
 from pyftpdlib import ftpserver
+from pyftpdlib.lib.compat import u
 
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
@@ -87,7 +88,7 @@ except socket.error:
     HOST = 'localhost'
 USER = 'user'
 PASSWD = '12345'
-HOME = os.getcwd()
+HOME = os.getcwdu()
 TESTFN = 'tmp-pyftpdlib'
 
 def try_address(host, port=0, family=socket.AF_INET):
@@ -274,131 +275,179 @@ class TestAbstractedFS(unittest.TestCase):
     def test_ftpnorm(self):
         # Tests for ftpnorm method.
         ae = self.assertEquals
-        fs = ftpserver.AbstractedFS('/', None)
+        fs = ftpserver.AbstractedFS(u('/'), None)
 
-        fs._cwd = '/'
-        ae(fs.ftpnorm(''), '/')
-        ae(fs.ftpnorm('/'), '/')
-        ae(fs.ftpnorm('.'), '/')
-        ae(fs.ftpnorm('..'), '/')
-        ae(fs.ftpnorm('a'), '/a')
-        ae(fs.ftpnorm('/a'), '/a')
-        ae(fs.ftpnorm('/a/'), '/a')
-        ae(fs.ftpnorm('a/..'), '/')
-        ae(fs.ftpnorm('a/b'), '/a/b')
-        ae(fs.ftpnorm('a/b/..'), '/a')
-        ae(fs.ftpnorm('a/b/../..'), '/')
-        fs._cwd = '/sub'
-        ae(fs.ftpnorm(''), '/sub')
-        ae(fs.ftpnorm('/'), '/')
-        ae(fs.ftpnorm('.'), '/sub')
-        ae(fs.ftpnorm('..'), '/')
-        ae(fs.ftpnorm('a'), '/sub/a')
-        ae(fs.ftpnorm('a/'), '/sub/a')
-        ae(fs.ftpnorm('a/..'), '/sub')
-        ae(fs.ftpnorm('a/b'), '/sub/a/b')
-        ae(fs.ftpnorm('a/b/'), '/sub/a/b')
-        ae(fs.ftpnorm('a/b/..'), '/sub/a')
-        ae(fs.ftpnorm('a/b/../..'), '/sub')
-        ae(fs.ftpnorm('a/b/../../..'), '/')
-        ae(fs.ftpnorm('//'), '/')  # UNC paths must be collapsed
+        fs._cwd = u('/')
+        ae(fs.ftpnorm(u('')), u('/'))
+        ae(fs.ftpnorm(u('/')), u('/'))
+        ae(fs.ftpnorm(u('.')), u('/'))
+        ae(fs.ftpnorm(u('..')), u('/'))
+        ae(fs.ftpnorm(u('a')), u('/a'))
+        ae(fs.ftpnorm(u('/a')), u('/a'))
+        ae(fs.ftpnorm(u('/a/')), u('/a'))
+        ae(fs.ftpnorm(u('a/..')), u('/'))
+        ae(fs.ftpnorm(u('a/b')), '/a/b')
+        ae(fs.ftpnorm(u('a/b/..')), u('/a'))
+        ae(fs.ftpnorm(u('a/b/../..')), u('/'))
+        fs._cwd = u('/sub')
+        ae(fs.ftpnorm(u('')), u('/sub'))
+        ae(fs.ftpnorm(u('/')), u('/'))
+        ae(fs.ftpnorm(u('.')), u('/sub'))
+        ae(fs.ftpnorm(u('..')), u('/'))
+        ae(fs.ftpnorm(u('a')), u('/sub/a'))
+        ae(fs.ftpnorm(u('a/')), u('/sub/a'))
+        ae(fs.ftpnorm(u('a/..')), u('/sub'))
+        ae(fs.ftpnorm(u('a/b')), u('/sub/a/b'))
+        ae(fs.ftpnorm(u('a/b/')), u('/sub/a/b'))
+        ae(fs.ftpnorm(u('a/b/..')), u('/sub/a'))
+        ae(fs.ftpnorm(u('a/b/../..')), u('/sub'))
+        ae(fs.ftpnorm(u('a/b/../../..')), u('/'))
+        ae(fs.ftpnorm(u('//')), u('/'))  # UNC paths must be collapsed
 
     def test_ftp2fs(self):
         # Tests for ftp2fs method.
         ae = self.assertEquals
-        fs = ftpserver.AbstractedFS('/', None)
+        fs = ftpserver.AbstractedFS(u('/'), None)
         join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
 
         def goforit(root):
             fs._root = root
-            fs._cwd = '/'
-            ae(fs.ftp2fs(''), root)
-            ae(fs.ftp2fs('/'), root)
-            ae(fs.ftp2fs('.'), root)
-            ae(fs.ftp2fs('..'), root)
-            ae(fs.ftp2fs('a'), join(root, 'a'))
-            ae(fs.ftp2fs('/a'), join(root, 'a'))
-            ae(fs.ftp2fs('/a/'), join(root, 'a'))
-            ae(fs.ftp2fs('a/..'), root)
-            ae(fs.ftp2fs('a/b'), join(root, r'a/b'))
-            ae(fs.ftp2fs('/a/b'), join(root, r'a/b'))
-            ae(fs.ftp2fs('/a/b/..'), join(root, 'a'))
-            ae(fs.ftp2fs('/a/b/../..'), root)
-            fs._cwd = '/sub'
-            ae(fs.ftp2fs(''), join(root, 'sub'))
-            ae(fs.ftp2fs('/'), root)
-            ae(fs.ftp2fs('.'), join(root, 'sub'))
-            ae(fs.ftp2fs('..'), root)
-            ae(fs.ftp2fs('a'), join(root, 'sub/a'))
-            ae(fs.ftp2fs('a/'), join(root, 'sub/a'))
-            ae(fs.ftp2fs('a/..'), join(root, 'sub'))
-            ae(fs.ftp2fs('a/b'), join(root, 'sub/a/b'))
-            ae(fs.ftp2fs('a/b/..'), join(root, 'sub/a'))
-            ae(fs.ftp2fs('a/b/../..'), join(root, 'sub'))
-            ae(fs.ftp2fs('a/b/../../..'), root)
-            ae(fs.ftp2fs('//a'), join(root, 'a'))  # UNC paths must be collapsed
+            fs._cwd = u('/')
+            ae(fs.ftp2fs(u('')), root)
+            ae(fs.ftp2fs(u('/')), root)
+            ae(fs.ftp2fs(u('.')), root)
+            ae(fs.ftp2fs(u('..')), root)
+            ae(fs.ftp2fs(u('a')), join(root, u('a')))
+            ae(fs.ftp2fs(u('/a')), join(root, u('a')))
+            ae(fs.ftp2fs(u('/a/')), join(root, u('a')))
+            ae(fs.ftp2fs(u('a/..')), root)
+            ae(fs.ftp2fs(u('a/b')), join(root, u(r'a/b')))
+            ae(fs.ftp2fs(u('/a/b')), join(root, u(r'a/b')))
+            ae(fs.ftp2fs(u('/a/b/..')), join(root, u('a')))
+            ae(fs.ftp2fs(u('/a/b/../..')), root)
+            fs._cwd = u('/sub')
+            ae(fs.ftp2fs(u('')), join(root, u('sub')))
+            ae(fs.ftp2fs(u('/')), root)
+            ae(fs.ftp2fs(u('.')), join(root, u('sub')))
+            ae(fs.ftp2fs(u('..')), root)
+            ae(fs.ftp2fs(u('a')), join(root, u('sub/a')))
+            ae(fs.ftp2fs(u('a/')), join(root, u('sub/a')))
+            ae(fs.ftp2fs(u('a/..')), join(root, u('sub')))
+            ae(fs.ftp2fs(u('a/b')), join(root, 'sub/a/b'))
+            ae(fs.ftp2fs(u('a/b/..')), join(root, u('sub/a')))
+            ae(fs.ftp2fs(u('a/b/../..')), join(root, u('sub')))
+            ae(fs.ftp2fs(u('a/b/../../..')), root)
+            ae(fs.ftp2fs(u('//a')), join(root, u('a')))  # UNC paths must be collapsed
 
         if os.sep == '\\':
-            goforit(r'C:\dir')
-            goforit('C:\\')
+            goforit(u(r'C:\dir'))
+            goforit(u('C:\\'))
             # on DOS-derived filesystems (e.g. Windows) this is the same
             # as specifying the current drive directory (e.g. 'C:\\')
-            goforit('\\')
+            goforit(u('\\'))
         elif os.sep == '/':
-            goforit('/home/user')
-            goforit('/')
+            goforit(u('/home/user'))
+            goforit(u('/'))
         else:
             # os.sep == ':'? Don't know... let's try it anyway
-            goforit(os.getcwd())
+            goforit(os.getcwdu())
+
+    def test_ftp2fs(self):
+        # Tests for ftp2fs method.
+        ae = self.assertEquals
+        fs = ftpserver.AbstractedFS(u('/'), None)
+        join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
+
+        def goforit(root):
+            fs._root = root
+            fs._cwd = u('/')
+            ae(fs.ftp2fs(u('')), root)
+            ae(fs.ftp2fs(u('/')), root)
+            ae(fs.ftp2fs(u('.')), root)
+            ae(fs.ftp2fs(u('..')), root)
+            ae(fs.ftp2fs(u('a')), join(root, u('a')))
+            ae(fs.ftp2fs(u('/a')), join(root, u('a')))
+            ae(fs.ftp2fs(u('/a/')), join(root, u('a')))
+            ae(fs.ftp2fs(u('a/..')), root)
+            ae(fs.ftp2fs(u('a/b')), join(root, r'a/b'))
+            ae(fs.ftp2fs(u('/a/b')), join(root, r'a/b'))
+            ae(fs.ftp2fs(u('/a/b/..')), join(root, u('a')))
+            ae(fs.ftp2fs(u('/a/b/../..')), root)
+            fs._cwd = u('/sub')
+            ae(fs.ftp2fs(u('')), join(root, u('sub')))
+            ae(fs.ftp2fs(u('/')), root)
+            ae(fs.ftp2fs(u('.')), join(root, u('sub')))
+            ae(fs.ftp2fs(u('..')), root)
+            ae(fs.ftp2fs(u('a')), join(root, u('sub/a')))
+            ae(fs.ftp2fs(u('a/')), join(root, u('sub/a')))
+            ae(fs.ftp2fs(u('a/..')), join(root, u('sub')))
+            ae(fs.ftp2fs(u('a/b')), join(root, 'sub/a/b'))
+            ae(fs.ftp2fs(u('a/b/..')), join(root, u('sub/a')))
+            ae(fs.ftp2fs(u('a/b/../..')), join(root, u('sub')))
+            ae(fs.ftp2fs(u('a/b/../../..')), root)
+            ae(fs.ftp2fs(u('//a')), join(root, u('a')))  # UNC paths must be collapsed
+
+        if os.sep == '\\':
+            goforit(u(r'C:\dir'))
+            goforit(u('C:\\'))
+            # on DOS-derived filesystems (e.g. Windows) this is the same
+            # as specifying the current drive directory (e.g. 'C:\\')
+            goforit(u('\\'))
+        elif os.sep == '/':
+            goforit(u('/home/user'))
+            goforit(u('/'))
+        else:
+            # os.sep == ':'? Don't know... let's try it anyway
+            goforit(os.getcwdu())
 
     def test_fs2ftp(self):
         # Tests for fs2ftp method.
         ae = self.assertEquals
-        fs = ftpserver.AbstractedFS('/', None)
+        fs = ftpserver.AbstractedFS(u('/'), None)
         join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
 
         def goforit(root):
             fs._root = root
-            ae(fs.fs2ftp(root), '/')
-            ae(fs.fs2ftp(join(root, '/')), '/')
-            ae(fs.fs2ftp(join(root, '.')), '/')
-            ae(fs.fs2ftp(join(root, '..')), '/')  # can't escape from root
-            ae(fs.fs2ftp(join(root, 'a')), '/a')
-            ae(fs.fs2ftp(join(root, 'a/')), '/a')
-            ae(fs.fs2ftp(join(root, 'a/..')), '/')
-            ae(fs.fs2ftp(join(root, 'a/b')), '/a/b')
-            ae(fs.fs2ftp(join(root, 'a/b')), '/a/b')
-            ae(fs.fs2ftp(join(root, 'a/b/..')), '/a')
-            ae(fs.fs2ftp(join(root, '/a/b/../..')), '/')
-            fs._cwd = '/sub'
-            ae(fs.fs2ftp(join(root, 'a/')), '/a')
+            ae(fs.fs2ftp(root), u('/'))
+            ae(fs.fs2ftp(join(root, u('/'))), u('/'))
+            ae(fs.fs2ftp(join(root, u('.'))), u('/'))
+            ae(fs.fs2ftp(join(root, u('..'))), u('/'))  # can't escape from root
+            ae(fs.fs2ftp(join(root, u('a'))), u('/a'))
+            ae(fs.fs2ftp(join(root, u('a/'))), u('/a'))
+            ae(fs.fs2ftp(join(root, u('a/..'))), u('/'))
+            ae(fs.fs2ftp(join(root, u('a/b'))), u('/a/b'))
+            ae(fs.fs2ftp(join(root, u('a/b'))), u('/a/b'))
+            ae(fs.fs2ftp(join(root, u('a/b/..'))), u('/a'))
+            ae(fs.fs2ftp(join(root, u('/a/b/../..'))), u('/'))
+            fs._cwd = u('/sub')
+            ae(fs.fs2ftp(join(root, 'a/')), u('/a'))
 
         if os.sep == '\\':
-            goforit(r'C:\dir')
-            goforit('C:\\')
+            goforit(u(r'C:\dir'))
+            goforit(u('C:\\'))
             # on DOS-derived filesystems (e.g. Windows) this is the same
             # as specifying the current drive directory (e.g. 'C:\\')
-            goforit('\\')
-            fs._root = r'C:\dir'
-            ae(fs.fs2ftp('C:\\'), '/')
-            ae(fs.fs2ftp('D:\\'), '/')
-            ae(fs.fs2ftp('D:\\dir'), '/')
+            goforit(u('\\'))
+            fs._root = u(r'C:\dir')
+            ae(fs.fs2ftp(u('C:\\')), u('/'))
+            ae(fs.fs2ftp(u('D:\\')), u('/'))
+            ae(fs.fs2ftp(u('D:\\dir')), u('/'))
         elif os.sep == '/':
-            goforit('/')
+            goforit(u('/'))
             if os.path.realpath('/__home/user') != '/__home/user':
                 self.fail('Test skipped (symlinks not allowed).')
-            goforit('/__home/user')
-            fs._root = '/__home/user'
-            ae(fs.fs2ftp('/__home'), '/')
-            ae(fs.fs2ftp('/'), '/')
-            ae(fs.fs2ftp('/__home/userx'), '/')
+            goforit(u('/__home/user'))
+            fs._root = u('/__home/user')
+            ae(fs.fs2ftp(u('/__home')), u('/'))
+            ae(fs.fs2ftp(u('/')), u('/'))
+            ae(fs.fs2ftp(u('/__home/userx')), u('/'))
         else:
             # os.sep == ':'? Don't know... let's try it anyway
-            goforit(os.getcwd())
+            goforit(os.getcwdu())
 
     def test_validpath(self):
         # Tests for validpath method.
-        fs = ftpserver.AbstractedFS('/', None)
+        fs = ftpserver.AbstractedFS(u('/'), None)
         fs._root = HOME
         self.assertTrue(fs.validpath(HOME))
         self.assertTrue(fs.validpath(HOME + '/'))
@@ -409,20 +458,20 @@ class TestAbstractedFS(unittest.TestCase):
         def test_validpath_validlink(self):
             # Test validpath by issuing a symlink pointing to a path
             # inside the root directory.
-            fs = ftpserver.AbstractedFS('/', None)
+            fs = ftpserver.AbstractedFS(u('/'), None)
             fs._root = HOME
             TESTFN2 = TESTFN + '1'
             try:
                 touch(TESTFN)
                 os.symlink(TESTFN, TESTFN2)
-                self.assertTrue(fs.validpath(TESTFN))
+                self.assertTrue(fs.validpath(u(TESTFN)))
             finally:
                 safe_remove(TESTFN, TESTFN2)
 
         def test_validpath_external_symlink(self):
             # Test validpath by issuing a symlink pointing to a path
             # outside the root directory.
-            fs = ftpserver.AbstractedFS('/', None)
+            fs = ftpserver.AbstractedFS(u('/'), None)
             fs._root = HOME
             # tempfile should create our file in /tmp directory
             # which should be outside the user root.  If it is
@@ -432,7 +481,7 @@ class TestAbstractedFS(unittest.TestCase):
                 if HOME == os.path.dirname(file.name):
                     return
                 os.symlink(file.name, TESTFN)
-                self.assertFalse(fs.validpath(TESTFN))
+                self.assertFalse(fs.validpath(u(TESTFN)))
             finally:
                 safe_remove(TESTFN)
                 file.close()
@@ -1087,16 +1136,16 @@ class TestFtpFsOperations(unittest.TestCase):
         # cwd provided with no arguments is supposed to move us to the
         # root directory
         self.client.sendcmd('cwd')
-        self.assertEqual(self.client.pwd(), '/')
+        self.assertEqual(self.client.pwd(), u('/'))
 
     def test_pwd(self):
-        self.assertEqual(self.client.pwd(), '/')
+        self.assertEqual(self.client.pwd(), u('/'))
         self.client.cwd(self.tempdir)
         self.assertEqual(self.client.pwd(), '/' + self.tempdir)
 
     def test_cdup(self):
         subfolder = os.path.basename(tempfile.mkdtemp(dir=self.tempdir))
-        self.assertEqual(self.client.pwd(), '/')
+        self.assertEqual(self.client.pwd(), u('/'))
         self.client.cwd(self.tempdir)
         self.assertEqual(self.client.pwd(), '/%s' % self.tempdir)
         self.client.cwd(subfolder)
@@ -1104,11 +1153,11 @@ class TestFtpFsOperations(unittest.TestCase):
         self.client.sendcmd('cdup')
         self.assertEqual(self.client.pwd(), '/%s' % self.tempdir)
         self.client.sendcmd('cdup')
-        self.assertEqual(self.client.pwd(), '/')
+        self.assertEqual(self.client.pwd(), u('/'))
 
         # make sure we can't escape from root directory
         self.client.sendcmd('cdup')
-        self.assertEqual(self.client.pwd(), '/')
+        self.assertEqual(self.client.pwd(), u('/'))
 
     def test_mkd(self):
         tempdir = os.path.basename(tempfile.mktemp(dir=HOME))
@@ -1130,7 +1179,7 @@ class TestFtpFsOperations(unittest.TestCase):
         self.client.rmd(self.tempdir)
         self.assertRaises(ftplib.error_perm, self.client.rmd, self.tempfile)
         # make sure we can't remove the root directory
-        self.assertRaises(ftplib.error_perm, self.client.rmd, '/')
+        self.assertRaises(ftplib.error_perm, self.client.rmd, u('/'))
 
     def test_dele(self):
         self.client.delete(self.tempfile)
@@ -1148,7 +1197,7 @@ class TestFtpFsOperations(unittest.TestCase):
         # rnfr/rnto over non-existing paths
         bogus = os.path.basename(tempfile.mktemp(dir=HOME))
         self.assertRaises(ftplib.error_perm, self.client.rename, bogus, '/x')
-        self.assertRaises(ftplib.error_perm, self.client.rename, self.tempfile, '/')
+        self.assertRaises(ftplib.error_perm, self.client.rename, self.tempfile, u('/'))
         # rnto sent without first specifying the source
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rnto ' + self.tempfile)
 

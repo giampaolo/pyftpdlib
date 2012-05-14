@@ -145,6 +145,8 @@ try:
 except ImportError:
     sendfile = None
 
+from pyftpdlib.lib.compat import u
+
 
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer',
            'AuthorizerError', 'FTPHandler', 'FTPServer', 'PassiveDTP',
@@ -534,6 +536,8 @@ class DummyAuthorizer(object):
         """
         if self.has_user(username):
             raise ValueError('user %r already exists' % username)
+        if not isinstance(homedir, unicode):
+            homedir = homedir.decode('utf8')
         if not os.path.isdir(homedir):
             raise ValueError('no such directory: %r' % homedir)
         homedir = os.path.realpath(homedir)
@@ -1450,12 +1454,13 @@ class AbstractedFS(object):
          - (str) root: the user "real" home directory (e.g. '/home/user')
          - (instance) cmd_channel: the FTPHandler class instance
         """
+        assert isinstance(root, unicode)
         # Set initial current working directory.
         # By default initial cwd is set to "/" to emulate a chroot jail.
         # If a different behavior is desired (e.g. initial cwd = root,
         # to reflect the real filesystem) users overriding this class
         # are responsible to set _cwd attribute as necessary.
-        self._cwd = '/'
+        self._cwd = u('/')
         self._root = root
         self.cmd_channel = cmd_channel
 
@@ -1471,10 +1476,12 @@ class AbstractedFS(object):
 
     @root.setter
     def root(self, path):
+        assert isinstance(path, unicode), path
         self._root = path
 
     @cwd.setter
     def cwd(self, path):
+        assert isinstance(path, unicode), path
         self._cwd = path
 
     # --- Pathname / conversion utilities
@@ -1490,6 +1497,7 @@ class AbstractedFS(object):
         Note: directory separators are system independent ("/").
         Pathname returned is always absolutized.
         """
+        assert isinstance(ftppath, unicode), ftppath
         if os.path.isabs(ftppath):
             p = os.path.normpath(ftppath)
         else:
@@ -1520,6 +1528,7 @@ class AbstractedFS(object):
 
         Note: directory separators are system dependent.
         """
+        assert isinstance(ftppath, unicode), ftppath
         # as far as I know, it should always be path traversal safe...
         if os.path.normpath(self.root) == os.sep:
             return os.path.normpath(self.ftpnorm(ftppath))
@@ -1542,6 +1551,7 @@ class AbstractedFS(object):
         On invalid pathnames escaping from user's root directory
         (e.g. "/home" when root is "/home/user") always return "/".
         """
+        assert isinstance(fspath, unicode), fspath
         if os.path.isabs(fspath):
             p = os.path.normpath(fspath)
         else:
@@ -1564,6 +1574,7 @@ class AbstractedFS(object):
         Pathnames escaping from user's root directory are considered
         not valid.
         """
+        assert isinstance(path, unicode), path
         root = self.realpath(self.root)
         path = self.realpath(path)
         if not root.endswith(os.sep):
@@ -1578,6 +1589,7 @@ class AbstractedFS(object):
 
     def open(self, filename, mode):
         """Open a file returning its handler."""
+        assert isinstance(filename, unicode), filename
         return open(filename, mode)
 
     def mkstemp(self, suffix='', prefix='', dir=None, mode='wb'):
@@ -1604,41 +1616,51 @@ class AbstractedFS(object):
     def chdir(self, path):
         """Change the current directory."""
         # note: process cwd will be reset by the caller
+        assert isinstance(path, unicode), path
         os.chdir(path)
         self._cwd = self.fs2ftp(path)
 
     def mkdir(self, path):
         """Create the specified directory."""
+        assert isinstance(path, unicode), path
         os.mkdir(path)
 
     def listdir(self, path):
         """List the content of a directory."""
+        assert isinstance(path, unicode), path
         return os.listdir(path)
 
     def rmdir(self, path):
         """Remove the specified directory."""
+        assert isinstance(path, unicode), path
         os.rmdir(path)
 
     def remove(self, path):
         """Remove the specified file."""
+        assert isinstance(path, unicode), path
         os.remove(path)
 
     def rename(self, src, dst):
         """Rename the specified src file to the dst filename."""
+        assert isinstance(src, unicode), src
+        assert isinstance(dst, unicode), dst
         os.rename(src, dst)
 
     def chmod(self, path, mode):
         """Change file/directory mode."""
+        assert isinstance(path, unicode), path
         if not hasattr(os, 'chmod'):
             raise NotImplementedError
         os.chmod(path, mode)
 
     def stat(self, path):
         """Perform a stat() system call on the given path."""
+        assert isinstance(path, unicode), path
         return os.stat(path)
 
     def lstat(self, path):
         """Like stat but does not follow symbolic links."""
+        assert isinstance(path, unicode), path
         return os.lstat(path)
 
     if not hasattr(os, 'lstat'):
@@ -1655,23 +1677,28 @@ class AbstractedFS(object):
 
     def isfile(self, path):
         """Return True if path is a file."""
+        assert isinstance(path, unicode), path
         return os.path.isfile(path)
 
     def islink(self, path):
         """Return True if path is a symbolic link."""
+        assert isinstance(path, unicode), path
         return os.path.islink(path)
 
     def isdir(self, path):
         """Return True if path is a directory."""
+        assert isinstance(path, unicode), path
         return os.path.isdir(path)
 
     def getsize(self, path):
         """Return the size of the specified file in bytes."""
+        assert isinstance(path, unicode), path
         return os.path.getsize(path)
 
     def getmtime(self, path):
         """Return the last modified time as a number of seconds since
         the epoch."""
+        assert isinstance(path, unicode), path
         return os.path.getmtime(path)
 
     def realpath(self, path):
@@ -1679,12 +1706,14 @@ class AbstractedFS(object):
         symbolic links encountered in the path (if they are
         supported by the operating system).
         """
+        assert isinstance(path, unicode), path
         return os.path.realpath(path)
 
     def lexists(self, path):
         """Return True if path refers to an existing path, including
         a broken or circular symbolic link.
         """
+        assert isinstance(path, unicode), path
         return os.path.lexists(path)
 
     def get_user_by_uid(self, uid):
@@ -1716,6 +1745,7 @@ class AbstractedFS(object):
         """"Return an iterator object that yields a directory listing
         in a form suitable for LIST command.
         """
+        assert isinstance(path, unicode), path
         if self.isdir(path):
             listing = self.listdir(path)
             listing.sort()
@@ -1747,6 +1777,7 @@ class AbstractedFS(object):
         drwxrwxrwx   1 owner   group          0 Aug 31 18:50 e-books
         -rw-rw-rw-   1 owner   group        380 Sep 02  3:40 module.py
         """
+        assert isinstance(basedir, unicode), basedir
         if self.cmd_channel.use_gmt_times:
             timefunc = time.gmtime
         else:
@@ -1800,8 +1831,9 @@ class AbstractedFS(object):
                         raise
 
             # formatting is matched with proftpd ls output
-            yield "%s %3s %-8s %-8s %8s %s %s\r\n" % (perms, nlinks, uname, gname,
-                                                      size, mtimestr, basename)
+            line = "%s %3s %-8s %-8s %8s %s %s\r\n" % (perms, nlinks, uname, gname,
+                                                       size, mtimestr, basename)
+            yield line.encode('utf8')
 
     def format_mlsx(self, basedir, listing, perms, facts, ignore_err=True):
         """Return an iterator object that yields the entries of a given
@@ -1909,7 +1941,8 @@ class AbstractedFS(object):
             # facts can be in any order but we sort them by name
             factstring = "".join(["%s=%s;" % (x, retfacts[x]) \
                                   for x in sorted(retfacts.keys())])
-            yield "%s %s\r\n" % (factstring, basename)
+            line = "%s %s\r\n" % (factstring, basename)
+            yield line.encode('utf8')
 
 
 # --- FTP
@@ -2194,6 +2227,9 @@ class FTPHandler(object, asynchat.async_chat):
             self._in_buffer = []
             self._in_buffer_len = 0
 
+    def decode(self, bytes):
+        return bytes.decode('utf8', errors='replace')
+
     def found_terminator(self):
         r"""Called when the incoming data stream matches the \r\n
         terminator.
@@ -2202,6 +2238,15 @@ class FTPHandler(object, asynchat.async_chat):
             self._idler.reset()
 
         line = ''.join(self._in_buffer)
+        try:
+            line = self.decode(line)
+        except UnicodeDecodeError:
+            # By default we'll never get here as we use errors='replace'
+            # but user might want to override this behavior.
+            # RFC-2640 doesn't mention what to do in this case so
+            # we'll just return 550.
+            return self.respond("550 Can't decode command.")
+
         self._in_buffer = []
         self._in_buffer_len = 0
 
@@ -2254,16 +2299,16 @@ class FTPHandler(object, asynchat.async_chat):
                 return
         else:
             if (cmd == 'STAT') and not arg:
-                self.ftp_STAT('')
+                self.ftp_STAT(u(''))
                 return
 
             # for file-system related commands check whether real path
             # destination is valid
             if self.proto_cmds[cmd]['perm'] and (cmd != 'STOU'):
                 if cmd in ('CWD', 'XCWD'):
-                    arg = self.fs.ftp2fs(arg or '/')
+                    arg = self.fs.ftp2fs(arg or u('/'))
                 elif cmd in ('CDUP', 'XCUP'):
-                    arg = self.fs.ftp2fs('..')
+                    arg = self.fs.ftp2fs(u('..'))
                 elif cmd == 'LIST':
                     if arg.lower() in ('-a', '-l', '-al', '-la'):
                         arg = self.fs.ftp2fs(self.fs.cwd)
@@ -2518,6 +2563,9 @@ class FTPHandler(object, asynchat.async_chat):
 
     # --- utility
 
+    def push(self, s):
+        asynchat.async_chat.push(self, s.encode('utf8'))
+
     def respond(self, resp):
         """Send a response to the client using the command channel."""
         self._last_response = resp
@@ -2642,7 +2690,7 @@ class FTPHandler(object, asynchat.async_chat):
         further commands.
         """
         if cmd in ("DELE", "RMD", "RNFR", "RNTO", "MKD"):
-            line = '"%s" %s' % (' '.join([cmd, str(arg)]).strip(), respcode)
+            line = '"%s" %s' % (' '.join([cmd, arg]).strip(), respcode)
             self.log(line)
 
     def log_transfer(self, cmd, filename, receive, completed, elapsed, bytes):
@@ -2927,6 +2975,7 @@ class FTPHandler(object, asynchat.async_chat):
             if listing:
                 listing.sort()
                 data = '\r\n'.join(listing) + '\r\n'
+            data = data.encode('utf8')
             self.push_dtp_data(data, cmd="NLST")
 
         # --- MLST and MLSD commands
@@ -3287,7 +3336,7 @@ class FTPHandler(object, asynchat.async_chat):
         # the process is started we'll get into troubles (os.getcwd()
         # will fail with ENOENT) but we can't do anything about that
         # except logging an error.
-        init_cwd = os.getcwd()
+        init_cwd = os.getcwdu()
         try:
             self.run_as_current_user(self.fs.chdir, path)
         except (OSError, FilesystemError), err:
@@ -3295,7 +3344,7 @@ class FTPHandler(object, asynchat.async_chat):
             self.respond('550 %s.' % why)
         else:
             self.respond('250 "%s" is the current directory.' % self.fs.cwd)
-            if os.getcwd() != init_cwd:
+            if os.getcwdu() != init_cwd:
                 os.chdir(init_cwd)
 
     def ftp_CDUP(self, path):
@@ -3972,7 +4021,7 @@ def main():
     parser.add_option('-w', '--write', action="store_true", default=False,
                       help="grants write access for the anonymous user "
                            "(default read-only)")
-    parser.add_option('-d', '--directory', default=os.getcwd(), metavar="FOLDER",
+    parser.add_option('-d', '--directory', default=os.getcwdu(), metavar="FOLDER",
                       help="specify the directory to share (default current "
                            "directory)")
     parser.add_option('-n', '--nat-address', default=None, metavar="ADDRESS",

@@ -603,12 +603,12 @@ if os.name == 'posix':
     class TestUnixFilesystem(unittest.TestCase):
 
         def test_case(self):
-            root = os.getcwd()
+            root = os.getcwdu()
             fs = filesystems.UnixFilesystem(root, None)
             self.assertEqual(fs.root, root)
             self.assertEqual(fs.cwd, root)
             cdup = os.path.dirname(root)
-            self.assertEqual(fs.ftp2fs('..'), cdup)
+            self.assertEqual(fs.ftp2fs(u('..')), cdup)
             self.assertEqual(fs.fs2ftp(root), root)
 
 
