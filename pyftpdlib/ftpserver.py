@@ -473,11 +473,11 @@ class _FileReadWriteError(OSError):
 
 def log(msg):
     """Log messages intended for the end user."""
-    print msg
+    print_(msg)
 
 def logline(msg):
     """Log commands and responses passing through the command channel."""
-    print msg
+    print_(msg)
 
 def logerror(msg):
     """Log traceback outputs occurring in case of errors."""
