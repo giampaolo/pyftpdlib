@@ -1514,7 +1514,7 @@ class AbstractedFS(object):
         # that self.cwd is not absolute, return "/" as a safety measure.
         # This is for extra protection, maybe not really necessary.
         if not os.path.isabs(p):
-            p = "/"
+            p = u("/")
         return p
 
     def ftp2fs(self, ftppath):
@@ -1557,7 +1557,7 @@ class AbstractedFS(object):
         else:
             p = os.path.normpath(os.path.join(self.root, fspath))
         if not self.validpath(p):
-            return '/'
+            return u('/')
         p = p.replace(os.sep, "/")
         p = p[len(self.root):]
         if not p.startswith('/'):
