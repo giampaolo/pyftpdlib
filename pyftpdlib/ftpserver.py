@@ -399,7 +399,8 @@ class CallLater(object):
                 self._target(*self._args, **self._kwargs)
             except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
                 raise
-            except Exception, exc:
+            except Exception:
+                exc = sys.exc_info()[1]
                 if self._errback is not None:
                     self._errback()
                 else:
@@ -723,7 +724,8 @@ class PassiveDTP(object, asyncore.dispatcher):
                 self.set_reuse_addr()
                 try:
                     self.bind((local_ip, port))
-                except socket.error, err:
+                except socket.error:
+                    err = sys.exc_info()[1]
                     if err.args[0] == errno.EADDRINUSE:  # port already in use
                         if ports:
                             continue
@@ -783,7 +785,8 @@ class PassiveDTP(object, asyncore.dispatcher):
         except TypeError:
             # sometimes accept() might return None (see issue 91)
             return
-        except socket.error, err:
+        except socket.error:
+            err = sys.exc_info()[1]
             # ECONNABORTED might be thrown on *BSD (see issue 105)
             if err.args[0] != errno.ECONNABORTED:
                 self.log_exception(self)
@@ -1019,7 +1022,8 @@ class DTPHandler(object, asynchat.async_chat):
             self._idler = None
         try:
             asynchat.async_chat.__init__(self, sock_obj)
-        except socket.error, err:
+        except socket.error:
+            err = sys.exc_info()[1]
             # if we get an exception here we want the dispatcher
             # instance to set socket attribute before closing, see:
             # http://code.google.com/p/pyftpdlib/issues/detail?id=188
@@ -1053,7 +1057,8 @@ class DTPHandler(object, asynchat.async_chat):
         try:
             sent = sendfile(self._fileno, self._filefd, self._offset,
                             self.ac_out_buffer_size)
-        except OSError, err:
+        except OSError:
+            err = sys.exc_info()[1]
             if err.errno in (errno.EAGAIN, errno.EWOULDBLOCK, errno.EBUSY):
                 return
             elif err.errno in _DISCONNECTED:
@@ -1168,7 +1173,8 @@ class DTPHandler(object, asynchat.async_chat):
                 return
             try:
                 self.file_obj.write(self._data_wrapper(chunk))
-            except OSError, err:
+            except OSError:
+                err = sys.exc_info()[1]
                 raise _FileReadWriteError(err)
 
     def readable(self):
@@ -1205,7 +1211,8 @@ class DTPHandler(object, asynchat.async_chat):
             raise
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             raise
-        except socket.error, err:
+        except socket.error:
+            err = sys.exc_info()[1]
             # fixes around various bugs:
             # - http://bugs.python.org/issue1736101
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=104
@@ -1218,7 +1225,8 @@ class DTPHandler(object, asynchat.async_chat):
                 error = str(err.args[1])
         # an error could occur in case we fail reading / writing
         # from / to file (e.g. file system gets full)
-        except _FileReadWriteError, err:
+        except _FileReadWriteError:
+            err = sys.exc_info()[1]
             error = _strerror(err.args[0])
         except:
             # some other exception occurred;  we don't want to provide
@@ -1397,7 +1405,8 @@ class FileProducer(object):
             return ''
         try:
             data = self._data_wrapper(self.file.read(self.buffer_size))
-        except OSError, err:
+        except OSError:
+            err = sys.exc_info()[1]
             raise _FileReadWriteError(err)
         if not data:
             self.done = True
@@ -2102,7 +2111,8 @@ class FTPHandler(object, asynchat.async_chat):
 
         try:
             asynchat.async_chat.__init__(self, conn)
-        except socket.error, err:
+        except socket.error:
+            err = sys.exc_info()[1]
             # if we get an exception here we want the dispatcher
             # instance to set socket attribute before closing, see:
             # http://code.google.com/p/pyftpdlib/issues/detail?id=188
@@ -2118,7 +2128,8 @@ class FTPHandler(object, asynchat.async_chat):
         # connection properties
         try:
             self.remote_ip, self.remote_port = self.socket.getpeername()[:2]
-        except socket.error, err:
+        except socket.error:
+            err = sys.exc_info()[1]
             # A race condition  may occur if the other end is closing
             # before we can get the peername, hence ENOTCONN (see issue
             # #100) while EINVAL can occur on OSX (see issue #143).
@@ -2379,7 +2390,8 @@ class FTPHandler(object, asynchat.async_chat):
         if hasattr(socket, 'MSG_OOB'):
             try:
                 data = self.socket.recv(1024, socket.MSG_OOB)
-            except socket.error, err:
+            except socket.error:
+                err = sys.exc_info()[1]
                 if err.args[0] == errno.EINVAL:
                     return
             else:
@@ -2393,7 +2405,8 @@ class FTPHandler(object, asynchat.async_chat):
             raise
         except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
             raise
-        except socket.error, err:
+        except socket.error:
+            err = sys.exc_info()[1]
             # fixes around various bugs:
             # - http://bugs.python.org/issue1736101
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=104
@@ -2950,7 +2963,8 @@ class FTPHandler(object, asynchat.async_chat):
         #   formats in which case we fall back on cwd as default.
         try:
             iterator = self.run_as_current_user(self.fs.get_list_dir, path)
-        except (OSError, FilesystemError), err:
+        except (OSError, FilesystemError):
+            err = sys.exc_info()[1]
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -2968,7 +2982,8 @@ class FTPHandler(object, asynchat.async_chat):
                 # if path is a file we just list its name
                 self.fs.lstat(path)  # raise exc in case of problems
                 listing = [os.path.basename(path)]
-        except (OSError, FilesystemError), err:
+        except (OSError, FilesystemError):
+            err = sys.exc_info()[1]
             self.respond('550 %s.' % _strerror(err))
         else:
             data = ''
@@ -2996,7 +3011,8 @@ class FTPHandler(object, asynchat.async_chat):
             iterator = self.run_as_current_user(self.fs.format_mlsx, basedir,
                        [basename], perms, self._current_facts, ignore_err=False)
             data = ''.join(iterator)
-        except (OSError, FilesystemError), err:
+        except (OSError, FilesystemError):
+            err = sys.exc_info()[1]
             self.respond('550 %s.' % _strerror(err))
         else:
             # since TVFS is supported (see RFC-3659 chapter 6), a fully
@@ -3018,7 +3034,8 @@ class FTPHandler(object, asynchat.async_chat):
             return
         try:
             listing = self.run_as_current_user(self.fs.listdir, path)
-        except (OSError, FilesystemError), err:
+        except (OSError, FilesystemError):
+            err = sys.exc_info()[1]
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -3036,7 +3053,8 @@ class FTPHandler(object, asynchat.async_chat):
         self._restart_position = 0
         try:
             fd = self.run_as_current_user(self.fs.open, file, 'rb')
-        except (EnvironmentError, FilesystemError), err:
+        except (EnvironmentError, FilesystemError):
+            err = sys.exc_info()[1]
             why = _strerror(err)
             self.respond('550 %s.' % why)
             return
@@ -3055,7 +3073,8 @@ class FTPHandler(object, asynchat.async_chat):
                 ok = 1
             except ValueError:
                 why = "Invalid REST parameter"
-            except (EnvironmentError, FilesystemError), err:
+            except (EnvironmentError, FilesystemError):
+                err = sys.exc_info()[1]
                 why = _strerror(err)
             if not ok:
                 self.respond('554 %s' % why)
@@ -3080,7 +3099,8 @@ class FTPHandler(object, asynchat.async_chat):
             mode = 'r+'
         try:
             fd = self.run_as_current_user(self.fs.open, file, mode + 'b')
-        except (EnvironmentError, FilesystemError), err:
+        except (EnvironmentError, FilesystemError):
+            err = sys.exc_info()[1]
             why = _strerror(err)
             self.respond('550 %s.' %why)
             return
@@ -3099,7 +3119,8 @@ class FTPHandler(object, asynchat.async_chat):
                 ok = 1
             except ValueError:
                 why = "Invalid REST parameter"
-            except (EnvironmentError, FilesystemError), err:
+            except (EnvironmentError, FilesystemError):
+                err = sys.exc_info()[1]
                 why = _strerror(err)
             if not ok:
                 self.respond('554 %s' %why)
@@ -3142,7 +3163,8 @@ class FTPHandler(object, asynchat.async_chat):
         try:
             fd = self.run_as_current_user(self.fs.mkstemp, prefix=prefix,
                                           dir=basedir)
-        except (EnvironmentError, FilesystemError), err:
+        except (EnvironmentError, FilesystemError):
+            err = sys.exc_info()[1]
             # hitted the max number of tries to find out file with
             # unique name
             if getattr(err, "errno", -1) == errno.EEXIST:
@@ -3339,7 +3361,8 @@ class FTPHandler(object, asynchat.async_chat):
         init_cwd = os.getcwdu()
         try:
             self.run_as_current_user(self.fs.chdir, path)
-        except (OSError, FilesystemError), err:
+        except (OSError, FilesystemError):
+            err = sys.exc_info()[1]
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -3380,7 +3403,8 @@ class FTPHandler(object, asynchat.async_chat):
             return
         try:
             size = self.run_as_current_user(self.fs.getsize, path)
-        except (OSError, FilesystemError), err:
+        except (OSError, FilesystemError):
+            err = sys.exc_info()[1]
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -3401,7 +3425,8 @@ class FTPHandler(object, asynchat.async_chat):
         try:
             secs = self.run_as_current_user(self.fs.getmtime, path)
             lmt = time.strftime("%Y%m%d%H%M%S", timefunc(secs))
-        except (ValueError, OSError, FilesystemError), err:
+        except (ValueError, OSError, FilesystemError):
+            err = sys.exc_info()[1]
             if isinstance(err, ValueError):
                 # It could happen if file's last modification time
                 # happens to be too old (prior to year 1900)
@@ -3417,7 +3442,8 @@ class FTPHandler(object, asynchat.async_chat):
         line = self.fs.fs2ftp(path)
         try:
             self.run_as_current_user(self.fs.mkdir, path)
-        except (OSError, FilesystemError), err:
+        except (OSError, FilesystemError):
+            err = sys.exc_info()[1]
             why = _strerror(err)
             self.respond('550 %s.' %why)
         else:
@@ -3434,7 +3460,8 @@ class FTPHandler(object, asynchat.async_chat):
             return
         try:
             self.run_as_current_user(self.fs.rmdir, path)
-        except (OSError, FilesystemError), err:
+        except (OSError, FilesystemError):
+            err = sys.exc_info()[1]
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -3444,7 +3471,8 @@ class FTPHandler(object, asynchat.async_chat):
         """Delete the specified file."""
         try:
             self.run_as_current_user(self.fs.remove, path)
-        except (OSError, FilesystemError), err:
+        except (OSError, FilesystemError):
+            err = sys.exc_info()[1]
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -3472,7 +3500,8 @@ class FTPHandler(object, asynchat.async_chat):
         self._rnfr = None
         try:
             self.run_as_current_user(self.fs.rename, src, path)
-        except (OSError, FilesystemError), err:
+        except (OSError, FilesystemError):
+            err = sys.exc_info()[1]
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -3576,7 +3605,8 @@ class FTPHandler(object, asynchat.async_chat):
             line = self.fs.fs2ftp(path)
             try:
                 iterator = self.run_as_current_user(self.fs.get_list_dir, path)
-            except (OSError, FilesystemError), err:
+            except (OSError, FilesystemError):
+                err = sys.exc_info()[1]
                 why = _strerror(err)
                 self.respond('550 %s.' %why)
             else:
@@ -3619,7 +3649,8 @@ class FTPHandler(object, asynchat.async_chat):
             # actually the only command able to accept options is MLST
             if cmd.upper() != 'MLST' or 'MLST' not in self.proto_cmds:
                 raise ValueError('Unsupported command "%s"' % cmd)
-        except ValueError, err:
+        except ValueError:
+            err = sys.exc_info()[1]
             self.respond('501 %s.' % err)
         else:
             facts = [x.lower() for x in arg.split(';')]
@@ -3689,7 +3720,8 @@ class FTPHandler(object, asynchat.async_chat):
         else:
             try:
                 self.run_as_current_user(self.fs.chmod, path, mode)
-            except (OSError, FilesystemError), err:
+            except (OSError, FilesystemError):
+                err = sys.exc_info()[1]
                 why = _strerror(err)
                 self.respond('550 %s.' % why)
             else:
@@ -3869,7 +3901,8 @@ class FTPServer(object, asyncore.dispatcher):
         except TypeError:
             # sometimes accept() might return None (see issue 91)
             return
-        except socket.error, err:
+        except socket.error:
+            err = sys.exc_info()[1]
             # ECONNABORTED might be thrown on *BSD (see issue 105)
             if err.args[0] != errno.ECONNABORTED:
                 logerror(traceback.format_exc())
