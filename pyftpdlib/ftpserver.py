@@ -145,7 +145,8 @@ try:
 except ImportError:
     sendfile = None
 
-from pyftpdlib.lib.compat import u, unicode, print_, getcwdu
+from pyftpdlib.lib.compat import (MAXSIZE, u, b, unicode, print_, getcwdu,
+                                  xrange, next)
 
 
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer',
@@ -364,8 +365,8 @@ class CallLater(object):
            called in case target function raises an exception.
         """
         assert callable(target), "%s is not callable" % target
-        assert sys.maxint >= seconds >= 0, "%s is not greater than or equal " \
-                                           "to 0 seconds" % seconds
+        assert MAXSIZE >= seconds >= 0, "%s is not greater than or equal " \
+                                        "to 0 seconds" % seconds
         self._delay = seconds
         self._target = target
         self._args = args
@@ -417,8 +418,8 @@ class CallLater(object):
     def delay(self, seconds):
         """Reschedule this call for a later time."""
         assert not self.cancelled, "Already cancelled."
-        assert sys.maxint >= seconds >= 0, "%s is not greater than or equal " \
-                                           "to 0 seconds" % seconds
+        assert MAXSIZE >= seconds >= 0, "%s is not greater than or equal " \
+                                        "to 0 seconds" % seconds
         self._delay = seconds
         newtime = time.time() + self._delay
         if newtime > self.timeout:
@@ -1431,7 +1432,7 @@ class BufferedIteratorProducer(object):
         buffer = []
         for x in xrange(self.loops):
             try:
-                buffer.append(self.iterator.next())
+                buffer.append(next(self.iterator))
             except StopIteration:
                 break
         return ''.join(buffer)
@@ -2123,7 +2124,7 @@ class FTPHandler(asynchat.async_chat):
                 return
             self.handle_error()
             return
-        self.set_terminator("\r\n")
+        self.set_terminator(b("\r\n"))
 
         # connection properties
         try:
@@ -2248,7 +2249,7 @@ class FTPHandler(asynchat.async_chat):
         if self._idler is not None and not self._idler.cancelled:
             self._idler.reset()
 
-        line = ''.join(self._in_buffer)
+        line = b('').join(self._in_buffer)
         try:
             line = self.decode(line)
         except UnicodeDecodeError:
@@ -3739,8 +3740,7 @@ class FTPHandler(asynchat.async_chat):
             self.push("214-The following SITE commands are recognized:\r\n")
             site_cmds = []
             keys = self.proto_cmds.keys()
-            keys.sort()
-            for cmd in keys:
+            for cmd in sorted(keys):
                 if cmd.startswith('SITE '):
                     site_cmds.append(' %s\r\n' % cmd[5:])
             self.push(''.join(site_cmds))
