@@ -81,8 +81,7 @@ else:
     else:
         class _SSLBase(object, asyncore.dispatcher):
             def __init__(self, *args, **kwargs):
-                # bypass object...
-                super(object, self).__init__(*args, **kwargs)
+                super(object, self).__init__(*args, **kwargs)  # bypass object
 
     class SSLConnection(_SSLBase):
         """An asyncore.dispatcher subclass supporting TLS/SSL."""

@@ -78,7 +78,7 @@ except ImportError:
     sendfile = None
 
 from pyftpdlib import ftpserver
-from pyftpdlib.lib.compat import u
+from pyftpdlib.lib.compat import u, getcwdu
 
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
@@ -88,7 +88,7 @@ except socket.error:
     HOST = 'localhost'
 USER = 'user'
 PASSWD = '12345'
-HOME = os.getcwdu()
+HOME = getcwdu()
 TESTFN = 'tmp-pyftpdlib'
 
 def try_address(host, port=0, family=socket.AF_INET):

@@ -145,7 +145,7 @@ try:
 except ImportError:
     sendfile = None
 
-from pyftpdlib.lib.compat import u
+from pyftpdlib.lib.compat import u, unicode, print_, getcwdu
 
 
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer',
@@ -3358,7 +3358,7 @@ class FTPHandler(asynchat.async_chat):
         # the process is started we'll get into troubles (os.getcwd()
         # will fail with ENOENT) but we can't do anything about that
         # except logging an error.
-        init_cwd = os.getcwdu()
+        init_cwd = getcwdu()
         try:
             self.run_as_current_user(self.fs.chdir, path)
         except (OSError, FilesystemError):
@@ -3367,7 +3367,7 @@ class FTPHandler(asynchat.async_chat):
             self.respond('550 %s.' % why)
         else:
             self.respond('250 "%s" is the current directory.' % self.fs.cwd)
-            if os.getcwdu() != init_cwd:
+            if getcwdu() != init_cwd:
                 os.chdir(init_cwd)
 
     def ftp_CDUP(self, path):
@@ -4055,7 +4055,7 @@ def main():
     parser.add_option('-w', '--write', action="store_true", default=False,
                       help="grants write access for the anonymous user "
                            "(default read-only)")
-    parser.add_option('-d', '--directory', default=os.getcwdu(), metavar="FOLDER",
+    parser.add_option('-d', '--directory', default=getcwdu(), metavar="FOLDER",
                       help="specify the directory to share (default current "
                            "directory)")
     parser.add_option('-n', '--nat-address', default=None, metavar="ADDRESS",
