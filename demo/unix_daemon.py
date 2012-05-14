@@ -67,6 +67,7 @@ import signal
 
 from pyftpdlib import ftpserver
 from pyftpdlib.contrib.authorizers import UnixAuthorizer
+from pyftpdlib.contrib.filesystems import UnixFilesystem
 
 # http://pypi.python.org/pypi/python-daemon
 import daemon
@@ -147,6 +148,7 @@ def get_server():
     ftpserver.log = ftpserver.logline = log
     ftp_handler = ftpserver.FTPHandler
     ftp_handler.authorizer = UnixAuthorizer()
+    ftp_handler.abstracted_fs = UnixFilesystem
     server = ftpserver.FTPServer((HOST, PORT), ftp_handler)
     return server
 
