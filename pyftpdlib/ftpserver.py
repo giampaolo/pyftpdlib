@@ -676,7 +676,7 @@ class DummyAuthorizer(object):
 
 # --- DTP classes
 
-class PassiveDTP(object, asyncore.dispatcher):
+class PassiveDTP(asyncore.dispatcher):
     """This class is an asyncore.dispatcher subclass. It creates a
     socket listening on a local port, dispatching the resultant
     connection to DTPHandler.
@@ -853,7 +853,7 @@ class PassiveDTP(object, asyncore.dispatcher):
                 self._idler.cancel()
 
 
-class ActiveDTP(object, asyncore.dispatcher):
+class ActiveDTP(asyncore.dispatcher):
     """This class is an asyncore.disptacher subclass. It creates a
     socket resulting from the connection to a remote user-port,
     dispatching it to DTPHandler.
@@ -970,7 +970,7 @@ class ActiveDTP(object, asyncore.dispatcher):
                 self._idler.cancel()
 
 
-class DTPHandler(object, asynchat.async_chat):
+class DTPHandler(asynchat.async_chat):
     """Class handling server-data-transfer-process (server-DTP, see
     RFC-959) managing data-transfer operations involving sending
     and receiving data.
@@ -1956,7 +1956,7 @@ class AbstractedFS(object):
 
 # --- FTP
 
-class FTPHandler(object, asynchat.async_chat):
+class FTPHandler(asynchat.async_chat):
     """Implements the FTP server Protocol Interpreter (see RFC-959),
     handling commands received from the client on the control channel.
 
@@ -3774,7 +3774,7 @@ class FTPHandler(object, asynchat.async_chat):
         self.ftp_RMD(line)
 
 
-class FTPServer(object, asyncore.dispatcher):
+class FTPServer(asyncore.dispatcher):
     """This class is an asyncore.disptacher subclass.  It creates a FTP
     socket listening on <address>, dispatching the requests to a <handler>
     (typically FTPHandler class).
@@ -3833,7 +3833,7 @@ class FTPServer(object, asyncore.dispatcher):
                     self.create_socket(af, socktype)
                     self.set_reuse_addr()
                     self.bind(sa)
-                except socket.error, msg:
+                except socket.error:
                     if self.socket:
                         self.socket.close()
                     self.socket = None
@@ -4001,8 +4001,9 @@ class FTPServer(object, asyncore.dispatcher):
         for x in values:
             try:
                 x.close()
-            except OSError, x:
-                if x[0] == errno.EBADF:
+            except OSError:
+                err = sys.exc_info()[1]
+                if err[0] == errno.EBADF:
                     pass
                 elif not ignore_all:
                     raise
