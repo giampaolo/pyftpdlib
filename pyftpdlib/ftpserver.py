@@ -1930,7 +1930,7 @@ class AbstractedFS(object):
                     pass
             # UNIX only
             if 'unix.mode' in facts:
-                retfacts['unix.mode'] = oct(st.st_mode & 0777)
+                retfacts['unix.mode'] = oct(st.st_mode & 511)
             if 'unix.uid' in facts:
                 retfacts['unix.uid'] = st.st_uid
             if 'unix.gid' in facts:
