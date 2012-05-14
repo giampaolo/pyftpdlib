@@ -52,6 +52,7 @@ import warnings
 import errno
 
 from pyftpdlib.ftpserver import FTPHandler, DTPHandler, proto_cmds, _DISCONNECTED
+from pyftpdlib.lib.compat import PY3
 
 __all__ = []
 
@@ -74,8 +75,16 @@ else:
                      help='Syntax: PROT <SP> [C|P] (set up un/secure data channel).'),
         })
 
+    if PY3:
+        class _SSLBase(asyncore.dispatcher):
+            pass
+    else:
+        class _SSLBase(object, asyncore.dispatcher):
+            def __init__(self, *args, **kwargs):
+                # bypass object...
+                super(object, self).__init__(*args, **kwargs)
 
-    class SSLConnection(object, asyncore.dispatcher):
+    class SSLConnection(_SSLBase):
         """An asyncore.dispatcher subclass supporting TLS/SSL."""
 
         _ssl_accepting = False
