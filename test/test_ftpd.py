@@ -65,9 +65,9 @@ import asyncore
 import atexit
 import stat
 try:
-    import cStringIO as StringIO
+    from StringIO import StringIO as BytesIO
 except ImportError:
-    import StringIO
+    from io import BytesIO
 try:
     import ssl
 except ImportError:
@@ -812,7 +812,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.client.connect(self.server.host, self.server.port)
         self.client.sock.settimeout(2)
         self.file = open(TESTFN, 'w+b')
-        self.dummyfile = StringIO.StringIO()
+        self.dummyfile = BytesIO()
 
     def tearDown(self):
         self.server.handler._auth_failed_timeout = 5
@@ -1305,8 +1305,8 @@ class TestFtpStoreData(unittest.TestCase):
         self.client.connect(self.server.host, self.server.port)
         self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
-        self.dummy_recvfile = StringIO.StringIO()
-        self.dummy_sendfile = StringIO.StringIO()
+        self.dummy_recvfile = BytesIO()
+        self.dummy_sendfile = BytesIO()
 
     def tearDown(self):
         self.client.close()
@@ -1612,7 +1612,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
         self.file = open(TESTFN, 'w+b')
-        self.dummyfile = StringIO.StringIO()
+        self.dummyfile = BytesIO()
 
     def tearDown(self):
         self.client.close()
@@ -2374,7 +2374,7 @@ class TestCallbacks(unittest.TestCase):
             if login:
                 self.client.login(USER, PASSWD)
         self.file = open(TESTFN, 'w+b')
-        self.dummyfile = StringIO.StringIO()
+        self.dummyfile = BytesIO()
         self._tearDown = False
 
     def tearDown(self):
@@ -3117,11 +3117,11 @@ class TestUnicodePathNames(unittest.TestCase):
     def test_stor(self):
         data = 'abcde12345' * 500
         os.remove(self.tempfile)
-        dummy = StringIO.StringIO()
+        dummy = BytesIO()
         dummy.write(data)
         dummy.seek(0)
         self.client.storbinary('stor ' + self.tempfile, dummy)
-        dummy_recv = StringIO.StringIO()
+        dummy_recv = BytesIO()
         self.client.retrbinary('retr ' + self.tempfile, dummy_recv.write)
         dummy_recv.seek(0)
         self.assertEqual(dummy_recv.read(), data)
@@ -3131,7 +3131,7 @@ class TestUnicodePathNames(unittest.TestCase):
         f = open(self.tempfile, 'wb')
         f.write(data)
         f.close()
-        dummy = StringIO.StringIO()
+        dummy = BytesIO()
         self.client.retrbinary('retr ' + self.tempfile, dummy.write)
         dummy.seek(0)
         self.assertEqual(dummy.read(), data)
@@ -3155,7 +3155,7 @@ class TestCommandLineParser(unittest.TestCase):
             def serve_forever(self, *args, **kwargs):
                 return
 
-        self.devnull = StringIO.StringIO()
+        self.devnull = BytesIO()
         sys.argv = self.SYSARGV[:]
         sys.stderr = self.STDERR
         self.original_ftpserver_class = ftpserver.FTPServer
