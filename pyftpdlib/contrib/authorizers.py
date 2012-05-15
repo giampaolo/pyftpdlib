@@ -405,9 +405,15 @@ else:
                     file.close()
 
 
+try:
+    import _winreg as winreg
+except ImportError:
+    try:
+        import winreg  # PY3
+    except ImportError:
+        pass
 # Note: requires pywin32 extension
 try:
-    import _winreg
     import win32security, win32net, pywintypes, win32con, win32api
 except ImportError:
     pass
@@ -473,11 +479,11 @@ else:
             path = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList" + \
                    "\\" + sid
             try:
-                key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, path)
+                key = winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, path)
             except WindowsError:
                 raise AuthorizerError("No profile directory defined for user %s"
                                       % username)
-            value = _winreg.QueryValueEx(key, "ProfileImagePath")[0]
+            value = winreg.QueryValueEx(key, "ProfileImagePath")[0]
             return win32api.ExpandEnvironmentStrings(value)
 
         @classmethod

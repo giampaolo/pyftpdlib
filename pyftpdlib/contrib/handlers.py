@@ -53,7 +53,7 @@ import errno
 import sys
 
 from pyftpdlib.ftpserver import FTPHandler, DTPHandler, proto_cmds, _DISCONNECTED
-from pyftpdlib.lib.compat import PY3, b
+from pyftpdlib.lib.compat import b
 
 __all__ = []
 

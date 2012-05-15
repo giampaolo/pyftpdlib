@@ -352,7 +352,7 @@ class TestAbstractedFS(unittest.TestCase):
             goforit(u('/'))
         else:
             # os.sep == ':'? Don't know... let's try it anyway
-            goforit(os.getcwdu())
+            goforit(getcwdu())
 
     def test_ftp2fs(self):
         # Tests for ftp2fs method.
@@ -400,7 +400,7 @@ class TestAbstractedFS(unittest.TestCase):
             goforit(u('/'))
         else:
             # os.sep == ':'? Don't know... let's try it anyway
-            goforit(os.getcwdu())
+            goforit(getcwdu())
 
     def test_fs2ftp(self):
         # Tests for fs2ftp method.
@@ -445,7 +445,7 @@ class TestAbstractedFS(unittest.TestCase):
             ae(fs.fs2ftp(u('/__home/userx')), u('/'))
         else:
             # os.sep == ':'? Don't know... let's try it anyway
-            goforit(os.getcwdu())
+            goforit(getcwdu())
 
     def test_validpath(self):
         # Tests for validpath method.
@@ -2245,7 +2245,7 @@ class TestConfigurableOptions(unittest.TestCase):
 
     def test_passive_ports(self):
         # Test FTPHandler.passive_ports attribute
-        _range = range(40000, 60000, 200)
+        _range = list(range(40000, 60000, 200))
         self.server.handler.passive_ports = _range
         self.assert_(self.client.makepasv()[1] in _range)
         self.assert_(self.client.makepasv()[1] in _range)

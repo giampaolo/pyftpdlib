@@ -146,7 +146,7 @@ except ImportError:
     sendfile = None
 
 from pyftpdlib.lib.compat import (MAXSIZE, u, b, unicode, print_, getcwdu,
-                                  xrange, next)
+                                  xrange, next, callable)
 
 
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer',
@@ -3740,8 +3740,7 @@ class FTPHandler(asynchat.async_chat):
         else:
             self.push("214-The following SITE commands are recognized:\r\n")
             site_cmds = []
-            keys = self.proto_cmds.keys()
-            for cmd in sorted(keys):
+            for cmd in sorted(self.proto_cmds.keys()):
                 if cmd.startswith('SITE '):
                     site_cmds.append(' %s\r\n' % cmd[5:])
             self.push(''.join(site_cmds))
@@ -3991,7 +3990,6 @@ class FTPServer(asyncore.dispatcher):
         all opened channels and calling close() method for each one
         of them only closed sockets generating memory leaks.
         """
-        values = asyncore.socket_map.values()
         # We sort the list so that we close all FTP handler instances
         # first since FTPHandler.close() has the peculiarity of
         # automatically closing all its children (DTPHandler, ActiveDTP
@@ -3999,7 +3997,8 @@ class FTPServer(asyncore.dispatcher):
         # This should minimize the possibility to incur in race
         # conditions or memory leaks caused by orphaned references
         # left behind in case of error.
-        values = sorted(values, key=lambda inst: isinstance(inst, FTPHandler),
+        values = sorted(asyncore.socket_map.values(),
+                        key=lambda inst: isinstance(inst, FTPHandler),
                         reverse=True)
         for x in values:
             try:
@@ -4081,7 +4080,7 @@ def main():
         except ValueError:
             parser.error('invalid argument passed to -r option')
         else:
-            passive_ports = range(start, stop + 1)
+            passive_ports = list(range(start, stop + 1))
     # On recent Windows versions, if address is not specified and IPv6
     # is installed the socket will listen on IPv6 by default; in this
     # case we force IPv4 instead.

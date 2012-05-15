@@ -41,18 +41,19 @@ except ImportError:
     from md5 import new as md5
 
 from pyftpdlib import ftpserver
+from pyftpdlib.lib.compat import b
 
 
 class DummyMD5Authorizer(ftpserver.DummyAuthorizer):
 
     def validate_authentication(self, username, password):
-        hash = md5(password).hexdigest()
+        hash = md5(b(password)).hexdigest()
         return self.user_table[username]['pwd'] == hash
 
 
 def main():
     # get a hash digest from a clear-text password
-    hash = md5('12345').hexdigest()
+    hash = md5(b('12345')).hexdigest()
     authorizer = DummyMD5Authorizer()
     authorizer.add_user('user', hash, os.getcwd(), perm='elradfmw')
     authorizer.add_anonymous(os.getcwd())
