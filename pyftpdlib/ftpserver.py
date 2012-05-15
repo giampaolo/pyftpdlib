@@ -3016,6 +3016,7 @@ class FTPHandler(asynchat.async_chat):
             err = sys.exc_info()[1]
             self.respond('550 %s.' % _strerror(err))
         else:
+            data = data.decode('utf8')
             # since TVFS is supported (see RFC-3659 chapter 6), a fully
             # qualified pathname should be returned
             data = data.split(' ')[0] + ' %s\r\n' % line
@@ -3834,6 +3835,7 @@ class FTPServer(asyncore.dispatcher):
                     self.set_reuse_addr()
                     self.bind(sa)
                 except socket.error:
+                    msg = sys.exc_info()[1]
                     if self.socket:
                         self.socket.close()
                     self.socket = None

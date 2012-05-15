@@ -78,7 +78,7 @@ except ImportError:
     sendfile = None
 
 from pyftpdlib import ftpserver
-from pyftpdlib.lib.compat import u, b, getcwdu
+from pyftpdlib.lib.compat import PY3, u, b, getcwdu
 
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
@@ -995,7 +995,7 @@ class TestFtpDummyCmds(unittest.TestCase):
 
     def test_help(self):
         self.client.sendcmd('help')
-        cmd = random.choice(ftpserver.proto_cmds.keys())
+        cmd = random.choice(list(ftpserver.proto_cmds.keys()))
         self.client.sendcmd('help %s' % cmd)
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'help ?!?')
 
@@ -1270,27 +1270,27 @@ class TestFtpFsOperations(unittest.TestCase):
             self.assertRaises(ftplib.error_perm, self.client.sendcmd,
                               'site chmod foo ' + self.tempfile)
 
+            def getmode():
+                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
+                if PY3:
+                    mode = mode.replace('o', '')
+                return mode
+
             # on Windows it is possible to set read-only flag only
             if os.name == 'nt':
                 self.client.sendcmd('site chmod 777 ' + self.tempfile)
-                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
-                self.assertEqual(mode, '0666')
+                self.assertEqual(getmode(), '0666')
                 self.client.sendcmd('site chmod 444 ' + self.tempfile)
-                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
-                self.assertEqual(mode, '0444')
+                self.assertEqual(getmode(), '0444')
                 self.client.sendcmd('site chmod 666 ' + self.tempfile)
-                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
-                self.assertEqual(mode, '0666')
+                self.assertEqual(getmode(), '0666')
             else:
                 self.client.sendcmd('site chmod 777 ' + self.tempfile)
-                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
-                self.assertEqual(mode, '0777')
+                self.assertEqual(getmode(), '0777')
                 self.client.sendcmd('site chmod 755 ' + self.tempfile)
-                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
-                self.assertEqual(mode, '0755')
+                self.assertEqual(getmode(), '0755')
                 self.client.sendcmd('site chmod 555 ' + self.tempfile)
-                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
-                self.assertEqual(mode, '0555')
+                self.assertEqual(getmode(), '0555')
 
 
 class TestFtpStoreData(unittest.TestCase):
@@ -2924,8 +2924,8 @@ class TestCornerCases(unittest.TestCase):
         hbytes = host.split('.')
         pbytes = [repr(port // 256), repr(port % 256)]
         bytes = hbytes + pbytes
-        cmd = 'PORT ' + ','.join(bytes)
-        self.client.sock.sendall(cmd + '\r\n')
+        cmd = 'PORT ' + ','.join(bytes) + '\r\n'
+        self.client.sock.sendall(b(cmd))
         self.client.quit()
         sock.accept()
         sock.close()
