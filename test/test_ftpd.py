@@ -897,6 +897,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.client.sendcmd('pwd')
         self.dummyfile.seek(0)
         self.assertEqual(hash(data), hash (self.dummyfile.read()))
+        conn.close()
 
     def test_user(self):
         # Test USER while already authenticated and no transfer
@@ -941,6 +942,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.client.sendcmd('pwd')
         self.dummyfile.seek(0)
         self.assertEqual(hash(data), hash (self.dummyfile.read()))
+        conn.close()
 
 
 class TestFtpDummyCmds(unittest.TestCase):
@@ -1478,7 +1480,7 @@ class TestFtpStoreData(unittest.TestCase):
         after = os.listdir(HOME)
         if before != after:
             for file in after:
-                self.assert_(not file.startswith(TESTFN))
+                self.assertFalse(file.startswith(TESTFN))
 
     def test_appe(self):
         try:
@@ -1931,6 +1933,7 @@ class TestFtpAbort(unittest.TestCase):
         f = open(TESTFN, 'w+b')
         f.write(data)
         f.close()
+        conn = None
         try:
             self.client.voidcmd('TYPE I')
             conn = self.client.transfercmd('retr ' + TESTFN)
@@ -1955,6 +1958,8 @@ class TestFtpAbort(unittest.TestCase):
                 self.client.delete(TESTFN)
             except (ftplib.Error, EOFError, socket.error):
                 safe_remove(TESTFN)
+            if conn is not None:
+                conn.close()
 
     if hasattr(socket, 'MSG_OOB'):
         def test_oob_abor(self):
@@ -2030,6 +2035,7 @@ class TestTimeouts(unittest.TestCase):
         self.assertEqual(data, b("421 Data connection timed out.\r\n"))
         # ensure client has been kicked off
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
+        s.close()
 
     def test_data_timeout_not_reached(self):
         # Impose a timeout for the data channel, then keep sending data for a
@@ -2062,6 +2068,7 @@ class TestTimeouts(unittest.TestCase):
         self.assertEqual(data, b("421 Data connection timed out.\r\n"))
         # ensure client has been kicked off
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
+        s.close()
 
     def test_idle_data_timeout2(self):
         # Tests that the control connection timeout is restarted after
@@ -2077,6 +2084,7 @@ class TestTimeouts(unittest.TestCase):
         self.assertEqual(data, b("421 Control connection timed out.\r\n"))
         # ensure client has been kicked off
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
+        s.close()
 
     def test_pasv_timeout(self):
         # Test pasv data channel timeout.  The client which does not
@@ -2247,10 +2255,10 @@ class TestConfigurableOptions(unittest.TestCase):
         # Test FTPHandler.passive_ports attribute
         _range = list(range(40000, 60000, 200))
         self.server.handler.passive_ports = _range
-        self.assert_(self.client.makepasv()[1] in _range)
-        self.assert_(self.client.makepasv()[1] in _range)
-        self.assert_(self.client.makepasv()[1] in _range)
-        self.assert_(self.client.makepasv()[1] in _range)
+        self.assertTrue(self.client.makepasv()[1] in _range)
+        self.assertTrue(self.client.makepasv()[1] in _range)
+        self.assertTrue(self.client.makepasv()[1] in _range)
+        self.assertTrue(self.client.makepasv()[1] in _range)
 
     def test_passive_ports_busy(self):
         # If the ports in the configured range are busy it is expected
@@ -2260,7 +2268,8 @@ class TestConfigurableOptions(unittest.TestCase):
         port = s.getsockname()[1]
         self.server.handler.passive_ports = [port]
         resulting_port = self.client.makepasv()[1]
-        self.assert_(port != resulting_port)
+        self.assertTrue(port != resulting_port)
+        s.close()
 
     def test_permit_privileged_ports(self):
         # Test FTPHandler.permit_privileged_ports_active attribute
@@ -2280,6 +2289,8 @@ class TestConfigurableOptions(unittest.TestCase):
                     err = sys.exc_info()[1]
                     if err.args[0] == errno.EACCES:
                         # root privileges needed
+                        if sock is not None:
+                            sock.close()
                         sock = None
                         break
                     sock.close()
@@ -2301,7 +2312,8 @@ class TestConfigurableOptions(unittest.TestCase):
                 sock.listen(5)
                 sock.settimeout(2)
                 self.client.sendport(HOST, port)
-                sock.accept()
+                s, addr = sock.accept()
+                s.close()
         finally:
             if sock is not None:
                 sock.close()
@@ -2730,7 +2742,7 @@ class _TestNetworkProtocols(unittest.TestCase):
             self.assertEqual(self.cmdresp('eprt |1|1.2.3.256|2048|'), msg)
             # bad proto
             resp = self.cmdresp('eprt |2|1.2.3.256|2048|')
-            self.assert_("Network protocol not supported" in resp)
+            self.assertTrue("Network protocol not supported" in resp)
 
         # test connection
         sock = socket.socket(self.client.af)
@@ -2741,7 +2753,8 @@ class _TestNetworkProtocols(unittest.TestCase):
         self.client.sendcmd('eprt |%s|%s|%s|' % (self.proto, ip, port))
         try:
             try:
-                sock.accept()
+                s = sock.accept()
+                s[0].close()
             except socket.timeout:
                 self.fail("Server didn't connect to passive socket")
         finally:
@@ -2932,7 +2945,8 @@ class TestCornerCases(unittest.TestCase):
         cmd = 'PORT ' + ','.join(bytes) + '\r\n'
         self.client.sock.sendall(b(cmd))
         self.client.quit()
-        sock.accept()
+        s, addr = sock.accept()
+        s.close()
         sock.close()
 
     def test_stou_max_tries(self):
