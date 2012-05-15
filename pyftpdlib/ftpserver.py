@@ -1435,7 +1435,7 @@ class BufferedIteratorProducer(object):
                 buffer.append(next(self.iterator))
             except StopIteration:
                 break
-        return ''.join(buffer)
+        return b('').join(buffer)
 
 
 # --- filesystem
@@ -2821,7 +2821,7 @@ class FTPHandler(asynchat.async_chat):
         # ...where the client's IP address is h1.h2.h3.h4 and the TCP
         # port number is (p1 * 256) + p2.
         try:
-            addr = map(int, line.split(','))
+            addr = list(map(int, line.split(',')))
             if len(addr) != 6:
                 raise ValueError
             for x in addr[:4]:
@@ -2862,7 +2862,7 @@ class FTPHandler(asynchat.async_chat):
                 self.respond('522 Network protocol not supported (use 2).')
             else:
                 try:
-                    octs = map(int, ip.split('.'))
+                    octs = list(map(int, ip.split('.')))
                     if len(octs) != 4:
                         raise ValueError
                     for x in octs:
@@ -3997,7 +3997,8 @@ class FTPServer(asyncore.dispatcher):
         # This should minimize the possibility to incur in race
         # conditions or memory leaks caused by orphaned references
         # left behind in case of error.
-        values.sort(key=lambda inst: isinstance(inst, FTPHandler), reverse=True)
+        values = sorted(values, key=lambda inst: isinstance(inst, FTPHandler),
+                        reverse=True)
         for x in values:
             try:
                 x.close()
