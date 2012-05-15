@@ -1083,15 +1083,15 @@ class DTPHandler(asynchat.async_chat):
         where CRLF ('\r\n') gets delivered in two chunks.
         """
         if self._had_cr:
-            chunk = '\r' + chunk
+            chunk = b('\r') + chunk
 
-        if chunk.endswith('\r'):
+        if chunk.endswith(b('\r')):
             self._had_cr = True
             chunk = chunk[:-1]
         else:
             self._had_cr = False
 
-        return chunk.replace('\r\n', os.linesep)
+        return chunk.replace(b('\r\n'), b(os.linesep))
 
     def enable_receiving(self, type, cmd):
         """Enable receiving of data over the channel. Depending on the
@@ -1394,7 +1394,7 @@ class FileProducer(object):
             if os.linesep == '\r\n':
                 self._data_wrapper = lambda x: x
             else:
-                self._data_wrapper = lambda x: x.replace(os.linesep, '\r\n')
+                self._data_wrapper = lambda x: x.replace(b(os.linesep), b('\r\n'))
         elif type == 'i':
             self._data_wrapper = lambda x: x
         else:
@@ -3011,7 +3011,7 @@ class FTPHandler(asynchat.async_chat):
         try:
             iterator = self.run_as_current_user(self.fs.format_mlsx, basedir,
                        [basename], perms, self._current_facts, ignore_err=False)
-            data = ''.join(iterator)
+            data = b('').join(iterator)
         except (OSError, FilesystemError):
             err = sys.exc_info()[1]
             self.respond('550 %s.' % _strerror(err))

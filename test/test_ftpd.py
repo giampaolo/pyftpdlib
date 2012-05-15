@@ -78,7 +78,7 @@ except ImportError:
     sendfile = None
 
 from pyftpdlib import ftpserver
-from pyftpdlib.lib.compat import u, getcwdu
+from pyftpdlib.lib.compat import u, b, getcwdu
 
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
@@ -867,7 +867,7 @@ class TestFtpAuthentication(unittest.TestCase):
         # Test REIN while already authenticated and a transfer is
         # in progress.
         self.client.login(user=USER, passwd=PASSWD)
-        data = 'abcde12345' * 1000000
+        data = b('abcde12345') * 1000000
         self.file.write(data)
         self.file.close()
 
@@ -911,7 +911,7 @@ class TestFtpAuthentication(unittest.TestCase):
         # Test USER while already authenticated and a transfer is
         # in progress.
         self.client.login(user=USER, passwd=PASSWD)
-        data = 'abcde12345' * 1000000
+        data = b('abcde12345') * 1000000
         self.file.write(data)
         self.file.close()
 
@@ -1317,7 +1317,7 @@ class TestFtpStoreData(unittest.TestCase):
 
     def test_stor(self):
         try:
-            data = 'abcde12345' * 100000
+            data = b('abcde12345') * 100000
             self.dummy_sendfile.write(data)
             self.dummy_sendfile.seek(0)
             self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
@@ -1356,12 +1356,12 @@ class TestFtpStoreData(unittest.TestCase):
             return self.client.voidresp()
 
         try:
-            data = 'abcde12345\r\n' * 100000
+            data = b('abcde12345\r\n') * 100000
             self.dummy_sendfile.write(data)
             self.dummy_sendfile.seek(0)
             store('stor ' + TESTFN, self.dummy_sendfile)
             self.client.retrbinary('retr ' + TESTFN, self.dummy_recvfile.write)
-            expected = data.replace('\r\n', os.linesep)
+            expected = data.replace(b('\r\n'), b(os.linesep))
             self.dummy_recvfile.seek(0)
             self.assertEqual(hash(expected), hash(self.dummy_recvfile.read()))
         finally:
@@ -1397,12 +1397,12 @@ class TestFtpStoreData(unittest.TestCase):
             # set a small buffer so that CRLF gets delivered in two
             # separate chunks: "CRLF", " f", "oo", " CR", "LF", " b", "ar"
             ftpserver.DTPHandler.ac_in_buffer_size = 2
-            data = '\r\n foo \r\n bar'
+            data = b('\r\n foo \r\n bar')
             self.dummy_sendfile.write(data)
             self.dummy_sendfile.seek(0)
             store('stor ' + TESTFN, self.dummy_sendfile)
 
-            expected = data.replace('\r\n', os.linesep)
+            expected = data.replace(b('\r\n'), b(os.linesep))
             self.client.retrbinary('retr ' + TESTFN, self.dummy_recvfile.write)
             self.dummy_recvfile.seek(0)
             self.assertEqual(expected, self.dummy_recvfile.read())
@@ -1418,7 +1418,7 @@ class TestFtpStoreData(unittest.TestCase):
                     safe_remove(TESTFN)
 
     def test_stou(self):
-        data = 'abcde12345' * 100000
+        data = b('abcde12345') * 100000
         self.dummy_sendfile.write(data)
         self.dummy_sendfile.seek(0)
 
@@ -1478,12 +1478,12 @@ class TestFtpStoreData(unittest.TestCase):
 
     def test_appe(self):
         try:
-            data1 = 'abcde12345' * 100000
+            data1 = b('abcde12345') * 100000
             self.dummy_sendfile.write(data1)
             self.dummy_sendfile.seek(0)
             self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
 
-            data2 = 'fghil67890' * 100000
+            data2 = b('fghil67890') * 100000
             self.dummy_sendfile.write(data2)
             self.dummy_sendfile.seek(len(data1))
             self.client.storbinary('appe ' + TESTFN, self.dummy_sendfile)
@@ -1509,7 +1509,7 @@ class TestFtpStoreData(unittest.TestCase):
 
     def test_rest_on_stor(self):
         # Test STOR preceded by REST.
-        data = 'abcde12345' * 100000
+        data = b('abcde12345') * 100000
         self.dummy_sendfile.write(data)
         self.dummy_sendfile.seek(0)
 
@@ -1558,7 +1558,7 @@ class TestFtpStoreData(unittest.TestCase):
                           'stor ' + TESTFN, lambda x: x)
         # if the first STOR failed because of REST, the REST marker
         # is supposed to be resetted to 0
-        self.dummy_sendfile.write('x' * 4096)
+        self.dummy_sendfile.write(b('x') * 4096)
         self.dummy_sendfile.seek(0)
         self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
 
@@ -1567,9 +1567,9 @@ class TestFtpStoreData(unittest.TestCase):
         # progress, the connection must remain open for result response
         # and the server will then close it.
         conn = self.client.transfercmd('stor ' + TESTFN)
-        conn.sendall('abcde12345' * 50000)
+        conn.sendall(b('abcde12345') * 50000)
         self.client.sendcmd('quit')
-        conn.sendall('abcde12345' * 50000)
+        conn.sendall(b('abcde12345') * 50000)
         conn.close()
         # expect the response (transfer ok)
         self.assertEqual('226', self.client.voidresp()[:3])
@@ -1624,7 +1624,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         safe_remove(TESTFN)
 
     def test_retr(self):
-        data = 'abcde12345' * 100000
+        data = b('abcde12345') * 100000
         self.file.write(data)
         self.file.close()
         self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
@@ -1651,16 +1651,16 @@ class TestFtpRetrieveData(unittest.TestCase):
             conn.close()
             return self.client.voidresp()
 
-        data = ('abcde12345' + os.linesep) * 100000
+        data = (b('abcde12345') + b(os.linesep)) * 100000
         self.file.write(data)
         self.file.close()
         retrieve("retr " + TESTFN, self.dummyfile.write)
-        expected = data.replace(os.linesep, '\r\n')
+        expected = data.replace(b(os.linesep), b('\r\n'))
         self.dummyfile.seek(0)
         self.assertEqual(hash(expected), hash(self.dummyfile.read()))
 
     def test_restore_on_retr(self):
-        data = 'abcde12345' * 1000000
+        data = b('abcde12345') * 1000000
         self.file.write(data)
         self.file.close()
 
@@ -1696,7 +1696,7 @@ class TestFtpRetrieveData(unittest.TestCase):
     def test_retr_empty_file(self):
         self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
         self.dummyfile.seek(0)
-        self.assertEqual(self.dummyfile.read(), "")
+        self.assertEqual(self.dummyfile.read(), b(""))
 
 
 if SUPPORTS_SENDFILE:
@@ -1923,7 +1923,7 @@ class TestFtpAbort(unittest.TestCase):
         # Case 4: ABOR while a data transfer on DTP channel is in
         # progress: close data channel, respond with 426, respond
         # with 226.
-        data = 'abcde12345' * 1000000
+        data = b('abcde12345') * 1000000
         f = open(TESTFN, 'w+b')
         f.write(data)
         f.close()
@@ -1960,9 +1960,9 @@ class TestFtpAbort(unittest.TestCase):
             # due to a different SO_OOBINLINE behavior.
             # On some platforms (e.g. Python CE) the test may fail
             # although the MSG_OOB constant is defined.
-            self.client.sock.sendall(chr(244), socket.MSG_OOB)
-            self.client.sock.sendall(chr(255), socket.MSG_OOB)
-            self.client.sock.sendall('abor\r\n')
+            self.client.sock.sendall(b(chr(244)), socket.MSG_OOB)
+            self.client.sock.sendall(b(chr(255)), socket.MSG_OOB)
+            self.client.sock.sendall(b('abor\r\n'))
             self.client.sock.settimeout(1)
             self.assertEqual(self.client.getresp()[:3], '225')
 
@@ -2008,7 +2008,7 @@ class TestTimeouts(unittest.TestCase):
         # fail if no msg is received within 1 second
         self.client.sock.settimeout(1)
         data = self.client.sock.recv(1024)
-        self.assertEqual(data, "421 Control connection timed out.\r\n")
+        self.assertEqual(data, b("421 Control connection timed out.\r\n"))
         # ensure client has been kicked off
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
 
@@ -2023,7 +2023,7 @@ class TestTimeouts(unittest.TestCase):
         # fail if no msg is received within 1 second
         self.client.sock.settimeout(1)
         data = self.client.sock.recv(1024)
-        self.assertEqual(data, "421 Data connection timed out.\r\n")
+        self.assertEqual(data, b("421 Data connection timed out.\r\n"))
         # ensure client has been kicked off
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
 
@@ -2038,7 +2038,7 @@ class TestTimeouts(unittest.TestCase):
         try:
             stop_at = time.time() + 0.2
             while time.time() < stop_at:
-                sock.send('x' * 1024)
+                sock.send(b('x') * 1024)
             sock.close()
             self.client.voidresp()
         finally:
@@ -2055,7 +2055,7 @@ class TestTimeouts(unittest.TestCase):
         # fail if no msg is received within 1 second
         self.client.sock.settimeout(1)
         data = self.client.sock.recv(1024)
-        self.assertEqual(data, "421 Data connection timed out.\r\n")
+        self.assertEqual(data, b("421 Data connection timed out.\r\n"))
         # ensure client has been kicked off
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
 
@@ -2070,7 +2070,7 @@ class TestTimeouts(unittest.TestCase):
         self.client.sendcmd('abor')
         self.client.sock.settimeout(1)
         data = self.client.sock.recv(1024)
-        self.assertEqual(data, "421 Control connection timed out.\r\n")
+        self.assertEqual(data, b("421 Control connection timed out.\r\n"))
         # ensure client has been kicked off
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
 
@@ -2083,7 +2083,7 @@ class TestTimeouts(unittest.TestCase):
         # fail if no msg is received within 1 second
         self.client.sock.settimeout(1)
         data = self.client.sock.recv(1024)
-        self.assertEqual(data, "421 Passive data channel timed out.\r\n")
+        self.assertEqual(data, b("421 Passive data channel timed out.\r\n"))
         # client is not expected to be kicked off
         self.client.sendcmd('noop')
 
@@ -2409,7 +2409,7 @@ class TestCallbacks(unittest.TestCase):
                 raise Exception
 
         self._setUp(TestHandler)
-        data = 'abcde12345' * 100000
+        data = b('abcde12345') * 100000
         self.file.write(data)
         self.file.close()
         self.client.retrbinary("retr " + TESTFN, lambda x: x)
@@ -2435,7 +2435,7 @@ class TestCallbacks(unittest.TestCase):
                 raise Exception
 
         self._setUp(TestHandler)
-        data = 'abcde12345' * 100000
+        data = b('abcde12345') * 100000
         self.dummyfile.write(data)
         self.dummyfile.seek(0)
         self.client.storbinary('stor ' + TESTFN, self.dummyfile)
@@ -2461,7 +2461,7 @@ class TestCallbacks(unittest.TestCase):
                 raise Exception
 
         self._setUp(TestHandler)
-        data = 'abcde12345' * 100000
+        data = b('abcde12345') * 100000
         self.file.write(data)
         self.file.close()
 
@@ -2497,7 +2497,7 @@ class TestCallbacks(unittest.TestCase):
                 _file.append(file)
 
         self._setUp(TestHandler)
-        data = 'abcde12345' * 100000
+        data = b('abcde12345') * 100000
         self.dummyfile.write(data)
         self.dummyfile.seek(0)
 
@@ -2965,9 +2965,9 @@ class TestCornerCases(unittest.TestCase):
                 pass
             s.close()
 
-        for x in xrange(10):
+        for x in range(10):
             connect((self.server.host, self.server.port))
-        for x in xrange(10):
+        for x in range(10):
             addr = self.client.makepasv()
             connect(addr)
 
@@ -3020,6 +3020,7 @@ class TestUnicodePathNames(unittest.TestCase):
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class()
+        self.client.encoding = 'utf8'  # PY3 only
         self.client.connect(self.server.host, self.server.port)
         self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
@@ -3115,7 +3116,7 @@ class TestUnicodePathNames(unittest.TestCase):
     # --- file transfer
 
     def test_stor(self):
-        data = 'abcde12345' * 500
+        data = b('abcde12345') * 500
         os.remove(self.tempfile)
         dummy = BytesIO()
         dummy.write(data)
@@ -3127,7 +3128,7 @@ class TestUnicodePathNames(unittest.TestCase):
         self.assertEqual(dummy_recv.read(), data)
 
     def test_retr(self):
-        data = 'abcd1234' * 500
+        data = b('abcd1234') * 500
         f = open(self.tempfile, 'wb')
         f.write(data)
         f.close()
