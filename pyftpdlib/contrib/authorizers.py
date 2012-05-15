@@ -383,7 +383,8 @@ else:
             try:
                 try:
                     file = open('/etc/shells', 'r')
-                except IOError, err:
+                except IOError:
+                    err = sys.exc_info()[1]
                     if err.errno == errno.ENOENT:
                         return True
                     raise
@@ -466,7 +467,8 @@ else:
             try:
                 sid = win32security.ConvertSidToStringSid(
                         win32security.LookupAccountName(None, username)[0])
-            except pywintypes.error, err:
+            except pywintypes.error:
+                err = sys.exc_info()[1]
                 raise AuthorizerError(err)
             path = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList" + \
                    "\\" + sid
