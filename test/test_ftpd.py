@@ -3026,6 +3026,7 @@ class TestCornerCases(unittest.TestCase):
             pass
         else:
             self.assertNotEqual(str(resp)[:3], '200')
+        sock.close()
 
 
 class TestUnicodePathNames(unittest.TestCase):

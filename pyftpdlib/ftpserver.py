@@ -2438,6 +2438,11 @@ class FTPHandler(asynchat.async_chat):
                 self.data_channel.close()
                 del self.data_channel
 
+            if self._out_dtp_queue is not None:
+                self._out_dtp_queue[3].close()
+            if self._in_dtp_queue is not None:
+                self._in_dtp_queue[0].close()
+
             del self._out_dtp_queue
             del self._in_dtp_queue
 
@@ -3079,6 +3084,7 @@ class FTPHandler(asynchat.async_chat):
                 err = sys.exc_info()[1]
                 why = _strerror(err)
             if not ok:
+                fd.close()
                 self.respond('554 %s' % why)
                 return
         producer = FileProducer(fd, self._current_type)
@@ -3125,6 +3131,7 @@ class FTPHandler(asynchat.async_chat):
                 err = sys.exc_info()[1]
                 why = _strerror(err)
             if not ok:
+                fd.close()
                 self.respond('554 %s' %why)
                 return
 
