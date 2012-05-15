@@ -2549,6 +2549,7 @@ class TestCallbacks(unittest.TestCase):
             pass
         else:
             self.fail('still connected')
+        self.tearDown()
         self.assertTrue(flag)
 
     def test_on_login(self):
@@ -3137,11 +3138,6 @@ class TestUnicodePathNames(unittest.TestCase):
         dummy.seek(0)
         self.assertEqual(dummy.read(), data)
 
-    # XXX - provisional
-    def test_encode_decode(self):
-        self.client.sendcmd('type i')
-        self.client.sendcmd('size ' + self.tempfile.decode('utf8').encode('utf8'))
-
 
 class TestCommandLineParser(unittest.TestCase):
     """Test command line parser."""
@@ -3156,7 +3152,11 @@ class TestCommandLineParser(unittest.TestCase):
             def serve_forever(self, *args, **kwargs):
                 return
 
-        self.devnull = BytesIO()
+        if PY3:
+            import io
+            self.devnull = io.StringIO()
+        else:
+            self.devnull = BytesIO()
         sys.argv = self.SYSARGV[:]
         sys.stderr = self.STDERR
         self.original_ftpserver_class = ftpserver.FTPServer
