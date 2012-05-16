@@ -145,7 +145,7 @@ try:
 except ImportError:
     sendfile = None
 
-from pyftpdlib.lib.compat import (MAXSIZE, u, b, unicode, print_, getcwdu,
+from pyftpdlib.lib.compat import (PY3, MAXSIZE, u, b, unicode, print_, getcwdu,
                                   xrange, next, callable)
 
 
@@ -1788,6 +1788,8 @@ class AbstractedFS(object):
         -rw-rw-rw-   1 owner   group        380 Sep 02  3:40 module.py
         """
         assert isinstance(basedir, unicode), basedir
+        if listing:
+            assert isinstance(listing[0], unicode)
         if self.cmd_channel.use_gmt_times:
             timefunc = time.gmtime
         else:
@@ -1871,6 +1873,9 @@ class AbstractedFS(object):
         type=dir;size=0;perm=el;modify=20071127230206;unique=801e33; ebooks
         type=file;size=211;perm=r;modify=20071103093626;unique=801e32; module.py
         """
+        assert isinstance(basedir, unicode), basedir
+        if listing:
+            assert isinstance(listing[0], unicode)
         if self.cmd_channel.use_gmt_times:
             timefunc = time.gmtime
         else:
@@ -3320,6 +3325,15 @@ class FTPHandler(asynchat.async_chat):
             self.attempted_logins = 0
 
             home = self.authorizer.get_home_dir(self.username)
+            if not isinstance(home, unicode):
+                if PY3:
+                    raise ValueError('type(home) != text')
+                else:
+                    warnings.warn(
+                        '%s.get_home_dir returned a non-unicode string; now ' \
+                        'casting to unicode' % self.authorizer.__class__.__name__,
+                         RuntimeWarning)
+                    home = home.decode('utf8')
             self.fs = self.abstracted_fs(home, self)
             self.on_login(self.username)
         else:
