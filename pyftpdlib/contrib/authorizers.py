@@ -48,6 +48,7 @@ __all__ = []
 
 import os
 import errno
+import sys
 
 from pyftpdlib.ftpserver import DummyAuthorizer, AuthorizerError
 
@@ -479,7 +480,7 @@ else:
             path = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList" + \
                    "\\" + sid
             try:
-                key = winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, path)
+                key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path)
             except WindowsError:
                 raise AuthorizerError("No profile directory defined for user %s"
                                       % username)

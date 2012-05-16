@@ -19,7 +19,7 @@ if PY3:
     xrange = range
 else:
     def u(s):
-        return unicode(s, "unicode_escape")
+        return unicode(s)
 
     def b(s):
         return s

@@ -61,7 +61,7 @@ setup(
     author_email='g.rodola@gmail.com',
     url='http://code.google.com/p/pyftpdlib/',
     download_url=download_url,
-    packages=['pyftpdlib', 'pyftpdlib/contrib'],
+    packages=['pyftpdlib', 'pyftpdlib/contrib', 'pyftpdlib/lib'],
     keywords=['ftp', 'ftps', 'server', 'ftpd', 'daemon', 'python', 'ssl',
               'sendfile', 'asynchronous', 'nonblocking', 'eventdriven',
               'rfc959', 'rfc1123', 'rfc2228', 'rfc2428', 'rfc3659'],

@@ -159,7 +159,7 @@ def onexit():
     Also closes all sockets/instances left behind in asyncore
     socket map (if any).
     """
-    for name in os.listdir('.'):
+    for name in os.listdir(u('.')):
         if name.startswith(tempfile.template):
             if os.path.isdir(name):
                 shutil.rmtree(name)

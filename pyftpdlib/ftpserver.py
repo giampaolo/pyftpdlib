@@ -1746,8 +1746,8 @@ class AbstractedFS(object):
         except KeyError:
             return gid
 
-    if pwd is None: get_user_by_uid = lambda: "owner"
-    if grp is None: get_group_by_gid = lambda: "group"
+    if pwd is None: get_user_by_uid = lambda x, y: "owner"
+    if grp is None: get_group_by_gid = lambda x, y: "group"
 
     # --- Listing utilities
 
