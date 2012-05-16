@@ -60,7 +60,7 @@ from pyftpdlib import ftpserver
 from pyftpdlib.contrib import authorizers
 from pyftpdlib.contrib import handlers
 from pyftpdlib.contrib import filesystems
-from pyftpdlib.lib.compat import b, getcwdu
+from pyftpdlib.lib.compat import b, getcwdu, unicode
 from test_ftpd import *
 
 
@@ -341,6 +341,7 @@ class SharedAuthorizerTests(unittest.TestCase):
     def test_get_home_dir(self):
         auth = self.authorizer_class()
         home = auth.get_home_dir(self.get_current_user())
+        self.assertTrue(isinstance(home, unicode))
         nonexistent_user = self.get_nonexistent_user()
         self.assertTrue(os.path.isdir(home))
         if auth.has_user('nobody'):

@@ -51,6 +51,7 @@ import errno
 import sys
 
 from pyftpdlib.ftpserver import DummyAuthorizer, AuthorizerError
+from pyftpdlib.lib.compat import PY3, unicode, getcwdu
 
 
 def replace_anonymous(callable):
@@ -107,12 +108,14 @@ class _Base(object):
             raise ValueError("can't assign password to anonymous user")
         if not self.has_user(username):
             raise ValueError('no such user %s' % username)
+        if homedir is not None and not isinstance(homedir, unicode):
+            homedir = homedir.decode('utf8')
 
         if username in self._dummy_authorizer.user_table:
             # re-set parameters
             del self._dummy_authorizer.user_table[username]
         self._dummy_authorizer.add_user(username, password or "",
-                                                  homedir or os.getcwd(),
+                                                  homedir or getcwdu(),
                                                   perm or "",
                                                   msg_login or "",
                                                   msg_quit or "")
@@ -229,13 +232,19 @@ else:
         def get_home_dir(self, username):
             """Return user home directory."""
             try:
-                return pwd.getpwnam(username).pw_dir
+                home = pwd.getpwnam(username).pw_dir
             except KeyError:
                 raise AuthorizerError('no such user %s' % username)
+            else:
+                if not PY3:
+                    home = home.decode('utf8')
+                return home
 
         @staticmethod
         def _get_system_users():
             """Return all users defined on the UNIX system."""
+            # there should be no need to convert usernames to unicode
+            # as UNIX does not allow chars outside of ASCII set
             return [entry.pw_name for entry in pwd.getpwall()]
 
         def get_msg_login(self, username):
@@ -485,11 +494,16 @@ else:
                 raise AuthorizerError("No profile directory defined for user %s"
                                       % username)
             value = winreg.QueryValueEx(key, "ProfileImagePath")[0]
-            return win32api.ExpandEnvironmentStrings(value)
+            home = win32api.ExpandEnvironmentStrings(value)
+            if not PY3 and not instance(home, unicode):
+                home = home.decode('utf8')
+            return home
 
         @classmethod
         def _get_system_users(cls):
             """Return all users defined on the Windows system."""
+            # XXX - Does Windows allow usernames with chars outside of
+            # ASCII set? In that case we need to convert this to unicode.
             return [entry['name'] for entry in win32net.NetUserEnum(None, 0)[0]]
 
         def get_msg_login(self, username):
@@ -627,5 +641,9 @@ else:
         def get_home_dir(self, username):
             overridden_home = self._get_key(username, 'home')
             if overridden_home:
-                return overridden_home
-            return BaseWindowsAuthorizer.get_home_dir(self, username)
+                home = overridden_home
+            else:
+                home = BaseWindowsAuthorizer.get_home_dir(self, username)
+            if not PY3 and not instance(home, unicode):
+                home = home.decode('utf8')
+            return home
