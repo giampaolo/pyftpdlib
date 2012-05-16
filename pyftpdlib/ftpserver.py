@@ -1681,6 +1681,7 @@ class AbstractedFS(object):
             """Return a string representing the path to which a
             symbolic link points.
             """
+            assert isinstance(path, unicode), path
             return os.readlink(path)
 
     # --- Wrapper methods around os.path.* calls
@@ -3369,8 +3370,10 @@ class FTPHandler(asynchat.async_chat):
         # The 257 response is supposed to include the directory
         # name and in case it contains embedded double-quotes
         # they must be doubled (see RFC-959, chapter 7, appendix 2).
+        cwd = self.fs.cwd
+        assert isinstance(cwd, unicode), cwd
         self.respond('257 "%s" is the current directory.'
-                     % self.fs.cwd.replace('"', '""'))
+                     % cwd.replace('"', '""'))
 
     def ftp_CWD(self, path):
         """Change the current working directory."""
@@ -3389,7 +3392,9 @@ class FTPHandler(asynchat.async_chat):
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
-            self.respond('250 "%s" is the current directory.' % self.fs.cwd)
+            cwd = self.fs.cwd
+            assert isinstance(cwd, unicode), cwd
+            self.respond('250 "%s" is the current directory.' % cwd)
             if getcwdu() != init_cwd:
                 os.chdir(init_cwd)
 
