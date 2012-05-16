@@ -1024,6 +1024,11 @@ class TestFtpDummyCmds(unittest.TestCase):
         self.client.sendcmd('type a')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest 10')
 
+    def test_feat(self):
+        resp = self.client.sendcmd('feat')
+        self.assertTrue('UTF8' in resp)
+        self.assertTrue('TVFS' in resp)
+
     def test_opts_feat(self):
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'opts mlst bad_fact')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'opts mlst type ;')
