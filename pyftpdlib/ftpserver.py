@@ -1403,7 +1403,7 @@ class FileProducer(object):
     def more(self):
         """Attempt a chunk of data of size self.buffer_size."""
         if self.done:
-            return ''
+            return b('')
         try:
             data = self._data_wrapper(self.file.read(self.buffer_size))
         except OSError:
