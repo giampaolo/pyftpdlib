@@ -143,7 +143,6 @@ def safe_rmdir(dir):
 
 def touch(name):
     """Create a file and return its name."""
-    assert not os.path.isfile(name), name
     f = open(name, 'w')
     try:
         return f.name

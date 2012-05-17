@@ -3927,7 +3927,7 @@ class FTPServer(object, asyncore.dispatcher):
             try:
                 x.close()
             except OSError, x:
-                if x[0] == errno.EBADF:
+                if x.args[0] == errno.EBADF:
                     pass
                 elif not ignore_all:
                     raise
