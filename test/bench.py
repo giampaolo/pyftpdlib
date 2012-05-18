@@ -118,6 +118,10 @@ BUFFER_LEN = 8192
 SERVER_PROC = None
 
 
+def print_(s):
+    sys.stdout.write(s + '\n')
+    sys.stdout.flush()
+
 # http://goo.gl/6V8Rm
 def hilite(string, ok=True, bold=False):
     """Return an highlighted version of 'string'."""
@@ -144,7 +148,7 @@ def print_bench(what, value, unit=""):
                       unit)
     if server_memory:
         s += "%s RSS" % hilite(server_memory.pop())
-    print s.strip()
+    print_(s.strip())
 
 # http://goo.gl/zeJZl
 def bytes2human(n, format="%(value)i%(symbol)s"):
@@ -486,8 +490,8 @@ def main():
     # start benchmark
     if SERVER_PROC is not None:
         register_memory()
-        print "(starting with %s of RSS memory being used)" \
-               % hilite(server_memory.pop())
+        print_("(starting with %s of RSS memory being used)" \
+               % hilite(server_memory.pop()))
     if options.benchmark == 'transfer':
         bench_stor()
         bench_retr()
