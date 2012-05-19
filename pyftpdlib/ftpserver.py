@@ -485,6 +485,20 @@ def logerror(msg):
     sys.stderr.write(str(msg) + '\n')
     sys.stderr.flush()
 
+# Hack for Windows console which is not able to print all unicode strings.
+# http://bugs.python.org/issue1602
+# http://stackoverflow.com/questions/5419/
+if os.name in ('nt', 'ce'):
+    def _safeprint(s):
+        try:
+            print_(s)
+        except UnicodeEncodeError:
+            if PY3:
+                print_(s.encode('utf8').decode(sys.stdout.encoding))
+            else:
+                print_(s.encode('utf8'))
+    log = logline = _safeprint
+
 
 # --- authorizers
 
