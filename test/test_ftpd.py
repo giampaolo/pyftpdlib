@@ -3310,6 +3310,10 @@ def test_main(tests=None):
             if os.name == 'posix':
                 atexit.register(warnings.warn, "couldn't run sendfile() tests",
                                 RuntimeWarning)
+        # Unicode tests won't work on Windows-Python2.x as the default
+        # fs encoding is != utf8
+        if not PY3 and os.name in ('nt', 'ce'):
+            tests.remove(TestUnicodePathNames)
 
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))

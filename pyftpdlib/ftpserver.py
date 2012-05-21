@@ -2260,6 +2260,8 @@ class FTPHandler(asynchat.async_chat):
             self._in_buffer_len = 0
 
     def decode(self, bytes):
+        # 'replace' looks to be the default behavior adopted by
+        # proftpd when dealing with unencodable strings
         return bytes.decode('utf8', errors='replace')
 
     def found_terminator(self):
@@ -2276,8 +2278,8 @@ class FTPHandler(asynchat.async_chat):
             # By default we'll never get here as we use errors='replace'
             # but user might want to override this behavior.
             # RFC-2640 doesn't mention what to do in this case so
-            # we'll just return 550.
-            return self.respond("550 Can't decode command.")
+            # we'll just return 501 (bad arg).
+            return self.respond("501 Can't decode command.")
 
         self._in_buffer = []
         self._in_buffer_len = 0
