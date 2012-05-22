@@ -48,6 +48,9 @@ version = '1.0.0'
 download_url = "http://pyftpdlib.googlecode.com/files/" + name + "-" + \
                                                           version + ".tar.gz"
 
+if sys.version_info < (2, 4):
+    sys.exit('python version not supported (min 2.4)')
+
 setup(
     name=name,
     version=version,
@@ -64,7 +67,7 @@ setup(
     packages=['pyftpdlib', 'pyftpdlib/contrib', 'pyftpdlib/lib'],
     keywords=['ftp', 'ftps', 'server', 'ftpd', 'daemon', 'python', 'ssl',
               'sendfile', 'asynchronous', 'nonblocking', 'eventdriven',
-              'rfc959', 'rfc1123', 'rfc2228', 'rfc2428', 'rfc3659'],
+              'rfc959', 'rfc1123', 'rfc2228', 'rfc2428', 'rfc2640', 'rfc3659'],
     classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Environment :: Console',
@@ -82,6 +85,11 @@ setup(
           'Programming Language :: Python :: 2.5',
           'Programming Language :: Python :: 2.6',
           'Programming Language :: Python :: 2.7',
+          'Programming Language :: Python :: 2.7',
+          'Programming Language :: Python :: 3',
+          'Programming Language :: Python :: 3.0',
+          'Programming Language :: Python :: 3.1',
+          'Programming Language :: Python :: 3.2',
           ],
     )
 
