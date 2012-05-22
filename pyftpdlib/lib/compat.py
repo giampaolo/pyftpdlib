@@ -12,7 +12,6 @@ if PY3:
     def b(s):
         return s.encode("latin-1")
 
-    MAXSIZE = sys.maxsize
     print_ = getattr(builtins, "print")
     getcwdu = os.getcwd
     unicode = str
@@ -28,11 +27,24 @@ else:
         sys.stdout.write(s + '\n')
         sys.stdout.flush()
 
-    MAXSIZE = sys.maxsize
     getcwdu = os.getcwdu
     unicode = unicode
     xrange = xrange
 
+# introduced in 2.6
+if hasattr(sys, 'maxsize'):
+    MAXSIZE = sys.maxsize
+else:
+    class X(object):
+        def __len__(self):
+            return 1 << 31
+    try:
+        len(X())
+    except OverflowError:
+        MAXSIZE = int((1 << 31) - 1)  # 32-bit
+    else:
+        MAXSIZE = int((1 << 63) - 1)  # 64-bit
+    del X
 
 # removed in 3.0, reintroduced in 3.2
 try:

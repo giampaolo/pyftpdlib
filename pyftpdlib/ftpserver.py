@@ -2262,7 +2262,7 @@ class FTPHandler(asynchat.async_chat):
     def decode(self, bytes):
         # 'replace' looks to be the default behavior adopted by
         # proftpd when dealing with unencodable strings
-        return bytes.decode('utf8', errors='replace')
+        return bytes.decode('utf8', 'replace')
 
     def found_terminator(self):
         r"""Called when the incoming data stream matches the \r\n
