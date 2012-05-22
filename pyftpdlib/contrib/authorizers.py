@@ -495,7 +495,7 @@ else:
                                       % username)
             value = winreg.QueryValueEx(key, "ProfileImagePath")[0]
             home = win32api.ExpandEnvironmentStrings(value)
-            if not PY3 and not instance(home, unicode):
+            if not PY3 and not isinstance(home, unicode):
                 home = home.decode('utf8')
             return home
 
@@ -644,6 +644,6 @@ else:
                 home = overridden_home
             else:
                 home = BaseWindowsAuthorizer.get_home_dir(self, username)
-            if not PY3 and not instance(home, unicode):
+            if not PY3 and not isinstance(home, unicode):
                 home = home.decode('utf8')
             return home
