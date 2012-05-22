@@ -50,8 +50,10 @@ import asyncore
 import socket
 import warnings
 import errno
+import sys
 
 from pyftpdlib.ftpserver import FTPHandler, DTPHandler, proto_cmds, _DISCONNECTED
+from pyftpdlib.lib.compat import PY3, b
 
 __all__ = []
 
@@ -74,8 +76,15 @@ else:
                      help='Syntax: PROT <SP> [C|P] (set up un/secure data channel).'),
         })
 
+    if PY3:
+        class _SSLBase(asyncore.dispatcher):
+            pass
+    else:
+        class _SSLBase(object, asyncore.dispatcher):
+            def __init__(self, *args, **kwargs):
+                super(object, self).__init__(*args, **kwargs)  # bypass object
 
-    class SSLConnection(object, asyncore.dispatcher):
+    class SSLConnection(_SSLBase):
         """An asyncore.dispatcher subclass supporting TLS/SSL."""
 
         _ssl_accepting = False
@@ -94,6 +103,12 @@ else:
                 self.socket = SSL.Connection(ssl_context, self.socket)
             except socket.error:
                 self.close()
+            except ValueError:
+                # may happen in case the client connects/disconnects
+                # very quickly
+                if self.socket.fileno() == -1:
+                    return
+                raise
             else:
                 self.socket.set_accept_state()
                 self._ssl_accepting = True
@@ -104,7 +119,9 @@ else:
                 self.socket.do_handshake()
             except (SSL.WantReadError, SSL.WantWriteError):
                 return
-            except SSL.SysCallError, (retval, desc):
+            except SSL.SysCallError:
+                err = sys.exc_info()[1]
+                retval, desc = err.args
                 if (retval == -1 and desc == 'Unexpected EOF') or retval > 0:
                     return self.handle_close()
                 raise
@@ -163,7 +180,9 @@ else:
             except SSL.ZeroReturnError:
                 super(SSLConnection, self).handle_close()
                 return 0
-            except SSL.SysCallError, (errnum, errstr):
+            except SSL.SysCallError:
+                err = sys.exc_info()[1]
+                errnum, errstr = err.args
                 if errnum == errno.EWOULDBLOCK:
                     return 0
                 elif errnum in _DISCONNECTED or errstr == 'Unexpected EOF':
@@ -176,14 +195,16 @@ else:
             try:
                 return super(SSLConnection, self).recv(buffer_size)
             except (SSL.WantReadError, SSL.WantWriteError):
-                return ''
+                return b('')
             except SSL.ZeroReturnError:
                 super(SSLConnection, self).handle_close()
-                return ''
-            except SSL.SysCallError, (errnum, errstr):
+                return b('')
+            except SSL.SysCallError:
+                err = sys.exc_info()[1]
+                errnum, errstr = err.args
                 if errnum in _DISCONNECTED or errstr == 'Unexpected EOF':
                     super(SSLConnection, self).handle_close()
-                    return ''
+                    return b('')
                 else:
                     raise
 
@@ -197,8 +218,9 @@ else:
             # write call is done first, to try to detect if the
             # connection has gone away
             try:
-                os.write(self.socket.fileno(), '')
-            except (OSError, socket.error), err:
+                os.write(self.socket.fileno(), b(''))
+            except (OSError, socket.error):
+                err = sys.exc_info()[1]
                 if err.args[0] in (errno.EINTR, errno.EWOULDBLOCK, errno.ENOBUFS):
                     return
                 elif err.args[0] in _DISCONNECTED:
@@ -232,20 +254,24 @@ else:
                 pass
             except SSL.ZeroReturnError:
                 super(SSLConnection, self).close()
-            except SSL.SysCallError, (errnum, errstr):
+            except SSL.SysCallError:
+                err = sys.exc_info()[1]
+                errnum, errstr = err.args
                 if errnum in _DISCONNECTED or errstr == 'Unexpected EOF':
                     super(SSLConnection, self).close()
                 else:
                     raise
-            except SSL.Error, err:
+            except SSL.Error:
                 # see:
                 # http://code.google.com/p/pyftpdlib/issues/detail?id=171
                 # https://bugs.launchpad.net/pyopenssl/+bug/785985
+                err = sys.exc_info()[1]
                 if err.args and not err.args[0]:
                     pass
                 else:
                     raise
-            except socket.error, err:
+            except socket.error:
+                err = sys.exc_info()[1]
                 if err.args[0] in _DISCONNECTED:
                     super(SSLConnection, self).close()
                 else:

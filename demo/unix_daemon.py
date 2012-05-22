@@ -83,11 +83,16 @@ WORKDIR = os.getcwd()
 UMASK = 0
 
 
+def print_(s):
+    sys.stdout.write(s + '\n')
+    sys.stdout.flush()
+
 def pid_exists(pid):
     """Return True if a process with the given PID is currently running."""
     try:
         os.kill(pid, 0)
-    except OSError, e:
+    except OSError:
+        e = sys.exc_info()[1]
         return e.errno == errno.EPERM
     else:
         return True
@@ -97,7 +102,8 @@ def get_pid():
     try:
         with open(PID_FILE) as f:
             return int(f.read().strip())
-    except IOError, err:
+    except IOError:
+        e = sys.exc_info()[1]
         if err.errno != errno.ENOENT:
             raise
 
@@ -107,8 +113,7 @@ def stop():
     """
     pid = get_pid()
     if not pid or not pid_exists(pid):
-        print "daemon not running"
-        return
+        sys.exit("daemon not running")
     sig = signal.SIGTERM
     i = 0
     while True:
@@ -116,9 +121,10 @@ def stop():
         sys.stdout.flush()
         try:
             os.kill(pid, sig)
-        except OSError, e:
+        except OSError:
+            e = sys.exc_info()[1]
             if e.errno == errno.ESRCH:
-                print "\nstopped (pid %s)" % pid
+                print_("\nstopped (pid %s)" % pid)
                 return
             else:
                 raise
@@ -133,9 +139,9 @@ def status():
     """Print daemon status and exit."""
     pid = get_pid()
     if not pid or not pid_exists(pid):
-        print "daemon not running"
+        print_("daemon not running")
     else:
-        print "daemon running with pid %s" % pid
+        print_("daemon running with pid %s" % pid)
     sys.exit(0)
 
 def get_server():

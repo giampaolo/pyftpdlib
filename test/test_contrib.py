@@ -60,6 +60,7 @@ from pyftpdlib import ftpserver
 from pyftpdlib.contrib import authorizers
 from pyftpdlib.contrib import handlers
 from pyftpdlib.contrib import filesystems
+from pyftpdlib.lib.compat import b, getcwdu, unicode
 from test_ftpd import *
 
 
@@ -155,7 +156,8 @@ class TestFTPS(unittest.TestCase):
     def assertRaisesWithMsg(self, excClass, msg, callableObj, *args, **kwargs):
         try:
             callableObj(*args, **kwargs)
-        except excClass, why:
+        except excClass:
+            why = sys.exc_info()[1]
             if str(why) == msg:
                 return
             raise self.failureException("%s != %s" % (str(why), msg))
@@ -164,7 +166,7 @@ class TestFTPS(unittest.TestCase):
                 excName = excClass.__name__
             else:
                 excName = str(excClass)
-            raise self.failureException, "%s not raised" % excName
+            raise self.failureException("%s not raised" % excName)
 
     def test_auth(self):
         # unsecured
@@ -222,17 +224,18 @@ class TestFTPS(unittest.TestCase):
         self.client.login()
         try:
             sock = self.client.sock.unwrap()
-        except socket.error, err:
+        except socket.error:
+            err = sys.exc_info()[1]
             if err.errno == 0:
                 return
             raise
-        sock.sendall('noop')
+        sock.sendall(b('noop'))
         try:
             chunk = sock.recv(1024)
         except socket.error:
             pass
         else:
-            self.assertEqual(chunk, "")
+            self.assertEqual(chunk, b(""))
 
     def test_tls_control_required(self):
         self.server.handler.tls_control_required = True
@@ -323,20 +326,22 @@ class SharedAuthorizerTests(unittest.TestCase):
     def assertRaisesWithMsg(self, excClass, msg, callableObj, *args, **kwargs):
         try:
             callableObj(*args, **kwargs)
-        except excClass, why:
+        except excClass:
+            why = sys.exc_info()[1]
             if str(why) == msg:
                 return
             raise self.failureException("%s != %s" % (str(why), msg))
         else:
             if hasattr(excClass,'__name__'): excName = excClass.__name__
             else: excName = str(excClass)
-            raise self.failureException, "%s not raised" % excName
+            raise self.failureException("%s not raised" % excName)
 
     # --- /utils
 
     def test_get_home_dir(self):
         auth = self.authorizer_class()
         home = auth.get_home_dir(self.get_current_user())
+        self.assertTrue(isinstance(home, unicode))
         nonexistent_user = self.get_nonexistent_user()
         self.assertTrue(os.path.isdir(home))
         if auth.has_user('nobody'):
@@ -433,7 +438,7 @@ class SharedAuthorizerTests(unittest.TestCase):
     def test_override_user_homedir(self):
         auth = self.authorizer_class()
         user = self.get_current_user()
-        dir = os.path.dirname(os.getcwd())
+        dir = os.path.dirname(getcwdu())
         auth.override_user(user, homedir=dir)
         self.assertEqual(auth.get_home_dir(user), dir)
         # make sure other settings keep using default values
@@ -603,12 +608,12 @@ if os.name == 'posix':
     class TestUnixFilesystem(unittest.TestCase):
 
         def test_case(self):
-            root = os.getcwd()
+            root = getcwdu()
             fs = filesystems.UnixFilesystem(root, None)
             self.assertEqual(fs.root, root)
             self.assertEqual(fs.cwd, root)
             cdup = os.path.dirname(root)
-            self.assertEqual(fs.ftp2fs('..'), cdup)
+            self.assertEqual(fs.ftp2fs(u('..')), cdup)
             self.assertEqual(fs.fs2ftp(root), root)
 
 

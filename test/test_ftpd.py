@@ -65,9 +65,9 @@ import asyncore
 import atexit
 import stat
 try:
-    import cStringIO as StringIO
+    from StringIO import StringIO as BytesIO
 except ImportError:
-    import StringIO
+    from io import BytesIO
 try:
     import ssl
 except ImportError:
@@ -78,6 +78,7 @@ except ImportError:
     sendfile = None
 
 from pyftpdlib import ftpserver
+from pyftpdlib.lib.compat import PY3, u, b, getcwdu
 
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
@@ -87,7 +88,7 @@ except socket.error:
     HOST = 'localhost'
 USER = 'user'
 PASSWD = '12345'
-HOME = os.getcwd()
+HOME = getcwdu()
 TESTFN = 'tmp-pyftpdlib'
 
 def try_address(host, port=0, family=socket.AF_INET):
@@ -129,7 +130,8 @@ def safe_remove(*files):
     for file in files:
         try:
             os.remove(file)
-        except OSError, err:
+        except OSError:
+            err = sys.exc_info()[1]
             if err.errno != errno.ENOENT:
                 raise
 
@@ -137,7 +139,8 @@ def safe_rmdir(dir):
     "Convenience function for removing temporary test directories"
     try:
         os.rmdir(dir)
-    except OSError, err:
+    except OSError:
+        err = sys.exc_info()[1]
         if err.errno != errno.ENOENT:
             raise
 
@@ -155,7 +158,7 @@ def onexit():
     Also closes all sockets/instances left behind in asyncore
     socket map (if any).
     """
-    for name in os.listdir('.'):
+    for name in os.listdir(u('.')):
         if name.startswith(tempfile.template):
             if os.path.isdir(name):
                 shutil.rmtree(name)
@@ -273,131 +276,179 @@ class TestAbstractedFS(unittest.TestCase):
     def test_ftpnorm(self):
         # Tests for ftpnorm method.
         ae = self.assertEquals
-        fs = ftpserver.AbstractedFS('/', None)
+        fs = ftpserver.AbstractedFS(u('/'), None)
 
-        fs._cwd = '/'
-        ae(fs.ftpnorm(''), '/')
-        ae(fs.ftpnorm('/'), '/')
-        ae(fs.ftpnorm('.'), '/')
-        ae(fs.ftpnorm('..'), '/')
-        ae(fs.ftpnorm('a'), '/a')
-        ae(fs.ftpnorm('/a'), '/a')
-        ae(fs.ftpnorm('/a/'), '/a')
-        ae(fs.ftpnorm('a/..'), '/')
-        ae(fs.ftpnorm('a/b'), '/a/b')
-        ae(fs.ftpnorm('a/b/..'), '/a')
-        ae(fs.ftpnorm('a/b/../..'), '/')
-        fs._cwd = '/sub'
-        ae(fs.ftpnorm(''), '/sub')
-        ae(fs.ftpnorm('/'), '/')
-        ae(fs.ftpnorm('.'), '/sub')
-        ae(fs.ftpnorm('..'), '/')
-        ae(fs.ftpnorm('a'), '/sub/a')
-        ae(fs.ftpnorm('a/'), '/sub/a')
-        ae(fs.ftpnorm('a/..'), '/sub')
-        ae(fs.ftpnorm('a/b'), '/sub/a/b')
-        ae(fs.ftpnorm('a/b/'), '/sub/a/b')
-        ae(fs.ftpnorm('a/b/..'), '/sub/a')
-        ae(fs.ftpnorm('a/b/../..'), '/sub')
-        ae(fs.ftpnorm('a/b/../../..'), '/')
-        ae(fs.ftpnorm('//'), '/')  # UNC paths must be collapsed
+        fs._cwd = u('/')
+        ae(fs.ftpnorm(u('')), u('/'))
+        ae(fs.ftpnorm(u('/')), u('/'))
+        ae(fs.ftpnorm(u('.')), u('/'))
+        ae(fs.ftpnorm(u('..')), u('/'))
+        ae(fs.ftpnorm(u('a')), u('/a'))
+        ae(fs.ftpnorm(u('/a')), u('/a'))
+        ae(fs.ftpnorm(u('/a/')), u('/a'))
+        ae(fs.ftpnorm(u('a/..')), u('/'))
+        ae(fs.ftpnorm(u('a/b')), '/a/b')
+        ae(fs.ftpnorm(u('a/b/..')), u('/a'))
+        ae(fs.ftpnorm(u('a/b/../..')), u('/'))
+        fs._cwd = u('/sub')
+        ae(fs.ftpnorm(u('')), u('/sub'))
+        ae(fs.ftpnorm(u('/')), u('/'))
+        ae(fs.ftpnorm(u('.')), u('/sub'))
+        ae(fs.ftpnorm(u('..')), u('/'))
+        ae(fs.ftpnorm(u('a')), u('/sub/a'))
+        ae(fs.ftpnorm(u('a/')), u('/sub/a'))
+        ae(fs.ftpnorm(u('a/..')), u('/sub'))
+        ae(fs.ftpnorm(u('a/b')), u('/sub/a/b'))
+        ae(fs.ftpnorm(u('a/b/')), u('/sub/a/b'))
+        ae(fs.ftpnorm(u('a/b/..')), u('/sub/a'))
+        ae(fs.ftpnorm(u('a/b/../..')), u('/sub'))
+        ae(fs.ftpnorm(u('a/b/../../..')), u('/'))
+        ae(fs.ftpnorm(u('//')), u('/'))  # UNC paths must be collapsed
 
     def test_ftp2fs(self):
         # Tests for ftp2fs method.
         ae = self.assertEquals
-        fs = ftpserver.AbstractedFS('/', None)
+        fs = ftpserver.AbstractedFS(u('/'), None)
         join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
 
         def goforit(root):
             fs._root = root
-            fs._cwd = '/'
-            ae(fs.ftp2fs(''), root)
-            ae(fs.ftp2fs('/'), root)
-            ae(fs.ftp2fs('.'), root)
-            ae(fs.ftp2fs('..'), root)
-            ae(fs.ftp2fs('a'), join(root, 'a'))
-            ae(fs.ftp2fs('/a'), join(root, 'a'))
-            ae(fs.ftp2fs('/a/'), join(root, 'a'))
-            ae(fs.ftp2fs('a/..'), root)
-            ae(fs.ftp2fs('a/b'), join(root, r'a/b'))
-            ae(fs.ftp2fs('/a/b'), join(root, r'a/b'))
-            ae(fs.ftp2fs('/a/b/..'), join(root, 'a'))
-            ae(fs.ftp2fs('/a/b/../..'), root)
-            fs._cwd = '/sub'
-            ae(fs.ftp2fs(''), join(root, 'sub'))
-            ae(fs.ftp2fs('/'), root)
-            ae(fs.ftp2fs('.'), join(root, 'sub'))
-            ae(fs.ftp2fs('..'), root)
-            ae(fs.ftp2fs('a'), join(root, 'sub/a'))
-            ae(fs.ftp2fs('a/'), join(root, 'sub/a'))
-            ae(fs.ftp2fs('a/..'), join(root, 'sub'))
-            ae(fs.ftp2fs('a/b'), join(root, 'sub/a/b'))
-            ae(fs.ftp2fs('a/b/..'), join(root, 'sub/a'))
-            ae(fs.ftp2fs('a/b/../..'), join(root, 'sub'))
-            ae(fs.ftp2fs('a/b/../../..'), root)
-            ae(fs.ftp2fs('//a'), join(root, 'a'))  # UNC paths must be collapsed
+            fs._cwd = u('/')
+            ae(fs.ftp2fs(u('')), root)
+            ae(fs.ftp2fs(u('/')), root)
+            ae(fs.ftp2fs(u('.')), root)
+            ae(fs.ftp2fs(u('..')), root)
+            ae(fs.ftp2fs(u('a')), join(root, u('a')))
+            ae(fs.ftp2fs(u('/a')), join(root, u('a')))
+            ae(fs.ftp2fs(u('/a/')), join(root, u('a')))
+            ae(fs.ftp2fs(u('a/..')), root)
+            ae(fs.ftp2fs(u('a/b')), join(root, u(r'a/b')))
+            ae(fs.ftp2fs(u('/a/b')), join(root, u(r'a/b')))
+            ae(fs.ftp2fs(u('/a/b/..')), join(root, u('a')))
+            ae(fs.ftp2fs(u('/a/b/../..')), root)
+            fs._cwd = u('/sub')
+            ae(fs.ftp2fs(u('')), join(root, u('sub')))
+            ae(fs.ftp2fs(u('/')), root)
+            ae(fs.ftp2fs(u('.')), join(root, u('sub')))
+            ae(fs.ftp2fs(u('..')), root)
+            ae(fs.ftp2fs(u('a')), join(root, u('sub/a')))
+            ae(fs.ftp2fs(u('a/')), join(root, u('sub/a')))
+            ae(fs.ftp2fs(u('a/..')), join(root, u('sub')))
+            ae(fs.ftp2fs(u('a/b')), join(root, 'sub/a/b'))
+            ae(fs.ftp2fs(u('a/b/..')), join(root, u('sub/a')))
+            ae(fs.ftp2fs(u('a/b/../..')), join(root, u('sub')))
+            ae(fs.ftp2fs(u('a/b/../../..')), root)
+            ae(fs.ftp2fs(u('//a')), join(root, u('a')))  # UNC paths must be collapsed
 
         if os.sep == '\\':
-            goforit(r'C:\dir')
-            goforit('C:\\')
+            goforit(u(r'C:\dir'))
+            goforit(u('C:\\'))
             # on DOS-derived filesystems (e.g. Windows) this is the same
             # as specifying the current drive directory (e.g. 'C:\\')
-            goforit('\\')
+            goforit(u('\\'))
         elif os.sep == '/':
-            goforit('/home/user')
-            goforit('/')
+            goforit(u('/home/user'))
+            goforit(u('/'))
         else:
             # os.sep == ':'? Don't know... let's try it anyway
-            goforit(os.getcwd())
+            goforit(getcwdu())
+
+    def test_ftp2fs(self):
+        # Tests for ftp2fs method.
+        ae = self.assertEquals
+        fs = ftpserver.AbstractedFS(u('/'), None)
+        join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
+
+        def goforit(root):
+            fs._root = root
+            fs._cwd = u('/')
+            ae(fs.ftp2fs(u('')), root)
+            ae(fs.ftp2fs(u('/')), root)
+            ae(fs.ftp2fs(u('.')), root)
+            ae(fs.ftp2fs(u('..')), root)
+            ae(fs.ftp2fs(u('a')), join(root, u('a')))
+            ae(fs.ftp2fs(u('/a')), join(root, u('a')))
+            ae(fs.ftp2fs(u('/a/')), join(root, u('a')))
+            ae(fs.ftp2fs(u('a/..')), root)
+            ae(fs.ftp2fs(u('a/b')), join(root, r'a/b'))
+            ae(fs.ftp2fs(u('/a/b')), join(root, r'a/b'))
+            ae(fs.ftp2fs(u('/a/b/..')), join(root, u('a')))
+            ae(fs.ftp2fs(u('/a/b/../..')), root)
+            fs._cwd = u('/sub')
+            ae(fs.ftp2fs(u('')), join(root, u('sub')))
+            ae(fs.ftp2fs(u('/')), root)
+            ae(fs.ftp2fs(u('.')), join(root, u('sub')))
+            ae(fs.ftp2fs(u('..')), root)
+            ae(fs.ftp2fs(u('a')), join(root, u('sub/a')))
+            ae(fs.ftp2fs(u('a/')), join(root, u('sub/a')))
+            ae(fs.ftp2fs(u('a/..')), join(root, u('sub')))
+            ae(fs.ftp2fs(u('a/b')), join(root, 'sub/a/b'))
+            ae(fs.ftp2fs(u('a/b/..')), join(root, u('sub/a')))
+            ae(fs.ftp2fs(u('a/b/../..')), join(root, u('sub')))
+            ae(fs.ftp2fs(u('a/b/../../..')), root)
+            ae(fs.ftp2fs(u('//a')), join(root, u('a')))  # UNC paths must be collapsed
+
+        if os.sep == '\\':
+            goforit(u(r'C:\dir'))
+            goforit(u('C:\\'))
+            # on DOS-derived filesystems (e.g. Windows) this is the same
+            # as specifying the current drive directory (e.g. 'C:\\')
+            goforit(u('\\'))
+        elif os.sep == '/':
+            goforit(u('/home/user'))
+            goforit(u('/'))
+        else:
+            # os.sep == ':'? Don't know... let's try it anyway
+            goforit(getcwdu())
 
     def test_fs2ftp(self):
         # Tests for fs2ftp method.
         ae = self.assertEquals
-        fs = ftpserver.AbstractedFS('/', None)
+        fs = ftpserver.AbstractedFS(u('/'), None)
         join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
 
         def goforit(root):
             fs._root = root
-            ae(fs.fs2ftp(root), '/')
-            ae(fs.fs2ftp(join(root, '/')), '/')
-            ae(fs.fs2ftp(join(root, '.')), '/')
-            ae(fs.fs2ftp(join(root, '..')), '/')  # can't escape from root
-            ae(fs.fs2ftp(join(root, 'a')), '/a')
-            ae(fs.fs2ftp(join(root, 'a/')), '/a')
-            ae(fs.fs2ftp(join(root, 'a/..')), '/')
-            ae(fs.fs2ftp(join(root, 'a/b')), '/a/b')
-            ae(fs.fs2ftp(join(root, 'a/b')), '/a/b')
-            ae(fs.fs2ftp(join(root, 'a/b/..')), '/a')
-            ae(fs.fs2ftp(join(root, '/a/b/../..')), '/')
-            fs._cwd = '/sub'
-            ae(fs.fs2ftp(join(root, 'a/')), '/a')
+            ae(fs.fs2ftp(root), u('/'))
+            ae(fs.fs2ftp(join(root, u('/'))), u('/'))
+            ae(fs.fs2ftp(join(root, u('.'))), u('/'))
+            ae(fs.fs2ftp(join(root, u('..'))), u('/'))  # can't escape from root
+            ae(fs.fs2ftp(join(root, u('a'))), u('/a'))
+            ae(fs.fs2ftp(join(root, u('a/'))), u('/a'))
+            ae(fs.fs2ftp(join(root, u('a/..'))), u('/'))
+            ae(fs.fs2ftp(join(root, u('a/b'))), u('/a/b'))
+            ae(fs.fs2ftp(join(root, u('a/b'))), u('/a/b'))
+            ae(fs.fs2ftp(join(root, u('a/b/..'))), u('/a'))
+            ae(fs.fs2ftp(join(root, u('/a/b/../..'))), u('/'))
+            fs._cwd = u('/sub')
+            ae(fs.fs2ftp(join(root, 'a/')), u('/a'))
 
         if os.sep == '\\':
-            goforit(r'C:\dir')
-            goforit('C:\\')
+            goforit(u(r'C:\dir'))
+            goforit(u('C:\\'))
             # on DOS-derived filesystems (e.g. Windows) this is the same
             # as specifying the current drive directory (e.g. 'C:\\')
-            goforit('\\')
-            fs._root = r'C:\dir'
-            ae(fs.fs2ftp('C:\\'), '/')
-            ae(fs.fs2ftp('D:\\'), '/')
-            ae(fs.fs2ftp('D:\\dir'), '/')
+            goforit(u('\\'))
+            fs._root = u(r'C:\dir')
+            ae(fs.fs2ftp(u('C:\\')), u('/'))
+            ae(fs.fs2ftp(u('D:\\')), u('/'))
+            ae(fs.fs2ftp(u('D:\\dir')), u('/'))
         elif os.sep == '/':
-            goforit('/')
+            goforit(u('/'))
             if os.path.realpath('/__home/user') != '/__home/user':
                 self.fail('Test skipped (symlinks not allowed).')
-            goforit('/__home/user')
-            fs._root = '/__home/user'
-            ae(fs.fs2ftp('/__home'), '/')
-            ae(fs.fs2ftp('/'), '/')
-            ae(fs.fs2ftp('/__home/userx'), '/')
+            goforit(u('/__home/user'))
+            fs._root = u('/__home/user')
+            ae(fs.fs2ftp(u('/__home')), u('/'))
+            ae(fs.fs2ftp(u('/')), u('/'))
+            ae(fs.fs2ftp(u('/__home/userx')), u('/'))
         else:
             # os.sep == ':'? Don't know... let's try it anyway
-            goforit(os.getcwd())
+            goforit(getcwdu())
 
     def test_validpath(self):
         # Tests for validpath method.
-        fs = ftpserver.AbstractedFS('/', None)
+        fs = ftpserver.AbstractedFS(u('/'), None)
         fs._root = HOME
         self.assertTrue(fs.validpath(HOME))
         self.assertTrue(fs.validpath(HOME + '/'))
@@ -408,20 +459,20 @@ class TestAbstractedFS(unittest.TestCase):
         def test_validpath_validlink(self):
             # Test validpath by issuing a symlink pointing to a path
             # inside the root directory.
-            fs = ftpserver.AbstractedFS('/', None)
+            fs = ftpserver.AbstractedFS(u('/'), None)
             fs._root = HOME
             TESTFN2 = TESTFN + '1'
             try:
                 touch(TESTFN)
                 os.symlink(TESTFN, TESTFN2)
-                self.assertTrue(fs.validpath(TESTFN))
+                self.assertTrue(fs.validpath(u(TESTFN)))
             finally:
                 safe_remove(TESTFN, TESTFN2)
 
         def test_validpath_external_symlink(self):
             # Test validpath by issuing a symlink pointing to a path
             # outside the root directory.
-            fs = ftpserver.AbstractedFS('/', None)
+            fs = ftpserver.AbstractedFS(u('/'), None)
             fs._root = HOME
             # tempfile should create our file in /tmp directory
             # which should be outside the user root.  If it is
@@ -431,7 +482,7 @@ class TestAbstractedFS(unittest.TestCase):
                 if HOME == os.path.dirname(file.name):
                     return
                 os.symlink(file.name, TESTFN)
-                self.assertFalse(fs.validpath(TESTFN))
+                self.assertFalse(fs.validpath(u(TESTFN)))
             finally:
                 safe_remove(TESTFN)
                 file.close()
@@ -458,13 +509,14 @@ class TestDummyAuthorizer(unittest.TestCase):
     def assertRaisesWithMsg(self, excClass, msg, callableObj, *args, **kwargs):
         try:
             callableObj(*args, **kwargs)
-        except excClass, why:
+        except excClass:
+            why = sys.exc_info()[1]
             if msg not in str(why):
                 raise self.failureException("%s != %s" % (str(why), msg))
         else:
             if hasattr(excClass,'__name__'): excName = excClass.__name__
             else: excName = str(excClass)
-            raise self.failureException, "%s not raised" % excName
+            raise self.failureException("%s not raised" % excName)
 
     def test_common_methods(self):
         auth = ftpserver.DummyAuthorizer()
@@ -759,7 +811,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.client.connect(self.server.host, self.server.port)
         self.client.sock.settimeout(2)
         self.file = open(TESTFN, 'w+b')
-        self.dummyfile = StringIO.StringIO()
+        self.dummyfile = BytesIO()
 
     def tearDown(self):
         self.server.handler._auth_failed_timeout = 5
@@ -814,7 +866,7 @@ class TestFtpAuthentication(unittest.TestCase):
         # Test REIN while already authenticated and a transfer is
         # in progress.
         self.client.login(user=USER, passwd=PASSWD)
-        data = 'abcde12345' * 1000000
+        data = b('abcde12345') * 1000000
         self.file.write(data)
         self.file.close()
 
@@ -844,6 +896,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.client.sendcmd('pwd')
         self.dummyfile.seek(0)
         self.assertEqual(hash(data), hash (self.dummyfile.read()))
+        conn.close()
 
     def test_user(self):
         # Test USER while already authenticated and no transfer
@@ -858,7 +911,7 @@ class TestFtpAuthentication(unittest.TestCase):
         # Test USER while already authenticated and a transfer is
         # in progress.
         self.client.login(user=USER, passwd=PASSWD)
-        data = 'abcde12345' * 1000000
+        data = b('abcde12345') * 1000000
         self.file.write(data)
         self.file.close()
 
@@ -888,6 +941,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.client.sendcmd('pwd')
         self.dummyfile.seek(0)
         self.assertEqual(hash(data), hash (self.dummyfile.read()))
+        conn.close()
 
 
 class TestFtpDummyCmds(unittest.TestCase):
@@ -942,7 +996,7 @@ class TestFtpDummyCmds(unittest.TestCase):
 
     def test_help(self):
         self.client.sendcmd('help')
-        cmd = random.choice(ftpserver.proto_cmds.keys())
+        cmd = random.choice(list(ftpserver.proto_cmds.keys()))
         self.client.sendcmd('help %s' % cmd)
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'help ?!?')
 
@@ -968,6 +1022,11 @@ class TestFtpDummyCmds(unittest.TestCase):
         # REST is not supposed to be allowed in ASCII mode
         self.client.sendcmd('type a')
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest 10')
+
+    def test_feat(self):
+        resp = self.client.sendcmd('feat')
+        self.assertTrue('UTF8' in resp)
+        self.assertTrue('TVFS' in resp)
 
     def test_opts_feat(self):
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'opts mlst bad_fact')
@@ -1086,16 +1145,16 @@ class TestFtpFsOperations(unittest.TestCase):
         # cwd provided with no arguments is supposed to move us to the
         # root directory
         self.client.sendcmd('cwd')
-        self.assertEqual(self.client.pwd(), '/')
+        self.assertEqual(self.client.pwd(), u('/'))
 
     def test_pwd(self):
-        self.assertEqual(self.client.pwd(), '/')
+        self.assertEqual(self.client.pwd(), u('/'))
         self.client.cwd(self.tempdir)
         self.assertEqual(self.client.pwd(), '/' + self.tempdir)
 
     def test_cdup(self):
         subfolder = os.path.basename(tempfile.mkdtemp(dir=self.tempdir))
-        self.assertEqual(self.client.pwd(), '/')
+        self.assertEqual(self.client.pwd(), u('/'))
         self.client.cwd(self.tempdir)
         self.assertEqual(self.client.pwd(), '/%s' % self.tempdir)
         self.client.cwd(subfolder)
@@ -1103,11 +1162,11 @@ class TestFtpFsOperations(unittest.TestCase):
         self.client.sendcmd('cdup')
         self.assertEqual(self.client.pwd(), '/%s' % self.tempdir)
         self.client.sendcmd('cdup')
-        self.assertEqual(self.client.pwd(), '/')
+        self.assertEqual(self.client.pwd(), u('/'))
 
         # make sure we can't escape from root directory
         self.client.sendcmd('cdup')
-        self.assertEqual(self.client.pwd(), '/')
+        self.assertEqual(self.client.pwd(), u('/'))
 
     def test_mkd(self):
         tempdir = os.path.basename(tempfile.mktemp(dir=HOME))
@@ -1129,7 +1188,7 @@ class TestFtpFsOperations(unittest.TestCase):
         self.client.rmd(self.tempdir)
         self.assertRaises(ftplib.error_perm, self.client.rmd, self.tempfile)
         # make sure we can't remove the root directory
-        self.assertRaises(ftplib.error_perm, self.client.rmd, '/')
+        self.assertRaises(ftplib.error_perm, self.client.rmd, u('/'))
 
     def test_dele(self):
         self.client.delete(self.tempfile)
@@ -1147,7 +1206,7 @@ class TestFtpFsOperations(unittest.TestCase):
         # rnfr/rnto over non-existing paths
         bogus = os.path.basename(tempfile.mktemp(dir=HOME))
         self.assertRaises(ftplib.error_perm, self.client.rename, bogus, '/x')
-        self.assertRaises(ftplib.error_perm, self.client.rename, self.tempfile, '/')
+        self.assertRaises(ftplib.error_perm, self.client.rename, self.tempfile, u('/'))
         # rnto sent without first specifying the source
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rnto ' + self.tempfile)
 
@@ -1161,7 +1220,8 @@ class TestFtpFsOperations(unittest.TestCase):
         # make sure we can't use mdtm against directories
         try:
             self.client.sendcmd('mdtm ' + self.tempdir)
-        except ftplib.error_perm, err:
+        except ftplib.error_perm:
+            err = sys.exc_info()[1]
             self.assertTrue("not retrievable" in str(err))
         else:
             self.fail('Exception not raised')
@@ -1175,15 +1235,19 @@ class TestFtpFsOperations(unittest.TestCase):
         # returns a negative value referring to a year prior to 1900.
         # It causes time.localtime/gmtime to raise a ValueError exception
         # which is supposed to be handled by server.
-        _getmtime = ftpserver.AbstractedFS.getmtime
-        try:
-            ftpserver.AbstractedFS.getmtime = lambda x, y: -9000000000
-            self.assertRaises(ftplib.error_perm, self.client.sendcmd,
-                              'mdtm ' + self.tempfile)
-            # make sure client hasn't been disconnected
-            self.client.sendcmd('noop')
-        finally:
-            ftpserver.AbstractedFS.getmtime = _getmtime
+
+        # On python 3 it seems that the trick of replacing the original
+        # method with the lambda doesn't work.
+        if not PY3:
+            _getmtime = ftpserver.AbstractedFS.getmtime
+            try:
+                ftpserver.AbstractedFS.getmtime = lambda x, y: -9000000000
+                self.assertRaises(ftplib.error_perm, self.client.sendcmd,
+                                  'mdtm ' + self.tempfile)
+                # make sure client hasn't been disconnected
+                self.client.sendcmd('noop')
+            finally:
+                ftpserver.AbstractedFS.getmtime = _getmtime
 
     def test_size(self):
         self.client.sendcmd('type a')
@@ -1193,7 +1257,8 @@ class TestFtpFsOperations(unittest.TestCase):
         # make sure we can't use size against directories
         try:
             self.client.sendcmd('size ' + self.tempdir)
-        except ftplib.error_perm, err:
+        except ftplib.error_perm:
+            err = sys.exc_info()[1]
             self.assertTrue("not retrievable" in str(err))
         else:
             self.fail('Exception not raised')
@@ -1215,27 +1280,27 @@ class TestFtpFsOperations(unittest.TestCase):
             self.assertRaises(ftplib.error_perm, self.client.sendcmd,
                               'site chmod foo ' + self.tempfile)
 
+            def getmode():
+                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
+                if PY3:
+                    mode = mode.replace('o', '')
+                return mode
+
             # on Windows it is possible to set read-only flag only
             if os.name == 'nt':
                 self.client.sendcmd('site chmod 777 ' + self.tempfile)
-                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
-                self.assertEqual(mode, '0666')
+                self.assertEqual(getmode(), '0666')
                 self.client.sendcmd('site chmod 444 ' + self.tempfile)
-                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
-                self.assertEqual(mode, '0444')
+                self.assertEqual(getmode(), '0444')
                 self.client.sendcmd('site chmod 666 ' + self.tempfile)
-                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
-                self.assertEqual(mode, '0666')
+                self.assertEqual(getmode(), '0666')
             else:
                 self.client.sendcmd('site chmod 777 ' + self.tempfile)
-                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
-                self.assertEqual(mode, '0777')
+                self.assertEqual(getmode(), '0777')
                 self.client.sendcmd('site chmod 755 ' + self.tempfile)
-                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
-                self.assertEqual(mode, '0755')
+                self.assertEqual(getmode(), '0755')
                 self.client.sendcmd('site chmod 555 ' + self.tempfile)
-                mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
-                self.assertEqual(mode, '0555')
+                self.assertEqual(getmode(), '0555')
 
 
 class TestFtpStoreData(unittest.TestCase):
@@ -1250,8 +1315,8 @@ class TestFtpStoreData(unittest.TestCase):
         self.client.connect(self.server.host, self.server.port)
         self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
-        self.dummy_recvfile = StringIO.StringIO()
-        self.dummy_sendfile = StringIO.StringIO()
+        self.dummy_recvfile = BytesIO()
+        self.dummy_sendfile = BytesIO()
 
     def tearDown(self):
         self.client.close()
@@ -1262,7 +1327,7 @@ class TestFtpStoreData(unittest.TestCase):
 
     def test_stor(self):
         try:
-            data = 'abcde12345' * 100000
+            data = b('abcde12345') * 100000
             self.dummy_sendfile.write(data)
             self.dummy_sendfile.seek(0)
             self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
@@ -1301,12 +1366,12 @@ class TestFtpStoreData(unittest.TestCase):
             return self.client.voidresp()
 
         try:
-            data = 'abcde12345\r\n' * 100000
+            data = b('abcde12345\r\n') * 100000
             self.dummy_sendfile.write(data)
             self.dummy_sendfile.seek(0)
             store('stor ' + TESTFN, self.dummy_sendfile)
             self.client.retrbinary('retr ' + TESTFN, self.dummy_recvfile.write)
-            expected = data.replace('\r\n', os.linesep)
+            expected = data.replace(b('\r\n'), b(os.linesep))
             self.dummy_recvfile.seek(0)
             self.assertEqual(hash(expected), hash(self.dummy_recvfile.read()))
         finally:
@@ -1342,12 +1407,12 @@ class TestFtpStoreData(unittest.TestCase):
             # set a small buffer so that CRLF gets delivered in two
             # separate chunks: "CRLF", " f", "oo", " CR", "LF", " b", "ar"
             ftpserver.DTPHandler.ac_in_buffer_size = 2
-            data = '\r\n foo \r\n bar'
+            data = b('\r\n foo \r\n bar')
             self.dummy_sendfile.write(data)
             self.dummy_sendfile.seek(0)
             store('stor ' + TESTFN, self.dummy_sendfile)
 
-            expected = data.replace('\r\n', os.linesep)
+            expected = data.replace(b('\r\n'), b(os.linesep))
             self.client.retrbinary('retr ' + TESTFN, self.dummy_recvfile.write)
             self.dummy_recvfile.seek(0)
             self.assertEqual(expected, self.dummy_recvfile.read())
@@ -1363,7 +1428,7 @@ class TestFtpStoreData(unittest.TestCase):
                     safe_remove(TESTFN)
 
     def test_stou(self):
-        data = 'abcde12345' * 100000
+        data = b('abcde12345') * 100000
         self.dummy_sendfile.write(data)
         self.dummy_sendfile.seek(0)
 
@@ -1419,16 +1484,16 @@ class TestFtpStoreData(unittest.TestCase):
         after = os.listdir(HOME)
         if before != after:
             for file in after:
-                self.assert_(not file.startswith(TESTFN))
+                self.assertFalse(file.startswith(TESTFN))
 
     def test_appe(self):
         try:
-            data1 = 'abcde12345' * 100000
+            data1 = b('abcde12345') * 100000
             self.dummy_sendfile.write(data1)
             self.dummy_sendfile.seek(0)
             self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
 
-            data2 = 'fghil67890' * 100000
+            data2 = b('fghil67890') * 100000
             self.dummy_sendfile.write(data2)
             self.dummy_sendfile.seek(len(data1))
             self.client.storbinary('appe ' + TESTFN, self.dummy_sendfile)
@@ -1454,7 +1519,7 @@ class TestFtpStoreData(unittest.TestCase):
 
     def test_rest_on_stor(self):
         # Test STOR preceded by REST.
-        data = 'abcde12345' * 100000
+        data = b('abcde12345') * 100000
         self.dummy_sendfile.write(data)
         self.dummy_sendfile.seek(0)
 
@@ -1503,7 +1568,7 @@ class TestFtpStoreData(unittest.TestCase):
                           'stor ' + TESTFN, lambda x: x)
         # if the first STOR failed because of REST, the REST marker
         # is supposed to be resetted to 0
-        self.dummy_sendfile.write('x' * 4096)
+        self.dummy_sendfile.write(b('x') * 4096)
         self.dummy_sendfile.seek(0)
         self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
 
@@ -1512,9 +1577,9 @@ class TestFtpStoreData(unittest.TestCase):
         # progress, the connection must remain open for result response
         # and the server will then close it.
         conn = self.client.transfercmd('stor ' + TESTFN)
-        conn.sendall('abcde12345' * 50000)
+        conn.sendall(b('abcde12345') * 50000)
         self.client.sendcmd('quit')
-        conn.sendall('abcde12345' * 50000)
+        conn.sendall(b('abcde12345') * 50000)
         conn.close()
         # expect the response (transfer ok)
         self.assertEqual('226', self.client.voidresp()[:3])
@@ -1557,7 +1622,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
         self.file = open(TESTFN, 'w+b')
-        self.dummyfile = StringIO.StringIO()
+        self.dummyfile = BytesIO()
 
     def tearDown(self):
         self.client.close()
@@ -1569,7 +1634,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         safe_remove(TESTFN)
 
     def test_retr(self):
-        data = 'abcde12345' * 100000
+        data = b('abcde12345') * 100000
         self.file.write(data)
         self.file.close()
         self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
@@ -1596,16 +1661,16 @@ class TestFtpRetrieveData(unittest.TestCase):
             conn.close()
             return self.client.voidresp()
 
-        data = ('abcde12345' + os.linesep) * 100000
+        data = (b('abcde12345') + b(os.linesep)) * 100000
         self.file.write(data)
         self.file.close()
         retrieve("retr " + TESTFN, self.dummyfile.write)
-        expected = data.replace(os.linesep, '\r\n')
+        expected = data.replace(b(os.linesep), b('\r\n'))
         self.dummyfile.seek(0)
         self.assertEqual(hash(expected), hash(self.dummyfile.read()))
 
     def test_restore_on_retr(self):
-        data = 'abcde12345' * 1000000
+        data = b('abcde12345') * 1000000
         self.file.write(data)
         self.file.close()
 
@@ -1641,7 +1706,7 @@ class TestFtpRetrieveData(unittest.TestCase):
     def test_retr_empty_file(self):
         self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
         self.dummyfile.seek(0)
-        self.assertEqual(self.dummyfile.read(), "")
+        self.assertEqual(self.dummyfile.read(), b(""))
 
 
 if SUPPORTS_SENDFILE:
@@ -1757,7 +1822,8 @@ class TestFtpListingCmds(unittest.TestCase):
         try:
             try:
                 self.client.retrlines('mlsd ' + TESTFN, lambda x: x)
-            except ftplib.error_perm, resp:
+            except ftplib.error_perm:
+                resp = sys.exc_info()[1]
                 # if path is a file a 501 response code is expected
                 self.assertEqual(str(resp)[0:3], "501")
             else:
@@ -1867,10 +1933,11 @@ class TestFtpAbort(unittest.TestCase):
         # Case 4: ABOR while a data transfer on DTP channel is in
         # progress: close data channel, respond with 426, respond
         # with 226.
-        data = 'abcde12345' * 1000000
+        data = b('abcde12345') * 1000000
         f = open(TESTFN, 'w+b')
         f.write(data)
         f.close()
+        conn = None
         try:
             self.client.voidcmd('TYPE I')
             conn = self.client.transfercmd('retr ' + TESTFN)
@@ -1895,6 +1962,8 @@ class TestFtpAbort(unittest.TestCase):
                 self.client.delete(TESTFN)
             except (ftplib.Error, EOFError, socket.error):
                 safe_remove(TESTFN)
+            if conn is not None:
+                conn.close()
 
     if hasattr(socket, 'MSG_OOB'):
         def test_oob_abor(self):
@@ -1904,9 +1973,9 @@ class TestFtpAbort(unittest.TestCase):
             # due to a different SO_OOBINLINE behavior.
             # On some platforms (e.g. Python CE) the test may fail
             # although the MSG_OOB constant is defined.
-            self.client.sock.sendall(chr(244), socket.MSG_OOB)
-            self.client.sock.sendall(chr(255), socket.MSG_OOB)
-            self.client.sock.sendall('abor\r\n')
+            self.client.sock.sendall(b(chr(244)), socket.MSG_OOB)
+            self.client.sock.sendall(b(chr(255)), socket.MSG_OOB)
+            self.client.sock.sendall(b('abor\r\n'))
             self.client.sock.settimeout(1)
             self.assertEqual(self.client.getresp()[:3], '225')
 
@@ -1952,7 +2021,7 @@ class TestTimeouts(unittest.TestCase):
         # fail if no msg is received within 1 second
         self.client.sock.settimeout(1)
         data = self.client.sock.recv(1024)
-        self.assertEqual(data, "421 Control connection timed out.\r\n")
+        self.assertEqual(data, b("421 Control connection timed out.\r\n"))
         # ensure client has been kicked off
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
 
@@ -1967,9 +2036,10 @@ class TestTimeouts(unittest.TestCase):
         # fail if no msg is received within 1 second
         self.client.sock.settimeout(1)
         data = self.client.sock.recv(1024)
-        self.assertEqual(data, "421 Data connection timed out.\r\n")
+        self.assertEqual(data, b("421 Data connection timed out.\r\n"))
         # ensure client has been kicked off
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
+        s.close()
 
     def test_data_timeout_not_reached(self):
         # Impose a timeout for the data channel, then keep sending data for a
@@ -1982,7 +2052,7 @@ class TestTimeouts(unittest.TestCase):
         try:
             stop_at = time.time() + 0.2
             while time.time() < stop_at:
-                sock.send('x' * 1024)
+                sock.send(b('x') * 1024)
             sock.close()
             self.client.voidresp()
         finally:
@@ -1999,9 +2069,10 @@ class TestTimeouts(unittest.TestCase):
         # fail if no msg is received within 1 second
         self.client.sock.settimeout(1)
         data = self.client.sock.recv(1024)
-        self.assertEqual(data, "421 Data connection timed out.\r\n")
+        self.assertEqual(data, b("421 Data connection timed out.\r\n"))
         # ensure client has been kicked off
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
+        s.close()
 
     def test_idle_data_timeout2(self):
         # Tests that the control connection timeout is restarted after
@@ -2014,9 +2085,10 @@ class TestTimeouts(unittest.TestCase):
         self.client.sendcmd('abor')
         self.client.sock.settimeout(1)
         data = self.client.sock.recv(1024)
-        self.assertEqual(data, "421 Control connection timed out.\r\n")
+        self.assertEqual(data, b("421 Control connection timed out.\r\n"))
         # ensure client has been kicked off
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
+        s.close()
 
     def test_pasv_timeout(self):
         # Test pasv data channel timeout.  The client which does not
@@ -2027,7 +2099,7 @@ class TestTimeouts(unittest.TestCase):
         # fail if no msg is received within 1 second
         self.client.sock.settimeout(1)
         data = self.client.sock.recv(1024)
-        self.assertEqual(data, "421 Passive data channel timed out.\r\n")
+        self.assertEqual(data, b("421 Passive data channel timed out.\r\n"))
         # client is not expected to be kicked off
         self.client.sendcmd('noop')
 
@@ -2185,12 +2257,12 @@ class TestConfigurableOptions(unittest.TestCase):
 
     def test_passive_ports(self):
         # Test FTPHandler.passive_ports attribute
-        _range = range(40000, 60000, 200)
+        _range = list(range(40000, 60000, 200))
         self.server.handler.passive_ports = _range
-        self.assert_(self.client.makepasv()[1] in _range)
-        self.assert_(self.client.makepasv()[1] in _range)
-        self.assert_(self.client.makepasv()[1] in _range)
-        self.assert_(self.client.makepasv()[1] in _range)
+        self.assertTrue(self.client.makepasv()[1] in _range)
+        self.assertTrue(self.client.makepasv()[1] in _range)
+        self.assertTrue(self.client.makepasv()[1] in _range)
+        self.assertTrue(self.client.makepasv()[1] in _range)
 
     def test_passive_ports_busy(self):
         # If the ports in the configured range are busy it is expected
@@ -2200,7 +2272,8 @@ class TestConfigurableOptions(unittest.TestCase):
         port = s.getsockname()[1]
         self.server.handler.passive_ports = [port]
         resulting_port = self.client.makepasv()[1]
-        self.assert_(port != resulting_port)
+        self.assertTrue(port != resulting_port)
+        s.close()
 
     def test_permit_privileged_ports(self):
         # Test FTPHandler.permit_privileged_ports_active attribute
@@ -2210,15 +2283,18 @@ class TestConfigurableOptions(unittest.TestCase):
         for port in reversed(range(1, 1024)):
             try:
                 socket.getservbyport(port)
-            except socket.error, err:
+            except socket.error:
                 # not registered port; go on
                 try:
                     sock = socket.socket(self.client.af, socket.SOCK_STREAM)
                     sock.bind((HOST, port))
                     break
-                except socket.error, err:
+                except socket.error:
+                    err = sys.exc_info()[1]
                     if err.args[0] == errno.EACCES:
                         # root privileges needed
+                        if sock is not None:
+                            sock.close()
                         sock = None
                         break
                     sock.close()
@@ -2240,7 +2316,8 @@ class TestConfigurableOptions(unittest.TestCase):
                 sock.listen(5)
                 sock.settimeout(2)
                 self.client.sendport(HOST, port)
-                sock.accept()
+                s, addr = sock.accept()
+                s.close()
         finally:
             if sock is not None:
                 sock.close()
@@ -2317,7 +2394,7 @@ class TestCallbacks(unittest.TestCase):
             if login:
                 self.client.login(USER, PASSWD)
         self.file = open(TESTFN, 'w+b')
-        self.dummyfile = StringIO.StringIO()
+        self.dummyfile = BytesIO()
         self._tearDown = False
 
     def tearDown(self):
@@ -2352,7 +2429,7 @@ class TestCallbacks(unittest.TestCase):
                 raise Exception
 
         self._setUp(TestHandler)
-        data = 'abcde12345' * 100000
+        data = b('abcde12345') * 100000
         self.file.write(data)
         self.file.close()
         self.client.retrbinary("retr " + TESTFN, lambda x: x)
@@ -2378,7 +2455,7 @@ class TestCallbacks(unittest.TestCase):
                 raise Exception
 
         self._setUp(TestHandler)
-        data = 'abcde12345' * 100000
+        data = b('abcde12345') * 100000
         self.dummyfile.write(data)
         self.dummyfile.seek(0)
         self.client.storbinary('stor ' + TESTFN, self.dummyfile)
@@ -2404,7 +2481,7 @@ class TestCallbacks(unittest.TestCase):
                 raise Exception
 
         self._setUp(TestHandler)
-        data = 'abcde12345' * 100000
+        data = b('abcde12345') * 100000
         self.file.write(data)
         self.file.close()
 
@@ -2440,7 +2517,7 @@ class TestCallbacks(unittest.TestCase):
                 _file.append(file)
 
         self._setUp(TestHandler)
-        data = 'abcde12345' * 100000
+        data = b('abcde12345') * 100000
         self.dummyfile.write(data)
         self.dummyfile.seek(0)
 
@@ -2492,6 +2569,7 @@ class TestCallbacks(unittest.TestCase):
             pass
         else:
             self.fail('still connected')
+        self.tearDown()
         self.assertTrue(flag)
 
     def test_on_login(self):
@@ -2626,7 +2704,8 @@ class _TestNetworkProtocols(unittest.TestCase):
         """Send a command and return response, also if the command failed."""
         try:
             return self.client.sendcmd(cmd)
-        except ftplib.Error, err:
+        except ftplib.Error:
+            err = sys.exc_info()[1]
             return str(err)
 
     def test_eprt(self):
@@ -2634,7 +2713,8 @@ class _TestNetworkProtocols(unittest.TestCase):
         try:
             self.client.sendcmd('eprt |%s|%s|%s|' % (self.other_proto,
                                 self.server.host, self.server.port))
-        except ftplib.error_perm, err:
+        except ftplib.error_perm:
+            err = sys.exc_info()[1]
             self.assertEqual(str(err)[0:3], "522")
         else:
             self.fail("Exception not raised")
@@ -2666,7 +2746,7 @@ class _TestNetworkProtocols(unittest.TestCase):
             self.assertEqual(self.cmdresp('eprt |1|1.2.3.256|2048|'), msg)
             # bad proto
             resp = self.cmdresp('eprt |2|1.2.3.256|2048|')
-            self.assert_("Network protocol not supported" in resp)
+            self.assertTrue("Network protocol not supported" in resp)
 
         # test connection
         sock = socket.socket(self.client.af)
@@ -2677,7 +2757,8 @@ class _TestNetworkProtocols(unittest.TestCase):
         self.client.sendcmd('eprt |%s|%s|%s|' % (self.proto, ip, port))
         try:
             try:
-                sock.accept()
+                s = sock.accept()
+                s[0].close()
             except socket.timeout:
                 self.fail("Server didn't connect to passive socket")
         finally:
@@ -2687,7 +2768,8 @@ class _TestNetworkProtocols(unittest.TestCase):
         # test wrong proto
         try:
             self.client.sendcmd('epsv ' + self.other_proto)
-        except ftplib.error_perm, err:
+        except ftplib.error_perm:
+            err = sys.exc_info()[1]
             self.assertEqual(str(err)[0:3], "522")
         else:
             self.fail("Exception not raised")
@@ -2864,10 +2946,11 @@ class TestCornerCases(unittest.TestCase):
         hbytes = host.split('.')
         pbytes = [repr(port // 256), repr(port % 256)]
         bytes = hbytes + pbytes
-        cmd = 'PORT ' + ','.join(bytes)
-        self.client.sock.sendall(cmd + '\r\n')
+        cmd = 'PORT ' + ','.join(bytes) + '\r\n'
+        self.client.sock.sendall(b(cmd))
         self.client.quit()
-        sock.accept()
+        s, addr = sock.accept()
+        s.close()
         sock.close()
 
     def test_stou_max_tries(self):
@@ -2905,9 +2988,9 @@ class TestCornerCases(unittest.TestCase):
                 pass
             s.close()
 
-        for x in xrange(10):
+        for x in range(10):
             connect((self.server.host, self.server.port))
-        for x in xrange(10):
+        for x in range(10):
             addr = self.client.makepasv()
             connect(addr)
 
@@ -2940,12 +3023,14 @@ class TestCornerCases(unittest.TestCase):
         self.client.sock.settimeout(.1)
         try:
             resp = self.client.sendport(HOST, port)
-        except ftplib.error_temp, err:
+        except ftplib.error_temp:
+            err = sys.exc_info()[1]
             self.assertEqual(str(err)[:3], '425')
         except socket.timeout:
             pass
         else:
             self.assertNotEqual(str(resp)[:3], '200')
+        sock.close()
 
 
 class TestUnicodePathNames(unittest.TestCase):
@@ -2959,6 +3044,7 @@ class TestUnicodePathNames(unittest.TestCase):
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class()
+        self.client.encoding = 'utf8'  # PY3 only
         self.client.connect(self.server.host, self.server.port)
         self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
@@ -3054,31 +3140,26 @@ class TestUnicodePathNames(unittest.TestCase):
     # --- file transfer
 
     def test_stor(self):
-        data = 'abcde12345' * 500
+        data = b('abcde12345') * 500
         os.remove(self.tempfile)
-        dummy = StringIO.StringIO()
+        dummy = BytesIO()
         dummy.write(data)
         dummy.seek(0)
         self.client.storbinary('stor ' + self.tempfile, dummy)
-        dummy_recv = StringIO.StringIO()
+        dummy_recv = BytesIO()
         self.client.retrbinary('retr ' + self.tempfile, dummy_recv.write)
         dummy_recv.seek(0)
         self.assertEqual(dummy_recv.read(), data)
 
     def test_retr(self):
-        data = 'abcd1234' * 500
+        data = b('abcd1234') * 500
         f = open(self.tempfile, 'wb')
         f.write(data)
         f.close()
-        dummy = StringIO.StringIO()
+        dummy = BytesIO()
         self.client.retrbinary('retr ' + self.tempfile, dummy.write)
         dummy.seek(0)
         self.assertEqual(dummy.read(), data)
-
-    # XXX - provisional
-    def test_encode_decode(self):
-        self.client.sendcmd('type i')
-        self.client.sendcmd('size ' + self.tempfile.decode('utf8').encode('utf8'))
 
 
 class TestCommandLineParser(unittest.TestCase):
@@ -3094,7 +3175,11 @@ class TestCommandLineParser(unittest.TestCase):
             def serve_forever(self, *args, **kwargs):
                 return
 
-        self.devnull = StringIO.StringIO()
+        if PY3:
+            import io
+            self.devnull = io.StringIO()
+        else:
+            self.devnull = BytesIO()
         sys.argv = self.SYSARGV[:]
         sys.stderr = self.STDERR
         self.original_ftpserver_class = ftpserver.FTPServer
@@ -3225,6 +3310,10 @@ def test_main(tests=None):
             if os.name == 'posix':
                 atexit.register(warnings.warn, "couldn't run sendfile() tests",
                                 RuntimeWarning)
+        # Unicode tests won't work on Windows-Python2.x as the default
+        # fs encoding is != utf8
+        if not PY3 and os.name in ('nt', 'ce'):
+            tests.remove(TestUnicodePathNames)
 
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))

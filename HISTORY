@@ -9,6 +9,10 @@ Version: 1.0.0 - Date: XXXX-XX-XX
 
 Enhancements:
 
+ * Issue 76: python 3.x porting.
+
+ * Issue 198: full unicode support (RFC-2640).
+
  * Issue 204: a new FilesystemError exception class is available in order send
    custom error strings to client from an AbstracteFS subclass.
 
@@ -22,6 +26,7 @@ Bugfixes:
 
 Major API changes since 0.7.0:
 
+ * Unicode is now used instead of bytes pretty much everywhere.
  * New FilesystemError exception class.
  * New FTPHandler's on_connect() and on_disconnect() callbacks.
 
