@@ -100,6 +100,5 @@ if os.name == 'posix':
         msg = "\nYou might want to install pysendfile module to speedup " \
               "transfers:\nhttp://code.google.com/p/pysendfile/\n"
         if sys.stderr.isatty():
-            sys.stderr.write('\x1b[1m%s\x1b[0m' % msg)
-        else:
-            sys.stderr.write(msg)
+            msg = '\x1b[1m%s\x1b[0m' % msg
+        sys.stderr.write(msg)

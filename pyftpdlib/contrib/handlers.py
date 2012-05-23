@@ -53,6 +53,7 @@ import errno
 import sys
 
 from pyftpdlib.ftpserver import FTPHandler, DTPHandler, proto_cmds, _DISCONNECTED
+from pyftpdlib.lib.ioloop import Acceptor
 from pyftpdlib.lib.compat import PY3, b
 
 __all__ = []
@@ -77,10 +78,10 @@ else:
         })
 
     if PY3:
-        class _SSLBase(asyncore.dispatcher):
+        class _SSLBase(Acceptor):
             pass
     else:
-        class _SSLBase(object, asyncore.dispatcher):
+        class _SSLBase(object, Acceptor):
             def __init__(self, *args, **kwargs):
                 super(object, self).__init__(*args, **kwargs)  # bypass object
 

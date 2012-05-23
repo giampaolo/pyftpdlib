@@ -13,6 +13,11 @@ Enhancements:
 
  * Issue 198: full unicode support (RFC-2640).
 
+ * Issue 203: asyncore IO loop has been rewritten from scratch and now supports
+   epoll() on Linux and kqueue() on OSX/BSD.
+   Also select() (Windows) and poll() pollers have been rewritten resulting in
+   pyftpdlib being an order of magnitude faster and more scalable than ever.
+
  * Issue 204: a new FilesystemError exception class is available in order send
    custom error strings to client from an AbstracteFS subclass.
 
@@ -27,6 +32,15 @@ Bugfixes:
 Major API changes since 0.7.0:
 
  * Unicode is now used instead of bytes pretty much everywhere.
+ * FTPServer.server_forever() signature has changed from:
+       serve_forever(timeout=1.0, use_poll=False, count=None)
+   ...to:
+       serve_forever(timeout=1.0, blocking=True):
+ * asyncore.dispatcher and asynchat.async_chat classes has been replaced by:
+   - pyftpdlib.lib.ioloop.Acceptor
+   - pyftpdlib.lib.ioloop.Connector
+   - pyftpdlib.lib.ioloop.AsyncChat
+   Any implementation relying on them will no longer work.
  * New FilesystemError exception class.
  * New FTPHandler's on_connect() and on_disconnect() callbacks.
 

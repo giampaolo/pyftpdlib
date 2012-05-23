@@ -229,7 +229,7 @@ class FTPd(threading.Thread):
     def running(self):
         return self.__serving
 
-    def start(self, timeout=0.001, use_poll=False):
+    def start(self, timeout=0.001):
         """Start serving until an explicit stop() request.
         Polls for shutdown every 'timeout' seconds.
         """
@@ -239,17 +239,15 @@ class FTPd(threading.Thread):
             # ensure the server can be started again
             FTPd.__init__(self, self.server.socket.getsockname(), self.handler)
         self.__timeout = timeout
-        self.__use_poll = use_poll
         threading.Thread.start(self)
         self.__flag.wait()
 
     def run(self):
         self.__serving = True
         self.__flag.set()
-        while self.__serving and asyncore.socket_map:
+        while self.__serving:
             self.__lock.acquire()
-            self.server.serve_forever(timeout=self.__timeout, count=1,
-                                      use_poll=self.__use_poll)
+            self.server.serve_forever(timeout=self.__timeout, blocking=False)
             self.__lock.release()
         self.server.close_all()
 
@@ -2357,8 +2355,9 @@ class TestConfigurableOptions(unittest.TestCase):
         def test_tcp_no_delay(self):
             def get_handler_socket():
                 # return the server's handler socket object
-                for fd in asyncore.socket_map:
-                    instance = asyncore.socket_map[fd]
+                from pyftpdlib.lib.ioloop import ioloop
+                for fd in ioloop.instance().socket_map:
+                    instance = ioloop.instance().socket_map[fd]
                     if isinstance(instance, ftpserver.FTPHandler):
                         break
                 return instance.socket
@@ -3005,7 +3004,7 @@ class TestCornerCases(unittest.TestCase):
         try:
             len1 = len(asyncore.socket_map)
             ftpserver.CallLater(0, lambda: 1 // 0)
-            server.serve_forever(timeout=0, count=1)
+            server.serve_forever(timeout=0, blocking=False)
             len2 = len(asyncore.socket_map)
             self.assertEqual(len1, len2)
             self.assertTrue(flag)
@@ -3026,7 +3025,7 @@ class TestCornerCases(unittest.TestCase):
         except ftplib.error_temp:
             err = sys.exc_info()[1]
             self.assertEqual(str(err)[:3], '425')
-        except socket.timeout:
+        except (socket.timeout, getattr(ssl, "SSLError", object())):
             pass
         else:
             self.assertNotEqual(str(resp)[:3], '200')

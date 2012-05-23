@@ -145,6 +145,7 @@ try:
 except ImportError:
     sendfile = None
 
+from pyftpdlib.lib.ioloop import Acceptor, Connector, AsyncChat, ioloop
 from pyftpdlib.lib.compat import (PY3, MAXSIZE, u, b, unicode, print_, getcwdu,
                                   xrange, next, callable)
 
@@ -691,7 +692,7 @@ class DummyAuthorizer(object):
 
 # --- DTP classes
 
-class PassiveDTP(asyncore.dispatcher):
+class PassiveDTP(Acceptor):
     """This class is an asyncore.dispatcher subclass. It creates a
     socket listening on a local port, dispatching the resultant
     connection to DTPHandler.
@@ -711,7 +712,7 @@ class PassiveDTP(asyncore.dispatcher):
         self.log = cmd_channel.log
         self.log_exception = cmd_channel.log_exception
         self._closed = False
-        asyncore.dispatcher.__init__(self)
+        Acceptor.__init__(self)
         if self.timeout:
             self._idler = CallLater(self.timeout, self.handle_timeout,
                                     _errback=self.handle_error)
@@ -782,12 +783,6 @@ class PassiveDTP(asyncore.dispatcher):
         else:
             self.cmd_channel.respond('229 Entering extended passive mode '
                                      '(|||%d|).' % port)
-
-    def set_reuse_addr(self):
-        # overridden for convenience; avoid to reuse address on Windows
-        if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
-            return
-        asyncore.dispatcher.set_reuse_addr(self)
 
     # --- connection / overridden
 
@@ -863,12 +858,12 @@ class PassiveDTP(asyncore.dispatcher):
     def close(self):
         if not self._closed:
             self._closed = True
-            asyncore.dispatcher.close(self)
+            Acceptor.close(self)
             if self._idler is not None and not self._idler.cancelled:
                 self._idler.cancel()
 
 
-class ActiveDTP(asyncore.dispatcher):
+class ActiveDTP(Connector):
     """This class is an asyncore.disptacher subclass. It creates a
     socket resulting from the connection to a remote user-port,
     dispatching it to DTPHandler.
@@ -890,7 +885,7 @@ class ActiveDTP(asyncore.dispatcher):
         self.log = cmd_channel.log
         self.log_exception = cmd_channel.log_exception
         self._closed = True
-        asyncore.dispatcher.__init__(self)
+        Connector.__init__(self)
         if self.timeout:
             self._idler = CallLater(self.timeout, self.handle_timeout,
                                     _errback=self.handle_error)
@@ -912,19 +907,19 @@ class ActiveDTP(asyncore.dispatcher):
         try:
             self.connect((ip, port))
         except (socket.gaierror, socket.error):
-            self.handle_expt()
+            self.handle_close()
 
-    # overridden to prevent unhandled read/write event messages to
-    # be printed by asyncore on Python < 2.6
+    def readable(self):
+        return False
 
     def handle_write(self):
-        pass
-
-    def handle_read(self):
+        # overridden to prevent unhandled read/write event messages to
+        # be printed by asyncore on Python < 2.6
         pass
 
     def handle_connect(self):
         """Called when connection is established."""
+        self.del_channel()
         if self._idler is not None and not self._idler.cancelled:
             self._idler.cancel()
         if not self.cmd_channel.connected:
@@ -946,10 +941,6 @@ class ActiveDTP(asyncore.dispatcher):
         handler = self.cmd_channel.dtp_handler(self.socket, self.cmd_channel)
         self.cmd_channel.data_channel = handler
         self.cmd_channel._on_dtp_connection()
-        # Can't close right now as the handler would have the socket
-        # object disconnected.  This class will be "closed" once the
-        # data transfer is completed or the client disconnects.
-        #self.close()
 
     def handle_timeout(self):
         if self.cmd_channel.connected:
@@ -958,7 +949,10 @@ class ActiveDTP(asyncore.dispatcher):
             self.cmd_channel.log_cmd(self._cmd, self._normalized_addr, 421, msg)
         self.close()
 
-    def handle_expt(self):
+    def handle_close(self):
+        # With the new IO loop, handle_close() gets called in case
+        # the fd appears in the list of exceptional fds.
+        # This means connect() failed.
         if self.cmd_channel.connected:
             msg = "Can't connect to specified address."
             self.cmd_channel.respond("425 " + msg)
@@ -975,17 +969,17 @@ class ActiveDTP(asyncore.dispatcher):
             pass
         except:
             self.log_exception(self)
-        self.handle_expt()
+        self.handle_close()
 
     def close(self):
         if not self._closed:
             self._closed = True
-            asyncore.dispatcher.close(self)
+            Connector.close(self)
             if self._idler is not None and not self._idler.cancelled:
                 self._idler.cancel()
 
 
-class DTPHandler(asynchat.async_chat):
+class DTPHandler(AsyncChat):
     """Class handling server-data-transfer-process (server-DTP, see
     RFC-959) managing data-transfer operations involving sending
     and receiving data.
@@ -1036,13 +1030,13 @@ class DTPHandler(asynchat.async_chat):
         else:
             self._idler = None
         try:
-            asynchat.async_chat.__init__(self, sock_obj)
+            AsyncChat.__init__(self, sock_obj)
         except socket.error:
             err = sys.exc_info()[1]
             # if we get an exception here we want the dispatcher
             # instance to set socket attribute before closing, see:
             # http://code.google.com/p/pyftpdlib/issues/detail?id=188
-            asynchat.async_chat.__init__(self, socket.socket())
+            AsyncChat.__init__(self, socket.socket())
             # http://code.google.com/p/pyftpdlib/issues/detail?id=143
             self.close()
             if err.args[0] == errno.EINVAL:
@@ -1058,14 +1052,22 @@ class DTPHandler(asynchat.async_chat):
            and isinstance(producer, FileProducer) \
            and producer.type == 'i'
 
+    def push(self, data):
+        ioloop.instance().modify(self._fileno, ioloop.WRITE)
+        AsyncChat.push(self, data)
+
     def push_with_producer(self, producer):
+        ioloop.instance().modify(self._fileno, ioloop.WRITE)
         if self._use_sendfile(producer):
             self._offset = producer.file.tell()
             self._filefd = self.file_obj.fileno()
             self.initiate_sendfile()
             self.initiate_send = self.initiate_sendfile
         else:
-            asynchat.async_chat.push_with_producer(self, producer)
+            AsyncChat.push_with_producer(self, producer)
+
+    def initiate_send(self):
+        asynchat.async_chat.initiate_send(self)
 
     def initiate_sendfile(self):
         """A wrapper around sendfile."""
@@ -1114,6 +1116,7 @@ class DTPHandler(asynchat.async_chat):
 
          - (str) type: current transfer type, 'a' (ASCII) or 'i' (binary).
         """
+        ioloop.instance().modify(self._fileno, ioloop.READ)
         self.cmd = cmd
         if type == 'a':
             if os.linesep == '\r\n':
@@ -1141,7 +1144,7 @@ class DTPHandler(asynchat.async_chat):
     # --- connection
 
     def send(self, data):
-        result = asyncore.dispatcher.send(self, data)
+        result = AsyncChat.send(self, data)
         self.tot_bytes_sent += result
         return result
 
@@ -1200,7 +1203,7 @@ class DTPHandler(asynchat.async_chat):
 
     def writable(self):
         """Predicate for inclusion in the writable for select()."""
-        return not self.receive and asynchat.async_chat.writable(self)
+        return not self.receive and AsyncChat.writable(self)
 
     def handle_timeout(self):
         """Called cyclically to check if data trasfer is stalling with
@@ -1214,11 +1217,6 @@ class DTPHandler(asynchat.async_chat):
             self._resp = "421 " + msg
             self.close()
             self.cmd_channel.close_when_done()
-
-    def handle_expt(self):
-        """Called on "exceptional" data events."""
-        self.cmd_channel.respond("426 Connection error; transfer aborted.")
-        self.close()
 
     def handle_error(self):
         """Called when an exception is raised and not otherwise handled."""
@@ -1276,7 +1274,7 @@ class DTPHandler(asynchat.async_chat):
         if not self._closed:
             self._closed = True
             # RFC-959 says we must close the connection before replying
-            asyncore.dispatcher.close(self)
+            AsyncChat.close(self)
             if self._resp:
                 self.cmd_channel.respond(self._resp)
 
@@ -1977,7 +1975,7 @@ class AbstractedFS(object):
 
 # --- FTP
 
-class FTPHandler(asynchat.async_chat):
+class FTPHandler(AsyncChat):
     """Implements the FTP server Protocol Interpreter (see RFC-959),
     handling commands received from the client on the control channel.
 
@@ -2131,13 +2129,13 @@ class FTPHandler(asynchat.async_chat):
             self._available_facts.append('create')
 
         try:
-            asynchat.async_chat.__init__(self, conn)
+            AsyncChat.__init__(self, conn)
         except socket.error:
             err = sys.exc_info()[1]
             # if we get an exception here we want the dispatcher
             # instance to set socket attribute before closing, see:
             # http://code.google.com/p/pyftpdlib/issues/detail?id=188
-            asynchat.async_chat.__init__(self, socket.socket())
+            AsyncChat.__init__(self, socket.socket())
             self.close()
             if err.args[0] == errno.EINVAL:
                 # http://code.google.com/p/pyftpdlib/issues/detail?id=143
@@ -2235,11 +2233,11 @@ class FTPHandler(asynchat.async_chat):
         # In contrast to DTPHandler, here we are not interested in
         # attempting to receive any further data from a closed socket.
         return not self.sleeping and self.connected \
-                                 and asynchat.async_chat.readable(self)
+                                 and AsyncChat.readable(self)
 
     def writable(self):
         return not self.sleeping and self.connected \
-                                 and asynchat.async_chat.writable(self)
+                                 and AsyncChat.writable(self)
 
     def close_when_done(self):
         self._closing = True
@@ -2401,28 +2399,6 @@ class FTPHandler(asynchat.async_chat):
             resp = self._last_response[4:]
             self.log_cmd(cmd, args[0], code, resp)
 
-    def handle_expt(self):
-        """Called when there is out of band (OOB) data to be read.
-        This might happen in case of such clients strictly following
-        the RFC-959 directives of sending Telnet IP and Synch as OOB
-        data before issuing ABOR, STAT and QUIT commands.
-        It should never be called since the SO_OOBINLINE option is
-        enabled except on some systems like FreeBSD where it doesn't
-        seem to have effect.
-        """
-        if hasattr(socket, 'MSG_OOB'):
-            try:
-                data = self.socket.recv(1024, socket.MSG_OOB)
-            except socket.error:
-                err = sys.exc_info()[1]
-                if err.args[0] == errno.EINVAL:
-                    return
-            else:
-                self._in_buffer.append(data)
-                return
-        self.log("Can't handle OOB data.")
-        self.close()
-
     def handle_error(self):
         try:
             raise
@@ -2452,7 +2428,7 @@ class FTPHandler(asynchat.async_chat):
             self._closed = True
             self._closing = False
             self.connected = False
-            asynchat.async_chat.close(self)
+            AsyncChat.close(self)
 
             self._shutdown_connecting_dtp()
 
@@ -2803,7 +2779,7 @@ class FTPHandler(asynchat.async_chat):
 
         # make sure we are not hitting the max connections limit
         if self.server.max_cons:
-            if len(asyncore.socket_map) >= self.server.max_cons:
+            if len(ioloop.instance().socket_map) >= self.server.max_cons:
                 msg = "Too many connections. Can't open data channel."
                 self.respond("425 %s" %msg)
                 self.log(msg)
@@ -2828,7 +2804,7 @@ class FTPHandler(asynchat.async_chat):
 
         # make sure we are not hitting the max connections limit
         if self.server.max_cons:
-            if len(asyncore.socket_map) >= self.server.max_cons:
+            if len(ioloop.instance().socket_map) >= self.server.max_cons:
                 msg = "Too many connections. Can't open data channel."
                 self.respond("425 %s" %msg)
                 self.log(msg)
@@ -3816,7 +3792,7 @@ class FTPHandler(asynchat.async_chat):
         self.ftp_RMD(line)
 
 
-class FTPServer(asyncore.dispatcher):
+class FTPServer(Acceptor):
     """This class is an asyncore.disptacher subclass.  It creates a FTP
     socket listening on <address>, dispatching the requests to a <handler>
     (typically FTPHandler class).
@@ -3849,7 +3825,7 @@ class FTPServer(asyncore.dispatcher):
 
          - (classobj) handler: the handler class to use.
         """
-        asyncore.dispatcher.__init__(self)
+        Acceptor.__init__(self)
         self.handler = handler
         self.ip_map = []
         host, port = address
@@ -3890,52 +3866,40 @@ class FTPServer(asyncore.dispatcher):
     def address(self):
         return self.socket.getsockname()[:2]
 
-    def set_reuse_addr(self):
-        # Overridden for convenience. Avoid to reuse address on Windows.
-        if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
-            return
-        asyncore.dispatcher.set_reuse_addr(self)
-
     @classmethod
-    def serve_forever(cls, timeout=1.0, use_poll=False, count=None):
-        """A wrap around asyncore.loop(); starts the asyncore polling
-        loop including running the scheduler.
-        The arguments are the same expected by original asyncore.loop()
-        function:
+    def serve_forever(cls, timeout=1.0, blocking=True):
+        """Start serving.
 
-         - (float) timeout: the timeout passed to select() or poll()
-           system calls expressed in seconds (default 1.0).
+         - (float) timeout: the timeout passed to the underlying IO
+           loop expressed in seconds (default 1.0).
 
-         - (bool) use_poll: when True use poll() instead of select()
-           (default False).
-
-         - (int) count: how many times the polling loop gets called
-           before returning.  If None loops forever (default None).
+         - (bool) blocking: if False loop once and then return
         """
-        if use_poll and hasattr(asyncore.select, 'poll'):
-            poll_fun = asyncore.poll2
-        else:
-            poll_fun = asyncore.poll
+        if blocking:
+            # localize variable access to minimize overhead
+            ioloop_ = ioloop.instance()
+            poll = ioloop_.poll
+            socket_map = ioloop_.socket_map
+            tasks = _scheduler._tasks
+            scheduler = _scheduler
 
-        if count is None:
             log("Starting FTP server")
             try:
                 try:
-                    while asyncore.socket_map or _scheduler._tasks:
-                        poll_fun(timeout)
-                        _scheduler()
+                    while socket_map or tasks:
+                        poll(timeout)
+                        scheduler()
                 except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
                     pass
             finally:
                 log("Shutting down FTP server")
                 cls.close_all()
         else:
-            while (asyncore.socket_map or _scheduler._tasks) and count > 0:
-                if asyncore.socket_map:
-                    poll_fun(timeout)
-                if _scheduler._tasks:
-                    _scheduler()
-                count -= 1
+            ioloop_ = ioloop.instance()
+            if ioloop_.socket_map:
+                ioloop_.poll(timeout)
+            if _scheduler._tasks:
+                _scheduler()
 
     def handle_accept(self):
         """Called when remote client initiates a connection."""
@@ -3970,7 +3934,7 @@ class FTPServer(asyncore.dispatcher):
             # should contain.  When we're running out of such limit we'll
             # use the last available channel for sending a 421 response
             # to the client before disconnecting it.
-            if self.max_cons and (len(asyncore.socket_map) > self.max_cons):
+            if self.max_cons and (len(ioloop.instance().socket_map) > self.max_cons):
                 handler.handle_max_cons()
                 return
 
@@ -4039,7 +4003,8 @@ class FTPServer(asyncore.dispatcher):
         # This should minimize the possibility to incur in race
         # conditions or memory leaks caused by orphaned references
         # left behind in case of error.
-        values = sorted(asyncore.socket_map.values(),
+        ioloop_ = ioloop.instance()
+        values = sorted(ioloop_.socket_map.values(),
                         key=lambda inst: isinstance(inst, FTPHandler),
                         reverse=True)
         for x in values:
@@ -4055,10 +4020,12 @@ class FTPServer(asyncore.dispatcher):
                 raise
             except:
                 if not ignore_all:
-                    asyncore.socket_map.clear()
+                    ioloop_.close()
+                    ioloop_.socket_map.clear()
                     del _scheduler._tasks[:]
                     raise
-        asyncore.socket_map.clear()
+        ioloop_.close()
+        ioloop_.socket_map.clear()
 
         for x in _scheduler._tasks:
             try:
