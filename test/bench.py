@@ -151,7 +151,7 @@ def print_bench(what, value, unit=""):
     print_(s.strip())
 
 # http://goo.gl/zeJZl
-def bytes2human(n, format="%(value)i%(symbol)s"):
+def bytes2human(n, format="%(value).1f%(symbol)s"):
     """
     >>> bytes2human(10000)
     '9K'
