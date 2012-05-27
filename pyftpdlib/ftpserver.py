@@ -1399,33 +1399,24 @@ class FileProducer(object):
          - (file) file: the file[-like] object.
          - (str) type: the current TYPE, 'a' (ASCII) or 'i' (binary).
         """
-        self.done = False
         self.file = file
         self.type = type
-        if type == 'a':
-            if os.linesep == '\r\n':
-                self._data_wrapper = lambda x: x
-            else:
-                self._data_wrapper = lambda x: x.replace(b(os.linesep), b('\r\n'))
-        elif type == 'i':
-            self._data_wrapper = lambda x: x
+        if type == 'a' and os.linesep != '\r\n':
+            self._data_wrapper = lambda x: x.replace(b(os.linesep), b('\r\n'))
         else:
-            raise TypeError("unsupported type")
+            self._data_wrapper = None
 
     def more(self):
         """Attempt a chunk of data of size self.buffer_size."""
-        if self.done:
-            return b('')
         try:
-            data = self._data_wrapper(self.file.read(self.buffer_size))
+            data = self.file.read(self.buffer_size)
         except OSError:
             err = sys.exc_info()[1]
             raise _FileReadWriteError(err)
-        if not data:
-            self.done = True
-            if not self.file.closed:
-                self.file.close()
-        return data
+        else:
+            if self._data_wrapper is not None:
+                data = self._data_wrapper(data)
+            return data
 
 
 class BufferedIteratorProducer(object):
