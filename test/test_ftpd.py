@@ -3004,7 +3004,7 @@ class TestCornerCases(unittest.TestCase):
         try:
             len1 = len(asyncore.socket_map)
             ftpserver.CallLater(0, lambda: 1 // 0)
-            server.serve_forever(timeout=0, blocking=False)
+            server.serve_forever(timeout=0.001, blocking=False)
             len2 = len(asyncore.socket_map)
             self.assertEqual(len1, len2)
             self.assertTrue(flag)

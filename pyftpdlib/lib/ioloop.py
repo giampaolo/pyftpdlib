@@ -145,7 +145,7 @@ class _BasePollEpoll(_Base):
 
     def poll(self, timeout):
         try:
-            events = self._poller.poll(timeout)
+            events = self._poller.poll(timeout or -1)  # -1 waits indefinitely
         except select.error:
             err = sys.exc_info()[1]
             if err.args[0] == errno.EINTR:
@@ -189,7 +189,9 @@ if hasattr(select, 'poll'):
 
         def poll(self, timeout):
             # poll() timeout is expressed in milliseconds
-            _BasePollEpoll.poll(self, int(timeout * 1000))
+            if timeout is not None:
+                timeout = int(timeout * 1000)
+            _BasePollEpoll.poll(self, timeout)
 
 
 # ===================================================================

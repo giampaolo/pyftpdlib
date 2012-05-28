@@ -286,6 +286,9 @@ class _Scheduler(object):
         self._cancellations = 0
 
     def __call__(self):
+        """Run the scheduled functions due to expire soonest and
+        return the timeout of the next one (if any, else None).
+        """
         now = time.time()
         calls = []
         while self._tasks:
@@ -317,6 +320,11 @@ class _Scheduler(object):
             self._cancellations = 0
             self._tasks = [x for x in self._tasks if not x.cancelled]
             self.reheapify()
+
+        try:
+            return max(0, self._tasks[0].timeout - now)
+        except IndexError:
+            pass
 
     def register(self, what):
         heapq.heappush(self._tasks, what)
@@ -3858,13 +3866,15 @@ class FTPServer(Acceptor):
         return self.socket.getsockname()[:2]
 
     @classmethod
-    def serve_forever(cls, timeout=1.0, blocking=True):
+    def serve_forever(cls, timeout=None, blocking=True):
         """Start serving.
 
          - (float) timeout: the timeout passed to the underlying IO
            loop expressed in seconds (default 1.0).
 
-         - (bool) blocking: if False loop once and then return
+         - (bool) blocking: if False loop once and then return the
+           timeout of the next scheduled call next to expire soonest
+           (if any).
         """
         if blocking:
             # localize variable access to minimize overhead
@@ -3877,9 +3887,15 @@ class FTPServer(Acceptor):
             log("Starting FTP server")
             try:
                 try:
-                    while socket_map or tasks:
-                        poll(timeout)
-                        scheduler()
+                    if timeout is not None:
+                        while socket_map or tasks:
+                            poll(timeout)
+                            scheduler()
+                    else:
+                        soonest_timeout = None
+                        while socket_map or tasks:
+                            poll(soonest_timeout)
+                            soonest_timeout = scheduler()
                 except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
                     pass
             finally:
@@ -3890,7 +3906,7 @@ class FTPServer(Acceptor):
             if ioloop_.socket_map:
                 ioloop_.poll(timeout)
             if _scheduler._tasks:
-                _scheduler()
+                return _scheduler()
 
     def handle_accept(self):
         """Called when remote client initiates a connection."""
