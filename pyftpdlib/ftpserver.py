@@ -2436,9 +2436,13 @@ class FTPHandler(AsyncChat):
                 del self.data_channel
 
             if self._out_dtp_queue is not None:
-                self._out_dtp_queue[2].close()
+                file = self._out_dtp_queue[2]
+                if file is not None:
+                    file.close()
             if self._in_dtp_queue is not None:
-                self._in_dtp_queue[0].close()
+                file = self._in_dtp_queue[0]
+                if file is not None:
+                    file.close()
 
             del self._out_dtp_queue
             del self._in_dtp_queue
