@@ -2390,6 +2390,8 @@ class FTPHandler(AsyncChat):
         method (e.g. for received command "MKD pathname", ftp_MKD()
         method is called with "pathname" as the argument).
         """
+        if self._closed:
+            return
         self._last_response = ""
         method = getattr(self, 'ftp_' + cmd.replace(' ', '_'))
         method(*args, **kwargs)
