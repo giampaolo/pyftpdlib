@@ -92,8 +92,8 @@ def pid_exists(pid):
     try:
         os.kill(pid, 0)
     except OSError:
-        e = sys.exc_info()[1]
-        return e.errno == errno.EPERM
+        err = sys.exc_info()[1]
+        return err.errno == errno.EPERM
     else:
         return True
 
@@ -103,7 +103,7 @@ def get_pid():
         with open(PID_FILE) as f:
             return int(f.read().strip())
     except IOError:
-        e = sys.exc_info()[1]
+        err = sys.exc_info()[1]
         if err.errno != errno.ENOENT:
             raise
 
