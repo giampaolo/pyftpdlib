@@ -107,14 +107,13 @@ def support_hybrid_ipv6():
     """Return True if it is possible to use hybrid IPv6/IPv4 sockets
     on this platform.
     """
-    # IPPROTO_IPV6 constant is broken, see: http://bugs.python.org/issue6926
-    IPPROTO_IPV6 = getattr(socket, "IPV6_V6ONLY", 41)
-    IPV6_V6ONLY = getattr(socket, "IPV6_V6ONLY", 26)
+    # Note: IPPROTO_IPV6 constant is broken on Windws, see:
+    # http://bugs.python.org/issue6926
     sock = socket.socket(socket.AF_INET6)
     try:
         try:
-            return not sock.getsockopt(IPPROTO_IPV6, IPV6_V6ONLY)
-        except socket.error:
+            return not sock.getsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY)
+        except (socket.error, AttributeError):
             return False
     finally:
         sock.close()
@@ -3274,6 +3273,10 @@ class TestCommandLineParser(unittest.TestCase):
 
 
 def test_main(tests=None):
+    def warn(msg):
+        atexit.register(warnings.warn, str(msg) + " - test has been skipped",
+                        RuntimeWarning)
+
     test_suite = unittest.TestSuite()
     if tests is None:
         tests = [
@@ -3298,17 +3301,22 @@ def test_main(tests=None):
                  ]
         if SUPPORTS_IPV4:
             tests.append(TestIPv4Environment)
+        else:
+            warn("IPv4 stack not available")
         if SUPPORTS_IPV6:
             tests.append(TestIPv6Environment)
+        else:
+            warn("IPv6 stack not available")
         if SUPPORTS_HYBRID_IPV6:
             tests.append(TestIPv6MixedEnvironment)
+        else:
+            warn("IPv4/6 dual stack not available")
         if SUPPORTS_SENDFILE:
             tests.append(TestFtpRetrieveDataNoSendfile)
             tests.append(TestFtpStoreDataNoSendfile)
         else:
             if os.name == 'posix':
-                atexit.register(warnings.warn, "couldn't run sendfile() tests",
-                                RuntimeWarning)
+                warn("sendfile() not available")
         # Unicode tests won't work on Windows-Python2.x as the default
         # fs encoding is != utf8
         if not PY3 and os.name in ('nt', 'ce'):

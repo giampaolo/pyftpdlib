@@ -906,15 +906,24 @@ class ActiveDTP(Connector):
             self._cmd = "EPRT"
             self._normalized_addr = "[%s]:%s" % (ip, port)
 
-        self.create_socket(self.cmd_channel._af, socket.SOCK_STREAM)
-        # Have the active connection come from the same IP address
-        # as the command channel, see:
-        # http://code.google.com/p/pyftpdlib/issues/detail?id=123
+        # dual stack IPv4/IPv6 support
         source_ip = self.cmd_channel.socket.getsockname()[0]
-        self.bind((source_ip, 0))
-        try:
-            self.connect((ip, port))
-        except (socket.gaierror, socket.error):
+        for res in socket.getaddrinfo(ip, port, 0, socket.SOCK_STREAM):
+            self.socket = None
+            af, socktype, proto, canonname, sa = res
+            try:
+                self.create_socket(af, socktype)
+                # Have the active connection come from the same IP address
+                # as the command channel, see:
+                # http://code.google.com/p/pyftpdlib/issues/detail?id=123
+                self.bind((source_ip, 0))
+                self.connect((ip, port))
+            except (socket.gaierror, socket.error):
+                if self.socket is not None:
+                    self.socket.close()
+            else:
+                break
+        else:
             self.handle_close()
 
     def readable(self):
