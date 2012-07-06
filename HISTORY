@@ -26,6 +26,8 @@ Enhancements:
 
 Bugfixes:
 
+ * Issue 131: IPv6 dual-stack support was broken.
+
  * Issue 206: can't change directory (CWD) when using UnixAuthorizer and process
    cwd is == "/root".
 

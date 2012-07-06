@@ -916,7 +916,10 @@ class ActiveDTP(Connector):
                 # Have the active connection come from the same IP address
                 # as the command channel, see:
                 # http://code.google.com/p/pyftpdlib/issues/detail?id=123
-                self.bind((source_ip, 0))
+                # In case we're a dealing with a mixed IPv4/IPv6 stack
+                # avoid to bind() though.
+                if af == self.cmd_channel._af:
+                    self.bind((source_ip, 0))
                 self.connect((ip, port))
             except (socket.gaierror, socket.error):
                 if self.socket is not None:
