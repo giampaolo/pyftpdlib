@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 # $Id$
 
@@ -90,6 +89,7 @@ USER = 'user'
 PASSWD = '12345'
 HOME = getcwdu()
 TESTFN = 'tmp-pyftpdlib'
+TESTFN_UNICODE = TESTFN + '\xe2\x98\x83'
 
 def try_address(host, port=0, family=socket.AF_INET):
     """Try to bind a socket on the given host:port and return True
@@ -3046,8 +3046,8 @@ class TestUnicodePathNames(unittest.TestCase):
         self.client.connect(self.server.host, self.server.port)
         self.client.sock.settimeout(2)
         self.client.login(USER, PASSWD)
-        self.tempfile = os.path.basename(touch(TESTFN + '☃'))
-        self.tempdir = TESTFN + '☺'
+        self.tempfile = os.path.basename(touch(TESTFN_UNICODE + '1'))
+        self.tempdir = TESTFN_UNICODE + '2'
         os.mkdir(self.tempdir)
 
     def tearDown(self):
@@ -3077,7 +3077,7 @@ class TestUnicodePathNames(unittest.TestCase):
         self.assertFalse(os.path.exists(self.tempfile))
 
     def test_rnfr_rnto(self):
-        tempname = TESTFN + '♥'
+        tempname = TESTFN_UNICODE + 'foo'
         try:
             # rename file
             self.client.rename(self.tempfile, tempname)
@@ -3321,6 +3321,14 @@ def test_main(tests=None):
         # fs encoding is != utf8
         if not PY3 and os.name in ('nt', 'ce'):
             tests.remove(TestUnicodePathNames)
+        else:
+            try:
+                touch(TESTFN_UNICODE)
+            except UnicodeEncodeError:
+                tests.remove(TestUnicodePathNames)
+                warn("skipping unicode tests (OS seems not able to support UTF8")
+            else:
+                safe_remove(TESTFN_UNICODE)
 
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
