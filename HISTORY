@@ -24,15 +24,15 @@ Enhancements:
  * Issue 207: added on_connect() and on_disconnect() callback methods to
    FTPHandler class.
 
- * Issue 211: pyftpdlib doesn't work if deprecated py-sendfile 1.2.4 module is
-   installed.
-
 Bugfixes:
 
  * Issue 131: IPv6 dual-stack support was broken.
 
  * Issue 206: can't change directory (CWD) when using UnixAuthorizer and process
    cwd is == "/root".
+
+ * Issue 211: pyftpdlib doesn't work if deprecated py-sendfile 1.2.4 module is
+   installed.
 
 Major API changes since 0.7.0:
 
