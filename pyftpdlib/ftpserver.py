@@ -116,7 +116,6 @@ Serving FTP on 127.0.0.1:21
 """
 
 
-import asyncore
 import asynchat
 import socket
 import os
@@ -307,9 +306,7 @@ class _Scheduler(object):
                 continue
             try:
                 call.call()
-            except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
-                raise
-            except:
+            except Exception:
                 logerror(traceback.format_exc())
 
         # remove cancelled tasks and re-heapify the queue if the
@@ -407,8 +404,6 @@ class CallLater(object):
         try:
             try:
                 self._target(*self._args, **self._kwargs)
-            except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
-                raise
             except Exception:
                 exc = sys.exc_info()[1]
                 if self._errback is not None:
@@ -857,9 +852,7 @@ class PassiveDTP(Acceptor):
         """Called to handle any uncaught exceptions."""
         try:
             raise
-        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
-            raise
-        except:
+        except Exception:
             logerror(traceback.format_exc())
         self.close()
 
@@ -983,11 +976,9 @@ class ActiveDTP(Connector):
         """Called to handle any uncaught exceptions."""
         try:
             raise
-        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
-            raise
         except (socket.gaierror, socket.error):
             pass
-        except:
+        except Exception:
             self.log_exception(self)
         self.handle_close()
 
@@ -1242,8 +1233,6 @@ class DTPHandler(AsyncChat):
         """Called when an exception is raised and not otherwise handled."""
         try:
             raise
-        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
-            raise
         except socket.error:
             err = sys.exc_info()[1]
             # fixes around various bugs:
@@ -1261,7 +1250,7 @@ class DTPHandler(AsyncChat):
         except _FileReadWriteError:
             err = sys.exc_info()[1]
             error = _strerror(err.args[0])
-        except:
+        except Exception:
             # some other exception occurred;  we don't want to provide
             # confidential error messages
             self.log_exception(self)
@@ -2415,8 +2404,6 @@ class FTPHandler(AsyncChat):
     def handle_error(self):
         try:
             raise
-        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
-            raise
         except socket.error:
             err = sys.exc_info()[1]
             # fixes around various bugs:
@@ -2428,7 +2415,7 @@ class FTPHandler(AsyncChat):
                 return
             else:
                 self.log_exception(self)
-        except:
+        except Exception:
             self.log_exception(self)
         self.close()
 
@@ -3914,7 +3901,7 @@ class FTPServer(Acceptor):
                         while socket_map or tasks:
                             poll(soonest_timeout)
                             soonest_timeout = scheduler()
-                except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
+                except (KeyboardInterrupt, SystemExit):
                     pass
             finally:
                 log("Shutting down FTP server")
@@ -3974,9 +3961,7 @@ class FTPServer(Acceptor):
                 handler.handle()
             except:
                 handler.handle_error()
-        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
-            raise
-        except:
+        except Exception:
             # This is supposed to be an application bug that should
             # be fixed. We do not want to tear down the server though
             # (DoS). We just log the exception, hoping that someone
@@ -3998,9 +3983,7 @@ class FTPServer(Acceptor):
         """Called to handle any uncaught exceptions."""
         try:
             raise
-        except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
-            raise
-        except:
+        except Exception:
             logerror(traceback.format_exc())
         self.close()
 
@@ -4041,9 +4024,7 @@ class FTPServer(Acceptor):
                     pass
                 elif not ignore_all:
                     raise
-            except (asyncore.ExitNow, KeyboardInterrupt, SystemExit):
-                raise
-            except:
+            except Exception:
                 if not ignore_all:
                     ioloop_.close()
                     ioloop_.socket_map.clear()
@@ -4056,9 +4037,7 @@ class FTPServer(Acceptor):
             try:
                 if not x.cancelled:
                     x.cancel()
-            except (asyncore.ExitNow, KeyboardInterrupt, SystemExit):
-                raise
-            except:
+            except Exception:
                 if not ignore_all:
                     del _scheduler._tasks[:]
                     raise
