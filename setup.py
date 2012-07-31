@@ -96,6 +96,8 @@ setup(
 if os.name == 'posix':
     try:
         import sendfile
+        if hasattr(sendfile, 'has_sf_hdtr'):  # old 1.2.4 version
+            raise ImportError
     except ImportError:
         msg = "\nYou might want to install pysendfile module to speedup " \
               "transfers:\nhttp://code.google.com/p/pysendfile/\n"

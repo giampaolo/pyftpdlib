@@ -141,6 +141,11 @@ except ImportError:
 # http://code.google.com/p/pysendfile/
 try:
     from sendfile import sendfile
+    # dirty hack to detect whether old 1.2.4 version is installed
+    import sendfile as _sf
+    if hasattr(_sf, 'has_sf_hdtr'):
+        raise ImportError
+    del _sf
 except ImportError:
     sendfile = None
 
