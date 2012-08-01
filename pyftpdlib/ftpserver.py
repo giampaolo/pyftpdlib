@@ -361,7 +361,7 @@ class CallLater(object):
 
     It can be used to asynchronously schedule a call within the polling
     loop without blocking it. The instance returned is an object that
-    can be used to cancel or reschedule the call.
+    can be used to cancel the call or reset its timeout.
     """
     __slots__ = ('_delay', '_target', '_args', '_kwargs', '_errback',
                  '_repush', 'timeout', 'cancelled')
@@ -423,21 +423,6 @@ class CallLater(object):
         assert not self.cancelled, "Already cancelled"
         self.timeout = time.time() + self._delay
         self._repush = True
-
-    def delay(self, seconds):
-        """Reschedule this call for a later time."""
-        assert not self.cancelled, "Already cancelled."
-        assert MAXSIZE >= seconds >= 0, "%s is not greater than or equal " \
-                                        "to 0 seconds" % seconds
-        self._delay = seconds
-        newtime = time.time() + self._delay
-        if newtime > self.timeout:
-            self.timeout = newtime
-            self._repush = True
-        else:
-            # XXX - slow, can be improved
-            self.timeout = newtime
-            _scheduler.reheapify()
 
     def cancel(self):
         """Unschedule this call."""

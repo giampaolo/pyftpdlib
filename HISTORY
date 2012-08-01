@@ -36,6 +36,7 @@ Bugfixes:
 
 Major API changes since 0.7.0:
 
+ * CallLater.delay() method has been removed.
  * Unicode is now used instead of bytes pretty much everywhere.
  * FTPServer.server_forever() signature has changed from:
        serve_forever(timeout=1.0, use_poll=False, count=None)

@@ -637,13 +637,11 @@ class TestCallLater(unittest.TestCase):
         fun = lambda: 0
         self.assertRaises(AssertionError, ftpserver.CallLater, -1, fun)
         x = ftpserver.CallLater(3, fun)
-        self.assertRaises(AssertionError, x.delay, -1)
         self.assertEqual(x.cancelled, False)
         x.cancel()
         self.assertEqual(x.cancelled, True)
         self.assertRaises(AssertionError, x.call)
         self.assertRaises(AssertionError, x.reset)
-        self.assertRaises(AssertionError, x.delay, 2)
         self.assertRaises(AssertionError, x.cancel)
 
     def test_order(self):
@@ -653,18 +651,6 @@ class TestCallLater(unittest.TestCase):
             ftpserver.CallLater(x, fun, x)
         self.scheduler()
         self.assertEqual(l, [0.01, 0.02, 0.03, 0.04, 0.05])
-
-    def test_delay(self):
-        l = []
-        fun = lambda x: l.append(x)
-        ftpserver.CallLater(0.01, fun, 0.01).delay(0.07)
-        ftpserver.CallLater(0.02, fun, 0.02).delay(0.08)
-        ftpserver.CallLater(0.03, fun, 0.03)
-        ftpserver.CallLater(0.04, fun, 0.04)
-        ftpserver.CallLater(0.05, fun, 0.05)
-        ftpserver.CallLater(0.06, fun, 0.06).delay(0.001)
-        self.scheduler()
-        self.assertEqual(l, [0.06, 0.03, 0.04, 0.05, 0.01, 0.02])
 
     # The test is reliable only on those systems where time.time()
     # provides time with a better precision than 1 second.
@@ -718,13 +704,11 @@ class TestCallEvery(unittest.TestCase):
         fun = lambda: 0
         self.assertRaises(AssertionError, ftpserver.CallEvery, -1, fun)
         x = ftpserver.CallEvery(3, fun)
-        self.assertRaises(AssertionError, x.delay, -1)
         self.assertEqual(x.cancelled, False)
         x.cancel()
         self.assertEqual(x.cancelled, True)
         self.assertRaises(AssertionError, x.call)
         self.assertRaises(AssertionError, x.reset)
-        self.assertRaises(AssertionError, x.delay, 2)
         self.assertRaises(AssertionError, x.cancel)
 
     def test_only_once(self):
