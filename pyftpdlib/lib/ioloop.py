@@ -34,17 +34,26 @@ import errno
 import select
 import os
 import sys
+try:
+    import threading
+except ImportError:
+    import dummy_threading as threading
 
 
 class _Base(object):
     READ = 1
     WRITE = 2
     _instance = None
+    _lock = threading.Lock()
 
     @classmethod
     def instance(cls):
         if cls._instance is None:
-            cls._instance = cls()
+            cls._lock.acquire()
+            try:
+                cls._instance = cls()
+            finally:
+                cls._lock.release()
         return cls._instance
 
     @classmethod
