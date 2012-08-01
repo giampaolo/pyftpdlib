@@ -336,7 +336,7 @@ class Select(_Base):
     def poll(self, timeout):
         try:
             r, w, e = select.select(self._r, self._w, [], timeout)
-        except select.error:
+        except select.error:  # XXX catch EnvironmentError?
             err = sys.exc_info()[1]
             if err.args[0] == errno.EINTR:
                 return
@@ -387,7 +387,7 @@ class _BasePollEpoll(_Base):
     def poll(self, timeout):
         try:
             events = self._poller.poll(timeout or -1)  # -1 waits indefinitely
-        except select.error:
+        except (EnvironmentError, select.error):  # XXX expect select.error?
             err = sys.exc_info()[1]
             if err.args[0] == errno.EINTR:
                 return
