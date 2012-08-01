@@ -64,9 +64,6 @@ the backend functionality for the FTPd:
     providing a high level, cross-platform interface compatible
     with both Windows and UNIX style filesystems.
 
-    [CallLater] - calls a function at a later time whithin the polling
-    loop asynchronously.
-
     [AuthorizerError] - base class for authorizers exceptions.
 
 
@@ -149,7 +146,7 @@ try:
 except ImportError:
     sendfile = None
 
-from pyftpdlib.lib.ioloop import Acceptor, Connector, AsyncChat, ioloop
+from pyftpdlib.lib.ioloop import Acceptor, Connector, AsyncChat, IOLoop
 from pyftpdlib.lib.compat import (PY3, MAXSIZE, u, b, unicode, print_, getcwdu,
                                   xrange, next, callable)
 
@@ -157,7 +154,7 @@ from pyftpdlib.lib.compat import (PY3, MAXSIZE, u, b, unicode, print_, getcwdu,
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer',
            'AuthorizerError', 'FTPHandler', 'FTPServer', 'PassiveDTP',
            'ActiveDTP', 'DTPHandler', 'ThrottledDTPHandler', 'FileProducer',
-           'BufferedIteratorProducer', 'AbstractedFS', 'CallLater', 'CallEvery']
+           'BufferedIteratorProducer', 'AbstractedFS']
 
 
 __pname__   = 'Python FTP server library (pyftpdlib)'
@@ -280,66 +277,6 @@ def _strerror(err):
     else:
         return str(err)
 
-
-class _Scheduler(object):
-    """Run the scheduled functions due to expire soonest (if any)."""
-
-    def __init__(self):
-        # the heap used for the scheduled tasks
-        self._tasks = []
-        self._cancellations = 0
-
-    def __call__(self):
-        """Run the scheduled functions due to expire soonest and
-        return the timeout of the next one (if any, else None).
-        """
-        now = time.time()
-        calls = []
-        while self._tasks:
-            if now < self._tasks[0].timeout:
-                break
-            call = heapq.heappop(self._tasks)
-            if not call.cancelled:
-                calls.append(call)
-            else:
-                self._cancellations -= 1
-
-        for call in calls:
-            if call._repush:
-                heapq.heappush(self._tasks, call)
-                call._repush = False
-                continue
-            try:
-                call.call()
-            except Exception:
-                logerror(traceback.format_exc())
-
-        # remove cancelled tasks and re-heapify the queue if the
-        # number of cancelled tasks is more than the half of the
-        # entire queue
-        if self._cancellations > 512 \
-          and self._cancellations > (len(self._tasks) >> 1):
-            self._cancellations = 0
-            self._tasks = [x for x in self._tasks if not x.cancelled]
-            self.reheapify()
-
-        try:
-            return max(0, self._tasks[0].timeout - now)
-        except IndexError:
-            pass
-
-    def register(self, what):
-        heapq.heappush(self._tasks, what)
-
-    def unregister(self, what):
-        self._cancellations += 1
-
-    def reheapify(self):
-        heapq.heapify(self._tasks)
-
-
-_scheduler = _Scheduler()
-
 # dirty hack to support property.setter on python < 2.6
 if not hasattr(property, "setter"):
     class property(property):
@@ -355,95 +292,6 @@ if not hasattr(property, "setter"):
 _months_map = {1:'Jan', 2:'Feb', 3:'Mar', 4:'Apr', 5:'May', 6:'Jun', 7:'Jul',
                8:'Aug', 9:'Sep', 10:'Oct', 11:'Nov', 12:'Dec'}
 
-
-class CallLater(object):
-    """Calls a function at a later time.
-
-    It can be used to asynchronously schedule a call within the polling
-    loop without blocking it. The instance returned is an object that
-    can be used to cancel the call or reset its timeout.
-    """
-    __slots__ = ('_delay', '_target', '_args', '_kwargs', '_errback',
-                 '_repush', 'timeout', 'cancelled')
-
-    def __init__(self, seconds, target, *args, **kwargs):
-        """
-         - (int) seconds: the number of seconds to wait
-         - (obj) target: the callable object to call later
-         - args: the arguments to call it with
-         - kwargs: the keyword arguments to call it with; a special
-           '_errback' parameter can be passed: it is a callable
-           called in case target function raises an exception.
-        """
-        assert callable(target), "%s is not callable" % target
-        assert MAXSIZE >= seconds >= 0, "%s is not greater than or equal " \
-                                        "to 0 seconds" % seconds
-        self._delay = seconds
-        self._target = target
-        self._args = args
-        self._kwargs = kwargs
-        self._errback = kwargs.pop('_errback', None)
-        self._repush = False
-        # seconds from the epoch at which to call the function
-        if not seconds:
-            self.timeout = 0
-        else:
-            self.timeout = time.time() + self._delay
-        self.cancelled = False
-        _scheduler.register(self)
-
-    def __lt__(self, other):
-        return self.timeout < other.timeout
-
-    def __le__(self, other):
-        return self.timeout <= other.timeout
-
-    def _post_call(self, exc):
-        if not self.cancelled:
-            self.cancel()
-
-    def call(self):
-        """Call this scheduled function."""
-        assert not self.cancelled, "Already cancelled"
-        exc = None
-        try:
-            try:
-                self._target(*self._args, **self._kwargs)
-            except Exception:
-                exc = sys.exc_info()[1]
-                if self._errback is not None:
-                    self._errback()
-                else:
-                    raise
-        finally:
-            self._post_call(exc)
-
-    def reset(self):
-        """Reschedule this call resetting the current countdown."""
-        assert not self.cancelled, "Already cancelled"
-        self.timeout = time.time() + self._delay
-        self._repush = True
-
-    def cancel(self):
-        """Unschedule this call."""
-        assert not self.cancelled, "Already cancelled"
-        self.cancelled = True
-        del self._target, self._args, self._kwargs, self._errback
-        _scheduler.unregister(self)
-
-
-class CallEvery(CallLater):
-    """Calls a function every x seconds.
-    It accepts the same arguments as CallLater and shares the same API.
-    """
-
-    def _post_call(self, exc):
-        if not self.cancelled:
-            if exc:
-                self.cancel()
-            else:
-                self.timeout = time.time() + self._delay
-                _scheduler.register(self)
 
 
 # --- library defined exceptions
@@ -492,6 +340,21 @@ if os.name in ('nt', 'ce'):
             else:
                 print_(s.encode('utf8'))
     log = logline = _safeprint
+
+
+# --- deprecated APIs
+
+class CallLater(object):
+    def __init__(self, *args, **kwargs):
+        msg = "CallLater is deprecated; use self.ioloop.call_later() instead"
+        warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
+        IOLoop.instance().call_later(*args, **kwargs)
+
+class CallEvery(object):
+    def __init__(self, *args, **kwargs):
+        msg = "CallEvery is deprecated; use self.ioloop.call_every() instead"
+        warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
+        IOLoop.instance().call_every(*args, **kwargs)
 
 
 # --- authorizers
@@ -705,12 +568,8 @@ class PassiveDTP(Acceptor):
         self.log = cmd_channel.log
         self.log_exception = cmd_channel.log_exception
         self._closed = False
-        Acceptor.__init__(self)
-        if self.timeout:
-            self._idler = CallLater(self.timeout, self.handle_timeout,
-                                    _errback=self.handle_error)
-        else:
-            self._idler = None
+        self._idler = None
+        Acceptor.__init__(self, ioloop=cmd_channel.ioloop)
 
         local_ip = self.cmd_channel.socket.getsockname()[0]
         if local_ip in self.cmd_channel.masquerade_address_map:
@@ -776,6 +635,10 @@ class PassiveDTP(Acceptor):
         else:
             self.cmd_channel.respond('229 Entering extended passive mode '
                                      '(|||%d|).' % port)
+        if self.timeout:
+            self._idler = self.ioloop.call_later(self.timeout,
+                                                 self.handle_timeout,
+                                                 _errback=self.handle_error)
 
     # --- connection / overridden
 
@@ -861,12 +724,8 @@ class ActiveDTP(Connector):
         self.log = cmd_channel.log
         self.log_exception = cmd_channel.log_exception
         self._closed = True
-        Connector.__init__(self)
-        if self.timeout:
-            self._idler = CallLater(self.timeout, self.handle_timeout,
-                                    _errback=self.handle_error)
-        else:
-            self._idler = None
+        self._idler = None
+        Connector.__init__(self, ioloop=cmd_channel.ioloop)
         if ip.count('.') == 4:
             self._cmd = "PORT"
             self._normalized_addr = "%s:%s" % (ip, port)
@@ -895,7 +754,11 @@ class ActiveDTP(Connector):
             else:
                 break
         else:
-            self.handle_close()
+            return self.handle_close()
+        if self.timeout:
+            self._idler = self.ioloop.call_later(self.timeout,
+                                                 self.handle_timeout,
+                                                 _errback=self.handle_error)
 
     def readable(self):
         return False
@@ -1010,28 +873,29 @@ class DTPHandler(AsyncChat):
         self._resp = None
         self._offset = None
         self._filefd = None
-        if self.timeout:
-            self._idler = CallEvery(self.timeout, self.handle_timeout,
-                                    _errback=self.handle_error)
-        else:
-            self._idler = None
+        self._idler = None
         try:
-            AsyncChat.__init__(self, sock_obj)
+            AsyncChat.__init__(self, sock_obj, ioloop=cmd_channel.ioloop)
         except socket.error:
             err = sys.exc_info()[1]
             # if we get an exception here we want the dispatcher
             # instance to set socket attribute before closing, see:
             # http://code.google.com/p/pyftpdlib/issues/detail?id=188
-            AsyncChat.__init__(self, socket.socket())
+            AsyncChat.__init__(self, socket.socket(), ioloop=cmd_channel.ioloop)
             # http://code.google.com/p/pyftpdlib/issues/detail?id=143
             self.close()
             if err.args[0] == errno.EINVAL:
                 return
             self.handle_error()
             return
+
         # remove this instance from asyncore socket map
         if not self.connected:
-            self.close()
+            return self.close()
+        if self.timeout:
+            self._idler = self.ioloop.call_every(self.timeout,
+                                                 self.handle_timeout,
+                                                 _errback=self.handle_error)
 
     def _use_sendfile(self, producer):
         return self.cmd_channel.use_sendfile \
@@ -1039,11 +903,11 @@ class DTPHandler(AsyncChat):
            and producer.type == 'i'
 
     def push(self, data):
-        ioloop.instance().modify(self._fileno, ioloop.WRITE)
+        self.ioloop.modify(self._fileno, self.ioloop.WRITE)
         AsyncChat.push(self, data)
 
     def push_with_producer(self, producer):
-        ioloop.instance().modify(self._fileno, ioloop.WRITE)
+        self.ioloop.modify(self._fileno, self.ioloop.WRITE)
         if self._use_sendfile(producer):
             self._offset = producer.file.tell()
             self._filefd = self.file_obj.fileno()
@@ -1102,7 +966,7 @@ class DTPHandler(AsyncChat):
 
          - (str) type: current transfer type, 'a' (ASCII) or 'i' (binary).
         """
-        ioloop.instance().modify(self._fileno, ioloop.READ)
+        self.ioloop.modify(self._fileno, self.ioloop.READ)
         self.cmd = cmd
         if type == 'a':
             if os.linesep == '\r\n':
@@ -1130,7 +994,7 @@ class DTPHandler(AsyncChat):
     # --- connection
 
     def send(self, data):
-        result = AsyncChat.send(self, data)
+        result = asynchat.async_chat.send(self, data)
         self.tot_bytes_sent += result
         return result
 
@@ -1189,7 +1053,7 @@ class DTPHandler(AsyncChat):
 
     def writable(self):
         """Predicate for inclusion in the writable for select()."""
-        return not self.receive and AsyncChat.writable(self)
+        return not self.receive and asynchat.async_chat.writable(self)
 
     def handle_timeout(self):
         """Called cyclically to check if data trasfer is stalling with
@@ -1359,8 +1223,8 @@ class ThrottledDTPHandler(DTPHandler):
                 def unsleep():
                     self.sleeping = False
                 self.sleeping = True
-                self._throttler = CallLater(sleepfor * 2, unsleep,
-                                            _errback=self.handle_error)
+                self._throttler = self.ioloop.call_later(sleepfor * 2, unsleep,
+                                                    _errback=self.handle_error)
             self._timenext = now + 1
 
     def close(self):
@@ -2053,7 +1917,7 @@ class FTPHandler(AsyncChat):
     use_sendfile = sendfile is not None
     tcp_no_delay = hasattr(socket, "TCP_NODELAY")
 
-    def __init__(self, conn, server):
+    def __init__(self, conn, server, ioloop=None):
         """Initialize the command channel.
 
          - (instance) conn: the socket object instance of the newly
@@ -2090,11 +1954,8 @@ class FTPHandler(AsyncChat):
         self._extra_feats = []
         self._current_facts = ['type', 'perm', 'size', 'modify']
         self._rnfr = None
-        if self.timeout:
-            self._idler = CallLater(self.timeout, self.handle_timeout,
-                                    _errback=self.handle_error)
-        else:
-            self._idler = None
+        self._idler = None
+
         if os.name == 'posix':
             self._current_facts.append('unique')
         self._available_facts = self._current_facts[:]
@@ -2104,13 +1965,13 @@ class FTPHandler(AsyncChat):
             self._available_facts.append('create')
 
         try:
-            AsyncChat.__init__(self, conn)
+            AsyncChat.__init__(self, conn, ioloop=ioloop)
         except socket.error:
             err = sys.exc_info()[1]
             # if we get an exception here we want the dispatcher
             # instance to set socket attribute before closing, see:
             # http://code.google.com/p/pyftpdlib/issues/detail?id=188
-            AsyncChat.__init__(self, socket.socket())
+            AsyncChat.__init__(self, socket.socket(), ioloop=ioloop)
             self.close()
             if err.args[0] == errno.EINVAL:
                 # http://code.google.com/p/pyftpdlib/issues/detail?id=143
@@ -2157,7 +2018,11 @@ class FTPHandler(AsyncChat):
 
         # remove this instance from asyncore socket_map
         if not self.connected:
-            self.close()
+            return self.close()
+
+        if self.timeout:
+            self._idler = self.ioloop.call_later(self.timeout, self.handle_timeout,
+                                                 _errback=self.handle_error)
 
     def handle(self):
         """Return a 220 'ready' response to the client over the command
@@ -2438,7 +2303,8 @@ class FTPHandler(AsyncChat):
             # actually took place, hence we're not interested in
             # invoking the callback.
             if self.remote_ip:
-                CallLater(0, self.on_disconnect, _errback=self.handle_error)
+                self.ioloop.call_later(0, self.on_disconnect,
+                                       _errback=self.handle_error)
 
     def _shutdown_connecting_dtp(self):
         """Close any ActiveDTP or PassiveDTP instance waiting to
@@ -2554,8 +2420,9 @@ class FTPHandler(AsyncChat):
             self.close()
         elif self.timeout:
             # data transfer finished, restart the idle timer
-            self._idler = CallLater(self.timeout, self.handle_timeout,
-                                    _errback=self.handle_error)
+            self._idler = self.ioloop.call_later(self.timeout,
+                                                 self.handle_timeout,
+                                                 _errback=self.handle_error)
 
     # --- utility
 
@@ -2757,12 +2624,11 @@ class FTPHandler(AsyncChat):
             self.data_channel = None
 
         # make sure we are not hitting the max connections limit
-        if self.server.max_cons:
-            if len(ioloop.instance().socket_map) >= self.server.max_cons:
-                msg = "Too many connections. Can't open data channel."
-                self.respond("425 %s" %msg)
-                self.log(msg)
-                return
+        if not self.server._accept_new_cons():
+            msg = "Too many connections. Can't open data channel."
+            self.respond("425 %s" %msg)
+            self.log(msg)
+            return
 
         # open data channel
         self._dtp_connector = self.active_dtp(ip, port, self)
@@ -2782,12 +2648,11 @@ class FTPHandler(AsyncChat):
             self.data_channel = None
 
         # make sure we are not hitting the max connections limit
-        if self.server.max_cons:
-            if len(ioloop.instance().socket_map) >= self.server.max_cons:
-                msg = "Too many connections. Can't open data channel."
-                self.respond("425 %s" %msg)
-                self.log(msg)
-                return
+        if not self.server._accept_new_cons():
+            msg = "Too many connections. Can't open data channel."
+            self.respond("425 %s" %msg)
+            self.log(msg)
+            return
 
         # open data channel
         self._dtp_acceptor = self.passive_dtp(self, extmode)
@@ -3314,8 +3179,9 @@ class FTPHandler(AsyncChat):
                 msg = "Anonymous access not allowed."
             else:
                 msg = "Authentication failed."
-            CallLater(self._auth_failed_timeout, auth_failed, self.username,
-                      line, msg, _errback=self.handle_error)
+            self.ioloop.call_later(self._auth_failed_timeout, auth_failed,
+                                   self.username, line, msg,
+                                   _errback=self.handle_error)
             self.username = ""
 
     def ftp_REIN(self, line):
@@ -3796,7 +3662,7 @@ class FTPServer(Acceptor):
     max_cons = 512
     max_cons_per_ip = 0
 
-    def __init__(self, address, handler):
+    def __init__(self, address, handler, ioloop=None):
         """Initiate the FTP server opening listening on address.
 
          - (tuple) address: the host:port pair on which the command
@@ -3804,7 +3670,7 @@ class FTPServer(Acceptor):
 
          - (classobj) handler: the handler class to use.
         """
-        Acceptor.__init__(self)
+        Acceptor.__init__(self, ioloop=ioloop)
         self.handler = handler
         self.ip_map = []
         host, port = address
@@ -3845,8 +3711,14 @@ class FTPServer(Acceptor):
     def address(self):
         return self.socket.getsockname()[:2]
 
-    @classmethod
-    def serve_forever(cls, timeout=None, blocking=True):
+    def _accept_new_cons(self):
+        """Return True if the server is willing to accept new connections."""
+        if not self.max_cons:
+            return True
+        else:
+            return len(self.ioloop.socket_map) <= self.max_cons
+
+    def serve_forever(self, timeout=None, blocking=True):
         """Start serving.
 
          - (float) timeout: the timeout passed to the underlying IO
@@ -3856,44 +3728,14 @@ class FTPServer(Acceptor):
            timeout of the next scheduled call next to expire soonest
            (if any).
         """
-        if blocking:
-            # localize variable access to minimize overhead
-            ioloop_ = ioloop.instance()
-            poll = ioloop_.poll
-            socket_map = ioloop_.socket_map
-            tasks = _scheduler._tasks
-            scheduler = _scheduler
-
-            log("Starting FTP server")
-            try:
-                try:
-                    if timeout is not None:
-                        while socket_map or tasks:
-                            poll(timeout)
-                            scheduler()
-                    else:
-                        soonest_timeout = None
-                        while socket_map or tasks:
-                            poll(soonest_timeout)
-                            soonest_timeout = scheduler()
-                except (KeyboardInterrupt, SystemExit):
-                    pass
-            finally:
-                log("Shutting down FTP server")
-                cls.close_all()
-        else:
-            ioloop_ = ioloop.instance()
-            if ioloop_.socket_map:
-                ioloop_.poll(timeout)
-            if _scheduler._tasks:
-                return _scheduler()
+        self.ioloop.loop(timeout, blocking)
 
     def handle_accepted(self, sock, addr):
         """Called when remote client initiates a connection."""
         handler = None
         ip = None
         try:
-            handler = self.handler(sock, self)
+            handler = self.handler(sock, self, ioloop=self.ioloop)
             if not handler.connected:
                 return
             log("[]%s:%s Connected." % addr[:2])
@@ -3905,7 +3747,7 @@ class FTPServer(Acceptor):
             # should contain.  When we're running out of such limit we'll
             # use the last available channel for sending a 421 response
             # to the client before disconnecting it.
-            if self.max_cons and (len(ioloop.instance().socket_map) > self.max_cons):
+            if not self._accept_new_cons():
                 handler.handle_max_cons()
                 return
 
@@ -3946,61 +3788,11 @@ class FTPServer(Acceptor):
             logerror(traceback.format_exc())
         self.close()
 
-    @classmethod
-    def close_all(cls, ignore_all=False):
+    def close_all(self):
         """Stop serving and also disconnects all currently connected
         clients.
-
-         - (bool) ignore_all:
-            having it set to False results in raising exception in case
-            of unexpected errors.
-
-        Implementation note:
-
-        This is how asyncore.close_all() is implemented starting from
-        Python 2.6.
-        The previous versions of close_all() instead of iterating over
-        all opened channels and calling close() method for each one
-        of them only closed sockets generating memory leaks.
         """
-        # We sort the list so that we close all FTP handler instances
-        # first since FTPHandler.close() has the peculiarity of
-        # automatically closing all its children (DTPHandler, ActiveDTP
-        # and PassiveDTP).
-        # This should minimize the possibility to incur in race
-        # conditions or memory leaks caused by orphaned references
-        # left behind in case of error.
-        ioloop_ = ioloop.instance()
-        values = sorted(ioloop_.socket_map.values(),
-                        key=lambda inst: isinstance(inst, FTPHandler),
-                        reverse=True)
-        for x in values:
-            try:
-                x.close()
-            except OSError:
-                err = sys.exc_info()[1]
-                if err.args[0] == errno.EBADF:
-                    pass
-                elif not ignore_all:
-                    raise
-            except Exception:
-                if not ignore_all:
-                    ioloop_.close()
-                    ioloop_.socket_map.clear()
-                    del _scheduler._tasks[:]
-                    raise
-        ioloop_.close()
-        ioloop_.socket_map.clear()
-
-        for x in _scheduler._tasks:
-            try:
-                if not x.cancelled:
-                    x.cancel()
-            except Exception:
-                if not ignore_all:
-                    del _scheduler._tasks[:]
-                    raise
-        del _scheduler._tasks[:]
+        return self.ioloop.close()
 
 
 def main():

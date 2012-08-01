@@ -53,7 +53,7 @@ import errno
 import sys
 
 from pyftpdlib.ftpserver import FTPHandler, DTPHandler, proto_cmds, _DISCONNECTED
-from pyftpdlib.lib.ioloop import Acceptor
+from pyftpdlib.lib.ioloop import AsyncChat
 from pyftpdlib.lib.compat import PY3, b
 
 __all__ = []
@@ -78,10 +78,10 @@ else:
         })
 
     if PY3:
-        class _SSLBase(Acceptor):
+        class _SSLBase(AsyncChat):
             pass
     else:
-        class _SSLBase(object, Acceptor):
+        class _SSLBase(object, AsyncChat):
             def __init__(self, *args, **kwargs):
                 super(object, self).__init__(*args, **kwargs)  # bypass object
 
@@ -373,8 +373,8 @@ else:
         proto_cmds = new_proto_cmds
         dtp_handler = TLS_DTPHandler
 
-        def __init__(self, conn, server):
-            super(TLS_FTPHandler, self).__init__(conn, server)
+        def __init__(self, conn, server, ioloop=None):
+            super(TLS_FTPHandler, self).__init__(conn, server, ioloop)
             if not self.connected:
                 return
             self._extra_feats = ['AUTH TLS', 'AUTH SSL', 'PBSZ', 'PROT']

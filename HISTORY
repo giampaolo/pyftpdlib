@@ -34,21 +34,42 @@ Bugfixes:
  * Issue 211: pyftpdlib doesn't work if deprecated py-sendfile 1.2.4 module is
    installed.
 
-Major API changes since 0.7.0:
+New APIs:
 
- * CallLater.delay() method has been removed.
+ * pyftpdlib.ftpserver.FilesystemError exception class.
+ * pyftpdlib.ftpserver.FTPHandler's on_connect() and on_disconnect() callbacks.
+ * pyftpdlib.ftpserver's FTPServer, FTPHandler, DTPHandler new ioloop attribute.
+ * pyftpdlib.lib.ioloop.IOLoop class (not supposed to be used directly)
+
+Incompatible API changes:
+
  * Unicode is now used instead of bytes pretty much everywhere.
- * FTPServer.server_forever() signature has changed from:
-       serve_forever(timeout=1.0, use_poll=False, count=None)
-   ...to:
-       serve_forever(timeout=1.0, blocking=True):
+
+ * FTPHandler.__init__() and TLS_FTPHandler.__init__() signatures have changed:
+     - __init__(conn, server)
+     + __init__(conn, server, ioloop=None)
+
+ * FTPServer.server_forever() signature has changed:
+     - serve_forever(timeout=1.0, use_poll=False, count=None)
+     + serve_forever(timeout=1.0, blocking=True)
+
+ * FTPServer.close_all() signature has changed:
+     - close_all(ignore_all=False)
+     + close_all()
+
+ * FTPServer.server_forever() and FTPServer.close_all() are no longer class
+   methods (XXX still not sure)
+
  * asyncore.dispatcher and asynchat.async_chat classes has been replaced by:
-   - pyftpdlib.lib.ioloop.Acceptor
-   - pyftpdlib.lib.ioloop.Connector
-   - pyftpdlib.lib.ioloop.AsyncChat
-   Any implementation relying on them will no longer work.
- * New FilesystemError exception class.
- * New FTPHandler's on_connect() and on_disconnect() callbacks.
+     - pyftpdlib.lib.ioloop.Acceptor
+     - pyftpdlib.lib.ioloop.Connector
+     - pyftpdlib.lib.ioloop.AsyncChat
+   Any customization relying on asyncore or its IO loop will no longer work.
+
+ * pyftpdlib.ftpserver.CallLater and pyftpdlib.ftpserver.CallEvery are
+   deprecated. Instead, use self.ioloop.call_later() and self.ioloop.call_every()
+   from withing FTPHandler.  Also delay() method of the returned object has
+   been removed.
 
 
 Version: 0.7.0 - Date: 2012-01-25

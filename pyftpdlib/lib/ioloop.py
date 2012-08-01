@@ -34,20 +34,179 @@ import errno
 import select
 import os
 import sys
+import traceback
+import time
+import heapq
 try:
     import threading
 except ImportError:
     import dummy_threading as threading
 
+from pyftpdlib.lib.compat import MAXSIZE, callable
+
+
+_read = asyncore.read
+_write = asyncore.write
+
+# XXX
+def logerror(msg):
+    sys.stderr.write(str(msg) + '\n')
+    sys.stderr.flush()
+
+
+# ===================================================================
+# --- scheduler
+# ===================================================================
+
+class _Scheduler(object):
+    """Run the scheduled functions due to expire soonest (if any)."""
+
+    def __init__(self):
+        # the heap used for the scheduled tasks
+        self._tasks = []
+        self._cancellations = 0
+
+    def poll(self):
+        """Run the scheduled functions due to expire soonest and
+        return the timeout of the next one (if any, else None).
+        """
+        now = time.time()
+        calls = []
+        while self._tasks:
+            if now < self._tasks[0].timeout:
+                break
+            call = heapq.heappop(self._tasks)
+            if not call.cancelled:
+                calls.append(call)
+            else:
+                self._cancellations -= 1
+
+        for call in calls:
+            if call._repush:
+                heapq.heappush(self._tasks, call)
+                call._repush = False
+                continue
+            try:
+                call.call()
+            except Exception:
+                logerror(traceback.format_exc())
+
+        # remove cancelled tasks and re-heapify the queue if the
+        # number of cancelled tasks is more than the half of the
+        # entire queue
+        if self._cancellations > 512 \
+          and self._cancellations > (len(self._tasks) >> 1):
+            self._cancellations = 0
+            self._tasks = [x for x in self._tasks if not x.cancelled]
+            self.reheapify()
+
+        try:
+            return max(0, self._tasks[0].timeout - now)
+        except IndexError:
+            pass
+
+    def register(self, what):
+        heapq.heappush(self._tasks, what)
+
+    def unregister(self, what):
+        self._cancellations += 1
+
+    def reheapify(self):
+        heapq.heapify(self._tasks)
+
+
+class _CallLater(object):
+    """Container object which instance is returned by ioloop.call_later()."""
+
+    __slots__ = ('_delay', '_target', '_args', '_kwargs', '_errback', '_sched',
+                 '_repush', 'timeout', 'cancelled')
+
+    def __init__(self, seconds, target, *args, **kwargs):
+        assert callable(target), "%s is not callable" % target
+        assert MAXSIZE >= seconds >= 0, "%s is not greater than or equal " \
+                                        "to 0 seconds" % seconds
+        self._delay = seconds
+        self._target = target
+        self._args = args
+        self._kwargs = kwargs
+        self._errback = kwargs.pop('_errback', None)
+        self._sched = kwargs.pop('_scheduler')
+        self._repush = False
+        # seconds from the epoch at which to call the function
+        if not seconds:
+            self.timeout = 0
+        else:
+            self.timeout = time.time() + self._delay
+        self.cancelled = False
+        self._sched.register(self)
+
+    def __lt__(self, other):
+        return self.timeout < other.timeout
+
+    def __le__(self, other):
+        return self.timeout <= other.timeout
+
+    def _post_call(self, exc):
+        if not self.cancelled:
+            self.cancel()
+
+    def call(self):
+        """Call this scheduled function."""
+        assert not self.cancelled, "already cancelled"
+        exc = None
+        try:
+            try:
+                self._target(*self._args, **self._kwargs)
+            except Exception:
+                exc = sys.exc_info()[1]
+                if self._errback is not None:
+                    self._errback()
+                else:
+                    raise
+        finally:
+            self._post_call(exc)
+
+    def reset(self):
+        """Reschedule this call resetting the current countdown."""
+        assert not self.cancelled, "already cancelled"
+        self.timeout = time.time() + self._delay
+        self._repush = True
+
+    def cancel(self):
+        """Unschedule this call."""
+        assert not self.cancelled, "already cancelled"
+        self.cancelled = True
+        del self._target, self._args, self._kwargs, self._errback
+        self._sched.unregister(self)
+
+
+class _CallEvery(_CallLater):
+    """Container object which instance is returned by ioloop.call_every()."""
+
+    def _post_call(self, exc):
+        if not self.cancelled:
+            if exc:
+                self.cancel()
+            else:
+                self.timeout = time.time() + self._delay
+                self._sched.register(self)
+
 
 class _Base(object):
+    """Base class which is then referred as IOLoop."""
+
     READ = 1
     WRITE = 2
     _instance = None
     _lock = threading.Lock()
 
+    def __init__(self):
+        self.socket_map = {}
+        self.sched = _Scheduler()
+
     @classmethod
     def instance(cls):
+        """Return a global IOLoop instance."""
         if cls._instance is None:
             cls._lock.acquire()
             try:
@@ -56,12 +215,85 @@ class _Base(object):
                 cls._lock.release()
         return cls._instance
 
-    @classmethod
-    def close(cls):
-        cls._instance = None
+    def close(self):
+        """Closes the IOLoop, freeing any resources used."""
+        self.__class__._instance = None
 
-_read = asyncore.read
-_write = asyncore.write
+        # free connections
+        instances = sorted(self.socket_map.values(), key=lambda x: x._fileno)
+        for inst in instances:
+            try:
+                inst.close()
+            except OSError:
+                err = sys.exc_info()[1]
+                if err.args[0] != errno.EBADF:
+                    logerror(traceback.format_exc())  # XXX
+            except Exception:
+                logerror(traceback.format_exc())  # XXX
+        self.socket_map.clear()
+
+        # free scheduled functions
+        for x in self.sched._tasks:
+            try:
+                if not x.cancelled:
+                    x.cancel()
+            except Exception:
+                logerror(traceback.format_exc())  # XXX
+        del self.sched._tasks[:]
+
+    def loop(self, timeout=None, blocking=True):
+        """Start the asynchronous IO loop.
+
+         - (float) timeout: the timeout passed to the underlying
+           multiplex syscall (select(), epoll() etc.).
+
+         - (bool) blocking: if False loop once and then return the
+           timeout of the next scheduled call next to expire soonest
+           (if any, else None).
+        """
+        if blocking:
+            # localize variable access to minimize overhead
+            poll = self.poll
+            socket_map = self.socket_map
+            tasks = self.sched._tasks
+            sched_poll = self.sched.poll
+
+            if timeout is not None:
+                while socket_map or tasks:
+                    poll(timeout)
+                    sched_poll()
+            else:
+                soonest_timeout = None
+                while socket_map or tasks:
+                    poll(soonest_timeout)
+                    soonest_timeout = sched_poll()
+        else:
+            if self.socket_map:
+                self.poll(timeout)
+            if self.sched._tasks:
+                return self.sched.poll()
+
+    def call_later(self, seconds, target, *args, **kwargs):
+        """Calls a function at a later time.
+        It can be used to asynchronously schedule a call within the polling
+        loop without blocking it. The instance returned is an object that
+        can be used to cancel or reschedule the call.
+
+         - (int) seconds: the number of seconds to wait
+         - (obj) target: the callable object to call later
+         - args: the arguments to call it with
+         - kwargs: the keyword arguments to call it with; a special
+           '_errback' parameter can be passed: it is a callable
+           called in case target function raises an exception.
+               """
+        kwargs['_scheduler'] = self.sched
+        return _CallLater(seconds, target, *args, **kwargs)
+
+    def call_every(self, seconds, target, *args, **kwargs):
+        """Schedules the given callback to be called periodically."""
+        kwargs['_scheduler'] = self.sched
+        return _CallEvery(seconds, target, *args, **kwargs)
+
 
 
 # ===================================================================
@@ -72,7 +304,7 @@ class Select(_Base):
     """select()-based poller."""
 
     def __init__(self):
-        self.socket_map = {}
+        _Base.__init__(self)
         self._r = []
         self._w = []
 
@@ -134,7 +366,7 @@ class _BasePollEpoll(_Base):
     """
 
     def __init__(self):
-        self.socket_map = {}
+        _Base.__init__(self)
         self._poller = self._poller()
 
     def register(self, fd, instance, events):
@@ -218,8 +450,8 @@ if hasattr(select, 'epoll'):
         _poller = select.epoll
 
         def close(self):
+            _Base.close(self)
             self._poller.close()
-            Epoll._instance = None
 
 
 # ===================================================================
@@ -230,17 +462,15 @@ if hasattr(select, 'kqueue'):
 
     class Kqueue(_Base):
         """kqueue() based poller."""
-        READ = 1
-        WRITE = 2
 
         def __init__(self):
-            self.socket_map = {}
+            _Base.__init__(self)
             self._kqueue = select.kqueue()
             self._active = {}
 
         def close(self):
+            _Base.close(self)
             self._kqueue.close()
-            Kqueue._instance = None
 
         def register(self, fd, instance, events):
             self.socket_map[fd] = instance
@@ -309,26 +539,14 @@ if hasattr(select, 'kqueue'):
 # ===================================================================
 
 if hasattr(select, 'epoll'):     # epoll() - Linux only
-    ioloop = Epoll
+    IOLoop = Epoll
 elif hasattr(select, 'kqueue'):  # kqueue() - BSD / OSX
-    ioloop = Kqueue
+    IOLoop = Kqueue
 elif hasattr(select, 'poll'):    # poll()- POSIX
-    ioloop = Poll
+    IOLoop = Poll
 else:                            # select() - POSIX and Windows
-    ioloop = Select
+    IOLoop = Select
 
-
-def install(poller):
-    """Utility method to install a specific poller."""
-    global ioloop
-    if ioloop._instance is not None:
-        raise ValueError("IO poller must be stopped first")
-    ioloop = poller
-
-#install(Epoll)
-#install(Kqueue)
-#install(Poll)
-#install(Select)
 
 # ===================================================================
 # --- asyncore dispatchers
@@ -339,22 +557,24 @@ def install(poller):
 
 class Acceptor(asyncore.dispatcher):
 
+    def __init__(self, ioloop=None):
+        self.ioloop = ioloop or IOLoop.instance()
+        asyncore.dispatcher.__init__(self)
+
     def add_channel(self, map=None):
-        io = ioloop.instance()
-        io.register(self._fileno, self, io.READ)
+        self.ioloop.register(self._fileno, self, self.ioloop.READ)
 
     def del_channel(self, map=None):
-        ioloop.instance().unregister(self._fileno)
+        self.ioloop.unregister(self._fileno)
         self._fileno = None
 
     def listen(self, num):
         asyncore.dispatcher.listen(self, num)
-        io = ioloop.instance()
         # XXX - this seems to be necessary, otherwise kqueue.control()
         # won't return listening fd events
         try:
-            if isinstance(io, Kqueue):
-                io.modify(self._fileno, io.READ)
+            if isinstance(self.ioloop, Kqueue):
+                self.ioloop.modify(self._fileno, self.ioloop.READ)
         except NameError:
             pass
 
@@ -387,23 +607,22 @@ class Acceptor(asyncore.dispatcher):
 class Connector(Acceptor):
 
     def add_channel(self, map=None):
-        io = ioloop.instance()
-        io.register(self._fileno, self, io.WRITE)
+        self.ioloop.register(self._fileno, self, self.ioloop.WRITE)
 
 
 class AsyncChat(asynchat.async_chat):
 
-    def __init__(self, *args, **kwargs):
-        self._current_io_events = ioloop.READ
+    def __init__(self, sock, ioloop=None):
+        self.ioloop = ioloop or IOLoop.instance()
+        self._current_io_events = self.ioloop.READ
         self._closed = False
-        asynchat.async_chat.__init__(self, *args, **kwargs)
+        asynchat.async_chat.__init__(self, sock)
 
     def add_channel(self, map=None):
-        io = ioloop.instance()
-        io.register(self._fileno, self, io.READ)
+        self.ioloop.register(self._fileno, self, self.ioloop.READ)
 
     def del_channel(self, map=None):
-        ioloop.instance().unregister(self._fileno)
+        self.ioloop.unregister(self._fileno)
         self._fileno = None
 
     def initiate_send(self):
@@ -412,9 +631,9 @@ class AsyncChat(asynchat.async_chat):
             # if there's still data to send we want to be ready
             # for writing, else we're only intereseted in reading
             if not self.producer_fifo:
-                wanted = ioloop.READ
+                wanted = self.ioloop.READ
             else:
-                wanted = ioloop.READ | ioloop.WRITE
+                wanted = self.ioloop.READ | self.ioloop.WRITE
             if self._current_io_events != wanted:
-                ioloop.instance().modify(self._fileno, wanted)
+                self.ioloop.modify(self._fileno, wanted)
                 self._current_io_events = wanted

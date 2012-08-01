@@ -43,7 +43,6 @@ import random
 import warnings
 import sys
 import errno
-import asyncore
 import atexit
 import stat
 try:
@@ -61,6 +60,7 @@ except ImportError:
 
 from pyftpdlib import ftpserver
 from pyftpdlib.lib.compat import PY3, u, b, getcwdu
+from pyftpdlib.lib.ioloop import IOLoop
 
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
@@ -138,7 +138,7 @@ def touch(name):
 def onexit():
     """Convenience function for removing temporary files and
     directories on interpreter exit.
-    Also closes all sockets/instances left behind in asyncore
+    Also closes all sockets/instances left behind in IOLoop
     socket map (if any).
     """
     for name in os.listdir(u('.')):
@@ -147,7 +147,7 @@ def onexit():
                 shutil.rmtree(name)
             else:
                 os.remove(name)
-    map = asyncore.socket_map
+    map = IOLoop.instance().socket_map
     for x in map.values():
         try:
             sys.stderr.write("garbage: %s\n" % repr(x))
@@ -163,7 +163,7 @@ atexit.register(onexit)
 
 # lower this threshold so that the scheduler internal queue
 # gets re-heapified more often
-ftpserver._scheduler.cancellations_threshold = 5
+#ftpserver._scheduler.cancellations_threshold = 5  # XXX
 
 
 class FTPd(threading.Thread):
@@ -622,21 +622,22 @@ class TestCallLater(unittest.TestCase):
     """Tests for CallLater class."""
 
     def setUp(self):
-        for task in ftpserver._scheduler._tasks:
+        self.ioloop = IOLoop.instance()
+        for task in self.ioloop.sched._tasks:
             if not task.cancelled:
                 task.cancel()
-        del ftpserver._scheduler._tasks[:]
+        del self.ioloop.sched._tasks[:]
 
     def scheduler(self, timeout=0.01, count=100):
-        while ftpserver._scheduler._tasks and count > 0:
-            ftpserver._scheduler()
+        while self.ioloop.sched._tasks and count > 0:
+            self.ioloop.sched.poll()
             count -= 1
             time.sleep(timeout)
 
     def test_interface(self):
         fun = lambda: 0
-        self.assertRaises(AssertionError, ftpserver.CallLater, -1, fun)
-        x = ftpserver.CallLater(3, fun)
+        self.assertRaises(AssertionError, self.ioloop.call_later, -1, fun)
+        x = self.ioloop.call_later(3, fun)
         self.assertEqual(x.cancelled, False)
         x.cancel()
         self.assertEqual(x.cancelled, True)
@@ -644,11 +645,25 @@ class TestCallLater(unittest.TestCase):
         self.assertRaises(AssertionError, x.reset)
         self.assertRaises(AssertionError, x.cancel)
 
+    def test_deprecation(self):
+        l = []
+        fun = lambda x: l.append(x)
+        warnings.filterwarnings("error")
+        try:
+            self.assertRaises(DeprecationWarning, ftpserver.CallLater, 0, fun)
+            warnings.filterwarnings("ignore")
+            for x in [0.05, 0.04, 0.03, 0.02, 0.01]:
+                ftpserver.CallLater(x, fun, x)
+            self.scheduler()
+            self.assertEqual(l, [0.01, 0.02, 0.03, 0.04, 0.05])
+        finally:
+            warnings.resetwarnings()
+
     def test_order(self):
         l = []
         fun = lambda x: l.append(x)
         for x in [0.05, 0.04, 0.03, 0.02, 0.01]:
-            ftpserver.CallLater(x, fun, x)
+            self.ioloop.call_later(x, fun, x)
         self.scheduler()
         self.assertEqual(l, [0.01, 0.02, 0.03, 0.04, 0.05])
 
@@ -658,11 +673,11 @@ class TestCallLater(unittest.TestCase):
         def test_reset(self):
             l = []
             fun = lambda x: l.append(x)
-            ftpserver.CallLater(0.01, fun, 0.01)
-            ftpserver.CallLater(0.02, fun, 0.02)
-            ftpserver.CallLater(0.03, fun, 0.03)
-            x = ftpserver.CallLater(0.04, fun, 0.04)
-            ftpserver.CallLater(0.05, fun, 0.05)
+            self.ioloop.call_later(0.01, fun, 0.01)
+            self.ioloop.call_later(0.02, fun, 0.02)
+            self.ioloop.call_later(0.03, fun, 0.03)
+            x = self.ioloop.call_later(0.04, fun, 0.04)
+            self.ioloop.call_later(0.05, fun, 0.05)
             time.sleep(0.1)
             x.reset()
             self.scheduler()
@@ -671,17 +686,17 @@ class TestCallLater(unittest.TestCase):
     def test_cancel(self):
         l = []
         fun = lambda x: l.append(x)
-        ftpserver.CallLater(0.01, fun, 0.01).cancel()
-        ftpserver.CallLater(0.02, fun, 0.02)
-        ftpserver.CallLater(0.03, fun, 0.03)
-        ftpserver.CallLater(0.04, fun, 0.04)
-        ftpserver.CallLater(0.05, fun, 0.05).cancel()
+        self.ioloop.call_later(0.01, fun, 0.01).cancel()
+        self.ioloop.call_later(0.02, fun, 0.02)
+        self.ioloop.call_later(0.03, fun, 0.03)
+        self.ioloop.call_later(0.04, fun, 0.04)
+        self.ioloop.call_later(0.05, fun, 0.05).cancel()
         self.scheduler()
         self.assertEqual(l, [0.02, 0.03, 0.04])
 
     def test_errback(self):
         l = []
-        ftpserver.CallLater(0.0, lambda: 1//0, _errback=lambda: l.append(True))
+        self.ioloop.call_later(0.0, lambda: 1//0, _errback=lambda: l.append(True))
         self.scheduler()
         self.assertEqual(l, [True])
 
@@ -690,20 +705,21 @@ class TestCallEvery(unittest.TestCase):
     """Tests for CallEvery class."""
 
     def setUp(self):
-        for task in ftpserver._scheduler._tasks:
+        self.ioloop = IOLoop.instance()
+        for task in self.ioloop.sched._tasks:
             if not task.cancelled:
                 task.cancel()
-        del ftpserver._scheduler._tasks[:]
+        del self.ioloop.sched._tasks[:]
 
     def scheduler(self, timeout=0.0001):
         for x in range(100):
-            ftpserver._scheduler()
+            self.ioloop.sched.poll()
             time.sleep(timeout)
 
     def test_interface(self):
         fun = lambda: 0
-        self.assertRaises(AssertionError, ftpserver.CallEvery, -1, fun)
-        x = ftpserver.CallEvery(3, fun)
+        self.assertRaises(AssertionError, self.ioloop.call_every, -1, fun)
+        x = self.ioloop.call_every(3, fun)
         self.assertEqual(x.cancelled, False)
         x.cancel()
         self.assertEqual(x.cancelled, True)
@@ -711,12 +727,25 @@ class TestCallEvery(unittest.TestCase):
         self.assertRaises(AssertionError, x.reset)
         self.assertRaises(AssertionError, x.cancel)
 
+    def test_deprecation(self):
+        l = []
+        fun = lambda x: l.append(x)
+        warnings.filterwarnings("error")
+        try:
+            self.assertRaises(DeprecationWarning, ftpserver.CallEvery, 0, fun)
+            warnings.filterwarnings("ignore")
+            ftpserver.CallEvery(0, fun, None)
+            self.ioloop.sched.poll()
+            self.assertEqual(l, [None])
+        finally:
+            warnings.resetwarnings()
+
     def test_only_once(self):
         # make sure that callback is called only once per-loop
         l1 = []
         fun = lambda: l1.append(None)
-        ftpserver.CallEvery(0, fun)
-        ftpserver._scheduler()
+        self.ioloop.call_every(0, fun)
+        self.ioloop.sched.poll()
         self.assertEqual(l1, [None])
 
     def test_multi_0_timeout(self):
@@ -724,7 +753,7 @@ class TestCallEvery(unittest.TestCase):
         # as the number of loops
         l = []
         fun = lambda: l.append(None)
-        ftpserver.CallEvery(0, fun)
+        self.ioloop.call_every(0, fun)
         self.scheduler()
         self.assertEqual(len(l), 100)
 
@@ -735,12 +764,12 @@ class TestCallEvery(unittest.TestCase):
             # frequently than another with a greater timeout
             l1 = []
             fun = lambda: l1.append(None)
-            ftpserver.CallEvery(0.001, fun)
+            self.ioloop.call_every(0.001, fun)
             self.scheduler()
 
             l2 = []
             fun = lambda: l2.append(None)
-            ftpserver.CallEvery(0.01, fun)
+            self.ioloop.call_every(0.01, fun)
             self.scheduler()
 
             self.assertTrue(len(l1) > len(l2))
@@ -749,7 +778,7 @@ class TestCallEvery(unittest.TestCase):
         # make sure a cancelled callback doesn't get called anymore
         l = []
         fun = lambda: l.append(None)
-        call = ftpserver.CallEvery(0.001, fun)
+        call = self.ioloop.call_every(0.001, fun)
         self.scheduler()
         len_l = len(l)
         call.cancel()
@@ -758,7 +787,7 @@ class TestCallEvery(unittest.TestCase):
 
     def test_errback(self):
         l = []
-        ftpserver.CallEvery(0.0, lambda: 1//0, _errback=lambda: l.append(True))
+        self.ioloop.call_every(0.0, lambda: 1//0, _errback=lambda: l.append(True))
         self.scheduler()
         self.assertTrue(l)
 
@@ -2322,9 +2351,9 @@ class TestConfigurableOptions(unittest.TestCase):
         def test_tcp_no_delay(self):
             def get_handler_socket():
                 # return the server's handler socket object
-                from pyftpdlib.lib.ioloop import ioloop
-                for fd in ioloop.instance().socket_map:
-                    instance = ioloop.instance().socket_map[fd]
+                ioloop = IOLoop.instance()
+                for fd in ioloop.socket_map:
+                    instance = ioloop.socket_map[fd]
                     if isinstance(instance, ftpserver.FTPHandler):
                         break
                 return instance.socket
@@ -2963,20 +2992,16 @@ class TestCornerCases(unittest.TestCase):
     def test_error_on_callback(self):
         # test that the server do not crash in case an error occurs
         # while firing a scheduled function
+        # TODO silence logerror message
         self.tearDown()
-        flag = []
-        original_logerror = ftpserver.logerror
-        ftpserver.logerror = lambda msg: flag.append(msg)
         server = ftpserver.FTPServer((HOST, 0), ftpserver.FTPHandler)
         try:
-            len1 = len(asyncore.socket_map)
-            ftpserver.CallLater(0, lambda: 1 // 0)
+            len1 = len(IOLoop.instance().socket_map)
+            IOLoop.instance().call_later(0, lambda: 1 // 0)
             server.serve_forever(timeout=0.001, blocking=False)
-            len2 = len(asyncore.socket_map)
+            len2 = len(IOLoop.instance().socket_map)
             self.assertEqual(len1, len2)
-            self.assertTrue(flag)
         finally:
-            ftpserver.logerror = original_logerror
             server.close()
 
     def test_active_conn_error(self):
@@ -3305,7 +3330,7 @@ def test_main(tests=None):
     except:
         # in case of KeyboardInterrupt grant that the threaded FTP
         # server running in background gets stopped
-        asyncore.socket_map.clear()
+        IOLoop.instance().socket_map.clear()
         raise
 
 
