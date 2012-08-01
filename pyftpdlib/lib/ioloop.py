@@ -349,6 +349,26 @@ class Acceptor(asyncore.dispatcher):
         except NameError:
             pass
 
+    def handle_accept(self):
+        try:
+            sock, addr = self.accept()
+        except TypeError:
+            # sometimes accept() might return None (see issue 91)
+            return
+        except socket.error:
+            err = sys.exc_info()[1]
+            # ECONNABORTED might be thrown on *BSD (see issue 105)
+            if err.args[0] != errno.ECONNABORTED:
+                raise
+        else:
+            # sometimes addr == None instead of (ip, port) (see issue 104)
+            if addr is not None:
+                self.handle_accepted(sock, addr)
+
+    def handle_accepted(self, sock, addr):
+        sock.close()
+        self.log_info('unhandled accepted event', 'warning')
+
     # overridden for convenience; avoid to reuse address on Windows
     if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
         def set_reuse_addr(self):

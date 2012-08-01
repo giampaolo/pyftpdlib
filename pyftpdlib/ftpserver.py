@@ -794,25 +794,10 @@ class PassiveDTP(Acceptor):
 
     # --- connection / overridden
 
-    def handle_accept(self):
+    def handle_accepted(self, sock, addr):
         """Called when remote client initiates a connection."""
         if not self.cmd_channel.connected:
             return self.close()
-        try:
-            sock, addr = self.accept()
-        except TypeError:
-            # sometimes accept() might return None (see issue 91)
-            return
-        except socket.error:
-            err = sys.exc_info()[1]
-            # ECONNABORTED might be thrown on *BSD (see issue 105)
-            if err.args[0] != errno.ECONNABORTED:
-                self.log_exception(self)
-            return
-        else:
-            # sometimes addr == None instead of (ip, port) (see issue 104)
-            if addr == None:
-                return
 
         # Check the origin of data connection.  If not expressively
         # configured we drop the incoming data connection if remote
@@ -3918,24 +3903,8 @@ class FTPServer(Acceptor):
             if _scheduler._tasks:
                 return _scheduler()
 
-    def handle_accept(self):
+    def handle_accepted(self, sock, addr):
         """Called when remote client initiates a connection."""
-        try:
-            sock, addr = self.accept()
-        except TypeError:
-            # sometimes accept() might return None (see issue 91)
-            return
-        except socket.error:
-            err = sys.exc_info()[1]
-            # ECONNABORTED might be thrown on *BSD (see issue 105)
-            if err.args[0] != errno.ECONNABORTED:
-                logerror(traceback.format_exc())
-            return
-        else:
-            # sometimes addr == None instead of (ip, port) (see issue 104)
-            if addr is None:
-                return
-
         handler = None
         ip = None
         try:
