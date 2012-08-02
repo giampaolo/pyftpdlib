@@ -46,8 +46,24 @@ Two classes are provided:
  - MultiprocessFTPServer
 
 ...spawning a new thread or process every time a client connects.
-Every handler will live in its own thread/process and will be free to
-block without freezing the FTP server.
+
+The main thread will be async-based and be used only to accept new
+connections (not handling them).
+Every time a new connection comes in that will be dispatched to a
+separate thread/process which internally will run its own IO loop.
+This way the handler handling that connections will be free to block
+without hanging the whole FTP server.
+
+Example usage:
+
+>>> from pyftpdlib import ftpserver
+>>> from pyftpdlib.contrib.servers import ThreadedFTPServer
+>>>
+>>> authorizer = ftpserver.DummyAuthorizer()
+>>> handler = ftpserver.FTPHandler
+>>> handler.authorizer = authorizer
+>>> server = ThreadedFTPServer(('', 21), handler)
+>>> server.serve_forever()
 """
 
 from pyftpdlib.ftpserver import FTPServer as _FTPServer
