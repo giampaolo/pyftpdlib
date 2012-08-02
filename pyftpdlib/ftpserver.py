@@ -2080,8 +2080,11 @@ class FTPHandler(AsyncChat):
                                  and AsyncChat.writable(self)
 
     def close_when_done(self):
-        self._closing = True
-        asynchat.async_chat.close_when_done(self)
+        if len(self.producer_fifo) == 0:
+            self.handle_close()
+        else:
+            self._closing = True
+            asynchat.async_chat.close_when_done(self)
 
     def collect_incoming_data(self, data):
         """Read incoming data and append to the input buffer."""
