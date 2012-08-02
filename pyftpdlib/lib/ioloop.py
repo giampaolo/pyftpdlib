@@ -146,6 +146,18 @@ class _CallLater(object):
     def __le__(self, other):
         return self.timeout <= other.timeout
 
+    def __repr__(self):
+        if self._target is None:
+            sig = object.__repr__(self)
+        else:
+            sig = repr(self._target)
+        sig += ' args=%s, kwargs=%s, cancelled=%s, secs=%s' \
+                % (self._args or '[]',  self._kwargs or '{}', self.cancelled,
+                   self._delay)
+        return '<%s>' % sig
+
+    __str__ = __repr__
+
     def _post_call(self, exc):
         if not self.cancelled:
             self.cancel()
