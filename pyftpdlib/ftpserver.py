@@ -874,6 +874,7 @@ class DTPHandler(AsyncChat):
         self._offset = None
         self._filefd = None
         self._idler = None
+        self._initialized = False
         try:
             AsyncChat.__init__(self, sock_obj, ioloop=cmd_channel.ioloop)
         except socket.error:
@@ -903,10 +904,12 @@ class DTPHandler(AsyncChat):
            and producer.type == 'i'
 
     def push(self, data):
+        self._initialized = True
         self.ioloop.modify(self._fileno, self.ioloop.WRITE)
         AsyncChat.push(self, data)
 
     def push_with_producer(self, producer):
+        self._initialized = True
         self.ioloop.modify(self._fileno, self.ioloop.WRITE)
         if self._use_sendfile(producer):
             self._offset = producer.file.tell()
@@ -966,6 +969,7 @@ class DTPHandler(AsyncChat):
 
          - (str) type: current transfer type, 'a' (ASCII) or 'i' (binary).
         """
+        self._initialized = True
         self.ioloop.modify(self._fileno, self.ioloop.READ)
         self.cmd = cmd
         if type == 'a':
@@ -1047,8 +1051,15 @@ class DTPHandler(AsyncChat):
 
     def readable(self):
         """Predicate for inclusion in the readable for select()."""
-        # we don't use asynchat's find terminator feature so we can
-        # freely avoid to call the original implementation
+        # It the channel is not supposed to be receiving but yet it's
+        # in the list of readable events, that means it has been
+        # disconnected, in which case we explicitly close() it.
+        # This is necessary as differently from FTPHandler this channel
+        # is not supposed to be readable/writable at first, meaning the
+        # upper IOLoop might end up calling readable() repeatedly,
+        # hogging CPU resources.
+        if not self.receive and not self._initialized:
+            return self.close()
         return self.receive
 
     def writable(self):
