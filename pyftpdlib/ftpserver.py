@@ -3729,12 +3729,15 @@ class FTPServer(Acceptor):
     def address(self):
         return self.socket.getsockname()[:2]
 
+    def _map_len(self):
+        return len(self.ioloop.socket_map)
+
     def _accept_new_cons(self):
         """Return True if the server is willing to accept new connections."""
         if not self.max_cons:
             return True
         else:
-            return len(self.ioloop.socket_map) <= self.max_cons
+            return self._map_len() <= self.max_cons
 
     def serve_forever(self, timeout=None, blocking=True):
         """Start serving.
@@ -3780,6 +3783,8 @@ class FTPServer(Acceptor):
                 handler.handle()
             except:
                 handler.handle_error()
+            else:
+                return handler
         except Exception:
             # This is supposed to be an application bug that should
             # be fixed. We do not want to tear down the server though

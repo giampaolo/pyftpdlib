@@ -188,7 +188,7 @@ class _CallLater(object):
         """Unschedule this call."""
         assert not self.cancelled, "already cancelled"
         self.cancelled = True
-        del self._target, self._args, self._kwargs, self._errback
+        self._target = self._args = self._kwargs = self._errback = None
         self._sched.unregister(self)
 
 
@@ -271,12 +271,12 @@ class _Base(object):
             sched_poll = self.sched.poll
 
             if timeout is not None:
-                while socket_map or tasks:
+                while socket_map:
                     poll(timeout)
                     sched_poll()
             else:
                 soonest_timeout = None
-                while socket_map or tasks:
+                while socket_map:
                     poll(soonest_timeout)
                     soonest_timeout = sched_poll()
         else:

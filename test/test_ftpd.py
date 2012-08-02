@@ -176,6 +176,7 @@ class FTPd(threading.Thread):
     eventually re-start() the server.
     """
     handler = ftpserver.FTPHandler
+    server_class = ftpserver.FTPServer
 
     def __init__(self, host=HOST, port=0, verbose=False):
         threading.Thread.__init__(self)
@@ -196,7 +197,7 @@ class FTPd(threading.Thread):
         authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwM')  # full perms
         authorizer.add_anonymous(HOME)
         self.handler.authorizer = authorizer
-        self.server = ftpserver.FTPServer((host, port), self.handler)
+        self.server = self.server_class((host, port), self.handler)
         self.host, self.port = self.server.socket.getsockname()[:2]
 
     def __repr__(self):

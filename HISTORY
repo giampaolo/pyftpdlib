@@ -24,6 +24,13 @@ Enhancements:
  * Issue 207: added on_connect() and on_disconnect() callback methods to
    FTPHandler class.
 
+ * Issues 212: provided two new classes:
+     - pyftpdlib.contrib.servers.ThreadedFTPServer
+     - pyftpdlib.contrib.servers.MultiprocessFTPServer
+   They can be used to change the base async-based concurrecy model and use a
+   multiple threads / processes based approach instead.
+   Your FTPHandler subclasses will finally be free to block! ;)
+
 Bugfixes:
 
  * Issue 131: IPv6 dual-stack support was broken.
@@ -37,6 +44,8 @@ Bugfixes:
 New APIs:
 
  * pyftpdlib.ftpserver.FilesystemError exception class.
+ * pyftpdlib.contrib.servers.ThreadedFTPServer
+ * pyftpdlib.contrib.servers.MultiprocessFTPServer
  * pyftpdlib.ftpserver.FTPHandler's on_connect() and on_disconnect() callbacks.
  * pyftpdlib.ftpserver's FTPServer, FTPHandler, DTPHandler new ioloop attribute.
  * pyftpdlib.lib.ioloop.IOLoop class (not supposed to be used directly)

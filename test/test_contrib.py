@@ -2,7 +2,7 @@
 # $Id$
 
 #  pyftpdlib is released under the MIT license, reproduced below:
-#  ======================================================================
+#  ========================================================================
 #  Copyright (C) 2007-2012 Giampaolo Rodola' <g.rodola@gmail.com>
 #
 #                         All Rights Reserved
@@ -28,10 +28,11 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-#  ======================================================================
+#  ========================================================================
 
-"""Tests for pyftpdlib.contrib namespace: handlers.py, authorizers.py
-and filesystems.py modules.
+"""
+Tests for pyftpdlib.contrib namespace: handlers.py, authorizers.py,
+filesystems.py and servers.py modules.
 """
 
 import ftplib
@@ -60,12 +61,37 @@ from pyftpdlib import ftpserver
 from pyftpdlib.contrib import authorizers
 from pyftpdlib.contrib import handlers
 from pyftpdlib.contrib import filesystems
+from pyftpdlib.contrib import servers
 from pyftpdlib.lib.compat import b, getcwdu, unicode
 from test_ftpd import *
 
 
 FTPS_SUPPORT = hasattr(ftplib, 'FTP_TLS') and hasattr(handlers, 'TLS_FTPHandler')
 CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__), 'keycert.pem'))
+MPROCESS_SUPPORT = hasattr(servers, 'MultiprocessFTPServer')
+
+
+# =====================================================================
+# --- Mixin tests
+# =====================================================================
+
+# What we're going to do here is repeat the original functional tests
+# defined in test_ftpd.py but by using different FTP server
+# configurations.
+#
+# In case of FTPS we secure both control and data connections before
+# running any test.
+# Same story for ThreadedFTPServer which will be used instead of
+# base FTPServer class.
+#
+# This is useful as we reuse the existent functional tests which are
+# supposed to work no matter if the underlying protocol is FTP or FTPS,
+# or if the concurrency module used is asynchronous or based on
+# multiple threads or processes (fork).
+
+# =====================================================================
+# --- FTPS mixin tests
+# =====================================================================
 
 if FTPS_SUPPORT:
     class FTPSClient(ftplib.FTP_TLS):
@@ -88,20 +114,6 @@ else:
     class TLSTestMixin:
         pass
 
-# --- FTPS mixin tests
-#
-# What we're going to do here is repeating the original tests
-# defined in test_ftpd.py but securing both control and data
-# connections first.
-# The tests are exactly the same, the only difference is that
-# different classes are used (TLS_FPTHandler for the server
-# and ftplib.FTP_TLS for the client) and everything goes through
-# FTPS instead of clear-text FTP.
-# This is very useful as we entirely reuse the existent test code
-# base which is very large (more than 100 tests) and covers a lot
-# of cases which are supposed to work no matter if the protocol
-# is FTP or FTPS.
-
 class TestFtpAuthenticationTLSMixin(TLSTestMixin, TestFtpAuthentication): pass
 class TestTFtpDummyCmdsTLSMixin(TLSTestMixin, TestFtpDummyCmds): pass
 class TestFtpCmdsSemanticTLSMixin(TLSTestMixin, TestFtpCmdsSemantic): pass
@@ -109,6 +121,7 @@ class TestFtpFsOperationsTLSMixin(TLSTestMixin, TestFtpFsOperations): pass
 class TestFtpStoreDataTLSMixin(TLSTestMixin, TestFtpStoreData): pass
 class TestFtpRetrieveDataTLSMixin(TLSTestMixin, TestFtpRetrieveData): pass
 class TestFtpListingCmdsTLSMixin(TLSTestMixin, TestFtpListingCmds): pass
+
 class TestFtpAbortTLSMixin(TLSTestMixin, TestFtpAbort):
     def test_oob_abor(self): pass
 
@@ -129,11 +142,76 @@ class TestCallbacksTLSMixin(TLSTestMixin, TestCallbacks):
     def test_on_logout_rein(self): pass
     def test_on_logout_user_issued_twice(self): pass
 
-
 class TestIPv4EnvironmentTLSMixin(TLSTestMixin, TestIPv4Environment): pass
 class TestIPv6EnvironmentTLSMixin(TLSTestMixin, TestIPv6Environment): pass
 class TestCornerCasesTLSMixin(TLSTestMixin, TestCornerCases): pass
 
+
+# =====================================================================
+# --- threaded FTP server mixin tests
+# =====================================================================
+
+class TFTPd(FTPd):
+    server_class = servers.ThreadedFTPServer
+
+class ThreadFTPTestMixin:
+    server_class = TFTPd
+
+class TestFtpAuthenticationThreadMixin(ThreadFTPTestMixin, TestFtpAuthentication): pass
+class TestTFtpDummyCmdsThreadMixin(ThreadFTPTestMixin, TestFtpDummyCmds): pass
+class TestFtpCmdsSemanticThreadMixin(ThreadFTPTestMixin, TestFtpCmdsSemantic): pass
+class TestFtpFsOperationsThreadMixin(ThreadFTPTestMixin, TestFtpFsOperations): pass
+class TestFtpStoreDataThreadMixin(ThreadFTPTestMixin, TestFtpStoreData): pass
+class TestFtpRetrieveDataThreadMixin(ThreadFTPTestMixin, TestFtpRetrieveData): pass
+class TestFtpListingCmdsThreadMixin(ThreadFTPTestMixin, TestFtpListingCmds): pass
+class TestFtpAbortThreadMixin(ThreadFTPTestMixin, TestFtpAbort): pass
+#class TestTimeoutsThreadMixin(ThreadFTPTestMixin, TestTimeouts):
+#    def test_data_timeout_not_reached(self): pass
+#class TestConfigurableOptionsThreadMixin(ThreadFTPTestMixin, TestConfigurableOptions): pass
+class TestCallbacksThreadMixin(ThreadFTPTestMixin, TestCallbacks): pass
+class TestIPv4EnvironmentThreadMixin(ThreadFTPTestMixin, TestIPv4Environment): pass
+class TestIPv6EnvironmentThreadMixin(ThreadFTPTestMixin, TestIPv6Environment): pass
+class TestCornerCasesThreadMixin(ThreadFTPTestMixin, TestCornerCases): pass
+
+
+# =====================================================================
+# --- multiprocess FTP server mixin tests
+# =====================================================================
+
+if MPROCESS_SUPPORT:
+    class MultiProcFTPd(FTPd):
+        server_class = servers.MultiprocessFTPServer
+
+    class MProcFTPTestMixin:
+        server_class = MultiProcFTPd
+else:
+    class MProcFTPTestMixin:
+        pass
+
+class TestFtpAuthenticationMProcMixin(MProcFTPTestMixin, TestFtpAuthentication): pass
+class TestTFtpDummyCmdsMProcMixin(MProcFTPTestMixin, TestFtpDummyCmds): pass
+class TestFtpCmdsSemanticMProcMixin(MProcFTPTestMixin, TestFtpCmdsSemantic): pass
+
+class TestFtpFsOperationsMProcMixin(MProcFTPTestMixin, TestFtpFsOperations):
+    def test_unforeseen_mdtm_event(self):
+        pass
+
+class TestFtpStoreDataMProcMixin(MProcFTPTestMixin, TestFtpStoreData): pass
+class TestFtpRetrieveDataMProcMixin(MProcFTPTestMixin, TestFtpRetrieveData): pass
+class TestFtpListingCmdsMProcMixin(MProcFTPTestMixin, TestFtpListingCmds): pass
+class TestFtpAbortMProcMixin(MProcFTPTestMixin, TestFtpAbort): pass
+#class TestTimeoutsMProcMixin(MProcFTPTestMixin, TestTimeouts):
+#    def test_data_timeout_not_reached(self): pass
+#class TestConfigurableOptionsMProcMixin(MProcFTPTestMixin, TestConfigurableOptions): pass
+#class TestCallbacksMProcMixin(MProcFTPTestMixin, TestCallbacks): pass
+class TestIPv4EnvironmentMProcMixin(MProcFTPTestMixin, TestIPv4Environment): pass
+class TestIPv6EnvironmentMProcMixin(MProcFTPTestMixin, TestIPv6Environment): pass
+class TestCornerCasesMProcMixin(MProcFTPTestMixin, TestCornerCases): pass
+
+
+# =====================================================================
+# dedicated FTPs tests
+# =====================================================================
 
 class TestFTPS(unittest.TestCase):
     """Specific tests fot TSL_FTPHandler class."""
@@ -289,7 +367,9 @@ class TestFTPS(unittest.TestCase):
             self.client.ssl_version = ssl.PROTOCOL_SSLv2
 
 
-# --- System dependant authorizers tests
+# =====================================================================
+# --- authorizer
+# =====================================================================
 
 class SharedAuthorizerTests(unittest.TestCase):
     """Tests valid for both UnixAuthorizer and WindowsAuthorizer for
@@ -510,6 +590,10 @@ class SharedAuthorizerTests(unittest.TestCase):
                                  auth.override_user, "anonymous", password='foo')
 
 
+# =====================================================================
+# --- UNIX authorizer
+# =====================================================================
+
 class TestUnixAuthorizer(SharedAuthorizerTests):
     """Unix authorizer specific tests."""
 
@@ -593,6 +677,10 @@ class TestUnixAuthorizer(SharedAuthorizerTests):
             auth.terminate_impersonation('nobody')
 
 
+# =====================================================================
+# --- Windows authorizer
+# =====================================================================
+
 class TestWindowsAuthorizer(SharedAuthorizerTests):
     """Windows authorizer specific tests."""
 
@@ -603,6 +691,10 @@ class TestWindowsAuthorizer(SharedAuthorizerTests):
         self.assertRaises(Win32ExtError, self.authorizer_class,
                        anonymous_user=user, anonymous_password='$|1wrongpasswd')
 
+
+# =====================================================================
+# --- UNIX filesystem
+# =====================================================================
 
 if os.name == 'posix':
     class TestUnixFilesystem(unittest.TestCase):
@@ -616,6 +708,10 @@ if os.name == 'posix':
             self.assertEqual(fs.ftp2fs(u('..')), cdup)
             self.assertEqual(fs.fs2ftp(root), root)
 
+
+# =====================================================================
+# --- main
+# =====================================================================
 
 def test_main():
     test_suite = unittest.TestSuite()
@@ -652,6 +748,40 @@ def test_main():
             warns.append("FTPS tests skipped (requires PyOpenSSL module)")
         else:
             warns.append("FTPS tests skipped")
+
+    # threaded FTP server tests
+    ftp_thread_tests = [
+        TestFtpAuthenticationThreadMixin,
+        TestTFtpDummyCmdsThreadMixin,
+        TestFtpCmdsSemanticThreadMixin,
+        TestFtpFsOperationsThreadMixin,
+        TestFtpStoreDataThreadMixin,
+        TestFtpRetrieveDataThreadMixin,
+        TestFtpListingCmdsThreadMixin,
+        TestFtpAbortThreadMixin,
+        #TestTimeoutsThreadMixin,
+        #TestConfigurableOptionsThreadMixin,
+        TestCallbacksThreadMixin,
+        TestCornerCasesThreadMixin,
+    ]
+    tests += ftp_thread_tests
+
+    # multi process FTP server tests
+    ftp_mproc_tests = [
+        TestFtpAuthenticationMProcMixin,
+        TestTFtpDummyCmdsMProcMixin,
+        TestFtpCmdsSemanticMProcMixin,
+        TestFtpFsOperationsMProcMixin,
+        TestFtpStoreDataMProcMixin,
+        TestFtpRetrieveDataMProcMixin,
+        TestFtpListingCmdsMProcMixin,
+        TestFtpAbortMProcMixin,
+        #TestTimeoutsMProcMixin,
+        #TestConfigurableOptionsMProcMixin,
+        #TestCallbacksMProcMixin,
+        TestCornerCasesMProcMixin,
+    ]
+    tests += ftp_mproc_tests
 
     # authorizers tests
     if os.name == 'posix':
