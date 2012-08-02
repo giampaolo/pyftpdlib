@@ -720,12 +720,17 @@ class ActiveDTP(Connector):
          - (int) port: the remote port.
          - (instance) cmd_channel: the command channel class instance.
         """
+        Connector.__init__(self, ioloop=cmd_channel.ioloop)
         self.cmd_channel = cmd_channel
         self.log = cmd_channel.log
         self.log_exception = cmd_channel.log_exception
-        self._closed = True
+        self._closed = False
         self._idler = None
-        Connector.__init__(self, ioloop=cmd_channel.ioloop)
+        if self.timeout:
+            self._idler = self.ioloop.call_later(self.timeout,
+                                                 self.handle_timeout,
+                                                 _errback=self.handle_error)
+
         if ip.count('.') == 4:
             self._cmd = "PORT"
             self._normalized_addr = "%s:%s" % (ip, port)
@@ -736,7 +741,6 @@ class ActiveDTP(Connector):
         # dual stack IPv4/IPv6 support
         source_ip = self.cmd_channel.socket.getsockname()[0]
         for res in socket.getaddrinfo(ip, port, 0, socket.SOCK_STREAM):
-            self.socket = None
             af, socktype, proto, canonname, sa = res
             try:
                 self.create_socket(af, socktype)
@@ -749,16 +753,11 @@ class ActiveDTP(Connector):
                     self.bind((source_ip, 0))
                 self.connect((ip, port))
             except (socket.gaierror, socket.error):
-                if self.socket is not None:
-                    self.socket.close()
+                self.socket.close()
             else:
-                break
-        else:
-            return self.handle_close()
-        if self.timeout:
-            self._idler = self.ioloop.call_later(self.timeout,
-                                                 self.handle_timeout,
-                                                 _errback=self.handle_error)
+                return
+
+        return self.handle_close()
 
     def readable(self):
         return False
@@ -804,11 +803,12 @@ class ActiveDTP(Connector):
         # With the new IO loop, handle_close() gets called in case
         # the fd appears in the list of exceptional fds.
         # This means connect() failed.
-        if self.cmd_channel.connected:
-            msg = "Can't connect to specified address."
-            self.cmd_channel.respond("425 " + msg)
-            self.cmd_channel.log_cmd(self._cmd, self._normalized_addr, 425, msg)
-        self.close()
+        if not self._closed:
+            self.close()
+            if self.cmd_channel.connected:
+                msg = "Can't connect to specified address."
+                self.cmd_channel.respond("425 " + msg)
+                self.cmd_channel.log_cmd(self._cmd, self._normalized_addr, 425, msg)
 
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
