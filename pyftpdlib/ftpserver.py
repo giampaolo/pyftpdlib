@@ -1105,16 +1105,20 @@ class DTPHandler(AsyncChat):
         # (responding with 226) or not (responding with 426).
         # In both cases handle_close() is automatically called by the
         # underlying asynchat module.
-        if self.receive:
-            self.transfer_finished = True
-        else:
-            self.transfer_finished = len(self.producer_fifo) == 0
-        if self.transfer_finished:
-            self._resp = "226 Transfer complete."
-        else:
-            tot_bytes = self.get_transmitted_bytes()
-            self._resp = "426 Transfer aborted; %d bytes transmitted." % tot_bytes
-        self.close()
+        if not self._closed:
+            if self.receive:
+                self.transfer_finished = True
+            else:
+                self.transfer_finished = len(self.producer_fifo) == 0
+            try:
+                if self.transfer_finished:
+                    self._resp = "226 Transfer complete."
+                else:
+                    tot_bytes = self.get_transmitted_bytes()
+                    self._resp = "426 Transfer aborted; %d bytes transmitted." \
+                                  % tot_bytes
+            finally:
+                self.close()
 
     def close(self):
         """Close the data channel, first attempting to close any remaining
