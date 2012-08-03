@@ -280,10 +280,11 @@ class _Base(object):
                     poll(soonest_timeout)
                     soonest_timeout = sched_poll()
         else:
+            sched = self.sched
             if self.socket_map:
                 self.poll(timeout)
-            if self.sched._tasks:
-                return self.sched.poll()
+            if sched._tasks:
+                return sched.poll()
 
     def call_later(self, seconds, target, *args, **kwargs):
         """Calls a function at a later time.

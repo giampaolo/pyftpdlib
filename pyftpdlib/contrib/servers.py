@@ -78,7 +78,6 @@ __all__ = []
 class _Base(_FTPServer):
     """Base class shared by both implementations (not supposed to be used)"""
 
-    poll_timeout = 1.0
     _lock = None
 
     def __init__(self, address, handler, ioloop=None):
@@ -102,20 +101,24 @@ class _Base(_FTPServer):
         socket_map = ioloop.socket_map
         tasks = ioloop.sched._tasks
         sched_poll = ioloop.sched.poll
-        timeout = self.poll_timeout
-        soonest_timeout = None
+        poll_timeout = getattr(self, 'poll_timeout', None)
+        soonest_timeout = poll_timeout
 
         while self._serving and socket_map:
             try:
-                poll(timeout=(min(soonest_timeout, timeout)))
+                poll(timeout=soonest_timeout)
                 if tasks:
                     soonest_timeout = sched_poll()
                 else:
-                    soonest_timeout = timeout
+                    soonest_timeout = None
             except (KeyboardInterrupt, SystemExit):
                 # note: these two exceptions are raised in all sub
                 # processes
                 self._serving = False
+            else:
+                if poll_timeout:
+                    if soonest_timeout is None or soonest_timeout > poll_timeout:
+                        soonest_timeout = poll_timeout
 
         self._lock.acquire()
         try:
@@ -189,6 +192,9 @@ else:
         """A modified version of base FTPServer class which spawns a
         thread every time a new connection is established.
         """
+        # The timeout passed to thread's IOLoop.poll() call on every
+        # loop. Necessary since threads ignore KeyboardInterrupt.
+        poll_timeout = 1.0
         _lock = threading.Lock()
 
         def _start_task(self, *args, **kwargs):
