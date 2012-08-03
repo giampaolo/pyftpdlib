@@ -533,9 +533,18 @@ if hasattr(select, 'kqueue'):
             self._active[fd] = events
 
         def unregister(self, fd):
-            del self.socket_map[fd]
-            events = self._active.pop(fd)
-            self._control(fd, events, select.KQ_EV_DELETE)
+            try:
+                del self.socket_map[fd]
+                events = self._active.pop(fd)
+            except KeyError:
+                pass
+            else:
+                try:
+                    self._control(fd, events, select.KQ_EV_DELETE)
+                except OSError:
+                    err = sys.exc_info()[1]
+                    if err.errno != errno.EBADF:
+                        raise
 
         def modify(self, fd, events):
             instance = self.socket_map[fd]
