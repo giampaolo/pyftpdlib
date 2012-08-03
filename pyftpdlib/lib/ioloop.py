@@ -643,6 +643,7 @@ class AsyncChat(asynchat.async_chat):
         self.ioloop = ioloop or IOLoop.instance()
         self._current_io_events = self.ioloop.READ
         self._closed = False
+        self._closing = False
         asynchat.async_chat.__init__(self, sock)
 
     def add_channel(self, map=None, events=None):
@@ -663,3 +664,10 @@ class AsyncChat(asynchat.async_chat):
             if self._current_io_events != wanted:
                 self.ioloop.modify(self._fileno, wanted)
                 self._current_io_events = wanted
+
+    def close_when_done(self):
+        if len(self.producer_fifo) == 0:
+            self.handle_close()
+        else:
+            self._closing = True
+            asynchat.async_chat.close_when_done(self)

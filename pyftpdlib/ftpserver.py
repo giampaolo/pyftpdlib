@@ -917,6 +917,9 @@ class DTPHandler(AsyncChat):
         else:
             AsyncChat.push_with_producer(self, producer)
 
+    def close_when_done(self):
+        asynchat.async_chat.close_when_done(self)
+
     def initiate_send(self):
         asynchat.async_chat.initiate_send(self)
 
@@ -1963,7 +1966,6 @@ class FTPHandler(AsyncChat):
         self._in_dtp_queue = None
         self._out_dtp_queue = None
         self._closed = False
-        self._closing = False
         self._extra_feats = []
         self._current_facts = ['type', 'perm', 'size', 'modify']
         self._rnfr = None
@@ -2091,13 +2093,6 @@ class FTPHandler(AsyncChat):
     def writable(self):
         return not self.sleeping and self.connected \
                                  and AsyncChat.writable(self)
-
-    def close_when_done(self):
-        if len(self.producer_fifo) == 0:
-            self.handle_close()
-        else:
-            self._closing = True
-            asynchat.async_chat.close_when_done(self)
 
     def collect_incoming_data(self, data):
         """Read incoming data and append to the input buffer."""
