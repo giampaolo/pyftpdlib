@@ -127,6 +127,15 @@ def safe_rmdir(dir):
         if err.errno != errno.ENOENT:
             raise
 
+def safe_mkdir(dir):
+    "Convenience function for creating a directory"
+    try:
+        os.mkdir(dir)
+    except OSError:
+        err = sys.exc_info()[1]
+        if err.errno != errno.EEXIST:
+            raise
+
 def touch(name):
     """Create a file and return its name."""
     f = open(name, 'w')
@@ -792,7 +801,6 @@ class TestCallEvery(unittest.TestCase):
         self.ioloop.call_every(0.0, lambda: 1//0, _errback=lambda: l.append(True))
         self.scheduler()
         self.assertTrue(l)
-
 
 class TestFtpAuthentication(unittest.TestCase):
     "test: USER, PASS, REIN."
@@ -1764,10 +1772,7 @@ class TestFtpListingCmds(unittest.TestCase):
             self.client.retrlines('%s %s' % (cmd, tempdir), x.append)
             self.assertEqual(x, [])
         finally:
-            try:
-                os.rmdir(tempdir)
-            except OSError:
-                pass
+            safe_rmdir(tempdir)
 
     def test_nlst(self):
         # common tests
@@ -3045,7 +3050,7 @@ class TestUnicodePathNames(unittest.TestCase):
         self.client.login(USER, PASSWD)
         self.tempfile = os.path.basename(touch(TESTFN_UNICODE + '1'))
         self.tempdir = TESTFN_UNICODE + '2'
-        os.mkdir(self.tempdir)
+        safe_mkdir(self.tempdir)
 
     def tearDown(self):
         self.client.close()
@@ -3227,8 +3232,7 @@ class TestCommandLineParser(unittest.TestCase):
 
     def test_d_option(self):
         sys.argv += ["-d", TESTFN, "-p", "0"]
-        if not os.path.isdir(TESTFN):
-            os.mkdir(TESTFN)
+        safe_mkdir(TESTFN)
         ftpserver.main()
 
         # without argument
