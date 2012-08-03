@@ -3749,7 +3749,10 @@ class FTPServer(Acceptor):
            timeout of the next scheduled call next to expire soonest
            (if any).
         """
-        self.ioloop.loop(timeout, blocking)
+        try:
+            self.ioloop.loop(timeout, blocking)
+        finally:
+            self.close_all()
 
     def handle_accepted(self, sock, addr):
         """Called when remote client initiates a connection."""

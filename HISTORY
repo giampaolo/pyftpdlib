@@ -75,6 +75,11 @@ Incompatible API changes:
      - pyftpdlib.lib.ioloop.AsyncChat
    Any customization relying on asyncore or its IO loop will no longer work.
 
+ * FTPServer.serve_forever() no longer logs start and stop.  XXX - am I sure?
+
+ * FTPServer.serve_forever() no longer catches KeyboardInterrupt and SystemExit.
+   XXX - am I sure?
+
  * pyftpdlib.ftpserver.CallLater and pyftpdlib.ftpserver.CallEvery are
    deprecated. Instead, use self.ioloop.call_later() and self.ioloop.call_every()
    from withing FTPHandler.  Also delay() method of the returned object has
