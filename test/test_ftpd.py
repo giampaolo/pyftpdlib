@@ -712,10 +712,10 @@ class TestCallEvery(unittest.TestCase):
                 task.cancel()
         del self.ioloop.sched._tasks[:]
 
-    def scheduler(self, timeout=0.0001):
-        for x in range(100):
+    def scheduler(self, timeout=0.003):
+        stop_at = time.time() + timeout
+        while time.time() < stop_at:
             self.ioloop.sched.poll()
-            time.sleep(timeout)
 
     def test_interface(self):
         fun = lambda: 0
@@ -755,7 +755,8 @@ class TestCallEvery(unittest.TestCase):
         l = []
         fun = lambda: l.append(None)
         self.ioloop.call_every(0, fun)
-        self.scheduler()
+        for x in range(100):
+            self.ioloop.sched.poll()
         self.assertEqual(len(l), 100)
 
     # run it on systems where time.time() has a higher precision
@@ -770,8 +771,8 @@ class TestCallEvery(unittest.TestCase):
 
             l2 = []
             fun = lambda: l2.append(None)
-            self.ioloop.call_every(0.01, fun)
-            self.scheduler()
+            self.ioloop.call_every(0.005, fun)
+            self.scheduler(timeout=0.01)
 
             self.assertTrue(len(l1) > len(l2))
 
