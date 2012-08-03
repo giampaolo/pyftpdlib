@@ -46,7 +46,6 @@ Development status: experimental.
 
 
 import os
-import asyncore
 import socket
 import warnings
 import errno
@@ -86,7 +85,7 @@ else:
                 super(object, self).__init__(*args, **kwargs)  # bypass object
 
     class SSLConnection(_SSLBase):
-        """An asyncore.dispatcher subclass supporting TLS/SSL."""
+        """An AsyncChat subclass supporting TLS/SSL."""
 
         _ssl_accepting = False
         _ssl_established = False
@@ -164,7 +163,7 @@ else:
             self._error = True
             try:
                 raise
-            except (KeyboardInterrupt, SystemExit, asyncore.ExitNow):
+            except (KeyboardInterrupt, SystemExit):
                 raise
             except:
                 self.log_exception(self)

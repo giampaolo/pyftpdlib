@@ -549,9 +549,8 @@ class DummyAuthorizer(object):
 # --- DTP classes
 
 class PassiveDTP(Acceptor):
-    """This class is an asyncore.dispatcher subclass. It creates a
-    socket listening on a local port, dispatching the resultant
-    connection to DTPHandler.
+    """Creates a socket listening on a local port, dispatching the
+    resultant connection to DTPHandler. Used for handling PASV command.
 
      - (int) timeout: the timeout for a remote client to establish
        connection with the listening socket. Defaults to 30 seconds.
@@ -703,9 +702,8 @@ class PassiveDTP(Acceptor):
 
 
 class ActiveDTP(Connector):
-    """This class is an asyncore.disptacher subclass. It creates a
-    socket resulting from the connection to a remote user-port,
-    dispatching it to DTPHandler.
+    """Connects to remote client and dispatches the resulting connection
+    to DTPHandler. Used for handling PORT command.
 
      - (int) timeout: the timeout for us to establish connection with
        the client's listening data socket.
@@ -890,7 +888,7 @@ class DTPHandler(AsyncChat):
             self.handle_error()
             return
 
-        # remove this instance from asyncore socket map
+        # remove this instance from IOLoop's socket map
         if not self.connected:
             return self.close()
         if self.timeout:
@@ -2031,7 +2029,7 @@ class FTPHandler(AsyncChat):
             except socket.error:
                 pass
 
-        # remove this instance from asyncore socket_map
+        # remove this instance from IOLoop's socket_map
         if not self.connected:
             return self.close()
 
@@ -2059,7 +2057,7 @@ class FTPHandler(AsyncChat):
         # If self.push is used, data could not be sent immediately in
         # which case a new "loop" will occur exposing us to the risk of
         # accepting new connections.  Since this could cause asyncore to
-        # run out of fds (...and exposes the server to DoS attacks), we
+        # run out of fds in case we're using select() on Windows  we
         # immediately close the channel by using close() instead of
         # close_when_done(). If data has not been sent yet client will
         # be silently disconnected.
@@ -3656,9 +3654,8 @@ class FTPHandler(AsyncChat):
 
 
 class FTPServer(Acceptor):
-    """This class is an asyncore.disptacher subclass.  It creates a FTP
-    socket listening on <address>, dispatching the requests to a <handler>
-    (typically FTPHandler class).
+    """Creates a socket listening on <address>, dispatching the requests
+    to a <handler> (typically FTPHandler class).
 
     Depending on the type of address specified IPv4 or IPv6 connections
     (or both, depending from the underlying system) will be accepted.

@@ -845,6 +845,7 @@ class TestFtpAuthentication(unittest.TestCase):
         # on the 'dead' socket object.  If socket object is really
         # closed it should be raised a socket.error exception (Windows)
         # or a EOFError exception (Linux).
+        self.client.sock.settimeout(.1)
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, '')
 
     def test_rein(self):
@@ -1581,6 +1582,7 @@ class TestFtpStoreData(unittest.TestCase):
         # Make sure client has been disconnected.
         # socket.error (Windows) or EOFError (Linux) exception is supposed
         # to be raised in such a case.
+        self.client.sock.settimeout(.1)
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
 
     def test_stor_empty_file(self):

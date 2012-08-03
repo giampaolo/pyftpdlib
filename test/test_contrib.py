@@ -823,7 +823,7 @@ def test_main():
     except:
         # in case of KeyboardInterrupt grant that the threaded FTP
         # server running in background gets stopped
-        asyncore.socket_map.clear()
+        IOLoop.instance().close()
         raise
     for warn in warns:
         warnings.warn(warn, RuntimeWarning)
