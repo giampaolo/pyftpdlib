@@ -3751,7 +3751,9 @@ class FTPServer(Acceptor):
         """
         try:
             self.ioloop.loop(timeout, blocking)
-        finally:
+        except (KeyboardInterrupt, SystemExit):
+            return self.close_all()
+        if blocking:
             self.close_all()
 
     def handle_accepted(self, sock, addr):
