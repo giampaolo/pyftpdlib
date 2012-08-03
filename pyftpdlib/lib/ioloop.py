@@ -578,7 +578,6 @@ class Acceptor(asyncore.dispatcher):
 
     def del_channel(self, map=None):
         self.ioloop.unregister(self._fileno)
-        self._fileno = None
 
     def listen(self, num):
         asyncore.dispatcher.listen(self, num)
@@ -630,12 +629,11 @@ class AsyncChat(asynchat.async_chat):
         self._closed = False
         asynchat.async_chat.__init__(self, sock)
 
-    def add_channel(self, map=None):
-        self.ioloop.register(self._fileno, self, self.ioloop.READ)
+    def add_channel(self, map=None, events=None):
+        self.ioloop.register(self._fileno, self, events or self.ioloop.READ)
 
     def del_channel(self, map=None):
         self.ioloop.unregister(self._fileno)
-        self._fileno = None
 
     def initiate_send(self):
         asynchat.async_chat.initiate_send(self)

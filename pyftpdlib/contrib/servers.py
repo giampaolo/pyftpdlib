@@ -96,17 +96,22 @@ class _Base(_FTPServer):
         raise NotImplementedError('must be implemented in subclass')
 
     def _loop(self, ioloop):
-        # this loop will live in a separate thread/process
+        # This loop will live in a separate thread/process.
+        # Here we localize variable access to minimize overhead.
         poll = ioloop.poll
         socket_map = ioloop.socket_map
         tasks = ioloop.sched._tasks
         sched_poll = ioloop.sched.poll
         timeout = self.poll_timeout
+        soonest_timeout = None
+
         while self._serving and socket_map:
             try:
-                poll(timeout=timeout)
+                poll(timeout=(min(soonest_timeout, timeout)))
                 if tasks:
-                    sched_poll()
+                    soonest_timeout = sched_poll()
+                else:
+                    soonest_timeout = timeout
             except (KeyboardInterrupt, SystemExit):
                 # note: these two exceptions are raised in all sub
                 # processes
