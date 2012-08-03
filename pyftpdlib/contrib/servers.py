@@ -66,6 +66,9 @@ Example usage:
 >>> server.serve_forever()
 """
 
+import errno
+import sys
+
 from pyftpdlib.ftpserver import FTPServer as _FTPServer
 from pyftpdlib.lib.ioloop import IOLoop
 
@@ -74,6 +77,7 @@ __all__ = []
 
 class _Base(_FTPServer):
     """Base class shared by both implementations (not supposed to be used)"""
+
     poll_timeout = 1.0
     _lock = None
 
@@ -99,9 +103,14 @@ class _Base(_FTPServer):
         sched_poll = ioloop.sched.poll
         timeout = self.poll_timeout
         while self._serving and socket_map:
-            poll(timeout=timeout)
-            if tasks:
-                sched_poll()
+            try:
+                poll(timeout=timeout)
+                if tasks:
+                    sched_poll()
+            except (KeyboardInterrupt, SystemExit):
+                # note: these two exceptions are raised in all sub
+                # processes
+                self._serving = False
 
         self._lock.acquire()
         try:
@@ -124,27 +133,45 @@ class _Base(_FTPServer):
             handler.add_channel()
 
             t = self._start_task(target=self._loop, args=(ioloop,))
+            t.name = repr(addr)
             t.start()
+
             self._lock.acquire()
             self._active_tasks.append(t)
             self._lock.release()
 
     def serve_forever(self, timeout=None, blocking=True):
         self._serving = True
+        closed = False
         try:
             _FTPServer.serve_forever(self, timeout, blocking)
+        except (KeyboardInterrupt, SystemExit):
+            self.close_all()
+            closed = True
+            raise
         finally:
-            if blocking:
+            if blocking and not closed:
                 self.close_all()
 
     def close_all(self):
+        tasks = self._active_tasks[:]
+        # this must be set after getting active tasks as it causes
+        # thread objects to get out of the list too soon
         self._serving = False
-        for t in self._active_tasks:
-            if hasattr(t, 'terminate'):
-                t.terminate()
-            t.join()
+        if tasks and hasattr(tasks[0], 'terminate'):
+            for t in tasks:
+                try:
+                    t.terminate()
+                except OSError:
+                    err = sys.exc_info()[1]
+                    if err.errno != errno.ESRCH:
+                        raise
+        for t in tasks:
+            if t.is_alive():
+                t.join()
         del self._active_tasks[:]
         _FTPServer.close_all(self)
+
 
 try:
     import threading

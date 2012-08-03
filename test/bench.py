@@ -498,8 +498,8 @@ def main():
     elif options.benchmark == 'concurrence':
         bench_multi()
     elif options.benchmark == 'all':
-        bench_stor()
-        bench_retr()
+#        bench_stor()
+#        bench_retr()
         bench_multi()
     else:
         sys.exit("invalid 'benchmark' parameter %r" % options.benchmark)
