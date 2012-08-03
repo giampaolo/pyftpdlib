@@ -26,6 +26,33 @@ in which case:
 asyncore.dispatcher_with_send is not supported, same for "map" argument
 for asyncore.loop and asyncore.dispatcher and asynchat.async_chat
 constructors.
+
+Follows a server example:
+
+import socket
+from pyftpdlib.lib.ioloop import IOLoop, Acceptor, AsyncChat
+
+class Handler(AsyncChat):
+
+    def __init__(self, sock):
+        AsyncChat.__init__(self, sock)
+        self.push('200 hello\r\n')
+        self.close_when_done()
+
+class Server(Acceptor):
+
+    def __init__(self, host, port):
+        Acceptor.__init__(self)
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.set_reuse_addr()
+        self.bind((host, port))
+        self.listen(5)
+
+    def handle_accepted(self, sock, addr):
+        Handler(sock)
+
+server = Server('localhost', 8021)
+IOLoop.instance().loop()
 """
 
 import asyncore
