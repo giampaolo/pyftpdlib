@@ -155,16 +155,7 @@ def get_server():
     handler = ftpserver.FTPHandler
     handler.authorizer = UnixAuthorizer()
     handler.abstracted_fs = UnixFilesystem
-
-    from pyftpdlib.ftpserver import FTPServer
-    from pyftpdlib.contrib.servers import ThreadedFTPServer, MultiprocessFTPServer
-    server = MultiprocessFTPServer((HOST, PORT), handler)
-    server.max_cons = 0
-
-    import resource
-    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
-    resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard))
-
+    server = ftpserver.FTPServer((HOST, PORT), handler)
     return server
 
 def daemonize():
