@@ -204,8 +204,8 @@ class _CallEvery(_CallLater):
                 self._sched.register(self)
 
 
-class _Base(object):
-    """Base class which is then referred as IOLoop."""
+class _IOLoop(object):
+    """Base class which will later be referred as IOLoop."""
 
     READ = 1
     WRITE = 2
@@ -227,31 +227,21 @@ class _Base(object):
                 cls._lock.release()
         return cls._instance
 
-    def close(self):
-        """Closes the IOLoop, freeing any resources used."""
-        self.__class__._instance = None
+    def register(self, fd, instance, events):
+        """Register a fd, handled by instance for the given events."""
+        raise NotImplementedError('must be implemented in subclass')
 
-        # free connections
-        instances = sorted(self.socket_map.values(), key=lambda x: x._fileno)
-        for inst in instances:
-            try:
-                inst.close()
-            except OSError:
-                err = sys.exc_info()[1]
-                if err.args[0] != errno.EBADF:
-                    logerror(traceback.format_exc())  # XXX
-            except Exception:
-                logerror(traceback.format_exc())  # XXX
-        self.socket_map.clear()
+    def unregister(self, fd):
+        """Register fd."""
+        raise NotImplementedError('must be implemented in subclass')
 
-        # free scheduled functions
-        for x in self.sched._tasks:
-            try:
-                if not x.cancelled:
-                    x.cancel()
-            except Exception:
-                logerror(traceback.format_exc())  # XXX
-        del self.sched._tasks[:]
+    def modify(self, fd, events):
+        """Changes the events assigned for fd."""
+        raise NotImplementedError('must be implemented in subclass')
+
+    def poll(self, timeout):
+        """Poll once."""
+        raise NotImplementedError('must be implemented in subclass')
 
     def loop(self, timeout=None, blocking=True):
         """Start the asynchronous IO loop.
@@ -298,7 +288,7 @@ class _Base(object):
          - kwargs: the keyword arguments to call it with; a special
            '_errback' parameter can be passed: it is a callable
            called in case target function raises an exception.
-               """
+       """
         kwargs['_scheduler'] = self.sched
         return _CallLater(seconds, target, *args, **kwargs)
 
@@ -307,17 +297,42 @@ class _Base(object):
         kwargs['_scheduler'] = self.sched
         return _CallEvery(seconds, target, *args, **kwargs)
 
+    def close(self):
+        """Closes the IOLoop, freeing any resources used."""
+        self.__class__._instance = None
+
+        # free connections
+        instances = sorted(self.socket_map.values(), key=lambda x: x._fileno)
+        for inst in instances:
+            try:
+                inst.close()
+            except OSError:
+                err = sys.exc_info()[1]
+                if err.args[0] != errno.EBADF:
+                    logerror(traceback.format_exc())  # XXX
+            except Exception:
+                logerror(traceback.format_exc())  # XXX
+        self.socket_map.clear()
+
+        # free scheduled functions
+        for x in self.sched._tasks:
+            try:
+                if not x.cancelled:
+                    x.cancel()
+            except Exception:
+                logerror(traceback.format_exc())  # XXX
+        del self.sched._tasks[:]
 
 
 # ===================================================================
 # --- select() - POSIX / Windows
 # ===================================================================
 
-class Select(_Base):
+class Select(_IOLoop):
     """select()-based poller."""
 
     def __init__(self):
-        _Base.__init__(self)
+        _IOLoop.__init__(self)
         self._r = []
         self._w = []
 
@@ -372,14 +387,14 @@ class Select(_Base):
 # --- poll() / epoll()
 # ===================================================================
 
-class _BasePollEpoll(_Base):
+class _BasePollEpoll(_IOLoop):
     """This is common to both poll/epoll implementations which
     almost share the same interface.
     Not supposed to be used directly.
     """
 
     def __init__(self):
-        _Base.__init__(self)
+        _IOLoop.__init__(self)
         self._poller = self._poller()
 
     def register(self, fd, instance, events):
@@ -463,7 +478,7 @@ if hasattr(select, 'epoll'):
         _poller = select.epoll
 
         def close(self):
-            _Base.close(self)
+            _IOLoop.close(self)
             self._poller.close()
 
 
@@ -473,16 +488,16 @@ if hasattr(select, 'epoll'):
 
 if hasattr(select, 'kqueue'):
 
-    class Kqueue(_Base):
+    class Kqueue(_IOLoop):
         """kqueue() based poller."""
 
         def __init__(self):
-            _Base.__init__(self)
+            _IOLoop.__init__(self)
             self._kqueue = select.kqueue()
             self._active = {}
 
         def close(self):
-            _Base.close(self)
+            _IOLoop.close(self)
             self._kqueue.close()
 
         def register(self, fd, instance, events):
