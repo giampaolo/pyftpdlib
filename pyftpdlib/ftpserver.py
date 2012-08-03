@@ -2811,7 +2811,7 @@ class FTPHandler(AsyncChat):
         # We also stop responding to any further command.
         if self.data_channel:
             self._quit_pending = True
-            self.sleeping = True
+            self.del_channel()
         else:
             self._shutdown_connecting_dtp()
             self.close_when_done()
@@ -3156,7 +3156,7 @@ class FTPHandler(AsyncChat):
             return
 
         def auth_failed(username, password, msg):
-            self.sleeping = False
+            self.add_channel()
             if hasattr(self, '_closed') and not self._closed:
                 self.attempted_logins += 1
                 if self.attempted_logins >= self.max_login_attempts:
@@ -3192,11 +3192,11 @@ class FTPHandler(AsyncChat):
             self.fs = self.abstracted_fs(home, self)
             self.on_login(self.username)
         else:
-            self.sleeping = True
             if self.username == 'anonymous':
                 msg = "Anonymous access not allowed."
             else:
                 msg = "Authentication failed."
+            self.del_channel()
             self.ioloop.call_later(self._auth_failed_timeout, auth_failed,
                                    self.username, line, msg,
                                    _errback=self.handle_error)
