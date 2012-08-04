@@ -72,7 +72,8 @@ USER = 'user'
 PASSWD = '12345'
 HOME = getcwdu()
 TESTFN = 'tmp-pyftpdlib'
-TESTFN_UNICODE = TESTFN + '\xe2\x98\x83'
+TESTFN_UNICODE = TESTFN + '-unicode-' + '\xe2\x98\x83'
+TESTFN_UNICODE_2 = TESTFN_UNICODE + '-2'
 TIMEOUT = 2
 
 def try_address(host, port=0, family=socket.AF_INET):
@@ -3048,77 +3049,97 @@ class TestUnicodePathNames(unittest.TestCase):
         self.client.connect(self.server.host, self.server.port)
         self.client.sock.settimeout(TIMEOUT)
         self.client.login(USER, PASSWD)
-        self.tempfile = os.path.basename(touch(TESTFN_UNICODE + '1'))
-        self.tempdir = TESTFN_UNICODE + '2'
-        safe_mkdir(self.tempdir)
+        if PY3:
+            safe_mkdir(bytes(TESTFN_UNICODE, 'utf8'))
+            touch(bytes(TESTFN_UNICODE_2, 'utf8'))
+            self.utf8fs = TESTFN_UNICODE in os.listdir('.')
+        else:
+            warnings.filterwarnings("ignore")
+            safe_mkdir(TESTFN_UNICODE)
+            touch(TESTFN_UNICODE_2)
+            self.utf8fs = unicode(TESTFN_UNICODE, 'utf8') in os.listdir(u('.'))
+            warnings.resetwarnings()
 
     def tearDown(self):
         self.client.close()
         self.server.stop()
-        safe_remove(self.tempfile)
-        if os.path.exists(self.tempdir):
-            shutil.rmtree(self.tempdir)
+        if PY3:
+            safe_rmdir(bytes(TESTFN_UNICODE, 'utf8'))
+            safe_remove(bytes(TESTFN_UNICODE_2, 'utf8'))
+        else:
+            safe_rmdir(TESTFN_UNICODE)
+            safe_remove(TESTFN_UNICODE_2)
 
     # --- fs operations
 
     def test_cwd(self):
-        resp = self.client.cwd(self.tempdir)
-        self.assertTrue(self.tempdir in resp)
+        if self.utf8fs:
+            resp = self.client.cwd(TESTFN_UNICODE)
+            self.assertTrue(TESTFN_UNICODE in resp)
+        else:
+            self.assertRaises(ftplib.error_perm, self.client.cwd, TESTFN_UNICODE)
 
     def test_mkd(self):
-        os.rmdir(self.tempdir)
-        dirname = self.client.mkd(self.tempdir)
-        self.assertEqual(dirname, '/' + self.tempdir)
-        self.assertTrue(os.path.isdir(self.tempdir))
+        if self.utf8fs:
+            os.rmdir(TESTFN_UNICODE)
+            dirname = self.client.mkd(TESTFN_UNICODE)
+            self.assertEqual(dirname, '/' + TESTFN_UNICODE)
+            self.assertTrue(os.path.isdir(TESTFN_UNICODE))
+        else:
+            self.assertRaises(ftplib.error_perm, self.client.mkd, TESTFN_UNICODE)
 
     def test_rmdir(self):
-        self.client.rmd(self.tempdir)
-
-    def test_dele(self):
-        self.client.delete(self.tempfile)
-        self.assertFalse(os.path.exists(self.tempfile))
+        if self.utf8fs:
+            self.client.rmd(TESTFN_UNICODE)
+        else:
+            self.assertRaises(ftplib.error_perm, self.client.rmd, TESTFN_UNICODE)
 
     def test_rnfr_rnto(self):
-        tempname = TESTFN_UNICODE + 'foo'
-        try:
-            # rename file
-            self.client.rename(self.tempfile, tempname)
-            self.assertTrue(os.path.isfile(tempname))
-            self.client.rename(tempname, self.tempfile)
-            # rename dir
-            self.client.rename(self.tempdir, tempname)
-            self.assertTrue(os.path.isdir(tempname))
-            self.client.rename(tempname, self.tempdir)
-        finally:
-            safe_remove(tempname)
-            safe_rmdir(tempname)
+        if self.utf8fs:
+            self.client.rename(TESTFN_UNICODE, TESTFN)
+        else:
+            self.assertRaises(ftplib.error_perm, self.client.rename,
+                              TESTFN_UNICODE, TESTFN)
 
     def test_size(self):
         self.client.sendcmd('type i')
-        self.client.sendcmd('size ' + self.tempfile)
+        if self.utf8fs:
+            self.client.sendcmd('size ' + TESTFN_UNICODE_2)
+        else:
+            self.assertRaises(ftplib.error_perm, self.client.sendcmd,
+                              'size ' + TESTFN_UNICODE_2)
 
     def test_mdtm(self):
-        self.client.sendcmd('mdtm ' + self.tempfile)
+        if self.utf8fs:
+            self.client.sendcmd('mdtm ' + TESTFN_UNICODE_2)
+        else:
+            self.assertRaises(ftplib.error_perm, self.client.sendcmd,
+                              'mdtm ' + TESTFN_UNICODE_2)
 
     def test_stou(self):
-        resp = self.client.sendcmd('stou ' + self.tempfile)
-        try:
-            self.assertTrue(self.tempfile in resp)
-            self.client.quit()
-        finally:
-            os.remove(resp.rsplit(' ', 1)[1])
+        if self.utf8fs:
+            resp = self.client.sendcmd('stou ' + TESTFN_UNICODE)
+            self.assertTrue(TESTFN_UNICODE in resp)
+        else:
+            self.assertRaises(ftplib.error_perm, self.client.sendcmd,
+                              'stou ' + TESTFN_UNICODE)
 
     if hasattr(os, 'chmod'):
         def test_site_chmod(self):
-            self.client.sendcmd('site chmod 777 ' + self.tempfile)
+            if self.utf8fs:
+                self.client.sendcmd('site chmod 777 ' + TESTFN_UNICODE)
+            else:
+                self.assertRaises(ftplib.error_perm, self.client.sendcmd,
+                                  'site chmod 777 ' + TESTFN_UNICODE)
+
 
     # --- listing cmds
 
     def _test_listing_cmds(self, cmd):
         ls = []
-        touch(os.path.join(self.tempdir, self.tempfile))
-        self.client.retrlines("%s %s" % (cmd, self.tempdir), ls.append)
-        self.assertTrue(self.tempfile in ls[0])
+        self.client.retrlines(cmd, ls.append)
+        ls = ''.join(ls)
+        self.assertTrue(TESTFN_UNICODE in ls)
 
     def test_list(self):
         self._test_listing_cmds('list')
@@ -3132,34 +3153,50 @@ class TestUnicodePathNames(unittest.TestCase):
     def test_mlst(self):
         # utility function for extracting the line of interest
         mlstline = lambda cmd: self.client.voidcmd(cmd).split('\n')[1]
-        self.assertTrue('type=dir' in mlstline('mlst ' + self.tempdir))
-        self.assertTrue('/' + self.tempdir in mlstline('mlst ' + self.tempdir))
-        self.assertTrue('type=file' in mlstline('mlst ' + self.tempfile))
-        self.assertTrue('/' + self.tempfile in mlstline('mlst ' + self.tempfile))
+        self.assertTrue('type=dir' in \
+                        mlstline('mlst ' + TESTFN_UNICODE))
+        self.assertTrue('/' + TESTFN_UNICODE in \
+                        mlstline('mlst ' + TESTFN_UNICODE))
+        self.assertTrue('type=file' in \
+                        mlstline('mlst ' + TESTFN_UNICODE_2))
+        self.assertTrue('/' + TESTFN_UNICODE_2 in \
+                        mlstline('mlst ' + TESTFN_UNICODE_2))
+
 
     # --- file transfer
 
     def test_stor(self):
-        data = b('abcde12345') * 500
-        os.remove(self.tempfile)
-        dummy = BytesIO()
-        dummy.write(data)
-        dummy.seek(0)
-        self.client.storbinary('stor ' + self.tempfile, dummy)
-        dummy_recv = BytesIO()
-        self.client.retrbinary('retr ' + self.tempfile, dummy_recv.write)
-        dummy_recv.seek(0)
-        self.assertEqual(dummy_recv.read(), data)
+        if self.utf8fs:
+            data = b('abcde12345') * 500
+            os.remove(TESTFN_UNICODE_2)
+            dummy = BytesIO()
+            dummy.write(data)
+            dummy.seek(0)
+            self.client.storbinary('stor ' + TESTFN_UNICODE_2, dummy)
+            dummy_recv = BytesIO()
+            self.client.retrbinary('retr ' + TESTFN_UNICODE_2, dummy_recv.write)
+            dummy_recv.seek(0)
+            self.assertEqual(dummy_recv.read(), data)
+        else:
+            dummy = BytesIO()
+            self.assertRaises(ftplib.error_perm, self.client.storbinary,
+                              'stor ' + TESTFN_UNICODE_2, dummy)
 
     def test_retr(self):
-        data = b('abcd1234') * 500
-        f = open(self.tempfile, 'wb')
-        f.write(data)
-        f.close()
-        dummy = BytesIO()
-        self.client.retrbinary('retr ' + self.tempfile, dummy.write)
-        dummy.seek(0)
-        self.assertEqual(dummy.read(), data)
+        if self.utf8fs:
+            data = b('abcd1234') * 500
+            f = open(TESTFN_UNICODE_2, 'wb')
+            f.write(data)
+            f.close()
+            dummy = BytesIO()
+            self.client.retrbinary('retr ' + TESTFN_UNICODE_2, dummy.write)
+            dummy.seek(0)
+            self.assertEqual(dummy.read(), data)
+        else:
+            dummy = BytesIO()
+            self.assertRaises(ftplib.error_perm, self.client.retrbinary,
+                              'retr ' + TESTFN_UNICODE_2, dummy.write)
+
 
 
 class TestCommandLineParser(unittest.TestCase):
@@ -3318,18 +3355,6 @@ def test_main(tests=None):
         else:
             if os.name == 'posix':
                 warn("sendfile() not available")
-        # Unicode tests won't work on Windows-Python2.x as the default
-        # fs encoding is != utf8
-        if not PY3 and os.name in ('nt', 'ce'):
-            tests.remove(TestUnicodePathNames)
-        else:
-            try:
-                touch(TESTFN_UNICODE)
-            except UnicodeEncodeError:
-                tests.remove(TestUnicodePathNames)
-                warn("skipping unicode tests (OS seems not able to support UTF8")
-            else:
-                safe_remove(TESTFN_UNICODE)
 
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))

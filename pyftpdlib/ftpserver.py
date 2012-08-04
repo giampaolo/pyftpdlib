@@ -2135,6 +2135,13 @@ class FTPHandler(AsyncChat):
 
         cmd = line.split(' ')[0].upper()
         arg = line[len(cmd)+1:]
+        try:
+            self.pre_process_command(line, cmd, arg)
+        except UnicodeEncodeError:
+            self.respond("501 can't decode path (server filesystem encoding " \
+                         "is %s)" % sys.getfilesystemencoding())
+
+    def pre_process_command(self, line, cmd, arg):
         kwargs = {}
         if cmd == "SITE" and arg:
             cmd = "SITE %s" % arg.split(' ')[0].upper()
