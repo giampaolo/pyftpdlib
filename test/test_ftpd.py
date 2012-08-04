@@ -145,18 +145,18 @@ def touch(name):
     finally:
         f.close()
 
-def onexit():
-    """Convenience function for removing temporary files and
-    directories on interpreter exit.
-    Also closes all sockets/instances left behind in IOLoop
-    socket map (if any).
-    """
+def remove_test_files():
+    """Remove files and directores created during tests."""
     for name in os.listdir(u('.')):
         if name.startswith(tempfile.template):
             if os.path.isdir(name):
                 shutil.rmtree(name)
             else:
                 os.remove(name)
+
+def onexit():
+    """Cleanup function executed on interpreter exit."""
+    remove_test_files()
     map = IOLoop.instance().socket_map
     for x in map.values():
         try:
@@ -3358,6 +3358,7 @@ def test_main(tests=None):
 
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
+    remove_test_files()
     try:
         unittest.TextTestRunner(verbosity=2).run(test_suite)
     except:
