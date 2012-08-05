@@ -3138,8 +3138,9 @@ class TestUnicodePathNames(unittest.TestCase):
     def _test_listing_cmds(self, cmd):
         ls = []
         self.client.retrlines(cmd, ls.append)
-        ls = ''.join(ls)
-        self.assertTrue(TESTFN_UNICODE in ls)
+        ls = '\n'.join(ls)
+        if self.utf8fs:
+            self.assertTrue(TESTFN_UNICODE in ls)
 
     def test_list(self):
         self._test_listing_cmds('list')
@@ -3153,14 +3154,18 @@ class TestUnicodePathNames(unittest.TestCase):
     def test_mlst(self):
         # utility function for extracting the line of interest
         mlstline = lambda cmd: self.client.voidcmd(cmd).split('\n')[1]
-        self.assertTrue('type=dir' in \
-                        mlstline('mlst ' + TESTFN_UNICODE))
-        self.assertTrue('/' + TESTFN_UNICODE in \
-                        mlstline('mlst ' + TESTFN_UNICODE))
-        self.assertTrue('type=file' in \
-                        mlstline('mlst ' + TESTFN_UNICODE_2))
-        self.assertTrue('/' + TESTFN_UNICODE_2 in \
-                        mlstline('mlst ' + TESTFN_UNICODE_2))
+        if self.utf8fs:
+            self.assertTrue('type=dir' in \
+                            mlstline('mlst ' + TESTFN_UNICODE))
+            self.assertTrue('/' + TESTFN_UNICODE in \
+                            mlstline('mlst ' + TESTFN_UNICODE))
+            self.assertTrue('type=file' in \
+                            mlstline('mlst ' + TESTFN_UNICODE_2))
+            self.assertTrue('/' + TESTFN_UNICODE_2 in \
+                            mlstline('mlst ' + TESTFN_UNICODE_2))
+        else:
+            self.assertRaises(ftplib.error_perm,
+                              mlstline, 'mlst ' + TESTFN_UNICODE)
 
 
     # --- file transfer
@@ -3355,6 +3360,8 @@ def test_main(tests=None):
         else:
             if os.name == 'posix':
                 warn("sendfile() not available")
+
+#    tests = [TestUnicodePathNames]
 
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))

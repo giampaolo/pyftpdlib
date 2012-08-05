@@ -331,14 +331,15 @@ def logerror(msg):
 # http://bugs.python.org/issue1602
 # http://stackoverflow.com/questions/5419/
 if os.name in ('nt', 'ce'):
-    def _safeprint(s):
+    def _safeprint(s, errors='replace'):
         try:
             print_(s)
         except UnicodeEncodeError:
             if PY3:
-                print_(s.encode('utf8').decode(sys.stdout.encoding))
+                print_(s.encode('utf8').decode(sys.stdout.encoding),
+                       errors=errors)
             else:
-                print_(s.encode('utf8'))
+                print_(s.encode('utf8'), errors=errors)
     log = logline = _safeprint
 
 
@@ -1626,7 +1627,15 @@ class AbstractedFS(object):
         assert isinstance(path, unicode), path
         if self.isdir(path):
             listing = self.listdir(path)
-            listing.sort()
+            try:
+                listing.sort()
+            except UnicodeDecodeError:
+                # (Python 2 only) might happen on filesystem not
+                # supporting UTF8 meaning os.listdir() returned a list
+                # of mixed bytes and unicode strings:
+                # http://goo.gl/6DLHD
+                # http://bugs.python.org/issue683592
+                pass
             return self.format_list(path, listing)
         # if path is a file or a symlink we return information about it
         else:
@@ -1666,13 +1675,25 @@ class AbstractedFS(object):
         readlink = getattr(self, 'readlink', None)
         now = time.time()
         for basename in listing:
-            file = os.path.join(basedir, basename)
+            if not PY3:
+                try:
+                    file = os.path.join(basedir, basename)
+                except UnicodeDecodeError:
+                    # (Python 2 only) might happen on filesystem not
+                    # supporting UTF8 meaning os.listdir() returned a list
+                    # of mixed bytes and unicode strings:
+                    # http://goo.gl/6DLHD
+                    # http://bugs.python.org/issue683592
+                    continue
+            else:
+                file = os.path.join(basedir, basename)
             try:
                 st = self.lstat(file)
             except (OSError, FilesystemError):
                 if ignore_err:
                     continue
                 raise
+
             perms = _filemode(st.st_mode)  # permissions
             nlinks = st.st_nlink  # number of links to inode
             if not nlinks:  # non-posix system, let's use a bogus value
@@ -1713,7 +1734,7 @@ class AbstractedFS(object):
             # formatting is matched with proftpd ls output
             line = "%s %3s %-8s %-8s %8s %s %s\r\n" % (perms, nlinks, uname, gname,
                                                        size, mtimestr, basename)
-            yield line.encode('utf8')
+            yield line.encode('utf8', errors=self.cmd_channel.unicode_errors)
 
     def format_mlsx(self, basedir, listing, perms, facts, ignore_err=True):
         """Return an iterator object that yields the entries of a given
@@ -1755,8 +1776,19 @@ class AbstractedFS(object):
         if 'd' in perms:
             permdir += 'p'
         for basename in listing:
-            file = os.path.join(basedir, basename)
             retfacts = dict()
+            if not PY3:
+                try:
+                    file = os.path.join(basedir, basename)
+                except UnicodeDecodeError:
+                    # (Python 2 only) might happen on filesystem not
+                    # supporting UTF8 meaning os.listdir() returned a list
+                    # of mixed bytes and unicode strings:
+                    # http://goo.gl/6DLHD
+                    # http://bugs.python.org/issue683592
+                    continue
+            else:
+                file = os.path.join(basedir, basename)
             # in order to properly implement 'unique' fact (RFC-3659,
             # chapter 7.5.2) we are supposed to follow symlinks, hence
             # use os.stat() instead of os.lstat()
@@ -1825,7 +1857,7 @@ class AbstractedFS(object):
             factstring = "".join(["%s=%s;" % (x, retfacts[x]) \
                                   for x in sorted(retfacts.keys())])
             line = "%s %s\r\n" % (factstring, basename)
-            yield line.encode('utf8')
+            yield line.encode('utf8', errors=self.cmd_channel.unicode_errors)
 
 
 # --- FTP
@@ -1898,6 +1930,11 @@ class FTPHandler(AsyncChat):
         significantly better performances (default True on all systems
         where it is supported).
 
+     - (str) unicode_errors: the error handler passed to ''.encode()
+       and ''.decode():
+       http://docs.python.org/library/stdtypes.html#str.decode
+       (detaults to 'replace').
+
     All relevant instance attributes initialized when client connects
     are reproduced below.  You may be interested in them in case you
     want to subclass the original FTPHandler.
@@ -1932,6 +1969,7 @@ class FTPHandler(AsyncChat):
     use_gmt_times = True
     use_sendfile = sendfile is not None
     tcp_no_delay = hasattr(socket, "TCP_NODELAY")
+    unicode_errors = 'replace'
 
     def __init__(self, conn, server, ioloop=None):
         """Initialize the command channel.
@@ -2109,9 +2147,7 @@ class FTPHandler(AsyncChat):
             self._in_buffer_len = 0
 
     def decode(self, bytes):
-        # 'replace' looks to be the default behavior adopted by
-        # proftpd when dealing with unencodable strings
-        return bytes.decode('utf8', 'replace')
+        return bytes.decode('utf8', self.unicode_errors)
 
     def found_terminator(self):
         r"""Called when the incoming data stream matches the \r\n
@@ -2124,7 +2160,7 @@ class FTPHandler(AsyncChat):
         try:
             line = self.decode(line)
         except UnicodeDecodeError:
-            # By default we'll never get here as we use errors='replace'
+            # By default we'll never get here as we replace errors
             # but user might want to override this behavior.
             # RFC-2640 doesn't mention what to do in this case so
             # we'll just return 501 (bad arg).
@@ -2854,9 +2890,22 @@ class FTPHandler(AsyncChat):
         else:
             data = ''
             if listing:
-                listing.sort()
+                try:
+                    listing.sort()
+                except UnicodeDecodeError:
+                    # (Python 2 only) might happen on filesystem not
+                    # supporting UTF8 meaning os.listdir() returned a list
+                    # of mixed bytes and unicode strings:
+                    # http://goo.gl/6DLHD
+                    # http://bugs.python.org/issue683592
+                    ls = []
+                    for x in ls:
+                        if not isinstance(x, unicode):
+                            x = unicode(x, 'utf8')
+                        ls.append(x)
+                    listing = sorted(ls)
                 data = '\r\n'.join(listing) + '\r\n'
-            data = data.encode('utf8')
+            data = data.encode('utf8', errors=self.unicode_errors)
             self.push_dtp_data(data, cmd="NLST")
 
         # --- MLST and MLSD commands
@@ -2881,7 +2930,7 @@ class FTPHandler(AsyncChat):
             err = sys.exc_info()[1]
             self.respond('550 %s.' % _strerror(err))
         else:
-            data = data.decode('utf8')
+            data = data.decode('utf8', errors=self.unicode_errors)
             # since TVFS is supported (see RFC-3659 chapter 6), a fully
             # qualified pathname should be returned
             data = data.split(' ')[0] + ' %s\r\n' % line
