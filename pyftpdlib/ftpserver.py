@@ -1533,12 +1533,14 @@ class AbstractedFS(object):
 
     def stat(self, path):
         """Perform a stat() system call on the given path."""
-        assert isinstance(path, unicode), path
+        # on python 2 we might also get bytes from os.lisdir()
+        #assert isinstance(path, unicode), path
         return os.stat(path)
 
     def lstat(self, path):
         """Like stat but does not follow symbolic links."""
-        assert isinstance(path, unicode), path
+        # on python 2 we might also get bytes from os.lisdir()
+        #assert isinstance(path, unicode), path
         return os.lstat(path)
 
     if not hasattr(os, 'lstat'):
@@ -1684,7 +1686,9 @@ class AbstractedFS(object):
                     # of mixed bytes and unicode strings:
                     # http://goo.gl/6DLHD
                     # http://bugs.python.org/issue683592
-                    continue
+                    file = os.path.join(bytes(basedir), bytes(basename))
+                    if not isinstance(basename, unicode):
+                        basename = unicode(basename, 'utf8')
             else:
                 file = os.path.join(basedir, basename)
             try:
@@ -1786,7 +1790,9 @@ class AbstractedFS(object):
                     # of mixed bytes and unicode strings:
                     # http://goo.gl/6DLHD
                     # http://bugs.python.org/issue683592
-                    continue
+                    file = os.path.join(bytes(basedir), bytes(basename))
+                    if not isinstance(basename, unicode):
+                        basename = unicode(basename, 'utf8')
             else:
                 file = os.path.join(basedir, basename)
             # in order to properly implement 'unique' fact (RFC-3659,
@@ -2899,7 +2905,7 @@ class FTPHandler(AsyncChat):
                     # http://goo.gl/6DLHD
                     # http://bugs.python.org/issue683592
                     ls = []
-                    for x in ls:
+                    for x in listing:
                         if not isinstance(x, unicode):
                             x = unicode(x, 'utf8')
                         ls.append(x)

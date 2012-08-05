@@ -3063,12 +3063,7 @@ class TestUnicodePathNames(unittest.TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
-        if PY3:
-            safe_rmdir(bytes(TESTFN_UNICODE, 'utf8'))
-            safe_remove(bytes(TESTFN_UNICODE_2, 'utf8'))
-        else:
-            safe_rmdir(TESTFN_UNICODE)
-            safe_remove(TESTFN_UNICODE_2)
+        remove_test_files()
 
     # --- fs operations
 
@@ -3141,6 +3136,13 @@ class TestUnicodePathNames(unittest.TestCase):
         ls = '\n'.join(ls)
         if self.utf8fs:
             self.assertTrue(TESTFN_UNICODE in ls)
+        else:
+            # Part of the filename which are not encodable are supposed
+            # to have been replaced. The file should be something like
+            # 'tmp-pyftpdlib-unicode-????'. In any case it is not
+            # referenceable (e.g. DELE 'tmp-pyftpdlib-unicode-????'
+            # won't work).
+            self.assertTrue('tmp-pyftpdlib-unicode' in ls)
 
     def test_list(self):
         self._test_listing_cmds('list')
