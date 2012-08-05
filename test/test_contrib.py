@@ -802,6 +802,7 @@ def test_main():
                 warn("UnixAuthorizer tests skipped (spwd module is missing")
             else:
                 warn("UnixAuthorizer tests skipped")
+
     # Windows tests
     elif os.name in ('nt', 'ce'):
         if hasattr(authorizers, "WindowsAuthorizer"):

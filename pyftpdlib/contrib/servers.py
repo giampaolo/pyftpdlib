@@ -94,8 +94,12 @@ class _Base(_FTPServer):
     def _map_len(self):
         raise NotImplementedError('must be implemented in subclass')
 
-    def _loop(self, ioloop):
-        # This loop will live in a separate thread/process.
+    def _loop(self, handler):
+        """Serve handler's IO loop in a separate thread or process."""
+        ioloop = IOLoop()
+        handler.ioloop = ioloop
+        handler.add_channel()
+
         # Here we localize variable access to minimize overhead.
         poll = ioloop.poll
         socket_map = ioloop.socket_map
@@ -133,14 +137,10 @@ class _Base(_FTPServer):
         handler = _FTPServer.handle_accepted(self, sock, addr)
         if handler is not None:
             # unregister the handler from the main IOLoop used by the
-            # main thread to accept connection, then instantiate a new
-            # IOLoop and make that loop into a separate thread
+            # main thread to accept connections
             self.ioloop.unregister(handler._fileno)
-            ioloop = IOLoop()
-            handler.ioloop = ioloop
-            handler.add_channel()
 
-            t = self._start_task(target=self._loop, args=(ioloop,))
+            t = self._start_task(target=self._loop, args=(handler,))
             t.name = repr(addr)
             t.start()
 

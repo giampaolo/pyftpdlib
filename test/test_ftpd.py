@@ -154,6 +154,11 @@ def remove_test_files():
             else:
                 os.remove(name)
 
+def warn(msg):
+    """Add warning message to be executed on exit."""
+    atexit.register(warnings.warn, str(msg) + " - test has been skipped",
+                    RuntimeWarning)
+
 def onexit():
     """Cleanup function executed on interpreter exit."""
     remove_test_files()
@@ -3319,10 +3324,6 @@ class TestCommandLineParser(unittest.TestCase):
 remove_test_files()
 
 def test_main(tests=None):
-    def warn(msg):
-        atexit.register(warnings.warn, str(msg) + " - test has been skipped",
-                        RuntimeWarning)
-
     test_suite = unittest.TestSuite()
     if tests is None:
         tests = [
