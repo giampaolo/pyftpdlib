@@ -783,24 +783,26 @@ def test_main():
     ]
     tests += ftp_mproc_tests
 
-    # authorizers tests
+    # POSIX tests
     if os.name == 'posix':
+        tests.append(TestUnixFilesystem)
+
         if hasattr(authorizers, "UnixAuthorizer"):
             try:
                 authorizers.UnixAuthorizer()
             except ftpserver.AuthorizerError:  # not root
-                warns.append("UnixAuthorizer tests skipped (root privileges are "
-                             "required)")
+                warn("UnixAuthorizer tests skipped (root privileges are " \
+                     "required)")
             else:
                 tests.append(TestUnixAuthorizer)
         else:
             try:
                 import spwd
             except ImportError:
-                warns.append("UnixAuthorizer tests skipped (spwd module is "
-                             "missing")
+                warn("UnixAuthorizer tests skipped (spwd module is missing")
             else:
-                warns.append("UnixAuthorizer tests skipped")
+                warn("UnixAuthorizer tests skipped")
+    # Windows tests
     elif os.name in ('nt', 'ce'):
         if hasattr(authorizers, "WindowsAuthorizer"):
             tests.append(TestWindowsAuthorizer)
@@ -808,25 +810,14 @@ def test_main():
             try:
                 import win32api
             except ImportError:
-                warns.append("WindowsAuthorizer tests skipped (pywin32 extension "
-                             "is required)")
+                warn("WindowsAuthorizer tests skipped (pywin32 extension " \
+                     "is required)")
             else:
-                warns.append("WindowsAuthorizer tests skipped")
-
-    if os.name == 'posix':
-        tests.append(TestUnixFilesystem)
+                warn("WindowsAuthorizer tests skipped")
 
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
-    try:
-        unittest.TextTestRunner(verbosity=2).run(test_suite)
-    except:
-        # in case of KeyboardInterrupt grant that the threaded FTP
-        # server running in background gets stopped
-        IOLoop.instance().close()
-        raise
-    for warn in warns:
-        warnings.warn(warn, RuntimeWarning)
+    unittest.TextTestRunner(verbosity=2).run(test_suite)
 
 if __name__ == '__main__':
     test_main()

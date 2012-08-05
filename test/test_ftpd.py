@@ -3205,7 +3205,6 @@ class TestUnicodePathNames(unittest.TestCase):
                               'retr ' + TESTFN_UNICODE_2, dummy.write)
 
 
-
 class TestCommandLineParser(unittest.TestCase):
     """Test command line parser."""
     SYSARGV = sys.argv
@@ -3317,6 +3316,8 @@ class TestCommandLineParser(unittest.TestCase):
         self.assertRaises(SystemExit, ftpserver.main)
 
 
+remove_test_files()
+
 def test_main(tests=None):
     def warn(msg):
         atexit.register(warnings.warn, str(msg) + " - test has been skipped",
@@ -3363,19 +3364,9 @@ def test_main(tests=None):
             if os.name == 'posix':
                 warn("sendfile() not available")
 
-#    tests = [TestUnicodePathNames]
-
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
-    remove_test_files()
-    try:
-        unittest.TextTestRunner(verbosity=2).run(test_suite)
-    except:
-        # in case of KeyboardInterrupt grant that the threaded FTP
-        # server running in background gets stopped
-        IOLoop.instance().socket_map.clear()
-        raise
-
+    unittest.TextTestRunner(verbosity=2).run(test_suite)
 
 if __name__ == '__main__':
     test_main()
