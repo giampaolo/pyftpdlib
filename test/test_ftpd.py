@@ -910,6 +910,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.file.close()
 
         conn = self.client.transfercmd('retr ' + TESTFN)
+        conn.settimeout(TIMEOUT)
         rein_sent = False
         bytes_recv = 0
         while 1:
@@ -955,6 +956,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.file.close()
 
         conn = self.client.transfercmd('retr ' + TESTFN)
+        conn.settimeout(TIMEOUT)
         rein_sent = 0
         bytes_recv = 0
         while 1:
@@ -1396,6 +1398,7 @@ class TestFtpStoreData(unittest.TestCase):
             # "type i" before starting the transfer
             self.client.voidcmd('type a')
             conn = self.client.transfercmd(cmd)
+            conn.settimeout(TIMEOUT)
             while 1:
                 buf = fp.read(blocksize)
                 if not buf:
@@ -1433,6 +1436,7 @@ class TestFtpStoreData(unittest.TestCase):
             # "type i" before starting the transfer
             self.client.voidcmd('type a')
             conn = self.client.transfercmd(cmd)
+            conn.settimeout(TIMEOUT)
             while 1:
                 buf = fp.read(blocksize)
                 if not buf:
@@ -1476,7 +1480,9 @@ class TestFtpStoreData(unittest.TestCase):
         filename = self.client.sendcmd('stou').split('FILE: ')[1]
         try:
             sock = self.client.makeport()
+            sock.settimeout(TIMEOUT)
             conn, sockaddr = sock.accept()
+            conn.settimeout(TIMEOUT)
             if hasattr(self.client_class, 'ssl_version'):
                 conn = ssl.wrap_socket(conn)
             while 1:
@@ -1564,6 +1570,7 @@ class TestFtpStoreData(unittest.TestCase):
 
         self.client.voidcmd('TYPE I')
         conn = self.client.transfercmd('stor ' + TESTFN)
+        conn.settimeout(TIMEOUT)
         bytes_sent = 0
         while 1:
             chunk = self.dummy_sendfile.read(8192)
@@ -1616,6 +1623,7 @@ class TestFtpStoreData(unittest.TestCase):
         # progress, the connection must remain open for result response
         # and the server will then close it.
         conn = self.client.transfercmd('stor ' + TESTFN)
+        conn.settimeout(TIMEOUT)
         conn.sendall(b('abcde12345') * 50000)
         self.client.sendcmd('quit')
         conn.sendall(b('abcde12345') * 50000)
@@ -1693,6 +1701,7 @@ class TestFtpRetrieveData(unittest.TestCase):
             # like retrbinary but uses TYPE A instead
             self.client.voidcmd('type a')
             conn = self.client.transfercmd(cmd, rest)
+            conn.settimeout(TIMEOUT)
             while 1:
                 data = conn.recv(blocksize)
                 if not data:
@@ -1717,6 +1726,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         received_bytes = 0
         self.client.voidcmd('TYPE I')
         conn = self.client.transfercmd('retr ' + TESTFN)
+        conn.settimeout(TIMEOUT)
         while 1:
             chunk = conn.recv(8192)
             if not chunk:
@@ -1961,6 +1971,7 @@ class TestFtpAbort(unittest.TestCase):
         # respond with 225
         self.client.set_pasv(0)
         sock = self.client.makeport()
+        sock.settimeout(TIMEOUT)
         respcode = self.client.sendcmd('ABOR')[:3]
         sock.close()
         self.assertEqual('225', respcode)
@@ -1978,6 +1989,7 @@ class TestFtpAbort(unittest.TestCase):
         try:
             self.client.voidcmd('TYPE I')
             conn = self.client.transfercmd('retr ' + TESTFN)
+            conn.settimeout(TIMEOUT)
             bytes_recv = 0
             while bytes_recv < 65536:
                 chunk = conn.recv(8192)
@@ -2069,6 +2081,7 @@ class TestTimeouts(unittest.TestCase):
         self._setUp(data_timeout=0.1)
         addr = self.client.makepasv()
         s = socket.socket()
+        s.settimeout(TIMEOUT)
         s.connect(addr)
         # fail if no msg is received within 1 second
         self.client.sock.settimeout(1)
@@ -2084,6 +2097,7 @@ class TestTimeouts(unittest.TestCase):
         # whether the transfer stalled for with no progress is executed.
         self._setUp(data_timeout=0.1)
         sock = self.client.transfercmd('stor ' + TESTFN)
+        sock.settimeout(TIMEOUT)
         if hasattr(self.client_class, 'ssl_version'):
             sock = ssl.wrap_socket(sock)
         try:
@@ -2102,6 +2116,7 @@ class TestTimeouts(unittest.TestCase):
         self._setUp(idle_timeout=0.1, data_timeout=0.2)
         addr = self.client.makepasv()
         s = socket.socket()
+        s.settimeout(TIMEOUT)
         s.connect(addr)
         # fail if no msg is received within 1 second
         self.client.sock.settimeout(1)
@@ -2117,6 +2132,7 @@ class TestTimeouts(unittest.TestCase):
         self._setUp(idle_timeout=0.1, data_timeout=0.2)
         addr = self.client.makepasv()
         s = socket.socket()
+        s.settimeout(TIMEOUT)
         s.connect(addr)
         # close data channel
         self.client.sendcmd('abor')
@@ -2148,6 +2164,7 @@ class TestTimeouts(unittest.TestCase):
         self._setUp(data_timeout=0)
         addr = self.client.makepasv()
         s = socket.socket()
+        s.settimeout(TIMEOUT)
         s.connect(addr)
         s.close()
 
@@ -2157,12 +2174,13 @@ class TestTimeouts(unittest.TestCase):
         # reset passive socket
         addr = self.client.makepasv()
         s = socket.socket()
+        s.settimeout(TIMEOUT)
         s.connect(addr)
         s.close()
 
     def test_disabled_port_timeout(self):
         self._setUp(port_timeout=0)
-        s1 =self.client.makeport()
+        s1 = self.client.makeport()
         s2 = self.client.makeport()
         s1.close()
         s2.close()
@@ -2224,6 +2242,7 @@ class TestConfigurableOptions(unittest.TestCase):
             # with active data channel established
             c1.login(USER, PASSWD)
             sock = c1.makeport()
+            sock.settimeout(TIMEOUT)
             self.assertRaises(ftplib.error_temp, c2.connect, self.server.host,
                               self.server.port)
             sock.close()
@@ -2306,6 +2325,7 @@ class TestConfigurableOptions(unittest.TestCase):
         # that a kernel-assigned port gets chosen
         s = socket.socket()
         s.bind((HOST, 0))
+        s.settimeout(TIMEOUT)
         port = s.getsockname()[1]
         self.server.handler.passive_ports = [port]
         resulting_port = self.client.makepasv()[1]
@@ -2325,6 +2345,7 @@ class TestConfigurableOptions(unittest.TestCase):
                 try:
                     sock = socket.socket(self.client.af, socket.SOCK_STREAM)
                     sock.bind((HOST, port))
+                    sock.settimeout(TIMEOUT)
                     break
                 except socket.error:
                     err = sys.exc_info()[1]
@@ -2525,6 +2546,7 @@ class TestCallbacks(unittest.TestCase):
 
         bytes_recv = 0
         conn = self.client.transfercmd("retr " + TESTFN, None)
+        conn.settimeout(TIMEOUT)
         while 1:
             chunk = conn.recv(8192)
             bytes_recv += len(chunk)
@@ -2560,6 +2582,7 @@ class TestCallbacks(unittest.TestCase):
         self.dummyfile.seek(0)
 
         conn = self.client.transfercmd('stor ' + TESTFN)
+        conn.settimeout(TIMEOUT)
         bytes_sent = 0
         while 1:
             chunk = self.dummyfile.read(8192)
@@ -2848,6 +2871,7 @@ class TestIPv4Environment(_TestNetworkProtocols):
     def test_port_v4(self):
         # test connection
         sock = self.client.makeport()
+        sock.settimeout(TIMEOUT)
         self.client.sendcmd('abor')
         sock.close()
         # test bad arguments
@@ -3020,6 +3044,7 @@ class TestCornerCases(unittest.TestCase):
             s = socket.socket()
             s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
                          struct.pack('ii', 1, 0))
+            s.settimeout(TIMEOUT)
             try:
                 s.connect(addr)
             except socket.error:

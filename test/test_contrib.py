@@ -278,6 +278,7 @@ class TestFTPS(unittest.TestCase):
         # secured
         self.client.prot_p()
         sock = self.client.transfercmd('list')
+        sock.settimeout(TIMEOUT)
         while 1:
             if not sock.recv(1024):
                 self.client.voidresp()
@@ -286,6 +287,7 @@ class TestFTPS(unittest.TestCase):
         # unsecured
         self.client.prot_c()
         sock = self.client.transfercmd('list')
+        sock.settimeout(TIMEOUT)
         while 1:
             if not sock.recv(1024):
                 self.client.voidresp()
@@ -307,6 +309,7 @@ class TestFTPS(unittest.TestCase):
             if err.errno == 0:
                 return
             raise
+        sock.settimeout(TIMEOUT)
         sock.sendall(b('noop'))
         try:
             chunk = sock.recv(1024)
