@@ -127,7 +127,10 @@ import random
 import stat
 import heapq
 import optparse
-from tarfile import filemode as _filemode
+try:
+    from stat import filemode as _filemode  # PY 3.3
+except ImportError:
+    from tarfile import filemode as _filemode
 
 try:
     import pwd
