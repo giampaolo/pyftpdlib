@@ -64,6 +64,7 @@ import sys
 import traceback
 import time
 import heapq
+import socket
 try:
     import threading
 except ImportError:
@@ -630,6 +631,31 @@ class Acceptor(asyncore.dispatcher):
 
     def del_channel(self, map=None):
         self.ioloop.unregister(self._fileno)
+
+    def bind_af_unspecified(self, host, port):
+        """Same as bind() but guesses address family from host.
+        Return the address family just determined.
+        """
+        assert self.socket is None
+        err = "getaddrinfo() returned an empty list"
+        info = socket.getaddrinfo(host, port, socket.AF_UNSPEC,
+                                  socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+        for res in info:
+            self.socket = None
+            af, socktype, proto, canonname, sa = res
+            try:
+                self.create_socket(af, socktype)
+                self.set_reuse_addr()
+                self.bind(sa)
+            except socket.error:
+                err = sys.exc_info()[1]
+                if self.socket is not None:
+                    self.socket.close()
+                continue
+            break
+        if self.socket is None:
+            raise socket.error(err)
+        return af
 
     def listen(self, num):
         asyncore.dispatcher.listen(self, num)

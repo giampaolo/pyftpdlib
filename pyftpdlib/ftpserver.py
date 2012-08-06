@@ -3754,29 +3754,12 @@ class FTPServer(Acceptor):
         # AF_INET or AF_INET6 socket
         # Get the correct address family for our host (allows IPv6 addresses)
         try:
-            info = socket.getaddrinfo(host, port, socket.AF_UNSPEC,
-                                      socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+            self.bind_af_unspecified(host, port)
         except socket.gaierror:
             # Probably a DNS issue. Assume IPv4.
             self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
             self.set_reuse_addr()
             self.bind((host, port))
-        else:
-            for res in info:
-                af, socktype, proto, canonname, sa = res
-                try:
-                    self.create_socket(af, socktype)
-                    self.set_reuse_addr()
-                    self.bind(sa)
-                except socket.error:
-                    msg = sys.exc_info()[1]
-                    if self.socket:
-                        self.socket.close()
-                    self.socket = None
-                    continue
-                break
-            if not self.socket:
-                raise socket.error(msg)
         self.listen(5)
 
     @property
