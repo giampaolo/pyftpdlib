@@ -632,11 +632,12 @@ class Acceptor(asyncore.dispatcher):
     def del_channel(self, map=None):
         self.ioloop.unregister(self._fileno)
 
-    def bind_af_unspecified(self, host, port):
+    def bind_af_unspecified(self, addr):
         """Same as bind() but guesses address family from host.
         Return the address family just determined.
         """
         assert self.socket is None
+        host, port = addr
         err = "getaddrinfo() returned an empty list"
         info = socket.getaddrinfo(host, port, socket.AF_UNSPEC,
                                   socket.SOCK_STREAM, 0, socket.AI_PASSIVE)

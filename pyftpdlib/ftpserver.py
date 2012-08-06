@@ -579,7 +579,14 @@ class PassiveDTP(Acceptor):
         else:
             masqueraded_ip = None
 
-        self.create_socket(self.cmd_channel._af, socket.SOCK_STREAM)
+        if self.cmd_channel.server._af != socket.AF_INET:
+            # dual stack IPv4/IPv6 support
+            af = self.bind_af_unspecified((local_ip, 0))
+            self.socket.close()
+        else:
+            af = self.cmd_channel._af
+
+        self.create_socket(af, socket.SOCK_STREAM)
 
         if self.cmd_channel.passive_ports is None:
             # By using 0 as port number value we let kernel choose a
@@ -3754,12 +3761,13 @@ class FTPServer(Acceptor):
         # AF_INET or AF_INET6 socket
         # Get the correct address family for our host (allows IPv6 addresses)
         try:
-            self.bind_af_unspecified(host, port)
+            self._af = self.bind_af_unspecified((host, port))
         except socket.gaierror:
             # Probably a DNS issue. Assume IPv4.
             self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
             self.set_reuse_addr()
             self.bind((host, port))
+            self._af = socket.AF_INET
         self.listen(5)
 
     @property
