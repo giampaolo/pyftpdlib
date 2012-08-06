@@ -747,26 +747,12 @@ class ActiveDTP(Connector):
             self._cmd = "EPRT"
             self._normalized_addr = "[%s]:%s" % (ip, port)
 
-        # dual stack IPv4/IPv6 support
         source_ip = self.cmd_channel.socket.getsockname()[0]
-        for res in socket.getaddrinfo(ip, port, 0, socket.SOCK_STREAM):
-            af, socktype, proto, canonname, sa = res
-            try:
-                self.create_socket(af, socktype)
-                # Have the active connection come from the same IP address
-                # as the command channel, see:
-                # http://code.google.com/p/pyftpdlib/issues/detail?id=123
-                # In case we're a dealing with a mixed IPv4/IPv6 stack
-                # avoid to bind() though.
-                if af == self.cmd_channel._af:
-                    self.bind((source_ip, 0))
-                self.connect((ip, port))
-            except (socket.gaierror, socket.error):
-                self.socket.close()
-            else:
-                return
-
-        return self.handle_close()
+        # dual stack IPv4/IPv6 support
+        try:
+            self.connect_af_unspecified((ip, port), (source_ip, 0))
+        except (socket.gaierror, socket.error):
+            return self.handle_close()
 
     def readable(self):
         return False

@@ -633,7 +633,7 @@ class Acceptor(asyncore.dispatcher):
         self.ioloop.unregister(self._fileno)
 
     def bind_af_unspecified(self, addr):
-        """Same as bind() but guesses address family from host.
+        """Same as bind() but guesses address family from addr.
         Return the address family just determined.
         """
         assert self.socket is None
@@ -643,6 +643,7 @@ class Acceptor(asyncore.dispatcher):
                                   socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
         for res in info:
             self.socket = None
+            self.del_channel()
             af, socktype, proto, canonname, sa = res
             try:
                 self.create_socket(af, socktype)
@@ -652,9 +653,11 @@ class Acceptor(asyncore.dispatcher):
                 err = sys.exc_info()[1]
                 if self.socket is not None:
                     self.socket.close()
+                    self.del_channel()
                 continue
             break
         if self.socket is None:
+            self.del_channel()
             raise socket.error(err)
         return af
 
@@ -698,6 +701,35 @@ class Connector(Acceptor):
 
     def add_channel(self, map=None):
         self.ioloop.register(self._fileno, self, self.ioloop.WRITE)
+
+    def connect_af_unspecified(self, addr, source_address=None):
+        """Same as connect() but guesses address family from addr.
+        Return the address family just determined.
+        """
+        assert self.socket is None
+        host, port = addr
+        err = "getaddrinfo() returned an empty list"
+        info = socket.getaddrinfo(host, port, socket.AF_UNSPEC,
+                                  socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+        for res in info:
+            self.socket = None
+            af, socktype, proto, canonname, sa = res
+            try:
+                self.create_socket(af, socktype)
+                if source_address:
+                    self.bind(source_address)
+                self.connect((host, port))
+            except socket.error:
+                err = sys.exc_info()[1]
+                if self.socket is not None:
+                    self.socket.close()
+                    self.del_channel()
+                continue
+            break
+        if self.socket is None:
+            self.del_channel()
+            raise socket.error(err)
+        return af
 
 
 class AsyncChat(asynchat.async_chat):
