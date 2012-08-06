@@ -159,6 +159,34 @@ def warn(msg):
     atexit.register(warnings.warn, str(msg) + " - test has been skipped",
                     RuntimeWarning)
 
+def skip_other_tests():
+    """Decorator which skips all tests except the decorated one.
+    http://mail.python.org/pipermail/python-ideas/2010-August/007992.html
+    """
+    from unittest import TextTestRunner as _TextTestRunner
+
+    class CustomTestRunner(_TextTestRunner):
+        def run(self, test):
+            if test._tests:
+                for t1 in test._tests:
+                    for t2 in t1._tests:
+                        if t2._testMethodName == self._special_name:
+                            return _TextTestRunner.run(self, t2)
+                raise RuntimeError("couldn't isolate test")
+
+    def outer(fun, *args, **kwargs):
+        # monkey patch unittest module
+        unittest.TextTestRunner = CustomTestRunner
+        if hasattr(unittest, 'runner'):
+            unittest.runner.TextTestRunner = CustomTestRunner
+        CustomTestRunner._special_name = fun.__name__
+
+        def inner(self):
+            return fun(self, *args, **kwargs)
+        return inner
+
+    return outer
+
 def onexit():
     """Cleanup function executed on interpreter exit."""
     remove_test_files()
