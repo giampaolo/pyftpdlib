@@ -250,7 +250,8 @@ class _IOLoop(object):
         if cls._instance is None:
             cls._lock.acquire()
             try:
-                cls._instance = cls()
+                if cls._instance is None:
+                    cls._instance = cls()
             finally:
                 cls._lock.release()
         return cls._instance
