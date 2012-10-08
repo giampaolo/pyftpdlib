@@ -1987,7 +1987,6 @@ class FTPHandler(AsyncChat):
         self.username = ""
         self.password = ""
         self.attempted_logins = 0
-        self.sleeping = False
         self.data_channel = None
         self.remote_ip = ""
         self.remote_port = ""
@@ -2127,12 +2126,10 @@ class FTPHandler(AsyncChat):
         # http://code.google.com/p/pyftpdlib/issues/detail?id=188#c18
         # In contrast to DTPHandler, here we are not interested in
         # attempting to receive any further data from a closed socket.
-        return not self.sleeping and self.connected \
-                                 and AsyncChat.readable(self)
+        return self.connected and AsyncChat.readable(self)
 
     def writable(self):
-        return not self.sleeping and self.connected \
-                                 and AsyncChat.writable(self)
+        return self.connected and AsyncChat.writable(self)
 
     def collect_incoming_data(self, data):
         """Read incoming data and append to the input buffer."""
@@ -2544,7 +2541,6 @@ class FTPHandler(AsyncChat):
         self._current_type = 'a'
         self._restart_position = 0
         self._quit_pending = False
-        self.sleeping = False
         self._in_dtp_queue = None
         self._rnfr = None
         self._out_dtp_queue = None

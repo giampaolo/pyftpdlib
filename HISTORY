@@ -41,6 +41,10 @@ Bugfixes:
  * Issue 211: pyftpdlib doesn't work if deprecated py-sendfile 1.2.4 module is
    installed.
 
+ * Issue 215: usage of FTPHandler.sleeping attribute could lead to 100% CPU
+   usage. FTPHandler.sleeping is now removed. self.add_channel() /
+   self.del_channel() should be used instead.
+
 New APIs:
 
  * pyftpdlib.ftpserver.FilesystemError exception class.
@@ -84,6 +88,9 @@ Incompatible API changes:
    deprecated. Instead, use self.ioloop.call_later() and self.ioloop.call_every()
    from withing FTPHandler.  Also delay() method of the returned object has
    been removed.
+
+ * FTPHandler.sleeping attribute is removed. self.add_channel() and
+   self.del_channel() should be used to pause and restart the handler.
 
 
 Version: 0.7.0 - Date: 2012-01-25
