@@ -914,7 +914,7 @@ class TestFtpAuthentication(unittest.TestCase):
         rein_sent = False
         bytes_recv = 0
         while 1:
-            chunk = conn.recv(8192)
+            chunk = conn.recv(1024)
             if not chunk:
                 break
             bytes_recv += len(chunk)
@@ -960,7 +960,7 @@ class TestFtpAuthentication(unittest.TestCase):
         rein_sent = 0
         bytes_recv = 0
         while 1:
-            chunk = conn.recv(8192)
+            chunk = conn.recv(1024)
             if not chunk:
                 break
             bytes_recv += len(chunk)
@@ -1573,7 +1573,7 @@ class TestFtpStoreData(unittest.TestCase):
         conn.settimeout(TIMEOUT)
         bytes_sent = 0
         while 1:
-            chunk = self.dummy_sendfile.read(8192)
+            chunk = self.dummy_sendfile.read(1024)
             conn.sendall(chunk)
             bytes_sent += len(chunk)
             # stop transfer while it isn't finished yet
@@ -1728,7 +1728,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         conn = self.client.transfercmd('retr ' + TESTFN)
         conn.settimeout(TIMEOUT)
         while 1:
-            chunk = conn.recv(8192)
+            chunk = conn.recv(1024)
             if not chunk:
                 break
             self.dummyfile.write(chunk)
@@ -1992,7 +1992,7 @@ class TestFtpAbort(unittest.TestCase):
             conn.settimeout(TIMEOUT)
             bytes_recv = 0
             while bytes_recv < 65536:
-                chunk = conn.recv(8192)
+                chunk = conn.recv(1024)
                 bytes_recv += len(chunk)
 
             # stop transfer while it isn't finished yet
@@ -2548,7 +2548,7 @@ class TestCallbacks(unittest.TestCase):
         conn = self.client.transfercmd("retr " + TESTFN, None)
         conn.settimeout(TIMEOUT)
         while 1:
-            chunk = conn.recv(8192)
+            chunk = conn.recv(1024)
             bytes_recv += len(chunk)
             if bytes_recv >= 524288 or not chunk:
                 break
@@ -2585,7 +2585,7 @@ class TestCallbacks(unittest.TestCase):
         conn.settimeout(TIMEOUT)
         bytes_sent = 0
         while 1:
-            chunk = self.dummyfile.read(8192)
+            chunk = self.dummyfile.read(1024)
             conn.sendall(chunk)
             bytes_sent += len(chunk)
             # stop transfer while it isn't finished yet
