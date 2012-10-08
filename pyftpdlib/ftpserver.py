@@ -860,7 +860,7 @@ class DTPHandler(AsyncChat):
         self.cmd = None
         self.log = cmd_channel.log
         self.log_exception = cmd_channel.log_exception
-        self._data_wrapper = lambda x: x
+        self._data_wrapper = None
         self._lastdata = 0
         self._closed = False
         self._had_cr = False
@@ -972,11 +972,11 @@ class DTPHandler(AsyncChat):
         self.cmd = cmd
         if type == 'a':
             if os.linesep == '\r\n':
-                self._data_wrapper = lambda x: x
+                self._data_wrapper = None
             else:
                 self._data_wrapper = self._posix_ascii_data_wrapper
         elif type == 'i':
-            self._data_wrapper = lambda x: x
+            self._data_wrapper = None
         else:
             raise TypeError("unsupported type")
         self.receive = True
@@ -1041,8 +1041,10 @@ class DTPHandler(AsyncChat):
                 self.transfer_finished = True
                 #self.close()  # <-- asyncore.recv() already do that...
                 return
+            if self._data_wrapper is not None:
+                chunk = self._data_wrapper(chunk)
             try:
-                self.file_obj.write(self._data_wrapper(chunk))
+                self.file_obj.write(chunk)
             except OSError:
                 err = sys.exc_info()[1]
                 raise _FileReadWriteError(err)
