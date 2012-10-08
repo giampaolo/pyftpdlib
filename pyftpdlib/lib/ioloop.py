@@ -104,10 +104,10 @@ class _Scheduler(object):
             if now < self._tasks[0].timeout:
                 break
             call = heapq.heappop(self._tasks)
-            if not call.cancelled:
-                calls.append(call)
-            else:
+            if call.cancelled:
                 self._cancellations -= 1
+            else:
+                calls.append(call)
 
         for call in calls:
             if call._repush:
@@ -134,9 +134,13 @@ class _Scheduler(object):
             pass
 
     def register(self, what):
+        """Register a _CallLater instance."""
         heapq.heappush(self._tasks, what)
 
     def unregister(self, what):
+        """Unregister a _CallLater instance.
+        The actual unregistration will happen at a later time though.
+        """
         self._cancellations += 1
 
     def reheapify(self):
@@ -221,7 +225,7 @@ class _CallLater(object):
 
 
 class _CallEvery(_CallLater):
-    """Container object which instance is returned by ioloop.call_every()."""
+    """Container object which instance is returned by IOLoop.call_every()."""
 
     def _post_call(self, exc):
         if not self.cancelled:
@@ -269,7 +273,10 @@ class _IOLoop(object):
         raise NotImplementedError('must be implemented in subclass')
 
     def poll(self, timeout):
-        """Poll once."""
+        """Poll once.  The subclass overriding this method is supposed
+        to poll over the registered handlers and the scheduled functions
+        and then return.
+        """
         raise NotImplementedError('must be implemented in subclass')
 
     def loop(self, timeout=None, blocking=True):
@@ -278,9 +285,10 @@ class _IOLoop(object):
          - (float) timeout: the timeout passed to the underlying
            multiplex syscall (select(), epoll() etc.).
 
-         - (bool) blocking: if False loop once and then return the
-           timeout of the next scheduled call next to expire soonest
-           (if any, else None).
+         - (bool) blocking: if True poll repeatedly, as long as there
+           are registered handlers and/or scheduled functions.
+           If False poll only once and return the timeout of the next
+           scheduled call (if any, else None).
         """
         if blocking:
             # localize variable access to minimize overhead
@@ -622,16 +630,13 @@ else:                            # select() - POSIX and Windows
 # file descriptors against the new pollers
 
 class Acceptor(asyncore.dispatcher):
+    """Same as base asyncore.dispatcher and supposed to be used to
+    accept new connections.
+    """
 
     def __init__(self, ioloop=None):
         self.ioloop = ioloop or IOLoop.instance()
         asyncore.dispatcher.__init__(self)
-
-    def add_channel(self, map=None):
-        self.ioloop.register(self._fileno, self, self.ioloop.READ)
-
-    def del_channel(self, map=None):
-        self.ioloop.unregister(self._fileno)
 
     def bind_af_unspecified(self, addr):
         """Same as bind() but guesses address family from addr.
@@ -661,6 +666,12 @@ class Acceptor(asyncore.dispatcher):
             self.del_channel()
             raise socket.error(err)
         return af
+
+    def add_channel(self, map=None):
+        self.ioloop.register(self._fileno, self, self.ioloop.READ)
+
+    def del_channel(self, map=None):
+        self.ioloop.unregister(self._fileno)
 
     def listen(self, num):
         asyncore.dispatcher.listen(self, num)
@@ -699,9 +710,9 @@ class Acceptor(asyncore.dispatcher):
 
 
 class Connector(Acceptor):
-
-    def add_channel(self, map=None):
-        self.ioloop.register(self._fileno, self, self.ioloop.WRITE)
+    """Same as base asyncore.dispatcher and supposed to be used for
+    clients.
+    """
 
     def connect_af_unspecified(self, addr, source_address=None):
         """Same as connect() but guesses address family from addr.
@@ -732,8 +743,15 @@ class Connector(Acceptor):
             raise socket.error(err)
         return af
 
+    def add_channel(self, map=None):
+        self.ioloop.register(self._fileno, self, self.ioloop.WRITE)
+
 
 class AsyncChat(asynchat.async_chat):
+    """Same as asynchat.async_chat, only working with the new IO poller
+    and being more clever in avoid registering for read events when
+    it shouldn't.
+    """
 
     def __init__(self, sock, ioloop=None):
         self.ioloop = ioloop or IOLoop.instance()
