@@ -1206,12 +1206,6 @@ class ThrottledDTPHandler(DTPHandler):
     def _use_sendfile(self, producer):
         return False
 
-    def readable(self):
-        return not self.sleeping and super(ThrottledDTPHandler, self).readable()
-
-    def writable(self):
-        return not self.sleeping and super(ThrottledDTPHandler, self).writable()
-
     def recv(self, buffer_size):
         chunk = super(ThrottledDTPHandler, self).recv(buffer_size)
         if self.read_limit:
@@ -1236,10 +1230,15 @@ class ThrottledDTPHandler(DTPHandler):
             if sleepfor > 0:
                 # we've passed bandwidth limits
                 def unsleep():
-                    self.sleeping = False
-                self.sleeping = True
-                self._throttler = self.ioloop.call_later(sleepfor * 2, unsleep,
-                                                    _errback=self.handle_error)
+                    if self.receive:
+                        event = self.ioloop.READ
+                    else:
+                        event = self.ioloop.WRITE
+                    self.add_channel(events=event)
+
+                self.del_channel()
+                self._throttler = self.ioloop.call_later(sleepfor, unsleep,
+                                                     _errback=self.handle_error)
             self._timenext = now + 1
 
     def close(self):
