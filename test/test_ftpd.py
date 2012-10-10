@@ -187,7 +187,7 @@ def skip_other_tests():
 
     return outer
 
-def onexit():
+def cleanup():
     """Cleanup function executed on interpreter exit."""
     remove_test_files()
     map = IOLoop.instance().socket_map
@@ -202,7 +202,6 @@ def onexit():
 
 # commented out as per bug http://bugs.python.org/issue10354
 #tempfile.template = 'tmp-pyftpdlib'
-atexit.register(onexit)
 
 # lower this threshold so that the scheduler internal queue
 # gets re-heapified more often
@@ -3424,7 +3423,10 @@ def test_main(tests=None):
 
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
-    unittest.TextTestRunner(verbosity=2).run(test_suite)
+    try:
+        unittest.TextTestRunner(verbosity=2).run(test_suite)
+    finally:
+        cleanup()
 
 if __name__ == '__main__':
     test_main()

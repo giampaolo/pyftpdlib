@@ -770,21 +770,22 @@ def test_main():
     tests += ftp_thread_tests
 
     # multi process FTP server tests
-    ftp_mproc_tests = [
-        TestFtpAuthenticationMProcMixin,
-        TestTFtpDummyCmdsMProcMixin,
-        TestFtpCmdsSemanticMProcMixin,
-        TestFtpFsOperationsMProcMixin,
-        TestFtpStoreDataMProcMixin,
-        TestFtpRetrieveDataMProcMixin,
-        TestFtpListingCmdsMProcMixin,
-        TestFtpAbortMProcMixin,
-        #TestTimeoutsMProcMixin,
-        #TestConfigurableOptionsMProcMixin,
-        #TestCallbacksMProcMixin,
-        TestCornerCasesMProcMixin,
-    ]
-    tests += ftp_mproc_tests
+    if MPROCESS_SUPPORT:
+        ftp_mproc_tests = [
+            TestFtpAuthenticationMProcMixin,
+            TestTFtpDummyCmdsMProcMixin,
+            TestFtpCmdsSemanticMProcMixin,
+            TestFtpFsOperationsMProcMixin,
+            TestFtpStoreDataMProcMixin,
+            TestFtpRetrieveDataMProcMixin,
+            TestFtpListingCmdsMProcMixin,
+            TestFtpAbortMProcMixin,
+            #TestTimeoutsMProcMixin,
+            #TestConfigurableOptionsMProcMixin,
+            #TestCallbacksMProcMixin,
+            TestCornerCasesMProcMixin,
+        ]
+        tests += ftp_mproc_tests
 
     # POSIX tests
     if os.name == 'posix':
@@ -821,7 +822,10 @@ def test_main():
 
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
-    unittest.TextTestRunner(verbosity=2).run(test_suite)
+    try:
+        unittest.TextTestRunner(verbosity=2).run(test_suite)
+    finally:
+        cleanup()
 
 if __name__ == '__main__':
     test_main()

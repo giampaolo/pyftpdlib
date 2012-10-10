@@ -68,6 +68,7 @@ Example usage:
 
 import errno
 import sys
+import os
 
 from pyftpdlib.ftpserver import FTPServer as _FTPServer
 from pyftpdlib.lib.ioloop import IOLoop
@@ -206,24 +207,26 @@ else:
         def _map_len(self):
             return threading.active_count()
 
-try:
-    import multiprocessing
-except ImportError:
-    pass
-else:
-    __all__ += ['MultiprocessFTPServer']
 
-    class MultiprocessFTPServer(_Base):
-        """A modified version of base FTPServer class which spawns a
-        process every time a new connection is established.
-        """
-        _lock = multiprocessing.Lock()
+if os.name == 'posix':
+    try:
+        import multiprocessing
+    except ImportError:
+        pass
+    else:
+        __all__ += ['MultiprocessFTPServer']
 
-        def _start_task(self, *args, **kwargs):
-            return multiprocessing.Process(*args, **kwargs)
+        class MultiprocessFTPServer(_Base):
+            """A modified version of base FTPServer class which spawns a
+            process every time a new connection is established.
+            """
+            _lock = multiprocessing.Lock()
 
-        def _current_task(self):
-            return multiprocessing.current_process()
+            def _start_task(self, *args, **kwargs):
+                return multiprocessing.Process(*args, **kwargs)
 
-        def _map_len(self):
-            return len(multiprocessing.active_children())
+            def _current_task(self):
+                return multiprocessing.current_process()
+
+            def _map_len(self):
+                return len(multiprocessing.active_children())
