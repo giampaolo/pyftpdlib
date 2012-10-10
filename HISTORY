@@ -26,10 +26,13 @@ Enhancements:
 
  * Issues 212: provided two new classes:
      - pyftpdlib.contrib.servers.ThreadedFTPServer
-     - pyftpdlib.contrib.servers.MultiprocessFTPServer
+     - pyftpdlib.contrib.servers.MultiprocessFTPServer  (POSIX only)
    They can be used to change the base async-based concurrecy model and use a
    multiple threads / processes based approach instead.
    Your FTPHandler subclasses will finally be free to block! ;)
+
+ * Issue 219: it is not possible to instantiate different FPTS classes using
+   different SSL certificates.
 
 Bugfixes:
 

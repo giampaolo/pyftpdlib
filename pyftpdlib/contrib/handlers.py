@@ -395,7 +395,6 @@ else:
                 if not cls.keyfile:
                     cls.keyfile = cls.certfile
                 cls.ssl_context.use_privatekey_file(cls.keyfile)
-                TLS_FTPHandler.ssl_context = cls.ssl_context
             return cls.ssl_context
 
         # --- overridden methods
