@@ -75,6 +75,9 @@ TESTFN = 'tmp-pyftpdlib'
 TESTFN_UNICODE = TESTFN + '-unicode-' + '\xe2\x98\x83'
 TESTFN_UNICODE_2 = TESTFN_UNICODE + '-2'
 TIMEOUT = 2
+BUFSIZE = 1024
+INTERRUPTED_TRANSF_SIZE = 196608
+
 
 def try_address(host, port=0, family=socket.AF_INET):
     """Try to bind a socket on the given host:port and return True
@@ -239,6 +242,10 @@ class FTPd(threading.Thread):
         authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwM')  # full perms
         authorizer.add_anonymous(HOME)
         self.handler.authorizer = authorizer
+        # lowering buffer sizes = more cycles to transfer data
+        # = less false positive test failures
+        self.handler.dtp_handler.ac_in_buffer_size = 32768
+        self.handler.dtp_handler.ac_out_buffer_size = 32768
         self.server = self.server_class((host, port), self.handler)
         self.host, self.port = self.server.socket.getsockname()[:2]
 
@@ -914,12 +921,12 @@ class TestFtpAuthentication(unittest.TestCase):
         rein_sent = False
         bytes_recv = 0
         while 1:
-            chunk = conn.recv(1024)
+            chunk = conn.recv(BUFSIZE)
             if not chunk:
                 break
             bytes_recv += len(chunk)
             self.dummyfile.write(chunk)
-            if bytes_recv > 65536 and not rein_sent:
+            if bytes_recv > INTERRUPTED_TRANSF_SIZE and not rein_sent:
                 rein_sent = True
                 # flush account, error response expected
                 self.client.sendcmd('rein')
@@ -960,13 +967,13 @@ class TestFtpAuthentication(unittest.TestCase):
         rein_sent = 0
         bytes_recv = 0
         while 1:
-            chunk = conn.recv(1024)
+            chunk = conn.recv(BUFSIZE)
             if not chunk:
                 break
             bytes_recv += len(chunk)
             self.dummyfile.write(chunk)
             # stop transfer while it isn't finished yet
-            if bytes_recv > 65536 and not rein_sent:
+            if bytes_recv > INTERRUPTED_TRANSF_SIZE and not rein_sent:
                 rein_sent = True
                 # flush account, expect an error response
                 self.client.sendcmd('user ' + USER)
@@ -1573,11 +1580,11 @@ class TestFtpStoreData(unittest.TestCase):
         conn.settimeout(TIMEOUT)
         bytes_sent = 0
         while 1:
-            chunk = self.dummy_sendfile.read(1024)
+            chunk = self.dummy_sendfile.read(BUFSIZE)
             conn.sendall(chunk)
             bytes_sent += len(chunk)
             # stop transfer while it isn't finished yet
-            if bytes_sent >= 524288 or not chunk:
+            if bytes_sent >= INTERRUPTED_TRANSF_SIZE or not chunk:
                 break
 
         conn.close()
@@ -1728,12 +1735,12 @@ class TestFtpRetrieveData(unittest.TestCase):
         conn = self.client.transfercmd('retr ' + TESTFN)
         conn.settimeout(TIMEOUT)
         while 1:
-            chunk = conn.recv(1024)
+            chunk = conn.recv(BUFSIZE)
             if not chunk:
                 break
             self.dummyfile.write(chunk)
             received_bytes += len(chunk)
-            if received_bytes >= len(data) // 2:
+            if received_bytes >= INTERRUPTED_TRANSF_SIZE:
                 break
         conn.close()
 
@@ -1992,7 +1999,7 @@ class TestFtpAbort(unittest.TestCase):
             conn.settimeout(TIMEOUT)
             bytes_recv = 0
             while bytes_recv < 65536:
-                chunk = conn.recv(1024)
+                chunk = conn.recv(BUFSIZE)
                 bytes_recv += len(chunk)
 
             # stop transfer while it isn't finished yet
@@ -2069,7 +2076,7 @@ class TestTimeouts(unittest.TestCase):
         self._setUp(idle_timeout=0.1)
         # fail if no msg is received within 1 second
         self.client.sock.settimeout(1)
-        data = self.client.sock.recv(1024)
+        data = self.client.sock.recv(BUFSIZE)
         self.assertEqual(data, b("421 Control connection timed out.\r\n"))
         # ensure client has been kicked off
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
@@ -2085,7 +2092,7 @@ class TestTimeouts(unittest.TestCase):
         s.connect(addr)
         # fail if no msg is received within 1 second
         self.client.sock.settimeout(1)
-        data = self.client.sock.recv(1024)
+        data = self.client.sock.recv(BUFSIZE)
         self.assertEqual(data, b("421 Data connection timed out.\r\n"))
         # ensure client has been kicked off
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
@@ -2120,7 +2127,7 @@ class TestTimeouts(unittest.TestCase):
         s.connect(addr)
         # fail if no msg is received within 1 second
         self.client.sock.settimeout(1)
-        data = self.client.sock.recv(1024)
+        data = self.client.sock.recv(BUFSIZE)
         self.assertEqual(data, b("421 Data connection timed out.\r\n"))
         # ensure client has been kicked off
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
@@ -2137,7 +2144,7 @@ class TestTimeouts(unittest.TestCase):
         # close data channel
         self.client.sendcmd('abor')
         self.client.sock.settimeout(1)
-        data = self.client.sock.recv(1024)
+        data = self.client.sock.recv(BUFSIZE)
         self.assertEqual(data, b("421 Control connection timed out.\r\n"))
         # ensure client has been kicked off
         self.assertRaises((socket.error, EOFError), self.client.sendcmd, 'noop')
@@ -2151,7 +2158,7 @@ class TestTimeouts(unittest.TestCase):
         self.client.makepasv()
         # fail if no msg is received within 1 second
         self.client.sock.settimeout(1)
-        data = self.client.sock.recv(1024)
+        data = self.client.sock.recv(BUFSIZE)
         self.assertEqual(data, b("421 Passive data channel timed out.\r\n"))
         # client is not expected to be kicked off
         self.client.sendcmd('noop')
@@ -2548,9 +2555,9 @@ class TestCallbacks(unittest.TestCase):
         conn = self.client.transfercmd("retr " + TESTFN, None)
         conn.settimeout(TIMEOUT)
         while 1:
-            chunk = conn.recv(1024)
+            chunk = conn.recv(BUFSIZE)
             bytes_recv += len(chunk)
-            if bytes_recv >= 524288 or not chunk:
+            if bytes_recv >= INTERRUPTED_TRANSF_SIZE or not chunk:
                 break
         conn.close()
         self.assertEqual(self.client.getline()[:3], "426")
@@ -2585,11 +2592,11 @@ class TestCallbacks(unittest.TestCase):
         conn.settimeout(TIMEOUT)
         bytes_sent = 0
         while 1:
-            chunk = self.dummyfile.read(1024)
+            chunk = self.dummyfile.read(BUFSIZE)
             conn.sendall(chunk)
             bytes_sent += len(chunk)
             # stop transfer while it isn't finished yet
-            if bytes_sent >= 524288 or not chunk:
+            if bytes_sent >= INTERRUPTED_TRANSF_SIZE or not chunk:
                 self.client.putcmd('abor')
                 break
         conn.close()
