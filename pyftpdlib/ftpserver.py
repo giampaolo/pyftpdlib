@@ -305,6 +305,9 @@ class Error(Exception):
 class AuthorizerError(Error):
     """Base class for authorizer exceptions."""
 
+class AuthenticationFailed(Error):
+    """Exception raised when authentication fails for any reason."""
+
 class FilesystemError(Error):
     """Custom class for filesystem-related exceptions.
     You can raise this from an AbstractedFS subclass in order to
@@ -463,14 +466,27 @@ class DummyAuthorizer(object):
             raise ValueError("path escapes user home directory")
         self.user_table[username]['operms'][directory] = perm, recursive
 
-    def validate_authentication(self, username, password):
-        """Return True if the supplied username and password match the
-        stored credentials."""
+    def validate_authentication(self, username, password, handler):
+        """Raises AuthenticationFailed if supplied username and
+        password don't match the stored credentials, else return
+        None.
+        """
+        msg = "Authentication failed."
         if not self.has_user(username):
-            return False
-        if username == 'anonymous':
-            return True
-        return self.user_table[username]['pwd'] == password
+            if username == 'anonymous':
+                msg = "Anonymous access not allowed."
+            raise AuthenticationFailed(msg)
+        if username != 'anonymous':
+            if self.user_table[username]['pwd'] != password:
+                raise AuthenticationFailed(msg)
+
+    def get_home_dir(self, username):
+        """Return the user's home directory.
+        Since this is called during authentication (PASS),
+        AuthenticationFailed can be freely raised by subclasses in case
+        the provided username no longer exists.
+        """
+        return self.user_table[username]['home']
 
     def impersonate_user(self, username, password):
         """Impersonate another user (noop).
@@ -519,10 +535,6 @@ class DummyAuthorizer(object):
     def get_perms(self, username):
         """Return current user permissions."""
         return self.user_table[username]['perm']
-
-    def get_home_dir(self, username):
-        """Return the user's home directory."""
-        return self.user_table[username]['home']
 
     def get_msg_login(self, username):
         """Return the user's login message."""
@@ -3203,31 +3215,39 @@ class FTPHandler(AsyncChat):
             self.respond("503 Login with USER first.")
             return
 
-        def auth_failed(username, password, msg):
-            self.add_channel()
-            if hasattr(self, '_closed') and not self._closed:
-                self.attempted_logins += 1
-                if self.attempted_logins >= self.max_login_attempts:
-                    msg += " Disconnecting."
-                    self.respond("530 " + msg)
-                    self.close_when_done()
-                else:
-                    self.respond("530 " + msg)
-                self.log_cmd("PASS", line, 530, msg)
-            self.on_login_failed(username, password)
-
-        if self.authorizer.validate_authentication(self.username, line):
-            msg_login = self.authorizer.get_msg_login(self.username)
-            if len(msg_login) <= 75:
-                self.respond('230 %s' % msg_login)
-            else:
-                self.push("230-%s\r\n" % msg_login)
-                self.respond("230 ")
-            self.authenticated = True
-            self.password = line
-            self.attempted_logins = 0
-
+        try:
+            self.authorizer.validate_authentication(self.username, line, self)
             home = self.authorizer.get_home_dir(self.username)
+            msg_login = self.authorizer.get_msg_login(self.username)
+        except (AuthenticationFailed, AuthorizerError):
+            def auth_failed(username, password, msg):
+                self.add_channel()
+                if hasattr(self, '_closed') and not self._closed:
+                    self.attempted_logins += 1
+                    if self.attempted_logins >= self.max_login_attempts:
+                        msg += " Disconnecting."
+                        self.respond("530 " + msg)
+                        self.close_when_done()
+                    else:
+                        self.respond("530 " + msg)
+                    self.log_cmd("PASS", line, 530, msg)
+                self.on_login_failed(username, password)
+
+            msg = str(sys.exc_info()[1])
+            if not msg:
+                if self.username == 'anonymous':
+                    msg = "Anonymous access not allowed."
+                else:
+                    msg = "Authentication failed."
+            else:
+                # response string should be capitalized as per RFC-959
+                msg = msg.capitalize()
+            self.del_channel()
+            self.ioloop.call_later(self._auth_failed_timeout, auth_failed,
+                                   self.username, line, msg,
+                                   _errback=self.handle_error)
+            self.username = ""
+        else:
             if not isinstance(home, unicode):
                 if PY3:
                     raise ValueError('type(home) != text')
@@ -3237,18 +3257,18 @@ class FTPHandler(AsyncChat):
                         'casting to unicode' % self.authorizer.__class__.__name__,
                          RuntimeWarning)
                     home = home.decode('utf8')
+
+            if len(msg_login) <= 75:
+                self.respond('230 %s' % msg_login)
+            else:
+                self.push("230-%s\r\n" % msg_login)
+                self.respond("230 ")
+            self.authenticated = True
+            self.password = line
+            self.attempted_logins = 0
+
             self.fs = self.abstracted_fs(home, self)
             self.on_login(self.username)
-        else:
-            if self.username == 'anonymous':
-                msg = "Anonymous access not allowed."
-            else:
-                msg = "Authentication failed."
-            self.del_channel()
-            self.ioloop.call_later(self._auth_failed_timeout, auth_failed,
-                                   self.username, line, msg,
-                                   _errback=self.handle_error)
-            self.username = ""
 
     def ftp_REIN(self, line):
         """Reinitialize user's current session."""

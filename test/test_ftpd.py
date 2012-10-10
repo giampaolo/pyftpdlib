@@ -548,8 +548,9 @@ class TestDummyAuthorizer(unittest.TestCase):
         auth.add_user(USER, PASSWD, HOME)
         auth.add_anonymous(HOME)
         # check credentials
-        self.assertTrue(auth.validate_authentication(USER, PASSWD))
-        self.assertFalse(auth.validate_authentication(USER, 'wrongpwd'))
+        auth.validate_authentication(USER, PASSWD, None)
+        self.assertRaises(ftpserver.AuthenticationFailed,
+                          auth.validate_authentication, USER, 'wrongpwd', None)
         # remove them
         auth.remove_user(USER)
         auth.remove_user('anonymous')

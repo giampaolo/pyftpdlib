@@ -50,7 +50,8 @@ import os
 import errno
 import sys
 
-from pyftpdlib.ftpserver import DummyAuthorizer, AuthorizerError
+from pyftpdlib.ftpserver import (DummyAuthorizer, AuthorizerError,
+                                 AuthenticationFailed)
 from pyftpdlib.lib.compat import PY3, unicode, getcwdu
 
 
@@ -71,26 +72,32 @@ class _Base(object):
     Not supposed to be used directly.
     """
 
+    msg_no_such_user = "Authentication failed."
+    msg_wrong_password = "Authentication failed."
+    msg_anon_not_allowed = "Anonymous access not allowed."
+    msg_invalid_shell = "User %s doesn't have a valid shell."
+    msg_rejected_user = "User %s is not allowed to login."
+
     def __init__(self):
         """Check for errors in the constructor."""
         if self.rejected_users and self.allowed_users:
-            raise ValueError("rejected_users and allowed_users options are "
-                             "mutually exclusive")
+            raise AuthorizerError("rejected_users and allowed_users options are "
+                                  "mutually exclusive")
 
         users = self._get_system_users()
         for user in (self.allowed_users or self.rejected_users):
             if user == 'anonymous':
-                raise ValueError('invalid username "anonymous"')
+                raise AuthorizerError('invalid username "anonymous"')
             if user not in users:
-                raise ValueError('unknown user %s' % user)
+                raise AuthorizerError('unknown user %s' % user)
 
         if self.anonymous_user is not None:
             if not self.has_user(self.anonymous_user):
-                raise ValueError('no such user %s' % self.anonymous_user)
+                raise AuthorizerError('no such user %s' % self.anonymous_user)
             home = self.get_home_dir(self.anonymous_user)
             if not os.path.isdir(home):
-                raise ValueError('no valid home set for user %s'
-                                 % self.anonymous_user)
+                raise AuthorizerError('no valid home set for user %s'
+                                      % self.anonymous_user)
 
     def override_user(self, username, password=None, homedir=None, perm=None,
                       msg_login=None, msg_quit=None):
@@ -99,15 +106,15 @@ class _Base(object):
         """
         if not password and not homedir and not perm and not msg_login \
         and not msg_quit:
-            raise ValueError("at least one keyword argument must be specified")
+            raise AuthorizerError("at least one keyword argument must be specified")
         if self.allowed_users and username not in self.allowed_users:
-            raise ValueError('%s is not an allowed user' % username)
+            raise AuthorizerError('%s is not an allowed user' % username)
         if self.rejected_users and username in self.rejected_users:
-            raise ValueError('%s is not an allowed user' % username)
+            raise AuthorizerError('%s is not an allowed user' % username)
         if username == "anonymous" and password:
-            raise ValueError("can't assign password to anonymous user")
+            raise AuthorizerError("can't assign password to anonymous user")
         if not self.has_user(username):
-            raise ValueError('no such user %s' % username)
+            raise AuthorizerError('no such user %s' % username)
         if homedir is not None and not isinstance(homedir, unicode):
             homedir = homedir.decode('utf8')
 
@@ -179,28 +186,29 @@ else:
             self.anonymous_user = anonymous_user
 
             if self.anonymous_user is not None:
-                if not self.anonymous_user in self._get_system_users():
-                    raise ValueError('no such user %s' % self.anonymous_user)
                 try:
                     pwd.getpwnam(self.anonymous_user).pw_dir
                 except KeyError:
-                    raise ValueError('no such user %s' % anonymous_user)
+                    raise AuthorizerError('no such user %s' % anonymous_user)
 
         # --- overridden / private API
 
-        def validate_authentication(self, username, password):
-            """Authenticates against shadow password db; return
-            True on success.
+        def validate_authentication(self, username, password, handler):
+            """Authenticates against shadow password db; raises
+            AuthenticationFailed in case of failed authentication.
             """
             if username == "anonymous":
-                return self.anonymous_user is not None
-            try:
-                pw1 = spwd.getspnam(username).sp_pwd
-                pw2 = crypt.crypt(password, pw1)
-            except KeyError:  # no such username
-                return False
+                if self.anonymous_user is None:
+                    raise AuthenticationFailed(self.msg_anon_not_allowed)
             else:
-                return pw1 == pw2
+                try:
+                    pw1 = spwd.getspnam(username).sp_pwd
+                    pw2 = crypt.crypt(password, pw1)
+                except KeyError:  # no such username
+                    raise AuthenticationFailed(self.msg_no_such_user)
+                else:
+                    if pw1 != pw2:
+                        raise AuthenticationFailed(self.msg_wrong_password)
 
         @replace_anonymous
         def impersonate_user(self, username, password):
@@ -210,7 +218,7 @@ else:
             try:
                 pwdstruct = pwd.getpwnam(username)
             except KeyError:
-                raise AuthorizerError('no such user %s' % username)
+                raise AuthorizerError(self.msg_no_such_user)
             else:
                 os.setegid(pwdstruct.pw_gid)
                 os.seteuid(pwdstruct.pw_uid)
@@ -234,7 +242,7 @@ else:
             try:
                 home = pwd.getpwnam(username).pw_dir
             except KeyError:
-                raise AuthorizerError('no such user %s' % username)
+                raise AuthorizerError(self.msg_no_such_user)
             else:
                 if not PY3:
                     home = home.decode('utf8')
@@ -340,8 +348,8 @@ else:
             if require_valid_shell:
                 for username in self.allowed_users:
                     if not self._has_valid_shell(username):
-                        raise ValueError("user %s has not a valid shell"
-                                         % username)
+                        raise AuthorizerError("user %s has not a valid shell"
+                                              % username)
 
         def override_user(self, username, password=None, homedir=None, perm=None,
                           msg_login=None, msg_quit=None):
@@ -350,26 +358,29 @@ else:
             """
             if self.require_valid_shell and username != 'anonymous':
                 if not self._has_valid_shell(username):
-                    raise ValueError("user %s has not a valid shell"
-                                     % username)
+                    raise AuthorizerError(self.msg_invalid_shell % username)
             _Base.override_user(self, username, password, homedir, perm,
                                 msg_login, msg_quit)
 
         # --- overridden / private API
 
-        def validate_authentication(self, username, password):
+        def validate_authentication(self, username, password, handler):
             if username == "anonymous":
-                return self.anonymous_user is not None
+                if self.anonymous_user is None:
+                    raise AuthenticationFailed(self.msg_anon_not_allowed)
+                return
             if self._is_rejected_user(username):
-                return False
-            if self.require_valid_shell and username != 'anonymous':
-                if not self._has_valid_shell(username):
-                    return False
+                raise AuthenticationFailed(self.msg_rejected_user % username)
             overridden_password = self._get_key(username, 'pwd')
             if overridden_password:
-                return overridden_password == password
-
-            return BaseUnixAuthorizer.validate_authentication(self, username, password)
+                if overridden_password != password:
+                    raise AuthenticationFailed(self.msg_wrong_password)
+            else:
+                BaseUnixAuthorizer.validate_authentication(self, username,
+                                                           password, handler)
+            if self.require_valid_shell and username != 'anonymous':
+                if not self._has_valid_shell(username):
+                    raise AuthenticationFailed(self.msg_invalid_shell % username)
 
         @replace_anonymous
         def has_user(self, username):
@@ -446,17 +457,17 @@ else:
                                       self.anonymous_password)
                 self.terminate_impersonation()
 
-        def validate_authentication(self, username, password):
+        def validate_authentication(self, username, password, handler):
             if username == "anonymous":
-                return self.anonymous_user is not None
+                if self.anonymous_user is None:
+                    raise AuthenticationFailed(self.msg_anon_not_allowed)
+                return
             try:
                 win32security.LogonUser(username, None, password,
                                         win32con.LOGON32_LOGON_INTERACTIVE,
                                         win32con.LOGON32_PROVIDER_DEFAULT)
             except pywintypes.error:
-                return False
-            else:
-                return True
+                raise AuthenticationFailed(self.msg_wrong_password)
 
         @replace_anonymous
         def impersonate_user(self, username, password):
@@ -606,30 +617,35 @@ else:
 
         # --- overridden / private API
 
-        def validate_authentication(self, username, password):
+        def validate_authentication(self, username, password, handler):
             """Authenticates against Windows user database; return
             True on success.
             """
             if username == "anonymous":
-                return self.anonymous_user is not None
+                if self.anonymous_user is None:
+                    raise AuthenticationFailed(self.msg_anon_not_allowed)
+                return
             if self.allowed_users and username not in self.allowed_users:
-                return False
+                raise AuthenticationFailed(
+                        self.msg_rejected_user % msg_rejected_user)
             if self.rejected_users and username in self.rejected_users:
-                return False
+                raise AuthenticationFailed(
+                        self.msg_rejected_user % msg_rejected_user)
 
             overridden_password = self._get_key(username, 'pwd')
             if overridden_password:
-                return overridden_password == password
+                if overridden_password != password:
+                    raise AuthenticationFailed(self.msg_wrong_password)
             else:
-                return BaseWindowsAuthorizer.validate_authentication(self,
-                                                            username, password)
+                BaseWindowsAuthorizer.validate_authentication(self, username,
+                                                              password, handler)
 
         def impersonate_user(self, username, password):
             """Impersonate the security context of another user."""
             if username == "anonymous":
                 username = self.anonymous_user or ""
                 password = self.anonymous_password or ""
-            return BaseWindowsAuthorizer.impersonate_user(self, username, password)
+            BaseWindowsAuthorizer.impersonate_user(self, username, password)
 
         @replace_anonymous
         def has_user(self, username):

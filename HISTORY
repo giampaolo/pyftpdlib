@@ -34,6 +34,15 @@ Enhancements:
  * Issue 219: it is not possible to instantiate different FPTS classes using
    different SSL certificates.
 
+ * Issue 213: DummyAuthorizer.validate_authentication() has changed in that it
+   no longer returns a bool but instead raises AuthenticationFailed() exception
+   to signal a failed authentication.
+   This has been done in order allow customized error messages on failed auth.
+   Also it now expects a third 'handler' argument which is passed in order to
+   allow IP-based authentication logic.
+   Existing code overriding validate_authentication() must be changed in
+   accordance.
+
 Bugfixes:
 
  * Issue 131: IPv6 dual-stack support was broken.
@@ -50,6 +59,7 @@ Bugfixes:
 
 New APIs:
 
+ * pyftpdlib.ftpserver.AuthenticationFailed
  * pyftpdlib.ftpserver.FilesystemError exception class.
  * pyftpdlib.contrib.servers.ThreadedFTPServer
  * pyftpdlib.contrib.servers.MultiprocessFTPServer
@@ -58,6 +68,13 @@ New APIs:
  * pyftpdlib.lib.ioloop.IOLoop class (not supposed to be used directly)
 
 Incompatible API changes:
+
+ * DummyAuthorizer.validate_authentication() signature has changed. A third
+   'handler' argument is now expected.
+
+ * DummyAuthorizer.validate_authentication() no longer returns a bool. Instead
+   it raises AuthenticationFailed(msg) in case of failed authentication.
+   (see issue 213)
 
  * Unicode is now used instead of bytes pretty much everywhere.
 
@@ -80,7 +97,8 @@ Incompatible API changes:
      - pyftpdlib.lib.ioloop.Acceptor
      - pyftpdlib.lib.ioloop.Connector
      - pyftpdlib.lib.ioloop.AsyncChat
-   Any customization relying on asyncore or its IO loop will no longer work.
+   Any customization relying on asyncore (e.g. use of asyncore.socket_map to
+   figure out the number of connected clients) will no longer work.
 
  * FTPServer.serve_forever() no longer logs start and stop.  XXX - am I sure?
 
@@ -89,7 +107,7 @@ Incompatible API changes:
 
  * pyftpdlib.ftpserver.CallLater and pyftpdlib.ftpserver.CallEvery are
    deprecated. Instead, use self.ioloop.call_later() and self.ioloop.call_every()
-   from withing FTPHandler.  Also delay() method of the returned object has
+   from within the FTPHandler.  Also delay() method of the returned object has
    been removed.
 
  * FTPHandler.sleeping attribute is removed. self.add_channel() and
