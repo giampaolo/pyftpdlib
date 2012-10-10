@@ -1061,6 +1061,8 @@ class DTPHandler(AsyncChat):
                 err = sys.exc_info()[1]
                 raise _FileReadWriteError(err)
 
+    handle_read_event = handle_read  # small speedup
+
     def readable(self):
         """Predicate for inclusion in the readable for select()."""
         # It the channel is not supposed to be receiving but yet it's
