@@ -76,7 +76,7 @@ from pyftpdlib.lib.compat import MAXSIZE, callable
 _read = asyncore.read
 _write = asyncore.write
 
-# XXX
+# XXX this gets overwritten from within ftpserver.py
 def logerror(msg):
     sys.stderr.write(str(msg) + '\n')
     sys.stderr.flush()
@@ -346,9 +346,9 @@ class _IOLoop(object):
             except OSError:
                 err = sys.exc_info()[1]
                 if err.args[0] != errno.EBADF:
-                    logerror(traceback.format_exc())  # XXX
+                    logerror(traceback.format_exc())
             except Exception:
-                logerror(traceback.format_exc())  # XXX
+                logerror(traceback.format_exc())
         self.socket_map.clear()
 
         # free scheduled functions
@@ -357,7 +357,7 @@ class _IOLoop(object):
                 if not x.cancelled:
                     x.cancel()
             except Exception:
-                logerror(traceback.format_exc())  # XXX
+                logerror(traceback.format_exc())
         del self.sched._tasks[:]
 
 

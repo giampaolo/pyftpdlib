@@ -333,6 +333,11 @@ def logerror(msg):
     sys.stderr.write(str(msg) + '\n')
     sys.stderr.flush()
 
+# dirty hack which overwrites base ioloop's error logger
+import pyftpdlib.lib.ioloop
+pyftpdlib.lib.ioloop.logerror = logerror
+
+
 # Hack for Windows console which is not able to print all unicode strings.
 # http://bugs.python.org/issue1602
 # http://stackoverflow.com/questions/5419/
