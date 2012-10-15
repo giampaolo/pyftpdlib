@@ -697,9 +697,6 @@ class PassiveDTP(Acceptor):
             self.cmd_channel.respond("421 Passive data channel timed out.")
         self.close()
 
-    def writable(self):
-        return 0
-
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
         try:
@@ -3823,9 +3820,6 @@ class FTPServer(Acceptor):
             else:
                 if ip is not None and ip in self.ip_map:
                     self.ip_map.remove(ip)
-
-    def writable(self):
-        return 0
 
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
