@@ -336,8 +336,9 @@ if os.name in ('nt', 'ce'):
                 print_(s.encode('utf8').decode(sys.stdout.encoding),
                        errors=errors)
             else:
-                print_(s.encode('utf8'), errors=errors)
+                print_(s.encode('utf8', errors))
     log = logline = _safeprint
+
 
 
 # --- deprecated APIs
@@ -1728,7 +1729,7 @@ class AbstractedFS(object):
             # formatting is matched with proftpd ls output
             line = "%s %3s %-8s %-8s %8s %s %s\r\n" % (perms, nlinks, uname, gname,
                                                        size, mtimestr, basename)
-            yield line.encode('utf8', errors=self.cmd_channel.unicode_errors)
+            yield line.encode('utf8', self.cmd_channel.unicode_errors)
 
     def format_mlsx(self, basedir, listing, perms, facts, ignore_err=True):
         """Return an iterator object that yields the entries of a given
@@ -1853,7 +1854,7 @@ class AbstractedFS(object):
             factstring = "".join(["%s=%s;" % (x, retfacts[x]) \
                                   for x in sorted(retfacts.keys())])
             line = "%s %s\r\n" % (factstring, basename)
-            yield line.encode('utf8', errors=self.cmd_channel.unicode_errors)
+            yield line.encode('utf8', self.cmd_channel.unicode_errors)
 
 
 # --- FTP
@@ -2883,7 +2884,7 @@ class FTPHandler(AsyncChat):
                         ls.append(x)
                     listing = sorted(ls)
                 data = '\r\n'.join(listing) + '\r\n'
-            data = data.encode('utf8', errors=self.unicode_errors)
+            data = data.encode('utf8', self.unicode_errors)
             self.push_dtp_data(data, cmd="NLST")
 
         # --- MLST and MLSD commands
@@ -2908,7 +2909,7 @@ class FTPHandler(AsyncChat):
             err = sys.exc_info()[1]
             self.respond('550 %s.' % _strerror(err))
         else:
-            data = data.decode('utf8', errors=self.unicode_errors)
+            data = data.decode('utf8', self.unicode_errors)
             # since TVFS is supported (see RFC-3659 chapter 6), a fully
             # qualified pathname should be returned
             data = data.split(' ')[0] + ' %s\r\n' % line

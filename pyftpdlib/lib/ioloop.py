@@ -639,6 +639,7 @@ class Acceptor(asyncore.dispatcher):
 
     def __init__(self, ioloop=None):
         self.ioloop = ioloop or IOLoop.instance()
+        self._fileno = None  # py < 2.6
         asyncore.dispatcher.__init__(self)
 
     def bind_af_unspecified(self, addr):
