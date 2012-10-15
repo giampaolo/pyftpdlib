@@ -149,7 +149,8 @@ try:
 except ImportError:
     sendfile = None
 
-from pyftpdlib.lib.ioloop import Acceptor, Connector, AsyncChat, IOLoop
+from pyftpdlib.lib.ioloop import (Acceptor, Connector, AsyncChat, IOLoop,
+                                  _DISCONNECTED)
 from pyftpdlib.lib.compat import (PY3, MAXSIZE, u, b, unicode, print_, getcwdu,
                                   xrange, next, callable)
 
@@ -166,9 +167,6 @@ __date__    = 'XXXX-XX-XX'
 __author__  = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__     = 'http://code.google.com/p/pyftpdlib/'
 
-
-_DISCONNECTED = frozenset((errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN,
-                           errno.ECONNABORTED, errno.EPIPE, errno.EBADF))
 
 proto_cmds = {
     'ABOR' : dict(perm=None, auth=True, arg=False,
@@ -1013,7 +1011,7 @@ class DTPHandler(AsyncChat):
     # --- connection
 
     def send(self, data):
-        result = asynchat.async_chat.send(self, data)
+        result = AsyncChat.send(self, data)
         self.tot_bytes_sent += result
         return result
 
@@ -1102,18 +1100,6 @@ class DTPHandler(AsyncChat):
         """Called when an exception is raised and not otherwise handled."""
         try:
             raise
-        except socket.error:
-            err = sys.exc_info()[1]
-            # fixes around various bugs:
-            # - http://bugs.python.org/issue1736101
-            # - http://code.google.com/p/pyftpdlib/issues/detail?id=104
-            # - http://code.google.com/p/pyftpdlib/issues/detail?id=109
-            if err.args[0] in _DISCONNECTED:
-                self.handle_close()
-                return
-            else:
-                self.log_exception(self)
-                error = str(err.args[1])
         # an error could occur in case we fail reading / writing
         # from / to file (e.g. file system gets full)
         except _FileReadWriteError:
@@ -2315,21 +2301,7 @@ class FTPHandler(AsyncChat):
             self.log_cmd(cmd, args[0], code, resp)
 
     def handle_error(self):
-        try:
-            raise
-        except socket.error:
-            err = sys.exc_info()[1]
-            # fixes around various bugs:
-            # - http://bugs.python.org/issue1736101
-            # - http://code.google.com/p/pyftpdlib/issues/detail?id=104
-            # - http://code.google.com/p/pyftpdlib/issues/detail?id=109
-            if err.args[0] in _DISCONNECTED:
-                self.handle_close()
-                return
-            else:
-                self.log_exception(self)
-        except Exception:
-            self.log_exception(self)
+        self.log_exception(self)
         self.close()
 
     def handle_close(self):

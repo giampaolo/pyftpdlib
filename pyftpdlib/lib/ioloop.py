@@ -70,7 +70,7 @@ try:
 except ImportError:
     import dummy_threading as threading
 
-from pyftpdlib.lib.compat import MAXSIZE, callable
+from pyftpdlib.lib.compat import MAXSIZE, callable, b
 
 
 _read = asyncore.read
@@ -629,6 +629,9 @@ else:                            # select() - POSIX and Windows
 # these are overridden in order to register() and unregister()
 # file descriptors against the new pollers
 
+_DISCONNECTED = frozenset((errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN,
+                           errno.ECONNABORTED, errno.EPIPE, errno.EBADF))
+
 class Acceptor(asyncore.dispatcher):
     """Same as base asyncore.dispatcher and supposed to be used to
     accept new connections.
@@ -765,6 +768,42 @@ class AsyncChat(asynchat.async_chat):
 
     def del_channel(self, map=None):
         self.ioloop.unregister(self._fileno)
+
+    # send() and recv() overridden as a fix around various bugs:
+    # - http://bugs.python.org/issue1736101
+    # - http://code.google.com/p/pyftpdlib/issues/detail?id=104
+    # - http://code.google.com/p/pyftpdlib/issues/detail?id=109
+
+    def send(self, data):
+        try:
+            return self.socket.send(data)
+        except socket.error:
+            why = sys.exc_info()[1]
+            if why.args[0] in (errno.EWOULDBLOCK, errno.EAGAIN):
+                return 0
+            elif why.args[0] in _DISCONNECTED:
+                self.handle_close()
+                return 0
+            else:
+                raise
+
+    def recv(self, buffer_size):
+        try:
+            data = self.socket.recv(buffer_size)
+            if not data:
+                # a closed connection is indicated by signaling
+                # a read condition, and having recv() return 0.
+                self.handle_close()
+                return b('')
+            else:
+                return data
+        except socket.error:
+            why = sys.exc_info()[1]
+            if why.args[0] in _DISCONNECTED:
+                self.handle_close()
+                return b('')
+            else:
+                raise
 
     def initiate_send(self):
         asynchat.async_chat.initiate_send(self)

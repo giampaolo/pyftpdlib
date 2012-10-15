@@ -51,8 +51,8 @@ import warnings
 import errno
 import sys
 
-from pyftpdlib.ftpserver import FTPHandler, DTPHandler, proto_cmds, _DISCONNECTED
-from pyftpdlib.lib.ioloop import AsyncChat
+from pyftpdlib.ftpserver import FTPHandler, DTPHandler, proto_cmds
+from pyftpdlib.lib.ioloop import AsyncChat, _DISCONNECTED
 from pyftpdlib.lib.compat import PY3, b
 
 __all__ = []
