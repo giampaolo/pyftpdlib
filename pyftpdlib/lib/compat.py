@@ -77,3 +77,16 @@ except NameError:
                 return iterable.next()
             except StopIteration:
                 return default
+
+# dirty hack to support property.setter on python < 2.6
+property = property
+if not hasattr(property, "setter"):
+    class property(property):
+        def setter(self, value):
+            cls_ns = sys._getframe(1).f_locals
+            for k, v in cls_ns.iteritems():
+                if v == self:
+                    name = k
+                    break
+            cls_ns[name] = property(self.fget, value, self.fdel, self.__doc__)
+            return cls_ns[name]

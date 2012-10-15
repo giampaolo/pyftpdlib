@@ -152,7 +152,7 @@ except ImportError:
 from pyftpdlib.lib.ioloop import (Acceptor, Connector, AsyncChat, IOLoop,
                                   _DISCONNECTED)
 from pyftpdlib.lib.compat import (PY3, MAXSIZE, u, b, unicode, print_, getcwdu,
-                                  xrange, next, callable)
+                                  xrange, next, callable, property)
 
 
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror', 'DummyAuthorizer',
@@ -277,18 +277,6 @@ def _strerror(err):
             raise
     else:
         return str(err)
-
-# dirty hack to support property.setter on python < 2.6
-if not hasattr(property, "setter"):
-    class property(property):
-        def setter(self, value):
-            cls_ns = sys._getframe(1).f_locals
-            for k, v in cls_ns.iteritems():
-                if v == self:
-                    name = k
-                    break
-            cls_ns[name] = property(self.fget, value, self.fdel, self.__doc__)
-            return cls_ns[name]
 
 _months_map = {1:'Jan', 2:'Feb', 3:'Mar', 4:'Apr', 5:'May', 6:'Jun', 7:'Jul',
                8:'Aug', 9:'Sep', 10:'Oct', 11:'Nov', 12:'Dec'}
