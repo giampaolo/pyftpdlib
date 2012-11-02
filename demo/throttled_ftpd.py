@@ -34,26 +34,30 @@
 speed of downloads and uploads.
 """
 
+# XXX this is broken
+
 import os
 
-from pyftpdlib import ftpserver
+from pyftpdlib.authorizers import DummyAuthorizer
+from pyftpdlib.handlers import FTPHandler, ThrottledDTPHandler
+from pyftpdlib.servers import FTPServer
 
 
 def main():
-    authorizer = ftpserver.DummyAuthorizer()
+    authorizer = DummyAuthorizer()
     authorizer.add_user('user', '12345', os.getcwd(), perm='elradfmw')
     authorizer.add_anonymous(os.getcwd())
 
-    dtp_handler = ftpserver.ThrottledDTPHandler
+    dtp_handler = ThrottledDTPHandler
     dtp_handler.read_limit = 30720  # 30 Kb/sec (30 * 1024)
     dtp_handler.write_limit = 30720  # 30 Kb/sec (30 * 1024)
 
-    ftp_handler = ftpserver.FTPHandler
+    ftp_handler = FTPHandler
     ftp_handler.authorizer = authorizer
     # have the ftp handler use the alternative dtp handler class
     ftp_handler.dtp_handler = dtp_handler
 
-    ftpd = ftpserver.FTPServer(('', 21), ftp_handler)
+    ftpd = FTPServer(('', 21), ftp_handler)
     ftpd.serve_forever()
 
 if __name__ == '__main__':

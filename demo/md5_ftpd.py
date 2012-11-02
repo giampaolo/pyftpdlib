@@ -40,13 +40,15 @@ except ImportError:
     # backward compatibility with Python < 2.5
     from md5 import new as md5
 
-from pyftpdlib import ftpserver
-from pyftpdlib.lib.compat import b
+from pyftpdlib.handlers import FTPHandler
+from pyftpdlib.servers import FTPServer
+from pyftpdlib.authorizers import DummyAuthorizer
+from pyftpdlib._compat import b
 
 
-class DummyMD5Authorizer(ftpserver.DummyAuthorizer):
+class DummyMD5Authorizer(DummyAuthorizer):
 
-    def validate_authentication(self, username, password):
+    def validate_authentication(self, username, password, handler):
         hash = md5(b(password)).hexdigest()
         return self.user_table[username]['pwd'] == hash
 
@@ -57,9 +59,9 @@ def main():
     authorizer = DummyMD5Authorizer()
     authorizer.add_user('user', hash, os.getcwd(), perm='elradfmw')
     authorizer.add_anonymous(os.getcwd())
-    handler = ftpserver.FTPHandler
+    handler = FTPHandler
     handler.authorizer = authorizer
-    ftpd = ftpserver.FTPServer(('', 21), handler)
+    ftpd = FTPServer(('', 21), handler)
     ftpd.serve_forever()
 
 if __name__ == "__main__":

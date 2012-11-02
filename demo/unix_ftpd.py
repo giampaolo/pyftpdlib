@@ -36,17 +36,18 @@ It temporarily impersonate the system users every time they are going
 to perform a filesystem operations.
 """
 
-from pyftpdlib import ftpserver
-from pyftpdlib.contrib.authorizers import UnixAuthorizer
-from pyftpdlib.contrib.filesystems import UnixFilesystem
+from pyftpdlib.handlers import FTPHandler
+from pyftpdlib.servers import FTPServer
+from pyftpdlib.authorizers import UnixAuthorizer
+from pyftpdlib.filesystems import UnixFilesystem
 
 
 def main():
     authorizer = UnixAuthorizer(rejected_users=["root"], require_valid_shell=True)
-    handler = ftpserver.FTPHandler
+    handler = FTPHandler
     handler.authorizer = authorizer
     handler.abstracted_fs = UnixFilesystem
-    server = ftpserver.FTPServer(('', 21), handler)
+    server = FTPServer(('', 21), handler)
     server.serve_forever()
 
 if __name__ == "__main__":

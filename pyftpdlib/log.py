@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # $Id$
 
-#  pyftpdlib is released under the MIT license, reproduced below:
 #  ======================================================================
 #  Copyright (C) 2007-2012 Giampaolo Rodola' <g.rodola@gmail.com>
 #
@@ -30,32 +29,42 @@
 #
 #  ======================================================================
 
-"""An RFC-4217 asynchronous FTPS server supporting both SSL and TLS.
-
-Requires PyOpenSSL module (http://pypi.python.org/pypi/pyOpenSSL).
-"""
-
+import sys
 import os
 
-from pyftpdlib.authorizers import DummyAuthorizer
-from pyftpdlib.handlers import TLS_FTPHandler
-from pyftpdlib.servers import FTPServer
+from pyftpdlib._compat import PY3, print_
 
-CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                        "keycert.pem"))
+# --- loggers
 
-def main():
-    authorizer = DummyAuthorizer()
-    authorizer.add_user('user', '12345', '.', perm='elradfmw')
-    authorizer.add_anonymous('.')
-    handler = TLS_FTPHandler
-    handler.certfile = CERTFILE
-    handler.authorizer = authorizer
-    # requires SSL for both control and data channel
-    #handler.tls_control_required = True
-    #handler.tls_data_required = True
-    ftpd = FTPServer(('', 21), handler)
-    ftpd.serve_forever()
+def log(msg):
+    """Log messages intended for the end user."""
+#    print_(msg)  # XXX
 
-if __name__ == '__main__':
-    main()
+def logline(msg):
+    """Log commands and responses passing through the command channel."""
+#    print_(msg)  # XXX
+
+def logerror(msg):
+    """Log traceback outputs occurring in case of errors."""
+    sys.stderr.write(str(msg) + '\n')
+    sys.stderr.flush()
+
+# dirty hack which overwrites base ioloop's error logger
+import pyftpdlib.ioloop
+pyftpdlib.ioloop.logerror = logerror
+
+
+# Hack for Windows console which is not able to print all unicode strings.
+# http://bugs.python.org/issue1602
+# http://stackoverflow.com/questions/5419/
+if os.name in ('nt', 'ce'):
+    def _safeprint(s, errors='replace'):
+        try:
+            print_(s)
+        except UnicodeEncodeError:
+            if PY3:
+                print_(s.encode('utf8').decode(sys.stdout.encoding),
+                       errors=errors)
+            else:
+                print_(s.encode('utf8', errors))
+    log = logline = _safeprint

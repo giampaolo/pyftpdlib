@@ -65,9 +65,10 @@ import time
 import optparse
 import signal
 
-from pyftpdlib import ftpserver
-from pyftpdlib.contrib.authorizers import UnixAuthorizer
-from pyftpdlib.contrib.filesystems import UnixFilesystem
+from pyftpdlib.handlers import FTPHandler
+from pyftpdlib.servers import FTPServer
+from pyftpdlib.authorizers import UnixAuthorizer
+from pyftpdlib.filesystems import UnixFilesystem
 
 # http://pypi.python.org/pypi/python-daemon
 import daemon
@@ -146,16 +147,10 @@ def status():
 
 def get_server():
     """Return a pre-configured FTP server instance."""
-    # when daemonized, it seems we need to flush() stdout explicitly
-    # in order to get the log file written in real time
-    def log(s):
-        sys.stdout.write(s + "\n")
-        sys.stdout.flush()
-    ftpserver.log = ftpserver.logline = log
-    handler = ftpserver.FTPHandler
+    handler = FTPHandler
     handler.authorizer = UnixAuthorizer()
     handler.abstracted_fs = UnixFilesystem
-    server = ftpserver.FTPServer((HOST, PORT), handler)
+    server = FTPServer((HOST, PORT), handler)
     return server
 
 def daemonize():

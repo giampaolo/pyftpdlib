@@ -36,12 +36,14 @@ users', setting a limit for incoming connections.
 
 import os
 
-from pyftpdlib import ftpserver
+from pyftpdlib.authorizers import DummyAuthorizer
+from pyftpdlib.handlers import FTPHandler
+from pyftpdlib.servers import FTPServer
 
 
 def main():
     # Instantiate a dummy authorizer for managing 'virtual' users
-    authorizer = ftpserver.DummyAuthorizer()
+    authorizer = DummyAuthorizer()
 
     # Define a new user having full r/w permissions and a read-only
     # anonymous user
@@ -49,11 +51,11 @@ def main():
     authorizer.add_anonymous(os.getcwd())
 
     # Instantiate FTP handler class
-    handler = ftpserver.FTPHandler
+    handler = FTPHandler
     handler.authorizer = authorizer
 
     # Define a customized banner (string returned when client connects)
-    handler.banner = "pyftpdlib %s based ftpd ready." %ftpserver.__ver__
+    handler.banner = "pyftpdlib based ftpd ready."
 
     # Specify a masquerade address and the range of ports to use for
     # passive connections.  Decomment in case you're behind a NAT.
@@ -62,7 +64,7 @@ def main():
 
     # Instantiate FTP server class and listen on 0.0.0.0:21
     address = ('', 21)
-    ftpd = ftpserver.FTPServer(address, handler)
+    ftpd = FTPServer(address, handler)
 
     # set a limit for connections
     ftpd.max_cons = 256

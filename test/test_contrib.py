@@ -57,13 +57,12 @@ try:
 except ImportError:
     pass
 
-from pyftpdlib import ftpserver
-from pyftpdlib.ftpserver import AuthenticationFailed, AuthorizerError
-from pyftpdlib.contrib import authorizers
-from pyftpdlib.contrib import handlers
-from pyftpdlib.contrib import filesystems
-from pyftpdlib.contrib import servers
-from pyftpdlib.lib.compat import b, getcwdu, unicode
+from pyftpdlib.authorizers import AuthenticationFailed, AuthorizerError
+from pyftpdlib import authorizers
+from pyftpdlib import handlers
+from pyftpdlib import filesystems
+from pyftpdlib import servers
+from pyftpdlib._compat import b, getcwdu, unicode
 from test_ftpd import *
 
 
@@ -430,7 +429,7 @@ class SharedAuthorizerTests(unittest.TestCase):
         self.assertTrue(os.path.isdir(home))
         if auth.has_user('nobody'):
             home = auth.get_home_dir('nobody')
-        self.assertRaises(ftpserver.AuthorizerError,
+        self.assertRaises(AuthorizerError,
                           auth.get_home_dir, nonexistent_user)
 
     def test_has_user(self):
@@ -462,7 +461,7 @@ class SharedAuthorizerTests(unittest.TestCase):
         try:
             if self.authorizer_class.__name__ == 'UnixAuthorizer':
                 auth.impersonate_user(self.get_current_user(), '')
-                self.assertRaises(ftpserver.AuthorizerError,
+                self.assertRaises(AuthorizerError,
                                   auth.impersonate_user, nonexistent_user, 'pwd')
             else:
                 self.assertRaises(Win32ExtError,
@@ -679,7 +678,7 @@ class TestUnixAuthorizer(SharedAuthorizerTests):
         auth = self.authorizer_class()
         try:
             auth.impersonate_user('nobody', '')
-            self.assertRaisesWithMsg(ftpserver.AuthorizerError,
+            self.assertRaisesWithMsg(AuthorizerError,
                                      "super user privileges are required",
                                      authorizers.UnixAuthorizer)
         finally:
@@ -800,7 +799,7 @@ def test_main():
         if hasattr(authorizers, "UnixAuthorizer"):
             try:
                 authorizers.UnixAuthorizer()
-            except ftpserver.AuthorizerError:  # not root
+            except AuthorizerError:  # not root
                 warn("UnixAuthorizer tests skipped (root privileges are " \
                      "required)")
             else:

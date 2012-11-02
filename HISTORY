@@ -25,8 +25,8 @@ Enhancements:
    FTPHandler class.
 
  * Issues 212: provided two new classes:
-     - pyftpdlib.contrib.servers.ThreadedFTPServer
-     - pyftpdlib.contrib.servers.MultiprocessFTPServer  (POSIX only)
+     - pyftpdlib.servers.ThreadedFTPServer
+     - pyftpdlib.servers.MultiprocessFTPServer  (POSIX only)
    They can be used to change the base async-based concurrecy model and use a
    multiple threads / processes based approach instead.
    Your FTPHandler subclasses will finally be free to block! ;)
@@ -43,6 +43,8 @@ Enhancements:
    Existing code overriding validate_authentication() must be changed in
    accordance.
 
+ * Issue 223: ftpserver.py has been split in submodules.
+
 Bugfixes:
 
  * Issue 131: IPv6 dual-stack support was broken.
@@ -57,23 +59,57 @@ Bugfixes:
    usage. FTPHandler.sleeping is now removed. self.add_channel() /
    self.del_channel() should be used instead.
 
+New modules:
+
+All the code contained in pyftpdlib/ftpserver.py and pyftpdlib/contrib
+namespaces has been moved here:
+
+ * pyftpdlib.authorizers
+ * pyftpdlib.filesystems
+ * pyftpdlib.servers
+ * pyftpdlib.handlers
+ * pyftpdlib.logs
+
 New APIs:
 
- * pyftpdlib.ftpserver.AuthenticationFailed
- * pyftpdlib.ftpserver.FilesystemError exception class.
- * pyftpdlib.contrib.servers.ThreadedFTPServer
- * pyftpdlib.contrib.servers.MultiprocessFTPServer
- * pyftpdlib.ftpserver.FTPHandler's on_connect() and on_disconnect() callbacks.
- * pyftpdlib.ftpserver's FTPServer, FTPHandler, DTPHandler new ioloop attribute.
+ * pyftpdlib.authorizers.AuthenticationFailed
+ * pyftpdlib.filesystems.FilesystemError
+ * pyftpdlib.servers.ThreadedFTPServer
+ * pyftpdlib.servers.MultiprocessFTPServer
+ * pyftpdlib.handlers.FTPHandler's on_connect() and on_disconnect() callbacks.
+ * FTPServer, FTPHandler, DTPHandler new ioloop attribute.
  * pyftpdlib.lib.ioloop.IOLoop class (not supposed to be used directly)
 
+Deprecated namespaces:
+
+ * pyftpdlib.ftpserver
+ * pyftpdlib.contrib/*
+
 Incompatible API changes:
+
+ * All the main classes have been extracted from ftpserver.py and split into sub
+   modules.
+
+  ----------------------------------------------------------------------------
+  BEFORE                               | NOW
+  ----------------------------------------------------------------------------
+  pyftpdlib.ftpserver.FTPServer        | pyftpdlib.servers.FTPServer
+  pyftpdlib.ftpserver.FTPHandler       | pyftpdlib.handlers.FTPHandler
+  pyftpdlib.ftpserver.DTPHandler       | pyftpdlib.handlers.DTPHandler
+  pyftpdlib.ftpserver.DummyAuthorizer  | pyftpdlib.authorizers.DummyAuthorizer
+  pyftpdlib.ftpserver.AbstractedFS     | pyftpdlib.filesystems.AbstractedFS
+  ----------------------------------------------------------------------------
+
+  Same for pyftpflib.contribs namespace which is deprecated.
+  Both imports from pyftpdlib.ftpserver and pyftpdlib.contrib.* will still work
+  though and will raise a DeprecationWarning.
 
  * DummyAuthorizer.validate_authentication() signature has changed. A third
    'handler' argument is now expected.
 
- * DummyAuthorizer.validate_authentication() no longer returns a bool. Instead
-   it raises AuthenticationFailed(msg) in case of failed authentication.
+ * DummyAuthorizer.validate_authentication() is no longer expected to return a
+   bool. Instead it is supposed to raise AuthenticationFailed(msg) in case of
+   failed authentication and return None otherwise.
    (see issue 213)
 
  * Unicode is now used instead of bytes pretty much everywhere.
@@ -94,9 +130,9 @@ Incompatible API changes:
    methods (XXX still not sure)
 
  * asyncore.dispatcher and asynchat.async_chat classes has been replaced by:
-     - pyftpdlib.lib.ioloop.Acceptor
-     - pyftpdlib.lib.ioloop.Connector
-     - pyftpdlib.lib.ioloop.AsyncChat
+     - pyftpdlib.ioloop.Acceptor
+     - pyftpdlib.ioloop.Connector
+     - pyftpdlib.ioloop.AsyncChat
    Any customization relying on asyncore (e.g. use of asyncore.socket_map to
    figure out the number of connected clients) will no longer work.
 

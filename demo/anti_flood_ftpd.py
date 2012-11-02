@@ -37,7 +37,9 @@ If client sends more than 300 requests per-second it will be
 disconnected and won't be able to re-connect for 1 hour.
 """
 
-from pyftpdlib.ftpserver import FTPHandler, FTPServer, DummyAuthorizer, CallEvery
+from pyftpdlib.handlers import FTPHandler
+from pyftpdlib.servers import FTPServer
+from pyftpdlib.authorizers import DummyAuthorizer
 
 
 class AntiFloodHandler(FTPHandler):
@@ -47,9 +49,9 @@ class AntiFloodHandler(FTPHandler):
     banned_ips = []
 
     def __init__(self, *args, **kwargs):
-        super(AntiFloodHandler, self).__init__(*args, **kwargs)
+        FTPHandler.__init__(self, *args, **kwargs)
         self.processed_cmds = 0
-        self.pcmds_callback = CallEvery(1, self.check_processed_cmds)
+        self.pcmds_callback = self.ioloop.call_every(1, self.check_processed_cmds)
 
     def on_connect(self):
         # called when client connects.
@@ -68,7 +70,7 @@ class AntiFloodHandler(FTPHandler):
     def process_command(self, *args, **kwargs):
         # increase counter for every received command
         self.processed_cmds += 1
-        super(AntiFloodHandler, self).process_command(*args, **kwargs)
+        FTPHandler.process_command(self, *args, **kwargs)
 
     def ban(self, ip):
         # ban ip and schedule next un-ban
@@ -88,7 +90,7 @@ class AntiFloodHandler(FTPHandler):
             self.log('unbanning IP %s' % ip)
 
     def close(self):
-        super(AntiFloodHandler, self).close()
+        FTPHandler.close(self)
         if not self.pcmds_callback.cancelled:
             self.pcmds_callback.cancel()
 

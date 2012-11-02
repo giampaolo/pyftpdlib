@@ -58,9 +58,13 @@ try:
 except ImportError:
     sendfile = None
 
-from pyftpdlib import ftpserver
-from pyftpdlib.lib.compat import PY3, u, b, getcwdu
-from pyftpdlib.lib.ioloop import IOLoop
+import pyftpdlib
+from pyftpdlib.ioloop import IOLoop
+from pyftpdlib.handlers import FTPHandler, DTPHandler
+from pyftpdlib.servers import FTPServer
+from pyftpdlib.filesystems import AbstractedFS
+from pyftpdlib.authorizers import DummyAuthorizer, AuthenticationFailed
+from pyftpdlib._compat import PY3, u, b, getcwdu
 
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
@@ -209,6 +213,7 @@ def cleanup():
 # lower this threshold so that the scheduler internal queue
 # gets re-heapified more often
 #ftpserver._scheduler.cancellations_threshold = 5  # XXX
+# XXX this code is old and no longer works; fix it.
 
 
 class FTPd(threading.Thread):
@@ -220,25 +225,17 @@ class FTPd(threading.Thread):
     The instance returned can be used to start(), stop() and
     eventually re-start() the server.
     """
-    handler = ftpserver.FTPHandler
-    server_class = ftpserver.FTPServer
+    handler = FTPHandler
+    server_class = FTPServer
 
-    def __init__(self, host=HOST, port=0, verbose=False):
+    def __init__(self, host=HOST, port=0):
         threading.Thread.__init__(self)
         self.__serving = False
         self.__stopped = False
         self.__lock = threading.Lock()
         self.__flag = threading.Event()
 
-        if not verbose:
-            ftpserver.log = ftpserver.logline = lambda x: x
-
-        # this makes the threaded server raise an actual exception
-        # instead of just logging its traceback
-        def logerror(msg):
-            raise
-        ftpserver.logerror = logerror
-        authorizer = ftpserver.DummyAuthorizer()
+        authorizer = DummyAuthorizer()
         authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwM')  # full perms
         authorizer.add_anonymous(HOME)
         self.handler.authorizer = authorizer
@@ -307,7 +304,7 @@ class TestAbstractedFS(unittest.TestCase):
     def test_ftpnorm(self):
         # Tests for ftpnorm method.
         ae = self.assertEquals
-        fs = ftpserver.AbstractedFS(u('/'), None)
+        fs = AbstractedFS(u('/'), None)
 
         fs._cwd = u('/')
         ae(fs.ftpnorm(u('')), u('/'))
@@ -339,7 +336,7 @@ class TestAbstractedFS(unittest.TestCase):
     def test_ftp2fs(self):
         # Tests for ftp2fs method.
         ae = self.assertEquals
-        fs = ftpserver.AbstractedFS(u('/'), None)
+        fs = AbstractedFS(u('/'), None)
         join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
 
         def goforit(root):
@@ -387,7 +384,7 @@ class TestAbstractedFS(unittest.TestCase):
     def test_ftp2fs(self):
         # Tests for ftp2fs method.
         ae = self.assertEquals
-        fs = ftpserver.AbstractedFS(u('/'), None)
+        fs = AbstractedFS(u('/'), None)
         join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
 
         def goforit(root):
@@ -435,7 +432,7 @@ class TestAbstractedFS(unittest.TestCase):
     def test_fs2ftp(self):
         # Tests for fs2ftp method.
         ae = self.assertEquals
-        fs = ftpserver.AbstractedFS(u('/'), None)
+        fs = AbstractedFS(u('/'), None)
         join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
 
         def goforit(root):
@@ -479,7 +476,7 @@ class TestAbstractedFS(unittest.TestCase):
 
     def test_validpath(self):
         # Tests for validpath method.
-        fs = ftpserver.AbstractedFS(u('/'), None)
+        fs = AbstractedFS(u('/'), None)
         fs._root = HOME
         self.assertTrue(fs.validpath(HOME))
         self.assertTrue(fs.validpath(HOME + '/'))
@@ -490,7 +487,7 @@ class TestAbstractedFS(unittest.TestCase):
         def test_validpath_validlink(self):
             # Test validpath by issuing a symlink pointing to a path
             # inside the root directory.
-            fs = ftpserver.AbstractedFS(u('/'), None)
+            fs = AbstractedFS(u('/'), None)
             fs._root = HOME
             TESTFN2 = TESTFN + '1'
             try:
@@ -503,7 +500,7 @@ class TestAbstractedFS(unittest.TestCase):
         def test_validpath_external_symlink(self):
             # Test validpath by issuing a symlink pointing to a path
             # outside the root directory.
-            fs = ftpserver.AbstractedFS(u('/'), None)
+            fs = AbstractedFS(u('/'), None)
             fs._root = HOME
             # tempfile should create our file in /tmp directory
             # which should be outside the user root.  If it is
@@ -550,13 +547,13 @@ class TestDummyAuthorizer(unittest.TestCase):
             raise self.failureException("%s not raised" % excName)
 
     def test_common_methods(self):
-        auth = ftpserver.DummyAuthorizer()
+        auth = DummyAuthorizer()
         # create user
         auth.add_user(USER, PASSWD, HOME)
         auth.add_anonymous(HOME)
         # check credentials
         auth.validate_authentication(USER, PASSWD, None)
-        self.assertRaises(ftpserver.AuthenticationFailed,
+        self.assertRaises(AuthenticationFailed,
                           auth.validate_authentication, USER, 'wrongpwd', None)
         # remove them
         auth.remove_user(USER)
@@ -595,7 +592,7 @@ class TestDummyAuthorizer(unittest.TestCase):
                                 auth.add_anonymous, HOME, perm=x)
 
     def test_override_perm_interface(self):
-        auth = ftpserver.DummyAuthorizer()
+        auth = DummyAuthorizer()
         auth.add_user(USER, PASSWD, HOME, perm='elr')
         # raise exc if user does not exists
         self.assertRaises(KeyError, auth.override_perm, USER+'w', HOME, 'elr')
@@ -631,7 +628,7 @@ class TestDummyAuthorizer(unittest.TestCase):
         auth.override_perm(USER, self.tempdir, perm='wr')
 
     def test_override_perm_recursive_paths(self):
-        auth = ftpserver.DummyAuthorizer()
+        auth = DummyAuthorizer()
         auth.add_user(USER, PASSWD, HOME, perm='elr')
         self.assertEqual(auth.has_perm(USER, 'w', self.tempdir), False)
         auth.override_perm(USER, self.tempdir, perm='w', recursive=True)
@@ -650,7 +647,7 @@ class TestDummyAuthorizer(unittest.TestCase):
             self.assertEqual(auth.has_perm(USER, 'w', self.tempdir.upper()), True)
 
     def test_override_perm_not_recursive_paths(self):
-        auth = ftpserver.DummyAuthorizer()
+        auth = DummyAuthorizer()
         auth.add_user(USER, PASSWD, HOME, perm='elr')
         self.assertEqual(auth.has_perm(USER, 'w', self.tempdir), False)
         auth.override_perm(USER, self.tempdir, perm='w')
@@ -695,20 +692,6 @@ class TestCallLater(unittest.TestCase):
         self.assertRaises(AssertionError, x.call)
         self.assertRaises(AssertionError, x.reset)
         self.assertRaises(AssertionError, x.cancel)
-
-    def test_deprecation(self):
-        l = []
-        fun = lambda x: l.append(x)
-        warnings.filterwarnings("error")
-        try:
-            self.assertRaises(DeprecationWarning, ftpserver.CallLater, 0, fun)
-            warnings.filterwarnings("ignore")
-            for x in [0.05, 0.04, 0.03, 0.02, 0.01]:
-                ftpserver.CallLater(x, fun, x)
-            self.scheduler()
-            self.assertEqual(l, [0.01, 0.02, 0.03, 0.04, 0.05])
-        finally:
-            warnings.resetwarnings()
 
     def test_order(self):
         l = []
@@ -777,19 +760,6 @@ class TestCallEvery(unittest.TestCase):
         self.assertRaises(AssertionError, x.call)
         self.assertRaises(AssertionError, x.reset)
         self.assertRaises(AssertionError, x.cancel)
-
-    def test_deprecation(self):
-        l = []
-        fun = lambda x: l.append(x)
-        warnings.filterwarnings("error")
-        try:
-            self.assertRaises(DeprecationWarning, ftpserver.CallEvery, 0, fun)
-            warnings.filterwarnings("ignore")
-            ftpserver.CallEvery(0, fun, None)
-            self.ioloop.sched.poll()
-            self.assertEqual(l, [None])
-        finally:
-            warnings.resetwarnings()
 
     def test_only_once(self):
         # make sure that callback is called only once per-loop
@@ -1044,7 +1014,7 @@ class TestFtpDummyCmds(unittest.TestCase):
 
     def test_help(self):
         self.client.sendcmd('help')
-        cmd = random.choice(list(ftpserver.proto_cmds.keys()))
+        cmd = random.choice(list(FTPHandler.proto_cmds.keys()))
         self.client.sendcmd('help %s' % cmd)
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'help ?!?')
 
@@ -1287,15 +1257,15 @@ class TestFtpFsOperations(unittest.TestCase):
         # On python 3 it seems that the trick of replacing the original
         # method with the lambda doesn't work.
         if not PY3:
-            _getmtime = ftpserver.AbstractedFS.getmtime
+            _getmtime = AbstractedFS.getmtime
             try:
-                ftpserver.AbstractedFS.getmtime = lambda x, y: -9000000000
+                AbstractedFS.getmtime = lambda x, y: -9000000000
                 self.assertRaises(ftplib.error_perm, self.client.sendcmd,
                                   'mdtm ' + self.tempfile)
                 # make sure client hasn't been disconnected
                 self.client.sendcmd('noop')
             finally:
-                ftpserver.AbstractedFS.getmtime = _getmtime
+                AbstractedFS.getmtime = _getmtime
 
     def test_size(self):
         self.client.sendcmd('type a')
@@ -1452,11 +1422,11 @@ class TestFtpStoreData(unittest.TestCase):
             conn.close()
             return self.client.voidresp()
 
-        old_buffer = ftpserver.DTPHandler.ac_in_buffer_size
+        old_buffer = DTPHandler.ac_in_buffer_size
         try:
             # set a small buffer so that CRLF gets delivered in two
             # separate chunks: "CRLF", " f", "oo", " CR", "LF", " b", "ar"
-            ftpserver.DTPHandler.ac_in_buffer_size = 2
+            DTPHandler.ac_in_buffer_size = 2
             data = b('\r\n foo \r\n bar')
             self.dummy_sendfile.write(data)
             self.dummy_sendfile.seek(0)
@@ -1467,7 +1437,7 @@ class TestFtpStoreData(unittest.TestCase):
             self.dummy_recvfile.seek(0)
             self.assertEqual(expected, self.dummy_recvfile.read())
         finally:
-            ftpserver.DTPHandler.ac_in_buffer_size = old_buffer
+            DTPHandler.ac_in_buffer_size = old_buffer
             # We do not use os.remove() because file could still be
             # locked by ftpd thread.  If DELE through FTP fails try
             # os.remove() as last resort.
@@ -1929,15 +1899,15 @@ class TestFtpListingCmds(unittest.TestCase):
         # returns a negative value referring to a year prior to 1900.
         # It causes time.localtime/gmtime to raise a ValueError exception
         # which is supposed to be handled by server.
-        _getmtime = ftpserver.AbstractedFS.getmtime
+        _getmtime = AbstractedFS.getmtime
         try:
-            ftpserver.AbstractedFS.getmtime = lambda x, y: -9000000000
+            AbstractedFS.getmtime = lambda x, y: -9000000000
             self.client.sendcmd('stat /')  # test AbstractedFS.format_list()
             self.client.sendcmd('mlst /')  # test AbstractedFS.format_mlsx()
             # make sure client hasn't been disconnected
             self.client.sendcmd('noop')
         finally:
-            ftpserver.AbstractedFS.getmtime = _getmtime
+            AbstractedFS.getmtime = _getmtime
 
 
 class TestFtpAbort(unittest.TestCase):
@@ -2212,7 +2182,7 @@ class TestConfigurableOptions(unittest.TestCase):
         # set back options to their original value
         self.server.server.max_cons = 0
         self.server.server.max_cons_per_ip = 0
-        self.server.handler.banner = "pyftpdlib %s ready." % ftpserver.__ver__
+        self.server.handler.banner = "pyftpdlib ready."
         self.server.handler.max_login_attempts = 3
         self.server.handler._auth_failed_timeout = 5
         self.server.handler.masquerade_address = None
@@ -2425,7 +2395,7 @@ class TestConfigurableOptions(unittest.TestCase):
                 ioloop = IOLoop.instance()
                 for fd in ioloop.socket_map:
                     instance = ioloop.socket_map[fd]
-                    if isinstance(instance, ftpserver.FTPHandler):
+                    if isinstance(instance, FTPHandler):
                         break
                 return instance.socket
 
@@ -2465,7 +2435,7 @@ class TestCallbacks(unittest.TestCase):
 
     def tearDown(self):
         if not self._tearDown:
-            FTPd.handler = ftpserver.FTPHandler
+            FTPd.handler = FTPHandler
             self._tearDown = True
             if self.client is not None:
                 self.client.close()
@@ -2480,7 +2450,7 @@ class TestCallbacks(unittest.TestCase):
     def test_on_file_sent(self):
         _file = []
 
-        class TestHandler(ftpserver.FTPHandler):
+        class TestHandler(FTPHandler):
 
             def on_file_sent(self, file):
                 _file.append(file)
@@ -2506,7 +2476,7 @@ class TestCallbacks(unittest.TestCase):
     def test_on_file_received(self):
         _file = []
 
-        class TestHandler(ftpserver.FTPHandler):
+        class TestHandler(FTPHandler):
 
             def on_file_sent(self, file):
                 raise Exception
@@ -2532,7 +2502,7 @@ class TestCallbacks(unittest.TestCase):
     def test_on_incomplete_file_sent(self):
         _file = []
 
-        class TestHandler(ftpserver.FTPHandler):
+        class TestHandler(FTPHandler):
 
             def on_file_sent(self, file):
                 raise Exception
@@ -2569,7 +2539,7 @@ class TestCallbacks(unittest.TestCase):
     def test_on_incomplete_file_received(self):
         _file = []
 
-        class TestHandler(ftpserver.FTPHandler):
+        class TestHandler(FTPHandler):
 
             def on_file_sent(self, file):
                 raise Exception
@@ -2609,7 +2579,7 @@ class TestCallbacks(unittest.TestCase):
     def test_on_connect(self):
         flag = []
 
-        class TestHandler(ftpserver.FTPHandler):
+        class TestHandler(FTPHandler):
             def on_connect(self):
                 flag.append(None)
 
@@ -2622,7 +2592,7 @@ class TestCallbacks(unittest.TestCase):
     def test_on_disconnect(self):
         flag = []
 
-        class TestHandler(ftpserver.FTPHandler):
+        class TestHandler(FTPHandler):
             def on_disconnect(self):
                 flag.append(None)
 
@@ -2643,7 +2613,7 @@ class TestCallbacks(unittest.TestCase):
     def test_on_login(self):
         user = []
 
-        class TestHandler(ftpserver.FTPHandler):
+        class TestHandler(FTPHandler):
             _auth_failed_timeout = 0
 
             def on_login(self, username):
@@ -2661,7 +2631,7 @@ class TestCallbacks(unittest.TestCase):
     def test_on_login_failed(self):
         pair = []
 
-        class TestHandler(ftpserver.FTPHandler):
+        class TestHandler(FTPHandler):
             _auth_failed_timeout = 0
 
             def on_login(self, username):
@@ -2679,7 +2649,7 @@ class TestCallbacks(unittest.TestCase):
     def test_on_login_failed(self):
         pair = []
 
-        class TestHandler(ftpserver.FTPHandler):
+        class TestHandler(FTPHandler):
             _auth_failed_timeout = 0
 
             def on_login(self, username):
@@ -2697,7 +2667,7 @@ class TestCallbacks(unittest.TestCase):
     def test_on_logout_quit(self):
         user = []
 
-        class TestHandler(ftpserver.FTPHandler):
+        class TestHandler(FTPHandler):
 
             def on_logout(self, username):
                 user.append(username)
@@ -2711,7 +2681,7 @@ class TestCallbacks(unittest.TestCase):
     def test_on_logout_rein(self):
         user = []
 
-        class TestHandler(ftpserver.FTPHandler):
+        class TestHandler(FTPHandler):
 
             def on_logout(self, username):
                 user.append(username)
@@ -2725,7 +2695,7 @@ class TestCallbacks(unittest.TestCase):
     def test_on_logout_user_issued_twice(self):
         users = []
 
-        class TestHandler(ftpserver.FTPHandler):
+        class TestHandler(FTPHandler):
 
             def on_logout(self, username):
                 users.append(username)
@@ -3026,7 +2996,7 @@ class TestCornerCases(unittest.TestCase):
         # Emulates case where the max number of tries to find out a
         # unique file name when processing STOU command gets hit.
 
-        class TestFS(ftpserver.AbstractedFS):
+        class TestFS(AbstractedFS):
             def mkstemp(self, *args, **kwargs):
                 raise IOError(errno.EEXIST, "No usable temporary file name found")
 
@@ -3037,7 +3007,7 @@ class TestCornerCases(unittest.TestCase):
             self.client.login(USER, PASSWD)
             self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'stou')
         finally:
-            self.server.handler.abstracted_fs = ftpserver.AbstractedFS
+            self.server.handler.abstracted_fs = AbstractedFS
 
     def test_quick_connect(self):
         # Clients that connected and disconnected quickly could cause
@@ -3069,7 +3039,7 @@ class TestCornerCases(unittest.TestCase):
         # while firing a scheduled function
         # TODO silence logerror message
         self.tearDown()
-        server = ftpserver.FTPServer((HOST, 0), ftpserver.FTPHandler)
+        server = FTPServer((HOST, 0), FTPHandler)
         original_stderr = sys.stderr
         sys.stderr = open(os.devnull, 'r+')
         try:
@@ -3273,14 +3243,13 @@ class TestUnicodePathNames(unittest.TestCase):
             self.assertRaises(ftplib.error_perm, self.client.retrbinary,
                               'retr ' + TESTFN_UNICODE_2, dummy.write)
 
-
 class TestCommandLineParser(unittest.TestCase):
     """Test command line parser."""
     SYSARGV = sys.argv
     STDERR = sys.stderr
 
     def setUp(self):
-        class DummyFTPServer(ftpserver.FTPServer):
+        class DummyFTPServer(FTPServer):
             """An overridden version of FTPServer class which forces
             serve_forever() to return immediately.
             """
@@ -3294,45 +3263,45 @@ class TestCommandLineParser(unittest.TestCase):
             self.devnull = BytesIO()
         sys.argv = self.SYSARGV[:]
         sys.stderr = self.STDERR
-        self.original_ftpserver_class = ftpserver.FTPServer
-        ftpserver.FTPServer = DummyFTPServer
+        self.original_ftpserver_class = FTPServer
+        pyftpdlib.servers.FTPServer = DummyFTPServer
 
     def tearDown(self):
         self.devnull.close()
         sys.argv = self.SYSARGV[:]
         sys.stderr = self.STDERR
-        ftpserver.FTPServer = self.original_ftpserver_class
+        pyftpdlib.servers.FTPServer = self.original_ftpserver_class
         safe_rmdir(TESTFN)
 
     def test_a_option(self):
         sys.argv += ["-i", "localhost", "-p", "0"]
-        ftpserver.main()
+        pyftpdlib.main()
         sys.argv = self.SYSARGV[:]
 
         # no argument
         sys.argv += ["-a"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, ftpserver.main)
+        self.assertRaises(SystemExit, pyftpdlib.main)
 
     def test_p_option(self):
         sys.argv += ["-p", "0"]
-        ftpserver.main()
+        pyftpdlib.main()
 
         # no argument
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-p"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, ftpserver.main)
+        self.assertRaises(SystemExit, pyftpdlib.main)
 
         # invalid argument
         sys.argv += ["-p foo"]
-        self.assertRaises(SystemExit, ftpserver.main)
+        self.assertRaises(SystemExit, pyftpdlib.main)
 
     def test_w_option(self):
         sys.argv += ["-w", "-p", "0"]
         warnings.filterwarnings("error")
         try:
-            self.assertRaises(RuntimeWarning, ftpserver.main)
+            self.assertRaises(RuntimeWarning, pyftpdlib.main)
         finally:
             warnings.resetwarnings()
 
@@ -3340,49 +3309,50 @@ class TestCommandLineParser(unittest.TestCase):
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-w foo"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, ftpserver.main)
+        self.assertRaises(SystemExit, pyftpdlib.main)
 
     def test_d_option(self):
         sys.argv += ["-d", TESTFN, "-p", "0"]
         safe_mkdir(TESTFN)
-        ftpserver.main()
+        pyftpdlib.main()
 
         # without argument
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-d"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, ftpserver.main)
+        self.assertRaises(SystemExit, pyftpdlib.main)
 
         # no such directory
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-d %s" % TESTFN]
         safe_rmdir(TESTFN)
-        self.assertRaises(ValueError, ftpserver.main)
+        self.assertRaises(ValueError, pyftpdlib.main)
 
     def test_r_option(self):
         sys.argv += ["-r 60000-61000", "-p", "0"]
-        ftpserver.main()
+        pyftpdlib.main()
 
         # without arg
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-r"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, ftpserver.main)
+        self.assertRaises(SystemExit, pyftpdlib.main)
 
         # wrong arg
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-r yyy-zzz"]
-        self.assertRaises(SystemExit, ftpserver.main)
+        self.assertRaises(SystemExit, pyftpdlib.main)
 
     def test_v_option(self):
         sys.argv += ["-v"]
-        self.assertRaises(SystemExit, ftpserver.main)
+        self.assertRaises(SystemExit, pyftpdlib.main)
 
         # unexpected argument
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-v foo"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, ftpserver.main)
+        self.assertRaises(SystemExit, pyftpdlib.main)
+
 
 
 remove_test_files()
