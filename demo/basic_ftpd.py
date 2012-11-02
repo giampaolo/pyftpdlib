@@ -64,14 +64,14 @@ def main():
 
     # Instantiate FTP server class and listen on 0.0.0.0:21
     address = ('', 21)
-    ftpd = FTPServer(address, handler)
+    server = FTPServer(address, handler)
 
     # set a limit for connections
-    ftpd.max_cons = 256
-    ftpd.max_cons_per_ip = 5
+    server.max_cons = 256
+    server.max_cons_per_ip = 5
 
     # start ftp server
-    ftpd.serve_forever()
+    server.serve_forever()
 
 if __name__ == '__main__':
     main()

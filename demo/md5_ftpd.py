@@ -61,8 +61,8 @@ def main():
     authorizer.add_anonymous(os.getcwd())
     handler = FTPHandler
     handler.authorizer = authorizer
-    ftpd = FTPServer(('', 21), handler)
-    ftpd.serve_forever()
+    server = FTPServer(('', 21), handler)
+    server.serve_forever()
 
 if __name__ == "__main__":
     main()
