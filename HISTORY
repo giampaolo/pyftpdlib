@@ -45,6 +45,9 @@ Enhancements:
 
  * Issue 223: ftpserver.py has been split in submodules.
 
+ * Issue 225: logging module is now used for logging. ftpserver.py's log(),
+   logline() and logerror() functions are deprecated.
+
 Bugfixes:
 
  * Issue 131: IPv6 dual-stack support was broken.
@@ -111,6 +114,9 @@ Incompatible API changes:
    bool. Instead it is supposed to raise AuthenticationFailed(msg) in case of
    failed authentication and return None otherwise.
    (see issue 213)
+
+ * ftpserver.py's log(), logline() and logerror() functions are deprecated.
+   logging module should be used instead.
 
  * Unicode is now used instead of bytes pretty much everywhere.
 

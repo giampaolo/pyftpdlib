@@ -65,8 +65,8 @@ import socket
 import traceback
 import sys
 import errno
+import logging
 
-from pyftpdlib.log import log, logerror
 from pyftpdlib.ioloop import Acceptor, IOLoop
 
 
@@ -169,7 +169,7 @@ class FTPServer(Acceptor):
             handler = self.handler(sock, self, ioloop=self.ioloop)
             if not handler.connected:
                 return
-            log("[]%s:%s Connected." % addr[:2])
+            logging.info("[]%s:%s Connected." % addr[:2])
             ip = addr[0]
             self.ip_map.append(ip)
 
@@ -203,7 +203,7 @@ class FTPServer(Acceptor):
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=143
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=166
             # - https://groups.google.com/forum/#!topic/pyftpdlib/h7pPybzAx14
-            logerror(traceback.format_exc())
+            logging.error(traceback.format_exc())
             if handler is not None:
                 handler.close()
             else:
@@ -215,7 +215,7 @@ class FTPServer(Acceptor):
         try:
             raise
         except Exception:
-            logerror(traceback.format_exc())
+            logging.error(traceback.format_exc())
         self.close()
 
     def close_all(self):

@@ -39,6 +39,7 @@ import traceback
 import glob
 import random
 import warnings
+import logging
 try:
     import pwd
     import grp
@@ -56,7 +57,6 @@ try:
 except ImportError:
     sendfile = None
 
-import pyftpdlib.log
 from pyftpdlib import __ver__
 from pyftpdlib.filesystems import FilesystemError, AbstractedFS
 from pyftpdlib._compat import PY3, b, u, getcwdu, unicode, xrange
@@ -64,10 +64,6 @@ from pyftpdlib.ioloop import AsyncChat, Connector, Acceptor, _DISCONNECTED
 from pyftpdlib.authorizers import (DummyAuthorizer, AuthenticationFailed,
                                    AuthorizerError)
 
-
-log = pyftpdlib.log.log
-logline = pyftpdlib.log.logline
-logerror = pyftpdlib.log.logerror
 
 proto_cmds = {
     'ABOR' : dict(perm=None, auth=True, arg=False,
@@ -331,7 +327,7 @@ class PassiveDTP(Acceptor):
         try:
             raise
         except Exception:
-            logerror(traceback.format_exc())
+            logging.error(traceback.format_exc())
         self.close()
 
     def close(self):
@@ -1244,9 +1240,9 @@ class FTPHandler(AsyncChat):
             arg = line[len(cmd)+1:]
 
         if cmd != 'PASS':
-            self.logline("<== %s" % line)
+            self.logline("<- %s" % line)
         else:
-            self.logline("<== %s %s" % (line.split(' ')[0], '*' * 6))
+            self.logline("<- %s %s" % (line.split(' ')[0], '*' * 6))
 
         # Recognize those commands having a "special semantic". They
         # should be sent by following the RFC-959 procedure of sending
@@ -1533,7 +1529,7 @@ class FTPHandler(AsyncChat):
         """Send a response to the client using the command channel."""
         self._last_response = resp
         self.push(resp + '\r\n')
-        self.logline('==> %s' % resp)
+        self.logline('-> %s' % resp)
 
     def push_dtp_data(self, data, isproducer=False, file=None, cmd=None):
         """Pushes data into the data channel.
@@ -1606,24 +1602,23 @@ class FTPHandler(AsyncChat):
 
     def log(self, msg):
         """Log a message, including additional identifying session data."""
-        log("[%s]@%s:%s %s" % (self.username, self.remote_ip,
-                               self.remote_port, msg))
+        logging.info("[%s]@%s:%s %s" % (self.username, self.remote_ip,
+                                        self.remote_port, msg))
 
     def logline(self, msg):
         """Log a line including additional indentifying session data."""
-        logline("%s:%s %s" % (self.remote_ip, self.remote_port, msg))
+        logging.debug("%s:%s %s" % (self.remote_ip, self.remote_port, msg))
 
     def logerror(self, msg):
         """Log an error including additional indentifying session data."""
-        logerror("[%s]@%s:%s %s" % (self.username, self.remote_ip,
-                                    self.remote_port, msg))
+        logging.error("[%s]@%s:%s %s" % (self.username, self.remote_ip,
+                                         self.remote_port, msg))
 
     def log_exception(self, instance):
         """Log an unhandled exception. 'instance' is the instance
         where the exception was generated.
         """
-        self.logerror("unhandled exception in instance %r\n%s" \
-                      % (instance, traceback.format_exc()))
+        logging.exception("unhandled exception in instance %r", instance)
 
     def log_cmd(self, cmd, arg, respcode, respstr):
         """Log commands and responses in a standardized format.
@@ -2264,7 +2259,7 @@ class FTPHandler(AsyncChat):
                         self.close_when_done()
                     else:
                         self.respond("530 " + msg)
-                    self.log_cmd("PASS", line, 530, msg)
+                    self.log("'%s' failed login." % self.username)
                 self.on_login_failed(username, password)
 
             msg = str(sys.exc_info()[1])
@@ -2297,6 +2292,7 @@ class FTPHandler(AsyncChat):
             else:
                 self.push("230-%s\r\n" % msg_login)
                 self.respond("230 ")
+            self.log("'%s' logged in." % self.username)
             self.authenticated = True
             self.password = line
             self.attempted_logins = 0

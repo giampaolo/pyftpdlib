@@ -66,18 +66,6 @@ the backend functionality for the FTPd:
       cross-platform interface compatible with both Windows and UNIX style
       filesystems.
 
-pyftpdlib also provides 3 different logging streams through 3 functions
-which can be overridden to allow for custom logging.
-
-    [pyftpdlib.log.log] - the main logger that logs the most important messages for
-    the end user regarding the FTPd.
-
-    [pyftpdlib.log.logline] - this function is used to log commands and responses
-    passing through the control FTP channel.
-
-    [pyftpdlib.log.logerror] - log traceback outputs occurring in case of errors.
-
-
 Usage example:
 
 >>> from pyftpdlib.authorizer import DummyAuthorizer
@@ -91,28 +79,27 @@ Usage example:
 >>> handler = FTPHandler
 >>> handler.authorizer = authorizer
 >>>
->>> ftpd = FTPServer(("127.0.0.1", 21), handler)
->>> ftpd.serve_forever()
-Serving FTP on 127.0.0.1:21
-[]127.0.0.1:2503 connected.
-127.0.0.1:2503 ==> 220 Ready.
-127.0.0.1:2503 <== USER anonymous
-127.0.0.1:2503 ==> 331 Username ok, send password.
-127.0.0.1:2503 <== PASS ******
-127.0.0.1:2503 ==> 230 Login successful.
-[anonymous]@127.0.0.1:2503 User anonymous logged in.
-127.0.0.1:2503 <== TYPE A
-127.0.0.1:2503 ==> 200 Type set to: ASCII.
-127.0.0.1:2503 <== PASV
-127.0.0.1:2503 ==> 227 Entering passive mode (127,0,0,1,9,201).
-127.0.0.1:2503 <== LIST
-127.0.0.1:2503 ==> 150 File status okay. About to open data connection.
-[anonymous]@127.0.0.1:2503 OK LIST "/". Transfer starting.
-127.0.0.1:2503 ==> 226 Transfer complete.
-[anonymous]@127.0.0.1:2503 Transfer complete. 706 bytes transmitted.
-127.0.0.1:2503 <== QUIT
-127.0.0.1:2503 ==> 221 Goodbye.
-[anonymous]@127.0.0.1:2503 Disconnected.
+>>> server = FTPServer(("127.0.0.1", 21), handler)
+>>> server.serve_forever()
+[I] []127.0.0.1:2503 connected.
+[D] 127.0.0.1:2503 -> 220 Ready.
+[D] 127.0.0.1:2503 <- USER anonymous
+[D] 127.0.0.1:2503 -> 331 Username ok, send password.
+[D] 127.0.0.1:2503 <- PASS ******
+[D] 127.0.0.1:2503 -> 230 Login successful.
+[I] [anonymous]@127.0.0.1:2503 User anonymous logged in.
+[D] 127.0.0.1:2503 <- TYPE A
+[D] 127.0.0.1:2503 -> 200 Type set to: ASCII.
+[D] 127.0.0.1:2503 <- PASV
+[D] 127.0.0.1:2503 -> 227 Entering passive mode (127,0,0,1,9,201).
+[D] 127.0.0.1:2503 <- LIST
+[D] 127.0.0.1:2503 -> 150 File status okay. About to open data connection.
+[I] [anonymous]@127.0.0.1:2503 OK LIST "/". Transfer starting.
+[D] 127.0.0.1:2503 -> 226 Transfer complete.
+[D] [anonymous]@127.0.0.1:2503 Transfer complete. 706 bytes transmitted.
+[D] 127.0.0.1:2503 <- QUIT
+[D] 127.0.0.1:2503 -> 221 Goodbye.
+[I] [anonymous]@127.0.0.1:2503 Disconnected.
 """
 
 __ver__     = '1.0.0'

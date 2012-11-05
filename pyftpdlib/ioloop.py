@@ -93,6 +93,7 @@ import traceback
 import time
 import heapq
 import socket
+import logging
 try:
     import threading
 except ImportError:
@@ -103,11 +104,6 @@ from pyftpdlib._compat import MAXSIZE, callable, b
 
 _read = asyncore.read
 _write = asyncore.write
-
-# XXX this gets overwritten from within ftpserver.py
-def logerror(msg):
-    sys.stderr.write(str(msg) + '\n')
-    sys.stderr.flush()
 
 
 # ===================================================================
@@ -145,7 +141,7 @@ class _Scheduler(object):
             try:
                 call.call()
             except Exception:
-                logerror(traceback.format_exc())
+                logging.error(traceback.format_exc())
 
         # remove cancelled tasks and re-heapify the queue if the
         # number of cancelled tasks is more than the half of the
@@ -271,6 +267,7 @@ class _IOLoop(object):
     WRITE = 2
     _instance = None
     _lock = threading.Lock()
+    _started_once = False
 
     def __init__(self):
         self.socket_map = {}
@@ -318,6 +315,16 @@ class _IOLoop(object):
            If False poll only once and return the timeout of the next
            scheduled call (if any, else None).
         """
+        if not _IOLoop._started_once:
+            _IOLoop._started_once = True
+            if not logging.getLogger().handlers:
+                # If we get to this point it means the user hasn't
+                # configured logging. We want to log by default so
+                # we configure logging ourself so that it prints to
+                # stderr.
+                logging.basicConfig(format='[%(levelname)1.1s] %(message)s',
+                                    level=logging.DEBUG)
+
         if blocking:
             # localize variable access to minimize overhead
             poll = self.poll
@@ -374,9 +381,9 @@ class _IOLoop(object):
             except OSError:
                 err = sys.exc_info()[1]
                 if err.args[0] != errno.EBADF:
-                    logerror(traceback.format_exc())
+                    logging.error(traceback.format_exc())
             except Exception:
-                logerror(traceback.format_exc())
+                logging.error(traceback.format_exc())
         self.socket_map.clear()
 
         # free scheduled functions
@@ -385,7 +392,7 @@ class _IOLoop(object):
                 if not x.cancelled:
                     x.cancel()
             except Exception:
-                logerror(traceback.format_exc())
+                logging.error(traceback.format_exc())
         del self.sched._tasks[:]
 
 

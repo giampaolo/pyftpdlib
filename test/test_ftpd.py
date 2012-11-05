@@ -45,6 +45,7 @@ import sys
 import errno
 import atexit
 import stat
+import logging
 try:
     from StringIO import StringIO as BytesIO
 except ImportError:
@@ -3040,8 +3041,6 @@ class TestCornerCases(unittest.TestCase):
         # TODO silence logerror message
         self.tearDown()
         server = FTPServer((HOST, 0), FTPHandler)
-        original_stderr = sys.stderr
-        sys.stderr = open(os.devnull, 'r+')
         try:
             len1 = len(IOLoop.instance().socket_map)
             IOLoop.instance().call_later(0, lambda: 1 // 0)
@@ -3049,8 +3048,6 @@ class TestCornerCases(unittest.TestCase):
             len2 = len(IOLoop.instance().socket_map)
             self.assertEqual(len1, len2)
         finally:
-            sys.stderr.close()
-            sys.stderr = original_stderr
             server.close()
 
     def test_active_conn_error(self):
@@ -3354,7 +3351,7 @@ class TestCommandLineParser(unittest.TestCase):
         self.assertRaises(SystemExit, pyftpdlib.main)
 
 
-
+logging.basicConfig(level=logging.WARNING)
 remove_test_files()
 
 def test_main(tests=None):
