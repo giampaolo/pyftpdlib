@@ -62,6 +62,9 @@ Bugfixes:
    usage. FTPHandler.sleeping is now removed. self.add_channel() /
    self.del_channel() should be used instead.
 
+ * Issue 222: an unhandled exception in handle_error() or close() can cause
+   server crash.
+
 New modules:
 
 All the code contained in pyftpdlib/ftpserver.py and pyftpdlib/contrib

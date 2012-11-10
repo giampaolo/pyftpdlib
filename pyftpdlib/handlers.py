@@ -328,7 +328,10 @@ class PassiveDTP(Acceptor):
             raise
         except Exception:
             logging.error(traceback.format_exc())
-        self.close()
+        try:
+            self.close()
+        except Exception:
+            logging.critical(traceback.format_exc())
 
     def close(self):
         if not self._closed:
@@ -439,7 +442,10 @@ class ActiveDTP(Connector):
             pass
         except Exception:
             self.log_exception(self)
-        self.handle_close()
+        try:
+            self.handle_close()
+        except Exception:
+            logging.critical(traceback.format_exc())
 
     def close(self):
         if not self._closed:
@@ -721,8 +727,11 @@ class DTPHandler(AsyncChat):
             # confidential error messages
             self.log_exception(self)
             error = "Internal error"
-        self._resp = "426 %s; transfer aborted." % error
-        self.close()
+        try:
+            self._resp = "426 %s; transfer aborted." % error
+            self.close()
+        except Exception:
+            logging.critical(traceback.format_exc())
 
     def handle_close(self):
         """Called when the socket is closed."""
@@ -1352,8 +1361,11 @@ class FTPHandler(AsyncChat):
             self.log_cmd(cmd, args[0], code, resp)
 
     def handle_error(self):
-        self.log_exception(self)
-        self.close()
+        try:
+            self.log_exception(self)
+            self.close()
+        except Exception:
+            logging.critical(traceback.format_exc())
 
     def handle_close(self):
         self.close()
@@ -2868,7 +2880,10 @@ else:
             # when facing an unhandled exception in here it's better
             # to rely on base class (FTPHandler or DTPHandler)
             # close() method as it does not imply SSL shutdown logic
-            super(SSLConnection, self).close()
+            try:
+                super(SSLConnection, self).close()
+            except Exception:
+                logging.critical(traceback.format_exc())
 
         def send(self, data):
             try:
