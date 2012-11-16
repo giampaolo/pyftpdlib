@@ -66,6 +66,7 @@ import traceback
 import sys
 import errno
 import logging
+import select
 
 from pyftpdlib.ioloop import Acceptor, IOLoop
 
@@ -275,6 +276,20 @@ class _SpawnerBase(FTPServer):
                 # note: these two exceptions are raised in all sub
                 # processes
                 self._serving = False
+            except select.error:
+                # on Windows we can get WSAENOTSOCK if the client rapidly
+                # connect and disconnects
+                err = sys.exc_info()[1]
+                if os.name == 'nt' and err.args[0] == 10038:
+                    for fd in socket_map.keys():
+                        try:
+                            select.select([fd], [], [], 0)
+                        except select.error:
+                            logging.info("discarding broken socket %r",
+                                         socket_map[fd])
+                            del socket_map[fd]
+                else:
+                    raise
             else:
                 if poll_timeout:
                     if soonest_timeout is None or soonest_timeout > poll_timeout:

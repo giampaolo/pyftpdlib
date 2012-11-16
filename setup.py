@@ -109,7 +109,7 @@ if os.name == 'posix':
             assert sys.stderr.isatty()
             curses.setupterm()
             assert curses.tigetnum("colors") > 0
-        except (ImportError, Exception):
+        except Exception:
             pass
         else:
             # ...it does; use bold
