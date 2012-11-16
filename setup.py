@@ -64,7 +64,7 @@ setup(
     author_email='g.rodola@gmail.com',
     url='http://code.google.com/p/pyftpdlib/',
     download_url=download_url,
-    packages=['pyftpdlib', 'pyftpdlib/contrib', 'pyftpdlib/lib'],
+    packages=['pyftpdlib', 'pyftpdlib/contrib'],
     keywords=['ftp', 'ftps', 'server', 'ftpd', 'daemon', 'python', 'ssl',
               'sendfile', 'asynchronous', 'nonblocking', 'eventdriven',
               'rfc959', 'rfc1123', 'rfc2228', 'rfc2428', 'rfc2640', 'rfc3659'],
@@ -93,6 +93,8 @@ setup(
           ],
     )
 
+
+# suggest to install pysendfile
 if os.name == 'posix':
     try:
         import sendfile
@@ -101,6 +103,15 @@ if os.name == 'posix':
     except ImportError:
         msg = "\nYou might want to install pysendfile module to speedup " \
               "transfers:\nhttp://code.google.com/p/pysendfile/\n"
-        if sys.stderr.isatty():
+        try:
+            # check if this terminal supports colors...
+            import curses
+            assert sys.stderr.isatty()
+            curses.setupterm()
+            assert curses.tigetnum("colors") > 0
+        except (ImportError, Exception):
+            pass
+        else:
+            # ...it does; use bold
             msg = '\x1b[1m%s\x1b[0m' % msg
         sys.stderr.write(msg)
