@@ -236,10 +236,10 @@ class _SpawnerBase(FTPServer):
     """
 
     _lock = None
+    _exit = None
 
     def __init__(self, address, handler, ioloop=None):
         FTPServer.__init__(self, address, handler, ioloop)
-        self._serving = False
         self._active_tasks = []
 
     def _start_task(self, *args, **kwargs):
@@ -265,7 +265,7 @@ class _SpawnerBase(FTPServer):
         poll_timeout = getattr(self, 'poll_timeout', None)
         soonest_timeout = poll_timeout
 
-        while self._serving and socket_map:
+        while socket_map and not self._exit.is_set():
             try:
                 poll(timeout=soonest_timeout)
                 if tasks:
@@ -275,7 +275,7 @@ class _SpawnerBase(FTPServer):
             except (KeyboardInterrupt, SystemExit):
                 # note: these two exceptions are raised in all sub
                 # processes
-                self._serving = False
+                self._exit.set()
             except select.error:
                 # on Windows we can get WSAENOTSOCK if the client rapidly
                 # connect and disconnects
@@ -320,7 +320,7 @@ class _SpawnerBase(FTPServer):
             self._lock.release()
 
     def serve_forever(self, timeout=None, blocking=True):
-        self._serving = True
+        self._exit.clear()
         closed = False
         try:
             FTPServer.serve_forever(self, timeout, blocking)
@@ -336,7 +336,7 @@ class _SpawnerBase(FTPServer):
         tasks = self._active_tasks[:]
         # this must be set after getting active tasks as it causes
         # thread objects to get out of the list too soon
-        self._serving = False
+        self._exit.set()
         if tasks and hasattr(tasks[0], 'terminate'):
             for t in tasks:
                 try:
@@ -367,6 +367,7 @@ else:
         # loop. Necessary since threads ignore KeyboardInterrupt.
         poll_timeout = 1.0
         _lock = threading.Lock()
+        _exit = threading.Event()
 
         def _start_task(self, *args, **kwargs):
             return threading.Thread(*args, **kwargs)
@@ -391,6 +392,7 @@ if os.name == 'posix':
             process every time a new connection is established.
             """
             _lock = multiprocessing.Lock()
+            _exit = multiprocessing.Event()
 
             def _start_task(self, *args, **kwargs):
                 return multiprocessing.Process(*args, **kwargs)
