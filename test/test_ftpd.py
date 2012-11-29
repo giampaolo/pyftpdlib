@@ -3020,6 +3020,9 @@ class TestCornerCases(unittest.TestCase):
 
         def connect(addr):
             s = socket.socket()
+            # Set SO_LINGER to 1,0 causes a connection reset (RST) to
+            # be sent when close() is called, instead of the standard
+            # FIN shutdown sequence.
             s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
                          struct.pack('ii', 1, 0))
             s.settimeout(TIMEOUT)
