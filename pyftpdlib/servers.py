@@ -325,7 +325,8 @@ class _SpawnerBase(FTPServer):
         try:
             FTPServer.serve_forever(self, timeout, blocking)
         except (KeyboardInterrupt, SystemExit):
-            self.close_all()
+            if blocking:
+                self.close_all()
             closed = True
             raise
         finally:
