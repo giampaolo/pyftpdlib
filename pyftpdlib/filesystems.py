@@ -141,7 +141,8 @@ class AbstractedFS(object):
             p = os.path.normpath(os.path.join(self.cwd, ftppath))
         # normalize string in a standard web-path notation having '/'
         # as separator.
-        p = p.replace("\\", "/")
+        if os.sep == "\\":
+            p = p.replace("\\", "/")
         # os.path.normpath supports UNC paths (e.g. "//a/b/c") but we
         # don't need them.  In case we get an UNC path we collapse
         # redundant separators appearing at the beginning of the string

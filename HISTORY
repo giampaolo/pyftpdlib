@@ -65,6 +65,8 @@ Bugfixes:
  * Issue 222: an unhandled exception in handle_error() or close() can cause
    server crash.
 
+ * Issue 229: backslashes on UNIX are not handled properly.
+
 New modules:
 
 All the code contained in pyftpdlib/ftpserver.py and pyftpdlib/contrib
