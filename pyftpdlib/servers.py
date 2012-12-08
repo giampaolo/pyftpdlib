@@ -295,12 +295,10 @@ class _SpawnerBase(FTPServer):
                     if soonest_timeout is None or soonest_timeout > poll_timeout:
                         soonest_timeout = poll_timeout
 
-        self._lock.acquire()
         try:
             self._active_tasks.remove(self._current_task())
         except ValueError:
             pass
-        self._lock.release()
 
         ioloop.close()
 
