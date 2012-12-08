@@ -101,17 +101,19 @@ if os.name == 'posix':
         if hasattr(sendfile, 'has_sf_hdtr'):  # old 1.2.4 version
             raise ImportError
     except ImportError:
+        def term_supports_colors():
+            try:
+                import curses
+                assert sys.stderr.isatty()
+                curses.setupterm()
+                assert curses.tigetnum("colors") > 0
+            except Exception:
+                return False
+            else:
+                return True
+
         msg = "\nYou might want to install pysendfile module to speedup " \
               "transfers:\nhttp://code.google.com/p/pysendfile/\n"
-        try:
-            # check if this terminal supports colors...
-            import curses
-            assert sys.stderr.isatty()
-            curses.setupterm()
-            assert curses.tigetnum("colors") > 0
-        except Exception:
-            pass
-        else:
-            # ...it does; use bold
+        if term_supports_colors():
             msg = '\x1b[1m%s\x1b[0m' % msg
         sys.stderr.write(msg)
