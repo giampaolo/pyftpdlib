@@ -131,14 +131,14 @@ Incompatible API changes:
 
  * FTPServer.server_forever() signature has changed:
      - serve_forever(timeout=1.0, use_poll=False, count=None)
-     + serve_forever(timeout=1.0, blocking=True)
+     + serve_forever(timeout=1.0, blocking=True, log_start_stop=True)
 
  * FTPServer.close_all() signature has changed:
      - close_all(ignore_all=False)
      + close_all()
 
  * FTPServer.server_forever() and FTPServer.close_all() are no longer class
-   methods (XXX still not sure)
+   methods.
 
  * asyncore.dispatcher and asynchat.async_chat classes has been replaced by:
      - pyftpdlib.ioloop.Acceptor
@@ -146,11 +146,6 @@ Incompatible API changes:
      - pyftpdlib.ioloop.AsyncChat
    Any customization relying on asyncore (e.g. use of asyncore.socket_map to
    figure out the number of connected clients) will no longer work.
-
- * FTPServer.serve_forever() no longer logs start and stop.  XXX - am I sure?
-
- * FTPServer.serve_forever() no longer catches KeyboardInterrupt and SystemExit.
-   XXX - am I sure?
 
  * pyftpdlib.ftpserver.CallLater and pyftpdlib.ftpserver.CallEvery are
    deprecated. Instead, use self.ioloop.call_later() and self.ioloop.call_every()

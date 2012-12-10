@@ -105,6 +105,10 @@ from pyftpdlib._compat import MAXSIZE, callable, b
 _read = asyncore.read
 _write = asyncore.write
 
+def _config_logging():
+    logging.basicConfig(format='[%(levelname)1.1s] %(message)s',
+                        level=logging.DEBUG)
+
 
 # ===================================================================
 # --- scheduler
@@ -320,10 +324,9 @@ class _IOLoop(object):
             if not logging.getLogger().handlers:
                 # If we get to this point it means the user hasn't
                 # configured logging. We want to log by default so
-                # we configure logging ourself so that it prints to
-                # stderr.
-                logging.basicConfig(format='[%(levelname)1.1s] %(message)s',
-                                    level=logging.DEBUG)
+                # we configure logging ourselves so that it will
+                # print to stderr.
+                _config_logging()
 
         if blocking:
             # localize variable access to minimize overhead
