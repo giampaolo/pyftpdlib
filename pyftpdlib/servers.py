@@ -160,7 +160,7 @@ class FTPServer(Acceptor):
         else:
             pasv_ports = None
         logging.info(">>> starting FTP server on %s:%s <<<" % self.address)
-        logging.info("poller: %s", self.ioloop.__class__.__name__)
+        logging.info("poller: %r", self.ioloop.__class__)
         logging.info("masquerade (NAT) address: %s",
                      self.handler.masquerade_address)
         logging.info("passive ports: %s", pasv_ports)
@@ -188,7 +188,8 @@ class FTPServer(Acceptor):
             pass
         if blocking:
             if log:
-                logging.info(">>> shutting down FTP server <<<")
+                logging.info(">>> shutting down FTP server (%s active fds) <<<",
+                             self._map_len())
             self.close_all()
 
     def handle_accepted(self, sock, addr):
@@ -358,24 +359,24 @@ class _SpawnerBase(FTPServer):
             finally:
                 self._lock.release()
 
+    def _log_start(self):
+        FTPServer._log_start(self)
+        logging.info("dispatcher: %r", self.__class__)
+
     def serve_forever(self, timeout=None, blocking=True, log_start_stop=True):
+        self._exit.clear()
         log = log_start_stop and blocking == True
         if log:
             self._log_start()
-        self._exit.clear()
-        closed = False
         try:
-            FTPServer.serve_forever(self, timeout, blocking)
+            self.ioloop.loop(timeout, blocking)
         except (KeyboardInterrupt, SystemExit):
-            if blocking:
-                if log:
-                    logging.info(">>> shutting down FTP server <<<")
-                self.close_all()
-            closed = True
-            raise
-        finally:
-            if blocking and not closed:
-                self.close_all()
+            pass
+        if blocking:
+            if log:
+                logging.info(">>> shutting down FTP server (%s active " \
+                             "workers) <<<", self._map_len())
+            self.close_all()
 
     def close_all(self):
         tasks = self._active_tasks[:]
