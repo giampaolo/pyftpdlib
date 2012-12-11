@@ -283,53 +283,63 @@ class _SpawnerBase(FTPServer):
     def _loop(self, handler):
         """Serve handler's IO loop in a separate thread or process."""
         ioloop = IOLoop()
-        handler.ioloop = ioloop
-        handler.add_channel()
-
-        # Here we localize variable access to minimize overhead.
-        poll = ioloop.poll
-        socket_map = ioloop.socket_map
-        tasks = ioloop.sched._tasks
-        sched_poll = ioloop.sched.poll
-        poll_timeout = getattr(self, 'poll_timeout', None)
-        soonest_timeout = poll_timeout
-
-        while socket_map and not self._exit.is_set():
+        try:
+            handler.ioloop = ioloop
             try:
-                poll(timeout=soonest_timeout)
-                if tasks:
-                    soonest_timeout = sched_poll()
-                else:
-                    soonest_timeout = None
-            except (KeyboardInterrupt, SystemExit):
-                # note: these two exceptions are raised in all sub
-                # processes
-                self._exit.set()
-            except select.error:
-                # on Windows we can get WSAENOTSOCK if the client rapidly
-                # connect and disconnects
+                handler.add_channel()
+            except EnvironmentError:
                 err = sys.exc_info()[1]
-                if os.name == 'nt' and err.args[0] == 10038:
-                    for fd in socket_map.keys():
-                        try:
-                            select.select([fd], [], [], 0)
-                        except select.error:
-                            logging.info("discarding broken socket %r",
-                                         socket_map[fd])
-                            del socket_map[fd]
+                if err.errno == errno.EBADF:
+                    # we might get here in case the other end quickly
+                    # disconnected (see test_quick_connect())
+                    return
                 else:
                     raise
-            else:
-                if poll_timeout:
-                    if soonest_timeout is None or soonest_timeout > poll_timeout:
-                        soonest_timeout = poll_timeout
 
-        try:
-            self._active_tasks.remove(self._current_task())
-        except ValueError:
-            pass
+            # Here we localize variable access to minimize overhead.
+            poll = ioloop.poll
+            socket_map = ioloop.socket_map
+            tasks = ioloop.sched._tasks
+            sched_poll = ioloop.sched.poll
+            poll_timeout = getattr(self, 'poll_timeout', None)
+            soonest_timeout = poll_timeout
 
-        ioloop.close()
+            while socket_map and not self._exit.is_set():
+                try:
+                    poll(timeout=soonest_timeout)
+                    if tasks:
+                        soonest_timeout = sched_poll()
+                    else:
+                        soonest_timeout = None
+                except (KeyboardInterrupt, SystemExit):
+                    # note: these two exceptions are raised in all sub
+                    # processes
+                    self._exit.set()
+                except select.error:
+                    # on Windows we can get WSAENOTSOCK if the client
+                    # rapidly connect and disconnects
+                    err = sys.exc_info()[1]
+                    if os.name == 'nt' and err.args[0] == 10038:
+                        for fd in socket_map.keys():
+                            try:
+                                select.select([fd], [], [], 0)
+                            except select.error:
+                                logging.info("discarding broken socket %r",
+                                             socket_map[fd])
+                                del socket_map[fd]
+                    else:
+                        raise
+                else:
+                    if poll_timeout:
+                        if soonest_timeout is None \
+                        or soonest_timeout > poll_timeout:
+                            soonest_timeout = poll_timeout
+        finally:
+            try:
+                self._active_tasks.remove(self._current_task())
+            except ValueError:
+                pass
+            ioloop.close()
 
     def handle_accepted(self, sock, addr):
         handler = FTPServer.handle_accepted(self, sock, addr)
@@ -343,8 +353,10 @@ class _SpawnerBase(FTPServer):
             t.start()
 
             self._lock.acquire()
-            self._active_tasks.append(t)
-            self._lock.release()
+            try:
+                self._active_tasks.append(t)
+            finally:
+                self._lock.release()
 
     def serve_forever(self, timeout=None, blocking=True, log_start_stop=True):
         log = log_start_stop and blocking == True
