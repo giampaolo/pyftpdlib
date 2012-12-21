@@ -52,7 +52,7 @@ class DummyMD5Authorizer(DummyAuthorizer):
         hash = md5(b(password)).hexdigest()
         try:
             if self.user_table[username]['pwd'] != hash:
-                raise ValueError
+                raise KeyError
         except KeyError:
             raise AuthenticationFailed
 
