@@ -42,7 +42,7 @@ except ImportError:
 
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer
-from pyftpdlib.authorizers import DummyAuthorizer
+from pyftpdlib.authorizers import DummyAuthorizer, AuthenticationFailed
 from pyftpdlib._compat import b
 
 
@@ -50,7 +50,11 @@ class DummyMD5Authorizer(DummyAuthorizer):
 
     def validate_authentication(self, username, password, handler):
         hash = md5(b(password)).hexdigest()
-        return self.user_table[username]['pwd'] == hash
+        try:
+            if self.user_table[username]['pwd'] != hash:
+                raise ValueError
+        except KeyError:
+            raise AuthenticationFailed
 
 
 def main():
