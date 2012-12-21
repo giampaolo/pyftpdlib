@@ -57,7 +57,7 @@ def main():
     # have the ftp handler use the alternative dtp handler class
     ftp_handler.dtp_handler = dtp_handler
 
-    server = FTPServer(('', 21), ftp_handler)
+    server = FTPServer(('', 2121), ftp_handler)
     server.serve_forever()
 
 if __name__ == '__main__':

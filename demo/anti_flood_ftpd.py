@@ -101,7 +101,7 @@ def main():
     authorizer.add_anonymous('.')
     handler = AntiFloodHandler
     handler.authorizer = authorizer
-    server = FTPServer(('', 21), handler)
+    server = FTPServer(('', 2121), handler)
     server.serve_forever(timeout=1)
 
 if __name__ == '__main__':
