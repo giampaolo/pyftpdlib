@@ -1911,6 +1911,7 @@ class FTPHandler(AsyncChat):
     def ftp_LIST(self, path):
         """Return a list of files in the specified directory to the
         client.
+        On success return the directory path, else None.
         """
         # - If no argument, fall back on cwd as default.
         # - Some older FTP clients erroneously issue /bin/ls-like LIST
@@ -1924,10 +1925,12 @@ class FTPHandler(AsyncChat):
         else:
             producer = BufferedIteratorProducer(iterator)
             self.push_dtp_data(producer, isproducer=True, cmd="LIST")
+            return path
 
     def ftp_NLST(self, path):
         """Return a list of files in the specified directory in a
         compact form to the client.
+        On success return the directory path, else None.
         """
         try:
             if self.fs.isdir(path):
@@ -1959,6 +1962,7 @@ class FTPHandler(AsyncChat):
                 data = '\r\n'.join(listing) + '\r\n'
             data = data.encode('utf8', self.unicode_errors)
             self.push_dtp_data(data, cmd="NLST")
+            return path
 
         # --- MLST and MLSD commands
 
@@ -1970,6 +1974,7 @@ class FTPHandler(AsyncChat):
     def ftp_MLST(self, path):
         """Return information about a pathname in a machine-processable
         form as defined in RFC-3659.
+        On success return the path just listed, else None.
         """
         line = self.fs.fs2ftp(path)
         basedir, basename = os.path.split(path)
@@ -1991,10 +1996,12 @@ class FTPHandler(AsyncChat):
             # the fact set must be preceded by a space
             self.push(' ' + data)
             self.respond('250 End MLST.')
+            return path
 
     def ftp_MLSD(self, path):
         """Return contents of a directory in a machine-processable form
         as defined in RFC-3659.
+        On success return the path just listed, else None.
         """
         # RFC-3659 requires 501 response code if path is not a directory
         if not self.fs.isdir(path):
@@ -2012,10 +2019,11 @@ class FTPHandler(AsyncChat):
                        self._current_facts)
             producer = BufferedIteratorProducer(iterator)
             self.push_dtp_data(producer, isproducer=True, cmd="MLSD")
+            return path
 
     def ftp_RETR(self, file):
         """Retrieve the specified file (transfer from the server to the
-        client)
+        client).  On success return the file path else None.
         """
         rest_pos = self._restart_position
         self._restart_position = 0
@@ -2050,9 +2058,12 @@ class FTPHandler(AsyncChat):
                 return
         producer = FileProducer(fd, self._current_type)
         self.push_dtp_data(producer, isproducer=True, file=fd, cmd="RETR")
+        return file
 
     def ftp_STOR(self, file, mode='w'):
-        """Store a file (transfer from the client to the server)."""
+        """Store a file (transfer from the client to the server).
+        On success return the file path, else None.
+        """
         # A resume could occur in case of APPE or REST commands.
         # In that case we have to open file object in different ways:
         # STOR: mode = 'w'
@@ -2105,10 +2116,13 @@ class FTPHandler(AsyncChat):
             resp = "File status okay. About to open data connection."
             self.respond("150 " + resp)
             self._in_dtp_queue = (fd, cmd)
+        return file
 
 
     def ftp_STOU(self, line):
-        """Store a file on the server with a unique name."""
+        """Store a file on the server with a unique name.
+        On success return the file path, else None.
+        """
         # Note 1: RFC-959 prohibited STOU parameters, but this
         # prohibition is obsolete.
         # Note 2: 250 response wanted by RFC-959 has been declared
@@ -2163,14 +2177,17 @@ class FTPHandler(AsyncChat):
         else:
             self.respond("150 FILE: %s" % filename)
             self._in_dtp_queue = (fd, "STOU")
+        return filename
 
     def ftp_APPE(self, file):
-        """Append data to an existing file on the server."""
+        """Append data to an existing file on the server.
+        On success return the file path, else None.
+        """
         # watch for APPE preceded by REST, which makes no sense.
         if self._restart_position:
             self.respond("450 Can't APPE while REST request is pending.")
         else:
-            self.ftp_STOR(file, mode='a')
+            return self.ftp_STOR(file, mode='a')
 
     def ftp_REST(self, line):
         """Restart a file transfer from a previous mark."""
@@ -2341,7 +2358,9 @@ class FTPHandler(AsyncChat):
                      % cwd.replace('"', '""'))
 
     def ftp_CWD(self, path):
-        """Change the current working directory."""
+        """Change the current working directory.
+        On success return the new directory path, else None.
+        """
         # Temporarily join the specified directory to see if we have
         # permissions to do so, then get back to original process's
         # current working directory.
@@ -2362,12 +2381,15 @@ class FTPHandler(AsyncChat):
             self.respond('250 "%s" is the current directory.' % cwd)
             if getcwdu() != init_cwd:
                 os.chdir(init_cwd)
+            return path
 
     def ftp_CDUP(self, path):
-        """Change into the parent directory."""
+        """Change into the parent directory.
+        On success return the new directory, else None.
+        """
         # Note: RFC-959 says that code 200 is required but it also says
         # that CDUP uses the same codes as CWD.
-        self.ftp_CWD(path)
+        return self.ftp_CWD(path)
 
     def ftp_SIZE(self, path):
         """Return size of file in a format suitable for using with
@@ -2406,6 +2428,7 @@ class FTPHandler(AsyncChat):
     def ftp_MDTM(self, path):
         """Return last modification time of file to the client as an ISO
         3307 style timestamp (YYYYMMDDHHMMSS) as defined in RFC-3659.
+        On success return the file path, else None.
         """
         line = self.fs.fs2ftp(path)
         if not self.fs.isfile(self.fs.realpath(path)):
@@ -2429,9 +2452,12 @@ class FTPHandler(AsyncChat):
             self.respond('550 %s.' % why)
         else:
             self.respond("213 %s" % lmt)
+            return path
 
     def ftp_MKD(self, path):
-        """Create the specified directory."""
+        """Create the specified directory.
+        On success return the directory path, else None.
+        """
         line = self.fs.fs2ftp(path)
         try:
             self.run_as_current_user(self.fs.mkdir, path)
@@ -2444,9 +2470,12 @@ class FTPHandler(AsyncChat):
             # name and in case it contains embedded double-quotes
             # they must be doubled (see RFC-959, chapter 7, appendix 2).
             self.respond('257 "%s" directory created.' % line.replace('"', '""'))
+            return path
 
     def ftp_RMD(self, path):
-        """Remove the specified directory."""
+        """Remove the specified directory.
+        On success return the directory path, else None.
+        """
         if self.fs.realpath(path) == self.fs.realpath(self.fs.root):
             msg = "Can't remove root directory."
             self.respond("550 %s" % msg)
@@ -2461,7 +2490,9 @@ class FTPHandler(AsyncChat):
             self.respond("250 Directory removed.")
 
     def ftp_DELE(self, path):
-        """Delete the specified file."""
+        """Delete the specified file.
+        On success return the file path, else None.
+        """
         try:
             self.run_as_current_user(self.fs.remove, path)
         except (OSError, FilesystemError):
@@ -2470,6 +2501,7 @@ class FTPHandler(AsyncChat):
             self.respond('550 %s.' % why)
         else:
             self.respond("250 File removed.")
+            return path
 
     def ftp_RNFR(self, path):
         """Rename the specified (only the source name is specified
@@ -2485,6 +2517,7 @@ class FTPHandler(AsyncChat):
     def ftp_RNTO(self, path):
         """Rename file (destination name only, source is specified with
         RNFR).
+        On success return a (source_path, destination_path) tuple.
         """
         if not self._rnfr:
             self.respond("503 Bad sequence of commands: use RNFR first.")
@@ -2499,6 +2532,7 @@ class FTPHandler(AsyncChat):
             self.respond('550 %s.' % why)
         else:
             self.respond("250 Renaming ok.")
+            return (src, path)
 
 
         # --- others
@@ -2606,6 +2640,7 @@ class FTPHandler(AsyncChat):
                 self.push('213-Status of "%s":\r\n' % line)
                 self.push_with_producer(BufferedIteratorProducer(iterator))
                 self.respond('213 End of status.')
+                return path
 
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
@@ -2700,7 +2735,9 @@ class FTPHandler(AsyncChat):
     # method in the subclass.
 
     def ftp_SITE_CHMOD(self, path, mode):
-        """Change file mode."""
+        """Change file mode.
+        On success return a (file_path, mode) tuple.
+        """
         # Note: although most UNIX servers implement it, SITE CHMOD is not
         # defined in any official RFC.
         try:
@@ -2719,6 +2756,7 @@ class FTPHandler(AsyncChat):
                 self.respond('550 %s.' % why)
             else:
                 self.respond('200 SITE CHMOD successful.')
+                return (path, mode)
 
     def ftp_SITE_HELP(self, line):
         """Return help text to the client for a given SITE command."""
@@ -2746,23 +2784,23 @@ class FTPHandler(AsyncChat):
 
     def ftp_XCUP(self, line):
         """Change to the parent directory. Synonym for CDUP. Deprecated."""
-        self.ftp_CDUP(line)
+        return self.ftp_CDUP(line)
 
     def ftp_XCWD(self, line):
         """Change the current working directory. Synonym for CWD. Deprecated."""
-        self.ftp_CWD(line)
+        return self.ftp_CWD(line)
 
     def ftp_XMKD(self, line):
         """Create the specified directory. Synonym for MKD. Deprecated."""
-        self.ftp_MKD(line)
+        return self.ftp_MKD(line)
 
     def ftp_XPWD(self, line):
         """Return the current working directory. Synonym for PWD. Deprecated."""
-        self.ftp_PWD(line)
+        return self.ftp_PWD(line)
 
     def ftp_XRMD(self, line):
         """Remove the specified directory. Synonym for RMD. Deprecated."""
-        self.ftp_RMD(line)
+        return self.ftp_RMD(line)
 
 
 

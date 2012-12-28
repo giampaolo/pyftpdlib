@@ -48,6 +48,9 @@ Enhancements:
  * Issue 225: logging module is now used for logging. ftpserver.py's log(),
    logline() and logerror() functions are deprecated.
 
+ * Issue 231: FTPHandler.ftp_* methods implementing filesystem-related commands
+   now return a meaningful value on success (tipically the path name).
+
 Bugfixes:
 
  * Issue 131: IPv6 dual-stack support was broken.
@@ -85,6 +88,8 @@ New APIs:
  * pyftpdlib.servers.ThreadedFTPServer
  * pyftpdlib.servers.MultiprocessFTPServer
  * pyftpdlib.handlers.FTPHandler's on_connect() and on_disconnect() callbacks.
+ * pyftpdlib.handlers.FTPHandler.ftp_* methods return a meaningful value on
+   success.
  * FTPServer, FTPHandler, DTPHandler new ioloop attribute.
  * pyftpdlib.lib.ioloop.IOLoop class (not supposed to be used directly)
 
