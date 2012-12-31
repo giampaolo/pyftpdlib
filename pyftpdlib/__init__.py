@@ -102,11 +102,14 @@ Usage example:
 [I] [anonymous]@127.0.0.1:2503 Disconnected.
 """
 
+import logging
+
 __ver__     = '1.0.0'
 __date__    = 'XXXX-XX-XX'
 __author__  = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__     = 'http://code.google.com/p/pyftpdlib/'
 
+logger = logging.getLogger('pyftpdlib')
 
 def _depwarn(msg):
     """

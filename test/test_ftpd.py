@@ -3044,7 +3044,7 @@ class TestCornerCases(unittest.TestCase):
         # TODO silence logerror message
         self.tearDown()
         server = FTPServer((HOST, 0), FTPHandler)
-        logger = logging.getLogger()
+        logger = logging.getLogger('pyftpdlib')
         logger.disabled = True
         try:
             len1 = len(IOLoop.instance().socket_map)

@@ -39,7 +39,6 @@ import traceback
 import glob
 import random
 import warnings
-import logging
 try:
     import pwd
     import grp
@@ -57,7 +56,7 @@ try:
 except ImportError:
     sendfile = None
 
-from pyftpdlib import __ver__
+from pyftpdlib import logger, __ver__
 from pyftpdlib.filesystems import FilesystemError, AbstractedFS
 from pyftpdlib._compat import PY3, b, u, getcwdu, unicode, xrange
 from pyftpdlib.ioloop import AsyncChat, Connector, Acceptor, _DISCONNECTED
@@ -327,11 +326,11 @@ class PassiveDTP(Acceptor):
         try:
             raise
         except Exception:
-            logging.error(traceback.format_exc())
+            logger.error(traceback.format_exc())
         try:
             self.close()
         except Exception:
-            logging.critical(traceback.format_exc())
+            logger.critical(traceback.format_exc())
 
     def close(self):
         if not self._closed:
@@ -445,7 +444,7 @@ class ActiveDTP(Connector):
         try:
             self.handle_close()
         except Exception:
-            logging.critical(traceback.format_exc())
+            logger.critical(traceback.format_exc())
 
     def close(self):
         if not self._closed:
@@ -731,7 +730,7 @@ class DTPHandler(AsyncChat):
             self._resp = "426 %s; transfer aborted." % error
             self.close()
         except Exception:
-            logging.critical(traceback.format_exc())
+            logger.critical(traceback.format_exc())
 
     def handle_close(self):
         """Called when the socket is closed."""
@@ -1365,7 +1364,7 @@ class FTPHandler(AsyncChat):
             self.log_exception(self)
             self.close()
         except Exception:
-            logging.critical(traceback.format_exc())
+            logger.critical(traceback.format_exc())
 
     def handle_close(self):
         self.close()
@@ -1614,23 +1613,23 @@ class FTPHandler(AsyncChat):
 
     def log(self, msg):
         """Log a message, including additional identifying session data."""
-        logging.info("[%s]@%s:%s %s" % (self.username, self.remote_ip,
+        logger.info("[%s]@%s:%s %s" % (self.username, self.remote_ip,
                                         self.remote_port, msg))
 
     def logline(self, msg):
         """Log a line including additional indentifying session data."""
-        logging.debug("%s:%s %s" % (self.remote_ip, self.remote_port, msg))
+        logger.debug("%s:%s %s" % (self.remote_ip, self.remote_port, msg))
 
     def logerror(self, msg):
         """Log an error including additional indentifying session data."""
-        logging.error("[%s]@%s:%s %s" % (self.username, self.remote_ip,
+        logger.error("[%s]@%s:%s %s" % (self.username, self.remote_ip,
                                          self.remote_port, msg))
 
     def log_exception(self, instance):
         """Log an unhandled exception. 'instance' is the instance
         where the exception was generated.
         """
-        logging.exception("unhandled exception in instance %r", instance)
+        logger.exception("unhandled exception in instance %r", instance)
 
     def log_cmd(self, cmd, arg, respcode, respstr):
         """Log commands and responses in a standardized format.
@@ -2921,7 +2920,7 @@ else:
             try:
                 super(SSLConnection, self).close()
             except Exception:
-                logging.critical(traceback.format_exc())
+                logger.critical(traceback.format_exc())
 
         def send(self, data):
             try:

@@ -38,9 +38,8 @@ from pyftpdlib.authorizers import DummyAuthorizer, UnixAuthorizer, ...
 from pyftpdlib.servers import FTPServer, ...
 """
 
-import logging
 
-from pyftpdlib import __ver__
+from pyftpdlib import logger, __ver__
 from pyftpdlib.handlers import *
 from pyftpdlib.authorizers import *
 from pyftpdlib.servers import *
@@ -71,15 +70,15 @@ class CallEvery(object):
 
 def log(msg):
     _depwarn("pyftpdlib.ftpserver.log() is deprecated")
-    logging.info(msg)
+    logger.info(msg)
 
 def logline(msg):
     _depwarn("pyftpdlib.ftpserver.logline() is deprecated")
-    logging.debug(msg)
+    logger.debug(msg)
 
 def logerror(msg):
     _depwarn("pyftpdlib.ftpserver.logline() is deprecated")
-    logging.error(msg)
+    logger.error(msg)
 
 if __name__ == '__main__':
     from pyftpdlib import main

@@ -100,6 +100,7 @@ except ImportError:
     import dummy_threading as threading
 
 from pyftpdlib._compat import MAXSIZE, callable, b
+from pyftpdlib import logger
 
 
 _read = asyncore.read
@@ -145,7 +146,7 @@ class _Scheduler(object):
             try:
                 call.call()
             except Exception:
-                logging.error(traceback.format_exc())
+                logger.error(traceback.format_exc())
 
         # remove cancelled tasks and re-heapify the queue if the
         # number of cancelled tasks is more than the half of the
@@ -384,9 +385,9 @@ class _IOLoop(object):
             except OSError:
                 err = sys.exc_info()[1]
                 if err.args[0] != errno.EBADF:
-                    logging.error(traceback.format_exc())
+                    logger.error(traceback.format_exc())
             except Exception:
-                logging.error(traceback.format_exc())
+                logger.error(traceback.format_exc())
         self.socket_map.clear()
 
         # free scheduled functions
@@ -395,7 +396,7 @@ class _IOLoop(object):
                 if not x.cancelled:
                     x.cancel()
             except Exception:
-                logging.error(traceback.format_exc())
+                logger.error(traceback.format_exc())
         del self.sched._tasks[:]
 
 

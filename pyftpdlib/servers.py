@@ -65,9 +65,9 @@ import socket
 import traceback
 import sys
 import errno
-import logging
 import select
 
+from pyftpdlib import logger
 from pyftpdlib.ioloop import Acceptor, IOLoop
 
 
@@ -146,9 +146,9 @@ class FTPServer(Acceptor):
             return self._map_len() <= self.max_cons
 
     def _log_start(self):
-        if not logging.getLogger().handlers:
+        if not logger.getLogger().handlers:
             # If we get to this point it means the user hasn't
-            # configured logging. We want to log by default so
+            # configured logger. We want to log by default so
             # we configure logging ourselves so that it will
             # print to stderr.
             from pyftpdlib.ioloop import _config_logging
@@ -159,13 +159,13 @@ class FTPServer(Acceptor):
                                      self.handler.passive_ports[-1])
         else:
             pasv_ports = None
-        logging.info(">>> starting FTP server on %s:%s <<<" % self.address)
-        logging.info("poller: %r", self.ioloop.__class__)
-        logging.info("masquerade (NAT) address: %s",
-                     self.handler.masquerade_address)
-        logging.info("passive ports: %s", pasv_ports)
+        logger.info(">>> starting FTP server on %s:%s <<<" % self.address)
+        logger.info("poller: %r", self.ioloop.__class__)
+        logger.info("masquerade (NAT) address: %s",
+                    self.handler.masquerade_address)
+        logger.info("passive ports: %s", pasv_ports)
         if os.name == 'posix':
-            logging.info("use sendfile(2): %s", self.handler.use_sendfile)
+            logger.info("use sendfile(2): %s", self.handler.use_sendfile)
 
     def serve_forever(self, timeout=None, blocking=True, log_start_stop=True):
         """Start serving.
@@ -188,8 +188,8 @@ class FTPServer(Acceptor):
             pass
         if blocking:
             if log:
-                logging.info(">>> shutting down FTP server (%s active fds) <<<",
-                             self._map_len())
+                logger.info(">>> shutting down FTP server (%s active fds) <<<",
+                            self._map_len())
             self.close_all()
 
     def handle_accepted(self, sock, addr):
@@ -200,7 +200,7 @@ class FTPServer(Acceptor):
             handler = self.handler(sock, self, ioloop=self.ioloop)
             if not handler.connected:
                 return
-            logging.info("[]%s:%s Connected." % addr[:2])
+            logger.info("[]%s:%s Connected." % addr[:2])
             ip = addr[0]
             self.ip_map.append(ip)
 
@@ -234,7 +234,7 @@ class FTPServer(Acceptor):
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=143
             # - http://code.google.com/p/pyftpdlib/issues/detail?id=166
             # - https://groups.google.com/forum/#!topic/pyftpdlib/h7pPybzAx14
-            logging.error(traceback.format_exc())
+            logger.error(traceback.format_exc())
             if handler is not None:
                 handler.close()
             else:
@@ -246,7 +246,7 @@ class FTPServer(Acceptor):
         try:
             raise
         except Exception:
-            logging.error(traceback.format_exc())
+            logger.error(traceback.format_exc())
         self.close()
 
     def close_all(self):
@@ -325,8 +325,8 @@ class _SpawnerBase(FTPServer):
                             try:
                                 select.select([fd], [], [], 0)
                             except select.error:
-                                logging.info("discarding broken socket %r",
-                                             socket_map[fd])
+                                logger.info("discarding broken socket %r",
+                                            socket_map[fd])
                                 del socket_map[fd]
                     else:
                         raise
@@ -361,7 +361,7 @@ class _SpawnerBase(FTPServer):
 
     def _log_start(self):
         FTPServer._log_start(self)
-        logging.info("dispatcher: %r", self.__class__)
+        logger.info("dispatcher: %r", self.__class__)
 
     def serve_forever(self, timeout=None, blocking=True, log_start_stop=True):
         self._exit.clear()
@@ -374,8 +374,8 @@ class _SpawnerBase(FTPServer):
             pass
         if blocking:
             if log:
-                logging.info(">>> shutting down FTP server (%s active " \
-                             "workers) <<<", self._map_len())
+                logger.info(">>> shutting down FTP server (%s active " \
+                            "workers) <<<", self._map_len())
             self.close_all()
 
     def close_all(self):
