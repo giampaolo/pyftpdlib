@@ -66,6 +66,7 @@ import traceback
 import sys
 import errno
 import select
+import logging
 
 from pyftpdlib import logger
 from pyftpdlib.ioloop import Acceptor, IOLoop
@@ -146,7 +147,7 @@ class FTPServer(Acceptor):
             return self._map_len() <= self.max_cons
 
     def _log_start(self):
-        if not logger.getLogger().handlers:
+        if not logging.getLogger().handlers:
             # If we get to this point it means the user hasn't
             # configured logger. We want to log by default so
             # we configure logging ourselves so that it will
@@ -167,7 +168,7 @@ class FTPServer(Acceptor):
         if os.name == 'posix':
             logger.info("use sendfile(2): %s", self.handler.use_sendfile)
 
-    def serve_forever(self, timeout=None, blocking=True, log_start_stop=True):
+    def serve_forever(self, timeout=None, blocking=True, handle_exit=True):
         """Start serving.
 
          - (float) timeout: the timeout passed to the underlying IO
@@ -177,20 +178,26 @@ class FTPServer(Acceptor):
            timeout of the next scheduled call next to expire soonest
            (if any).
 
-         - (bool) log_start_stop: whether log on server start and stop.
+         - (bool) handle_exit: when True catches KeyboardInterrupt and
+           SystemExit exceptions (generally caused by SIGTERM / SIGINT
+           signals) and gracefully exits after cleaning up resources.
+           Also, logs server start and stop.
         """
-        log = log_start_stop and blocking == True
-        if log:
-            self._log_start()
-        try:
-            self.ioloop.loop(timeout, blocking)
-        except (KeyboardInterrupt, SystemExit):
-            pass
-        if blocking:
+        if handle_exit:
+            log = handle_exit and blocking == True
             if log:
-                logger.info(">>> shutting down FTP server (%s active fds) <<<",
-                            self._map_len())
-            self.close_all()
+                self._log_start()
+            try:
+                self.ioloop.loop(timeout, blocking)
+            except (KeyboardInterrupt, SystemExit):
+                pass
+            if blocking:
+                if log:
+                    logger.info(">>> shutting down FTP server (%s active fds) <<<",
+                                self._map_len())
+                self.close_all()
+        else:
+            self.ioloop.loop(timeout, blocking)
 
     def handle_accepted(self, sock, addr):
         """Called when remote client initiates a connection."""
@@ -363,20 +370,23 @@ class _SpawnerBase(FTPServer):
         FTPServer._log_start(self)
         logger.info("dispatcher: %r", self.__class__)
 
-    def serve_forever(self, timeout=None, blocking=True, log_start_stop=True):
+    def serve_forever(self, timeout=None, blocking=True, handle_exit=True):
         self._exit.clear()
-        log = log_start_stop and blocking == True
-        if log:
-            self._log_start()
-        try:
-            self.ioloop.loop(timeout, blocking)
-        except (KeyboardInterrupt, SystemExit):
-            pass
-        if blocking:
+        if handle_exit:
+            log = handle_exit and blocking == True
             if log:
-                logger.info(">>> shutting down FTP server (%s active " \
-                            "workers) <<<", self._map_len())
-            self.close_all()
+                self._log_start()
+            try:
+                self.ioloop.loop(timeout, blocking)
+            except (KeyboardInterrupt, SystemExit):
+                pass
+            if blocking:
+                if log:
+                    logger.info(">>> shutting down FTP server (%s active " \
+                                "workers) <<<", self._map_len())
+                self.close_all()
+        else:
+            self.ioloop.loop(timeout, blocking)
 
     def close_all(self):
         tasks = self._active_tasks[:]
