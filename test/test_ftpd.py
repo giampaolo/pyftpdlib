@@ -61,7 +61,7 @@ except ImportError:
 
 import pyftpdlib
 from pyftpdlib.ioloop import IOLoop
-from pyftpdlib.handlers import FTPHandler, DTPHandler
+from pyftpdlib.handlers import FTPHandler, DTPHandler, SUPPORTS_HYBRID_IPV6
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.authorizers import DummyAuthorizer, AuthenticationFailed
@@ -96,25 +96,8 @@ def try_address(host, port=0, family=socket.AF_INET):
         sock.close()
         return True
 
-def support_hybrid_ipv6():
-    """Return True if it is possible to use hybrid IPv6/IPv4 sockets
-    on this platform.
-    """
-    # Note: IPPROTO_IPV6 constant is broken on Windws, see:
-    # http://bugs.python.org/issue6926
-    sock = socket.socket(socket.AF_INET6)
-    try:
-        try:
-            return not sock.getsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY)
-        except (socket.error, AttributeError):
-            return False
-    finally:
-        sock.close()
-
-
 SUPPORTS_IPV4 = try_address('127.0.0.1')
 SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
-SUPPORTS_HYBRID_IPV6 = SUPPORTS_IPV6 and support_hybrid_ipv6()
 SUPPORTS_SENDFILE = sendfile is not None
 
 def safe_remove(*files):
@@ -2748,15 +2731,16 @@ class _TestNetworkProtocols(unittest.TestCase):
             return str(err)
 
     def test_eprt(self):
-        # test wrong proto
-        try:
-            self.client.sendcmd('eprt |%s|%s|%s|' % (self.other_proto,
-                                self.server.host, self.server.port))
-        except ftplib.error_perm:
-            err = sys.exc_info()[1]
-            self.assertEqual(str(err)[0:3], "522")
-        else:
-            self.fail("Exception not raised")
+        if not SUPPORTS_HYBRID_IPV6:
+            # test wrong proto
+            try:
+                self.client.sendcmd('eprt |%s|%s|%s|' % (self.other_proto,
+                                    self.server.host, self.server.port))
+            except ftplib.error_perm:
+                err = sys.exc_info()[1]
+                self.assertEqual(str(err)[0:3], "522")
+            else:
+                self.fail("Exception not raised")
 
         # test bad args
         msg = "501 Invalid EPRT format."
@@ -2950,6 +2934,40 @@ class TestIPv6MixedEnvironment(unittest.TestCase):
         ip = self.client.makepasv()[0]
         self.assertFalse(ip.startswith("::ffff:"))
 
+    def test_eprt_v4(self):
+        self.client = self.client_class()
+        self.client.connect('127.0.0.1', self.server.port)
+        self.client.sock.settimeout(2)
+        self.client.login(USER, PASSWD)
+        # test connection
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind((self.client.sock.getsockname()[0], 0))
+        sock.listen(5)
+        sock.settimeout(2)
+        ip, port =  sock.getsockname()[:2]
+        self.client.sendcmd('eprt |1|%s|%s|' % (ip, port))
+        try:
+            try:
+                sock.accept()
+            except socket.timeout:
+                self.fail("Server didn't connect to passive socket")
+        finally:
+            sock.close()
+
+    def test_epsv_v4(self):
+        mlstline = lambda cmd: self.client.voidcmd(cmd).split('\n')[1]
+        self.client = self.client_class()
+        self.client.connect('127.0.0.1', self.server.port)
+        self.client.sock.settimeout(TIMEOUT)
+        self.client.login(USER, PASSWD)
+        host, port = ftplib.parse229(self.client.sendcmd('EPSV'),
+                     self.client.sock.getpeername())
+        self.assertEqual('127.0.0.1', host)
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(TIMEOUT)
+        s.connect((host, port))
+        self.assertTrue(mlstline('mlst /').endswith('/'))
+        s.close()
 
 class TestCornerCases(unittest.TestCase):
     """Tests for any kind of strange situation for the server to be in,

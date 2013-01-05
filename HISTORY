@@ -70,6 +70,8 @@ Bugfixes:
 
  * Issue 229: backslashes on UNIX are not handled properly.
 
+ * Issue 232: hybrid IPv4/IPv6 support is broken.  (patch by Claus Klein)
+
 New modules:
 
 All the code contained in pyftpdlib/ftpserver.py and pyftpdlib/contrib

@@ -174,6 +174,27 @@ def _strerror(err):
     else:
         return str(err)
 
+def _support_hybrid_ipv6():
+    """Return True if it is possible to use hybrid IPv6/IPv4 sockets
+    on this platform.
+    """
+    # Note: IPPROTO_IPV6 constant is broken on Windows, see:
+    # http://bugs.python.org/issue6926
+    sock = None
+    try:
+        try:
+            if not socket.has_ipv6:
+                return False
+            sock = socket.socket(socket.AF_INET6)
+            return not sock.getsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY)
+        except (socket.error, AttributeError):
+            return False
+    finally:
+        if sock is not None:
+            sock.close()
+
+SUPPORTS_HYBRID_IPV6 = _support_hybrid_ipv6()
+
 class _FileReadWriteError(OSError):
     """Exception raised when reading or writing a file during a transfer."""
 
@@ -1810,7 +1831,8 @@ class FTPHandler(AsyncChat):
             return
 
         if af == "1":
-            if self._af != socket.AF_INET:
+            # test if AF_INET6 and IPV6_V6ONLY
+            if self._af == socket.AF_INET6 and not SUPPORTS_HYBRID_IPV6:
                 self.respond('522 Network protocol not supported (use 2).')
             else:
                 try:
