@@ -74,7 +74,7 @@ from pyftpdlib.ioloop import Acceptor, IOLoop
 
 
 __all__ = ['FTPServer']
-
+_BSD = 'bsd' in sys.platform
 
 # ===================================================================
 # --- base class
@@ -273,6 +273,9 @@ class _SpawnerBase(FTPServer):
     Not supposed to be used.
     """
 
+    # how many seconds to wait when join()ing parent's threads
+    # or processes
+    join_timeout = 5
     _lock = None
     _exit = None
 
@@ -394,26 +397,51 @@ class _SpawnerBase(FTPServer):
         # this must be set after getting active tasks as it causes
         # thread objects to get out of the list too soon
         self._exit.set()
-        bsd = 'bsd' in sys.platform
         if tasks and hasattr(tasks[0], 'terminate'):
+            # we're dealing with subprocesses
             for t in tasks:
                 try:
-                    # XXX - on FreeBSD using SIGTERM doesn't work as
-                    # the process hangs on kqueue.control() or 
-                    # select.select(); not sure what to do about that.
-                    if not bsd:
+                    if not _BSD:
                         t.terminate()
                     else:
+                        # XXX - On FreeBSD using SIGTERM doesn't work
+                        # as the process hangs on kqueue.control() or
+                        # select.select(). Use SIGKILL instead.
                         os.kill(t.pid, signal.SIGKILL)
                 except OSError:
                     err = sys.exc_info()[1]
                     if err.errno != errno.ESRCH:
                         raise
-        for t in tasks:
-            if t.is_alive():
-                t.join()
+
+        self._wait_for_tasks(tasks)
         del self._active_tasks[:]
         FTPServer.close_all(self)
+
+    def _wait_for_tasks(self, tasks):
+        """Wait for threads or subprocesses to terminate."""
+        warn = logger.warning
+        for t in tasks:
+            t.join(self.join_timeout)
+            if t.is_alive():
+                # Thread or process is still alive. If it's a process
+                # attempt to send SIGKILL as last resort.
+                # Set timeout to None so that we will exit immediately
+                # in case also other threads/processes are hanging.
+                self.join_timeout = None
+                if hasattr(t, 'terminate'):
+                    msg = "could not terminate process %r" % t
+                    if not _BSD:
+                        warn(msg + "; sending SIGKILL as last resort")
+                        try:
+                            os.kill(t.pid, signal.SIGKILL)
+                        except OSError:
+                            err = sys.exc_info()[1]
+                            if err.errno != errno.ESRCH:
+                                raise
+                    else:
+                        warn(msg)
+                else:
+                    warn("thread %r didn't terminate; ignoring it", t)
 
 
 try:
