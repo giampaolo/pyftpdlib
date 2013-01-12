@@ -67,6 +67,7 @@ import sys
 import errno
 import select
 import logging
+import signal
 
 from pyftpdlib import logger
 from pyftpdlib.ioloop import Acceptor, IOLoop
@@ -393,10 +394,17 @@ class _SpawnerBase(FTPServer):
         # this must be set after getting active tasks as it causes
         # thread objects to get out of the list too soon
         self._exit.set()
+        bsd = 'bsd' in sys.platform
         if tasks and hasattr(tasks[0], 'terminate'):
             for t in tasks:
                 try:
-                    t.terminate()
+                    # XXX - on FreeBSD using SIGTERM doesn't work as
+                    # the process hangs on kqueue.control() or 
+                    # select.select(); not sure what to do about that.
+                    if not bsd:
+                        t.terminate()
+                    else:
+                        os.kill(t.pid, signal.SIGKILL)
                 except OSError:
                     err = sys.exc_info()[1]
                     if err.errno != errno.ESRCH:
