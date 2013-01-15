@@ -772,6 +772,17 @@ class Connector(Acceptor):
             try:
                 self.create_socket(af, socktype)
                 if source_address:
+                    if source_address[0].startswith('::ffff:'):
+                        # In this scenario, the server has an IPv6 socket, but
+                        # the remote client is using IPv4 and its address is
+                        # represented as an IPv4-mapped IPv6 address which
+                        # looks like this ::ffff:151.12.5.65, see:
+                        # http://en.wikipedia.org/wiki/IPv6#IPv4-mapped_addresses
+                        # http://tools.ietf.org/html/rfc3493.html#section-3.7
+                        # We truncate the first bytes to make it look like a
+                        # common IPv4 address.
+                        source_address = (source_address[0][7:],
+                                          source_address[1])
                     self.bind(source_address)
                 self.connect((host, port))
             except socket.error:
