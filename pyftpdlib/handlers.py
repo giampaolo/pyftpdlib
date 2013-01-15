@@ -545,6 +545,19 @@ class DTPHandler(AsyncChat):
                                                  self.handle_timeout,
                                                  _errback=self.handle_error)
 
+    def __repr__(self):
+        try:
+            addr = "%s:%s" % self.socket.getpeername()[:2]
+        except socket.error:
+            addr = None
+        status = [self.__class__.__module__+ "." + self.__class__.__name__]
+        status.append("(addr=%s, user=%r, receive=%r, file=%r)" \
+                      % (addr, self.cmd_channel.username or '',
+                         self.receive, getattr(self.file_obj, 'name', '')))
+        return '<%s at %#x>' % (' '.join(status), id(self))
+
+    __str__ = __repr__
+
     def _use_sendfile(self, producer):
         return self.cmd_channel.use_sendfile \
            and isinstance(producer, FileProducer) \
@@ -1163,6 +1176,14 @@ class FTPHandler(AsyncChat):
         if self.timeout:
             self._idler = self.ioloop.call_later(self.timeout, self.handle_timeout,
                                                  _errback=self.handle_error)
+
+    def __repr__(self):
+        status = [self.__class__.__module__+ "." + self.__class__.__name__]
+        status.append("(addr=%s:%s, user=%r)" % (self.remote_ip,
+                      self.remote_port, self.username or ''))
+        return '<%s at %#x>' % (' '.join(status), id(self))
+
+    __str__ = __repr__
 
     def handle(self):
         """Return a 220 'ready' response to the client over the command

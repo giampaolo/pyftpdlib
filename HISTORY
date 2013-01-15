@@ -51,6 +51,8 @@ Enhancements:
  * Issue 231: FTPHandler.ftp_* methods implementing filesystem-related commands
    now return a meaningful value on success (tipically the path name).
 
+ * Issue 234: FTPHandler and DTPHandler class provide a nice __repr__.
+
 Bugfixes:
 
  * Issue 131: IPv6 dual-stack support was broken.
