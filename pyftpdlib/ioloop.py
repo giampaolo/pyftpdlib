@@ -440,7 +440,7 @@ class Select(_IOLoop):
     def poll(self, timeout):
         try:
             r, w, e = select.select(self._r, self._w, [], timeout)
-        except select.error:  # XXX catch EnvironmentError?
+        except select.error:
             err = sys.exc_info()[1]
             if err.args[0] == errno.EINTR:
                 return
@@ -491,8 +491,9 @@ class _BasePollEpoll(_IOLoop):
     def poll(self, timeout):
         try:
             events = self._poller.poll(timeout or -1)  # -1 waits indefinitely
-        except (EnvironmentError, select.error):  # XXX expect select.error?
+        except (IOError, select.error):  # for epoll() and poll() respectively
             err = sys.exc_info()[1]
+            print err
             if err.args[0] == errno.EINTR:
                 return
             raise
@@ -622,7 +623,14 @@ if hasattr(select, 'kqueue'):
                        _WRITE=select.KQ_FILTER_WRITE,
                        _EOF=select.KQ_EV_EOF,
                        _ERROR=select.KQ_EV_ERROR):
-            kevents = self._kqueue.control(None, _len(self.socket_map), timeout)
+            try:
+                kevents = self._kqueue.control(None, _len(self.socket_map),
+                                               timeout)
+            except OSError:
+                err = sys.exc_info()[1]
+                if err.args[0] == errno.EINTR:
+                    return
+                raise
             for kevent in kevents:
                 inst = self.socket_map.get(kevent.ident)
                 if inst is None:
