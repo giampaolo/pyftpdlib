@@ -83,7 +83,6 @@ namespaces has been moved here:
  * pyftpdlib.filesystems
  * pyftpdlib.servers
  * pyftpdlib.handlers
- * pyftpdlib.logs
 
 New APIs:
 
@@ -100,7 +99,7 @@ New APIs:
 Deprecated namespaces:
 
  * pyftpdlib.ftpserver
- * pyftpdlib.contrib/*
+ * pyftpdlib.contrib.*
 
 Incompatible API changes:
 
@@ -118,8 +117,18 @@ Incompatible API changes:
   ----------------------------------------------------------------------------
 
   Same for pyftpflib.contribs namespace which is deprecated.
+
+  -------------------------------------------------------------------------------------------
+  BEFORE                                           | NOW
+  -------------------------------------------------------------------------------------------
+  pyftpdlib.contrib.handlers.TLS_FTPHandler        | pyftpdlib.handlers.TLS_FTPHandler
+  pyftpdlib.contrib.authorizers.UnixAuthorizer     | pyftpdlib.authorizers.UnixAuthorizer
+  pyftpdlib.contrib.authorizers.WindowsAuthorizer  | pyftpdlib.authorizers.WindowsAuthorizer
+  pyftpdlib.contrib.filesystems.UnixFilesystem     | pyftpdlib.filesystems.UnixFilesystem
+  -------------------------------------------------------------------------------------------
+
   Both imports from pyftpdlib.ftpserver and pyftpdlib.contrib.* will still work
-  though and will raise a DeprecationWarning.
+  though and will raise a DeprecationWarning exception.
 
  * DummyAuthorizer.validate_authentication() signature has changed. A third
    'handler' argument is now expected.
@@ -130,7 +139,7 @@ Incompatible API changes:
    (see issue 213)
 
  * ftpserver.py's log(), logline() and logerror() functions are deprecated.
-   logging module should be used instead.
+   logging module is now used instead.
 
  * Unicode is now used instead of bytes pretty much everywhere.
 
