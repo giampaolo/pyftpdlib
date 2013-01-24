@@ -1630,6 +1630,8 @@ class FTPHandler(AsyncChat):
                 self.data_channel = None
 
         username = self.username
+        if self.authenticated and username:
+            self.on_logout(username)
         self.authenticated = False
         self.username = ""
         self.password = ""
@@ -1640,8 +1642,6 @@ class FTPHandler(AsyncChat):
         self._in_dtp_queue = None
         self._rnfr = None
         self._out_dtp_queue = None
-        if username:
-            self.on_logout(username)
 
     def run_as_current_user(self, function, *args, **kwargs):
         """Execute a function impersonating the current logged-in user."""
@@ -1945,7 +1945,7 @@ class FTPHandler(AsyncChat):
         else:
             self._shutdown_connecting_dtp()
             self.close_when_done()
-        if self.username:
+        if self.authenticated and self.username:
             self.on_logout(self.username)
 
         # --- data transferring

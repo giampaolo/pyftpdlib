@@ -2693,6 +2693,23 @@ class TestCallbacks(unittest.TestCase):
         self.tearDown()
         self.assertEqual(users, [USER, 'anonymous'])
 
+    def test_on_logout_no_pass(self):
+        # make sure on_logout() is not called if USER was provided
+        # but not PASS
+        users = []
+
+        class TestHandler(FTPHandler):
+
+            def on_logout(self, username):
+                users.append(username)
+
+        self._setUp(TestHandler, login=False)
+        self.client.sendcmd("user foo")
+        self.client.quit()
+        # shut down the server to avoid race conditions
+        self.tearDown()
+        self.assertEqual(users, [])
+
 
 class _TestNetworkProtocols(unittest.TestCase):
     """Test PASV, EPSV, PORT and EPRT commands.
