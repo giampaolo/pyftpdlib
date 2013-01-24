@@ -496,10 +496,10 @@ class DTPHandler(AsyncChat):
     ac_in_buffer_size = 65536
     ac_out_buffer_size = 65536
 
-    def __init__(self, sock_obj, cmd_channel):
+    def __init__(self, sock, cmd_channel):
         """Initialize the command channel.
 
-         - (instance) sock_obj: the socket object instance of the newly
+         - (instance) sock: the socket object instance of the newly
             established connection.
          - (instance) cmd_channel: the command channel class instance.
         """
@@ -523,7 +523,7 @@ class DTPHandler(AsyncChat):
         self._idler = None
         self._initialized = False
         try:
-            AsyncChat.__init__(self, sock_obj, ioloop=cmd_channel.ioloop)
+            AsyncChat.__init__(self, sock, ioloop=cmd_channel.ioloop)
         except socket.error:
             err = sys.exc_info()[1]
             # if we get an exception here we want the dispatcher
@@ -846,8 +846,8 @@ class ThrottledDTPHandler(DTPHandler):
     write_limit = 0
     auto_sized_buffers = True
 
-    def __init__(self, sock_obj, cmd_channel):
-        super(ThrottledDTPHandler, self).__init__(sock_obj, cmd_channel)
+    def __init__(self, sock, cmd_channel):
+        super(ThrottledDTPHandler, self).__init__(sock, cmd_channel)
         self._timenext = 0
         self._datacount = 0
         self.sleeping = False
@@ -3088,8 +3088,8 @@ else:
     class TLS_DTPHandler(SSLConnection, DTPHandler):
         """A DTPHandler subclass supporting TLS/SSL."""
 
-        def __init__(self, sock_obj, cmd_channel):
-            super(TLS_DTPHandler, self).__init__(sock_obj, cmd_channel)
+        def __init__(self, sock, cmd_channel):
+            super(TLS_DTPHandler, self).__init__(sock, cmd_channel)
             if self.cmd_channel._prot:
                 self.secure_connection(self.cmd_channel.ssl_context)
 
