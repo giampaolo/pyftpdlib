@@ -194,11 +194,6 @@ def cleanup():
 # commented out as per bug http://bugs.python.org/issue10354
 #tempfile.template = 'tmp-pyftpdlib'
 
-# lower this threshold so that the scheduler internal queue
-# gets re-heapified more often
-#ftpserver._scheduler.cancellations_threshold = 5  # XXX
-# XXX this code is old and no longer works; fix it.
-
 
 class FTPd(threading.Thread):
     """A threaded FTP server used for running tests.
