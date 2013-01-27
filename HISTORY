@@ -53,6 +53,10 @@ Enhancements:
 
  * Issue 234: FTPHandler and DTPHandler class provide a nice __repr__.
 
+ * Issue 235: FTPServer.serve_forever() has a new handle_exit parameter which
+   can be set to False in order to avoid handling SIGTERM/SIGINT signals and
+   logging server start and stop.
+
 Bugfixes:
 
  * Issue 131: IPv6 dual-stack support was broken.

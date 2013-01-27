@@ -3071,7 +3071,6 @@ class TestCornerCases(unittest.TestCase):
     def test_error_on_callback(self):
         # test that the server do not crash in case an error occurs
         # while firing a scheduled function
-        # TODO silence logerror message
         self.tearDown()
         server = FTPServer((HOST, 0), FTPHandler)
         logger = logging.getLogger('pyftpdlib')
