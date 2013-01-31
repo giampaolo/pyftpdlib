@@ -2767,8 +2767,9 @@ class _TestNetworkProtocols(unittest.TestCase):
         self.assertEqual(self.cmdresp('eprt |%s|%s|-1|' % (self.proto,
                                                           self.HOST)), msg)
         # port < 1024
-        self.assertEqual(self.cmdresp('eprt |%s|%s|222|' % (self.proto,
-                       self.HOST)), "501 Can't connect over a privileged port.")
+        resp = self.cmdresp('eprt |%s|%s|222|' % (self.proto, self.HOST))
+        self.assertEqual(resp[:3], '501')
+        self.assertIn('privileged port', resp)
         # proto > 2
         _cmd = 'eprt |3|%s|%s|' % (self.server.host, self.server.port)
         self.assertRaises(ftplib.error_perm,  self.client.sendcmd, _cmd)
@@ -2858,15 +2859,17 @@ class TestIPv4Environment(_TestNetworkProtocols):
         ae(self.cmdresp('port 256,0,0,1,1,1'), msg)    # oct > 255
         ae(self.cmdresp('port 127,0,0,1,256,1'), msg)  # port > 65535
         ae(self.cmdresp('port 127,0,0,1,-1,0'), msg)   # port < 0
-        msg = "501 Can't connect over a privileged port."
-        ae(self.cmdresp('port %s,1,1' % self.HOST.replace('.',',')),msg) # port < 1024
+        resp = self.cmdresp('port %s,1,1' % self.HOST.replace('.',',')) # port < 1024
+        self.assertEqual(resp[:3], '501')
+        self.assertIn('privileged port', resp)
         if "1.2.3.4" != self.HOST:
-            msg = "501 Can't connect to a foreign address."
-            ae(self.cmdresp('port 1,2,3,4,4,4'), msg)
+            resp = self.cmdresp('port 1,2,3,4,4,4')
+            assert 'foreign address' in resp, resp
 
     def test_eprt_v4(self):
-        self.assertEqual(self.cmdresp('eprt |1|0.10.10.10|2222|'),
-                         "501 Can't connect to a foreign address.")
+        resp = self.cmdresp('eprt |1|0.10.10.10|2222|')
+        self.assertEqual(resp[:3], '501')
+        self.assertIn('foreign address', resp)
 
     def test_pasv_v4(self):
         host, port = ftplib.parse227(self.client.sendcmd('pasv'))
@@ -2899,8 +2902,9 @@ class TestIPv6Environment(_TestNetworkProtocols):
         self.client.makepasv()
 
     def test_eprt_v6(self):
-        self.assertEqual(self.cmdresp('eprt |2|::foo|2222|'),
-                         "501 Can't connect to a foreign address.")
+        resp = self.cmdresp('eprt |2|::foo|2222|')
+        self.assertEqual(resp[:3], '501')
+        self.assertIn('foreign address', resp)
 
 
 class TestIPv6MixedEnvironment(unittest.TestCase):
