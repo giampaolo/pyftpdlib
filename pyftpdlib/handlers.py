@@ -58,7 +58,7 @@ except ImportError:
 
 from pyftpdlib import logger, __ver__
 from pyftpdlib.filesystems import FilesystemError, AbstractedFS
-from pyftpdlib._compat import PY3, b, u, getcwdu, unicode, xrange
+from pyftpdlib._compat import PY3, b, u, getcwdu, unicode, xrange, next
 from pyftpdlib.ioloop import AsyncChat, Connector, Acceptor, _DISCONNECTED
 from pyftpdlib.authorizers import (DummyAuthorizer, AuthenticationFailed,
                                    AuthorizerError)

@@ -272,7 +272,20 @@ class FTPd(threading.Thread):
         self.join()
 
 
-class TestAbstractedFS(unittest.TestCase):
+class TestCase(unittest.TestCase):
+
+    # compatibility with python < 2.7
+    if not hasattr(unittest.TestCase, 'assertIn'):
+        def assertIn(self, member, container, msg=None):
+            if member not in container:
+                self.fail(msg or '%r not found in %r' % (member, container))
+
+        def assertNotIn(self, member, container, msg=None):
+            if member in container:
+                self.fail(msg or '%r not found in %r' % (member, container))
+
+
+class TestAbstractedFS(TestCase):
     """Test for conversion utility methods of AbstractedFS class."""
 
     def setUp(self):
@@ -495,7 +508,7 @@ class TestAbstractedFS(unittest.TestCase):
                 file.close()
 
 
-class TestDummyAuthorizer(unittest.TestCase):
+class TestDummyAuthorizer(TestCase):
     """Tests for DummyAuthorizer class."""
 
     # temporarily change warnings to exceptions for the purposes of testing
@@ -645,7 +658,7 @@ class TestDummyAuthorizer(unittest.TestCase):
             self.assertEqual(auth.has_perm(USER, 'w', self.tempdir.upper()), True)
 
 
-class TestCallLater(unittest.TestCase):
+class TestCallLater(TestCase):
     """Tests for CallLater class."""
 
     def setUp(self):
@@ -714,7 +727,7 @@ class TestCallLater(unittest.TestCase):
         self.assertEqual(l, [True])
 
 
-class TestCallEvery(unittest.TestCase):
+class TestCallEvery(TestCase):
     """Tests for CallEvery class."""
 
     def setUp(self):
@@ -792,7 +805,7 @@ class TestCallEvery(unittest.TestCase):
         self.scheduler()
         self.assertTrue(l)
 
-class TestFtpAuthentication(unittest.TestCase):
+class TestFtpAuthentication(TestCase):
     "test: USER, PASS, REIN."
     server_class = FTPd
     client_class = ftplib.FTP
@@ -941,7 +954,7 @@ class TestFtpAuthentication(unittest.TestCase):
         conn.close()
 
 
-class TestFtpDummyCmds(unittest.TestCase):
+class TestFtpDummyCmds(TestCase):
     "test: TYPE, STRU, MODE, NOOP, SYST, ALLO, HELP, SITE HELP"
     server_class = FTPd
     client_class = ftplib.FTP
@@ -1051,7 +1064,7 @@ class TestFtpDummyCmds(unittest.TestCase):
         self.assertTrue('type*;perm;size;modify;' in mlst())
 
 
-class TestFtpCmdsSemantic(unittest.TestCase):
+class TestFtpCmdsSemantic(TestCase):
     server_class = FTPd
     client_class = ftplib.FTP
     arg_cmds = ['allo','appe','dele','eprt','mdtm','mode','mkd','opts','port',
@@ -1113,7 +1126,7 @@ class TestFtpCmdsSemantic(unittest.TestCase):
         self.client.sendcmd('quit')
 
 
-class TestFtpFsOperations(unittest.TestCase):
+class TestFtpFsOperations(TestCase):
     "test: PWD, CWD, CDUP, SIZE, RNFR, RNTO, DELE, MKD, RMD, MDTM, STAT"
     server_class = FTPd
     client_class = ftplib.FTP
@@ -1300,7 +1313,7 @@ class TestFtpFsOperations(unittest.TestCase):
                 self.assertEqual(getmode(), '0555')
 
 
-class TestFtpStoreData(unittest.TestCase):
+class TestFtpStoreData(TestCase):
     """Test STOR, STOU, APPE, REST, TYPE."""
     server_class = FTPd
     client_class = ftplib.FTP
@@ -1613,7 +1626,7 @@ if SUPPORTS_SENDFILE:
             self.server.handler.use_sendfile = True
 
 
-class TestFtpRetrieveData(unittest.TestCase):
+class TestFtpRetrieveData(TestCase):
     "Test RETR, REST, TYPE"
     server_class = FTPd
     client_class = ftplib.FTP
@@ -1728,7 +1741,7 @@ if SUPPORTS_SENDFILE:
             self.server.handler.use_sendfile = True
 
 
-class TestFtpListingCmds(unittest.TestCase):
+class TestFtpListingCmds(TestCase):
     """Test LIST, NLST, argumented STAT."""
     server_class = FTPd
     client_class = ftplib.FTP
@@ -1889,7 +1902,7 @@ class TestFtpListingCmds(unittest.TestCase):
             AbstractedFS.getmtime = _getmtime
 
 
-class TestFtpAbort(unittest.TestCase):
+class TestFtpAbort(TestCase):
     "test: ABOR"
     server_class = FTPd
     client_class = ftplib.FTP
@@ -1985,7 +1998,7 @@ class TestFtpAbort(unittest.TestCase):
             self.assertEqual(self.client.getresp()[:3], '225')
 
 
-class TestTimeouts(unittest.TestCase):
+class TestTimeouts(TestCase):
     """Test idle-timeout capabilities of control and data channels.
     Some tests may fail on slow machines.
     """
@@ -2142,7 +2155,7 @@ class TestTimeouts(unittest.TestCase):
         s2.close()
 
 
-class TestConfigurableOptions(unittest.TestCase):
+class TestConfigurableOptions(TestCase):
     """Test those daemon options which are commonly modified by user."""
     server_class = FTPd
     client_class = ftplib.FTP
@@ -2388,7 +2401,7 @@ class TestConfigurableOptions(unittest.TestCase):
             self.assertFalse(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
 
 
-class TestCallbacks(unittest.TestCase):
+class TestCallbacks(TestCase):
     """Test FTPHandler class callback methods."""
     server_class = FTPd
     client_class = ftplib.FTP
@@ -2706,7 +2719,7 @@ class TestCallbacks(unittest.TestCase):
         self.assertEqual(users, [])
 
 
-class _TestNetworkProtocols(unittest.TestCase):
+class _TestNetworkProtocols(TestCase):
     """Test PASV, EPSV, PORT and EPRT commands.
 
     Do not use this class directly, let TestIPv4Environment and
@@ -2907,7 +2920,7 @@ class TestIPv6Environment(_TestNetworkProtocols):
         self.assertIn('foreign address', resp)
 
 
-class TestIPv6MixedEnvironment(unittest.TestCase):
+class TestIPv6MixedEnvironment(TestCase):
     """By running the server by specifying "::" as IP address the
     server is supposed to listen on all interfaces, supporting both
     IPv4 and IPv6 by using a single socket.
@@ -2985,7 +2998,7 @@ class TestIPv6MixedEnvironment(unittest.TestCase):
         self.assertTrue(mlstline('mlst /').endswith('/'))
         s.close()
 
-class TestCornerCases(unittest.TestCase):
+class TestCornerCases(TestCase):
     """Tests for any kind of strange situation for the server to be in,
     mainly referring to bugs signaled on the bug tracker.
     """
@@ -3109,7 +3122,7 @@ class TestCornerCases(unittest.TestCase):
         sock.close()
 
 
-class TestUnicodePathNames(unittest.TestCase):
+class TestUnicodePathNames(TestCase):
     """Test FTP commands and responses by using path names with non
     ASCII characters.
     """
@@ -3279,7 +3292,7 @@ class TestUnicodePathNames(unittest.TestCase):
             self.assertRaises(ftplib.error_perm, self.client.retrbinary,
                               'retr ' + TESTFN_UNICODE_2, dummy.write)
 
-class TestCommandLineParser(unittest.TestCase):
+class TestCommandLineParser(TestCase):
     """Test command line parser."""
     SYSARGV = sys.argv
     STDERR = sys.stderr
