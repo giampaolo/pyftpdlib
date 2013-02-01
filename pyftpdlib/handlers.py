@@ -57,7 +57,8 @@ try:
 except ImportError:
     sendfile = None
 
-from pyftpdlib import logger, __ver__
+from pyftpdlib import __ver__
+from pyftpdlib.log import logger
 from pyftpdlib.filesystems import FilesystemError, AbstractedFS
 from pyftpdlib._compat import PY3, b, u, getcwdu, unicode, xrange, next
 from pyftpdlib.ioloop import AsyncChat, Connector, Acceptor, _DISCONNECTED

@@ -69,7 +69,7 @@ import select
 import logging
 import signal
 
-from pyftpdlib import logger
+from pyftpdlib.log import logger
 from pyftpdlib.ioloop import Acceptor, IOLoop
 
 

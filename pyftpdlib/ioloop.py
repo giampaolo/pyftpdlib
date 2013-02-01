@@ -100,15 +100,11 @@ except ImportError:
     import dummy_threading as threading
 
 from pyftpdlib._compat import MAXSIZE, callable, b
-from pyftpdlib import logger
+from pyftpdlib.log import logger, _config_logging
 
 
 _read = asyncore.read
 _write = asyncore.write
-
-def _config_logging():
-    logging.basicConfig(format='[%(levelname)1.1s] %(message)s',
-                        level=logging.INFO)
 
 
 # ===================================================================

@@ -109,8 +109,6 @@ __date__    = 'XXXX-XX-XX'
 __author__  = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__     = 'http://code.google.com/p/pyftpdlib/'
 
-logger = logging.getLogger('pyftpdlib')
-
 def _depwarn(msg):
     """
     Force DeprecationWarning to be temporarily shown (it's been
