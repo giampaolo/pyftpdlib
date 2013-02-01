@@ -95,7 +95,7 @@ setup(
 
 
 # suggest to install pysendfile
-if os.name == 'posix':
+if os.name == 'posix' and sys.version_info >= (2, 5):
     try:
         import sendfile
         if hasattr(sendfile, 'has_sf_hdtr'):  # old 1.2.4 version
