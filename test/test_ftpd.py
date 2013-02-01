@@ -3292,6 +3292,7 @@ class TestUnicodePathNames(TestCase):
             self.assertRaises(ftplib.error_perm, self.client.retrbinary,
                               'retr ' + TESTFN_UNICODE_2, dummy.write)
 
+
 class TestCommandLineParser(TestCase):
     """Test command line parser."""
     SYSARGV = sys.argv
@@ -3403,7 +3404,7 @@ class TestCommandLineParser(TestCase):
         self.assertRaises(SystemExit, pyftpdlib.main)
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.ERROR)
 remove_test_files()
 
 def test_main(tests=None):

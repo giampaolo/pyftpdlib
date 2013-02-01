@@ -59,7 +59,8 @@ Enhancements:
 
  * Issue 236: big logging refactoring; by default only useful messages are
    logged (as opposed to *all* commands and responses exchanged by client and
-   server).
+   server).  Also, FTPHandler has a new 'log_prefix' attribute which can be used
+   to format every line logged.
 
 Bugfixes:
 
@@ -91,6 +92,7 @@ namespaces has been moved here:
  * pyftpdlib.filesystems
  * pyftpdlib.servers
  * pyftpdlib.handlers
+ * pyftpdlib.log
 
 New APIs:
 
@@ -103,6 +105,7 @@ New APIs:
    success.
  * FTPServer, FTPHandler, DTPHandler new ioloop attribute.
  * pyftpdlib.lib.ioloop.IOLoop class (not supposed to be used directly)
+ * pyftpdlib.handlers.FTPHandler.log_prefix
 
 Deprecated namespaces:
 
@@ -147,7 +150,8 @@ Incompatible API changes:
    (see issue 213)
 
  * ftpserver.py's log(), logline() and logerror() functions are deprecated.
-   logging module is now used instead.
+   logging module is now used instead. See:
+   http://code.google.com/p/billiejoex/wiki/Tutorial#4.2_-_Logging_management
 
  * Unicode is now used instead of bytes pretty much everywhere.
 

@@ -29,7 +29,7 @@
 #
 
 """
-Logging support for pyftpdlib, inspired from Tornado
+Logging support for pyftpdlib, inspired from Tornado's
 (http://www.tornadoweb.org/).
 
 This is not supposed to be imported/used directly.
@@ -45,6 +45,7 @@ except ImportError:
     curses = None
 
 # default logger
+
 logger = logging.getLogger('pyftpdlib')
 
 def _stderr_supports_color():

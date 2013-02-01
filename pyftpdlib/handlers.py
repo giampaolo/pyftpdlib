@@ -1033,10 +1033,15 @@ class FTPHandler(AsyncChat):
         significantly better performances (default True on all systems
         where it is supported).
 
-     - (str) unicode_errors: the error handler passed to ''.encode()
-       and ''.decode():
+     - (str) unicode_errors:
+       the error handler passed to ''.encode() and ''.decode():
        http://docs.python.org/library/stdtypes.html#str.decode
        (detaults to 'replace').
+
+     - (str) log_prefix:
+       the prefix string preceding any log line; all instance
+       attributes can be used as arguments.
+
 
     All relevant instance attributes initialized when client connects
     are reproduced below.  You may be interested in them in case you
@@ -1073,6 +1078,7 @@ class FTPHandler(AsyncChat):
     use_sendfile = sendfile is not None
     tcp_no_delay = hasattr(socket, "TCP_NODELAY")
     unicode_errors = 'replace'
+    log_prefix = '%(remote_ip)s:%(remote_port)s-[%(username)s]'
 
     def __init__(self, conn, server, ioloop=None):
         """Initialize the command channel.
@@ -1151,6 +1157,8 @@ class FTPHandler(AsyncChat):
             else:
                 self.handle_error()
             return
+        else:
+            self.log("FTP session opened (connect)")
 
         if hasattr(self.socket, 'family'):
             self._af = self.socket.family
@@ -1659,23 +1667,26 @@ class FTPHandler(AsyncChat):
 
     # --- logging wrappers
 
+    # this is defined earlier
+    #log_prefix = '%(remote_ip)s:%(remote_port)s-[%(username)s]'
+
     def log(self, msg, logfun=logger.info):
         """Log a message, including additional identifying session data."""
-        logfun("[%s]@%s:%s %s" % (self.username, self.remote_ip,
-                                  self.remote_port, msg))
+        prefix = self.log_prefix % self.__dict__
+        logfun("%s %s" % (prefix, msg))
 
     def logline(self, msg, logfun=logger.debug):
         """Log a line including additional indentifying session data.
         By default this is disabled unless logging level == DEBUG.
         """
         if self._log_debug:
-            logfun("[%s]@%s:%s %s" % (self.username, self.remote_ip,
-                                      self.remote_port, msg))
+            prefix = self.log_prefix % self.__dict__
+            logfun("%s %s" % (prefix, msg))
 
     def logerror(self, msg):
         """Log an error including additional indentifying session data."""
-        logger.error("[%s]@%s:%s %s" % (self.username, self.remote_ip,
-                                        self.remote_port, msg))
+        prefix = self.log_prefix % self.__dict__
+        logger.error("%s %s" % (prefix, msg))
 
     def log_exception(self, instance):
         """Log an unhandled exception. 'instance' is the instance
