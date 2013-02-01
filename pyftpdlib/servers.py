@@ -208,7 +208,7 @@ class FTPServer(Acceptor):
             handler = self.handler(sock, self, ioloop=self.ioloop)
             if not handler.connected:
                 return
-            logger.info("[]%s:%s Connected." % addr[:2])
+            logger.info("[]@%s:%s FTP session opened (connect)" % addr[:2])
             ip = addr[0]
             self.ip_map.append(ip)
 

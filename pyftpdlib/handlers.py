@@ -39,6 +39,7 @@ import traceback
 import glob
 import random
 import warnings
+import logging
 try:
     import pwd
     import grp
@@ -263,11 +264,12 @@ class PassiveDTP(Acceptor):
                         # choose a free unprivileged random port.
                         else:
                             self.bind((local_ip, 0))
-                            self.log(
+                            self.cmd_channel.log(
                                 "Can't find a valid passive port in the "
                                 "configured range. A random kernel-assigned "
-                                "port will be used."
-                                )
+                                "port will be used.",
+                                logfun=logger.warning
+                            )
                     else:
                         raise
                 else:
@@ -315,17 +317,16 @@ class PassiveDTP(Acceptor):
                     sock.close()
                 except socket.error:
                     pass
-                msg = 'Rejected data connection from foreign address %s:%s.' \
+                msg = '425 Rejected data connection from foreign address %s:%s.' \
                         %(addr[0], addr[1])
-                self.cmd_channel.respond("425 %s" % msg)
-                self.log(msg)
+                self.cmd_channel.respond_w_warning(msg)
                 # do not close listening socket: it couldn't be client's blame
                 return
             else:
                 # site-to-site FTP allowed
                 msg = 'Established data connection with foreign address %s:%s.'\
                         % (addr[0], addr[1])
-                self.log(msg)
+                self.cmd_channel.log(msg, logfun=logger.warning)
         # Immediately close the current channel (we accept only one
         # connection at time) and avoid running out of max connections
         # limit.
@@ -339,7 +340,8 @@ class PassiveDTP(Acceptor):
 
     def handle_timeout(self):
         if self.cmd_channel.connected:
-            self.cmd_channel.respond("421 Passive data channel timed out.")
+            self.cmd_channel.respond("421 Passive data channel timed out.",
+                                     logfun=logging.info)
         self.close()
 
     def handle_error(self):
@@ -439,7 +441,7 @@ class ActiveDTP(Connector):
     def handle_timeout(self):
         if self.cmd_channel.connected:
             msg = "Active data channel timed out."
-            self.cmd_channel.respond("421 " +  msg)
+            self.cmd_channel.respond("421 " +  msg, logfun=logger.info)
             self.cmd_channel.log_cmd(self._cmd, self._normalized_addr, 421, msg)
         self.close()
 
@@ -517,7 +519,7 @@ class DTPHandler(AsyncChat):
         self._closed = False
         self._had_cr = False
         self._start_time = time.time()
-        self._resp = None
+        self._resp = ()
         self._offset = None
         self._filefd = None
         self._idler = None
@@ -741,8 +743,7 @@ class DTPHandler(AsyncChat):
             self._lastdata = self.get_transmitted_bytes()
         else:
             msg = "Data connection timed out."
-            self.log(msg)
-            self._resp = "421 " + msg
+            self._resp = ("421 " + msg, logger.info)
             self.close()
             self.cmd_channel.close_when_done()
 
@@ -761,7 +762,7 @@ class DTPHandler(AsyncChat):
             self.log_exception(self)
             error = "Internal error"
         try:
-            self._resp = "426 %s; transfer aborted." % error
+            self._resp = ("426 %s; transfer aborted." % error, logger.warning)
             self.close()
         except Exception:
             logger.critical(traceback.format_exc())
@@ -781,11 +782,11 @@ class DTPHandler(AsyncChat):
                 self.transfer_finished = len(self.producer_fifo) == 0
             try:
                 if self.transfer_finished:
-                    self._resp = "226 Transfer complete."
+                    self._resp = ("226 Transfer complete.", logger.debug)
                 else:
                     tot_bytes = self.get_transmitted_bytes()
-                    self._resp = "426 Transfer aborted; %d bytes transmitted." \
-                                  % tot_bytes
+                    self._resp = ("426 Transfer aborted; %d bytes transmitted." \
+                                  % tot_bytes, logger.debug)
             finally:
                 self.close()
 
@@ -797,7 +798,7 @@ class DTPHandler(AsyncChat):
             # RFC-959 says we must close the connection before replying
             AsyncChat.close(self)
             if self._resp:
-                self.cmd_channel.respond(self._resp)
+                self.cmd_channel.respond(self._resp[0], logfun=self._resp[1])
 
             if self.file_obj is not None and not self.file_obj.closed:
                 self.file_obj.close()
@@ -1108,6 +1109,8 @@ class FTPHandler(AsyncChat):
         self._current_facts = ['type', 'perm', 'size', 'modify']
         self._rnfr = None
         self._idler = None
+        self._log_debug = logging.getLogger('pyftpdlib').getEffectiveLevel() \
+                          <= logging.DEBUG
 
         if os.name == 'posix':
             self._current_facts.append('unique')
@@ -1199,9 +1202,8 @@ class FTPHandler(AsyncChat):
 
     def handle_max_cons(self):
         """Called when limit for maximum number of connections is reached."""
-        msg = "Too many connections. Service temporarily unavailable."
-        self.respond("421 %s" % msg)
-        self.log(msg)
+        msg = "421 Too many connections. Service temporarily unavailable."
+        self.respond_w_warning(msg)
         # If self.push is used, data could not be sent immediately in
         # which case a new "loop" will occur exposing us to the risk of
         # accepting new connections.  Since this could cause asyncore to
@@ -1213,17 +1215,15 @@ class FTPHandler(AsyncChat):
 
     def handle_max_cons_per_ip(self):
         """Called when too many clients are connected from the same IP."""
-        msg = "Too many connections from the same IP address."
-        self.respond("421 %s" % msg)
-        self.log(msg)
+        msg = "421 Too many connections from the same IP address."
+        self.respond_w_warning(msg)
         self.close_when_done()
 
     def handle_timeout(self):
         """Called when client does not send any command within the time
         specified in <timeout> attribute."""
         msg = "Control connection timed out."
-        self.log(msg)
-        self.respond("421 " + msg)
+        self.respond("421 " + msg, logfun=logger.info)
         self.close_when_done()
 
     # --- asyncore / asynchat overridden methods
@@ -1247,8 +1247,7 @@ class FTPHandler(AsyncChat):
         # such cases
         buflimit = 2048
         if self._in_buffer_len > buflimit:
-            self.respond('500 Command too long.')
-            self.log('Command received exceeded buffer limit of %s.' % buflimit)
+            self.respond_w_warning('500 Command too long.')
             self._in_buffer = []
             self._in_buffer_len = 0
 
@@ -1447,7 +1446,7 @@ class FTPHandler(AsyncChat):
             if self.fs is not None:
                 self.fs.cmd_channel = None
                 self.fs = None
-            self.log("Disconnected.")
+            self.log("FTP session closed (disconnect).")
             # Having self.remote_ip not set means that no connection
             # actually took place, hence we're not interested in
             # invoking the callback.
@@ -1578,11 +1577,17 @@ class FTPHandler(AsyncChat):
     def push(self, s):
         asynchat.async_chat.push(self, s.encode('utf8'))
 
-    def respond(self, resp):
+    def respond(self, resp, logfun=logger.debug):
         """Send a response to the client using the command channel."""
         self._last_response = resp
         self.push(resp + '\r\n')
-        self.logline('-> %s' % resp)
+        if self._log_debug:
+            self.logline('-> %s' % resp, logfun=logfun)
+        else:
+            self.log(resp[4:], logfun=logfun)
+
+    def respond_w_warning(self, resp):
+        self.respond(resp, logfun=logger.warning)
 
     def push_dtp_data(self, data, isproducer=False, file=None, cmd=None):
         """Pushes data into the data channel.
@@ -1653,19 +1658,23 @@ class FTPHandler(AsyncChat):
 
     # --- logging wrappers
 
-    def log(self, msg):
+    def log(self, msg, logfun=logger.info):
         """Log a message, including additional identifying session data."""
-        logger.info("[%s]@%s:%s %s" % (self.username, self.remote_ip,
-                                        self.remote_port, msg))
+        logfun("[%s]@%s:%s %s" % (self.username, self.remote_ip,
+                                  self.remote_port, msg))
 
-    def logline(self, msg):
-        """Log a line including additional indentifying session data."""
-        logger.debug("%s:%s %s" % (self.remote_ip, self.remote_port, msg))
+    def logline(self, msg, logfun=logger.debug):
+        """Log a line including additional indentifying session data.
+        By default this is disabled unless logging level == DEBUG.
+        """
+        if self._log_debug:
+            logfun("[%s]@%s:%s %s" % (self.username, self.remote_ip,
+                                      self.remote_port, msg))
 
     def logerror(self, msg):
         """Log an error including additional indentifying session data."""
         logger.error("[%s]@%s:%s %s" % (self.username, self.remote_ip,
-                                         self.remote_port, msg))
+                                        self.remote_port, msg))
 
     def log_exception(self, instance):
         """Log an unhandled exception. 'instance' is the instance
@@ -1673,8 +1682,15 @@ class FTPHandler(AsyncChat):
         """
         logger.exception("unhandled exception in instance %r", instance)
 
+    # the list of commands which gets logged when logging level
+    # is >= logging.INFO
+    log_cmds_list = ["DELE", "RNFR", "RNTO", "MKD", "RMD", "CWD",
+                     "XMKD", "XRMD", "XCWD",
+                     "REIN", "SITE CHMOD"]
+
     def log_cmd(self, cmd, arg, respcode, respstr):
         """Log commands and responses in a standardized format.
+        This is disabled in case the logging level is set to DEBUG.
 
          - (str) cmd:
             the command sent by client
@@ -1693,14 +1709,17 @@ class FTPHandler(AsyncChat):
          - (str) respstr:
             the response string as being sent by server.
 
-        By default only DELE, RMD, RNFR, RNTO, MKD commands are logged
-        and the output is redirected to self.log method (the main logger).
+        By default only DELE, RMD, RNTO, MKD, CWD, ABOR, REIN, SITE CHMOD
+        commands are logged and the output is redirected to self.log
+        method.
 
         Can be overridden to provide alternate formats or to log
         further commands.
         """
-        if cmd in ("DELE", "RMD", "RNFR", "RNTO", "MKD"):
-            line = '"%s" %s' % (' '.join([cmd, arg]).strip(), respcode)
+        if not self._log_debug and cmd in self.log_cmds_list:
+            line = '%s %s' % (' '.join([cmd, arg]).strip(), respcode)
+            if str(respcode)[0] in ('4', '5'):
+                line += ' %r' % respstr
             self.log(line)
 
     def log_transfer(self, cmd, filename, receive, completed, elapsed, bytes):
@@ -1725,7 +1744,7 @@ class FTPHandler(AsyncChat):
          - (int) bytes:
             number of bytes transmitted.
         """
-        line = '"%s %s" completed=%s bytes=%s seconds=%s' % \
+        line = '%s %s completed=%s bytes=%s seconds=%s' % \
                 (cmd, filename, completed and 1 or 0, bytes, elapsed)
         self.log(line)
 
@@ -1751,16 +1770,16 @@ class FTPHandler(AsyncChat):
             # common IPv4 address.
             remote_ip = remote_ip[7:]
         if not self.permit_foreign_addresses and ip != remote_ip:
-            self.log("Rejected data connection to foreign address %s:%s."
-                     % (ip, port))
-            self.respond("501 Can't connect to a foreign address.")
+            msg = "501 Rejected data connection to foreign address %s:%s." \
+                   % (ip, port)
+            self.respond_w_warning(msg)
             return
 
         # ...another RFC-2577 recommendation is rejecting connections
         # to privileged ports (< 1024) for security reasons.
         if not self.permit_privileged_ports and port < 1024:
-            self.log('PORT against the privileged port "%s" refused.' % port)
-            self.respond("501 Can't connect over a privileged port.")
+            msg = '501 PORT against the privileged port "%s" refused.' % port
+            self.respond_w_warning(msg)
             return
 
         # close establishing DTP instances, if any
@@ -1772,9 +1791,8 @@ class FTPHandler(AsyncChat):
 
         # make sure we are not hitting the max connections limit
         if not self.server._accept_new_cons():
-            msg = "Too many connections. Can't open data channel."
-            self.respond("425 %s" %msg)
-            self.log(msg)
+            msg = "425 Too many connections. Can't open data channel."
+            self.respond_w_warning(msg)
             return
 
         # open data channel
@@ -1796,9 +1814,8 @@ class FTPHandler(AsyncChat):
 
         # make sure we are not hitting the max connections limit
         if not self.server._accept_new_cons():
-            msg = "Too many connections. Can't open data channel."
-            self.respond("425 %s" %msg)
-            self.log(msg)
+            msg = "425 Too many connections. Can't open data channel."
+            self.respond_w_warning(msg)
             return
 
         # open data channel
@@ -2270,8 +2287,8 @@ class FTPHandler(AsyncChat):
                 if self.data_channel.transfer_in_progress():
                     self.data_channel.close()
                     self.data_channel = None
-                    self.respond("426 Connection closed; transfer aborted.")
-                    self.log("Transfer aborted via ABOR.")
+                    self.respond("426 Transfer aborted via ABOR.",
+                                 logfun=logging.info)
                     resp = "226 ABOR command successful."
                 else:
                     self.data_channel.close()
@@ -2300,8 +2317,7 @@ class FTPHandler(AsyncChat):
             # login sequence again.
             self.flush_account()
             msg = 'Previous account information was flushed'
-            self.log(msg)
-            self.respond('331 %s, send password.' % msg)
+            self.respond('331 %s, send password.' % msg, logfun=logging.info)
         self.username = line
 
     _auth_failed_timeout = 5
@@ -2330,7 +2346,7 @@ class FTPHandler(AsyncChat):
                         self.close_when_done()
                     else:
                         self.respond("530 " + msg)
-                    self.log("'%s' failed login." % self.username)
+                    self.log("USER '%s' failed login." % self.username)
                 self.on_login_failed(username, password)
 
             msg = str(sys.exc_info()[1])
@@ -2363,7 +2379,7 @@ class FTPHandler(AsyncChat):
             else:
                 self.push("230-%s\r\n" % msg_login)
                 self.respond("230 ")
-            self.log("'%s' logged in." % self.username)
+            self.log("USER '%s' logged in." % self.username)
             self.authenticated = True
             self.password = line
             self.attempted_logins = 0
@@ -2380,7 +2396,6 @@ class FTPHandler(AsyncChat):
         # and the control connection is left open.  This is identical
         # to the state in which a user finds himself immediately after
         # the control connection is opened.
-        self.log("Previous account information was flushed.")
         self.flush_account()
         # Note: RFC-959 erroneously mention "220" as the correct response
         # code to be given in this case, but this is wrong...

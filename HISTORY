@@ -57,6 +57,10 @@ Enhancements:
    can be set to False in order to avoid handling SIGTERM/SIGINT signals and
    logging server start and stop.
 
+ * Issue 236: big logging refactoring; by default only useful messages are
+   logged (as opposed to *all* commands and responses exchanged by client and
+   server).
+
 Bugfixes:
 
  * Issue 131: IPv6 dual-stack support was broken.
@@ -176,6 +180,17 @@ Incompatible API changes:
 
  * FTPHandler.sleeping attribute is removed. self.add_channel() and
    self.del_channel() should be used to pause and restart the handler.
+
+Minor incompatible API changes:
+
+   - FTPHandler.respond(resp)
+   + FTPHandler.respond(resp, logfun=logger.debug)
+
+   - FTPHandler.log(resp)
+   + FTPHandler.log(resp, logfun=logger.info)
+
+   - FTPHandler.logline(resp)
+   + FTPHandler.logline(resp, logfun=logger.debug)
 
 
 Version: 0.7.0 - Date: 2012-01-25

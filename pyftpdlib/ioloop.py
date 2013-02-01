@@ -108,7 +108,7 @@ _write = asyncore.write
 
 def _config_logging():
     logging.basicConfig(format='[%(levelname)1.1s] %(message)s',
-                        level=logging.DEBUG)
+                        level=logging.INFO)
 
 
 # ===================================================================
@@ -493,7 +493,6 @@ class _BasePollEpoll(_IOLoop):
             events = self._poller.poll(timeout or -1)  # -1 waits indefinitely
         except (IOError, select.error):  # for epoll() and poll() respectively
             err = sys.exc_info()[1]
-            print err
             if err.args[0] == errno.EINTR:
                 return
             raise

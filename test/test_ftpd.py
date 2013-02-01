@@ -3403,7 +3403,7 @@ class TestCommandLineParser(TestCase):
         self.assertRaises(SystemExit, pyftpdlib.main)
 
 
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.INFO)
 remove_test_files()
 
 def test_main(tests=None):
