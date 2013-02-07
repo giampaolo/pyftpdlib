@@ -453,7 +453,7 @@ class SharedAuthorizerTests(unittest.TestCase):
         self.assertRaises(AuthenticationFailed,
               auth.validate_authentication, current_user, 'wrongpasswd', None)
         self.assertRaises(AuthenticationFailed,
-                  auth.validate_authentication(nonexistent_user, 'bar', None))
+                  auth.validate_authentication, nonexistent_user, 'bar', None)
 
     def test_impersonate_user(self):
         auth = self.authorizer_class()

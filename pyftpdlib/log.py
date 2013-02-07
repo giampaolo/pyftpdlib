@@ -99,8 +99,9 @@ class LogFormatter(logging.Formatter):
     def format(self, record):
         try:
             record.message = record.getMessage()
-        except Exception, e:
-            record.message = "Bad message (%r): %r" % (e, record.__dict__)
+        except Exception:
+            err = sys.exc_info()[1]
+            record.message = "Bad message (%r): %r" % (err, record.__dict__)
 
         record.asctime = time.strftime(TIME_FORMAT,
                                        self.converter(record.created))
