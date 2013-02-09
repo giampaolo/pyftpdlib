@@ -316,7 +316,7 @@ class _SpawnerBase(FTPServer):
             poll_timeout = getattr(self, 'poll_timeout', None)
             soonest_timeout = poll_timeout
 
-            while socket_map and not self._exit.isSet():
+            while socket_map and not self._exit.is_set():
                 try:
                     poll(timeout=soonest_timeout)
                     if tasks:
@@ -422,7 +422,7 @@ class _SpawnerBase(FTPServer):
         warn = logger.warning
         for t in tasks:
             t.join(self.join_timeout)
-            if t.isAlive():
+            if t.is_alive():
                 # Thread or process is still alive. If it's a process
                 # attempt to send SIGKILL as last resort.
                 # Set timeout to None so that we will exit immediately
@@ -450,6 +450,11 @@ except ImportError:
     pass
 else:
     __all__ += ['ThreadedFTPServer']
+
+    # compatibility with python <= 2.6
+    if not hasattr(threading.Thread, 'is_alive'):
+        threading.Thread.is_alive = threading.Thread.isAlive
+        threading.Event.is_set = threading.Event.isSet
 
     class ThreadedFTPServer(_SpawnerBase):
         """A modified version of base FTPServer class which spawns a
