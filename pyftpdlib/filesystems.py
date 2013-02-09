@@ -539,6 +539,15 @@ class AbstractedFS(object):
             permdir += 'c'
         if 'd' in perms:
             permdir += 'p'
+        show_type = 'type' in facts
+        show_perm = 'perm' in facts
+        show_size = 'size' in facts
+        show_modify = 'modify' in facts
+        show_create = 'create' in facts
+        show_mode = 'unix.mode' in facts
+        show_uid = 'unix.uid' in facts
+        show_gid = 'unix.gid' in facts
+        show_unique = 'unique' in facts
         for basename in listing:
             retfacts = dict()
             if not PY3:
@@ -568,24 +577,24 @@ class AbstractedFS(object):
             # same as stat.S_ISDIR(st.st_mode) but slighlty faster
             isdir = (st.st_mode & 61440) == stat.S_IFDIR
             if isdir:
-                if 'type' in facts:
+                if show_type:
                     if basename == '.':
                         retfacts['type'] = 'cdir'
                     elif basename == '..':
                         retfacts['type'] = 'pdir'
                     else:
                         retfacts['type'] = 'dir'
-                if 'perm' in facts:
+                if show_perm:
                     retfacts['perm'] = permdir
             else:
-                if 'type' in facts:
+                if show_type:
                     retfacts['type'] = 'file'
-                if 'perm' in facts:
+                if show_perm:
                     retfacts['perm'] = permfile
-            if 'size' in facts:
+            if show_size:
                 retfacts['size'] = st.st_size  # file size
             # last modification time
-            if 'modify' in facts:
+            if show_modify:
                 try:
                     retfacts['modify'] = time.strftime("%Y%m%d%H%M%S",
                                                        timefunc(st.st_mtime))
@@ -593,7 +602,7 @@ class AbstractedFS(object):
                 # (prior to year 1900)
                 except ValueError:
                     pass
-            if 'create' in facts:
+            if show_create:
                 # on Windows we can provide also the creation time
                 try:
                     retfacts['create'] = time.strftime("%Y%m%d%H%M%S",
@@ -601,11 +610,11 @@ class AbstractedFS(object):
                 except ValueError:
                     pass
             # UNIX only
-            if 'unix.mode' in facts:
+            if show_mode:
                 retfacts['unix.mode'] = oct(st.st_mode & 511)
-            if 'unix.uid' in facts:
+            if show_uid:
                 retfacts['unix.uid'] = st.st_uid
-            if 'unix.gid' in facts:
+            if show_gid:
                 retfacts['unix.gid'] = st.st_gid
 
             # We provide unique fact (see RFC-3659, chapter 7.5.2) on
@@ -616,7 +625,7 @@ class AbstractedFS(object):
             # Implementors who want to provide unique fact on other
             # platforms should use some platform-specific method (e.g.
             # on Windows NTFS filesystems MTF records could be used).
-            if 'unique' in facts:
+            if show_unique:
                 retfacts['unique'] = "%xg%x" % (st.st_dev, st.st_ino)
 
             # facts can be in any order but we sort them by name
