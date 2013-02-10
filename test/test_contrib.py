@@ -724,7 +724,6 @@ if os.name == 'posix':
 def test_main():
     test_suite = unittest.TestSuite()
     tests = []
-    warns = []
 
     # FTPS tests
     if FTPS_SUPPORT:
@@ -749,13 +748,13 @@ def test_main():
         tests += ftps_tests
     else:
         if sys.version_info < (2, 7):
-            warns.append("FTPS tests skipped (requires python 2.7)")
+            warn("FTPS tests skipped (requires python 2.7)")
         elif ssl is None:
-            warns.append("FTPS tests skipped (requires ssl module)")
+            warn("FTPS tests skipped (requires ssl module)")
         elif not hasattr(handlers, 'TLS_FTPHandler'):
-            warns.append("FTPS tests skipped (requires PyOpenSSL module)")
+            warn("FTPS tests skipped (requires PyOpenSSL module)")
         else:
-            warns.append("FTPS tests skipped")
+            warn("FTPS tests skipped")
 
     # threaded FTP server tests
     ftp_thread_tests = [

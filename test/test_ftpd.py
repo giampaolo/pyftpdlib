@@ -147,7 +147,7 @@ def remove_test_files():
 
 def warn(msg):
     """Add warning message to be executed on exit."""
-    atexit.register(warnings.warn, str(msg) + " - test has been skipped",
+    atexit.register(warnings.warn, str(msg) + " - tests have been skipped",
                     RuntimeWarning)
 
 def skip_other_tests():
