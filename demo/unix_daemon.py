@@ -64,15 +64,12 @@ import sys
 import time
 import optparse
 import signal
+import atexit
 
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.authorizers import UnixAuthorizer
 from pyftpdlib.filesystems import UnixFilesystem
-
-# http://pypi.python.org/pypi/python-daemon
-import daemon
-import daemon.pidfile
 
 
 # overridable options
@@ -82,8 +79,7 @@ PID_FILE = "/var/run/pyftpdlib.pid"
 LOG_FILE = "/var/log/pyftpdlib.log"
 WORKDIR = os.getcwd()
 UMASK = 0
-
-
+    
 def print_(s):
     sys.stdout.write(s + '\n')
     sys.stdout.flush()
@@ -155,23 +151,49 @@ def get_server():
 
 def daemonize():
     """A wrapper around python-daemonize context manager."""
+    def _daemonize():
+        pid = os.fork() 
+        if pid > 0:
+            # exit first parent
+            sys.exit(0) 
+    
+        # decouple from parent environment
+        os.chdir(WORKDIR) 
+        os.setsid() 
+        os.umask(0) 
+    
+        # do second fork     
+        pid = os.fork() 
+        if pid > 0:
+            # exit from second parent
+            sys.exit(0) 
+    
+        # redirect standard file descriptors
+        sys.stdout.flush()
+        sys.stderr.flush()
+        si = open(LOG_FILE, 'r')
+        so = open(LOG_FILE, 'a+')
+        se = open(LOG_FILE, 'a+', 0)
+        os.dup2(si.fileno(), sys.stdin.fileno())
+        os.dup2(so.fileno(), sys.stdout.fileno())
+        os.dup2(se.fileno(), sys.stderr.fileno())
+    
+        # write pidfile
+        pid = str(os.getpid())
+        f = open(PID_FILE,'w')
+        f.write("%s\n" % pid)
+        f.close()
+        atexit.register(lambda: os.remove(PID_FILE))
+
     pid = get_pid()
     if pid and pid_exists(pid):
         sys.exit('daemon already running (pid %s)' % pid)
     # instance FTPd before daemonizing, so that in case of problems we
     # get an exception here and exit immediately
-    server = get_server()
-    logfile = open(LOG_FILE, 'a+')
-    ctx = daemon.DaemonContext(
-        stdout=logfile,
-        stderr=logfile,
-        working_directory=WORKDIR,
-        umask=UMASK,
-        pidfile=daemon.pidfile.TimeoutPIDLockFile(PID_FILE),
-        files_preserve=[server],
-    )
-    with ctx:
-        server.serve_forever()
+    server = get_server()    
+    _daemonize()
+    server.serve_forever()
+
 
 def main():
     global PID_FILE, LOG_FILE
@@ -199,6 +221,11 @@ def main():
             daemonize()
         elif args[0] == 'stop':
             stop()
+        elif args[0] == 'restart':
+            try:
+                stop()
+            finally:
+                daemonize()
         elif args[0] == 'status':
             status()
         else:
