@@ -3121,6 +3121,14 @@ class TestCornerCases(TestCase):
             self.assertNotEqual(str(resp)[:3], '200')
         sock.close()
 
+    def test_repr(self):
+        # make sure the FTP/DTP handler classes have a sane repr()
+        sock = self.client.makeport()
+        for inst in IOLoop.instance().socket_map.values():
+            repr(inst)
+            str(inst)
+        sock.close()
+
 
 class TestUnicodePathNames(TestCase):
     """Test FTP commands and responses by using path names with non

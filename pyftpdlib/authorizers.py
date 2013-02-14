@@ -514,8 +514,8 @@ else:
         # --- public API
 
         def __init__(self, global_perm="elradfmw",
-                           allowed_users=[],
-                           rejected_users=[],
+                           allowed_users=None,
+                           rejected_users=None,
                            require_valid_shell=True,
                            anonymous_user=None,
                            msg_login="Login successful.",
@@ -556,6 +556,10 @@ else:
                 the string sent when client quits.
             """
             BaseUnixAuthorizer.__init__(self, anonymous_user)
+            if allowed_users is None:
+                allowed_users = []
+            if rejected_users is None:
+                rejected_users = []
             self.global_perm = global_perm
             self.allowed_users = allowed_users
             self.rejected_users = rejected_users
@@ -777,8 +781,8 @@ else:
         # --- public API
 
         def __init__(self, global_perm="elradfmw",
-                           allowed_users=[],
-                           rejected_users=[],
+                           allowed_users=None,
+                           rejected_users=None,
                            anonymous_user=None,
                            anonymous_password=None,
                            msg_login="Login successful.",
@@ -817,6 +821,10 @@ else:
              - (string) msg_quit:
                 the string sent when client quits.
             """
+            if allowed_users is None:
+                allowed_users = []
+            if rejected_users is None:
+                rejected_users = []
             self.global_perm = global_perm
             self.allowed_users = allowed_users
             self.rejected_users = rejected_users
