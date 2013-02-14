@@ -124,7 +124,7 @@ class AbstractedFS(object):
     # --- Pathname / conversion utilities
 
     def ftpnorm(self, ftppath):
-        """Normalize a "virtual" ftp pathname (tipically the raw string
+        """Normalize a "virtual" ftp pathname (typically the raw string
         coming from client) depending on the current working directory.
 
         Example (having "/foo" as current working directory):
@@ -156,7 +156,7 @@ class AbstractedFS(object):
         return p
 
     def ftp2fs(self, ftppath):
-        """Translate a "virtual" ftp pathname (tipically the raw string
+        """Translate a "virtual" ftp pathname (typically the raw string
         coming from client) into equivalent absolute "real" filesystem
         pathname.
 
@@ -466,7 +466,7 @@ class AbstractedFS(object):
             uname = self.get_user_by_uid(st.st_uid)
             gname = self.get_group_by_gid(st.st_gid)
             mtime = timefunc(st.st_mtime)
-            # if modificaton time > 6 months shows "month year"
+            # if modification time > 6 months shows "month year"
             # else "month hh:mm";  this matches proftpd format, see:
             # http://code.google.com/p/pyftpdlib/issues/detail?id=187
             if (now - st.st_mtime) > SIX_MONTHS:
@@ -574,7 +574,7 @@ class AbstractedFS(object):
                     continue
                 raise
             # type + perm
-            # same as stat.S_ISDIR(st.st_mode) but slighlty faster
+            # same as stat.S_ISDIR(st.st_mode) but slightly faster
             isdir = (st.st_mode & 61440) == stat.S_IFDIR
             if isdir:
                 if show_type:

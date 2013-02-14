@@ -33,7 +33,7 @@
 This module contains the main FTPServer class which listens on a
 host:port and dispatches the incoming connections to a handler.
 The concurrency is handled asynchronously by the main process thread,
-meaning the handler cannot block otherwise the whole server whill hang.
+meaning the handler cannot block otherwise the whole server will hang.
 
 Other than that we have 2 subclasses changing the asynchronous concurrency
 model using multiple threads or processes.

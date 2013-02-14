@@ -271,7 +271,7 @@ class DummyAuthorizer(object):
 
 def replace_anonymous(callable):
     """A decorator to replace anonymous user string passed to authorizer
-    methods as first arugument with the actual user used to handle
+    methods as first argument with the actual user used to handle
     anonymous sessions.
     """
     def wrapper(self, username, *args, **kwargs):
@@ -681,7 +681,7 @@ else:
             if self.anonymous_user is not None:
                 self.impersonate_user(self.anonymous_user,
                                       self.anonymous_password)
-                self.terminate_impersonation()
+                self.terminate_impersonation(None)
 
         def validate_authentication(self, username, password, handler):
             if username == "anonymous":
@@ -831,7 +831,7 @@ else:
             if self.anonymous_user is not None:
                 self.impersonate_user(self.anonymous_user,
                                       self.anonymous_password)
-                self.terminate_impersonation()
+                self.terminate_impersonation(None)
 
         def override_user(self, username, password=None, homedir=None, perm=None,
                           msg_login=None, msg_quit=None):

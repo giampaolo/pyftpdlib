@@ -39,7 +39,7 @@ from pyftpdlib.servers import FTPServer, ...
 """
 
 
-from pyftpdlib import logger, __ver__
+from pyftpdlib.log import logger
 from pyftpdlib.handlers import *
 from pyftpdlib.authorizers import *
 from pyftpdlib.servers import *

@@ -249,7 +249,7 @@ class PassiveDTP(Acceptor):
         else:
             ports = list(self.cmd_channel.passive_ports)
             while ports:
-                port = ports.pop(random.randint(0, len(ports) -1))
+                port = ports.pop(random.randint(0, len(ports) - 1))
                 self.set_reuse_addr()
                 try:
                     self.bind((local_ip, port))
@@ -404,7 +404,7 @@ class ActiveDTP(Connector):
         try:
             self.connect_af_unspecified((ip, port), (source_ip, 0))
         except (socket.gaierror, socket.error):
-            return self.handle_close()
+            self.handle_close()
 
     def readable(self):
         return False
@@ -442,7 +442,7 @@ class ActiveDTP(Connector):
     def handle_timeout(self):
         if self.cmd_channel.connected:
             msg = "Active data channel timed out."
-            self.cmd_channel.respond("421 " +  msg, logfun=logger.info)
+            self.cmd_channel.respond("421 " + msg, logfun=logger.info)
             self.cmd_channel.log_cmd(self._cmd, self._normalized_addr, 421, msg)
         self.close()
 
@@ -542,7 +542,8 @@ class DTPHandler(AsyncChat):
 
         # remove this instance from IOLoop's socket map
         if not self.connected:
-            return self.close()
+            self.close()
+            return
         if self.timeout:
             self._idler = self.ioloop.call_every(self.timeout,
                                                  self.handle_timeout,
@@ -650,15 +651,15 @@ class DTPHandler(AsyncChat):
         self.receive = True
 
     def get_transmitted_bytes(self):
-        "Return the number of transmitted bytes."
+        """Return the number of transmitted bytes."""
         return self.tot_bytes_sent + self.tot_bytes_received
 
     def get_elapsed_time(self):
-        "Return the transfer elapsed time in seconds."
+        """Return the transfer elapsed time in seconds."""
         return time.time() - self._start_time
 
     def transfer_in_progress(self):
-        "Return True if a transfer is in progress, else False."
+        """Return True if a transfer is in progress, else False."""
         return self.get_transmitted_bytes() != 0
 
     # --- connection
@@ -668,7 +669,7 @@ class DTPHandler(AsyncChat):
         self.tot_bytes_sent += result
         return result
 
-    def refill_buffer (self):
+    def refill_buffer(self):
         """Overridden as a fix around http://bugs.python.org/issue1740572
         (when the producer is consumed, close() was called instead of
         handle_close()).
@@ -1183,7 +1184,8 @@ class FTPHandler(AsyncChat):
 
         # remove this instance from IOLoop's socket_map
         if not self.connected:
-            return self.close()
+            self.close()
+            return
 
         if self.timeout:
             self._idler = self.ioloop.call_later(self.timeout, self.handle_timeout,
@@ -2175,7 +2177,7 @@ class FTPHandler(AsyncChat):
                 why = _strerror(err)
             if not ok:
                 fd.close()
-                self.respond('554 %s' %why)
+                self.respond('554 %s' % why)
                 return
 
         if self.data_channel is not None:
@@ -3159,8 +3161,8 @@ else:
 
          - (string) keyfile:
             the path to the file containing the private RSA key;
-            can be omittetted if certfile already contains the
-            private key (defaults: None).
+            can be omitted if certfile already contains the private
+            key (defaults: None).
 
          - (int) protocol:
             specifies which version of the SSL protocol to use when

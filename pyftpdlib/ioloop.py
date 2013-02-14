@@ -658,7 +658,7 @@ if hasattr(select, 'epoll'):     # epoll() - Linux only
     IOLoop = Epoll
 elif hasattr(select, 'kqueue'):  # kqueue() - BSD / OSX
     IOLoop = Kqueue
-elif hasattr(select, 'poll'):    # poll()- POSIX
+elif hasattr(select, 'poll'):    # poll() - POSIX
     IOLoop = Poll
 else:                            # select() - POSIX and Windows
     IOLoop = Select
