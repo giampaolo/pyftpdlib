@@ -34,8 +34,6 @@
 speed of downloads and uploads.
 """
 
-# XXX this is broken
-
 import os
 
 from pyftpdlib.authorizers import DummyAuthorizer

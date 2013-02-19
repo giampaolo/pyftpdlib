@@ -828,7 +828,18 @@ class DTPHandler(AsyncChat):
             self.cmd_channel._on_dtp_close()
 
 
-class ThrottledDTPHandler(DTPHandler):
+# dirty hack in order to turn AsyncChat into a new style class in
+# python 2.x so that we can use super()
+if PY3:
+    class _AsyncChatNewStyle(AsyncChat):
+        pass
+else:
+    class _AsyncChatNewStyle(object, AsyncChat):
+        def __init__(self, *args, **kwargs):
+            super(object, self).__init__(*args, **kwargs)  # bypass object
+
+
+class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
     """A DTPHandler subclass which wraps sending and receiving in a data
     counter and temporarily "sleeps" the channel so that you burst to no
     more than x Kb/sec average.
@@ -887,7 +898,7 @@ class ThrottledDTPHandler(DTPHandler):
         if self._datacount >= max_speed:
             self._datacount = 0
             now = time.time()
-            sleepfor = self._timenext - now
+            sleepfor = (self._timenext - now) * 2
             if sleepfor > 0:
                 # we've passed bandwidth limits
                 def unsleep():
@@ -2895,15 +2906,8 @@ else:
                      help='Syntax: PROT <SP> [C|P] (set up un/secure data channel).'),
         })
 
-    if PY3:
-        class _SSLBase(AsyncChat):
-            pass
-    else:
-        class _SSLBase(object, AsyncChat):
-            def __init__(self, *args, **kwargs):
-                super(object, self).__init__(*args, **kwargs)  # bypass object
 
-    class SSLConnection(_SSLBase):
+    class SSLConnection(_AsyncChatNewStyle):
         """An AsyncChat subclass supporting TLS/SSL."""
 
         _ssl_accepting = False
