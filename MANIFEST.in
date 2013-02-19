@@ -1,0 +1,13 @@
+# Tells "python setup.py sdist" what files to include in the tarball.
+# Note: make sure everything is in place with "svn list -R".
+
+include CREDITS
+include HISTORY
+include INSTALL
+include LICENSE
+include MANIFEST.in
+include README
+include setup.py
+recursive-include demo *.py *.pem
+recursive-include pyftpdlib *.py
+recursive-include test *.py *.pem
