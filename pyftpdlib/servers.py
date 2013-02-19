@@ -332,13 +332,17 @@ class _SpawnerBase(FTPServer):
                     # rapidly connect and disconnects
                     err = sys.exc_info()[1]
                     if os.name == 'nt' and err.args[0] == 10038:
-                        for fd in socket_map.keys():
+                        for fd in list(socket_map.keys()):
                             try:
                                 select.select([fd], [], [], 0)
                             except select.error:
-                                logger.info("discarding broken socket %r",
-                                            socket_map[fd])
-                                del socket_map[fd]
+                                try:
+                                    logger.info("discarding broken socket %r",
+                                                socket_map[fd])
+                                    del socket_map[fd]
+                                except KeyError:
+                                    # dict changed during iteration
+                                    pass
                     else:
                         raise
                 else:
