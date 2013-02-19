@@ -2,7 +2,7 @@
 # $Id$
 
 #  ======================================================================
-#  Copyright (C) 2007-2012 Giampaolo Rodola' <g.rodola@gmail.com>
+#  Copyright (C) 2007-2013 Giampaolo Rodola' <g.rodola@gmail.com>
 #
 #                         All Rights Reserved
 #
@@ -68,44 +68,34 @@ the backend functionality for the FTPd:
 
 Usage example:
 
->>> from pyftpdlib.authorizer import DummyAuthorizer
+>>> from pyftpdlib.authorizers import DummyAuthorizer
 >>> from pyftpdlib.handlers import FTPHandler
 >>> from pyftpdlib.servers import FTPServer
 >>>
 >>> authorizer = DummyAuthorizer()
->>> authorizer.add_user('user', 'password', '/home/user', perm='elradfmw')
->>> authorizer.add_anonymous('/home/nobody')
+>>> authorizer.add_user("user", "12345", "/home/giampaolo", perm="elradfmw")
+>>> authorizer.add_anonymous("/home/nobody")
 >>>
 >>> handler = FTPHandler
 >>> handler.authorizer = authorizer
 >>>
 >>> server = FTPServer(("127.0.0.1", 21), handler)
 >>> server.serve_forever()
-[I] []127.0.0.1:2503 connected.
-[D] 127.0.0.1:2503 -> 220 Ready.
-[D] 127.0.0.1:2503 <- USER anonymous
-[D] 127.0.0.1:2503 -> 331 Username ok, send password.
-[D] 127.0.0.1:2503 <- PASS ******
-[D] 127.0.0.1:2503 -> 230 Login successful.
-[I] [anonymous]@127.0.0.1:2503 User anonymous logged in.
-[D] 127.0.0.1:2503 <- TYPE A
-[D] 127.0.0.1:2503 -> 200 Type set to: ASCII.
-[D] 127.0.0.1:2503 <- PASV
-[D] 127.0.0.1:2503 -> 227 Entering passive mode (127,0,0,1,9,201).
-[D] 127.0.0.1:2503 <- LIST
-[D] 127.0.0.1:2503 -> 150 File status okay. About to open data connection.
-[I] [anonymous]@127.0.0.1:2503 OK LIST "/". Transfer starting.
-[D] 127.0.0.1:2503 -> 226 Transfer complete.
-[D] [anonymous]@127.0.0.1:2503 Transfer complete. 706 bytes transmitted.
-[D] 127.0.0.1:2503 <- QUIT
-[D] 127.0.0.1:2503 -> 221 Goodbye.
-[I] [anonymous]@127.0.0.1:2503 Disconnected.
+[I 13-02-19 10:55:42] >>> starting FTP server on 127.0.0.1:21 <<<
+[I 13-02-19 10:55:42] poller: <class 'pyftpdlib.ioloop.Epoll'>
+[I 13-02-19 10:55:42] masquerade (NAT) address: None
+[I 13-02-19 10:55:42] passive ports: None
+[I 13-02-19 10:55:42] use sendfile(2): True
+[I 13-02-19 10:55:45] 127.0.0.1:34178-[] FTP session opened (connect)
+[I 13-02-19 10:55:48] 127.0.0.1:34178-[user] USER 'user' logged in.
+[I 13-02-19 10:56:27] 127.0.0.1:34179-[user] RETR /home/giampaolo/.vimrc completed=1 bytes=1700 seconds=0.001
+[I 13-02-19 10:56:39] 127.0.0.1:34179-[user] FTP session closed (disconnect).
 """
 
 import logging
 
 __ver__     = '1.0.0'
-__date__    = 'XXXX-XX-XX'
+__date__    = '2013-02-19'
 __author__  = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__     = 'http://code.google.com/p/pyftpdlib/'
 

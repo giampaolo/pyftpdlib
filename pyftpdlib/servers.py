@@ -2,7 +2,7 @@
 # $Id$
 
 #  ======================================================================
-#  Copyright (C) 2007-2012 Giampaolo Rodola' <g.rodola@gmail.com>
+#  Copyright (C) 2007-2013 Giampaolo Rodola' <g.rodola@gmail.com>
 #
 #                         All Rights Reserved
 #
@@ -454,7 +454,7 @@ else:
     # compatibility with python <= 2.6
     if not hasattr(threading.Thread, 'is_alive'):
         threading.Thread.is_alive = threading.Thread.isAlive
-    
+
     class ThreadedFTPServer(_SpawnerBase):
         """A modified version of base FTPServer class which spawns a
         thread every time a new connection is established.
@@ -464,7 +464,7 @@ else:
         poll_timeout = 1.0
         _lock = threading.Lock()
         _exit = threading.Event()
-        
+
         # compatibility with python <= 2.6
         if not hasattr(_exit, 'is_set'):
             _exit.is_set = _exit.isSet
