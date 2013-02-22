@@ -4,8 +4,10 @@ Bug tracker at http://code.google.com/p/pyftpdlib/issues/list
 History
 =======
 
-Version: 1.0.1 - Date: 2013-XX-XX
+Version: 1.0.1 - Date: 2013-02-22
 ---------------------------------
+
+Bugfixes:
 
  * Issue 236: MultiprocessFTPServer and ThreadedFTPServer hanging in case of
    failed authentication.
