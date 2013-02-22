@@ -2591,7 +2591,7 @@ class FTPHandler(AsyncChat):
         if not self.fs.lexists(path):
             self.respond("550 No such file or directory.")
         elif self.fs.realpath(path) == self.fs.realpath(self.fs.root):
-            self.respond("550 Can't rename the home directory.")
+            self.respond("550 Can't rename home directory.")
         else:
             self._rnfr = path
             self.respond("350 Ready for destination name.")

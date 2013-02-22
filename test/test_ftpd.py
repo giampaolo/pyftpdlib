@@ -1070,7 +1070,8 @@ class TestFtpDummyCmds(TestCase):
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest 10.1')
         # REST is not supposed to be allowed in ASCII mode
         self.client.sendcmd('type a')
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest 10')
+        self.assertRaisesRegexp(ftplib.error_perm, 'not allowed in ASCII mode',
+                                self.client.sendcmd, 'rest 10')
 
     def test_feat(self):
         resp = self.client.sendcmd('feat')
@@ -1161,7 +1162,8 @@ class TestFtpCmdsSemantic(TestCase):
             self.client.sendcmd(cmd)
         # STAT provided with an argument is equal to LIST hence not allowed
         # if not authenticated
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'stat /')
+        self.assertRaisesRegexp(ftplib.error_perm, '530 Log in with USER',
+                                self.client.sendcmd, 'stat /')
         self.client.sendcmd('quit')
 
 
@@ -1237,7 +1239,8 @@ class TestFtpFsOperations(TestCase):
         self.client.rmd(self.tempdir)
         self.assertRaises(ftplib.error_perm, self.client.rmd, self.tempfile)
         # make sure we can't remove the root directory
-        self.assertRaises(ftplib.error_perm, self.client.rmd, u('/'))
+        self.assertRaisesRegexp(ftplib.error_perm, "Can't remove root directory",
+                                self.client.rmd, u('/'))
 
     def test_dele(self):
         self.client.delete(self.tempfile)
@@ -1257,10 +1260,12 @@ class TestFtpFsOperations(TestCase):
         self.assertRaises(ftplib.error_perm, self.client.rename, bogus, '/x')
         self.assertRaises(ftplib.error_perm, self.client.rename, self.tempfile, u('/'))
         # rnto sent without first specifying the source
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rnto ' + self.tempfile)
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd,
+                          'rnto ' + self.tempfile)
 
         # make sure we can't rename root directory
-        self.assertRaises(ftplib.error_perm, self.client.rename, '/', '/x')
+        self.assertRaisesRegexp(ftplib.error_perm, "Can't rename home directory",
+                                self.client.rename, '/', '/x')
 
     def test_mdtm(self):
         self.client.sendcmd('mdtm ' + self.tempfile)
@@ -1291,8 +1296,9 @@ class TestFtpFsOperations(TestCase):
             _getmtime = AbstractedFS.getmtime
             try:
                 AbstractedFS.getmtime = lambda x, y: -9000000000
-                self.assertRaises(ftplib.error_perm, self.client.sendcmd,
-                                  'mdtm ' + self.tempfile)
+                self.assertRaisesRegexp(ftplib.error_perm,
+                            "550 Can't determine file's last modification time",
+                            self.client.sendcmd, 'mdtm ' + self.tempfile)
                 # make sure client hasn't been disconnected
                 self.client.sendcmd('noop')
             finally:
@@ -1519,7 +1525,8 @@ class TestFtpStoreData(TestCase):
         # Watch for STOU preceded by REST, which makes no sense.
         self.client.sendcmd('type i')
         self.client.sendcmd('rest 10')
-        self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'stou')
+        self.assertRaisesRegexp(ftplib.error_temp, "Can't STOU while REST",
+                                self.client.sendcmd, 'stou')
 
     def test_stou_orphaned_file(self):
         # Check that no orphaned file gets left behind when STOU fails.
@@ -1530,7 +1537,7 @@ class TestFtpStoreData(TestCase):
         # Assuming that TESTFN is supposed to be a "reserved" file
         # name we shouldn't get false positives.
         safe_remove(TESTFN)
-        # login as a limited user to let STOU fail
+        # login as a limited user in order to make STOU fail
         self.client.login('anonymous', '@nopasswd')
         before = os.listdir(HOME)
         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'stou ' + TESTFN)
@@ -1568,7 +1575,8 @@ class TestFtpStoreData(TestCase):
         # Watch for APPE preceded by REST, which makes no sense.
         self.client.sendcmd('type i')
         self.client.sendcmd('rest 10')
-        self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'appe x')
+        self.assertRaisesRegexp(ftplib.error_temp, "Can't APPE while REST",
+                                    self.client.sendcmd, 'appe x')
 
     def test_rest_on_stor(self):
         # Test STOR preceded by REST.
