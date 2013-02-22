@@ -2216,9 +2216,11 @@ class TestConfigurableOptions(TestCase):
                               self.server.port)
             sock.close()
         finally:
-            c1.close()
-            c2.close()
-            c3.close()
+            for c in (c1, c2, c3):
+                try:
+                    c.quit()
+                except (socket.error, EOFError):  # already disconnected
+                    c.close()
 
     def test_max_connections_per_ip(self):
         # Test FTPServer.max_cons_per_ip attribute
@@ -2239,10 +2241,11 @@ class TestConfigurableOptions(TestCase):
             # supposed to be raised in such a case.
             self.assertRaises((socket.error, EOFError), c4.sendcmd, 'noop')
         finally:
-            c1.close()
-            c2.close()
-            c3.close()
-            c4.close()
+            for c in (c1, c2, c3, c4):
+                try:
+                    c.quit()
+                except (socket.error, EOFError):  # already disconnected
+                    c.close()
 
     def test_banner(self):
         # Test FTPHandler.banner attribute
