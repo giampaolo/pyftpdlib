@@ -150,6 +150,18 @@ def warn(msg):
     atexit.register(warnings.warn, str(msg) + " - tests have been skipped",
                     RuntimeWarning)
 
+def disable_log_warning(inst):
+    """Temporarily set FTP server's logging level to ERROR."""
+    def wrapper(self, *args, **kwargs):
+        logger = logging.getLogger('pyftpdlib')
+        level = logger.getEffectiveLevel()
+        logger.setLevel(logging.ERROR)
+        try:
+            return callable(self, *args, **kwargs)
+        finally:
+            logger.setLevel(level)
+    return wrapper
+
 def skip_other_tests():
     """Decorator which skips all tests except the decorated one.
     http://mail.python.org/pipermail/python-ideas/2010-August/007992.html
@@ -2185,6 +2197,7 @@ class TestConfigurableOptions(TestCase):
         self.server.handler.tcp_no_delay = hasattr(socket, 'TCP_NODELAY')
         self.server.stop()
 
+    @disable_log_warning
     def test_max_connections(self):
         # Test FTPServer.max_cons attribute
         self.server.server.max_cons = 3
@@ -2222,6 +2235,7 @@ class TestConfigurableOptions(TestCase):
                 except (socket.error, EOFError):  # already disconnected
                     c.close()
 
+    @disable_log_warning
     def test_max_connections_per_ip(self):
         # Test FTPServer.max_cons_per_ip attribute
         self.server.server.max_cons_per_ip = 3
@@ -2292,6 +2306,7 @@ class TestConfigurableOptions(TestCase):
         self.assertTrue(self.client.makepasv()[1] in _range)
         self.assertTrue(self.client.makepasv()[1] in _range)
 
+    @disable_log_warning
     def test_passive_ports_busy(self):
         # If the ports in the configured range are busy it is expected
         # that a kernel-assigned port gets chosen
@@ -2304,6 +2319,7 @@ class TestConfigurableOptions(TestCase):
         self.assertTrue(port != resulting_port)
         s.close()
 
+    @disable_log_warning
     def test_permit_privileged_ports(self):
         # Test FTPHandler.permit_privileged_ports_active attribute
 
@@ -2758,6 +2774,7 @@ class _TestNetworkProtocols(TestCase):
             err = sys.exc_info()[1]
             return str(err)
 
+    @disable_log_warning
     def test_eprt(self):
         if not SUPPORTS_HYBRID_IPV6:
             # test wrong proto
@@ -2859,6 +2876,7 @@ class TestIPv4Environment(_TestNetworkProtocols):
     client_class = ftplib.FTP
     HOST = '127.0.0.1'
 
+    @disable_log_warning
     def test_port_v4(self):
         # test connection
         sock = self.client.makeport()
@@ -2882,6 +2900,7 @@ class TestIPv4Environment(_TestNetworkProtocols):
             resp = self.cmdresp('port 1,2,3,4,4,4')
             assert 'foreign address' in resp, resp
 
+    @disable_log_warning
     def test_eprt_v4(self):
         resp = self.cmdresp('eprt |1|0.10.10.10|2222|')
         self.assertEqual(resp[:3], '501')
@@ -2917,6 +2936,7 @@ class TestIPv6Environment(_TestNetworkProtocols):
         # IPv4 connecting to a server supporting both IPv4 and IPv6
         self.client.makepasv()
 
+    @disable_log_warning
     def test_eprt_v6(self):
         resp = self.cmdresp('eprt |2|::foo|2222|')
         self.assertEqual(resp[:3], '501')
@@ -3417,7 +3437,7 @@ class TestCommandLineParser(TestCase):
         self.assertRaises(SystemExit, pyftpdlib.main)
 
 
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.WARNING)
 remove_test_files()
 
 def test_main(tests=None):
