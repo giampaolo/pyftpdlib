@@ -824,7 +824,7 @@ class TestFtpAuthentication(TestCase):
 
     def setUp(self):
         self.server = self.server_class()
-        self.server.handler._auth_failed_timeout = 0
+        self.server.handler._auth_failed_timeout = 0.001
         self.server.start()
         self.client = self.client_class()
         self.client.connect(self.server.host, self.server.port)

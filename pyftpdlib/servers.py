@@ -316,9 +316,10 @@ class _SpawnerBase(FTPServer):
             poll_timeout = getattr(self, 'poll_timeout', None)
             soonest_timeout = poll_timeout
 
-            while socket_map and not self._exit.is_set():
+            while (socket_map or tasks) and not self._exit.is_set():
                 try:
-                    poll(timeout=soonest_timeout)
+                    if socket_map:
+                        poll(timeout=soonest_timeout)
                     if tasks:
                         soonest_timeout = sched_poll()
                     else:
