@@ -3520,9 +3520,10 @@ def test_main(tests=None):
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
     try:
-        unittest.TextTestRunner(verbosity=2).run(test_suite)
+        result = unittest.TextTestRunner(verbosity=2).run(test_suite)
     finally:
         cleanup()
+    return result
 
 if __name__ == '__main__':
-    test_main()
+    sys.exit(not test_main().wasSuccessful())
