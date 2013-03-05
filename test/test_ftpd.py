@@ -286,7 +286,7 @@ class FTPd(threading.Thread):
 
 class TestCase(unittest.TestCase):
 
-    # compatibility with python < 2.7
+    # compatibility with python < 3.1
     if not hasattr(unittest.TestCase, 'assertIn'):
         def assertIn(self, member, container, msg=None):
             if member not in container:
@@ -296,7 +296,7 @@ class TestCase(unittest.TestCase):
             if member in container:
                 self.fail(msg or '%r not found in %r' % (member, container))
 
-    # compatibility with python < 2.7
+    # compatibility with python < 2.7 / 3.2
     if not hasattr(unittest.TestCase, 'assertRaisesRegex'):
         def assertRaisesRegex(self, expected_exception, expected_regexp,
                               callable_obj, *args, **kwargs):
@@ -328,7 +328,7 @@ class TestAbstractedFS(TestCase):
 
     def test_ftpnorm(self):
         # Tests for ftpnorm method.
-        ae = self.assertEquals
+        ae = self.assertEqual
         fs = AbstractedFS(u('/'), None)
 
         fs._cwd = u('/')
@@ -360,7 +360,7 @@ class TestAbstractedFS(TestCase):
 
     def test_ftp2fs(self):
         # Tests for ftp2fs method.
-        ae = self.assertEquals
+        ae = self.assertEqual
         fs = AbstractedFS(u('/'), None)
         join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
 
@@ -408,7 +408,7 @@ class TestAbstractedFS(TestCase):
 
     def test_ftp2fs(self):
         # Tests for ftp2fs method.
-        ae = self.assertEquals
+        ae = self.assertEqual
         fs = AbstractedFS(u('/'), None)
         join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
 
@@ -456,7 +456,7 @@ class TestAbstractedFS(TestCase):
 
     def test_fs2ftp(self):
         # Tests for fs2ftp method.
-        ae = self.assertEquals
+        ae = self.assertEqual
         fs = AbstractedFS(u('/'), None)
         join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
 
