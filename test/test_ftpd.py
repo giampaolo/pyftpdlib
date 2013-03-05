@@ -65,7 +65,7 @@ from pyftpdlib.handlers import FTPHandler, DTPHandler, SUPPORTS_HYBRID_IPV6
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.authorizers import DummyAuthorizer, AuthenticationFailed
-from pyftpdlib._compat import PY3, u, b, getcwdu
+from pyftpdlib._compat import PY3, u, b, getcwdu, callable
 
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
@@ -3033,13 +3033,16 @@ class TestIPv6MixedEnvironment(TestCase):
         sock.settimeout(2)
         ip, port =  sock.getsockname()[:2]
         self.client.sendcmd('eprt |1|%s|%s|' % (ip, port))
+        sock2 = None
         try:
             try:
-                sock.accept()
+                sock2, addr = sock.accept()
             except socket.timeout:
                 self.fail("Server didn't connect to passive socket")
         finally:
             sock.close()
+            if sock2 is not None:
+                sock2.close()
 
     def test_epsv_v4(self):
         mlstline = lambda cmd: self.client.voidcmd(cmd).split('\n')[1]

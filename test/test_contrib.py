@@ -278,21 +278,27 @@ class TestFTPS(unittest.TestCase):
         # secured
         self.client.prot_p()
         sock = self.client.transfercmd('list')
-        sock.settimeout(TIMEOUT)
-        while 1:
-            if not sock.recv(1024):
-                self.client.voidresp()
-                break
-        self.assertTrue(isinstance(sock, ssl.SSLSocket))
-        # unsecured
-        self.client.prot_c()
+        try:
+            sock.settimeout(TIMEOUT)
+            while 1:
+                if not sock.recv(1024):
+                    self.client.voidresp()
+                    break
+            self.assertTrue(isinstance(sock, ssl.SSLSocket))
+            # unsecured
+            self.client.prot_c()
+        finally:
+            sock.close()
         sock = self.client.transfercmd('list')
-        sock.settimeout(TIMEOUT)
-        while 1:
-            if not sock.recv(1024):
-                self.client.voidresp()
-                break
-        self.assertFalse(isinstance(sock, ssl.SSLSocket))
+        try:
+            sock.settimeout(TIMEOUT)
+            while 1:
+                if not sock.recv(1024):
+                    self.client.voidresp()
+                    break
+            self.assertFalse(isinstance(sock, ssl.SSLSocket))
+        finally:
+            sock.close()
 
     def test_feat(self):
         feat = self.client.sendcmd('feat')
