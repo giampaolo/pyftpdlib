@@ -4,6 +4,19 @@ Bug tracker at http://code.google.com/p/pyftpdlib/issues/list
 History
 =======
 
+Version: 1.0.2 - Date: XXXX-XX-XX
+---------------------------------
+
+Enhancements:
+
+ * Issue 240: enabled "python -m pyftpdlib" cmdline syntax and got rid of
+   "python -m pyftpdlib.tpserver" syntax which was deprecated in 1.0.0.
+
+Incompatible API changes:
+
+ * "python -m pyftpdlib.tpserver" cmdline syntax doesn't work anymore
+
+
 Version: 1.0.1 - Date: 2013-02-22
 ---------------------------------
 
