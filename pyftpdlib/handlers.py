@@ -2371,7 +2371,7 @@ class FTPHandler(AsyncChat):
                         self.close_when_done()
                     else:
                         self.respond("530 " + msg)
-                    self.log("USER '%s' failed login." % self.username)
+                    self.log("USER '%s' failed login." % username)
                 self.on_login_failed(username, password)
 
             msg = str(sys.exc_info()[1])

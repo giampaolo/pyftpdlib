@@ -12,9 +12,14 @@ Enhancements:
  * Issue 240: enabled "python -m pyftpdlib" cmdline syntax and got rid of
    "python -m pyftpdlib.tpserver" syntax which was deprecated in 1.0.0.
 
+Bugfixes:
+
+ * Issue 238: username is not logged in case of failed authentication.
+   (patch by tlockert)
+
 Incompatible API changes:
 
- * "python -m pyftpdlib.tpserver" cmdline syntax doesn't work anymore
+ * "python -m pyftpdlib.ftpserver" cmdline syntax doesn't work anymore
 
 
 Version: 1.0.1 - Date: 2013-02-22
