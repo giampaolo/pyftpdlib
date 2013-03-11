@@ -59,7 +59,7 @@ try:
 except ImportError:
     sendfile = None
 
-import pyftpdlib
+import pyftpdlib.__main__
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.handlers import FTPHandler, DTPHandler, SUPPORTS_HYBRID_IPV6
 from pyftpdlib.servers import FTPServer
@@ -194,7 +194,7 @@ def cleanup():
     """Cleanup function executed on interpreter exit."""
     remove_test_files()
     map = IOLoop.instance().socket_map
-    for x in map.values():
+    for x in list(map.values()):
         try:
             sys.stderr.write("garbage: %s\n" % repr(x))
             x.close()
@@ -3385,7 +3385,7 @@ class TestCommandLineParser(TestCase):
         sys.argv = self.SYSARGV[:]
         sys.stderr = self.STDERR
         self.original_ftpserver_class = FTPServer
-        pyftpdlib.servers.FTPServer = DummyFTPServer
+        pyftpdlib.__main__.FTPServer = DummyFTPServer
 
     def tearDown(self):
         self.devnull.close()
@@ -3396,33 +3396,33 @@ class TestCommandLineParser(TestCase):
 
     def test_a_option(self):
         sys.argv += ["-i", "localhost", "-p", "0"]
-        pyftpdlib.main()
+        pyftpdlib.__main__.main()
         sys.argv = self.SYSARGV[:]
 
         # no argument
         sys.argv += ["-a"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.main)
+        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
 
     def test_p_option(self):
         sys.argv += ["-p", "0"]
-        pyftpdlib.main()
+        pyftpdlib.__main__.main()
 
         # no argument
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-p"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.main)
+        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
 
         # invalid argument
         sys.argv += ["-p foo"]
-        self.assertRaises(SystemExit, pyftpdlib.main)
+        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
 
     def test_w_option(self):
         sys.argv += ["-w", "-p", "0"]
         warnings.filterwarnings("error")
         try:
-            self.assertRaises(RuntimeWarning, pyftpdlib.main)
+            self.assertRaises(RuntimeWarning, pyftpdlib.__main__.main)
         finally:
             warnings.resetwarnings()
 
@@ -3430,49 +3430,49 @@ class TestCommandLineParser(TestCase):
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-w foo"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.main)
+        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
 
     def test_d_option(self):
         sys.argv += ["-d", TESTFN, "-p", "0"]
         safe_mkdir(TESTFN)
-        pyftpdlib.main()
+        pyftpdlib.__main__.main()
 
         # without argument
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-d"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.main)
+        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
 
         # no such directory
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-d %s" % TESTFN]
         safe_rmdir(TESTFN)
-        self.assertRaises(ValueError, pyftpdlib.main)
+        self.assertRaises(ValueError, pyftpdlib.__main__.main)
 
     def test_r_option(self):
         sys.argv += ["-r 60000-61000", "-p", "0"]
-        pyftpdlib.main()
+        pyftpdlib.__main__.main()
 
         # without arg
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-r"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.main)
+        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
 
         # wrong arg
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-r yyy-zzz"]
-        self.assertRaises(SystemExit, pyftpdlib.main)
+        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
 
     def test_v_option(self):
         sys.argv += ["-v"]
-        self.assertRaises(SystemExit, pyftpdlib.main)
+        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
 
         # unexpected argument
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-v foo"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.main)
+        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
 
 
 logging.basicConfig(level=logging.WARNING)

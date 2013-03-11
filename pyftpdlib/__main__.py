@@ -33,6 +33,7 @@ import optparse
 import sys
 import os
 
+from pyftpdlib import __ver__
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer
@@ -101,7 +102,10 @@ def main():
     handler.masquerade_address = options.nat_address
     handler.passive_ports = passive_ports
     ftpd = FTPServer((options.interface, options.port), FTPHandler)
-    ftpd.serve_forever()
+    try:
+        ftpd.serve_forever()
+    finally:
+        ftpd.close_all()
 
 if __name__ == '__main__':
     main()
