@@ -568,6 +568,8 @@ class TestDummyAuthorizer(TestCase):
         auth.validate_authentication(USER, PASSWD, None)
         self.assertRaises(AuthenticationFailed,
                           auth.validate_authentication, USER, 'wrongpwd', None)
+        auth.validate_authentication('anonymous', 'foo', None)
+        auth.validate_authentication('anonymous', '', None)  # empty passwd
         # remove them
         auth.remove_user(USER)
         auth.remove_user('anonymous')
@@ -861,7 +863,13 @@ class TestFtpAuthentication(TestCase):
     def test_anon_auth(self):
         self.client.login(user='anonymous', passwd='anon@')
         self.client.login(user='anonymous', passwd='')
+        # supposed to be case sensitive
         self.assert_auth_failed('AnoNymouS', 'foo')
+        # empty passwords should be allowed
+        self.client.sendcmd('user anonymous')
+        self.client.sendcmd('pass ')
+        self.client.sendcmd('user anonymous')
+        self.client.sendcmd('pass')
 
     def test_auth_failed(self):
         self.assert_auth_failed(USER, 'wrong')
