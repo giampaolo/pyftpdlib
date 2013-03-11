@@ -690,6 +690,12 @@ class Acceptor(asyncore.dispatcher):
         """
         assert self.socket is None
         host, port = addr
+        if host == "":
+            # When using bind() "" is a symbolic name meaning all
+            # available interfaces. People might not know we're
+            # using getaddrinfo() internally, which uses None
+            # instead of "", so we'll make the conversion for them.
+            host = None
         err = "getaddrinfo() returned an empty list"
         info = socket.getaddrinfo(host, port, socket.AF_UNSPEC,
                                   socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
