@@ -492,8 +492,10 @@ class _BasePollEpoll(_IOLoop):
             if err.args[0] == errno.EINTR:
                 return
             raise
+        # localize variable access to minimize overhead
+        smap_get = self.socket_map.get
         for fd, event in events:
-            inst = self.socket_map.get(fd)
+            inst = smap_get(fd)
             if inst is None:
                 continue
             if event & self._ERROR and not event & self.READ:
