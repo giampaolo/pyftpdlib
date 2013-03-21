@@ -19,6 +19,9 @@ Bugfixes:
  * Issue 238: username is not logged in case of failed authentication.
    (patch by tlockert)
 
+ * Issue 243: an erroneous error message is given in case the address passed to
+   bind() is already in use.
+
 Incompatible API changes:
 
  * "python -m pyftpdlib.ftpserver" cmdline syntax doesn't work anymore

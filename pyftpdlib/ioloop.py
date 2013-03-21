@@ -714,6 +714,7 @@ class Acceptor(asyncore.dispatcher):
                 if self.socket is not None:
                     self.socket.close()
                     self.del_channel()
+                    self.socket = None
                 continue
             break
         if self.socket is None:
@@ -801,6 +802,7 @@ class Connector(Acceptor):
                 if self.socket is not None:
                     self.socket.close()
                     self.del_channel()
+                    self.socket = None
                 continue
             break
         if self.socket is None:
