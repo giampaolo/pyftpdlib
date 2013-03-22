@@ -97,9 +97,14 @@ setup(
 # suggest to install pysendfile
 if os.name == 'posix' and sys.version_info >= (2, 5):
     try:
-        import sendfile
-        if hasattr(sendfile, 'has_sf_hdtr'):  # old 1.2.4 version
-            raise ImportError
+        # os.sendfile() appeared in python 3.3
+        # http://bugs.python.org/issue10882
+        if not hasattr(os, 'sendfile'):
+            # fallback on using third-party pysendfile module
+            # http://code.google.com/p/pysendfile/
+            import sendfile
+            if hasattr(sendfile, 'has_sf_hdtr'):  # old 1.2.4 version
+                raise ImportError
     except ImportError:
         def term_supports_colors():
             try:

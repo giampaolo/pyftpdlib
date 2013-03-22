@@ -14,6 +14,9 @@ Enhancements:
 
  * Issue 241: empty passwords are now allowed for anonymous and other users.
 
+ * Issue 244: pysendfile is no longer a dependency if we're on Python >= 3.3
+   since os.sendfile() is now used instead.
+
 Bugfixes:
 
  * Issue 238: username is not logged in case of failed authentication.

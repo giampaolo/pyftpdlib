@@ -98,7 +98,7 @@ def try_address(host, port=0, family=socket.AF_INET):
 
 SUPPORTS_IPV4 = try_address('127.0.0.1')
 SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
-SUPPORTS_SENDFILE = sendfile is not None
+SUPPORTS_SENDFILE = hasattr(os, 'sendfile') or sendfile is not None
 
 def safe_remove(*files):
     "Convenience function for removing temporary test files"
@@ -3197,6 +3197,17 @@ class TestCornerCases(TestCase):
             repr(inst)
             str(inst)
         sock.close()
+
+    if hasattr(os, 'sendfile'):
+        def test_sendfile(self):
+            # make sure that on python >= 3.3 we're using os.sendfile
+            # rather than third party pysendfile module
+            from pyftpdlib.handlers import sendfile
+            self.assertIs(sendfile, os.sendfile)
+
+    if SUPPORTS_SENDFILE:
+        def test_sendfile_enabled(self):
+            self.assertEqual(FTPHandler.use_sendfile, True)
 
 
 # TODO: disabled as on certain platforms (OSX and Windows) produces

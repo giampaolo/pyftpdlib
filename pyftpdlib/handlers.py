@@ -46,17 +46,6 @@ try:
 except ImportError:
     pwd = grp = None
 
-# http://code.google.com/p/pysendfile/
-try:
-    from sendfile import sendfile
-    # dirty hack to detect whether old 1.2.4 version is installed
-    import sendfile as _sf
-    if hasattr(_sf, 'has_sf_hdtr'):
-        raise ImportError
-    del _sf
-except ImportError:
-    sendfile = None
-
 from pyftpdlib import __ver__
 from pyftpdlib.log import logger
 from pyftpdlib.filesystems import FilesystemError, AbstractedFS
@@ -64,6 +53,26 @@ from pyftpdlib._compat import PY3, b, u, getcwdu, unicode, xrange, next
 from pyftpdlib.ioloop import AsyncChat, Connector, Acceptor, _DISCONNECTED
 from pyftpdlib.authorizers import (DummyAuthorizer, AuthenticationFailed,
                                    AuthorizerError)
+
+def _import_sendfile():
+    # By default attempt to use os.sendfile introduced in Python 3.3:
+    # http://bugs.python.org/issue10882
+    # ...otherwise fallback on using third-party pysendfile module:
+    # http://code.google.com/p/pysendfile/
+    if os.name == 'posix':
+        try:
+            return os.sendfile  # py >= 3.3
+        except AttributeError:
+            try:
+                import sendfile as sf
+                # dirty hack to detect whether old 1.2.4 version is installed
+                if hasattr(sf, 'has_sf_hdtr'):
+                    raise ImportError
+                return sf.sendfile
+            except ImportError:
+                pass
+
+sendfile = _import_sendfile()
 
 
 proto_cmds = {
