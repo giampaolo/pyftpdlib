@@ -48,45 +48,45 @@ Example usages:
 """
 
 # Some benchmarks (Linux 3.0.0, Intel core duo - 3.1 Ghz).
+
+# pyftpdlib 1.0.0:
 #
-# pyftpdlib 0.6.0:
+#   (starting with 6.7M of memory being used)
+#   STOR (client -> server)                              557.97 MB/sec  6.7M
+#   RETR (server -> client)                             1613.82 MB/sec  6.8M
+#   300 concurrent clients (connect, login)                1.20 secs    8.8M
+#   STOR (1 file with 300 idle clients)                  567.52 MB/sec  8.8M
+#   RETR (1 file with 300 idle clients)                 1561.41 MB/sec  8.8M
+#   300 concurrent clients (RETR 10.0M file)               3.26 secs    10.8M
+#   300 concurrent clients (STOR 10.0M file)               8.46 secs    12.6M
+#   300 concurrent clients (QUIT)                          0.07 secs
 #
-# (starting with 9M of RSS memory being used)
-# STOR (client -> server)                      528.02 MB/sec  9M RSS
-# RETR (server -> client)                      693.41 MB/sec  10M RSS
-# 200 concurrent clients (connect, login)        0.25 secs    10M RSS
-# 200 concurrent clients (RETR 10M file)         3.68 secs    11M RSS
-# 200 concurrent clients (STOR 10M file)         6.11 secs    11M RSS
-# 200 concurrent clients (quit)                  0.02 secs
 #
-# pyftpdlib 0.7.0:
-#  (starting with 6M of RSS memory being used)
-#   STOR (client -> server)                      512.80 MB/sec  9M RSS
-#   RETR (server -> client)                     1694.14 MB/sec  9M RSS
-#   200 concurrent clients (connect, login)        0.95 secs    11M RSS
-#   200 concurrent clients (RETR 10M file)         2.80 secs    12M RSS
-#   200 concurrent clients (STOR 10M file)         6.30 secs    13M RSS
-#   200 concurrent clients (quit)                  0.02 secs
+# proftpd 1.3.4a:
 #
-# proftpd 1.3.4rc2:
+#   (starting with 1.4M of memory being used)
+#   STOR (client -> server)                              554.67 MB/sec  3.2M
+#   RETR (server -> client)                             1517.12 MB/sec  3.2M
+#   300 concurrent clients (connect, login)                9.30 secs    568.6M
+#   STOR (1 file with 300 idle clients)                  484.11 MB/sec  570.6M
+#   RETR (1 file with 300 idle clients)                 1534.61 MB/sec  570.6M
+#   300 concurrent clients (RETR 10.0M file)               3.67 secs    568.6M
+#   300 concurrent clients (STOR 10.0M file)              11.21 secs    568.7M
+#   300 concurrent clients (QUIT)                          0.43 secs
 #
-#   (starting with 2M of RSS memory being used)
-#   STOR (client -> server)                      609.22 MB/sec  6M RSS
-#   RETR (server -> client)                     1313.77 MB/sec  6M RSS
-#   200 concurrent clients (connect, login)        7.53 secs    862M RSS
-#   200 concurrent clients (RETR 10M file)         2.76 secs    862M RSS
-#   200 concurrent clients (STOR 10M file)         6.39 secs    862M RSS
-#   200 concurrent clients (quit)                  0.23 secs
 #
 # vsftpd 2.3.2
 #
-#   (starting with 1M of RSS memory being used)
-#   STOR (client -> server)                      670.48 MB/sec  2M RSS
-#   RETR (server -> client)                     1505.18 MB/sec  2M RSS
-#   200 concurrent clients (connect, login)       12.61 secs    289M RSS
-#   200 concurrent clients (RETR 10M file)         2.30 secs    289M RSS
-#   200 concurrent clients (STOR 10M file)          N/A
-#   200 concurrent clients (quit)                  0.01
+#   (starting with 352.0K of memory being used)
+#   STOR (client -> server)                              607.23 MB/sec  816.0K
+#   RETR (server -> client)                             1506.59 MB/sec  816.0K
+#   300 concurrent clients (connect, login)               18.91 secs    140.9M
+#   STOR (1 file with 300 idle clients)                  618.99 MB/sec  141.4M
+#   RETR (1 file with 300 idle clients)                 1402.48 MB/sec  141.4M
+#   300 concurrent clients (RETR 10.0M file)               3.64 secs    140.9M
+#   300 concurrent clients (STOR 10.0M file)               9.74 secs    140.9M
+#   300 concurrent clients (QUIT)                          0.00 secs
+
 
 
 from __future__ import with_statement, division
@@ -147,7 +147,7 @@ def print_bench(what, value, unit=""):
                       hilite("%8.2f" % value),
                       unit)
     if server_memory:
-        s += "%s RSS" % hilite(server_memory.pop())
+        s += "%s" % hilite(server_memory.pop())
     print_(s.strip())
 
 # http://goo.gl/zeJZl
@@ -187,11 +187,27 @@ def human2bytes(s):
     return int(num * prefix[letter])
 
 def register_memory():
-    """Register RSS memory used by server process and its children."""
+    """Register an approximation of memory used by FTP server process
+    and all of its children.
+    """
+    # XXX How to get a reliable representation of memory being used is
+    # not clear. (rss - shared) seems kind of ok but we might also use
+    # the private working set via get_memory_maps().private*.
+    def get_mem(proc):
+        if os.name == 'posix':
+            mem = proc.get_ext_memory_info()
+            counter = mem.rss
+            if 'shared' in mem._fields:
+                counter -= mem.shared
+            return counter
+        else:
+            # TODO figure out what to do on Windows
+            return proc.get_memory_info().rss
+
     if SERVER_PROC is not None:
-        mem = SERVER_PROC.get_memory_info().rss
+        mem = get_mem(SERVER_PROC)
         for child in SERVER_PROC.get_children():
-            mem += child.get_memory_info().rss
+            mem += get_mem(child)
         server_memory.append(bytes2human(mem))
 
 def timethis(what):
@@ -490,7 +506,7 @@ def main():
     # start benchmark
     if SERVER_PROC is not None:
         register_memory()
-        print_("(starting with %s of RSS memory being used)" \
+        print_("(starting with %s of memory being used)" \
                % hilite(server_memory.pop()))
     if options.benchmark == 'transfer':
         bench_stor()
