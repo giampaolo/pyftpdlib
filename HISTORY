@@ -7,7 +7,7 @@ History
 Version: 1.0.2 - Date: XXXX-XX-XX
 ---------------------------------
 
-Enhancements:
+ENHANCEMENTS
 
  * #240: enabled "python -m pyftpdlib" cmdline syntax and got rid of
          "python -m pyftpdlib.ftpserver" syntax which was deprecated in 1.0.0.
@@ -15,7 +15,7 @@ Enhancements:
  * #244: pysendfile is no longer a dependency if we're on Python >= 3.3
          since os.sendfile() is now used instead.
 
-Bugfixes:
+BUG FIXES
 
  * #245: ThreadedFTPServer hogs all CPU resources after a client connects.
  * #238: username is not logged in case of failed authentication.
@@ -23,7 +23,7 @@ Bugfixes:
  * #243: an erroneous error message is given in case the address passed to
          bind() is already in use.
 
-Incompatible API changes:
+INCOMPATIBLE API CHANGES
 
  * "python -m pyftpdlib.ftpserver" cmdline syntax doesn't work anymore
 
@@ -31,7 +31,7 @@ Incompatible API changes:
 Version: 1.0.1 - Date: 2013-02-22
 ---------------------------------
 
-Bugfixes:
+BUG FIXES
 
  * #236: MultiprocessFTPServer and ThreadedFTPServer hanging in case of failed
          authentication.
@@ -40,7 +40,7 @@ Bugfixes:
 Version: 1.0.0 - Date: 2013-02-19
 ---------------------------------
 
-Enhancements:
+ENHANCEMENTS
 
  * #76:  python 3.x porting.
  * #198: full unicode support (RFC-2640).
@@ -82,7 +82,7 @@ Enhancements:
          server).  Also, FTPHandler has a new 'log_prefix' attribute which can
          be used to format every line logged.
 
-Bugfixes:
+BUG FIXES
 
  * #131: IPv6 dual-stack support was broken.
  * #206: can't change directory (CWD) when using UnixAuthorizer and process
@@ -97,7 +97,7 @@ Bugfixes:
  * #229: backslashes on UNIX are not handled properly.
  * #232: hybrid IPv4/IPv6 support is broken.  (patch by Claus Klein)
 
-New modules:
+NEW MODULES
 
 All the code contained in pyftpdlib/ftpserver.py and pyftpdlib/contrib
 namespaces has been moved here:
@@ -108,7 +108,7 @@ namespaces has been moved here:
  * pyftpdlib.handlers
  * pyftpdlib.log
 
-New APIs:
+NEW APIS
 
  * pyftpdlib.authorizers.AuthenticationFailed
  * pyftpdlib.filesystems.FilesystemError
@@ -121,30 +121,30 @@ New APIs:
  * pyftpdlib.lib.ioloop.IOLoop class (not supposed to be used directly)
  * pyftpdlib.handlers.FTPHandler.log_prefix
 
-Deprecated namespaces:
+DEPRECATED NAME SPACES
 
  * pyftpdlib.ftpserver
  * pyftpdlib.contrib.*
 
-Incompatible API changes:
+INCOMPATIBLE API CHANGES
 
  * All the main classes have been extracted from ftpserver.py and split into sub
          modules.
 
   ----------------------------------------------------------------------------
-  BEFORE                                           | NOW
+  BEFORE                              | NOW
   ----------------------------------------------------------------------------
-  pyftpdlib.ftpserver.FTPServer                    | pyftpdlib.servers.FTPServer
-  pyftpdlib.ftpserver.FTPHandler                   | pyftpdlib.handlers.FTPHandler
-  pyftpdlib.ftpserver.DTPHandler                   | pyftpdlib.handlers.DTPHandler
-  pyftpdlib.ftpserver.DummyAuthorizer              | pyftpdlib.authorizers.DummyAuthorizer
-  pyftpdlib.ftpserver.AbstractedFS                 | pyftpdlib.filesystems.AbstractedFS
+  pyftpdlib.ftpserver.FTPServer       | pyftpdlib.servers.FTPServer
+  pyftpdlib.ftpserver.FTPHandler      | pyftpdlib.handlers.FTPHandler
+  pyftpdlib.ftpserver.DTPHandler      | pyftpdlib.handlers.DTPHandler
+  pyftpdlib.ftpserver.DummyAuthorizer | pyftpdlib.authorizers.DummyAuthorizer
+  pyftpdlib.ftpserver.AbstractedFS    | pyftpdlib.filesystems.AbstractedFS
   ----------------------------------------------------------------------------
 
   Same for pyftpflib.contribs namespace which is deprecated.
 
   -------------------------------------------------------------------------------------------
-  BEFORE                                           | NOW
+  BEFORE                                          | NOW
   -------------------------------------------------------------------------------------------
   pyftpdlib.contrib.handlers.TLS_FTPHandler       | pyftpdlib.handlers.TLS_FTPHandler
   pyftpdlib.contrib.authorizers.UnixAuthorizer    | pyftpdlib.authorizers.UnixAuthorizer
@@ -199,7 +199,7 @@ Incompatible API changes:
  * FTPHandler.sleeping attribute is removed. self.add_channel() and
    self.del_channel() should be used to pause and restart the handler.
 
-Minor incompatible API changes:
+MINOR INCOMPATIBLE API CHANGES
 
  - FTPHandler.respond(resp)
  + FTPHandler.respond(resp, logfun=logger.debug)
@@ -214,7 +214,7 @@ Minor incompatible API changes:
 Version: 0.7.0 - Date: 2012-01-25
 ---------------------------------
 
-Enhancements:
+ENHANCEMENTS
 
  * #152: uploads (from server to client) on UNIX are now from 2x (Linux) to 3x
          (OSX) faster because of sendfile(2) system call usage.
@@ -242,7 +242,7 @@ Enhancements:
  * #200: FTPServer.server_forever() is now a class method.
  * #202: added benchmark script.
 
-Bugfixes:
+BUG FIXES
 
  * #156: data connection must be closed before sending 226/426 reply. This was
          against RFC-959 and was causing problems with older FTP clients.
@@ -271,7 +271,7 @@ Bugfixes:
          infinite loop hogging CPU resources.
  * #199: UnixAuthorizer with require_valid_shell option is broken.
 
-Major API changes since 0.6.0:
+MAJOR API CHANGES SINCE 0.6.0:
 
  * New FTPHandler.use_sendfile attribute.
  * sendfile() is now automatically used instead of plain send() if
@@ -287,7 +287,7 @@ Major API changes since 0.6.0:
 Version: 0.6.0 - Date: 2011-01-24
 ---------------------------------
 
-Enhancements:
+ENHANCEMENTS
 
  * #68:  added full FTPS (FTP over SSL/TLS) support provided by new
          TLS_FTPHandler class defined in pyftpdlib.contrib.handlers module.
@@ -332,7 +332,7 @@ Enhancements:
  * #149: ftpserver.proto_cmds dictionary refactoring and get rid of
          _CommandProperty class.
 
-Bugfixes:
+BUG FIXES
 
  * #120: an ActiveDTP() instance is not garbage collected in case a client
          issuing PORT disconnects before establishing the data connection.
@@ -347,69 +347,69 @@ Bugfixes:
  * #150: path traversal bug: it is possible to move/rename a file outside of the
          user home directory.
 
-Major API changes since 0.5.2
+MAJOR API CHANGES SINCE 0.5.2
 
  * dropped Python 2.3 support.
  * all classes are now new-style classes.
  * AbstractedFS class:
-         * __init__ now accepts two arguments: root and cmd_channel.
-         * root and cwd attributes are now read-only properties.
-         * 3 new methods have been added:
-           - get_user_by_uid()
-           - get_group_by_gid()
-           - readlink()
+     * __init__ now accepts two arguments: root and cmd_channel.
+     * root and cwd attributes are now read-only properties.
+     * 3 new methods have been added:
+       - get_user_by_uid()
+       - get_group_by_gid()
+       - readlink()
  * FTPHandler class:
-         * new class attributes:
-           - use_gmt_times
-           - tcp_no_delay
-           - masquerade_address_map
-         * new methods:
-           - on_incomplete_file_sent()
-           - on_incomplete_file_received()
-           - on_login()
-           - on_logout()
-           - log_cmd()
-           - log_transfer()
-         * proto_cmds class attribute has been added.  The FTPHandler class no longer
-           relies on "ftpserver.proto_cmds" global dictionary but on
-           "ftpserver.FTPHandler.proto_cmds" instead.
+     * new class attributes:
+       - use_gmt_times
+       - tcp_no_delay
+       - masquerade_address_map
+     * new methods:
+       - on_incomplete_file_sent()
+       - on_incomplete_file_received()
+       - on_login()
+       - on_logout()
+       - log_cmd()
+       - log_transfer()
+     * proto_cmds class attribute has been added.  The FTPHandler class no
+       longer relies on "ftpserver.proto_cmds" global dictionary but on
+       "ftpserver.FTPHandler.proto_cmds" instead.
  * FTPServer class:
-         - max_cons attribute defaults to 512 by default instead of 0 (unlimited).
-         - server_forever()'s map argument is gone.
+     - max_cons attribute defaults to 512 by default instead of 0 (unlimited).
+     - server_forever()'s map argument is gone.
  * DummyAuthorizer:
-         - ValueError exceptions are now raised instead of AuthorizerError.
-         - terminate_impersonation() method now expects a "username" parameter.
+     - ValueError exceptions are now raised instead of AuthorizerError.
+     - terminate_impersonation() method now expects a "username" parameter.
  * DTPHandler.get_elapsed_time() method has been added.
  * Added a new package in pyftpdlib namespace: "contrib". Modules (and classes)
-         defined here:
-         - pyftpdlib.contrib.handlers.py (TLS_FTPHandler)
-         - pyftpdlib.contrib.authorizers.py (UnixAuthorizer, WindowsAuthorizer)
-         - pyftpdlib.contrib.filesystems (UnixFilesystem)
+   defined here:
+     - pyftpdlib.contrib.handlers.py (TLS_FTPHandler)
+     - pyftpdlib.contrib.authorizers.py (UnixAuthorizer, WindowsAuthorizer)
+     - pyftpdlib.contrib.filesystems (UnixFilesystem)
 
-Minor API changes since 0.5.2
+MINOR API CHANGES SINCE 0.5.2
 
  * FTPHandler renamed objects:
-         data_server -> _dtp_acceptor
-         current_type -> _current_type
-         restart_position -> _restart_position
-         quit_pending -> _quit_pending
-         af -> _af
-         on_dtp_connection -> _on_dtp_connection
-         on_dtp_close -> _on_dtp_close
-         idler -> _idler
+     - data_server -> _dtp_acceptor
+     - current_type -> _current_type
+     - restart_position -> _restart_position
+     - quit_pending -> _quit_pending
+     - af -> _af
+     - on_dtp_connection -> _on_dtp_connection
+     - on_dtp_close -> _on_dtp_close
+     - idler -> _idler
  * AbstractedFS.rnfr attribute moved to FTPHandler._rnfr.
 
 
 Version: 0.5.2 - Date: 2009-09-14
 ---------------------------------
 
-Enhancements:
+ENHANCEMENTS
 
  * #103: added unix_daemon.py script.
  * #108: a new ThrottledDTPHandler class has been added for limiting the speed
          of downloads and uploads.
 
-Bugfixes:
+BUG FIXES
 
  * #100: fixed a race condition in FTPHandler constructor which could throw an
          exception in case of connection bashing (DoS).  (thanks Bram Neijt)
@@ -438,7 +438,7 @@ Bugfixes:
  * #119: QUIT sent during a transfer caused a memory leak.
 
 
-API changes since 0.5.1:
+API CHANGES SINCE 0.5.1:
 
  * ThrottledDTPHandler class has been added.
  * FTPHandler.process_command() method has been added.
@@ -447,7 +447,7 @@ API changes since 0.5.1:
 Version: 0.5.1 - Date: 2009-01-21
 ---------------------------------
 
-Enhancements:
+ENHANCEMENTS
 
  * #79: added two new callback methods to FTPHandler class to handle
         "on_file_sent" and "on_file_received" events.
@@ -462,7 +462,7 @@ Enhancements:
         demo directory. See:
         http://code.google.com/p/pyftpdlib/source/browse/trunk/demo/tls_ftpd.py
 
-Bugfixes:
+BUG FIXES
 
  * #78: the idle timeout of passive data connections gets stopped in case of
         rejected "site-to-site" connections.
@@ -483,7 +483,7 @@ Bugfixes:
         of a socket (it happens sometimes).
  * #95: anonymous is now treated as any other case-sensitive user.
 
-API changes since 0.5.0:
+API CHANGES SINCE 0.5.0:
 
  * FTPHandler gained a new "_extra_feats" private attribute.
  * FTPHandler gained two new methods: "on_file_sent" and "on_file_received".
@@ -492,7 +492,7 @@ API changes since 0.5.0:
 Version: 0.5.0 - Date: 2008-09-20
 ---------------------------------
 
-Enhancements:
+ENHANCEMENTS
 
  * #72: pyftpdlib now provides configurable idle timeouts to disconnect client
         after a long time of inactivity.
@@ -505,7 +505,7 @@ Enhancements:
         script  by having used the new CallLater class which drastically reduces
         the number of time.time() calls.
 
-Bugfixes:
+BUG FIXES
 
  * #62: some unit tests were failing on certain dual core machines.
  * #71: socket handles are leaked when a data transfer is in progress and user
@@ -514,7 +514,7 @@ Bugfixes:
         permissions.
  * #77: incorrect OOB data management on FreeBSD.
 
-API changes since 0.4.0:
+API CHANGES SINCE 0.4.0:
 
  * FTPHandler, DTPHandler, PassiveDTP and ActiveDTP classes gained a new timeout
    class attribute.
@@ -526,13 +526,13 @@ API changes since 0.4.0:
 Version: 0.4.0 - Date: 2008-05-16
 ---------------------------------
 
-Enhancements:
+ENHANCEMENTS
 
  * #65: It is now possible to assume the id of real users when using system
         dependent authorizers.
  * #67: added IPv6 support.
 
-Bugfixes:
+BUG FIXES
 
  * #64: Issue #when authenticating as anonymous user when using UNIX and Windows
         authorizers.
@@ -541,7 +541,7 @@ Bugfixes:
         attribute for user_table dictionary.
  * #70: a wrong NOOP response code was given.
 
-API changes since 0.3.0:
+API CHANGES SINCE 0.3.0:
 
  * DummyAuthorizer class has now two new methods: impersonate_user() and
          terminate_impersonation().
@@ -550,7 +550,7 @@ API changes since 0.3.0:
 Version: 0.3.0 - Date: 2008-01-17
 ---------------------------------
 
-Enhancements:
+ENHANCEMENTS
 
  * #42: implemented FEAT command (RFC-2389).
  * #48: real permissions, owner, and group for files on UNIX platforms are now
@@ -563,7 +563,7 @@ Enhancements:
         scalability when dealing with many connected clients.
  * #61: extended the set of assignable user permissions.
 
-Bugfixes:
+BUG FIXES
 
  * #41: an unhandled exception occurred on QUIT if user was not yet
         authenticated.
@@ -589,7 +589,7 @@ Bugfixes:
  * #60: an unhandled IndexError exception error was raised in case of certain
         bad formatted PORT requests.
 
-API changes since 0.2.0:
+API CHANGES SINCE 0.2.0:
 
  * New IteratorProducer and BufferedIteratorProducer classes have been added.
  * DummyAuthorizer class changes:
@@ -613,7 +613,7 @@ API changes since 0.2.0:
 Version: 0.2.0 - Date: 2007-09-17
 ---------------------------------
 
-Major enhancements:
+MAJOR ENHANCEMENTS
 
  * #5: it is now possible to set a maximum number of connecions and a maximum
        number of connections from the same IP address.
@@ -622,7 +622,7 @@ Major enhancements:
  * #40: it is now possible to set a range of ports to use for passive
         connections.
 
-RFC-related enhancements:
+RFC-RELATED ENHANCEMENTS
 
  * #6: accept TYPE AN and TYPE L8 as synonyms for TYPE ASCII and TYPE Binary.
  * #7: a new USER command can now be entered at any point to begin the login
@@ -632,7 +632,7 @@ RFC-related enhancements:
  * #15: STAT used with an argument now returns directory LISTing over the
         command channel (RFC-959).
 
-Security enhancements:
+SECURITY ENHANCEMENTS
 
  * #3: stop buffering when extremely long lines are received over the command
        channel.
@@ -641,7 +641,7 @@ Security enhancements:
  * #25: limited the number of attempts to find a unique filename when
         processing STOU command.
 
-Usability enhancements:
+USABILITY ENHANCEMENTS
 
  * #    Provided an overridable attribute to easily set number of maximum login
         attempts before disconnecting.
@@ -652,7 +652,7 @@ Usability enhancements:
          case the transfer is interrupted for some unexpected reason.
  * #38: write access can now be optionally granted for anonymous user.
 
-Test suite enhancements:
+TEST SUITE ENHANCEMENTS
 
  * #   File creation/removal moved into setUp and tearDown methods to avoid
        leaving behind orphaned temporary files in the event of a test suite
@@ -661,7 +661,7 @@ Test suite enhancements:
  * #7: added test case for REIN while a transfer is in progress.
  * #28: added ABOR tests.
 
-Bugfixes:
+BUG FIXES
 
  * #4: socket's "reuse_address" feature was used after the socket's binding.
  * #8: STOU string response didn't follow RFC-1123 specifications.
