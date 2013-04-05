@@ -1599,6 +1599,8 @@ class FTPHandler(AsyncChat):
             self.close()
         elif self.timeout:
             # data transfer finished, restart the idle timer
+            if self._idler is not None and not self._idler.cancelled:
+                self._idler.cancel()
             self._idler = self.ioloop.call_later(self.timeout,
                                                  self.handle_timeout,
                                                  _errback=self.handle_error)

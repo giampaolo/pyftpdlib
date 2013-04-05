@@ -19,6 +19,8 @@ Enhancements:
 
 Bugfixes:
 
+ * Issue 245: ThreadedFTPServer hogs all CPU resources after a client connects.
+
  * Issue 238: username is not logged in case of failed authentication.
    (patch by tlockert)
 

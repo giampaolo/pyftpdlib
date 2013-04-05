@@ -149,8 +149,6 @@ class _Scheduler(object):
         # entire queue
         if self._cancellations > 512 \
           and self._cancellations > (len(self._tasks) >> 1):
-            self._cancellations = 0
-            self._tasks = [x for x in self._tasks if not x.cancelled]
             self.reheapify()
 
         try:
@@ -169,6 +167,9 @@ class _Scheduler(object):
         self._cancellations += 1
 
     def reheapify(self):
+        """Get rid of cancelled calls and reinitialize the internal heap."""
+        self._cancellations = 0
+        self._tasks = [x for x in self._tasks if not x.cancelled]
         heapq.heapify(self._tasks)
 
 

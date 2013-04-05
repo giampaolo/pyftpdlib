@@ -68,6 +68,7 @@ import errno
 import select
 import logging
 import signal
+import time
 
 from pyftpdlib.log import logger
 from pyftpdlib.ioloop import Acceptor, IOLoop
@@ -324,6 +325,19 @@ class _SpawnerBase(FTPServer):
                         poll(timeout=soonest_timeout)
                     if tasks:
                         soonest_timeout = sched_poll()
+                        # Handle the case where socket_map is emty but some
+                        # cancelled scheduled calls are still around causing
+                        # this while loop to hog CPU resources.
+                        # In theory this should never happen as all the sched
+                        # functions are supposed to be cancel()ed on close()
+                        # but by using threads we can incur into
+                        # synchronization issues such as this one.
+                        # https://code.google.com/p/pyftpdlib/issues/detail?id=245
+                        if not socket_map:
+                            ioloop.sched.reheapify() # get rid of cancel()led calls
+                            soonest_timeout = sched_poll()
+                            if soonest_timeout:
+                                time.sleep(min(soonest_timeout, 1))
                     else:
                         soonest_timeout = None
                 except (KeyboardInterrupt, SystemExit):
