@@ -875,7 +875,6 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
         self._datacount = 0
         self.sleeping = False
         self._throttler = None
-
         if self.auto_sized_buffers:
             if self.read_limit:
                 while self.ac_in_buffer_size > self.read_limit:
@@ -883,6 +882,8 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
             if self.write_limit:
                 while self.ac_out_buffer_size > self.write_limit:
                     self.ac_out_buffer_size /= 2
+        self.ac_in_buffer_size = int(self.ac_in_buffer_size)
+        self.ac_out_buffer_size = int(self.ac_out_buffer_size)
 
     def _use_sendfile(self, producer):
         return False
@@ -898,6 +899,10 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
         if self.write_limit:
             self._throttle_bandwidth(num_sent, self.write_limit)
         return num_sent
+
+    def _cancel_throttler(self):
+        if self._throttler is not None and not self._throttler.cancelled:
+            self._throttler.cancel()
 
     def _throttle_bandwidth(self, len_chunk, max_speed):
         """A method which counts data transmitted so that you burst to
@@ -918,13 +923,13 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
                     self.add_channel(events=event)
 
                 self.del_channel()
+                self._cancel_throttler()
                 self._throttler = self.ioloop.call_later(sleepfor, unsleep,
                                                      _errback=self.handle_error)
             self._timenext = now + 1
 
     def close(self):
-        if self._throttler is not None and not self._throttler.cancelled:
-            self._throttler.cancel()
+        self._cancel_throttler()
         super(ThrottledDTPHandler, self).close()
 
 

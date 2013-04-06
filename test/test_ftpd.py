@@ -61,7 +61,8 @@ except ImportError:
 
 import pyftpdlib.__main__
 from pyftpdlib.ioloop import IOLoop
-from pyftpdlib.handlers import FTPHandler, DTPHandler, SUPPORTS_HYBRID_IPV6
+from pyftpdlib.handlers import (FTPHandler, DTPHandler, ThrottledDTPHandler,
+                                SUPPORTS_HYBRID_IPV6)
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.authorizers import DummyAuthorizer, AuthenticationFailed
@@ -2053,6 +2054,68 @@ class TestFtpAbort(TestCase):
             self.assertEqual(self.client.getresp()[:3], '225')
 
 
+class TestThrottleBandwidth(unittest.TestCase):
+    """Test ThrottledDTPHandler class."""
+    server_class = FTPd
+    client_class = ftplib.FTP
+
+    def setUp(self):
+        class CustomDTPHandler(ThrottledDTPHandler):
+            # overridden so that the "awake" callback is executed
+            # immediately; this way we won't introduce any slowdown
+            # and still test the code of interest
+            def _throttle_bandwidth(self, *args, **kwargs):
+                ThrottledDTPHandler._throttle_bandwidth(self, *args, **kwargs)
+                if self._throttler is not None and not self._throttler.cancelled:
+                    self._throttler.call()
+                    self._throttler = None
+
+        self.server = self.server_class()
+        self.server.handler.dtp_handler = CustomDTPHandler
+        self.server.start()
+        self.client = self.client_class()
+        self.client.connect(self.server.host, self.server.port)
+        self.client.sock.settimeout(2)
+        self.client.login(USER, PASSWD)
+        self.dummyfile = BytesIO()
+
+    def tearDown(self):
+        self.client.close()
+        self.server.handler.dtp_handler.read_limit = 0
+        self.server.handler.dtp_handler.write_limit = 0
+        self.server.handler.dtp_handler = DTPHandler
+        self.server.stop()
+        if not self.dummyfile.closed:
+            self.dummyfile.close()
+        if os.path.exists(TESTFN):
+            os.remove(TESTFN)
+
+    def test_throttle_send(self):
+        # This test doesn't test the actual speed accuracy, just
+        # awakes all that code which implements the throttling.
+        self.server.handler.dtp_handler.write_limit = 32768
+        data = b('abcde12345') * 100000
+        file = open(TESTFN, 'wb')
+        file.write(data)
+        file.close()
+        self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
+        self.dummyfile.seek(0)
+        self.assertEqual(hash(data), hash(self.dummyfile.read()))
+
+    def test_throttle_recv(self):
+        # This test doesn't test the actual speed accuracy, just
+        # awakes all that code which implements the throttling.
+        self.server.handler.dtp_handler.read_limit = 32768
+        data = b('abcde12345') * 100000
+        self.dummyfile.write(data)
+        self.dummyfile.seek(0)
+        self.client.storbinary("stor " + TESTFN, self.dummyfile)
+        self.client.quit()  # needed to fix occasional failures
+        file = open(TESTFN, 'rb')
+        file_data = file.read()
+        file.close()
+        self.assertEqual(hash(data), hash(file_data))
+
 class TestTimeouts(TestCase):
     """Test idle-timeout capabilities of control and data channels.
     Some tests may fail on slow machines.
@@ -3513,6 +3576,7 @@ def test_main(tests=None):
                  TestFtpRetrieveData,
                  TestFtpListingCmds,
                  TestFtpAbort,
+                 TestThrottleBandwidth,
                  TestTimeouts,
                  TestConfigurableOptions,
                  TestCallbacks,

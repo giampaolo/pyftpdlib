@@ -29,6 +29,12 @@
 #
 #  ======================================================================
 
+"""
+Start a stand alone anonymous FTP server from the command line as in:
+
+$ python -m pyftpdlib
+"""
+
 import optparse
 import sys
 import os
