@@ -103,6 +103,7 @@ from pyftpdlib._compat import MAXSIZE, callable, b
 from pyftpdlib.log import logger, _config_logging
 
 
+timer = getattr(time, 'monotonic', time.time)
 _read = asyncore.read
 _write = asyncore.write
 
@@ -123,7 +124,7 @@ class _Scheduler(object):
         """Run the scheduled functions due to expire soonest and
         return the timeout of the next one (if any, else None).
         """
-        now = time.time()
+        now = timer()
         calls = []
         while self._tasks:
             if now < self._tasks[0].timeout:
@@ -194,7 +195,7 @@ class _CallLater(object):
         if not seconds:
             self.timeout = 0
         else:
-            self.timeout = time.time() + self._delay
+            self.timeout = timer() + self._delay
         self.cancelled = False
         self._sched.register(self)
 
@@ -239,7 +240,7 @@ class _CallLater(object):
     def reset(self):
         """Reschedule this call resetting the current countdown."""
         assert not self.cancelled, "already cancelled"
-        self.timeout = time.time() + self._delay
+        self.timeout = timer() + self._delay
         self._repush = True
 
     def cancel(self):
@@ -258,7 +259,7 @@ class _CallEvery(_CallLater):
             if exc:
                 self.cancel()
             else:
-                self.timeout = time.time() + self._delay
+                self.timeout = timer() + self._delay
                 self._sched.register(self)
 
 

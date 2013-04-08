@@ -50,7 +50,7 @@ from pyftpdlib import __ver__
 from pyftpdlib.log import logger
 from pyftpdlib.filesystems import FilesystemError, AbstractedFS
 from pyftpdlib._compat import PY3, b, u, getcwdu, unicode, xrange, next
-from pyftpdlib.ioloop import AsyncChat, Connector, Acceptor, _DISCONNECTED
+from pyftpdlib.ioloop import AsyncChat, Connector, Acceptor, timer, _DISCONNECTED
 from pyftpdlib.authorizers import (DummyAuthorizer, AuthenticationFailed,
                                    AuthorizerError)
 
@@ -528,7 +528,7 @@ class DTPHandler(AsyncChat):
         self._lastdata = 0
         self._closed = False
         self._had_cr = False
-        self._start_time = time.time()
+        self._start_time = timer()
         self._resp = ()
         self._offset = None
         self._filefd = None
@@ -665,7 +665,7 @@ class DTPHandler(AsyncChat):
 
     def get_elapsed_time(self):
         """Return the transfer elapsed time in seconds."""
-        return time.time() - self._start_time
+        return timer() - self._start_time
 
     def transfer_in_progress(self):
         """Return True if a transfer is in progress, else False."""
@@ -911,7 +911,7 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
         self._datacount += len_chunk
         if self._datacount >= max_speed:
             self._datacount = 0
-            now = time.time()
+            now = timer()
             sleepfor = (self._timenext - now) * 2
             if sleepfor > 0:
                 # we've passed bandwidth limits
