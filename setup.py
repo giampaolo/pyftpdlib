@@ -43,8 +43,25 @@ try:
 except ImportError:
     from distutils.core import setup
 
+def get_version():
+    INIT = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                           'pyftpdlib', '__init__.py'))
+    f = open(INIT, 'r')
+    try:
+        for line in f:
+            if line.startswith('__ver__'):
+                ret = eval(line.strip().split(' = ')[1])
+                assert ret.count('.') == 2, ret
+                for num in ret.split('.'):
+                    assert num.isdigit(), ret
+                return ret
+        else:
+            raise ValueError("couldn't find version string")
+    finally:
+        f.close()
+
 name = 'pyftpdlib'
-version = '1.0.1'
+version = get_version()
 download_url = "http://pyftpdlib.googlecode.com/files/" + name + "-" + \
                                                           version + ".tar.gz"
 
