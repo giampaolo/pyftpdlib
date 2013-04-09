@@ -16,6 +16,7 @@ ENHANCEMENTS
          os.sendfile() will be used instead.
  * #247: on python 3.3 use time.monotonic() instead of time.time() so that the
          scheduler won't break in case of system clock updates.
+ * #248: bench.py memory usage is highly overestimated.
 
 BUG FIXES
 
