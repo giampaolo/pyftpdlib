@@ -482,7 +482,8 @@ class ActiveDTP(Connector):
     def close(self):
         if not self._closed:
             self._closed = True
-            Connector.close(self)
+            if self.socket is not None:
+                Connector.close(self)
             if self._idler is not None and not self._idler.cancelled:
                 self._idler.cancel()
 
