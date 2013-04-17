@@ -313,17 +313,16 @@ class _SpawnerBase(FTPServer):
 
             # Here we localize variable access to minimize overhead.
             poll = ioloop.poll
-            socket_map = ioloop.socket_map
-            tasks = ioloop.sched._tasks
             sched_poll = ioloop.sched.poll
             poll_timeout = getattr(self, 'poll_timeout', None)
             soonest_timeout = poll_timeout
 
-            while (socket_map or tasks) and not self._exit.is_set():
+            while (ioloop.socket_map or ioloop.sched._tasks) and not \
+              self._exit.is_set():
                 try:
-                    if socket_map:
+                    if ioloop.socket_map:
                         poll(timeout=soonest_timeout)
-                    if tasks:
+                    if ioloop.sched._tasks:
                         soonest_timeout = sched_poll()
                         # Handle the case where socket_map is emty but some
                         # cancelled scheduled calls are still around causing
@@ -333,7 +332,7 @@ class _SpawnerBase(FTPServer):
                         # but by using threads we can incur into
                         # synchronization issues such as this one.
                         # https://code.google.com/p/pyftpdlib/issues/detail?id=245
-                        if not socket_map:
+                        if not ioloop.socket_map:
                             ioloop.sched.reheapify() # get rid of cancel()led calls
                             soonest_timeout = sched_poll()
                             if soonest_timeout:
@@ -349,14 +348,14 @@ class _SpawnerBase(FTPServer):
                     # rapidly connect and disconnects
                     err = sys.exc_info()[1]
                     if os.name == 'nt' and err.args[0] == 10038:
-                        for fd in list(socket_map.keys()):
+                        for fd in list(ioloop.socket_map.keys()):
                             try:
                                 select.select([fd], [], [], 0)
                             except select.error:
                                 try:
                                     logger.info("discarding broken socket %r",
-                                                socket_map[fd])
-                                    del socket_map[fd]
+                                                ioloop.socket_map[fd])
+                                    del ioloop.socket_map[fd]
                                 except KeyError:
                                     # dict changed during iteration
                                     pass

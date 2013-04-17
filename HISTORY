@@ -4,6 +4,14 @@ Bug tracker at http://code.google.com/p/pyftpdlib/issues/list
 History
 =======
 
+Version: 1.1.1 - Date: XXXX-XX-XX
+---------------------------------
+
+BUG FIXES
+
+ * #245: ThreadedFTPServer hogs all CPU resources after a client connects.
+
+
 Version: 1.1.0 - Date: 2013-04-09
 ---------------------------------
 
