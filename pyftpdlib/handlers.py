@@ -2250,8 +2250,8 @@ class FTPHandler(AsyncChat):
                                           dir=basedir)
         except (EnvironmentError, FilesystemError):
             err = sys.exc_info()[1]
-            # hitted the max number of tries to find out file with
-            # unique name
+            # likely, we hit the max number of retries to find out a
+            # file with a unique name
             if getattr(err, "errno", -1) == errno.EEXIST:
                 why = 'No usable unique file name found'
             # something else happened
@@ -2743,10 +2743,10 @@ class FTPHandler(AsyncChat):
 
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
-        features = ['UTF8', 'TVFS']
-        features += [feat for feat in ('EPRT', 'EPSV', 'MDTM', 'SIZE') \
-                     if feat in self.proto_cmds]
-        features.extend(self._extra_feats)
+        features = set(['UTF8', 'TVFS'])
+        features.update([feat for feat in ('EPRT', 'EPSV', 'MDTM', 'SIZE') \
+                        if feat in self.proto_cmds])
+        features.update(self._extra_feats)
         if 'MLST' in self.proto_cmds or 'MLSD' in self.proto_cmds:
             facts = ''
             for fact in self._available_facts:
@@ -2754,10 +2754,10 @@ class FTPHandler(AsyncChat):
                     facts += fact + '*;'
                 else:
                     facts += fact + ';'
-            features.append('MLST ' + facts)
+            features.add('MLST ' + facts)
         if 'REST' in self.proto_cmds:
-            features.append('REST STREAM')
-        features.sort()
+            features.add('REST STREAM')
+        features = sorted(features)
         self.push("211-Features supported:\r\n")
         self.push("".join([" %s\r\n" % x for x in features]))
         self.respond('211 End FEAT.')
