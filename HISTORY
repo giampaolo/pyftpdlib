@@ -7,6 +7,10 @@ History
 Version: 1.1.1 - Date: XXXX-XX-XX
 ---------------------------------
 
+ENHANCEMENTS
+
+ * 251: IOLoop.fileno() method for epoll() and kqueue() pollers.
+
 BUG FIXES
 
  * #245: ThreadedFTPServer hogs all CPU resources after a client connects.

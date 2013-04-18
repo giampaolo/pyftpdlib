@@ -46,6 +46,7 @@ import errno
 import atexit
 import stat
 import logging
+import select
 try:
     from StringIO import StringIO as BytesIO
 except ImportError:
@@ -3271,6 +3272,11 @@ class TestCornerCases(TestCase):
     if SUPPORTS_SENDFILE:
         def test_sendfile_enabled(self):
             self.assertEqual(FTPHandler.use_sendfile, True)
+
+    if hasattr(select, 'epoll') or hasattr(select, 'kqueue'):
+        def test_ioloop_fileno(self):
+            fd = self.server.server.ioloop.fileno()
+            self.assertTrue(isinstance(fd, int), fd)
 
 
 # TODO: disabled as on certain platforms (OSX and Windows) produces

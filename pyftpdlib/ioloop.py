@@ -553,6 +553,10 @@ if hasattr(select, 'epoll'):
         _ERROR = select.EPOLLERR | select.EPOLLHUP
         _poller = select.epoll
 
+        def fileno(self):
+            """Return epoll() fd."""
+            return self._poller.fileno()
+
         def close(self):
             _IOLoop.close(self)
             self._poller.close()
@@ -571,6 +575,10 @@ if hasattr(select, 'kqueue'):
             _IOLoop.__init__(self)
             self._kqueue = select.kqueue()
             self._active = {}
+
+        def fileno(self):
+            """Return kqueue() fd."""
+            return self._poller.fileno()
 
         def close(self):
             _IOLoop.close(self)
