@@ -105,11 +105,13 @@ class FTPServer(Acceptor):
     max_cons = 512
     max_cons_per_ip = 0
 
-    def __init__(self, address, handler, ioloop=None, backlog=5):
-        """Initiate the FTP server opening listening on address.
+    def __init__(self, address_or_socket, handler, ioloop=None, backlog=5):
+        """Creates a socket listening on 'address' dispatching
+        connections to a 'handler'.
 
-         - (tuple) address: the host:port pair on which the command
-           channel will listen.
+         - (tuple) address_or_socket: the (host, port) pair on which
+           the command channel will listen for incoming connections or
+           an existent socket object.
 
          - (instance) handler: the handler class to use.
 
@@ -124,22 +126,23 @@ class FTPServer(Acceptor):
         self.handler = handler
         self.backlog = backlog
         self.ip_map = []
-        host, port = address
         # in case of FTPS class not properly configured we want errors
         # to be raised here rather than later, when client connects
         if hasattr(handler, 'get_ssl_context'):
             handler.get_ssl_context()
-
-        # AF_INET or AF_INET6 socket
-        # Get the correct address family for our host (allows IPv6 addresses)
-        try:
-            self._af = self.bind_af_unspecified((host, port))
-        except socket.gaierror:
-            # Probably a DNS issue. Assume IPv4.
-            self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.set_reuse_addr()
-            self.bind((host, port))
-            self._af = socket.AF_INET
+        if isinstance(address_or_socket, socket.socket):
+            sock = address_or_socket
+            sock.setblocking(0)
+            self.set_socket(sock)
+            if hasattr(sock, 'family'):
+                self._af = sock.family
+            else:
+                # python 2.4
+                ip, port = self.socket.getsockname()[:2]
+                self._af = socket.getaddrinfo(ip, port, socket.AF_UNSPEC,
+                                              socket.SOCK_STREAM)[0][0]
+        else:
+            self._af = self.bind_af_unspecified(address_or_socket)
         self.listen(backlog)
 
     @property

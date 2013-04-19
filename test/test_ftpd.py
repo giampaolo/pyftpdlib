@@ -221,12 +221,14 @@ class FTPd(threading.Thread):
     handler = FTPHandler
     server_class = FTPServer
 
-    def __init__(self, host=HOST, port=0):
+    def __init__(self, addr=None):
         threading.Thread.__init__(self)
         self.__serving = False
         self.__stopped = False
         self.__lock = threading.Lock()
         self.__flag = threading.Event()
+        if addr is None:
+            addr = (HOST, 0)
 
         authorizer = DummyAuthorizer()
         authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwM')  # full perms
@@ -236,7 +238,7 @@ class FTPd(threading.Thread):
         # = less false positive test failures
         self.handler.dtp_handler.ac_in_buffer_size = 32768
         self.handler.dtp_handler.ac_out_buffer_size = 32768
-        self.server = self.server_class((host, port), self.handler)
+        self.server = self.server_class(addr, self.handler)
         self.host, self.port = self.server.socket.getsockname()[:2]
 
     def __repr__(self):
@@ -2845,6 +2847,36 @@ class TestCallbacks(TestCase):
         self.assertEqual(users, [])
 
 
+class TestFTPServer(TestCase):
+    """Tests for *FTPServer classes."""
+    server_class = FTPd
+    client_class = ftplib.FTP
+
+    def setUp(self):
+        self.server = None
+        self.client = None
+
+    def tearDown(self):
+        if self.client is not None:
+            self.client.close()
+        if self.server is not None:
+            self.server.stop()
+
+    def test_sock_instead_of_addr(self):
+        # pass a socket object instead of an address tuple to FTPServer
+        # constructor
+        sock = socket.socket()
+        sock.bind((HOST, 0))
+        sock.listen(5)
+        ip, port = sock.getsockname()[:2]
+        self.server = self.server_class(sock)
+        self.server.start()
+        self.client = self.client_class()
+        self.client.connect(ip, port)
+        self.client.sock.settimeout(TIMEOUT)
+        self.client.login(USER, PASSWD)
+
+
 class _TestNetworkProtocols(TestCase):
     """Test PASV, EPSV, PORT and EPRT commands.
 
@@ -2856,7 +2888,7 @@ class _TestNetworkProtocols(TestCase):
     HOST = HOST
 
     def setUp(self):
-        self.server = self.server_class(self.HOST)
+        self.server = self.server_class((self.HOST, 0))
         self.server.start()
         self.client = self.client_class()
         self.client.connect(self.server.host, self.server.port)
@@ -3063,7 +3095,7 @@ class TestIPv6MixedEnvironment(TestCase):
     HOST = "::"
 
     def setUp(self):
-        self.server = self.server_class(self.HOST)
+        self.server = self.server_class((self.HOST, 0))
         self.server.start()
         self.client = None
 
@@ -3586,6 +3618,7 @@ def test_main(tests=None):
                  TestTimeouts,
                  TestConfigurableOptions,
                  TestCallbacks,
+                 TestFTPServer,
                  TestCornerCases,
                  #TestUnicodePathNames,  # TODO: fix errors and re-enable
                  TestCommandLineParser,

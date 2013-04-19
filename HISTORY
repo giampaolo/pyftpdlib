@@ -12,6 +12,7 @@ ENHANCEMENTS
  * 250: added FTPServer's backlog argument controlling the queue of accepted
         connections.
  * 251: IOLoop.fileno() method for epoll() and kqueue() pollers.
+ * 252: FTPServer 'address' parameter can also be an existent socket object.
 
 BUG FIXES
 

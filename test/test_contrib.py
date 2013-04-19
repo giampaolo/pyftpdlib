@@ -172,6 +172,7 @@ class TestCallbacksThreadMixin(ThreadFTPTestMixin, TestCallbacks): pass
 class TestIPv4EnvironmentThreadMixin(ThreadFTPTestMixin, TestIPv4Environment): pass
 class TestIPv6EnvironmentThreadMixin(ThreadFTPTestMixin, TestIPv6Environment): pass
 class TestCornerCasesThreadMixin(ThreadFTPTestMixin, TestCornerCases): pass
+class TestFTPServerThreadMixin(ThreadFTPTestMixin, TestFTPServer): pass
 
 
 # =====================================================================
@@ -207,6 +208,7 @@ class TestFtpAbortMProcMixin(MProcFTPTestMixin, TestFtpAbort): pass
 class TestIPv4EnvironmentMProcMixin(MProcFTPTestMixin, TestIPv4Environment): pass
 class TestIPv6EnvironmentMProcMixin(MProcFTPTestMixin, TestIPv6Environment): pass
 class TestCornerCasesMProcMixin(MProcFTPTestMixin, TestCornerCases): pass
+class TestFTPServerMProcMixin(MProcFTPTestMixin, TestFTPServer): pass
 
 
 # =====================================================================
@@ -776,6 +778,7 @@ def test_main():
         #TestConfigurableOptionsThreadMixin,
         TestCallbacksThreadMixin,
         TestCornerCasesThreadMixin,
+        TestFTPServerThreadMixin,
     ]
     tests += ftp_thread_tests
 
@@ -794,6 +797,7 @@ def test_main():
             #TestConfigurableOptionsMProcMixin,
             #TestCallbacksMProcMixin,
             TestCornerCasesMProcMixin,
+            TestFTPServerMProcMixin,
         ]
         tests += ftp_mproc_tests
 
