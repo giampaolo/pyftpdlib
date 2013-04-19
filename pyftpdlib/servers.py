@@ -105,16 +105,24 @@ class FTPServer(Acceptor):
     max_cons = 512
     max_cons_per_ip = 0
 
-    def __init__(self, address, handler, ioloop=None):
+    def __init__(self, address, handler, ioloop=None, backlog=5):
         """Initiate the FTP server opening listening on address.
 
          - (tuple) address: the host:port pair on which the command
            channel will listen.
 
-         - (classobj) handler: the handler class to use.
+         - (instance) handler: the handler class to use.
+
+         - (instance) ioloop: a pyftpdlib.ioloop.IOLoop instance
+
+         - (int) backlog: the maximum number of queued connections
+           passed to listen(). If a connection request arrives when
+           the queue is full the client may raise ECONNRESET.
+           Defaults to 5.
         """
         Acceptor.__init__(self, ioloop=ioloop)
         self.handler = handler
+        self.backlog = backlog
         self.ip_map = []
         host, port = address
         # in case of FTPS class not properly configured we want errors
@@ -132,7 +140,7 @@ class FTPServer(Acceptor):
             self.set_reuse_addr()
             self.bind((host, port))
             self._af = socket.AF_INET
-        self.listen(5)
+        self.listen(backlog)
 
     @property
     def address(self):

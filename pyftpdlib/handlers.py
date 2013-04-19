@@ -218,8 +218,13 @@ class PassiveDTP(Acceptor):
 
      - (int) timeout: the timeout for a remote client to establish
        connection with the listening socket. Defaults to 30 seconds.
+
+     - (int) backlog: the maximum number of queued connections passed
+       to listen(). If a connection request arrives when the queue is
+       full the client may raise ECONNRESET. Defaults to 5.
     """
     timeout = 30
+    backlog = None
 
     def __init__(self, cmd_channel, extmode=False):
         """Initialize the passive data server.
@@ -284,7 +289,7 @@ class PassiveDTP(Acceptor):
                         raise
                 else:
                     break
-        self.listen(5)
+        self.listen(self.backlog or self.cmd_channel.server.backlog)
 
         port = self.socket.getsockname()[1]
         if not extmode:

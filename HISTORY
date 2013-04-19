@@ -9,6 +9,8 @@ Version: 1.1.1 - Date: XXXX-XX-XX
 
 ENHANCEMENTS
 
+ * 250: added FTPServer's backlog argument controlling the queue of accepted
+        connections.
  * 251: IOLoop.fileno() method for epoll() and kqueue() pollers.
 
 BUG FIXES
