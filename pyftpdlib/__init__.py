@@ -94,8 +94,8 @@ Usage example:
 
 import logging
 
-__ver__     = '1.1.1'
-__date__    = '2013-04-09'
+__ver__     = '1.2.0'
+__date__    = '2013-04-22'
 __author__  = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__     = 'http://code.google.com/p/pyftpdlib/'
 
