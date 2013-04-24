@@ -116,6 +116,7 @@ PASSWORD = None
 TESTFN = "$testfile"
 BUFFER_LEN = 8192
 SERVER_PROC = None
+TIMEOUT = None
 
 
 def print_(s):
@@ -233,8 +234,14 @@ def timethis(what):
 
 def connect():
     """Connect to FTP server, login and return an ftplib.FTP instance."""
-    ftp = ftplib.FTP()
-    ftp.connect(HOST, PORT)
+    if sys.version_info >= (2, 6):
+        # 'timeout' parameter is >= 2.6 only
+        ftp = ftplib.FTP(timeout=TIMEOUT)
+        ftp.connect(HOST, PORT)
+    else:
+        ftp = ftplib.FTP()
+        ftp.connect(HOST, PORT)
+        ftp.sock.settimeout(TIMEOUT)
     ftp.login(USER, PASSWORD)
     return ftp
 
@@ -392,7 +399,7 @@ class OptFormatter(optparse.IndentedHelpFormatter):
         return ''.join(result)
 
 def main():
-    global HOST, PORT, USER, PASSWORD, SERVER_PROC
+    global HOST, PORT, USER, PASSWORD, SERVER_PROC, TIMEOUT
     USAGE = "%s -u USERNAME -p PASSWORD [-H] [-P] [-b] [-n] [-s] [-k]" % __file__
     parser = optparse.OptionParser(usage=USAGE,
                                    epilog=__doc__[__doc__.find('Example'):],
@@ -411,6 +418,8 @@ def main():
                            "(e.g. '10M')")
     parser.add_option('-k', '--pid', dest='pid', default=None, type="int",
                       help="the PID of the server process to bench memory usage")
+    parser.add_option('-t', '--timeout', dest='timeout',
+                      default=TIMEOUT, type="int", help="the socket timeout")
 
 
     options, args = parser.parse_args()
@@ -421,6 +430,7 @@ def main():
         PASSWORD = options.password
         HOST = options.host
         PORT = options.port
+        TIMEOUT = options.timeout
         try:
             FILE_SIZE = human2bytes(options.filesize)
         except (ValueError, AssertionError):
