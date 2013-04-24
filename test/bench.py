@@ -35,6 +35,8 @@ FTP server benchmark script.
 
 In order to run this you must have a listening FTP server with a user
 with writing permissions configured.
+This is a stand-alone script which does not depend from pyftpdlib.
+It just requires python >= 2.5.
 
 Example usages:
   python bench.py -u USER -p PASSWORD
@@ -117,11 +119,21 @@ TESTFN = "$testfile"
 BUFFER_LEN = 8192
 SERVER_PROC = None
 TIMEOUT = None
+PY3 = sys.version_info >= (3, 0)
 
+if PY3:
+    import builtins
+    print_ = getattr(builtins, "print")
 
-def print_(s):
-    sys.stdout.write(s + '\n')
-    sys.stdout.flush()
+    def b(s):
+        return s.encode("latin-1")
+else:
+    def print_(s):
+        sys.stdout.write(s + '\n')
+        sys.stdout.flush()
+
+    def b(s):
+        return s
 
 # http://goo.gl/6V8Rm
 def hilite(string, ok=True, bold=False):
@@ -264,7 +276,7 @@ def stor(ftp, size):
     """
     ftp.voidcmd('TYPE I')
     conn = ftp.transfercmd("STOR " + TESTFN)
-    chunk = 'x' * BUFFER_LEN
+    chunk = b('x') * BUFFER_LEN
     total_sent = 0
     while 1:
         sent = conn.send(chunk)
@@ -306,7 +318,7 @@ def bytes_per_second(ftp, retr=True):
         ftp.voidcmd('TYPE I')
         conn = ftp.transfercmd("STOR " + TESTFN)
         register_memory()
-        chunk = 'x' * BUFFER_LEN
+        chunk = b('x') * BUFFER_LEN
         stop_at = time.time() + 1
         while stop_at > time.time():
             bytes += conn.send(chunk)
@@ -351,11 +363,11 @@ class AsyncWriter(asynchat.async_chat):
         def __init__(self, size):
             self.size = size
             self.sent = 0
-            self.chunk = 'x' * BUFFER_LEN
+            self.chunk = b('x') * BUFFER_LEN
 
         def more(self):
             if self.sent >= self.size:
-                return ''
+                return b('')
             self.sent += len(self.chunk)
             return self.chunk
 
@@ -372,8 +384,8 @@ class AsyncQuit(asynchat.async_chat):
     def __init__(self, sock):
         asynchat.async_chat.__init__(self, sock)
         self.in_buffer = []
-        self.set_terminator('\r\n')
-        self.push('QUIT\r\n')
+        self.set_terminator(b('\r\n'))
+        self.push(b('QUIT\r\n'))
 
     def collect_incoming_data(self, data):
         self.in_buffer.append(data)
@@ -407,7 +419,8 @@ def main():
     parser.add_option('-u', '--user', dest='user', help='username')
     parser.add_option('-p', '--pass', dest='password', help='password')
     parser.add_option('-H', '--host', dest='host', default=HOST, help='hostname')
-    parser.add_option('-P', '--port', dest='port', default=PORT, help='port')
+    parser.add_option('-P', '--port', dest='port', default=PORT, help='port',
+                      type=int)
     parser.add_option('-b', '--benchmark', dest='benchmark', default='transfer',
                       help="benchmark type ('transfer', 'concurrence', 'all')")
     parser.add_option('-n', '--clients', dest='clients', default=200, type="int",

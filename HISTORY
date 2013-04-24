@@ -11,6 +11,10 @@ ENHANCEMENTS
 
  * #253: benchmark script's new --timeout option.
 
+BUG FIXES
+
+ * #254: bench.py script hadn't been ported to Python 3.
+
 
 Version: 1.2.0 - Date: 2013-04-22
 ---------------------------------
