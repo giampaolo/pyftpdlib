@@ -685,6 +685,7 @@ else:                            # select() - POSIX and Windows
 
 _DISCONNECTED = frozenset((errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN,
                            errno.ECONNABORTED, errno.EPIPE, errno.EBADF))
+_RETRY = frozenset((errno.EAGAIN, errno.EWOULDBLOCK))
 
 class Acceptor(asyncore.dispatcher):
     """Same as base asyncore.dispatcher and supposed to be used to
@@ -853,7 +854,7 @@ class AsyncChat(asynchat.async_chat):
             return self.socket.send(data)
         except socket.error:
             why = sys.exc_info()[1]
-            if why.args[0] in (errno.EWOULDBLOCK, errno.EAGAIN):
+            if why.args[0] in _RETRY:
                 return 0
             elif why.args[0] in _DISCONNECTED:
                 self.handle_close()
