@@ -130,7 +130,7 @@ class FTPServer(Acceptor):
         # to be raised here rather than later, when client connects
         if hasattr(handler, 'get_ssl_context'):
             handler.get_ssl_context()
-        if isinstance(address_or_socket, socket.socket):
+        if callable(getattr(address_or_socket, 'listen', None)):
             sock = address_or_socket
             sock.setblocking(0)
             self.set_socket(sock)
