@@ -129,7 +129,7 @@ D: Bug report #104 (socket.accept() might return None instead of a valid address
 N: Ben Timby
 E: btimby@gmail.com
 C: USA
-D: issues 127, 229
+D: issues 127, 229, 265
 
 N: Bernd Deichmann
 W: http://deichmann-edv.de/

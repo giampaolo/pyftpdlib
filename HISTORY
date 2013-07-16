@@ -16,6 +16,7 @@ BUG FIXES
  * #254: bench.py script hadn't been ported to Python 3.
  * #263: MultiprocessFTPServer leaks memory and file descriptors.  (patch by
          Juan J. Martinez)
+ * #265: FTPServer class cannot be used with Circus.
 
 
 Version: 1.2.0 - Date: 2013-04-22
