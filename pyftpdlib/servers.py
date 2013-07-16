@@ -378,10 +378,6 @@ class _SpawnerBase(FTPServer):
                         or soonest_timeout > poll_timeout:
                             soonest_timeout = poll_timeout
         finally:
-            try:
-                self._active_tasks.remove(self._current_task())
-            except ValueError:
-                pass
             ioloop.close()
 
     def handle_accepted(self, sock, addr):
@@ -395,8 +391,17 @@ class _SpawnerBase(FTPServer):
             t.name = repr(addr)
             t.start()
 
+            # it is a different process so free resources here
+            if hasattr(t, 'pid'):
+                handler.close()
+
             self._lock.acquire()
             try:
+                # clean finished tasks
+                for task in self._active_tasks[:]:
+                    if not task.is_alive():
+                        self._active_tasks.remove(task)
+                # add the new task
                 self._active_tasks.append(t)
             finally:
                 self._lock.release()
