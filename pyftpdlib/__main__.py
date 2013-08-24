@@ -80,10 +80,17 @@ def main():
                            "connections (e.g. -r 8000-9000)")
     parser.add_option('-v', '--version', action='store_true',
                       help="print pyftpdlib version and exit")
+    parser.add_option('-V', '--verbose', action='store_true',
+                      help="activate a more verbose logging")
 
     options, args = parser.parse_args()
     if options.version:
         sys.exit("pyftpdlib %s" % __ver__)
+    if options.verbose:
+        import logging
+        import pyftpdlib.log
+        pyftpdlib.log.LEVEL = logging.DEBUG
+
     passive_ports = None
     if options.range:
         try:

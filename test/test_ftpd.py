@@ -3594,6 +3594,16 @@ class TestCommandLineParser(TestCase):
         sys.stderr = self.devnull
         self.assertRaises(SystemExit, pyftpdlib.__main__.main)
 
+    def test_V_option(self):
+        sys.argv += ["-V"]
+        pyftpdlib.__main__.main()
+
+        # unexpected argument
+        sys.argv = self.SYSARGV[:]
+        sys.argv += ["-V foo"]
+        sys.stderr = self.devnull
+        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+
 
 logging.basicConfig(level=logging.WARNING)
 remove_test_files()

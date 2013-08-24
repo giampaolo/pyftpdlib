@@ -10,6 +10,7 @@ Version: 1.3.0 - Date: XXXX-XX-XX
 ENHANCEMENTS
 
  * #253: benchmark script's new --timeout option.
+ * #270: new -V / --verbose cmdline option to enable a more verbose logging.
 
 BUG FIXES
 
