@@ -578,7 +578,7 @@ if hasattr(select, 'kqueue'):
 
         def fileno(self):
             """Return kqueue() fd."""
-            return self._poller.fileno()
+            return self._kqueue.fileno()
 
         def close(self):
             _IOLoop.close(self)

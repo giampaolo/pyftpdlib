@@ -18,6 +18,8 @@ BUG FIXES
  * #263: MultiprocessFTPServer leaks memory and file descriptors.  (patch by
          Juan J. Martinez)
  * #265: FTPServer class cannot be used with Circus.
+ * #273: IOLoop.fileno() on BSD systems raises AttributeError.  (patch by
+         Michael Ross)
 
 
 Version: 1.2.0 - Date: 2013-04-22
