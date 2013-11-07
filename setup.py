@@ -55,8 +55,7 @@ def get_version():
                 for num in ret.split('.'):
                     assert num.isdigit(), ret
                 return ret
-        else:
-            raise ValueError("couldn't find version string")
+        raise ValueError("couldn't find version string")
     finally:
         f.close()
 
