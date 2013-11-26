@@ -242,7 +242,7 @@ class TestFTPS(unittest.TestCase):
                 return
             raise self.failureException("%s != %s" % (str(why), msg))
         else:
-            if hasattr(excClass,'__name__'):
+            if hasattr(excClass, '__name__'):
                 excName = excClass.__name__
             else:
                 excName = str(excClass)
@@ -423,8 +423,10 @@ class SharedAuthorizerTests(unittest.TestCase):
                 return
             raise self.failureException("%s != %s" % (str(why), msg))
         else:
-            if hasattr(excClass,'__name__'): excName = excClass.__name__
-            else: excName = str(excClass)
+            if hasattr(excClass, '__name__'):
+                excName = excClass.__name__
+            else:
+                excName = str(excClass)
             raise self.failureException("%s not raised" % excName)
 
     # --- /utils
@@ -458,10 +460,12 @@ class SharedAuthorizerTests(unittest.TestCase):
             auth = self.authorizer_class()
         current_user = self.get_current_user()
         nonexistent_user = self.get_nonexistent_user()
-        self.assertRaises(AuthenticationFailed,
-              auth.validate_authentication, current_user, 'wrongpasswd', None)
-        self.assertRaises(AuthenticationFailed,
-                  auth.validate_authentication, nonexistent_user, 'bar', None)
+        self.assertRaises(
+            AuthenticationFailed,
+            auth.validate_authentication, current_user, 'wrongpasswd', None)
+        self.assertRaises(
+            AuthenticationFailed,
+            auth.validate_authentication, nonexistent_user, 'bar', None)
 
     def test_impersonate_user(self):
         auth = self.authorizer_class()
@@ -472,10 +476,12 @@ class SharedAuthorizerTests(unittest.TestCase):
                 self.assertRaises(AuthorizerError,
                                   auth.impersonate_user, nonexistent_user, 'pwd')
             else:
-                self.assertRaises(Win32ExtError,
-                            auth.impersonate_user, nonexistent_user, 'pwd')
-                self.assertRaises(Win32ExtError,
-                            auth.impersonate_user, self.get_current_user(), '')
+                self.assertRaises(
+                    Win32ExtError,
+                    auth.impersonate_user, nonexistent_user, 'pwd')
+                self.assertRaises(
+                    Win32ExtError,
+                    auth.impersonate_user, self.get_current_user(), '')
         finally:
             auth.terminate_impersonation('')
 
@@ -501,20 +507,25 @@ class SharedAuthorizerTests(unittest.TestCase):
 
     def test_error_options(self):
         wrong_user = self.get_nonexistent_user()
-        self.assertRaisesWithMsg(AuthorizerError,
-           "rejected_users and allowed_users options are mutually exclusive",
-           self.authorizer_class, allowed_users=['foo'], rejected_users=['bar'])
-        self.assertRaisesWithMsg(AuthorizerError,
-                             'invalid username "anonymous"',
-                             self.authorizer_class, allowed_users=['anonymous'])
-        self.assertRaisesWithMsg(AuthorizerError,
-                            'invalid username "anonymous"',
-                            self.authorizer_class, rejected_users=['anonymous'])
-        self.assertRaisesWithMsg(AuthorizerError,
-                            'unknown user %s' % wrong_user,
-                            self.authorizer_class, allowed_users=[wrong_user])
+        self.assertRaisesWithMsg(
+            AuthorizerError,
+            "rejected_users and allowed_users options are mutually exclusive",
+            self.authorizer_class, allowed_users=['foo'], rejected_users=['bar'])
+        self.assertRaisesWithMsg(
+            AuthorizerError,
+            'invalid username "anonymous"',
+            self.authorizer_class, allowed_users=['anonymous'])
+        self.assertRaisesWithMsg(
+            AuthorizerError,
+            'invalid username "anonymous"',
+            self.authorizer_class, rejected_users=['anonymous'])
+        self.assertRaisesWithMsg(
+            AuthorizerError,
+            'unknown user %s' % wrong_user,
+            self.authorizer_class, allowed_users=[wrong_user])
         self.assertRaisesWithMsg(AuthorizerError, 'unknown user %s' % wrong_user,
-                            self.authorizer_class, rejected_users=[wrong_user])
+                                 self.authorizer_class,
+                                 rejected_users=[wrong_user])
 
     def test_override_user_password(self):
         auth = self.authorizer_class()
@@ -575,9 +586,10 @@ class SharedAuthorizerTests(unittest.TestCase):
                 another_user = x
                 break
         nonexistent_user = self.get_nonexistent_user()
-        self.assertRaisesWithMsg(AuthorizerError,
-                                "at least one keyword argument must be specified",
-                                auth.override_user, this_user)
+        self.assertRaisesWithMsg(
+            AuthorizerError,
+            "at least one keyword argument must be specified",
+            auth.override_user, this_user)
         self.assertRaisesWithMsg(AuthorizerError,
                                  'no such user %s' % nonexistent_user,
                                  auth.override_user, nonexistent_user, perm='r')
@@ -650,8 +662,9 @@ class TestUnixAuthorizer(SharedAuthorizerTests):
                                           require_valid_shell=False)
         self.assertRaises(AuthenticationFailed,
                           auth.validate_authentication, 'foo', 'passwd', None)
-        self.assertRaises(AuthenticationFailed,
-                     auth.validate_authentication, current_user, 'passwd', None)
+        self.assertRaises(
+            AuthenticationFailed,
+            auth.validate_authentication, current_user, 'passwd', None)
         auth.validate_authentication('anonymous', 'passwd', None)
 
     def test_require_valid_shell(self):
@@ -667,9 +680,10 @@ class TestUnixAuthorizer(SharedAuthorizerTests):
             self.fail("no user found")
 
         user = get_fake_shell_user()
-        self.assertRaisesWithMsg(AuthorizerError,
-                             "user %s has not a valid shell" % user,
-                             authorizers.UnixAuthorizer, allowed_users=[user])
+        self.assertRaisesWithMsg(
+            AuthorizerError,
+            "user %s has not a valid shell" % user,
+            authorizers.UnixAuthorizer, allowed_users=[user])
         # commented as it first fails for invalid home
         #self.assertRaisesWithMsg(ValueError,
         #                     "user %s has not a valid shell" % user,
@@ -705,7 +719,8 @@ class TestWindowsAuthorizer(SharedAuthorizerTests):
     def test_wrong_anonymous_credentials(self):
         user = self.get_current_user()
         self.assertRaises(Win32ExtError, self.authorizer_class,
-                       anonymous_user=user, anonymous_password='$|1wrongpasswd')
+                          anonymous_user=user,
+                          anonymous_password='$|1wrongpasswd')
 
 
 # =====================================================================
@@ -735,20 +750,21 @@ def test_main():
 
     # FTPS tests
     if FTPS_SUPPORT:
-        ftps_tests = [TestFTPS,
-                      TestFtpAuthenticationTLSMixin,
-                      TestTFtpDummyCmdsTLSMixin,
-                      TestFtpCmdsSemanticTLSMixin,
-                      TestFtpFsOperationsTLSMixin,
-                      TestFtpStoreDataTLSMixin,
-                      TestFtpRetrieveDataTLSMixin,
-                      TestFtpListingCmdsTLSMixin,
-                      TestFtpAbortTLSMixin,
-                      TestTimeoutsTLSMixin,
-                      TestConfigurableOptionsTLSMixin,
-                      TestCallbacksTLSMixin,
-                      TestCornerCasesTLSMixin,
-                     ]
+        ftps_tests = [
+            TestFTPS,
+            TestFtpAuthenticationTLSMixin,
+            TestTFtpDummyCmdsTLSMixin,
+            TestFtpCmdsSemanticTLSMixin,
+            TestFtpFsOperationsTLSMixin,
+            TestFtpStoreDataTLSMixin,
+            TestFtpRetrieveDataTLSMixin,
+            TestFtpListingCmdsTLSMixin,
+            TestFtpAbortTLSMixin,
+            TestTimeoutsTLSMixin,
+            TestConfigurableOptionsTLSMixin,
+            TestCallbacksTLSMixin,
+            TestCornerCasesTLSMixin,
+        ]
         if SUPPORTS_IPV4:
             ftps_tests.append(TestIPv4EnvironmentTLSMixin)
         if SUPPORTS_IPV6:
@@ -809,7 +825,7 @@ def test_main():
             try:
                 authorizers.UnixAuthorizer()
             except AuthorizerError:  # not root
-                warn("UnixAuthorizer tests skipped (root privileges are " \
+                warn("UnixAuthorizer tests skipped (root privileges are "
                      "required)")
             else:
                 tests.append(TestUnixAuthorizer)
@@ -829,7 +845,7 @@ def test_main():
             try:
                 import win32api
             except ImportError:
-                warn("WindowsAuthorizer tests skipped (pywin32 extension " \
+                warn("WindowsAuthorizer tests skipped (pywin32 extension "
                      "is required)")
             else:
                 warn("WindowsAuthorizer tests skipped")

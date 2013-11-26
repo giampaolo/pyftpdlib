@@ -30,16 +30,16 @@
 #  ======================================================================
 
 import asynchat
-import time
-import sys
-import os
 import errno
-import socket
-import traceback
 import glob
-import random
-import warnings
 import logging
+import os
+import random
+import socket
+import sys
+import time
+import traceback
+import warnings
 try:
     import pwd
     import grp
@@ -47,12 +47,12 @@ except ImportError:
     pwd = grp = None
 
 from pyftpdlib import __ver__
-from pyftpdlib.log import logger
-from pyftpdlib.filesystems import FilesystemError, AbstractedFS
-from pyftpdlib._compat import PY3, b, u, getcwdu, unicode, xrange, next
-from pyftpdlib.ioloop import AsyncChat, Connector, Acceptor, timer, _DISCONNECTED
 from pyftpdlib.authorizers import (DummyAuthorizer, AuthenticationFailed,
                                    AuthorizerError)
+from pyftpdlib._compat import PY3, b, u, getcwdu, unicode, xrange, next
+from pyftpdlib.filesystems import FilesystemError, AbstractedFS
+from pyftpdlib.ioloop import AsyncChat, Connector, Acceptor, timer, _DISCONNECTED
+from pyftpdlib.log import logger
 
 
 def _import_sendfile():
