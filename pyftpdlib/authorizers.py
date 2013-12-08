@@ -303,8 +303,8 @@ class _Base(object):
     def __init__(self):
         """Check for errors in the constructor."""
         if self.rejected_users and self.allowed_users:
-            raise AuthorizerError("rejected_users and allowed_users options are "
-                                  "mutually exclusive")
+            raise AuthorizerError("rejected_users and allowed_users options "
+                                  "are mutually exclusive")
 
         users = self._get_system_users()
         for user in (self.allowed_users or self.rejected_users):
@@ -584,8 +584,8 @@ else:
                         raise AuthorizerError("user %s has not a valid shell"
                                               % username)
 
-        def override_user(self, username, password=None, homedir=None, perm=None,
-                          msg_login=None, msg_quit=None):
+        def override_user(self, username, password=None, homedir=None,
+                          perm=None, msg_login=None, msg_quit=None):
             """Overrides the options specified in the class constructor
             for a specific user.
             """
@@ -613,7 +613,8 @@ else:
                                                            password, handler)
             if self.require_valid_shell and username != 'anonymous':
                 if not self._has_valid_shell(username):
-                    raise AuthenticationFailed(self.msg_invalid_shell % username)
+                    raise AuthenticationFailed(
+                        self.msg_invalid_shell % username)
 
         @replace_anonymous
         def has_user(self, username):
@@ -713,9 +714,10 @@ else:
         @replace_anonymous
         def impersonate_user(self, username, password):
             """Impersonate the security context of another user."""
-            handler = win32security.LogonUser(username, None, password,
-                                              win32con.LOGON32_LOGON_INTERACTIVE,
-                                              win32con.LOGON32_PROVIDER_DEFAULT)
+            handler = win32security.LogonUser(
+                username, None, password,
+                win32con.LOGON32_LOGON_INTERACTIVE,
+                win32con.LOGON32_PROVIDER_DEFAULT)
             win32security.ImpersonateLoggedOnUser(handler)
             handler.Close()
 
@@ -738,13 +740,13 @@ else:
             except pywintypes.error:
                 err = sys.exc_info()[1]
                 raise AuthorizerError(err)
-            path = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList" + \
-                   "\\" + sid
+            path = r"SOFTWARE\Microsoft\Windows NT" \
+                   r"\CurrentVersion\ProfileList" + "\\" + sid
             try:
                 key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path)
             except WindowsError:
-                raise AuthorizerError("No profile directory defined for user %s"
-                                      % username)
+                raise AuthorizerError(
+                    "No profile directory defined for user %s" % username)
             value = winreg.QueryValueEx(key, "ProfileImagePath")[0]
             home = win32api.ExpandEnvironmentStrings(value)
             if not PY3 and not isinstance(home, unicode):
@@ -756,7 +758,8 @@ else:
             """Return all users defined on the Windows system."""
             # XXX - Does Windows allow usernames with chars outside of
             # ASCII set? In that case we need to convert this to unicode.
-            return [entry['name'] for entry in win32net.NetUserEnum(None, 0)[0]]
+            return [entry['name'] for entry in
+                    win32net.NetUserEnum(None, 0)[0]]
 
         def get_msg_login(self, username):
             return "Login successful."
@@ -852,8 +855,8 @@ else:
                                       self.anonymous_password)
                 self.terminate_impersonation(None)
 
-        def override_user(self, username, password=None, homedir=None, perm=None,
-                          msg_login=None, msg_quit=None):
+        def override_user(self, username, password=None, homedir=None,
+                          perm=None, msg_login=None, msg_quit=None):
             """Overrides the options specified in the class constructor
             for a specific user.
             """
@@ -880,8 +883,8 @@ else:
                 if overridden_password != password:
                     raise AuthenticationFailed(self.msg_wrong_password)
             else:
-                BaseWindowsAuthorizer.validate_authentication(self, username,
-                                                              password, handler)
+                BaseWindowsAuthorizer.validate_authentication(
+                    self, username, password, handler)
 
         def impersonate_user(self, username, password):
             """Impersonate the security context of another user."""

@@ -51,7 +51,8 @@ class AntiFloodHandler(FTPHandler):
     def __init__(self, *args, **kwargs):
         FTPHandler.__init__(self, *args, **kwargs)
         self.processed_cmds = 0
-        self.pcmds_callback = self.ioloop.call_every(1, self.check_processed_cmds)
+        self.pcmds_callback = \
+            self.ioloop.call_every(1, self.check_processed_cmds)
 
     def on_connect(self):
         # called when client connects.

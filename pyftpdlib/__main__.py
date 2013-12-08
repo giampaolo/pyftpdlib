@@ -57,6 +57,7 @@ class CustomizedOptionFormatter(optparse.IndentedHelpFormatter):
             result.append(help_text)
         return ''.join(result)
 
+
 def main():
     """Start a stand alone anonymous FTP server."""
     usage = "python -m pyftpdlib.ftpserver [options]"

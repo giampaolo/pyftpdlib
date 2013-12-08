@@ -83,17 +83,17 @@ server = Server('localhost', 8021)
 IOLoop.instance().loop()
 """
 
-import asyncore
 import asynchat
+import asyncore
 import errno
-import select
-import os
-import sys
-import traceback
-import time
 import heapq
-import socket
 import logging
+import os
+import select
+import socket
+import sys
+import time
+import traceback
 try:
     import threading
 except ImportError:
@@ -148,8 +148,8 @@ class _Scheduler(object):
         # remove cancelled tasks and re-heapify the queue if the
         # number of cancelled tasks is more than the half of the
         # entire queue
-        if self._cancellations > 512 \
-          and self._cancellations > (len(self._tasks) >> 1):
+        if (self._cancellations > 512
+                and self._cancellations > (len(self._tasks) >> 1)):
             self.reheapify()
 
         try:
@@ -210,9 +210,9 @@ class _CallLater(object):
             sig = object.__repr__(self)
         else:
             sig = repr(self._target)
-        sig += ' args=%s, kwargs=%s, cancelled=%s, secs=%s' \
-                % (self._args or '[]',  self._kwargs or '{}', self.cancelled,
-                   self._delay)
+        sig += ' args=%s, kwargs=%s, cancelled=%s, secs=%s' % (
+            self._args or '[]',  self._kwargs or '{}', self.cancelled,
+            self._delay)
         return '<%s>' % sig
 
     __str__ = __repr__
@@ -612,11 +612,11 @@ if hasattr(select, 'kqueue'):
             kevents = []
             if events & self.WRITE:
                 kevents.append(select.kevent(
-                        fd, filter=select.KQ_FILTER_WRITE, flags=flags))
+                    fd, filter=select.KQ_FILTER_WRITE, flags=flags))
             if events & self.READ or not kevents:
                 # always read when there is not a write
                 kevents.append(select.kevent(
-                        fd, filter=select.KQ_FILTER_READ, flags=flags))
+                    fd, filter=select.KQ_FILTER_READ, flags=flags))
             # even though control() takes a list, it seems to return
             # EINVAL on Mac OS X (10.6) when there is more than one
             # event in the list
@@ -624,12 +624,13 @@ if hasattr(select, 'kqueue'):
                 self._kqueue.control([kevent], 0)
 
         # localize variable access to minimize overhead
-        def poll(self, timeout,
-                       _len=len,
-                       _READ=select.KQ_FILTER_READ,
-                       _WRITE=select.KQ_FILTER_WRITE,
-                       _EOF=select.KQ_EV_EOF,
-                       _ERROR=select.KQ_EV_ERROR):
+        def poll(self,
+                 timeout,
+                 _len=len,
+                 _READ=select.KQ_FILTER_READ,
+                 _WRITE=select.KQ_FILTER_WRITE,
+                 _EOF=select.KQ_EV_EOF,
+                 _ERROR=select.KQ_EV_ERROR):
             try:
                 kevents = self._kqueue.control(None, _len(self.socket_map),
                                                timeout)
@@ -686,6 +687,7 @@ else:                            # select() - POSIX and Windows
 _DISCONNECTED = frozenset((errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN,
                            errno.ECONNABORTED, errno.EPIPE, errno.EBADF))
 _RETRY = frozenset((errno.EAGAIN, errno.EWOULDBLOCK))
+
 
 class Acceptor(asyncore.dispatcher):
     """Same as base asyncore.dispatcher and supposed to be used to
@@ -800,7 +802,8 @@ class Connector(Acceptor):
                         # the remote client is using IPv4 and its address is
                         # represented as an IPv4-mapped IPv6 address which
                         # looks like this ::ffff:151.12.5.65, see:
-                        # http://en.wikipedia.org/wiki/IPv6#IPv4-mapped_addresses
+                        # http://en.wikipedia.org/wiki/IPv6\
+                        #     IPv4-mapped_addresses
                         # http://tools.ietf.org/html/rfc3493.html#section-3.7
                         # We truncate the first bytes to make it look like a
                         # common IPv4 address.

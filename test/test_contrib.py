@@ -66,8 +66,10 @@ from pyftpdlib._compat import b, getcwdu, unicode
 from test_ftpd import *
 
 
-FTPS_SUPPORT = hasattr(ftplib, 'FTP_TLS') and hasattr(handlers, 'TLS_FTPHandler')
-CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__), 'keycert.pem'))
+FTPS_SUPPORT = (hasattr(ftplib, 'FTP_TLS') and
+                hasattr(handlers, 'TLS_FTPHandler'))
+CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                        'keycert.pem'))
 MPROCESS_SUPPORT = hasattr(servers, 'MultiprocessFTPServer')
 
 
@@ -535,7 +537,8 @@ class SharedAuthorizerTests(unittest.TestCase):
         self.assertRaises(AuthenticationFailed(auth.validate_authentication,
                                                user, 'bar', None))
         # make sure other settings keep using default values
-        self.assertEqual(auth.get_home_dir(user), self.get_current_user_homedir())
+        self.assertEqual(auth.get_home_dir(user),
+                         self.get_current_user_homedir())
         self.assertEqual(auth.get_perms(user), "elradfmw")
         self.assertEqual(auth.get_msg_login(user), "Login successful.")
         self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
@@ -547,7 +550,8 @@ class SharedAuthorizerTests(unittest.TestCase):
         auth.override_user(user, homedir=dir)
         self.assertEqual(auth.get_home_dir(user), dir)
         # make sure other settings keep using default values
-        #self.assertEqual(auth.get_home_dir(user), self.get_current_user_homedir())
+        # self.assertEqual(auth.get_home_dir(user),
+        #                  self.get_current_user_homedir())
         self.assertEqual(auth.get_perms(user), "elradfmw")
         self.assertEqual(auth.get_msg_login(user), "Login successful.")
         self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
@@ -558,7 +562,8 @@ class SharedAuthorizerTests(unittest.TestCase):
         auth.override_user(user, perm="elr")
         self.assertEqual(auth.get_perms(user), "elr")
         # make sure other settings keep using default values
-        self.assertEqual(auth.get_home_dir(user), self.get_current_user_homedir())
+        self.assertEqual(auth.get_home_dir(user),
+                         self.get_current_user_homedir())
         #self.assertEqual(auth.get_perms(user), "elradfmw")
         self.assertEqual(auth.get_msg_login(user), "Login successful.")
         self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
@@ -570,7 +575,8 @@ class SharedAuthorizerTests(unittest.TestCase):
         self.assertEqual(auth.get_msg_login(user), "foo")
         self.assertEqual(auth.get_msg_quit(user), "bar")
         # make sure other settings keep using default values
-        self.assertEqual(auth.get_home_dir(user), self.get_current_user_homedir())
+        self.assertEqual(auth.get_home_dir(user),
+                         self.get_current_user_homedir())
         self.assertEqual(auth.get_perms(user), "elradfmw")
         #self.assertEqual(auth.get_msg_login(user), "Login successful.")
         #self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
@@ -592,7 +598,8 @@ class SharedAuthorizerTests(unittest.TestCase):
             auth.override_user, this_user)
         self.assertRaisesWithMsg(AuthorizerError,
                                  'no such user %s' % nonexistent_user,
-                                 auth.override_user, nonexistent_user, perm='r')
+                                 auth.override_user, nonexistent_user,
+                                 perm='r')
         if self.authorizer_class.__name__ == 'UnixAuthorizer':
             auth = self.authorizer_class(allowed_users=[this_user],
                                          require_valid_shell=False)
@@ -613,7 +620,8 @@ class SharedAuthorizerTests(unittest.TestCase):
                                  auth.override_user, this_user, perm='r')
         self.assertRaisesWithMsg(AuthorizerError,
                                  "can't assign password to anonymous user",
-                                 auth.override_user, "anonymous", password='foo')
+                                 auth.override_user, "anonymous",
+                                 password='foo')
 
 
 # =====================================================================
@@ -626,8 +634,8 @@ class TestUnixAuthorizer(SharedAuthorizerTests):
     authorizer_class = getattr(authorizers, "UnixAuthorizer", None)
 
     def test_get_perms_anonymous(self):
-        auth = authorizers.UnixAuthorizer(global_perm='elr',
-                                          anonymous_user=self.get_current_user())
+        auth = authorizers.UnixAuthorizer(
+            global_perm='elr', anonymous_user=self.get_current_user())
         self.assertTrue('e' in auth.get_perms('anonymous'))
         self.assertFalse('w' in auth.get_perms('anonymous'))
         warnings.filterwarnings("ignore")
@@ -636,8 +644,8 @@ class TestUnixAuthorizer(SharedAuthorizerTests):
         self.assertTrue('w' in auth.get_perms('anonymous'))
 
     def test_has_perm_anonymous(self):
-        auth = authorizers.UnixAuthorizer(global_perm='elr',
-                                          anonymous_user=self.get_current_user())
+        auth = authorizers.UnixAuthorizer(
+            global_perm='elr', anonymous_user=self.get_current_user())
         self.assertTrue(auth.has_perm(self.get_current_user(), 'r'))
         self.assertFalse(auth.has_perm(self.get_current_user(), 'w'))
         self.assertTrue(auth.has_perm('anonymous', 'e'))
