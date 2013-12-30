@@ -3119,20 +3119,21 @@ else:
             twisted/internet/tcp.py code has been used as an example.
             """
             self._ssl_closing = True
-            # since SSL_shutdown() doesn't report errors, an empty
-            # write call is done first, to try to detect if the
-            # connection has gone away
-            try:
-                os.write(self.socket.fileno(), b(''))
-            except (OSError, socket.error):
-                err = sys.exc_info()[1]
-                if err.args[0] in (errno.EINTR, errno.EWOULDBLOCK,
-                                   errno.ENOBUFS):
-                    return
-                elif err.args[0] in _DISCONNECTED:
-                    return super(SSLConnection, self).close()
-                else:
-                    raise
+            if os.name == 'posix':
+                # since SSL_shutdown() doesn't report errors, an empty
+                # write call is done first, to try to detect if the
+                # connection has gone away
+                try:
+                    os.write(self.socket.fileno(), b(''))
+                except (OSError, socket.error):
+                    err = sys.exc_info()[1]
+                    if err.args[0] in (errno.EINTR, errno.EWOULDBLOCK,
+                                       errno.ENOBUFS):
+                        return
+                    elif err.args[0] in _DISCONNECTED:
+                        return super(SSLConnection, self).close()
+                    else:
+                        raise
             # Ok, this a mess, but the underlying OpenSSL API simply
             # *SUCKS* and I really couldn't do any better.
             #

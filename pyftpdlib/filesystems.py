@@ -370,7 +370,7 @@ class AbstractedFS(object):
             except KeyError:
                 return uid
     else:
-        def get_user_by_uid(self):
+        def get_user_by_uid(self, uid):
             return "owner"
 
     if grp is not None:
@@ -384,7 +384,7 @@ class AbstractedFS(object):
             except KeyError:
                 return gid
     else:
-        def get_group_by_gid(self):
+        def get_group_by_gid(self, gid):
             return "group"
 
     # --- Listing utilities

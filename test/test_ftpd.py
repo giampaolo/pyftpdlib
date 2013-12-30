@@ -55,10 +55,13 @@ try:
     import ssl
 except ImportError:
     ssl = None
-try:
-    import sendfile
-except ImportError:
-    sendfile = None
+
+sendfile = None
+if os.name == 'posix':
+    try:
+        import sendfile
+    except ImportError:
+        pass
 
 from pyftpdlib._compat import PY3, u, b, getcwdu, callable
 from pyftpdlib.authorizers import DummyAuthorizer, AuthenticationFailed
