@@ -422,55 +422,6 @@ class TestAbstractedFS(TestCase):
             # os.sep == ':'? Don't know... let's try it anyway
             goforit(getcwdu())
 
-    def test_ftp2fs(self):
-        # Tests for ftp2fs method.
-        ae = self.assertEqual
-        fs = AbstractedFS(u('/'), None)
-        join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
-
-        def goforit(root):
-            fs._root = root
-            fs._cwd = u('/')
-            ae(fs.ftp2fs(u('')), root)
-            ae(fs.ftp2fs(u('/')), root)
-            ae(fs.ftp2fs(u('.')), root)
-            ae(fs.ftp2fs(u('..')), root)
-            ae(fs.ftp2fs(u('a')), join(root, u('a')))
-            ae(fs.ftp2fs(u('/a')), join(root, u('a')))
-            ae(fs.ftp2fs(u('/a/')), join(root, u('a')))
-            ae(fs.ftp2fs(u('a/..')), root)
-            ae(fs.ftp2fs(u('a/b')), join(root, r'a/b'))
-            ae(fs.ftp2fs(u('/a/b')), join(root, r'a/b'))
-            ae(fs.ftp2fs(u('/a/b/..')), join(root, u('a')))
-            ae(fs.ftp2fs(u('/a/b/../..')), root)
-            fs._cwd = u('/sub')
-            ae(fs.ftp2fs(u('')), join(root, u('sub')))
-            ae(fs.ftp2fs(u('/')), root)
-            ae(fs.ftp2fs(u('.')), join(root, u('sub')))
-            ae(fs.ftp2fs(u('..')), root)
-            ae(fs.ftp2fs(u('a')), join(root, u('sub/a')))
-            ae(fs.ftp2fs(u('a/')), join(root, u('sub/a')))
-            ae(fs.ftp2fs(u('a/..')), join(root, u('sub')))
-            ae(fs.ftp2fs(u('a/b')), join(root, 'sub/a/b'))
-            ae(fs.ftp2fs(u('a/b/..')), join(root, u('sub/a')))
-            ae(fs.ftp2fs(u('a/b/../..')), join(root, u('sub')))
-            ae(fs.ftp2fs(u('a/b/../../..')), root)
-            # UNC paths must be collapsed
-            ae(fs.ftp2fs(u('//a')), join(root, u('a')))
-
-        if os.sep == '\\':
-            goforit(u(r'C:\dir'))
-            goforit(u('C:\\'))
-            # on DOS-derived filesystems (e.g. Windows) this is the same
-            # as specifying the current drive directory (e.g. 'C:\\')
-            goforit(u('\\'))
-        elif os.sep == '/':
-            goforit(u('/home/user'))
-            goforit(u('/'))
-        else:
-            # os.sep == ':'? Don't know... let's try it anyway
-            goforit(getcwdu())
-
     def test_fs2ftp(self):
         # Tests for fs2ftp method.
         ae = self.assertEqual
@@ -2829,24 +2780,6 @@ class TestCallbacks(TestCase):
         self.tearDown()
         self.assertEqual(pair, [('foo', 'bar')])
 
-    def test_on_login_failed(self):
-        pair = []
-
-        class TestHandler(FTPHandler):
-            _auth_failed_timeout = 0
-
-            def on_login(self, username):
-                raise Exception
-
-            def on_login_failed(self, username, password):
-                pair.append((username, password))
-
-        self._setUp(TestHandler, login=False)
-        self.assertRaises(ftplib.error_perm, self.client.login, 'foo', 'bar')
-        # shut down the server to avoid race conditions
-        self.tearDown()
-        self.assertEqual(pair, [('foo', 'bar')])
-
     def test_on_logout_quit(self):
         user = []
 
@@ -3007,7 +2940,7 @@ class _TestNetworkProtocols(TestCase):
         self.assertIn('privileged port', resp)
         # proto > 2
         _cmd = 'eprt |3|%s|%s|' % (self.server.host, self.server.port)
-        self.assertRaises(ftplib.error_perm,  self.client.sendcmd, _cmd)
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, _cmd)
 
         if self.proto == '1':
             # len(ip.octs) > 4

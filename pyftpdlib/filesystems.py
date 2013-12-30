@@ -299,13 +299,13 @@ class AbstractedFS(object):
         #assert isinstance(path, unicode), path
         return os.stat(path)
 
-    def lstat(self, path):
-        """Like stat but does not follow symbolic links."""
-        # on python 2 we might also get bytes from os.lisdir()
-        #assert isinstance(path, unicode), path
-        return os.lstat(path)
-
-    if not hasattr(os, 'lstat'):
+    if hasattr(os, 'lstat'):
+        def lstat(self, path):
+            """Like stat but does not follow symbolic links."""
+            # on python 2 we might also get bytes from os.lisdir()
+            #assert isinstance(path, unicode), path
+            return os.lstat(path)
+    else:
         lstat = stat
 
     if hasattr(os, 'readlink'):
@@ -359,28 +359,33 @@ class AbstractedFS(object):
         assert isinstance(path, unicode), path
         return os.path.lexists(path)
 
-    def get_user_by_uid(self, uid):
-        """Return the username associated with user id.
-        If this can't be determined return raw uid instead.
-        On Windows just return "owner".
-        """
-        try:
-            return pwd.getpwuid(uid).pw_name
-        except KeyError:
-            return uid
+    if pwd is not None:
+        def get_user_by_uid(self, uid):
+            """Return the username associated with user id.
+            If this can't be determined return raw uid instead.
+            On Windows just return "owner".
+            """
+            try:
+                return pwd.getpwuid(uid).pw_name
+            except KeyError:
+                return uid
+    else:
+        def get_user_by_uid(self):
+            return "owner"
 
-    def get_group_by_gid(self, gid):
-        """Return the groupname associated with group id.
-        If this can't be determined return raw gid instead.
-        On Windows just return "group".
-        """
-        try:
-            return grp.getgrgid(gid).gr_name
-        except KeyError:
-            return gid
-
-    if pwd is None: get_user_by_uid = lambda x, y: "owner"
-    if grp is None: get_group_by_gid = lambda x, y: "group"
+    if grp is not None:
+        def get_group_by_gid(self, gid):
+            """Return the groupname associated with group id.
+            If this can't be determined return raw gid instead.
+            On Windows just return "group".
+            """
+            try:
+                return grp.getgrgid(gid).gr_name
+            except KeyError:
+                return gid
+    else:
+        def get_group_by_gid(self):
+            return "group"
 
     # --- Listing utilities
 

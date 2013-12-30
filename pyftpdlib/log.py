@@ -98,7 +98,7 @@ class LogFormatter(logging.Formatter):
                 # blues
                 logging.DEBUG: unicode(curses.tparm(fg_color, 4), "ascii"),
                 # green
-                logging.INFO: unicode(curses.tparm(fg_color, 2),  "ascii"),
+                logging.INFO: unicode(curses.tparm(fg_color, 2), "ascii"),
                 # yellow
                 logging.WARNING: unicode(curses.tparm(fg_color, 3), "ascii"),
                 # red

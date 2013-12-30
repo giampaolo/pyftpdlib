@@ -136,23 +136,24 @@ else:
         return s
 
 
-# http://goo.gl/6V8Rm
-def hilite(string, ok=True, bold=False):
-    """Return an highlighted version of 'string'."""
-    attr = []
-    if ok is None:  # no color
-        pass
-    elif ok:   # green
-        attr.append('32')
-    else:   # red
-        attr.append('31')
-    if bold:
-        attr.append('1')
-    return '\x1b[%sm%s\x1b[0m' % (';'.join(attr), string)
-
 if not sys.stdout.isatty() or os.name != 'posix':
     def hilite(s, *args, **kwargs):
         return s
+else:
+    # http://goo.gl/6V8Rm
+    def hilite(string, ok=True, bold=False):
+        """Return an highlighted version of 'string'."""
+        attr = []
+        if ok is None:  # no color
+            pass
+        elif ok:   # green
+            attr.append('32')
+        else:   # red
+            attr.append('31')
+        if bold:
+            attr.append('1')
+        return '\x1b[%sm%s\x1b[0m' % (';'.join(attr), string)
+
 
 server_memory = []
 
@@ -177,7 +178,7 @@ def bytes2human(n, format="%(value).1f%(symbol)s"):
     symbols = ('B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
     prefix = {}
     for i, s in enumerate(symbols[1:]):
-        prefix[s] = 1 << (i+1)*10
+        prefix[s] = 1 << (i + 1) * 10
     for symbol in reversed(symbols[1:]):
         if n >= prefix[symbol]:
             value = float(n) / prefix[symbol]
@@ -200,7 +201,7 @@ def human2bytes(s):
     num = float(num)
     prefix = {symbols[0]: 1}
     for i, s in enumerate(symbols[1:]):
-        prefix[s] = 1 << (i+1)*10
+        prefix[s] = 1 << (i + 1) * 10
     return int(num * prefix[letter])
 
 

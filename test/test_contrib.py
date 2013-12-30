@@ -116,37 +116,80 @@ else:
     class TLSTestMixin:
         pass
 
-class TestFtpAuthenticationTLSMixin(TLSTestMixin, TestFtpAuthentication): pass
-class TestTFtpDummyCmdsTLSMixin(TLSTestMixin, TestFtpDummyCmds): pass
-class TestFtpCmdsSemanticTLSMixin(TLSTestMixin, TestFtpCmdsSemantic): pass
-class TestFtpFsOperationsTLSMixin(TLSTestMixin, TestFtpFsOperations): pass
-class TestFtpStoreDataTLSMixin(TLSTestMixin, TestFtpStoreData): pass
-class TestFtpRetrieveDataTLSMixin(TLSTestMixin, TestFtpRetrieveData): pass
-class TestFtpListingCmdsTLSMixin(TLSTestMixin, TestFtpListingCmds): pass
+class TestFtpAuthenticationTLSMixin(TLSTestMixin, TestFtpAuthentication):
+    pass
+
+class TestTFtpDummyCmdsTLSMixin(TLSTestMixin, TestFtpDummyCmds):
+    pass
+
+class TestFtpCmdsSemanticTLSMixin(TLSTestMixin, TestFtpCmdsSemantic):
+    pass
+
+class TestFtpFsOperationsTLSMixin(TLSTestMixin, TestFtpFsOperations):
+    pass
+
+class TestFtpStoreDataTLSMixin(TLSTestMixin, TestFtpStoreData):
+    pass
+
+class TestFtpRetrieveDataTLSMixin(TLSTestMixin, TestFtpRetrieveData):
+    pass
+
+class TestFtpListingCmdsTLSMixin(TLSTestMixin, TestFtpListingCmds):
+    pass
 
 class TestFtpAbortTLSMixin(TLSTestMixin, TestFtpAbort):
-    def test_oob_abor(self): pass
+    def test_oob_abor(self):
+        pass
 
 class TestTimeoutsTLSMixin(TLSTestMixin, TestTimeouts):
-    def test_data_timeout_not_reached(self): pass
+    def test_data_timeout_not_reached(self):
+        pass
 
-class TestConfigurableOptionsTLSMixin(TLSTestMixin, TestConfigurableOptions): pass
+class TestConfigurableOptionsTLSMixin(TLSTestMixin, TestConfigurableOptions):
+    pass
+
 class TestCallbacksTLSMixin(TLSTestMixin, TestCallbacks):
-    def test_on_file_received(self): pass
-    def test_on_file_sent(self): pass
-    def test_on_incomplete_file_received(self): pass
-    def test_on_incomplete_file_sent(self): pass
-    def test_on_connect(self): pass
-    def test_on_disconnect(self): pass
-    def test_on_login(self): pass
-    def test_on_login_failed(self): pass
-    def test_on_logout_quit(self): pass
-    def test_on_logout_rein(self): pass
-    def test_on_logout_user_issued_twice(self): pass
+    def test_on_file_received(self):
+        pass
 
-class TestIPv4EnvironmentTLSMixin(TLSTestMixin, TestIPv4Environment): pass
-class TestIPv6EnvironmentTLSMixin(TLSTestMixin, TestIPv6Environment): pass
-class TestCornerCasesTLSMixin(TLSTestMixin, TestCornerCases): pass
+    def test_on_file_sent(self):
+        pass
+
+    def test_on_incomplete_file_received(self):
+        pass
+
+    def test_on_incomplete_file_sent(self):
+        pass
+
+    def test_on_connect(self):
+        pass
+
+    def test_on_disconnect(self):
+        pass
+
+    def test_on_login(self):
+        pass
+
+    def test_on_login_failed(self):
+        pass
+
+    def test_on_logout_quit(self):
+        pass
+
+    def test_on_logout_rein(self):
+        pass
+
+    def test_on_logout_user_issued_twice(self):
+        pass
+
+class TestIPv4EnvironmentTLSMixin(TLSTestMixin, TestIPv4Environment):
+    pass
+
+class TestIPv6EnvironmentTLSMixin(TLSTestMixin, TestIPv6Environment):
+    pass
+
+class TestCornerCasesTLSMixin(TLSTestMixin, TestCornerCases):
+    pass
 
 
 # =====================================================================
@@ -159,22 +202,50 @@ class TFTPd(FTPd):
 class ThreadFTPTestMixin:
     server_class = TFTPd
 
-class TestFtpAuthenticationThreadMixin(ThreadFTPTestMixin, TestFtpAuthentication): pass
-class TestTFtpDummyCmdsThreadMixin(ThreadFTPTestMixin, TestFtpDummyCmds): pass
-class TestFtpCmdsSemanticThreadMixin(ThreadFTPTestMixin, TestFtpCmdsSemantic): pass
-class TestFtpFsOperationsThreadMixin(ThreadFTPTestMixin, TestFtpFsOperations): pass
-class TestFtpStoreDataThreadMixin(ThreadFTPTestMixin, TestFtpStoreData): pass
-class TestFtpRetrieveDataThreadMixin(ThreadFTPTestMixin, TestFtpRetrieveData): pass
-class TestFtpListingCmdsThreadMixin(ThreadFTPTestMixin, TestFtpListingCmds): pass
-class TestFtpAbortThreadMixin(ThreadFTPTestMixin, TestFtpAbort): pass
+class TestFtpAuthenticationThreadMixin(ThreadFTPTestMixin,
+                                       TestFtpAuthentication):
+    pass
+
+class TestTFtpDummyCmdsThreadMixin(ThreadFTPTestMixin, TestFtpDummyCmds):
+    pass
+
+class TestFtpCmdsSemanticThreadMixin(ThreadFTPTestMixin, TestFtpCmdsSemantic):
+    pass
+
+class TestFtpFsOperationsThreadMixin(ThreadFTPTestMixin, TestFtpFsOperations):
+    pass
+
+class TestFtpStoreDataThreadMixin(ThreadFTPTestMixin, TestFtpStoreData):
+    pass
+
+class TestFtpRetrieveDataThreadMixin(ThreadFTPTestMixin, TestFtpRetrieveData):
+    pass
+
+class TestFtpListingCmdsThreadMixin(ThreadFTPTestMixin, TestFtpListingCmds):
+    pass
+
+class TestFtpAbortThreadMixin(ThreadFTPTestMixin, TestFtpAbort):
+    pass
+
 #class TestTimeoutsThreadMixin(ThreadFTPTestMixin, TestTimeouts):
 #    def test_data_timeout_not_reached(self): pass
-#class TestConfigurableOptionsThreadMixin(ThreadFTPTestMixin, TestConfigurableOptions): pass
-class TestCallbacksThreadMixin(ThreadFTPTestMixin, TestCallbacks): pass
-class TestIPv4EnvironmentThreadMixin(ThreadFTPTestMixin, TestIPv4Environment): pass
-class TestIPv6EnvironmentThreadMixin(ThreadFTPTestMixin, TestIPv6Environment): pass
-class TestCornerCasesThreadMixin(ThreadFTPTestMixin, TestCornerCases): pass
-class TestFTPServerThreadMixin(ThreadFTPTestMixin, TestFTPServer): pass
+#class TestConfOptsThreadMixin(ThreadFTPTestMixin, TestConfigurableOptions):
+#    pass
+
+class TestCallbacksThreadMixin(ThreadFTPTestMixin, TestCallbacks):
+    pass
+
+class TestIPv4EnvironmentThreadMixin(ThreadFTPTestMixin, TestIPv4Environment):
+    pass
+
+class TestIPv6EnvironmentThreadMixin(ThreadFTPTestMixin, TestIPv6Environment):
+    pass
+
+class TestCornerCasesThreadMixin(ThreadFTPTestMixin, TestCornerCases):
+    pass
+
+class TestFTPServerThreadMixin(ThreadFTPTestMixin, TestFTPServer):
+    pass
 
 
 # =====================================================================
@@ -191,26 +262,49 @@ else:
     class MProcFTPTestMixin:
         pass
 
-class TestFtpAuthenticationMProcMixin(MProcFTPTestMixin, TestFtpAuthentication): pass
-class TestTFtpDummyCmdsMProcMixin(MProcFTPTestMixin, TestFtpDummyCmds): pass
-class TestFtpCmdsSemanticMProcMixin(MProcFTPTestMixin, TestFtpCmdsSemantic): pass
+class TestFtpAuthenticationMProcMixin(MProcFTPTestMixin,
+                                      TestFtpAuthentication):
+    pass
+
+class TestTFtpDummyCmdsMProcMixin(MProcFTPTestMixin, TestFtpDummyCmds):
+    pass
+
+class TestFtpCmdsSemanticMProcMixin(MProcFTPTestMixin, TestFtpCmdsSemantic):
+    pass
 
 class TestFtpFsOperationsMProcMixin(MProcFTPTestMixin, TestFtpFsOperations):
     def test_unforeseen_mdtm_event(self):
         pass
 
-class TestFtpStoreDataMProcMixin(MProcFTPTestMixin, TestFtpStoreData): pass
-class TestFtpRetrieveDataMProcMixin(MProcFTPTestMixin, TestFtpRetrieveData): pass
-class TestFtpListingCmdsMProcMixin(MProcFTPTestMixin, TestFtpListingCmds): pass
-class TestFtpAbortMProcMixin(MProcFTPTestMixin, TestFtpAbort): pass
+class TestFtpStoreDataMProcMixin(MProcFTPTestMixin, TestFtpStoreData):
+    pass
+
+class TestFtpRetrieveDataMProcMixin(MProcFTPTestMixin, TestFtpRetrieveData):
+    pass
+
+class TestFtpListingCmdsMProcMixin(MProcFTPTestMixin, TestFtpListingCmds):
+    pass
+
+class TestFtpAbortMProcMixin(MProcFTPTestMixin, TestFtpAbort):
+    pass
+
 #class TestTimeoutsMProcMixin(MProcFTPTestMixin, TestTimeouts):
 #    def test_data_timeout_not_reached(self): pass
-#class TestConfigurableOptionsMProcMixin(MProcFTPTestMixin, TestConfigurableOptions): pass
+#class TestConfiOptsMProcMixin(MProcFTPTestMixin, TestConfigurableOptions):
+#    pass
 #class TestCallbacksMProcMixin(MProcFTPTestMixin, TestCallbacks): pass
-class TestIPv4EnvironmentMProcMixin(MProcFTPTestMixin, TestIPv4Environment): pass
-class TestIPv6EnvironmentMProcMixin(MProcFTPTestMixin, TestIPv6Environment): pass
-class TestCornerCasesMProcMixin(MProcFTPTestMixin, TestCornerCases): pass
-class TestFTPServerMProcMixin(MProcFTPTestMixin, TestFTPServer): pass
+
+class TestIPv4EnvironmentMProcMixin(MProcFTPTestMixin, TestIPv4Environment):
+    pass
+
+class TestIPv6EnvironmentMProcMixin(MProcFTPTestMixin, TestIPv6Environment):
+    pass
+
+class TestCornerCasesMProcMixin(MProcFTPTestMixin, TestCornerCases):
+    pass
+
+class TestFTPServerMProcMixin(MProcFTPTestMixin, TestFTPServer):
+    pass
 
 
 # =====================================================================
@@ -475,8 +569,9 @@ class SharedAuthorizerTests(unittest.TestCase):
         try:
             if self.authorizer_class.__name__ == 'UnixAuthorizer':
                 auth.impersonate_user(self.get_current_user(), '')
-                self.assertRaises(AuthorizerError,
-                                  auth.impersonate_user, nonexistent_user, 'pwd')
+                self.assertRaises(
+                    AuthorizerError,
+                    auth.impersonate_user, nonexistent_user, 'pwd')
             else:
                 self.assertRaises(
                     Win32ExtError,
@@ -512,7 +607,8 @@ class SharedAuthorizerTests(unittest.TestCase):
         self.assertRaisesWithMsg(
             AuthorizerError,
             "rejected_users and allowed_users options are mutually exclusive",
-            self.authorizer_class, allowed_users=['foo'], rejected_users=['bar'])
+            self.authorizer_class, allowed_users=['foo'],
+            rejected_users=['bar'])
         self.assertRaisesWithMsg(
             AuthorizerError,
             'invalid username "anonymous"',
@@ -525,7 +621,8 @@ class SharedAuthorizerTests(unittest.TestCase):
             AuthorizerError,
             'unknown user %s' % wrong_user,
             self.authorizer_class, allowed_users=[wrong_user])
-        self.assertRaisesWithMsg(AuthorizerError, 'unknown user %s' % wrong_user,
+        self.assertRaisesWithMsg(AuthorizerError,
+                                 'unknown user %s' % wrong_user,
                                  self.authorizer_class,
                                  rejected_users=[wrong_user])
 

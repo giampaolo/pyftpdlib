@@ -2979,10 +2979,10 @@ else:
             perm=None, auth=False, arg=True,
             help='Syntax: AUTH <SP> TLS|SSL (set up secure control channel).'),
         'PBSZ': dict(
-            perm=None, auth=False,  arg=True,
+            perm=None, auth=False, arg=True,
             help='Syntax: PBSZ <SP> 0 (negotiate TLS buffer).'),
         'PROT': dict(
-            perm=None, auth=False,  arg=True,
+            perm=None, auth=False, arg=True,
             help='Syntax: PROT <SP> [C|P] (set up un/secure data channel).'),
     })
 

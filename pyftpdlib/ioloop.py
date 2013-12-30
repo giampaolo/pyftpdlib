@@ -211,7 +211,7 @@ class _CallLater(object):
         else:
             sig = repr(self._target)
         sig += ' args=%s, kwargs=%s, cancelled=%s, secs=%s' % (
-            self._args or '[]',  self._kwargs or '{}', self.cancelled,
+            self._args or '[]', self._kwargs or '{}', self.cancelled,
             self._delay)
         return '<%s>' % sig
 
@@ -331,7 +331,6 @@ class _IOLoop(object):
             # localize variable access to minimize overhead
             poll = self.poll
             socket_map = self.socket_map
-            tasks = self.sched._tasks
             sched_poll = self.sched.poll
 
             if timeout is not None:
