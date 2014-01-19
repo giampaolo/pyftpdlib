@@ -67,7 +67,7 @@ def main():
                       help="specify the interface to run on (default all "
                            "interfaces)")
     parser.add_option('-p', '--port', type="int", default=2121, metavar="PORT",
-                      help="specify port number to run on (default 21)")
+                      help="specify port number to run on (default 2121)")
     parser.add_option('-w', '--write', action="store_true", default=False,
                       help="grants write access for the anonymous user "
                            "(default read-only)")
