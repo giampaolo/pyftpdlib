@@ -455,7 +455,7 @@ class AbstractedFS(object):
                     # http://bugs.python.org/issue683592
                     file = os.path.join(bytes(basedir), bytes(basename))
                     if not isinstance(basename, unicode):
-                        basename = unicode(basename, 'utf8')
+                        basename = unicode(basename, 'utf8', 'ignore')
             else:
                 file = os.path.join(basedir, basename)
             try:
@@ -568,7 +568,7 @@ class AbstractedFS(object):
                     # http://bugs.python.org/issue683592
                     file = os.path.join(bytes(basedir), bytes(basename))
                     if not isinstance(basename, unicode):
-                        basename = unicode(basename, 'utf8')
+                        basename = unicode(basename, 'utf8', 'ignore')
             else:
                 file = os.path.join(basedir, basename)
             # in order to properly implement 'unique' fact (RFC-3659,
