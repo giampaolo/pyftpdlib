@@ -41,10 +41,8 @@ from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import TLS_FTPHandler
 from pyftpdlib.servers import FTPServer
 
-
 CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                         "keycert.pem"))
-
 
 def main():
     authorizer = DummyAuthorizer()

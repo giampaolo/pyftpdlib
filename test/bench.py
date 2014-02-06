@@ -90,6 +90,7 @@ Example usages:
 #   300 concurrent clients (QUIT)                          0.00 secs
 
 
+
 from __future__ import with_statement, division
 import ftplib
 import sys
@@ -109,7 +110,6 @@ try:
     import psutil
 except ImportError:
     psutil = None
-
 
 HOST = 'localhost'
 PORT = 21
@@ -135,37 +135,33 @@ else:
     def b(s):
         return s
 
+# http://goo.gl/6V8Rm
+def hilite(string, ok=True, bold=False):
+    """Return an highlighted version of 'string'."""
+    attr = []
+    if ok is None:  # no color
+        pass
+    elif ok:   # green
+        attr.append('32')
+    else:   # red
+        attr.append('31')
+    if bold:
+        attr.append('1')
+    return '\x1b[%sm%s\x1b[0m' % (';'.join(attr), string)
 
 if not sys.stdout.isatty() or os.name != 'posix':
     def hilite(s, *args, **kwargs):
         return s
-else:
-    # http://goo.gl/6V8Rm
-    def hilite(string, ok=True, bold=False):
-        """Return an highlighted version of 'string'."""
-        attr = []
-        if ok is None:  # no color
-            pass
-        elif ok:   # green
-            attr.append('32')
-        else:   # red
-            attr.append('31')
-        if bold:
-            attr.append('1')
-        return '\x1b[%sm%s\x1b[0m' % (';'.join(attr), string)
-
 
 server_memory = []
 
-
 def print_bench(what, value, unit=""):
     s = "%s %s %-8s" % (hilite("%-50s" % what, ok=None, bold=0),
-                        hilite("%8.2f" % value),
-                        unit)
+                      hilite("%8.2f" % value),
+                      unit)
     if server_memory:
         s += "%s" % hilite(server_memory.pop())
     print_(s.strip())
-
 
 # http://goo.gl/zeJZl
 def bytes2human(n, format="%(value).1f%(symbol)s"):
@@ -178,13 +174,12 @@ def bytes2human(n, format="%(value).1f%(symbol)s"):
     symbols = ('B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
     prefix = {}
     for i, s in enumerate(symbols[1:]):
-        prefix[s] = 1 << (i + 1) * 10
+        prefix[s] = 1 << (i+1)*10
     for symbol in reversed(symbols[1:]):
         if n >= prefix[symbol]:
             value = float(n) / prefix[symbol]
             return format % locals()
     return format % dict(symbol=symbols[0], value=n)
-
 
 # http://goo.gl/zeJZl
 def human2bytes(s):
@@ -199,11 +194,10 @@ def human2bytes(s):
     num = s[:-1]
     assert num.isdigit() and letter in symbols, s
     num = float(num)
-    prefix = {symbols[0]: 1}
+    prefix = {symbols[0]:1}
     for i, s in enumerate(symbols[1:]):
-        prefix[s] = 1 << (i + 1) * 10
+        prefix[s] = 1 << (i+1)*10
     return int(num * prefix[letter])
-
 
 def register_memory():
     """Register an approximation of memory used by FTP server process
@@ -229,7 +223,6 @@ def register_memory():
             mem += get_mem(child)
         server_memory.append(bytes2human(mem))
 
-
 def timethis(what):
     """"Utility function for making simple benchmarks (calculates time calls).
     It can be used either as a context manager or as a decorator.
@@ -243,14 +236,13 @@ def timethis(what):
         res = (stop - start)
         print_bench(what, res, "secs")
 
-    if hasattr(what, "__call__"):
-        def timed(*args, **kwargs):
+    if hasattr(what,"__call__"):
+        def timed(*args,**kwargs):
             with benchmark():
-                return what(*args, **kwargs)
+                return what(*args,**kwargs)
         return timed
     else:
         return benchmark()
-
 
 def connect():
     """Connect to FTP server, login and return an ftplib.FTP instance."""
@@ -265,7 +257,6 @@ def connect():
     ftp.login(USER, PASSWORD)
     return ftp
 
-
 def retr(ftp):
     """Same as ftplib's retrbinary() but discard the received data."""
     ftp.voidcmd('TYPE I')
@@ -278,7 +269,6 @@ def retr(ftp):
         recv_bytes += len(data)
     conn.close()
     ftp.voidresp()
-
 
 def stor(ftp, size):
     """Same as ftplib's storbinary() but just sends dummy data
@@ -295,7 +285,6 @@ def stor(ftp, size):
             break
     conn.close()
     ftp.voidresp()
-
 
 def bytes_per_second(ftp, retr=True):
     """Return the number of bytes transmitted in 1 second."""
@@ -339,7 +328,6 @@ def bytes_per_second(ftp, retr=True):
     ftp.quit()
     return bytes
 
-
 def cleanup():
     ftp = connect()
     try:
@@ -369,7 +357,6 @@ class AsyncReader(asyncore.dispatcher):
     def handle_error(self):
         raise
 
-
 class AsyncWriter(asynchat.async_chat):
     """Just write dummy data to a connected socket, asynchronously."""
     class ChunkProducer:
@@ -392,7 +379,6 @@ class AsyncWriter(asynchat.async_chat):
     def handle_error(self):
         raise
 
-
 class AsyncQuit(asynchat.async_chat):
 
     def __init__(self, sock):
@@ -410,7 +396,6 @@ class AsyncQuit(asynchat.async_chat):
     def handle_error(self):
         raise
 
-
 class OptFormatter(optparse.IndentedHelpFormatter):
 
     def format_epilog(self, s):
@@ -425,35 +410,30 @@ class OptFormatter(optparse.IndentedHelpFormatter):
             result.append(help_text)
         return ''.join(result)
 
-
 def main():
     global HOST, PORT, USER, PASSWORD, SERVER_PROC, TIMEOUT
-    USAGE = "%s -u USERNAME -p PASSWORD [-H] [-P] [-b] [-n] [-s] [-k]" % (
-        __file__)
+    USAGE = "%s -u USERNAME -p PASSWORD [-H] [-P] [-b] [-n] [-s] [-k]" % __file__
     parser = optparse.OptionParser(usage=USAGE,
                                    epilog=__doc__[__doc__.find('Example'):],
                                    formatter=OptFormatter())
     parser.add_option('-u', '--user', dest='user', help='username')
     parser.add_option('-p', '--pass', dest='password', help='password')
-    parser.add_option('-H', '--host', dest='host', default=HOST,
-                      help='hostname')
+    parser.add_option('-H', '--host', dest='host', default=HOST, help='hostname')
     parser.add_option('-P', '--port', dest='port', default=PORT, help='port',
                       type=int)
-    parser.add_option('-b', '--benchmark', dest='benchmark',
-                      default='transfer',
+    parser.add_option('-b', '--benchmark', dest='benchmark', default='transfer',
                       help="benchmark type ('transfer', 'concurrence', 'all')")
-    parser.add_option('-n', '--clients', dest='clients', default=200,
-                      type="int",
-                      help="number of concurrent clients used by "
-                           "'concurrence' benchmark")
+    parser.add_option('-n', '--clients', dest='clients', default=200, type="int",
+                      help="number of concurrent clients used by 'concurrence' "
+                           "benchmark")
     parser.add_option('-s', '--filesize', dest='filesize', default="10M",
                       help="file size used by 'concurrence' benchmark "
                            "(e.g. '10M')")
     parser.add_option('-k', '--pid', dest='pid', default=None, type="int",
-                      help="the PID of the server process to bench memory "
-                           "usage")
+                      help="the PID of the server process to bench memory usage")
     parser.add_option('-t', '--timeout', dest='timeout',
                       default=TIMEOUT, type="int", help="the socket timeout")
+
 
     options, args = parser.parse_args()
     if not options.user or not options.password:
@@ -501,8 +481,8 @@ def main():
 
         def bench_multi_retr(clients):
             stor(clients[0], FILE_SIZE)
-            with timethis("%s concurrent clients (RETR %s file)" % (
-                    howmany, bytes2human(FILE_SIZE))):
+            with timethis("%s concurrent clients (RETR %s file)" \
+                          % (howmany, bytes2human(FILE_SIZE))):
                 for ftp in clients:
                     ftp.voidcmd('TYPE I')
                     conn = ftp.transfercmd("RETR " + TESTFN)
@@ -513,8 +493,8 @@ def main():
                 ftp.voidresp()
 
         def bench_multi_stor(clients):
-            with timethis("%s concurrent clients (STOR %s file)" % (
-                    howmany, bytes2human(FILE_SIZE))):
+            with timethis("%s concurrent clients (STOR %s file)" \
+                          % (howmany, bytes2human(FILE_SIZE))):
                 for ftp in clients:
                     ftp.voidcmd('TYPE I')
                     conn = ftp.transfercmd("STOR " + TESTFN)
@@ -549,8 +529,8 @@ def main():
     # start benchmark
     if SERVER_PROC is not None:
         register_memory()
-        print_("(starting with %s of memory being used)" % (
-            hilite(server_memory.pop())))
+        print_("(starting with %s of memory being used)" \
+               % hilite(server_memory.pop()))
     if options.benchmark == 'transfer':
         bench_stor()
         bench_retr()

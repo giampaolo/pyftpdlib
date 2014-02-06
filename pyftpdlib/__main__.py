@@ -57,7 +57,6 @@ class CustomizedOptionFormatter(optparse.IndentedHelpFormatter):
             result.append(help_text)
         return ''.join(result)
 
-
 def main():
     """Start a stand alone anonymous FTP server."""
     usage = "python -m pyftpdlib.ftpserver [options]"
@@ -67,7 +66,7 @@ def main():
                       help="specify the interface to run on (default all "
                            "interfaces)")
     parser.add_option('-p', '--port', type="int", default=2121, metavar="PORT",
-                      help="specify port number to run on (default 2121)")
+                      help="specify port number to run on (default 21)")
     parser.add_option('-w', '--write', action="store_true", default=False,
                       help="grants write access for the anonymous user "
                            "(default read-only)")

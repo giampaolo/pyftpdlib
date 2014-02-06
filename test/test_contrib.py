@@ -66,10 +66,8 @@ from pyftpdlib._compat import b, getcwdu, unicode
 from test_ftpd import *
 
 
-FTPS_SUPPORT = (hasattr(ftplib, 'FTP_TLS') and
-                hasattr(handlers, 'TLS_FTPHandler'))
-CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                        'keycert.pem'))
+FTPS_SUPPORT = hasattr(ftplib, 'FTP_TLS') and hasattr(handlers, 'TLS_FTPHandler')
+CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__), 'keycert.pem'))
 MPROCESS_SUPPORT = hasattr(servers, 'MultiprocessFTPServer')
 
 
@@ -116,80 +114,37 @@ else:
     class TLSTestMixin:
         pass
 
-class TestFtpAuthenticationTLSMixin(TLSTestMixin, TestFtpAuthentication):
-    pass
-
-class TestTFtpDummyCmdsTLSMixin(TLSTestMixin, TestFtpDummyCmds):
-    pass
-
-class TestFtpCmdsSemanticTLSMixin(TLSTestMixin, TestFtpCmdsSemantic):
-    pass
-
-class TestFtpFsOperationsTLSMixin(TLSTestMixin, TestFtpFsOperations):
-    pass
-
-class TestFtpStoreDataTLSMixin(TLSTestMixin, TestFtpStoreData):
-    pass
-
-class TestFtpRetrieveDataTLSMixin(TLSTestMixin, TestFtpRetrieveData):
-    pass
-
-class TestFtpListingCmdsTLSMixin(TLSTestMixin, TestFtpListingCmds):
-    pass
+class TestFtpAuthenticationTLSMixin(TLSTestMixin, TestFtpAuthentication): pass
+class TestTFtpDummyCmdsTLSMixin(TLSTestMixin, TestFtpDummyCmds): pass
+class TestFtpCmdsSemanticTLSMixin(TLSTestMixin, TestFtpCmdsSemantic): pass
+class TestFtpFsOperationsTLSMixin(TLSTestMixin, TestFtpFsOperations): pass
+class TestFtpStoreDataTLSMixin(TLSTestMixin, TestFtpStoreData): pass
+class TestFtpRetrieveDataTLSMixin(TLSTestMixin, TestFtpRetrieveData): pass
+class TestFtpListingCmdsTLSMixin(TLSTestMixin, TestFtpListingCmds): pass
 
 class TestFtpAbortTLSMixin(TLSTestMixin, TestFtpAbort):
-    def test_oob_abor(self):
-        pass
+    def test_oob_abor(self): pass
 
 class TestTimeoutsTLSMixin(TLSTestMixin, TestTimeouts):
-    def test_data_timeout_not_reached(self):
-        pass
+    def test_data_timeout_not_reached(self): pass
 
-class TestConfigurableOptionsTLSMixin(TLSTestMixin, TestConfigurableOptions):
-    pass
-
+class TestConfigurableOptionsTLSMixin(TLSTestMixin, TestConfigurableOptions): pass
 class TestCallbacksTLSMixin(TLSTestMixin, TestCallbacks):
-    def test_on_file_received(self):
-        pass
+    def test_on_file_received(self): pass
+    def test_on_file_sent(self): pass
+    def test_on_incomplete_file_received(self): pass
+    def test_on_incomplete_file_sent(self): pass
+    def test_on_connect(self): pass
+    def test_on_disconnect(self): pass
+    def test_on_login(self): pass
+    def test_on_login_failed(self): pass
+    def test_on_logout_quit(self): pass
+    def test_on_logout_rein(self): pass
+    def test_on_logout_user_issued_twice(self): pass
 
-    def test_on_file_sent(self):
-        pass
-
-    def test_on_incomplete_file_received(self):
-        pass
-
-    def test_on_incomplete_file_sent(self):
-        pass
-
-    def test_on_connect(self):
-        pass
-
-    def test_on_disconnect(self):
-        pass
-
-    def test_on_login(self):
-        pass
-
-    def test_on_login_failed(self):
-        pass
-
-    def test_on_logout_quit(self):
-        pass
-
-    def test_on_logout_rein(self):
-        pass
-
-    def test_on_logout_user_issued_twice(self):
-        pass
-
-class TestIPv4EnvironmentTLSMixin(TLSTestMixin, TestIPv4Environment):
-    pass
-
-class TestIPv6EnvironmentTLSMixin(TLSTestMixin, TestIPv6Environment):
-    pass
-
-class TestCornerCasesTLSMixin(TLSTestMixin, TestCornerCases):
-    pass
+class TestIPv4EnvironmentTLSMixin(TLSTestMixin, TestIPv4Environment): pass
+class TestIPv6EnvironmentTLSMixin(TLSTestMixin, TestIPv6Environment): pass
+class TestCornerCasesTLSMixin(TLSTestMixin, TestCornerCases): pass
 
 
 # =====================================================================
@@ -202,50 +157,22 @@ class TFTPd(FTPd):
 class ThreadFTPTestMixin:
     server_class = TFTPd
 
-class TestFtpAuthenticationThreadMixin(ThreadFTPTestMixin,
-                                       TestFtpAuthentication):
-    pass
-
-class TestTFtpDummyCmdsThreadMixin(ThreadFTPTestMixin, TestFtpDummyCmds):
-    pass
-
-class TestFtpCmdsSemanticThreadMixin(ThreadFTPTestMixin, TestFtpCmdsSemantic):
-    pass
-
-class TestFtpFsOperationsThreadMixin(ThreadFTPTestMixin, TestFtpFsOperations):
-    pass
-
-class TestFtpStoreDataThreadMixin(ThreadFTPTestMixin, TestFtpStoreData):
-    pass
-
-class TestFtpRetrieveDataThreadMixin(ThreadFTPTestMixin, TestFtpRetrieveData):
-    pass
-
-class TestFtpListingCmdsThreadMixin(ThreadFTPTestMixin, TestFtpListingCmds):
-    pass
-
-class TestFtpAbortThreadMixin(ThreadFTPTestMixin, TestFtpAbort):
-    pass
-
+class TestFtpAuthenticationThreadMixin(ThreadFTPTestMixin, TestFtpAuthentication): pass
+class TestTFtpDummyCmdsThreadMixin(ThreadFTPTestMixin, TestFtpDummyCmds): pass
+class TestFtpCmdsSemanticThreadMixin(ThreadFTPTestMixin, TestFtpCmdsSemantic): pass
+class TestFtpFsOperationsThreadMixin(ThreadFTPTestMixin, TestFtpFsOperations): pass
+class TestFtpStoreDataThreadMixin(ThreadFTPTestMixin, TestFtpStoreData): pass
+class TestFtpRetrieveDataThreadMixin(ThreadFTPTestMixin, TestFtpRetrieveData): pass
+class TestFtpListingCmdsThreadMixin(ThreadFTPTestMixin, TestFtpListingCmds): pass
+class TestFtpAbortThreadMixin(ThreadFTPTestMixin, TestFtpAbort): pass
 #class TestTimeoutsThreadMixin(ThreadFTPTestMixin, TestTimeouts):
 #    def test_data_timeout_not_reached(self): pass
-#class TestConfOptsThreadMixin(ThreadFTPTestMixin, TestConfigurableOptions):
-#    pass
-
-class TestCallbacksThreadMixin(ThreadFTPTestMixin, TestCallbacks):
-    pass
-
-class TestIPv4EnvironmentThreadMixin(ThreadFTPTestMixin, TestIPv4Environment):
-    pass
-
-class TestIPv6EnvironmentThreadMixin(ThreadFTPTestMixin, TestIPv6Environment):
-    pass
-
-class TestCornerCasesThreadMixin(ThreadFTPTestMixin, TestCornerCases):
-    pass
-
-class TestFTPServerThreadMixin(ThreadFTPTestMixin, TestFTPServer):
-    pass
+#class TestConfigurableOptionsThreadMixin(ThreadFTPTestMixin, TestConfigurableOptions): pass
+class TestCallbacksThreadMixin(ThreadFTPTestMixin, TestCallbacks): pass
+class TestIPv4EnvironmentThreadMixin(ThreadFTPTestMixin, TestIPv4Environment): pass
+class TestIPv6EnvironmentThreadMixin(ThreadFTPTestMixin, TestIPv6Environment): pass
+class TestCornerCasesThreadMixin(ThreadFTPTestMixin, TestCornerCases): pass
+class TestFTPServerThreadMixin(ThreadFTPTestMixin, TestFTPServer): pass
 
 
 # =====================================================================
@@ -262,49 +189,26 @@ else:
     class MProcFTPTestMixin:
         pass
 
-class TestFtpAuthenticationMProcMixin(MProcFTPTestMixin,
-                                      TestFtpAuthentication):
-    pass
-
-class TestTFtpDummyCmdsMProcMixin(MProcFTPTestMixin, TestFtpDummyCmds):
-    pass
-
-class TestFtpCmdsSemanticMProcMixin(MProcFTPTestMixin, TestFtpCmdsSemantic):
-    pass
+class TestFtpAuthenticationMProcMixin(MProcFTPTestMixin, TestFtpAuthentication): pass
+class TestTFtpDummyCmdsMProcMixin(MProcFTPTestMixin, TestFtpDummyCmds): pass
+class TestFtpCmdsSemanticMProcMixin(MProcFTPTestMixin, TestFtpCmdsSemantic): pass
 
 class TestFtpFsOperationsMProcMixin(MProcFTPTestMixin, TestFtpFsOperations):
     def test_unforeseen_mdtm_event(self):
         pass
 
-class TestFtpStoreDataMProcMixin(MProcFTPTestMixin, TestFtpStoreData):
-    pass
-
-class TestFtpRetrieveDataMProcMixin(MProcFTPTestMixin, TestFtpRetrieveData):
-    pass
-
-class TestFtpListingCmdsMProcMixin(MProcFTPTestMixin, TestFtpListingCmds):
-    pass
-
-class TestFtpAbortMProcMixin(MProcFTPTestMixin, TestFtpAbort):
-    pass
-
+class TestFtpStoreDataMProcMixin(MProcFTPTestMixin, TestFtpStoreData): pass
+class TestFtpRetrieveDataMProcMixin(MProcFTPTestMixin, TestFtpRetrieveData): pass
+class TestFtpListingCmdsMProcMixin(MProcFTPTestMixin, TestFtpListingCmds): pass
+class TestFtpAbortMProcMixin(MProcFTPTestMixin, TestFtpAbort): pass
 #class TestTimeoutsMProcMixin(MProcFTPTestMixin, TestTimeouts):
 #    def test_data_timeout_not_reached(self): pass
-#class TestConfiOptsMProcMixin(MProcFTPTestMixin, TestConfigurableOptions):
-#    pass
+#class TestConfigurableOptionsMProcMixin(MProcFTPTestMixin, TestConfigurableOptions): pass
 #class TestCallbacksMProcMixin(MProcFTPTestMixin, TestCallbacks): pass
-
-class TestIPv4EnvironmentMProcMixin(MProcFTPTestMixin, TestIPv4Environment):
-    pass
-
-class TestIPv6EnvironmentMProcMixin(MProcFTPTestMixin, TestIPv6Environment):
-    pass
-
-class TestCornerCasesMProcMixin(MProcFTPTestMixin, TestCornerCases):
-    pass
-
-class TestFTPServerMProcMixin(MProcFTPTestMixin, TestFTPServer):
-    pass
+class TestIPv4EnvironmentMProcMixin(MProcFTPTestMixin, TestIPv4Environment): pass
+class TestIPv6EnvironmentMProcMixin(MProcFTPTestMixin, TestIPv6Environment): pass
+class TestCornerCasesMProcMixin(MProcFTPTestMixin, TestCornerCases): pass
+class TestFTPServerMProcMixin(MProcFTPTestMixin, TestFTPServer): pass
 
 
 # =====================================================================
@@ -338,7 +242,7 @@ class TestFTPS(unittest.TestCase):
                 return
             raise self.failureException("%s != %s" % (str(why), msg))
         else:
-            if hasattr(excClass, '__name__'):
+            if hasattr(excClass,'__name__'):
                 excName = excClass.__name__
             else:
                 excName = str(excClass)
@@ -519,10 +423,8 @@ class SharedAuthorizerTests(unittest.TestCase):
                 return
             raise self.failureException("%s != %s" % (str(why), msg))
         else:
-            if hasattr(excClass, '__name__'):
-                excName = excClass.__name__
-            else:
-                excName = str(excClass)
+            if hasattr(excClass,'__name__'): excName = excClass.__name__
+            else: excName = str(excClass)
             raise self.failureException("%s not raised" % excName)
 
     # --- /utils
@@ -556,12 +458,10 @@ class SharedAuthorizerTests(unittest.TestCase):
             auth = self.authorizer_class()
         current_user = self.get_current_user()
         nonexistent_user = self.get_nonexistent_user()
-        self.assertRaises(
-            AuthenticationFailed,
-            auth.validate_authentication, current_user, 'wrongpasswd', None)
-        self.assertRaises(
-            AuthenticationFailed,
-            auth.validate_authentication, nonexistent_user, 'bar', None)
+        self.assertRaises(AuthenticationFailed,
+              auth.validate_authentication, current_user, 'wrongpasswd', None)
+        self.assertRaises(AuthenticationFailed,
+                  auth.validate_authentication, nonexistent_user, 'bar', None)
 
     def test_impersonate_user(self):
         auth = self.authorizer_class()
@@ -569,16 +469,13 @@ class SharedAuthorizerTests(unittest.TestCase):
         try:
             if self.authorizer_class.__name__ == 'UnixAuthorizer':
                 auth.impersonate_user(self.get_current_user(), '')
-                self.assertRaises(
-                    AuthorizerError,
-                    auth.impersonate_user, nonexistent_user, 'pwd')
+                self.assertRaises(AuthorizerError,
+                                  auth.impersonate_user, nonexistent_user, 'pwd')
             else:
-                self.assertRaises(
-                    Win32ExtError,
-                    auth.impersonate_user, nonexistent_user, 'pwd')
-                self.assertRaises(
-                    Win32ExtError,
-                    auth.impersonate_user, self.get_current_user(), '')
+                self.assertRaises(Win32ExtError,
+                            auth.impersonate_user, nonexistent_user, 'pwd')
+                self.assertRaises(Win32ExtError,
+                            auth.impersonate_user, self.get_current_user(), '')
         finally:
             auth.terminate_impersonation('')
 
@@ -604,27 +501,20 @@ class SharedAuthorizerTests(unittest.TestCase):
 
     def test_error_options(self):
         wrong_user = self.get_nonexistent_user()
-        self.assertRaisesWithMsg(
-            AuthorizerError,
-            "rejected_users and allowed_users options are mutually exclusive",
-            self.authorizer_class, allowed_users=['foo'],
-            rejected_users=['bar'])
-        self.assertRaisesWithMsg(
-            AuthorizerError,
-            'invalid username "anonymous"',
-            self.authorizer_class, allowed_users=['anonymous'])
-        self.assertRaisesWithMsg(
-            AuthorizerError,
-            'invalid username "anonymous"',
-            self.authorizer_class, rejected_users=['anonymous'])
-        self.assertRaisesWithMsg(
-            AuthorizerError,
-            'unknown user %s' % wrong_user,
-            self.authorizer_class, allowed_users=[wrong_user])
         self.assertRaisesWithMsg(AuthorizerError,
-                                 'unknown user %s' % wrong_user,
-                                 self.authorizer_class,
-                                 rejected_users=[wrong_user])
+           "rejected_users and allowed_users options are mutually exclusive",
+           self.authorizer_class, allowed_users=['foo'], rejected_users=['bar'])
+        self.assertRaisesWithMsg(AuthorizerError,
+                             'invalid username "anonymous"',
+                             self.authorizer_class, allowed_users=['anonymous'])
+        self.assertRaisesWithMsg(AuthorizerError,
+                            'invalid username "anonymous"',
+                            self.authorizer_class, rejected_users=['anonymous'])
+        self.assertRaisesWithMsg(AuthorizerError,
+                            'unknown user %s' % wrong_user,
+                            self.authorizer_class, allowed_users=[wrong_user])
+        self.assertRaisesWithMsg(AuthorizerError, 'unknown user %s' % wrong_user,
+                            self.authorizer_class, rejected_users=[wrong_user])
 
     def test_override_user_password(self):
         auth = self.authorizer_class()
@@ -634,8 +524,7 @@ class SharedAuthorizerTests(unittest.TestCase):
         self.assertRaises(AuthenticationFailed(auth.validate_authentication,
                                                user, 'bar', None))
         # make sure other settings keep using default values
-        self.assertEqual(auth.get_home_dir(user),
-                         self.get_current_user_homedir())
+        self.assertEqual(auth.get_home_dir(user), self.get_current_user_homedir())
         self.assertEqual(auth.get_perms(user), "elradfmw")
         self.assertEqual(auth.get_msg_login(user), "Login successful.")
         self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
@@ -647,8 +536,7 @@ class SharedAuthorizerTests(unittest.TestCase):
         auth.override_user(user, homedir=dir)
         self.assertEqual(auth.get_home_dir(user), dir)
         # make sure other settings keep using default values
-        # self.assertEqual(auth.get_home_dir(user),
-        #                  self.get_current_user_homedir())
+        #self.assertEqual(auth.get_home_dir(user), self.get_current_user_homedir())
         self.assertEqual(auth.get_perms(user), "elradfmw")
         self.assertEqual(auth.get_msg_login(user), "Login successful.")
         self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
@@ -659,8 +547,7 @@ class SharedAuthorizerTests(unittest.TestCase):
         auth.override_user(user, perm="elr")
         self.assertEqual(auth.get_perms(user), "elr")
         # make sure other settings keep using default values
-        self.assertEqual(auth.get_home_dir(user),
-                         self.get_current_user_homedir())
+        self.assertEqual(auth.get_home_dir(user), self.get_current_user_homedir())
         #self.assertEqual(auth.get_perms(user), "elradfmw")
         self.assertEqual(auth.get_msg_login(user), "Login successful.")
         self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
@@ -672,8 +559,7 @@ class SharedAuthorizerTests(unittest.TestCase):
         self.assertEqual(auth.get_msg_login(user), "foo")
         self.assertEqual(auth.get_msg_quit(user), "bar")
         # make sure other settings keep using default values
-        self.assertEqual(auth.get_home_dir(user),
-                         self.get_current_user_homedir())
+        self.assertEqual(auth.get_home_dir(user), self.get_current_user_homedir())
         self.assertEqual(auth.get_perms(user), "elradfmw")
         #self.assertEqual(auth.get_msg_login(user), "Login successful.")
         #self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
@@ -689,14 +575,12 @@ class SharedAuthorizerTests(unittest.TestCase):
                 another_user = x
                 break
         nonexistent_user = self.get_nonexistent_user()
-        self.assertRaisesWithMsg(
-            AuthorizerError,
-            "at least one keyword argument must be specified",
-            auth.override_user, this_user)
+        self.assertRaisesWithMsg(AuthorizerError,
+                                "at least one keyword argument must be specified",
+                                auth.override_user, this_user)
         self.assertRaisesWithMsg(AuthorizerError,
                                  'no such user %s' % nonexistent_user,
-                                 auth.override_user, nonexistent_user,
-                                 perm='r')
+                                 auth.override_user, nonexistent_user, perm='r')
         if self.authorizer_class.__name__ == 'UnixAuthorizer':
             auth = self.authorizer_class(allowed_users=[this_user],
                                          require_valid_shell=False)
@@ -717,8 +601,7 @@ class SharedAuthorizerTests(unittest.TestCase):
                                  auth.override_user, this_user, perm='r')
         self.assertRaisesWithMsg(AuthorizerError,
                                  "can't assign password to anonymous user",
-                                 auth.override_user, "anonymous",
-                                 password='foo')
+                                 auth.override_user, "anonymous", password='foo')
 
 
 # =====================================================================
@@ -731,8 +614,8 @@ class TestUnixAuthorizer(SharedAuthorizerTests):
     authorizer_class = getattr(authorizers, "UnixAuthorizer", None)
 
     def test_get_perms_anonymous(self):
-        auth = authorizers.UnixAuthorizer(
-            global_perm='elr', anonymous_user=self.get_current_user())
+        auth = authorizers.UnixAuthorizer(global_perm='elr',
+                                          anonymous_user=self.get_current_user())
         self.assertTrue('e' in auth.get_perms('anonymous'))
         self.assertFalse('w' in auth.get_perms('anonymous'))
         warnings.filterwarnings("ignore")
@@ -741,8 +624,8 @@ class TestUnixAuthorizer(SharedAuthorizerTests):
         self.assertTrue('w' in auth.get_perms('anonymous'))
 
     def test_has_perm_anonymous(self):
-        auth = authorizers.UnixAuthorizer(
-            global_perm='elr', anonymous_user=self.get_current_user())
+        auth = authorizers.UnixAuthorizer(global_perm='elr',
+                                          anonymous_user=self.get_current_user())
         self.assertTrue(auth.has_perm(self.get_current_user(), 'r'))
         self.assertFalse(auth.has_perm(self.get_current_user(), 'w'))
         self.assertTrue(auth.has_perm('anonymous', 'e'))
@@ -767,9 +650,8 @@ class TestUnixAuthorizer(SharedAuthorizerTests):
                                           require_valid_shell=False)
         self.assertRaises(AuthenticationFailed,
                           auth.validate_authentication, 'foo', 'passwd', None)
-        self.assertRaises(
-            AuthenticationFailed,
-            auth.validate_authentication, current_user, 'passwd', None)
+        self.assertRaises(AuthenticationFailed,
+                     auth.validate_authentication, current_user, 'passwd', None)
         auth.validate_authentication('anonymous', 'passwd', None)
 
     def test_require_valid_shell(self):
@@ -785,10 +667,9 @@ class TestUnixAuthorizer(SharedAuthorizerTests):
             self.fail("no user found")
 
         user = get_fake_shell_user()
-        self.assertRaisesWithMsg(
-            AuthorizerError,
-            "user %s has not a valid shell" % user,
-            authorizers.UnixAuthorizer, allowed_users=[user])
+        self.assertRaisesWithMsg(AuthorizerError,
+                             "user %s has not a valid shell" % user,
+                             authorizers.UnixAuthorizer, allowed_users=[user])
         # commented as it first fails for invalid home
         #self.assertRaisesWithMsg(ValueError,
         #                     "user %s has not a valid shell" % user,
@@ -824,8 +705,7 @@ class TestWindowsAuthorizer(SharedAuthorizerTests):
     def test_wrong_anonymous_credentials(self):
         user = self.get_current_user()
         self.assertRaises(Win32ExtError, self.authorizer_class,
-                          anonymous_user=user,
-                          anonymous_password='$|1wrongpasswd')
+                       anonymous_user=user, anonymous_password='$|1wrongpasswd')
 
 
 # =====================================================================
@@ -855,21 +735,20 @@ def test_main():
 
     # FTPS tests
     if FTPS_SUPPORT:
-        ftps_tests = [
-            TestFTPS,
-            TestFtpAuthenticationTLSMixin,
-            TestTFtpDummyCmdsTLSMixin,
-            TestFtpCmdsSemanticTLSMixin,
-            TestFtpFsOperationsTLSMixin,
-            TestFtpStoreDataTLSMixin,
-            TestFtpRetrieveDataTLSMixin,
-            TestFtpListingCmdsTLSMixin,
-            TestFtpAbortTLSMixin,
-            TestTimeoutsTLSMixin,
-            TestConfigurableOptionsTLSMixin,
-            TestCallbacksTLSMixin,
-            TestCornerCasesTLSMixin,
-        ]
+        ftps_tests = [TestFTPS,
+                      TestFtpAuthenticationTLSMixin,
+                      TestTFtpDummyCmdsTLSMixin,
+                      TestFtpCmdsSemanticTLSMixin,
+                      TestFtpFsOperationsTLSMixin,
+                      TestFtpStoreDataTLSMixin,
+                      TestFtpRetrieveDataTLSMixin,
+                      TestFtpListingCmdsTLSMixin,
+                      TestFtpAbortTLSMixin,
+                      TestTimeoutsTLSMixin,
+                      TestConfigurableOptionsTLSMixin,
+                      TestCallbacksTLSMixin,
+                      TestCornerCasesTLSMixin,
+                     ]
         if SUPPORTS_IPV4:
             ftps_tests.append(TestIPv4EnvironmentTLSMixin)
         if SUPPORTS_IPV6:
@@ -930,7 +809,7 @@ def test_main():
             try:
                 authorizers.UnixAuthorizer()
             except AuthorizerError:  # not root
-                warn("UnixAuthorizer tests skipped (root privileges are "
+                warn("UnixAuthorizer tests skipped (root privileges are " \
                      "required)")
             else:
                 tests.append(TestUnixAuthorizer)
@@ -950,7 +829,7 @@ def test_main():
             try:
                 import win32api
             except ImportError:
-                warn("WindowsAuthorizer tests skipped (pywin32 extension "
+                warn("WindowsAuthorizer tests skipped (pywin32 extension " \
                      "is required)")
             else:
                 warn("WindowsAuthorizer tests skipped")

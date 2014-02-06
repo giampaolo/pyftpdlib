@@ -43,7 +43,6 @@ try:
 except ImportError:
     from distutils.core import setup
 
-
 def get_version():
     INIT = os.path.abspath(os.path.join(os.path.dirname(__file__),
                            'pyftpdlib', '__init__.py'))
@@ -60,11 +59,10 @@ def get_version():
     finally:
         f.close()
 
-
 name = 'pyftpdlib'
 version = get_version()
-download_url = ("http://pyftpdlib.googlecode.com/files/" + name + "-" +
-                version + ".tar.gz")
+download_url = "http://pyftpdlib.googlecode.com/files/" + name + "-" + \
+                                                          version + ".tar.gz"
 
 if sys.version_info < (2, 4):
     sys.exit('python version not supported (min 2.4)')
@@ -73,9 +71,9 @@ setup(
     name=name,
     version=version,
     description='High-level asynchronous FTP server library',
-    long_description="Python FTP server library provides an high-level "
-                     "portable interface to easily write asynchronous FTP "
-                     "servers with Python.",
+    long_description="Python FTP server library provides an high-level portable "
+                     "interface to easily write asynchronous FTP servers with "
+                     "Python.",
     license='License :: OSI Approved :: MIT License',
     platforms='Platform Independent',
     author="Giampaolo Rodola'",
@@ -87,29 +85,29 @@ setup(
               'sendfile', 'asynchronous', 'nonblocking', 'eventdriven',
               'rfc959', 'rfc1123', 'rfc2228', 'rfc2428', 'rfc2640', 'rfc3659'],
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'Environment :: Console',
-        'Intended Audience :: Developers',
-        'Intended Audience :: System Administrators',
-        'License :: OSI Approved :: MIT License',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python',
-        'Topic :: Internet :: File Transfer Protocol (FTP)',
-        'Topic :: Software Development :: Libraries :: Python Modules',
-        'Topic :: System :: Filesystems',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.4',
-        'Programming Language :: Python :: 2.5',
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.0',
-        'Programming Language :: Python :: 3.1',
-        'Programming Language :: Python :: 3.2',
-        'Programming Language :: Python :: 3.3'
-    ],
-)
+          'Development Status :: 5 - Production/Stable',
+          'Environment :: Console',
+          'Intended Audience :: Developers',
+          'Intended Audience :: System Administrators',
+          'License :: OSI Approved :: MIT License',
+          'Operating System :: OS Independent',
+          'Programming Language :: Python',
+          'Topic :: Internet :: File Transfer Protocol (FTP)',
+          'Topic :: Software Development :: Libraries :: Python Modules',
+          'Topic :: System :: Filesystems',
+          'Programming Language :: Python',
+          'Programming Language :: Python :: 2',
+          'Programming Language :: Python :: 2.4',
+          'Programming Language :: Python :: 2.5',
+          'Programming Language :: Python :: 2.6',
+          'Programming Language :: Python :: 2.7',
+          'Programming Language :: Python :: 3',
+          'Programming Language :: Python :: 3.0',
+          'Programming Language :: Python :: 3.1',
+          'Programming Language :: Python :: 3.2',
+          'Programming Language :: Python :: 3.3',
+          ],
+    )
 
 
 # suggest to install pysendfile

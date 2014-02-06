@@ -5,8 +5,6 @@ include CREDITS
 include HISTORY
 include INSTALL
 include LICENSE
-include make.bat
-include Makefile
 include MANIFEST.in
 include README
 include setup.py

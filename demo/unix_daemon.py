@@ -79,12 +79,10 @@ PID_FILE = "/var/run/pyftpdlib.pid"
 LOG_FILE = "/var/log/pyftpdlib.log"
 WORKDIR = os.getcwd()
 UMASK = 0
-
-
+    
 def print_(s):
     sys.stdout.write(s + '\n')
     sys.stdout.flush()
-
 
 def pid_exists(pid):
     """Return True if a process with the given PID is currently running."""
@@ -96,7 +94,6 @@ def pid_exists(pid):
     else:
         return True
 
-
 def get_pid():
     """Return the PID saved in the pid file if possible, else None."""
     try:
@@ -106,7 +103,6 @@ def get_pid():
         err = sys.exc_info()[1]
         if err.errno != errno.ENOENT:
             raise
-
 
 def stop():
     """Keep attempting to stop the daemon for 5 seconds, first using
@@ -136,7 +132,6 @@ def stop():
             sys.exit("\ncould not kill daemon (pid %s)" % pid)
         time.sleep(0.1)
 
-
 def status():
     """Print daemon status and exit."""
     pid = get_pid()
@@ -146,7 +141,6 @@ def status():
         print_("daemon running with pid %s" % pid)
     sys.exit(0)
 
-
 def get_server():
     """Return a pre-configured FTP server instance."""
     handler = FTPHandler
@@ -155,26 +149,25 @@ def get_server():
     server = FTPServer((HOST, PORT), handler)
     return server
 
-
 def daemonize():
     """A wrapper around python-daemonize context manager."""
     def _daemonize():
-        pid = os.fork()
+        pid = os.fork() 
         if pid > 0:
             # exit first parent
-            sys.exit(0)
-
+            sys.exit(0) 
+    
         # decouple from parent environment
-        os.chdir(WORKDIR)
-        os.setsid()
-        os.umask(0)
-
-        # do second fork
-        pid = os.fork()
+        os.chdir(WORKDIR) 
+        os.setsid() 
+        os.umask(0) 
+    
+        # do second fork     
+        pid = os.fork() 
         if pid > 0:
             # exit from second parent
-            sys.exit(0)
-
+            sys.exit(0) 
+    
         # redirect standard file descriptors
         sys.stdout.flush()
         sys.stderr.flush()
@@ -184,10 +177,10 @@ def daemonize():
         os.dup2(si.fileno(), sys.stdin.fileno())
         os.dup2(so.fileno(), sys.stdout.fileno())
         os.dup2(se.fileno(), sys.stderr.fileno())
-
+    
         # write pidfile
         pid = str(os.getpid())
-        f = open(PID_FILE, 'w')
+        f = open(PID_FILE,'w')
         f.write("%s\n" % pid)
         f.close()
         atexit.register(lambda: os.remove(PID_FILE))
@@ -197,7 +190,7 @@ def daemonize():
         sys.exit('daemon already running (pid %s)' % pid)
     # instance FTPd before daemonizing, so that in case of problems we
     # get an exception here and exit immediately
-    server = get_server()
+    server = get_server()    
     _daemonize()
     server.serve_forever()
 

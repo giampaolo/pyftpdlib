@@ -47,8 +47,7 @@ def main():
     # Use Guest user with empty password to handle anonymous sessions.
     # Guest user must be enabled first, empty password set and profile
     # directory specified.
-    # authorizer = WindowsAuthorizer(anonymous_user="Guest",
-    #                                anonymous_password="")
+    #authorizer = WindowsAuthorizer(anonymous_user="Guest", anonymous_password="")
     handler = FTPHandler
     handler.authorizer = authorizer
     ftpd = FTPServer(('', 21), handler)

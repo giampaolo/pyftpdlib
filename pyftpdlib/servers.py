@@ -77,7 +77,6 @@ from pyftpdlib.ioloop import Acceptor, IOLoop
 __all__ = ['FTPServer']
 _BSD = 'bsd' in sys.platform
 
-
 # ===================================================================
 # --- base class
 # ===================================================================
@@ -200,7 +199,7 @@ class FTPServer(Acceptor):
            Also, logs server start and stop.
         """
         if handle_exit:
-            log = handle_exit and blocking
+            log = handle_exit and blocking == True
             if log:
                 self._log_start()
             try:
@@ -209,9 +208,8 @@ class FTPServer(Acceptor):
                 pass
             if blocking:
                 if log:
-                    logger.info(
-                        ">>> shutting down FTP server (%s active fds) <<<",
-                        self._map_len())
+                    logger.info(">>> shutting down FTP server (%s active fds) <<<",
+                                self._map_len())
                 self.close_all()
         else:
             self.ioloop.loop(timeout, blocking)
@@ -330,8 +328,8 @@ class _SpawnerBase(FTPServer):
             poll_timeout = getattr(self, 'poll_timeout', None)
             soonest_timeout = poll_timeout
 
-            while (ioloop.socket_map or ioloop.sched._tasks) and \
-                    not self._exit.is_set():
+            while (ioloop.socket_map or ioloop.sched._tasks) and not \
+              self._exit.is_set():
                 try:
                     if ioloop.socket_map:
                         poll(timeout=soonest_timeout)
@@ -344,11 +342,9 @@ class _SpawnerBase(FTPServer):
                         # functions are supposed to be cancel()ed on close()
                         # but by using threads we can incur into
                         # synchronization issues such as this one.
-                        # https://code.google.com/p/pyftpdlib/issues/
-                        #     detail?id=245
+                        # https://code.google.com/p/pyftpdlib/issues/detail?id=245
                         if not ioloop.socket_map:
-                            # get rid of cancel()led calls
-                            ioloop.sched.reheapify()
+                            ioloop.sched.reheapify() # get rid of cancel()led calls
                             soonest_timeout = sched_poll()
                             if soonest_timeout:
                                 time.sleep(min(soonest_timeout, 1))
@@ -378,8 +374,8 @@ class _SpawnerBase(FTPServer):
                         raise
                 else:
                     if poll_timeout:
-                        if (soonest_timeout is None
-                                or soonest_timeout > poll_timeout):
+                        if soonest_timeout is None \
+                        or soonest_timeout > poll_timeout:
                             soonest_timeout = poll_timeout
         finally:
             ioloop.close()
@@ -417,7 +413,7 @@ class _SpawnerBase(FTPServer):
     def serve_forever(self, timeout=None, blocking=True, handle_exit=True):
         self._exit.clear()
         if handle_exit:
-            log = handle_exit and blocking
+            log = handle_exit and blocking == True
             if log:
                 self._log_start()
             try:
@@ -426,9 +422,8 @@ class _SpawnerBase(FTPServer):
                 pass
             if blocking:
                 if log:
-                    logger.info(
-                        ">>> shutting down FTP server (%s active workers) <<<",
-                        self._map_len())
+                    logger.info(">>> shutting down FTP server (%s active " \
+                                "workers) <<<", self._map_len())
                 self.close_all()
         else:
             self.ioloop.loop(timeout, blocking)

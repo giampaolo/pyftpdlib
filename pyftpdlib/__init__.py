@@ -88,16 +88,15 @@ Usage example:
 [I 13-02-19 10:55:42] use sendfile(2): True
 [I 13-02-19 10:55:45] 127.0.0.1:34178-[] FTP session opened (connect)
 [I 13-02-19 10:55:48] 127.0.0.1:34178-[user] USER 'user' logged in.
-[I 13-02-19 10:56:27] 127.0.0.1:34179-[user] RETR /home/giampaolo/.vimrc
-                      completed=1 bytes=1700 seconds=0.001
+[I 13-02-19 10:56:27] 127.0.0.1:34179-[user] RETR /home/giampaolo/.vimrc completed=1 bytes=1700 seconds=0.001
 [I 13-02-19 10:56:39] 127.0.0.1:34179-[user] FTP session closed (disconnect).
 """
 
+import logging
 
-__ver__ = '1.3.0'
-__author__ = "Giampaolo Rodola' <g.rodola@gmail.com>"
-__web__ = 'http://code.google.com/p/pyftpdlib/'
-
+__ver__     = '1.3.0'
+__author__  = "Giampaolo Rodola' <g.rodola@gmail.com>"
+__web__     = 'http://code.google.com/p/pyftpdlib/'
 
 def _depwarn(msg):
     """

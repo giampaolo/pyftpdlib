@@ -43,13 +43,12 @@ try:
     import curses
 except ImportError:
     curses = None
-
+    
 from pyftpdlib._compat import unicode
 
-
 # default logger
-logger = logging.getLogger('pyftpdlib')
 
+logger = logging.getLogger('pyftpdlib')
 
 def _stderr_supports_color():
     color = False
@@ -90,19 +89,14 @@ class LogFormatter(logging.Formatter):
             # works with unicode strings.  The explicit calls to
             # unicode() below are harmless in python2 but will do the
             # right conversion in python 3.
-            fg_color = (curses.tigetstr("setaf") or curses.tigetstr("setf")
-                        or "")
+            fg_color = (curses.tigetstr("setaf") or curses.tigetstr("setf") or "")
             if (3, 0) < sys.version_info < (3, 2, 3):
                 fg_color = unicode(fg_color, "ascii")
             self._colors = {
-                # blues
-                logging.DEBUG: unicode(curses.tparm(fg_color, 4), "ascii"),
-                # green
-                logging.INFO: unicode(curses.tparm(fg_color, 2), "ascii"),
-                # yellow
-                logging.WARNING: unicode(curses.tparm(fg_color, 3), "ascii"),
-                # red
-                logging.ERROR: unicode(curses.tparm(fg_color, 1), "ascii")
+                logging.DEBUG: unicode(curses.tparm(fg_color, 4), "ascii"),   # blue
+                logging.INFO: unicode(curses.tparm(fg_color, 2),  "ascii"),   # green
+                logging.WARNING: unicode(curses.tparm(fg_color, 3), "ascii"), # yellow
+                logging.ERROR: unicode(curses.tparm(fg_color, 1), "ascii")    # red
             }
             self._normal = unicode(curses.tigetstr("sgr0"), "ascii")
 
@@ -148,7 +142,6 @@ class LogFormatter(logging.Formatter):
         if record.exc_text:
             formatted = formatted.rstrip() + "\n" + record.exc_text
         return formatted.replace("\n", "\n    ")
-
 
 def _config_logging():
     channel = logging.StreamHandler()
