@@ -153,6 +153,6 @@ class LogFormatter(logging.Formatter):
 def _config_logging():
     channel = logging.StreamHandler()
     channel.setFormatter(LogFormatter())
-    logger = logging.getLogger()
+    logger = logging.getLogger('pyftpdlib')
     logger.setLevel(LEVEL)
     logger.addHandler(channel)

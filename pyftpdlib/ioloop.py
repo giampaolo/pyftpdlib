@@ -320,7 +320,7 @@ class _IOLoop(object):
         """
         if not _IOLoop._started_once:
             _IOLoop._started_once = True
-            if not logging.getLogger().handlers:
+            if not logging.getLogger('pyftpdlib').handlers:
                 # If we get to this point it means the user hasn't
                 # configured logging. We want to log by default so
                 # we configure logging ourselves so that it will
