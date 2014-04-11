@@ -461,8 +461,9 @@ class Select(_IOLoop):
 # ===================================================================
 
 class _BasePollEpoll(_IOLoop):
-    """This is common to both poll/epoll implementations which
-    almost share the same interface.
+    """This is common to both poll() (UNIX), epoll() (Linux) and
+    /dev/poll (Solaris) implementations which share almost the same
+    interface.
     Not supposed to be used directly.
     """
 
@@ -536,6 +537,44 @@ if hasattr(select, 'poll'):
             if timeout is not None:
                 timeout = int(timeout * 1000)
             _BasePollEpoll.poll(self, timeout)
+
+
+# ===================================================================
+# --- /dev/poll - Solaris (introduced in python 3.3)
+# ===================================================================
+
+if hasattr(select, 'devpoll'):
+
+    class DevPoll(_BasePollEpoll):
+        """/dev/poll based poller (introduced in python 3.3)."""
+
+        READ = select.POLLIN
+        WRITE = select.POLLOUT
+        _ERROR = select.POLLERR | select.POLLHUP | select.POLLNVAL
+        _poller = select.devpoll
+
+        # introduced in python 3.4
+        if hasattr(select.devpoll, 'fileno'):
+            def fileno(self):
+                """Return devpoll() fd."""
+                return self._poller.fileno()
+
+        def modify(self, fd, events):
+            inst = self.socket_map[fd]
+            self.unregister(fd)
+            self.register(fd, inst, events)
+
+        def poll(self, timeout):
+            # /dev/poll timeout is expressed in milliseconds
+            if timeout is not None:
+                timeout = int(timeout * 1000)
+            _BasePollEpoll.poll(self, timeout)
+
+        # introduced in python 3.4
+        if hasattr(select.devpoll, 'close'):
+            def close(self):
+                _IOLoop.close(self)
+                self._poller.close()
 
 
 # ===================================================================
@@ -666,10 +705,12 @@ if hasattr(select, 'kqueue'):
 # --- choose the better poller for this platform
 # ===================================================================
 
-if hasattr(select, 'epoll'):     # epoll() - Linux only
+if hasattr(select, 'epoll'):     # epoll() - Linux
     IOLoop = Epoll
 elif hasattr(select, 'kqueue'):  # kqueue() - BSD / OSX
     IOLoop = Kqueue
+elif hasattr(select, 'devpoll'): # /dev/poll - Solaris
+    IOLoop = DevPoll
 elif hasattr(select, 'poll'):    # poll() - POSIX
     IOLoop = Poll
 else:                            # select() - POSIX and Windows

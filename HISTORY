@@ -14,6 +14,7 @@ ENHANCEMENTS
  * #277: added a make file for running tests and for other repetitive tasks
          (also for Windows).
  * #281: tarballs are now hosted on PYPI.
+ * #282: support for /dev/poll on Solaris.
  * #285: test suite requires unittest2 module on python < 2.7.
 
 BUG FIXES
