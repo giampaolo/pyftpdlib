@@ -40,7 +40,13 @@ import unittest
 import os
 import random
 import string
+import sys
 import warnings
+
+if sys.version_info < (2, 7):
+    import unittest2 as unittest  # pip install unittest2
+else:
+    import unittest
 
 try:
     import pwd
