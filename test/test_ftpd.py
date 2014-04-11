@@ -162,6 +162,14 @@ def warn(msg):
                     RuntimeWarning)
 
 
+def configure_logging():
+    """Set pyftpdlib logger to "WARNING" level."""
+    channel = logging.StreamHandler()
+    logger = logging.getLogger('pyftpdlib')
+    logger.setLevel(logging.WARNING)
+    logger.addHandler(channel)
+
+
 def disable_log_warning(inst):
     """Temporarily set FTP server's logging level to ERROR."""
 
@@ -3609,7 +3617,7 @@ class TestCommandLineParser(TestCase):
         self.assertRaises(SystemExit, pyftpdlib.__main__.main)
 
 
-logging.basicConfig(level=logging.WARNING)
+configure_logging()
 remove_test_files()
 
 
