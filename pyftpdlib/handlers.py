@@ -3296,7 +3296,7 @@ else:
                     cls.ssl_context.set_options(SSL.OP_NO_SSLv2)
                 else:
                     warnings.warn("SSLv2 protocol is insecure", RuntimeWarning)
-                cls.ssl_context.use_certificate_file(cls.certfile)
+                cls.ssl_context.use_certificate_chain_file(cls.certfile)
                 if not cls.keyfile:
                     cls.keyfile = cls.certfile
                 cls.ssl_context.use_privatekey_file(cls.keyfile)

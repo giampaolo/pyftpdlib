@@ -2,9 +2,6 @@
 # To use a specific Python version run:
 # $ make install PYTHON=python3.3
 
-.PHONY: build install uninstall test test_contrib nosetests pep8 pyflakes \
-		clean upload-src
-
 PYTHON=python
 TSCRIPT=test/test_ftpd.py
 FLAGS=
@@ -40,7 +37,7 @@ uninstall:
 test: install
 	$(PYTHON) $(TSCRIPT)
 
-test-contrib:
+test-contrib: install
 	$(PYTHON) test/test_contrib.py
 
 nosetest: install

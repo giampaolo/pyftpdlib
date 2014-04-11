@@ -9,6 +9,8 @@ Version: 1.3.1 - Date: XXXX-XX-XX
 
 ENHANCEMENTS
 
+ * #262: FTPS is now able to load a certificate chain file.  (patch by
+         briantomko)
  * #277: added a make file for running tests and for other repetitive tasks
          (also for Windows).
  * #281: tarballs are now hosted on PYPI.
