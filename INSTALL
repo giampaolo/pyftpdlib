@@ -1,4 +1,17 @@
 Install
 =======
 
-See doc/install.html
+By using pip:
+
+    $ pip install pyftpdlib
+
+From sources:
+
+    $ svn checkout https://pyftpdlib.googlecode.com/svn/trunk/ pyftpdlib
+    $ cd pyftpdlib
+    $ python setup.py install
+
+Running tests:
+
+    $ make test
+    $ make test-contrib

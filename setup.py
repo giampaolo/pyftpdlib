@@ -32,8 +32,7 @@
 
 """pyftpdlib installer.
 
-To install pyftpdlib just open a command shell and run:
-> python setup.py install
+$ python setup.py install
 """
 
 import os
@@ -60,19 +59,13 @@ def get_version():
     finally:
         f.close()
 
-
-name = 'pyftpdlib'
-version = get_version()
-download_url = ("http://pyftpdlib.googlecode.com/files/" + name + "-" +
-                version + ".tar.gz")
-
 if sys.version_info < (2, 4):
     sys.exit('python version not supported (min 2.4)')
 
 setup(
-    name=name,
-    version=version,
-    description='High-level asynchronous FTP server library',
+    name='pyftpdlib',
+    version=get_version(),
+    description='Very fast asynchronous FTP server library',
     long_description="Python FTP server library provides an high-level "
                      "portable interface to easily write asynchronous FTP "
                      "servers with Python.",
@@ -81,7 +74,6 @@ setup(
     author="Giampaolo Rodola'",
     author_email='g.rodola@gmail.com',
     url='http://code.google.com/p/pyftpdlib/',
-    download_url=download_url,
     packages=['pyftpdlib', 'pyftpdlib/contrib'],
     keywords=['ftp', 'ftps', 'server', 'ftpd', 'daemon', 'python', 'ssl',
               'sendfile', 'asynchronous', 'nonblocking', 'eventdriven',
@@ -107,7 +99,8 @@ setup(
         'Programming Language :: Python :: 3.0',
         'Programming Language :: Python :: 3.1',
         'Programming Language :: Python :: 3.2',
-        'Programming Language :: Python :: 3.3'
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
     ],
 )
 
