@@ -259,10 +259,10 @@ class FTPd(threading.Thread):
         authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwM')  # full perms
         authorizer.add_anonymous(HOME)
         self.handler.authorizer = authorizer
-        # lowering buffer sizes = more cycles to transfer data
-        # = less false positive test failures
-        self.handler.dtp_handler.ac_in_buffer_size = 32768
-        self.handler.dtp_handler.ac_out_buffer_size = 32768
+        # lower buffer sizes = more "loops" while transfering data
+        # = less false positives
+        self.handler.dtp_handler.ac_in_buffer_size = 4096
+        self.handler.dtp_handler.ac_out_buffer_size = 4096
         self.server = self.server_class(addr, self.handler)
         self.host, self.port = self.server.socket.getsockname()[:2]
 
