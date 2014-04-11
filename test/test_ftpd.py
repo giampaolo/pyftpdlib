@@ -59,6 +59,9 @@ if sys.version_info < (2, 7):
 else:
     import unittest
 
+if not hasattr(unittest.TestCase, "assertRaisesRegex"):
+    unittest.TestCase.assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
+
 sendfile = None
 if os.name == 'posix':
     try:
@@ -89,7 +92,7 @@ TESTFN_UNICODE = TESTFN + '-unicode-' + '\xe2\x98\x83'
 TESTFN_UNICODE_2 = TESTFN_UNICODE + '-2'
 TIMEOUT = 2
 BUFSIZE = 1024
-INTERRUPTED_TRANSF_SIZE = 196608
+INTERRUPTED_TRANSF_SIZE = 32768
 
 
 def try_address(host, port=0, family=socket.AF_INET):
