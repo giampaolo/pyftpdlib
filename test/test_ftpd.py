@@ -937,7 +937,9 @@ class TestFtpAuthentication(TestCase):
         self.client.login(user=USER, passwd=PASSWD)
         self.client.sendcmd('pwd')
         self.dummyfile.seek(0)
-        self.assertEqual(hash(data), hash(self.dummyfile.read()))
+        datafile = self.dummyfile.read()
+        self.assertEqual(len(data), len(datafile))
+        self.assertEqual(hash(data), hash(datafile))
         conn.close()
 
     def test_user(self):
@@ -989,7 +991,9 @@ class TestFtpAuthentication(TestCase):
         self.client.sendcmd('pass ' + PASSWD)
         self.client.sendcmd('pwd')
         self.dummyfile.seek(0)
-        self.assertEqual(hash(data), hash(self.dummyfile.read()))
+        datafile = self.dummyfile.read()
+        self.assertEqual(len(data), len(datafile))
+        self.assertEqual(hash(data), hash(datafile))
         conn.close()
 
 
@@ -1407,7 +1411,9 @@ class TestFtpStoreData(TestCase):
             self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
             self.client.retrbinary('retr ' + TESTFN, self.dummy_recvfile.write)
             self.dummy_recvfile.seek(0)
-            self.assertEqual(hash(data), hash(self.dummy_recvfile.read()))
+            datafile = self.dummy_recvfile.read()
+            self.assertEqual(len(data), len(datafile))
+            self.assertEqual(hash(data), hash(datafile))
         finally:
             # We do not use os.remove() because file could still be
             # locked by ftpd thread.  If DELE through FTP fails try
@@ -1448,7 +1454,9 @@ class TestFtpStoreData(TestCase):
             self.client.retrbinary('retr ' + TESTFN, self.dummy_recvfile.write)
             expected = data.replace(b('\r\n'), b(os.linesep))
             self.dummy_recvfile.seek(0)
-            self.assertEqual(hash(expected), hash(self.dummy_recvfile.read()))
+            datafile = self.dummy_recvfile.read()
+            self.assertEqual(len(expected), len(datafile))
+            self.assertEqual(hash(expected), hash(datafile))
         finally:
             # We do not use os.remove() because file could still be
             # locked by ftpd thread.  If DELE through FTP fails try
@@ -1530,7 +1538,9 @@ class TestFtpStoreData(TestCase):
             self.client.retrbinary('retr ' + filename,
                                    self.dummy_recvfile.write)
             self.dummy_recvfile.seek(0)
-            self.assertEqual(hash(data), hash(self.dummy_recvfile.read()))
+            datafile = self.dummy_recvfile.read()
+            self.assertEqual(len(data), len(datafile))
+            self.assertEqual(hash(data), hash(datafile))
         finally:
             # We do not use os.remove() because file could still be
             # locked by ftpd thread.  If DELE through FTP fails try
@@ -1581,8 +1591,9 @@ class TestFtpStoreData(TestCase):
 
             self.client.retrbinary("retr " + TESTFN, self.dummy_recvfile.write)
             self.dummy_recvfile.seek(0)
-            self.assertEqual(
-                hash(data1 + data2), hash(self.dummy_recvfile.read()))
+            datafile = self.dummy_recvfile.read()
+            self.assertEqual(len(data1 + data2), len(datafile))
+            self.assertEqual(hash(data1 + data2), hash(datafile))
         finally:
             # We do not use os.remove() because file could still be
             # locked by ftpd thread.  If DELE through FTP fails try
@@ -1637,9 +1648,11 @@ class TestFtpStoreData(TestCase):
         self.client.retrbinary('retr ' + TESTFN, self.dummy_recvfile.write)
         self.dummy_sendfile.seek(0)
         self.dummy_recvfile.seek(0)
-        self.assertEqual(hash(self.dummy_sendfile.read()),
-                         hash(self.dummy_recvfile.read())
-                         )
+
+        data_sendfile = self.dummy_sendfile.read()
+        data_recvfile = self.dummy_recvfile.read()
+        self.assertEqual(len(data_sendfile), len(data_recvfile))
+        self.assertEqual(len(data_sendfile), len(data_recvfile))
         self.client.delete(TESTFN)
 
     def test_failing_rest_on_stor(self):
@@ -1727,7 +1740,9 @@ class TestFtpRetrieveData(TestCase):
         self.file.close()
         self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
         self.dummyfile.seek(0)
-        self.assertEqual(hash(data), hash(self.dummyfile.read()))
+        datafile = self.dummyfile.read()
+        self.assertEqual(len(data), len(datafile))
+        self.assertEqual(hash(data), hash(datafile))
 
         # attempt to retrieve a file which doesn't exist
         bogus = os.path.basename(tempfile.mktemp(dir=HOME))
@@ -1756,7 +1771,9 @@ class TestFtpRetrieveData(TestCase):
         retrieve("retr " + TESTFN, self.dummyfile.write)
         expected = data.replace(b(os.linesep), b('\r\n'))
         self.dummyfile.seek(0)
-        self.assertEqual(hash(expected), hash(self.dummyfile.read()))
+        datafile = self.dummyfile.read()
+        self.assertEqual(len(expected), len(datafile))
+        self.assertEqual(hash(expected), hash(datafile))
 
     def test_restore_on_retr(self):
         data = b('abcde12345') * 1000000
@@ -1791,7 +1808,9 @@ class TestFtpRetrieveData(TestCase):
         self.client.sendcmd('rest %s' % received_bytes)
         self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
         self.dummyfile.seek(0)
-        self.assertEqual(hash(data), hash(self.dummyfile.read()))
+        datafile = self.dummyfile.read()
+        self.assertEqual(len(data), len(datafile))
+        self.assertEqual(hash(data), hash(datafile))
 
     def test_retr_empty_file(self):
         self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
@@ -2120,7 +2139,9 @@ class TestThrottleBandwidth(unittest.TestCase):
         file.close()
         self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
         self.dummyfile.seek(0)
-        self.assertEqual(hash(data), hash(self.dummyfile.read()))
+        datafile = self.dummyfile.read()
+        self.assertEqual(len(data), len(datafile))
+        self.assertEqual(hash(data), hash(datafile))
 
     def test_throttle_recv(self):
         # This test doesn't test the actual speed accuracy, just
@@ -2134,6 +2155,7 @@ class TestThrottleBandwidth(unittest.TestCase):
         file = open(TESTFN, 'rb')
         file_data = file.read()
         file.close()
+        self.assertEqual(len(data), len(file_data))
         self.assertEqual(hash(data), hash(file_data))
 
 
