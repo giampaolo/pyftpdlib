@@ -878,6 +878,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.file.close()
 
         conn = self.client.transfercmd('retr ' + TESTFN)
+        self.addCleanup(conn.close)
         conn.settimeout(TIMEOUT)
         rein_sent = False
         bytes_recv = 0
@@ -909,7 +910,6 @@ class TestFtpAuthentication(unittest.TestCase):
         datafile = self.dummyfile.read()
         self.assertEqual(len(data), len(datafile))
         self.assertEqual(hash(data), hash(datafile))
-        conn.close()
 
     def test_user(self):
         # Test USER while already authenticated and no transfer
@@ -931,6 +931,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.file.close()
 
         conn = self.client.transfercmd('retr ' + TESTFN)
+        self.addCleanup(conn.close)
         conn.settimeout(TIMEOUT)
         rein_sent = 0
         bytes_recv = 0
@@ -963,7 +964,6 @@ class TestFtpAuthentication(unittest.TestCase):
         datafile = self.dummyfile.read()
         self.assertEqual(len(data), len(datafile))
         self.assertEqual(hash(data), hash(datafile))
-        conn.close()
 
 
 class TestFtpDummyCmds(unittest.TestCase):
@@ -1406,6 +1406,7 @@ class TestFtpStoreData(unittest.TestCase):
             # "type i" before starting the transfer
             self.client.voidcmd('type a')
             conn = self.client.transfercmd(cmd)
+            self.addCleanup(conn.close)
             conn.settimeout(TIMEOUT)
             while 1:
                 buf = fp.read(blocksize)
@@ -1446,6 +1447,7 @@ class TestFtpStoreData(unittest.TestCase):
             # "type i" before starting the transfer
             self.client.voidcmd('type a')
             conn = self.client.transfercmd(cmd)
+            self.addCleanup(conn.close)
             conn.settimeout(TIMEOUT)
             while 1:
                 buf = fp.read(blocksize)
@@ -1493,6 +1495,8 @@ class TestFtpStoreData(unittest.TestCase):
             sock.settimeout(TIMEOUT)
             conn, sockaddr = sock.accept()
             conn.settimeout(TIMEOUT)
+            self.addCleanup(sock.close)
+            self.addCleanup(conn.close)
             if hasattr(self.client_class, 'ssl_version'):
                 conn = ssl.wrap_socket(conn)
             while 1:
@@ -1588,6 +1592,7 @@ class TestFtpStoreData(unittest.TestCase):
 
         self.client.voidcmd('TYPE I')
         conn = self.client.transfercmd('stor ' + TESTFN)
+        self.addCleanup(conn.close)
         conn.settimeout(TIMEOUT)
         bytes_sent = 0
         while 1:
@@ -1643,6 +1648,7 @@ class TestFtpStoreData(unittest.TestCase):
         # progress, the connection must remain open for result response
         # and the server will then close it.
         conn = self.client.transfercmd('stor ' + TESTFN)
+        self.addCleanup(conn.close)
         conn.settimeout(TIMEOUT)
         conn.sendall(b('abcde12345') * 50000)
         self.client.sendcmd('quit')
@@ -1725,6 +1731,7 @@ class TestFtpRetrieveData(unittest.TestCase):
             # like retrbinary but uses TYPE A instead
             self.client.voidcmd('type a')
             conn = self.client.transfercmd(cmd, rest)
+            self.addCleanup(conn.close)
             conn.settimeout(TIMEOUT)
             while 1:
                 data = conn.recv(blocksize)
@@ -1752,6 +1759,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         received_bytes = 0
         self.client.voidcmd('TYPE I')
         conn = self.client.transfercmd('retr ' + TESTFN)
+        self.addCleanup(conn.close)
         conn.settimeout(TIMEOUT)
         while 1:
             chunk = conn.recv(BUFSIZE)
@@ -1895,17 +1903,15 @@ class TestFtpListingCmds(unittest.TestCase):
         # common tests
         self._test_listing_cmds('mlsd')
         dir = os.path.basename(tempfile.mkdtemp(dir=HOME))
+        self.addCleanup(safe_rmdir, dir)
         try:
-            try:
-                self.client.retrlines('mlsd ' + TESTFN, lambda x: x)
-            except ftplib.error_perm:
-                resp = sys.exc_info()[1]
-                # if path is a file a 501 response code is expected
-                self.assertEqual(str(resp)[0:3], "501")
-            else:
-                self.fail("Exception not raised")
-        finally:
-            safe_rmdir(dir)
+            self.client.retrlines('mlsd ' + TESTFN, lambda x: x)
+        except ftplib.error_perm:
+            resp = sys.exc_info()[1]
+            # if path is a file a 501 response code is expected
+            self.assertEqual(str(resp)[0:3], "501")
+        else:
+            self.fail("Exception not raised")
 
     def test_mlsd_all_facts(self):
         feat = self.client.sendcmd('feat')
@@ -2002,6 +2008,7 @@ class TestFtpAbort(unittest.TestCase):
         # respond with 225
         self.client.set_pasv(0)
         sock = self.client.makeport()
+        self.addCleanup(sock.close)
         sock.settimeout(TIMEOUT)
         respcode = self.client.sendcmd('ABOR')[:3]
         sock.close()
@@ -2020,6 +2027,7 @@ class TestFtpAbort(unittest.TestCase):
         try:
             self.client.voidcmd('TYPE I')
             conn = self.client.transfercmd('retr ' + TESTFN)
+            self.addCleanup(conn.close)
             conn.settimeout(TIMEOUT)
             bytes_recv = 0
             while bytes_recv < 65536:
@@ -2181,6 +2189,7 @@ class TestTimeouts(unittest.TestCase):
         self._setUp(data_timeout=0.1)
         addr = self.client.makepasv()
         s = socket.socket()
+        self.addCleanup(s.close)
         s.settimeout(TIMEOUT)
         s.connect(addr)
         # fail if no msg is received within 1 second
@@ -2198,6 +2207,7 @@ class TestTimeouts(unittest.TestCase):
         # whether the transfer stalled for with no progress is executed.
         self._setUp(data_timeout=0.1)
         sock = self.client.transfercmd('stor ' + TESTFN)
+        self.addCleanup(sock.close)
         sock.settimeout(TIMEOUT)
         if hasattr(self.client_class, 'ssl_version'):
             sock = ssl.wrap_socket(sock)
@@ -2217,6 +2227,7 @@ class TestTimeouts(unittest.TestCase):
         self._setUp(idle_timeout=0.1, data_timeout=0.2)
         addr = self.client.makepasv()
         s = socket.socket()
+        self.addCleanup(s.close)
         s.settimeout(TIMEOUT)
         s.connect(addr)
         # fail if no msg is received within 1 second
@@ -2234,6 +2245,7 @@ class TestTimeouts(unittest.TestCase):
         self._setUp(idle_timeout=0.1, data_timeout=0.2)
         addr = self.client.makepasv()
         s = socket.socket()
+        self.addCleanup(s.close)
         s.settimeout(TIMEOUT)
         s.connect(addr)
         # close data channel
@@ -2267,6 +2279,7 @@ class TestTimeouts(unittest.TestCase):
         self._setUp(data_timeout=0)
         addr = self.client.makepasv()
         s = socket.socket()
+        self.addCleanup(s.close)
         s.settimeout(TIMEOUT)
         s.connect(addr)
         s.close()
@@ -2277,9 +2290,9 @@ class TestTimeouts(unittest.TestCase):
         # reset passive socket
         addr = self.client.makepasv()
         s = socket.socket()
+        self.addCleanup(s.close)
         s.settimeout(TIMEOUT)
         s.connect(addr)
-        s.close()
 
     def test_disabled_port_timeout(self):
         self._setUp(port_timeout=0)
@@ -2318,6 +2331,7 @@ class TestConfigurableOptions(unittest.TestCase):
         self.server.handler.use_gmt_times = True
         self.server.handler.tcp_no_delay = hasattr(socket, 'TCP_NODELAY')
         self.server.stop()
+        self.client.close()
 
     @disable_log_warning
     def test_max_connections(self):
@@ -2346,10 +2360,10 @@ class TestConfigurableOptions(unittest.TestCase):
             # with active data channel established
             c1.login(USER, PASSWD)
             sock = c1.makeport()
+            self.addCleanup(sock.close)
             sock.settimeout(TIMEOUT)
             self.assertRaises(ftplib.error_temp, c2.connect, self.server.host,
                               self.server.port)
-            sock.close()
         finally:
             for c in (c1, c2, c3):
                 try:
@@ -2476,21 +2490,18 @@ class TestConfigurableOptions(unittest.TestCase):
             # no usable privileged port was found
             sock = None
 
-        try:
-            self.server.handler.permit_privileged_ports = False
-            self.assertRaises(ftplib.error_perm, self.client.sendport, HOST,
-                              port)
-            if sock:
-                port = sock.getsockname()[1]
-                self.server.handler.permit_privileged_ports = True
-                sock.listen(5)
-                sock.settimeout(TIMEOUT)
-                self.client.sendport(HOST, port)
-                s, addr = sock.accept()
-                s.close()
-        finally:
-            if sock is not None:
-                sock.close()
+        self.addCleanup(sock.close)
+        self.server.handler.permit_privileged_ports = False
+        self.assertRaises(ftplib.error_perm, self.client.sendport, HOST,
+                          port)
+        if sock:
+            port = sock.getsockname()[1]
+            self.server.handler.permit_privileged_ports = True
+            sock.listen(5)
+            sock.settimeout(TIMEOUT)
+            self.client.sendport(HOST, port)
+            s, addr = sock.accept()
+            s.close()
 
     def test_use_gmt_times(self):
         # use GMT time
@@ -2658,6 +2669,7 @@ class TestCallbacks(unittest.TestCase):
 
         bytes_recv = 0
         conn = self.client.transfercmd("retr " + TESTFN, None)
+        self.addCleanup(conn.close)
         conn.settimeout(TIMEOUT)
         while 1:
             chunk = conn.recv(BUFSIZE)
@@ -2694,6 +2706,7 @@ class TestCallbacks(unittest.TestCase):
         self.dummyfile.seek(0)
 
         conn = self.client.transfercmd('stor ' + TESTFN)
+        self.addCleanup(conn.close)
         conn.settimeout(TIMEOUT)
         bytes_sent = 0
         while 1:
@@ -2864,6 +2877,7 @@ class TestFTPServer(unittest.TestCase):
         # pass a socket object instead of an address tuple to FTPServer
         # constructor
         sock = socket.socket()
+        self.addCleanup(sock.close)
         sock.bind((HOST, 0))
         sock.listen(5)
         ip, port = sock.getsockname()[:2]
@@ -2955,19 +2969,17 @@ class _TestNetworkProtocols(unittest.TestCase):
 
         # test connection
         sock = socket.socket(self.client.af)
+        self.addCleanup(sock.close)
         sock.bind((self.client.sock.getsockname()[0], 0))
         sock.listen(5)
         sock.settimeout(TIMEOUT)
         ip, port = sock.getsockname()[:2]
         self.client.sendcmd('eprt |%s|%s|%s|' % (self.proto, ip, port))
         try:
-            try:
-                s = sock.accept()
-                s[0].close()
-            except socket.timeout:
-                self.fail("Server didn't connect to passive socket")
-        finally:
-            sock.close()
+            s = sock.accept()
+            s[0].close()
+        except socket.timeout:
+            self.fail("Server didn't connect to passive socket")
 
     def test_epsv(self):
         # test wrong proto
@@ -2987,12 +2999,10 @@ class _TestNetworkProtocols(unittest.TestCase):
             host, port = ftplib.parse229(self.client.sendcmd(cmd),
                                          self.client.sock.getpeername())
             s = socket.socket(self.client.af, socket.SOCK_STREAM)
+            self.addCleanup(s.close)
             s.settimeout(TIMEOUT)
-            try:
-                s.connect((host, port))
-                self.client.sendcmd('abor')
-            finally:
-                s.close()
+            s.connect((host, port))
+            self.client.sendcmd('abor')
 
     def test_epsv_all(self):
         self.client.sendcmd('epsv all')
@@ -3017,6 +3027,7 @@ class TestIPv4Environment(_TestNetworkProtocols):
     def test_port_v4(self):
         # test connection
         sock = self.client.makeport()
+        self.addCleanup(sock.close)
         sock.settimeout(TIMEOUT)
         self.client.sendcmd('abor')
         sock.close()
@@ -3047,11 +3058,9 @@ class TestIPv4Environment(_TestNetworkProtocols):
     def test_pasv_v4(self):
         host, port = ftplib.parse227(self.client.sendcmd('pasv'))
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.addCleanup(s.close)
         s.settimeout(TIMEOUT)
-        try:
-            s.connect((host, port))
-        finally:
-            s.close()
+        s.connect((host, port))
 
 
 class TestIPv6Environment(_TestNetworkProtocols):
@@ -3131,21 +3140,17 @@ class TestIPv6MixedEnvironment(unittest.TestCase):
         self.client.login(USER, PASSWD)
         # test connection
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
         sock.bind((self.client.sock.getsockname()[0], 0))
         sock.listen(5)
         sock.settimeout(2)
         ip, port = sock.getsockname()[:2]
         self.client.sendcmd('eprt |1|%s|%s|' % (ip, port))
-        sock2 = None
         try:
-            try:
-                sock2, addr = sock.accept()
-            except socket.timeout:
-                self.fail("Server didn't connect to passive socket")
-        finally:
-            sock.close()
-            if sock2 is not None:
-                sock2.close()
+            sock2, addr = sock.accept()
+            sock2.close()
+        except socket.timeout:
+            self.fail("Server didn't connect to passive socket")
 
     def test_epsv_v4(self):
         mlstline = lambda cmd: self.client.voidcmd(cmd).split('\n')[1]
@@ -3190,6 +3195,7 @@ class TestCornerCases(unittest.TestCase):
         # data connection established" *after* the client had already
         # disconnected the control connection.
         sock = socket.socket(self.client.af)
+        self.addCleanup(sock.close)
         sock.bind((self.client.sock.getsockname()[0], 0))
         sock.listen(5)
         sock.settimeout(TIMEOUT)
@@ -3203,7 +3209,6 @@ class TestCornerCases(unittest.TestCase):
         self.client.quit()
         s, addr = sock.accept()
         s.close()
-        sock.close()
 
     def test_stou_max_tries(self):
         # Emulates case where the max number of tries to find out a
@@ -3273,6 +3278,7 @@ class TestCornerCases(unittest.TestCase):
         # reproduce this error condition:
         # http://code.google.com/p/pyftpdlib/source/detail?r=905
         sock = socket.socket()
+        self.addCleanup(sock.close)
         sock.bind((HOST, 0))
         port = sock.getsockname()[1]
         self.client.sock.settimeout(.1)
@@ -3285,15 +3291,14 @@ class TestCornerCases(unittest.TestCase):
             pass
         else:
             self.assertNotEqual(str(resp)[:3], '200')
-        sock.close()
 
     def test_repr(self):
         # make sure the FTP/DTP handler classes have a sane repr()
         sock = self.client.makeport()
+        self.addCleanup(sock.close)
         for inst in IOLoop.instance().socket_map.values():
             repr(inst)
             str(inst)
-        sock.close()
 
     if hasattr(os, 'sendfile'):
         def test_sendfile(self):
