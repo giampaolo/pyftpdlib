@@ -52,5 +52,8 @@ pyflakes:
 	export PYFLAKES_NODOCTEST=1 && \
 		pyflakes pyftpdlib/ demo/ test/ setup.py
 
+flake8:
+	@git ls-files | grep \\.py$ | xargs flake8
+
 upload-src: clean
 	$(PYTHON) setup.py sdist upload
