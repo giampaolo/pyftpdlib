@@ -35,7 +35,6 @@ filesystems.py and servers.py modules.
 """
 
 import ftplib
-import unittest
 import os
 import random
 import string
@@ -68,8 +67,7 @@ from pyftpdlib import handlers
 from pyftpdlib import filesystems
 from pyftpdlib import servers
 from pyftpdlib._compat import b, getcwdu, unicode
-from test_ftpd import *
-
+from test_ftpd import *  # NOQA
 
 FTPS_SUPPORT = (hasattr(ftplib, 'FTP_TLS') and
                 hasattr(handlers, 'TLS_FTPHandler'))
@@ -105,6 +103,7 @@ if FTPS_SUPPORT:
         """A modified version of ftplib.FTP_TLS class which implicitly
         secure the data connection after login().
         """
+
         def login(self, *args, **kwargs):
             ftplib.FTP_TLS.login(self, *args, **kwargs)
             self.prot_p()
@@ -121,39 +120,51 @@ else:
     class TLSTestMixin:
         pass
 
+
 class TestFtpAuthenticationTLSMixin(TLSTestMixin, TestFtpAuthentication):
     pass
+
 
 class TestTFtpDummyCmdsTLSMixin(TLSTestMixin, TestFtpDummyCmds):
     pass
 
+
 class TestFtpCmdsSemanticTLSMixin(TLSTestMixin, TestFtpCmdsSemantic):
     pass
+
 
 class TestFtpFsOperationsTLSMixin(TLSTestMixin, TestFtpFsOperations):
     pass
 
+
 class TestFtpStoreDataTLSMixin(TLSTestMixin, TestFtpStoreData):
     pass
+
 
 class TestFtpRetrieveDataTLSMixin(TLSTestMixin, TestFtpRetrieveData):
     pass
 
+
 class TestFtpListingCmdsTLSMixin(TLSTestMixin, TestFtpListingCmds):
     pass
+
 
 class TestFtpAbortTLSMixin(TLSTestMixin, TestFtpAbort):
     def test_oob_abor(self):
         pass
 
+
 class TestTimeoutsTLSMixin(TLSTestMixin, TestTimeouts):
     def test_data_timeout_not_reached(self):
         pass
 
+
 class TestConfigurableOptionsTLSMixin(TLSTestMixin, TestConfigurableOptions):
     pass
 
+
 class TestCallbacksTLSMixin(TLSTestMixin, TestCallbacks):
+
     def test_on_file_received(self):
         pass
 
@@ -187,67 +198,85 @@ class TestCallbacksTLSMixin(TLSTestMixin, TestCallbacks):
     def test_on_logout_user_issued_twice(self):
         pass
 
+
 class TestIPv4EnvironmentTLSMixin(TLSTestMixin, TestIPv4Environment):
     pass
+
 
 class TestIPv6EnvironmentTLSMixin(TLSTestMixin, TestIPv6Environment):
     pass
 
+
 class TestCornerCasesTLSMixin(TLSTestMixin, TestCornerCases):
     pass
-
 
 # =====================================================================
 # --- threaded FTP server mixin tests
 # =====================================================================
 
+
 class TFTPd(FTPd):
     server_class = servers.ThreadedFTPServer
 
+
 class ThreadFTPTestMixin:
     server_class = TFTPd
+
 
 class TestFtpAuthenticationThreadMixin(ThreadFTPTestMixin,
                                        TestFtpAuthentication):
     pass
 
+
 class TestTFtpDummyCmdsThreadMixin(ThreadFTPTestMixin, TestFtpDummyCmds):
     pass
+
 
 class TestFtpCmdsSemanticThreadMixin(ThreadFTPTestMixin, TestFtpCmdsSemantic):
     pass
 
+
 class TestFtpFsOperationsThreadMixin(ThreadFTPTestMixin, TestFtpFsOperations):
     pass
+
 
 class TestFtpStoreDataThreadMixin(ThreadFTPTestMixin, TestFtpStoreData):
     pass
 
+
 class TestFtpRetrieveDataThreadMixin(ThreadFTPTestMixin, TestFtpRetrieveData):
     pass
+
 
 class TestFtpListingCmdsThreadMixin(ThreadFTPTestMixin, TestFtpListingCmds):
     pass
 
+
 class TestFtpAbortThreadMixin(ThreadFTPTestMixin, TestFtpAbort):
     pass
 
-#class TestTimeoutsThreadMixin(ThreadFTPTestMixin, TestTimeouts):
-#    def test_data_timeout_not_reached(self): pass
-#class TestConfOptsThreadMixin(ThreadFTPTestMixin, TestConfigurableOptions):
-#    pass
+
+# class TestTimeoutsThreadMixin(ThreadFTPTestMixin, TestTimeouts):
+#     def test_data_timeout_not_reached(self): pass
+# class TestConfOptsThreadMixin(ThreadFTPTestMixin, TestConfigurableOptions):
+#     pass
+
 
 class TestCallbacksThreadMixin(ThreadFTPTestMixin, TestCallbacks):
     pass
 
+
 class TestIPv4EnvironmentThreadMixin(ThreadFTPTestMixin, TestIPv4Environment):
     pass
+
 
 class TestIPv6EnvironmentThreadMixin(ThreadFTPTestMixin, TestIPv6Environment):
     pass
 
+
 class TestCornerCasesThreadMixin(ThreadFTPTestMixin, TestCornerCases):
     pass
+
 
 class TestFTPServerThreadMixin(ThreadFTPTestMixin, TestFTPServer):
     pass
@@ -267,46 +296,59 @@ else:
     class MProcFTPTestMixin:
         pass
 
+
 class TestFtpAuthenticationMProcMixin(MProcFTPTestMixin,
                                       TestFtpAuthentication):
     pass
 
+
 class TestTFtpDummyCmdsMProcMixin(MProcFTPTestMixin, TestFtpDummyCmds):
     pass
 
+
 class TestFtpCmdsSemanticMProcMixin(MProcFTPTestMixin, TestFtpCmdsSemantic):
     pass
+
 
 class TestFtpFsOperationsMProcMixin(MProcFTPTestMixin, TestFtpFsOperations):
     def test_unforeseen_mdtm_event(self):
         pass
 
+
 class TestFtpStoreDataMProcMixin(MProcFTPTestMixin, TestFtpStoreData):
     pass
+
 
 class TestFtpRetrieveDataMProcMixin(MProcFTPTestMixin, TestFtpRetrieveData):
     pass
 
+
 class TestFtpListingCmdsMProcMixin(MProcFTPTestMixin, TestFtpListingCmds):
     pass
+
 
 class TestFtpAbortMProcMixin(MProcFTPTestMixin, TestFtpAbort):
     pass
 
-#class TestTimeoutsMProcMixin(MProcFTPTestMixin, TestTimeouts):
-#    def test_data_timeout_not_reached(self): pass
-#class TestConfiOptsMProcMixin(MProcFTPTestMixin, TestConfigurableOptions):
-#    pass
-#class TestCallbacksMProcMixin(MProcFTPTestMixin, TestCallbacks): pass
+
+# class TestTimeoutsMProcMixin(MProcFTPTestMixin, TestTimeouts):
+#     def test_data_timeout_not_reached(self): pass
+# class TestConfiOptsMProcMixin(MProcFTPTestMixin, TestConfigurableOptions):
+#     pass
+# class TestCallbacksMProcMixin(MProcFTPTestMixin, TestCallbacks): pass
+
 
 class TestIPv4EnvironmentMProcMixin(MProcFTPTestMixin, TestIPv4Environment):
     pass
 
+
 class TestIPv6EnvironmentMProcMixin(MProcFTPTestMixin, TestIPv6Environment):
     pass
 
+
 class TestCornerCasesMProcMixin(MProcFTPTestMixin, TestCornerCases):
     pass
+
 
 class TestFTPServerMProcMixin(MProcFTPTestMixin, TestFTPServer):
     pass
@@ -315,6 +357,7 @@ class TestFTPServerMProcMixin(MProcFTPTestMixin, TestFTPServer):
 # =====================================================================
 # dedicated FTPs tests
 # =====================================================================
+
 
 class TestFTPS(unittest.TestCase):
     """Specific tests fot TSL_FTPHandler class."""
@@ -483,12 +526,12 @@ class TestFTPS(unittest.TestCase):
 # --- authorizer
 # =====================================================================
 
+
 class SharedAuthorizerTests(unittest.TestCase):
     """Tests valid for both UnixAuthorizer and WindowsAuthorizer for
     those parts which share the same API.
     """
     authorizer_class = None
-
     # --- utils
 
     def get_users(self):
@@ -529,7 +572,6 @@ class SharedAuthorizerTests(unittest.TestCase):
             else:
                 excName = str(excClass)
             raise self.failureException("%s not raised" % excName)
-
     # --- /utils
 
     def test_get_home_dir(self):
@@ -666,7 +708,7 @@ class SharedAuthorizerTests(unittest.TestCase):
         # make sure other settings keep using default values
         self.assertEqual(auth.get_home_dir(user),
                          self.get_current_user_homedir())
-        #self.assertEqual(auth.get_perms(user), "elradfmw")
+        # self.assertEqual(auth.get_perms(user), "elradfmw")
         self.assertEqual(auth.get_msg_login(user), "Login successful.")
         self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
 
@@ -680,8 +722,8 @@ class SharedAuthorizerTests(unittest.TestCase):
         self.assertEqual(auth.get_home_dir(user),
                          self.get_current_user_homedir())
         self.assertEqual(auth.get_perms(user), "elradfmw")
-        #self.assertEqual(auth.get_msg_login(user), "Login successful.")
-        #self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
+        # self.assertEqual(auth.get_msg_login(user), "Login successful.")
+        # self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
 
     def test_override_user_errors(self):
         if self.authorizer_class.__name__ == 'UnixAuthorizer':
@@ -729,6 +771,7 @@ class SharedAuthorizerTests(unittest.TestCase):
 # =====================================================================
 # --- UNIX authorizer
 # =====================================================================
+
 
 class TestUnixAuthorizer(SharedAuthorizerTests):
     """Unix authorizer specific tests."""
@@ -795,9 +838,10 @@ class TestUnixAuthorizer(SharedAuthorizerTests):
             "user %s has not a valid shell" % user,
             authorizers.UnixAuthorizer, allowed_users=[user])
         # commented as it first fails for invalid home
-        #self.assertRaisesWithMsg(ValueError,
-        #                     "user %s has not a valid shell" % user,
-        #                     authorizers.UnixAuthorizer, anonymous_user=user)
+        # self.assertRaisesWithMsg(
+        #     ValueError,
+        #     "user %s has not a valid shell" % user,
+        #     authorizers.UnixAuthorizer, anonymous_user=user)
         auth = authorizers.UnixAuthorizer()
         self.assertTrue(auth._has_valid_shell(self.get_current_user()))
         self.assertFalse(auth._has_valid_shell(user))
@@ -820,6 +864,7 @@ class TestUnixAuthorizer(SharedAuthorizerTests):
 # =====================================================================
 # --- Windows authorizer
 # =====================================================================
+
 
 class TestWindowsAuthorizer(SharedAuthorizerTests):
     """Windows authorizer specific tests."""
@@ -853,6 +898,7 @@ if os.name == 'posix':
 # =====================================================================
 # --- main
 # =====================================================================
+
 
 def test_main():
     test_suite = unittest.TestSuite()
@@ -900,8 +946,8 @@ def test_main():
         TestFtpRetrieveDataThreadMixin,
         TestFtpListingCmdsThreadMixin,
         TestFtpAbortThreadMixin,
-        #TestTimeoutsThreadMixin,
-        #TestConfigurableOptionsThreadMixin,
+        # TestTimeoutsThreadMixin,
+        # TestConfigurableOptionsThreadMixin,
         TestCallbacksThreadMixin,
         TestCornerCasesThreadMixin,
         TestFTPServerThreadMixin,
@@ -919,9 +965,9 @@ def test_main():
             TestFtpRetrieveDataMProcMixin,
             TestFtpListingCmdsMProcMixin,
             TestFtpAbortMProcMixin,
-            #TestTimeoutsMProcMixin,
-            #TestConfigurableOptionsMProcMixin,
-            #TestCallbacksMProcMixin,
+            # TestTimeoutsMProcMixin,
+            # TestConfigurableOptionsMProcMixin,
+            # TestCallbacksMProcMixin,
             TestCornerCasesMProcMixin,
             TestFTPServerMProcMixin,
         ]
@@ -941,7 +987,7 @@ def test_main():
                 tests.append(TestUnixAuthorizer)
         else:
             try:
-                import spwd
+                import spwd  # NOQA
             except ImportError:
                 warn("UnixAuthorizer tests skipped (spwd module is missing")
             else:
@@ -953,7 +999,7 @@ def test_main():
             tests.append(TestWindowsAuthorizer)
         else:
             try:
-                import win32api
+                import win32api  # NOQA
             except ImportError:
                 warn("WindowsAuthorizer tests skipped (pywin32 extension "
                      "is required)")

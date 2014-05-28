@@ -704,15 +704,15 @@ if hasattr(select, 'kqueue'):
 # --- choose the better poller for this platform
 # ===================================================================
 
-if hasattr(select, 'epoll'):     # epoll() - Linux
+if hasattr(select, 'epoll'):      # epoll() - Linux
     IOLoop = Epoll
-elif hasattr(select, 'kqueue'):  # kqueue() - BSD / OSX
+elif hasattr(select, 'kqueue'):   # kqueue() - BSD / OSX
     IOLoop = Kqueue
-elif hasattr(select, 'devpoll'): # /dev/poll - Solaris
+elif hasattr(select, 'devpoll'):  # /dev/poll - Solaris
     IOLoop = DevPoll
-elif hasattr(select, 'poll'):    # poll() - POSIX
+elif hasattr(select, 'poll'):     # poll() - POSIX
     IOLoop = Poll
-else:                            # select() - POSIX and Windows
+else:                             # select() - POSIX and Windows
     IOLoop = Select
 
 

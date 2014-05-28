@@ -107,7 +107,7 @@ def _depwarn(msg):
     import warnings
     orig_filters = warnings.filters[:]
     try:
-        #warnings.simplefilter('default')
+        # warnings.simplefilter('default')
         warnings.resetwarnings()
         warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
     finally:

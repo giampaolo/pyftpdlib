@@ -53,8 +53,8 @@ from pyftpdlib._compat import PY3, unicode, getcwdu
 
 
 __all__ = ['DummyAuthorizer',
-           #'BaseUnixAuthorizer', 'UnixAuthorizer',
-           #'BaseWindowsAuthorizer', 'WindowsAuthorizer',
+           # 'BaseUnixAuthorizer', 'UnixAuthorizer',
+           # 'BaseWindowsAuthorizer', 'WindowsAuthorizer',
            ]
 
 

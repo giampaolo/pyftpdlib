@@ -243,7 +243,7 @@ class AbstractedFS(object):
             def __getattr__(self, attr):
                 return getattr(self.file, attr)
 
-        text = not 'b' in mode
+        text = 'b' not in mode
         # max number of tries to find out a unique file name
         tempfile.TMP_MAX = 50
         fd, name = tempfile.mkstemp(suffix, prefix, dir, text=text)
@@ -295,14 +295,14 @@ class AbstractedFS(object):
     def stat(self, path):
         """Perform a stat() system call on the given path."""
         # on python 2 we might also get bytes from os.lisdir()
-        #assert isinstance(path, unicode), path
+        # assert isinstance(path, unicode), path
         return os.stat(path)
 
     if hasattr(os, 'lstat'):
         def lstat(self, path):
             """Like stat but does not follow symbolic links."""
             # on python 2 we might also get bytes from os.lisdir()
-            #assert isinstance(path, unicode), path
+            # assert isinstance(path, unicode), path
             return os.lstat(path)
     else:
         lstat = stat

@@ -1396,7 +1396,7 @@ class FTPHandler(AsyncChat):
         # Telnet IP/Synch sequence (chr 242 and 255) as OOB data but
         # since many ftp clients don't do it correctly we check the
         # last 4 characters only.
-        if not cmd in self.proto_cmds:
+        if cmd not in self.proto_cmds:
             if cmd[-4:] in ('ABOR', 'STAT', 'QUIT'):
                 cmd = cmd[-4:]
             else:
@@ -1406,12 +1406,12 @@ class FTPHandler(AsyncChat):
                     self.log_cmd(cmd, arg, 500, msg)
                 return
 
-        if not arg and self.proto_cmds[cmd]['arg'] == True:
+        if not arg and self.proto_cmds[cmd]['arg'] == True:  # NOQA
             msg = "Syntax error: command needs an argument."
             self.respond("501 " + msg)
             self.log_cmd(cmd, "", 501, msg)
             return
-        if arg and self.proto_cmds[cmd]['arg'] == False:
+        if arg and self.proto_cmds[cmd]['arg'] == False:  # NOQA
             msg = "Syntax error: command does not accept arguments."
             self.respond("501 " + msg)
             self.log_cmd(cmd, arg, 501, msg)
@@ -1451,7 +1451,7 @@ class FTPHandler(AsyncChat):
                         return
                     arg = self.fs.ftp2fs(arg or self.fs.cwd)
                 elif cmd == 'SITE CHMOD':
-                    if not ' ' in arg:
+                    if ' ' not in arg:
                         msg = "Syntax error: command needs two arguments."
                         self.respond("501 " + msg)
                         self.log_cmd(cmd, "", 501, msg)
@@ -1760,7 +1760,7 @@ class FTPHandler(AsyncChat):
     # --- logging wrappers
 
     # this is defined earlier
-    #log_prefix = '%(remote_ip)s:%(remote_port)s-[%(username)s]'
+    # log_prefix = '%(remote_ip)s:%(remote_port)s-[%(username)s]'
 
     def log(self, msg, logfun=logger.info):
         """Log a message, including additional identifying session data."""
@@ -2713,16 +2713,16 @@ class FTPHandler(AsyncChat):
         if stru == 'F':
             self.respond('200 File transfer structure set to: F.')
         elif stru in ('P', 'R'):
-           # R is required in minimum implementations by RFC-959, 5.1.
-           # RFC-1123, 4.1.2.13, amends this to only apply to servers
-           # whose file systems support record structures, but also
-           # suggests that such a server "may still accept files with
-           # STRU R, recording the byte stream literally".
-           # Should we accept R but with no operational difference from
-           # F? proftpd and wu-ftpd don't accept STRU R. We just do
-           # the same.
-           #
-           # RFC-1123 recommends against implementing P.
+            # R is required in minimum implementations by RFC-959, 5.1.
+            # RFC-1123, 4.1.2.13, amends this to only apply to servers
+            # whose file systems support record structures, but also
+            # suggests that such a server "may still accept files with
+            # STRU R, recording the byte stream literally".
+            # Should we accept R but with no operational difference from
+            # F? proftpd and wu-ftpd don't accept STRU R. We just do
+            # the same.
+            #
+            # RFC-1123 recommends against implementing P.
             self.respond('504 Unimplemented STRU type.')
         else:
             self.respond('501 Unrecognized STRU type.')

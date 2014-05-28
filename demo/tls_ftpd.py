@@ -53,8 +53,8 @@ def main():
     handler.certfile = CERTFILE
     handler.authorizer = authorizer
     # requires SSL for both control and data channel
-    #handler.tls_control_required = True
-    #handler.tls_data_required = True
+    # handler.tls_control_required = True
+    # handler.tls_data_required = True
     server = FTPServer(('', 2121), handler)
     server.serve_forever()
 

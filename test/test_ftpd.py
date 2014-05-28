@@ -67,7 +67,7 @@ if os.name == 'posix':
     except ImportError:
         pass
 
-from pyftpdlib._compat import PY3, u, b, getcwdu, callable
+from pyftpdlib._compat import PY3, u, b, getcwdu, callable, unicode
 from pyftpdlib.authorizers import DummyAuthorizer, AuthenticationFailed
 from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.handlers import (FTPHandler, DTPHandler, ThrottledDTPHandler,
@@ -232,7 +232,7 @@ def cleanup():
 
 
 # commented out as per bug http://bugs.python.org/issue10354
-#tempfile.template = 'tmp-pyftpdlib'
+# tempfile.template = 'tmp-pyftpdlib'
 
 
 class FTPd(threading.Thread):
@@ -1078,11 +1078,11 @@ class TestFtpDummyCmds(unittest.TestCase):
         self.assertTrue('type*;perm;size;modify;' in mlst())
 
         self.assertEqual(self.client.sendcmd('opts mlst'), '200 MLST OPTS ')
-        self.assertTrue(not '*' in mlst())
+        self.assertTrue('*' not in mlst())
 
         self.assertEqual(
             self.client.sendcmd('opts mlst fish;cakes;'), '200 MLST OPTS ')
-        self.assertTrue(not '*' in mlst())
+        self.assertTrue('*' not in mlst())
         self.assertEqual(self.client.sendcmd('opts mlst fish;cakes;type;'),
                          '200 MLST OPTS type;')
         self.assertTrue('type*;perm;size;modify;' in mlst())

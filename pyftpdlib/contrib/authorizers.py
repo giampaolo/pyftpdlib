@@ -35,11 +35,13 @@ _depwarn("pyftpdlib.contrib.authorizers module is deprecated; "
          "use pyftpdlib.authorizers instead")
 
 try:
-    from pyftpdlib.authorizers import BaseUnixAuthorizer, UnixAuthorizer
+    from pyftpdlib.authorizers import (BaseUnixAuthorizer,  # NOQA
+                                       UnixAuthorizer)
 except ImportError:
     pass
 
 try:
-    from pyftpdlib.authorizers import BaseWindowsAuthorizer, WindowsAuthorizer
+    from pyftpdlib.authorizers import (BaseWindowsAuthorizer,  # NOQA
+                                       WindowsAuthorizer)
 except ImportError:
     pass

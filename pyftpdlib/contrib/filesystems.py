@@ -35,6 +35,6 @@ _depwarn("pyftpdlib.contrib.filesystem module is deprecated; "
          "use pyftpdlib.filesystems instead")
 
 try:
-    from pyftpdlib.filesystems import UnixFilesystem
+    from pyftpdlib.filesystems import UnixFilesystem  # NOQA
 except ImportError:
     pass

@@ -39,11 +39,11 @@ from pyftpdlib.servers import FTPServer, ...
 
 
 from pyftpdlib.log import logger
-from pyftpdlib.handlers import *
-from pyftpdlib.authorizers import *
-from pyftpdlib.servers import *
+from pyftpdlib.handlers import *  # NOQA
+from pyftpdlib.authorizers import *  # NOQA
+from pyftpdlib.servers import *  # NOQA
 
-from pyftpdlib import _depwarn, __ver__
+from pyftpdlib import _depwarn, __ver__  # NOQA
 
 __all__ = ['proto_cmds', 'Error', 'log', 'logline', 'logerror',
            'DummyAuthorizer', 'AuthorizerError', 'FTPHandler', 'FTPServer',
