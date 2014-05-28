@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# $Id$
 
 #  pyftpdlib is released under the MIT license, reproduced below:
 #  ======================================================================

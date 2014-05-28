@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# $Id$
 
 """
 Compatibility module similar to six which helps maintaining
