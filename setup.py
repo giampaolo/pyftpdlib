@@ -61,74 +61,81 @@ def get_version():
 if sys.version_info < (2, 4):
     sys.exit('python version not supported (min 2.4)')
 
-setup(
-    name='pyftpdlib',
-    version=get_version(),
-    description='Very fast asynchronous FTP server library',
-    long_description="Python FTP server library provides an high-level "
-                     "portable interface to easily write asynchronous FTP "
-                     "servers with Python.",
-    license='License :: OSI Approved :: MIT License',
-    platforms='Platform Independent',
-    author="Giampaolo Rodola'",
-    author_email='g.rodola@gmail.com',
-    url='http://code.google.com/p/pyftpdlib/',
-    packages=['pyftpdlib', 'pyftpdlib/contrib'],
-    keywords=['ftp', 'ftps', 'server', 'ftpd', 'daemon', 'python', 'ssl',
-              'sendfile', 'asynchronous', 'nonblocking', 'eventdriven',
-              'rfc959', 'rfc1123', 'rfc2228', 'rfc2428', 'rfc2640', 'rfc3659'],
-    classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'Environment :: Console',
-        'Intended Audience :: Developers',
-        'Intended Audience :: System Administrators',
-        'License :: OSI Approved :: MIT License',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python',
-        'Topic :: Internet :: File Transfer Protocol (FTP)',
-        'Topic :: Software Development :: Libraries :: Python Modules',
-        'Topic :: System :: Filesystems',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.4',
-        'Programming Language :: Python :: 2.5',
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.0',
-        'Programming Language :: Python :: 3.1',
-        'Programming Language :: Python :: 3.2',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-    ],
-)
+VERSION = get_version()
 
 
-# suggest to install pysendfile
-if os.name == 'posix' and sys.version_info >= (2, 5):
-    try:
-        # os.sendfile() appeared in python 3.3
-        # http://bugs.python.org/issue10882
-        if not hasattr(os, 'sendfile'):
-            # fallback on using third-party pysendfile module
-            # http://code.google.com/p/pysendfile/
-            import sendfile
-            if hasattr(sendfile, 'has_sf_hdtr'):  # old 1.2.4 version
-                raise ImportError
-    except ImportError:
-        def term_supports_colors():
-            try:
-                import curses
-                assert sys.stderr.isatty()
-                curses.setupterm()
-                assert curses.tigetnum("colors") > 0
-            except Exception:
-                return False
-            else:
-                return True
+def main():
+    setup(
+        name='pyftpdlib',
+        version=get_version(),
+        description='Very fast asynchronous FTP server library',
+        long_description="Python FTP server library provides an high-level "
+                         "portable interface to easily write asynchronous FTP "
+                         "servers with Python.",
+        license='MIT',
+        platforms='Platform Independent',
+        author="Giampaolo Rodola'",
+        author_email='g.rodola@gmail.com',
+        url='http://code.google.com/p/pyftpdlib/',
+        packages=['pyftpdlib', 'pyftpdlib/contrib'],
+        keywords=['ftp', 'ftps', 'server', 'ftpd', 'daemon', 'python', 'ssl',
+                  'sendfile', 'asynchronous', 'nonblocking', 'eventdriven',
+                  'rfc959', 'rfc1123', 'rfc2228', 'rfc2428', 'rfc2640', 'rfc3659'],
+        classifiers=[
+            'Development Status :: 5 - Production/Stable',
+            'Environment :: Console',
+            'Intended Audience :: Developers',
+            'Intended Audience :: System Administrators',
+            'License :: OSI Approved :: MIT License',
+            'Operating System :: OS Independent',
+            'Programming Language :: Python',
+            'Topic :: Internet :: File Transfer Protocol (FTP)',
+            'Topic :: Software Development :: Libraries :: Python Modules',
+            'Topic :: System :: Filesystems',
+            'Programming Language :: Python',
+            'Programming Language :: Python :: 2',
+            'Programming Language :: Python :: 2.4',
+            'Programming Language :: Python :: 2.5',
+            'Programming Language :: Python :: 2.6',
+            'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 3',
+            'Programming Language :: Python :: 3.0',
+            'Programming Language :: Python :: 3.1',
+            'Programming Language :: Python :: 3.2',
+            'Programming Language :: Python :: 3.3',
+            'Programming Language :: Python :: 3.4',
+        ],
+    )
 
-        msg = "\nYou might want to install pysendfile module to speedup " \
-              "transfers:\nhttp://code.google.com/p/pysendfile/\n"
-        if term_supports_colors():
-            msg = '\x1b[1m%s\x1b[0m' % msg
-        sys.stderr.write(msg)
+    # suggest to install pysendfile
+    if os.name == 'posix' and sys.version_info >= (2, 5):
+        try:
+            # os.sendfile() appeared in python 3.3
+            # http://bugs.python.org/issue10882
+            if not hasattr(os, 'sendfile'):
+                # fallback on using third-party pysendfile module
+                # http://code.google.com/p/pysendfile/
+                import sendfile
+                if hasattr(sendfile, 'has_sf_hdtr'):  # old 1.2.4 version
+                    raise ImportError
+        except ImportError:
+            def term_supports_colors():
+                try:
+                    import curses
+                    assert sys.stderr.isatty()
+                    curses.setupterm()
+                    assert curses.tigetnum("colors") > 0
+                except Exception:
+                    return False
+                else:
+                    return True
+
+            msg = "\nYou might want to install pysendfile module to speedup " \
+                  "transfers:\nhttp://code.google.com/p/pysendfile/\n"
+            if term_supports_colors():
+                msg = '\x1b[1m%s\x1b[0m' % msg
+            sys.stderr.write(msg)
+
+
+if __name__ == '__main__':
+    main()
