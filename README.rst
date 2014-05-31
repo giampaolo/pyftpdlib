@@ -20,6 +20,7 @@ Quick links
 - `Home <https://github.com/giampaolo/pyftpdlib>`__
 - `Documentation <http://pythonhosted.org/pyftpdlib/>`__
 - `Download <https://pypi.python.org/pypi/pyftpdlib/>`__
+- `Blog <http://grodola.blogspot.com/search/label/pyftpdlib>`__
 - `Mailing list <http://groups.google.com/group/pyftpdlib/topics>`__
 - `What's new <https://github.com/giampaolo/pyftpdlib/blob/master/HISTORY.rst>`__
 
