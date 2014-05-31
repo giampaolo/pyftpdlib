@@ -67,7 +67,7 @@ if os.name == 'posix':
     except ImportError:
         pass
 
-from pyftpdlib._compat import PY3, u, b, getcwdu, callable, unicode
+from pyftpdlib._compat import PY3, u, b, getcwdu, callable, unicode, wraps
 from pyftpdlib.authorizers import DummyAuthorizer, AuthenticationFailed
 from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.handlers import (FTPHandler, DTPHandler, ThrottledDTPHandler,
@@ -91,6 +91,7 @@ TESTFN_UNICODE_2 = TESTFN_UNICODE + '-2'
 TIMEOUT = 2
 BUFSIZE = 1024
 INTERRUPTED_TRANSF_SIZE = 32768
+NO_RETRIES = 5
 
 
 def try_address(host, port=0, family=socket.AF_INET):
@@ -199,6 +200,23 @@ def cleanup():
         except:
             pass
     map.clear()
+
+
+def retry_before_failing(ntimes=None):
+    """Decorator which runs a test function and retries N times before
+    actually failing.
+    """
+    def decorator(fun):
+        @wraps(fun)
+        def wrapper(*args, **kwargs):
+            for x in range(ntimes or NO_RETRIES):
+                try:
+                    return fun(*args, **kwargs)
+                except AssertionError:
+                    pass
+            raise
+        return wrapper
+    return decorator
 
 
 # commented out as per bug http://bugs.python.org/issue10354
@@ -840,6 +858,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.client.login(user=USER, passwd=PASSWD)
         self.client.sendcmd('pwd')
 
+    @retry_before_failing()
     def test_rein_during_transfer(self):
         # Test REIN while already authenticated and a transfer is
         # in progress.
@@ -1722,6 +1741,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.assertEqual(len(expected), len(datafile))
         self.assertEqual(hash(expected), hash(datafile))
 
+    @retry_before_failing()
     def test_restore_on_retr(self):
         data = b('abcde12345') * 1000000
         self.file.write(data)
@@ -2616,6 +2636,7 @@ class TestCallbacks(unittest.TestCase):
         self.tearDown()
         self.assertEqual(_file, [os.path.abspath(TESTFN)])
 
+    @retry_before_failing()
     def test_on_incomplete_file_sent(self):
         _file = []
 
@@ -2654,6 +2675,7 @@ class TestCallbacks(unittest.TestCase):
         self.tearDown()
         self.assertEqual(_file, [os.path.abspath(TESTFN)])
 
+    @retry_before_failing()
     def test_on_incomplete_file_received(self):
         _file = []
 

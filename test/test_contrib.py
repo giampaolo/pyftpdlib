@@ -153,11 +153,15 @@ class TestFtpListingCmdsTLSMixin(TLSTestMixin, TestFtpListingCmds):
 
 
 class TestFtpAbortTLSMixin(TLSTestMixin, TestFtpAbort):
+
+    @unittest.skipIf(1, "fails with SSL")
     def test_oob_abor(self):
         pass
 
 
 class TestTimeoutsTLSMixin(TLSTestMixin, TestTimeouts):
+
+    @unittest.skipIf(1, "fails with SSL")
     def test_data_timeout_not_reached(self):
         pass
 
