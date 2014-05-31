@@ -10,6 +10,10 @@ Version: 1.4.0 - (unreleased)
   to GIT.
 - #295: use of travis continuos test integration.
 
+**Bug fixes**
+
+- #296: TypeError when using recent version of PyOpenSSL
+
 
 Version: 1.3.1 - Date: 2014-04-12
 =================================

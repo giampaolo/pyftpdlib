@@ -3662,10 +3662,11 @@ def test_main(tests=None):
             if os.name == 'posix':
                 warn("sendfile() not available")
 
+    verbosity = os.getenv('SILENT') and 1 or 2
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
     try:
-        result = unittest.TextTestRunner(verbosity=2).run(test_suite)
+        result = unittest.TextTestRunner(verbosity=verbosity).run(test_suite)
     finally:
         cleanup()
     return result

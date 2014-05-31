@@ -1006,10 +1006,11 @@ def test_main():
             else:
                 warn("WindowsAuthorizer tests skipped")
 
+    verbosity = os.getenv('SILENT') and 1 or 2
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
     try:
-        result = unittest.TextTestRunner(verbosity=2).run(test_suite)
+        result = unittest.TextTestRunner(verbosity=verbosity).run(test_suite)
     finally:
         cleanup()
     return result

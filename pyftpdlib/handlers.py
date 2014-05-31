@@ -3077,6 +3077,8 @@ else:
                 logger.critical(traceback.format_exc())
 
         def send(self, data):
+            if not isinstance(data, bytes):
+                data = bytes(data)
             try:
                 return super(SSLConnection, self).send(data)
             except (SSL.WantReadError, SSL.WantWriteError):
