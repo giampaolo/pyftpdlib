@@ -1,5 +1,14 @@
 Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 
+Version: 1.4.0 - (unreleased)
+=============================
+
+**Enhancements**
+
+- #284: documentation was turned into RsT and hosted on pythonhosted.org
+- #293: project was migrated from Google Code to Github. Code moved from SVN
+  to GIT.
+
 
 Version: 1.3.1 - Date: 2014-04-12
 =================================

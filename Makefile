@@ -16,6 +16,7 @@ clean:
 	rm -f `find . -type f -name \*.rej`
 	rm -rf `find . -type d -name __pycache__`
 	rm -rf *.egg-info
+	rm -rf .tox
 	rm -rf build
 	rm -rf dist
 
@@ -57,3 +58,9 @@ flake8:
 
 upload-src: clean
 	$(PYTHON) setup.py sdist upload
+
+# Build and upload doc on https://pythonhosted.org/pyftpdlib/.
+# Requires "pip install sphinx-pypi-upload".
+upload-docs:
+	cd docs; make html
+	$(PYTHON) setup.py upload_sphinx --upload-dir=docs/_build/html
