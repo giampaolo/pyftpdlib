@@ -1,3 +1,19 @@
+.. image:: https://pypip.in/d/pyftpdlib/badge.png
+    :target: https://crate.io/packages/pyftpdlib/
+    :alt: Download this month
+
+.. image:: https://pypip.in/v/pyftpdlib/badge.png
+    :target: https://pypi.python.org/pypi/pyftpdlib/
+    :alt: Latest version
+
+.. image:: https://pypip.in/license/pyftpdlib/badge.png
+    :target: https://pypi.python.org/pypi/pyftpdlib/
+    :alt: License
+
+.. image:: https://api.travis-ci.org/giampaolo/pyftpdlib.png?branch=master
+    :target: https://travis-ci.org/giampaolo/pyftpdlib
+    :alt: Travis
+
 Quick links
 ===========
 
@@ -141,7 +157,7 @@ Quick start
 How to contribute
 =================
 
-A lot of time and effort went into making psutil as it is right now.
+A lot of time and effort went into making pyftpdlib as it is right now.
 If you feel pyftpdlib is useful to you or your business and want to support its
 future development please consider donating me
 (`Giampaolo Rodola' <http://grodola.blogspot.com/p/about.html>`_) some money.
