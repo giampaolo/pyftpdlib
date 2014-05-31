@@ -22,7 +22,7 @@ if sys.version_info >= (3, ):
         return s
 else:
     def u(s):
-        if not isinstance(s, unicode):
+        if not isinstance(s, unicode):  # NOQA
             s = unicode(s, "unicode_escape")  # NOQA
         return s
 
@@ -34,7 +34,8 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 
 
 def get_version():
-    INIT = os.path.abspath(os.path.join(HERE, '..', 'pyftpdlib', '__init__.py'))
+    INIT = os.path.abspath(os.path.join(HERE, '..', 'pyftpdlib',
+                                        '__init__.py'))
     f = open(INIT, 'r')
     try:
         for line in f:
