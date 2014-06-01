@@ -105,7 +105,7 @@ class FTPServer(Acceptor):
     max_cons = 512
     max_cons_per_ip = 0
 
-    def __init__(self, address_or_socket, handler, ioloop=None, backlog=5):
+    def __init__(self, address_or_socket, handler, ioloop=None, backlog=100):
         """Creates a socket listening on 'address' dispatching
         connections to a 'handler'.
 

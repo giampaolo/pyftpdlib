@@ -14,6 +14,7 @@ Version: 1.4.0 - (unreleased)
 **Bug fixes**
 
 - #296: TypeError when using recent version of PyOpenSSL.
+- #297: listen() may raise EBADF in case of many connections.
 
 
 Version: 1.3.1 - Date: 2014-04-12

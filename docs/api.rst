@@ -331,7 +331,7 @@ Data connection
 Server (acceptor)
 =================
 
-.. class:: pyftpdlib.servers.FTPServer(address_or_socket, handler, ioloop=None, backlog=5)
+.. class:: pyftpdlib.servers.FTPServer(address_or_socket, handler, ioloop=None, backlog=100)
 
   Creates a socket listening on *address* (an ``(host, port)`` tuple) or a
   pre- existing socket object, dispatching the requests to *handler* (typically
