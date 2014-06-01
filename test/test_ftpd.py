@@ -2052,19 +2052,19 @@ class TestFtpAbort(unittest.TestCase):
             if conn is not None:
                 conn.close()
 
-    if hasattr(socket, 'MSG_OOB'):
-        def test_oob_abor(self):
-            # Send ABOR by following the RFC-959 directives of sending
-            # Telnet IP/Synch sequence as OOB data.
-            # On some systems like FreeBSD this happened to be a problem
-            # due to a different SO_OOBINLINE behavior.
-            # On some platforms (e.g. Python CE) the test may fail
-            # although the MSG_OOB constant is defined.
-            self.client.sock.sendall(b(chr(244)), socket.MSG_OOB)
-            self.client.sock.sendall(b(chr(255)), socket.MSG_OOB)
-            self.client.sock.sendall(b('abor\r\n'))
-            self.client.sock.settimeout(TIMEOUT)
-            self.assertEqual(self.client.getresp()[:3], '225')
+    @unittest.skipUnless(hasattr(socket, 'MSG_OOB'), "MSG_OOB not available")
+    def test_oob_abor(self):
+        # Send ABOR by following the RFC-959 directives of sending
+        # Telnet IP/Synch sequence as OOB data.
+        # On some systems like FreeBSD this happened to be a problem
+        # due to a different SO_OOBINLINE behavior.
+        # On some platforms (e.g. Python CE) the test may fail
+        # although the MSG_OOB constant is defined.
+        self.client.sock.sendall(b(chr(244)), socket.MSG_OOB)
+        self.client.sock.sendall(b(chr(255)), socket.MSG_OOB)
+        self.client.sock.sendall(b('abor\r\n'))
+        self.client.sock.settimeout(TIMEOUT)
+        self.assertEqual(self.client.getresp()[:3], '225')
 
 
 class TestThrottleBandwidth(unittest.TestCase):
@@ -2533,25 +2533,26 @@ class TestConfigurableOptions(unittest.TestCase):
             self.assertEqual(gmt2, loc2)
             self.assertEqual(gmt3, loc3)
 
-    if hasattr(socket, 'TCP_NODELAY'):
-        def test_tcp_no_delay(self):
-            def get_handler_socket():
-                # return the server's handler socket object
-                ioloop = IOLoop.instance()
-                for fd in ioloop.socket_map:
-                    instance = ioloop.socket_map[fd]
-                    if isinstance(instance, FTPHandler):
-                        break
-                return instance.socket
+    @unittest.skipUnless(hasattr(socket, 'TCP_NODELAY'),
+                         'TCP_NODELAY not available')
+    def test_tcp_no_delay(self):
+        def get_handler_socket():
+            # return the server's handler socket object
+            ioloop = IOLoop.instance()
+            for fd in ioloop.socket_map:
+                instance = ioloop.socket_map[fd]
+                if isinstance(instance, FTPHandler):
+                    break
+            return instance.socket
 
-            s = get_handler_socket()
-            self.assertTrue(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
-            self.client.quit()
-            self.server.handler.tcp_no_delay = False
-            self.client.connect(self.server.host, self.server.port)
-            self.client.sendcmd('noop')
-            s = get_handler_socket()
-            self.assertFalse(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
+        s = get_handler_socket()
+        self.assertTrue(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
+        self.client.quit()
+        self.server.handler.tcp_no_delay = False
+        self.client.connect(self.server.host, self.server.port)
+        self.client.sendcmd('noop')
+        s = get_handler_socket()
+        self.assertFalse(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
 
 
 class TestCallbacks(unittest.TestCase):

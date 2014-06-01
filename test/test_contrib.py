@@ -951,63 +951,9 @@ if os.name == 'posix':
 
 
 def test_main():
-    test_suite = unittest.TestSuite()
-    tests = [
-        # FTPS tests
-        TestFTPS,
-        TestFtpAuthenticationTLSMixin,
-        TestTFtpDummyCmdsTLSMixin,
-        TestFtpCmdsSemanticTLSMixin,
-        TestFtpFsOperationsTLSMixin,
-        TestFtpStoreDataTLSMixin,
-        TestFtpRetrieveDataTLSMixin,
-        TestFtpListingCmdsTLSMixin,
-        TestFtpAbortTLSMixin,
-        TestTimeoutsTLSMixin,
-        TestConfigurableOptionsTLSMixin,
-        TestCallbacksTLSMixin,
-        TestCornerCasesTLSMixin,
-        TestIPv4EnvironmentTLSMixin,
-        TestIPv6EnvironmentTLSMixin,
-        # threaded FTP server tests
-        TestFtpAuthenticationThreadMixin,
-        TestTFtpDummyCmdsThreadMixin,
-        TestFtpCmdsSemanticThreadMixin,
-        TestFtpFsOperationsThreadMixin,
-        TestFtpStoreDataThreadMixin,
-        TestFtpRetrieveDataThreadMixin,
-        TestFtpListingCmdsThreadMixin,
-        TestFtpAbortThreadMixin,
-        # TestTimeoutsThreadMixin,
-        # TestConfigurableOptionsThreadMixin,
-        TestCallbacksThreadMixin,
-        TestCornerCasesThreadMixin,
-        TestFTPServerThreadMixin,
-        # multi process FTP server tests
-        TestFtpAuthenticationMProcMixin,
-        TestTFtpDummyCmdsMProcMixin,
-        TestFtpCmdsSemanticMProcMixin,
-        TestFtpFsOperationsMProcMixin,
-        TestFtpStoreDataMProcMixin,
-        TestFtpRetrieveDataMProcMixin,
-        TestFtpListingCmdsMProcMixin,
-        TestFtpAbortMProcMixin,
-        # TestTimeoutsMProcMixin,
-        # TestConfigurableOptionsMProcMixin,
-        # TestCallbacksMProcMixin,
-        TestCornerCasesMProcMixin,
-        TestFTPServerMProcMixin,
-        # Unix / Windows
-        TestUnixFilesystem,
-        TestUnixAuthorizer,
-        TestWindowsAuthorizer
-    ]
-
     verbosity = os.getenv('SILENT') and 1 or 2
-    for test in tests:
-        test_suite.addTest(unittest.makeSuite(test))
     try:
-        unittest.TextTestRunner(verbosity=verbosity).run(test_suite)
+        unittest.main(verbosity=verbosity)
     finally:
         cleanup()
         # force interpreter exit in case the FTP server thread is hanging
