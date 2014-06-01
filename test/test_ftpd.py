@@ -299,7 +299,9 @@ class FTPd(threading.Thread):
             raise RuntimeError("Server not started yet")
         self.__serving = False
         self.__stopped = True
-        self.join()
+        self.join(timeout=3)
+        if threading.activeCount() > 1:
+            warn("test FTP server thread is still running")
 
 
 class TestAbstractedFS(unittest.TestCase):
@@ -1661,17 +1663,20 @@ class TestFtpStoreData(unittest.TestCase):
         f.close()
 
 
-if SUPPORTS_SENDFILE:
-    class TestFtpStoreDataNoSendfile(TestFtpStoreData):
-        """Test STOR, STOU, APPE, REST, TYPE not using sendfile()."""
+class TestFtpStoreDataNoSendfile(TestFtpStoreData):
+    """Test STOR, STOU, APPE, REST, TYPE not using sendfile()."""
 
-        def setUp(self):
-            TestFtpStoreData.setUp(self)
-            self.server.handler.use_sendfile = False
+    def setUp(self):
+        if os.name != 'posix':
+            self.skipTest("POSIX only")
+        if sys.version_info < (3, 3) and sendfile is None:
+            self.skipTest("pysendfile not installed")
+        TestFtpStoreData.setUp(self)
+        self.server.handler.use_sendfile = False
 
-        def tearDown(self):
-            TestFtpStoreData.tearDown(self)
-            self.server.handler.use_sendfile = True
+    def tearDown(self):
+        TestFtpStoreData.tearDown(self)
+        self.server.handler.use_sendfile = True
 
 
 class TestFtpRetrieveData(unittest.TestCase):
@@ -1786,17 +1791,20 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.assertEqual(self.dummyfile.read(), b(""))
 
 
-if SUPPORTS_SENDFILE:
-    class TestFtpRetrieveDataNoSendfile(TestFtpRetrieveData):
-        """Test RETR, REST, TYPE by not using sendfile()."""
+class TestFtpRetrieveDataNoSendfile(TestFtpRetrieveData):
+    """Test RETR, REST, TYPE by not using sendfile()."""
 
-        def setUp(self):
-            TestFtpRetrieveData.setUp(self)
-            self.server.handler.use_sendfile = False
+    def setUp(self):
+        if os.name != 'posix':
+            self.skipTest("POSIX only")
+        if sys.version_info < (3, 3) and sendfile is None:
+            self.skipTest("pysendfile not installed")
+        TestFtpRetrieveData.setUp(self)
+        self.server.handler.use_sendfile = False
 
-        def tearDown(self):
-            TestFtpRetrieveData.tearDown(self)
-            self.server.handler.use_sendfile = True
+    def tearDown(self):
+        TestFtpRetrieveData.tearDown(self)
+        self.server.handler.use_sendfile = True
 
 
 class TestFtpListingCmds(unittest.TestCase):
@@ -2882,7 +2890,7 @@ class TestFTPServer(unittest.TestCase):
         self.client.login(USER, PASSWD)
 
 
-class _TestNetworkProtocols(unittest.TestCase):
+class _TestNetworkProtocols(object):
     """Test PASV, EPSV, PORT and EPRT commands.
 
     Do not use this class directly, let TestIPv4Environment and
@@ -3006,7 +3014,7 @@ class _TestNetworkProtocols(unittest.TestCase):
                           'eprt |%s|%s|%s|' % (self.proto, self.HOST, 2000))
 
 
-class TestIPv4Environment(_TestNetworkProtocols):
+class TestIPv4Environment(_TestNetworkProtocols, unittest.TestCase):
     """Test PASV, EPSV, PORT and EPRT commands.
 
     Runs tests contained in _TestNetworkProtocols class by using IPv4
@@ -3015,6 +3023,11 @@ class TestIPv4Environment(_TestNetworkProtocols):
     server_class = FTPd
     client_class = ftplib.FTP
     HOST = '127.0.0.1'
+
+    def setUp(self):
+        super(TestIPv4Environment, self).setUp()
+        if not SUPPORTS_IPV4:
+            self.skipTest("IPv4 not supported")
 
     @disable_log_warning
     def test_port_v4(self):
@@ -3056,7 +3069,7 @@ class TestIPv4Environment(_TestNetworkProtocols):
         s.connect((host, port))
 
 
-class TestIPv6Environment(_TestNetworkProtocols):
+class TestIPv6Environment(_TestNetworkProtocols, unittest.TestCase):
     """Test PASV, EPSV, PORT and EPRT commands.
 
     Runs tests contained in _TestNetworkProtocols class by using IPv6
@@ -3065,6 +3078,11 @@ class TestIPv6Environment(_TestNetworkProtocols):
     server_class = FTPd
     client_class = ftplib.FTP
     HOST = '::1'
+
+    def setUp(self):
+        super(TestIPv6Environment, self).setUp()
+        if not SUPPORTS_IPV6:
+            self.skipTest("IPv6 not supported")
 
     def test_port_v6(self):
         # PORT is not supposed to work
@@ -3096,6 +3114,8 @@ class TestIPv6MixedEnvironment(unittest.TestCase):
     HOST = "::"
 
     def setUp(self):
+        if not SUPPORTS_HYBRID_IPV6:
+            self.skipTest("IPv4/6 dual stack not supported")
         self.server = self.server_class((self.HOST, 0))
         self.server.start()
         self.client = None
@@ -3611,57 +3631,11 @@ remove_test_files()
 
 
 def test_main(tests=None):
-    test_suite = unittest.TestSuite()
-    if tests is None:
-        tests = [
-            TestAbstractedFS,
-            TestDummyAuthorizer,
-            TestCallLater,
-            TestCallEvery,
-            TestFtpAuthentication,
-            TestFtpDummyCmds,
-            TestFtpCmdsSemantic,
-            TestFtpFsOperations,
-            TestFtpStoreData,
-            TestFtpRetrieveData,
-            TestFtpListingCmds,
-            TestFtpAbort,
-            TestThrottleBandwidth,
-            TestTimeouts,
-            TestConfigurableOptions,
-            TestCallbacks,
-            TestFTPServer,
-            TestCornerCases,
-            # TestUnicodePathNames,  # TODO: fix errors and re-enable
-            TestCommandLineParser,
-        ]
-        if SUPPORTS_IPV4:
-            tests.append(TestIPv4Environment)
-        else:
-            warn("IPv4 stack not available")
-        if SUPPORTS_IPV6:
-            tests.append(TestIPv6Environment)
-        else:
-            warn("IPv6 stack not available")
-        if SUPPORTS_HYBRID_IPV6:
-            tests.append(TestIPv6MixedEnvironment)
-        else:
-            warn("IPv4/6 dual stack not available")
-        if SUPPORTS_SENDFILE:
-            tests.append(TestFtpRetrieveDataNoSendfile)
-            tests.append(TestFtpStoreDataNoSendfile)
-        else:
-            if os.name == 'posix':
-                warn("sendfile() not available")
-
     verbosity = os.getenv('SILENT') and 1 or 2
-    for test in tests:
-        test_suite.addTest(unittest.makeSuite(test))
     try:
-        result = unittest.TextTestRunner(verbosity=verbosity).run(test_suite)
+        unittest.main(verbosity=verbosity)
     finally:
         cleanup()
-    return result
 
 if __name__ == '__main__':
-    sys.exit(not test_main().wasSuccessful())
+    test_main()

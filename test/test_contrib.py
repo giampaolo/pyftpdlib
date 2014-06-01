@@ -797,7 +797,7 @@ class _SharedAuthorizerTests(object):
 # =====================================================================
 
 
-class TestUnixAuthorizer(unittest.TestCase, _SharedAuthorizerTests):
+class TestUnixAuthorizer(_SharedAuthorizerTests, unittest.TestCase):
     """Unix authorizer specific tests."""
 
     authorizer_class = getattr(authorizers, "UnixAuthorizer", None)
@@ -904,7 +904,7 @@ class TestUnixAuthorizer(unittest.TestCase, _SharedAuthorizerTests):
 # =====================================================================
 
 
-class TestWindowsAuthorizer(unittest.TestCase, _SharedAuthorizerTests):
+class TestWindowsAuthorizer(_SharedAuthorizerTests, unittest.TestCase):
     """Windows authorizer specific tests."""
 
     authorizer_class = getattr(authorizers, "WindowsAuthorizer", None)
@@ -1007,10 +1007,9 @@ def test_main():
     for test in tests:
         test_suite.addTest(unittest.makeSuite(test))
     try:
-        result = unittest.TextTestRunner(verbosity=verbosity).run(test_suite)
+        unittest.TextTestRunner(verbosity=verbosity).run(test_suite)
     finally:
         cleanup()
-    return result
 
 if __name__ == '__main__':
-    sys.exit(not test_main().wasSuccessful())
+    test_main()
