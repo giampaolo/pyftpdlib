@@ -69,8 +69,19 @@ from pyftpdlib import servers
 from pyftpdlib._compat import b, getcwdu, unicode
 from test_ftpd import *  # NOQA
 
+
 FTPS_SUPPORT = (hasattr(ftplib, 'FTP_TLS') and
                 hasattr(handlers, 'TLS_FTPHandler'))
+if not FTPS_SUPPORT:
+    if sys.version_info < (2, 7):
+        FTPS_UNSUPPORT_REASON = "requires python 2.7+"
+    elif ssl is None:
+        FTPS_UNSUPPORT_REASON = "requires ssl module"
+    elif not hasattr(handlers, 'TLS_FTPHandler'):
+        FTPS_UNSUPPORT_REASON = "requires PyOpenSSL module"
+    else:
+        FTPS_UNSUPPORT_REASON = "FTPS test skipped"
+
 CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                         'keycert.pem'))
 MPROCESS_SUPPORT = hasattr(servers, 'MultiprocessFTPServer')
@@ -118,7 +129,9 @@ if FTPS_SUPPORT:
         client_class = FTPSClient
 else:
     class TLSTestMixin:
-        pass
+
+        def setUp(self):
+            self.skipTest(FTPS_UNSUPPORT_REASON)
 
 
 class TestFtpAuthenticationTLSMixin(TLSTestMixin, TestFtpAuthentication):
@@ -301,7 +314,9 @@ if MPROCESS_SUPPORT:
         server_class = MultiProcFTPd
 else:
     class MProcFTPTestMixin:
-        pass
+
+        def setUp(self):
+            self.skipTest("multiprocessing module not installed")
 
 
 class TestFtpAuthenticationMProcMixin(MProcFTPTestMixin,
@@ -370,6 +385,8 @@ class TestFTPS(unittest.TestCase):
     """Specific tests fot TSL_FTPHandler class."""
 
     def setUp(self):
+        if not FTPS_SUPPORT:
+            self.skipTest(FTPS_UNSUPPORT_REASON)
         self.server = FTPSServer()
         self.server.start()
         self.client = ftplib.FTP_TLS()
@@ -785,6 +802,16 @@ class TestUnixAuthorizer(SharedAuthorizerTests):
 
     authorizer_class = getattr(authorizers, "UnixAuthorizer", None)
 
+    def setUp(self):
+        if os.name != 'posix':
+            self.skipTest("UNIX only")
+        if sys.version_info < (2, 5):
+            self.skipTest("python >= 2.5 only")
+        try:
+            authorizers.UnixAuthorizer()
+        except AuthorizerError:  # not root
+            self.skipTest("need root access")
+
     def test_get_perms_anonymous(self):
         auth = authorizers.UnixAuthorizer(
             global_perm='elr', anonymous_user=self.get_current_user())
@@ -878,6 +905,14 @@ class TestWindowsAuthorizer(SharedAuthorizerTests):
 
     authorizer_class = getattr(authorizers, "WindowsAuthorizer", None)
 
+    def setUp(self):
+        if os.name != 'nt':
+            self.skipTest("Windows only")
+        try:
+            import win32api  # NOQA
+        except ImportError:
+            self.skipTest("pywin32 not installed")
+
     def test_wrong_anonymous_credentials(self):
         user = self.get_current_user()
         self.assertRaises(Win32ExtError, self.authorizer_class,
@@ -891,6 +926,10 @@ class TestWindowsAuthorizer(SharedAuthorizerTests):
 
 if os.name == 'posix':
     class TestUnixFilesystem(unittest.TestCase):
+
+        def setUp(self):
+            if os.name != 'posix':
+                self.skipTest("UNIX only")
 
         def test_case(self):
             root = getcwdu()
@@ -909,42 +948,24 @@ if os.name == 'posix':
 
 def test_main():
     test_suite = unittest.TestSuite()
-    tests = []
-
-    # FTPS tests
-    if FTPS_SUPPORT:
-        ftps_tests = [
-            TestFTPS,
-            TestFtpAuthenticationTLSMixin,
-            TestTFtpDummyCmdsTLSMixin,
-            TestFtpCmdsSemanticTLSMixin,
-            TestFtpFsOperationsTLSMixin,
-            TestFtpStoreDataTLSMixin,
-            TestFtpRetrieveDataTLSMixin,
-            TestFtpListingCmdsTLSMixin,
-            TestFtpAbortTLSMixin,
-            TestTimeoutsTLSMixin,
-            TestConfigurableOptionsTLSMixin,
-            TestCallbacksTLSMixin,
-            TestCornerCasesTLSMixin,
-        ]
-        if SUPPORTS_IPV4:
-            ftps_tests.append(TestIPv4EnvironmentTLSMixin)
-        if SUPPORTS_IPV6:
-            ftps_tests.append(TestIPv6EnvironmentTLSMixin)
-        tests += ftps_tests
-    else:
-        if sys.version_info < (2, 7):
-            warn("FTPS tests skipped (requires python 2.7)")
-        elif ssl is None:
-            warn("FTPS tests skipped (requires ssl module)")
-        elif not hasattr(handlers, 'TLS_FTPHandler'):
-            warn("FTPS tests skipped (requires PyOpenSSL module)")
-        else:
-            warn("FTPS tests skipped")
-
-    # threaded FTP server tests
-    ftp_thread_tests = [
+    tests = [
+        # FTPS tests
+        TestFTPS,
+        TestFtpAuthenticationTLSMixin,
+        TestTFtpDummyCmdsTLSMixin,
+        TestFtpCmdsSemanticTLSMixin,
+        TestFtpFsOperationsTLSMixin,
+        TestFtpStoreDataTLSMixin,
+        TestFtpRetrieveDataTLSMixin,
+        TestFtpListingCmdsTLSMixin,
+        TestFtpAbortTLSMixin,
+        TestTimeoutsTLSMixin,
+        TestConfigurableOptionsTLSMixin,
+        TestCallbacksTLSMixin,
+        TestCornerCasesTLSMixin,
+        TestIPv4EnvironmentTLSMixin,
+        TestIPv6EnvironmentTLSMixin,
+        # threaded FTP server tests
         TestFtpAuthenticationThreadMixin,
         TestTFtpDummyCmdsThreadMixin,
         TestFtpCmdsSemanticThreadMixin,
@@ -958,60 +979,25 @@ def test_main():
         TestCallbacksThreadMixin,
         TestCornerCasesThreadMixin,
         TestFTPServerThreadMixin,
+        # multi process FTP server tests
+        TestFtpAuthenticationMProcMixin,
+        TestTFtpDummyCmdsMProcMixin,
+        TestFtpCmdsSemanticMProcMixin,
+        TestFtpFsOperationsMProcMixin,
+        TestFtpStoreDataMProcMixin,
+        TestFtpRetrieveDataMProcMixin,
+        TestFtpListingCmdsMProcMixin,
+        TestFtpAbortMProcMixin,
+        # TestTimeoutsMProcMixin,
+        # TestConfigurableOptionsMProcMixin,
+        # TestCallbacksMProcMixin,
+        TestCornerCasesMProcMixin,
+        TestFTPServerMProcMixin,
+        # Unix / Windows
+        TestUnixFilesystem,
+        TestUnixAuthorizer,
+        TestWindowsAuthorizer
     ]
-    tests += ftp_thread_tests
-
-    # multi process FTP server tests
-    if MPROCESS_SUPPORT:
-        ftp_mproc_tests = [
-            TestFtpAuthenticationMProcMixin,
-            TestTFtpDummyCmdsMProcMixin,
-            TestFtpCmdsSemanticMProcMixin,
-            TestFtpFsOperationsMProcMixin,
-            TestFtpStoreDataMProcMixin,
-            TestFtpRetrieveDataMProcMixin,
-            TestFtpListingCmdsMProcMixin,
-            TestFtpAbortMProcMixin,
-            # TestTimeoutsMProcMixin,
-            # TestConfigurableOptionsMProcMixin,
-            # TestCallbacksMProcMixin,
-            TestCornerCasesMProcMixin,
-            TestFTPServerMProcMixin,
-        ]
-        tests += ftp_mproc_tests
-
-    # POSIX tests
-    if os.name == 'posix':
-        tests.append(TestUnixFilesystem)
-
-        if hasattr(authorizers, "UnixAuthorizer"):
-            try:
-                authorizers.UnixAuthorizer()
-            except AuthorizerError:  # not root
-                warn("UnixAuthorizer tests skipped (root privileges are "
-                     "required)")
-            else:
-                tests.append(TestUnixAuthorizer)
-        else:
-            try:
-                import spwd  # NOQA
-            except ImportError:
-                warn("UnixAuthorizer tests skipped (spwd module is missing")
-            else:
-                warn("UnixAuthorizer tests skipped")
-
-    # Windows tests
-    elif os.name in ('nt', 'ce'):
-        if hasattr(authorizers, "WindowsAuthorizer"):
-            tests.append(TestWindowsAuthorizer)
-        else:
-            try:
-                import win32api  # NOQA
-            except ImportError:
-                warn("WindowsAuthorizer tests skipped (pywin32 extension "
-                     "is required)")
-            else:
-                warn("WindowsAuthorizer tests skipped")
 
     verbosity = os.getenv('SILENT') and 1 or 2
     for test in tests:

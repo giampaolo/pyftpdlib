@@ -19,6 +19,7 @@ clean:
 	rm -rf .tox
 	rm -rf build
 	rm -rf dist
+	rm -rf docs/_build
 
 build: clean
 	$(PYTHON) setup.py build
