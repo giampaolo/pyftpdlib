@@ -2563,9 +2563,11 @@ class TestCallbacks(unittest.TestCase):
     def setUp(self):
         self.client = None
         self.server = None
-        self._tearDown = True
+        self.file = None
+        self.dummyfile = None
 
     def _setUp(self, handler, connect=True, login=True):
+        self.tearDown()
         FTPd.handler = handler
         self.server = self.server_class()
         self.server.start()
@@ -2580,18 +2582,15 @@ class TestCallbacks(unittest.TestCase):
         self._tearDown = False
 
     def tearDown(self):
-        if not self._tearDown:
-            FTPd.handler = FTPHandler
-            self._tearDown = True
-            if self.client is not None:
-                self.client.close()
-            if self.server is not None:
-                self.server.stop()
-            if not self.file.closed:
-                self.file.close()
-            if not self.dummyfile.closed:
-                self.dummyfile.close()
-            os.remove(TESTFN)
+        if self.client is not None:
+            self.client.close()
+        if self.server is not None and self.server.running:
+            self.server.stop()
+        if self.file is not None:
+            self.file.close()
+        if self.dummyfile is not None:
+            self.dummyfile.close()
+        safe_remove(TESTFN)
 
     def test_on_file_sent(self):
         _file = []
