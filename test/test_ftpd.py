@@ -3594,6 +3594,8 @@ def test_main(tests=None):
         unittest.main(verbosity=verbosity)
     finally:
         cleanup()
+        # force interpreter exit in case the FTP server thread is hanging
+        os._exit(0)
 
 if __name__ == '__main__':
     test_main()
