@@ -41,8 +41,8 @@ You might be interested in these in case your code contains blocking
 parts which cannot be adapted to the base async model or if the
 underlying filesystem is particularly slow, see:
 
-https://code.google.com/p/pyftpdlib/issues/detail?id=197
-https://code.google.com/p/pyftpdlib/issues/detail?id=212
+https://github.com/giampaolo/pyftpdlib/issues/197
+https://github.com/giampaolo/pyftpdlib/issues/212
 
 Two classes are provided:
 
@@ -254,8 +254,8 @@ class FTPServer(Acceptor):
             # be fixed. We do not want to tear down the server though
             # (DoS). We just log the exception, hoping that someone
             # will eventually file a bug. References:
-            # - http://code.google.com/p/pyftpdlib/issues/detail?id=143
-            # - http://code.google.com/p/pyftpdlib/issues/detail?id=166
+            # - https://github.com/giampaolo/pyftpdlib/issues/143
+            # - https://github.com/giampaolo/pyftpdlib/issues/166
             # - https://groups.google.com/forum/#!topic/pyftpdlib/h7pPybzAx14
             logger.error(traceback.format_exc())
             if handler is not None:
@@ -343,8 +343,7 @@ class _SpawnerBase(FTPServer):
                         # functions are supposed to be cancel()ed on close()
                         # but by using threads we can incur into
                         # synchronization issues such as this one.
-                        # https://code.google.com/p/pyftpdlib/issues/
-                        #     detail?id=245
+                        # https://github.com/giampaolo/pyftpdlib/issues/245
                         if not ioloop.socket_map:
                             # get rid of cancel()led calls
                             ioloop.sched.reheapify()

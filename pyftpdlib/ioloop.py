@@ -888,8 +888,8 @@ class AsyncChat(asynchat.async_chat):
 
     # send() and recv() overridden as a fix around various bugs:
     # - http://bugs.python.org/issue1736101
-    # - http://code.google.com/p/pyftpdlib/issues/detail?id=104
-    # - http://code.google.com/p/pyftpdlib/issues/detail?id=109
+    # - https://github.com/giampaolo/pyftpdlib/issues/104
+    # - https://github.com/giampaolo/pyftpdlib/issues/109
 
     def send(self, data):
         try:

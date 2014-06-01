@@ -59,7 +59,7 @@ def _import_sendfile():
     # By default attempt to use os.sendfile introduced in Python 3.3:
     # http://bugs.python.org/issue10882
     # ...otherwise fallback on using third-party pysendfile module:
-    # http://code.google.com/p/pysendfile/
+    # https://github.com/giampaolo/pysendfile/
     if os.name == 'posix':
         try:
             return os.sendfile  # py >= 3.3
@@ -599,10 +599,10 @@ class DTPHandler(AsyncChat):
             err = sys.exc_info()[1]
             # if we get an exception here we want the dispatcher
             # instance to set socket attribute before closing, see:
-            # http://code.google.com/p/pyftpdlib/issues/detail?id=188
+            # https://github.com/giampaolo/pyftpdlib/issues/188
             AsyncChat.__init__(
                 self, socket.socket(), ioloop=cmd_channel.ioloop)
-            # http://code.google.com/p/pyftpdlib/issues/detail?id=143
+            # https://github.com/giampaolo/pyftpdlib/issues/143
             self.close()
             if err.args[0] == errno.EINVAL:
                 return
@@ -1112,7 +1112,7 @@ class FTPHandler(AsyncChat):
         send a file resulting in faster uploads (from server to client).
         Works on UNIX only and requires pysendfile module to be
         installed separately:
-        http://code.google.com/p/pysendfile/
+        https://github.com/giampaolo/pysendfile/
         Automatically defaults to True if pysendfile module is
         installed.
 
@@ -1221,11 +1221,11 @@ class FTPHandler(AsyncChat):
             err = sys.exc_info()[1]
             # if we get an exception here we want the dispatcher
             # instance to set socket attribute before closing, see:
-            # http://code.google.com/p/pyftpdlib/issues/detail?id=188
+            # https://github.com/giampaolo/pyftpdlib/issues/188
             AsyncChat.__init__(self, socket.socket(), ioloop=ioloop)
             self.close()
             if err.args[0] == errno.EINVAL:
-                # http://code.google.com/p/pyftpdlib/issues/detail?id=143
+                # https://github.com/giampaolo/pyftpdlib/issues/143
                 return
             self.handle_error()
             return
@@ -1328,7 +1328,7 @@ class FTPHandler(AsyncChat):
 
     def readable(self):
         # Checking for self.connected seems to be necessary as per:
-        # http://code.google.com/p/pyftpdlib/issues/detail?id=188#c18
+        # https://github.com/giampaolo/pyftpdlib/issues/188#c18
         # In contrast to DTPHandler, here we are not interested in
         # attempting to receive any further data from a closed socket.
         return self.connected and AsyncChat.readable(self)
@@ -3171,7 +3171,7 @@ else:
                     raise
             except SSL.Error:
                 # see:
-                # http://code.google.com/p/pyftpdlib/issues/detail?id=171
+                # https://github.com/giampaolo/pyftpdlib/issues/171
                 # https://bugs.launchpad.net/pyopenssl/+bug/785985
                 err = sys.exc_info()[1]
                 if err.args and not err.args[0]:

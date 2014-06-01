@@ -7,7 +7,7 @@ By using pip:
 
 From sources:
 
-    $ svn checkout https://pyftpdlib.googlecode.com/svn/trunk/ pyftpdlib
+    $ git clone git@github.com:giampaolo/pyftpdlib.git
     $ cd pyftpdlib
     $ python setup.py install
 

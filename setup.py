@@ -58,6 +58,7 @@ def get_version():
     finally:
         f.close()
 
+
 if sys.version_info < (2, 4):
     sys.exit('python version not supported (min 2.4)')
 
@@ -69,14 +70,12 @@ def main():
         name='pyftpdlib',
         version=get_version(),
         description='Very fast asynchronous FTP server library',
-        long_description="Python FTP server library provides an high-level "
-                         "portable interface to easily write asynchronous FTP "
-                         "servers with Python.",
+        long_description=open('README.rst').read(),
         license='MIT',
         platforms='Platform Independent',
         author="Giampaolo Rodola'",
         author_email='g.rodola@gmail.com',
-        url='http://code.google.com/p/pyftpdlib/',
+        url='https://github.com/giampaolo/pyftpdlib/',
         packages=['pyftpdlib', 'pyftpdlib/contrib'],
         keywords=['ftp', 'ftps', 'server', 'ftpd', 'daemon', 'python', 'ssl',
                   'sendfile', 'asynchronous', 'nonblocking', 'eventdriven',
@@ -115,7 +114,7 @@ def main():
             # http://bugs.python.org/issue10882
             if not hasattr(os, 'sendfile'):
                 # fallback on using third-party pysendfile module
-                # http://code.google.com/p/pysendfile/
+                # https://github.com/giampaolo/pysendfile/
                 import sendfile
                 if hasattr(sendfile, 'has_sf_hdtr'):  # old 1.2.4 version
                     raise ImportError
@@ -132,7 +131,7 @@ def main():
                     return True
 
             msg = "\nYou might want to install pysendfile module to speedup " \
-                  "transfers:\nhttp://code.google.com/p/pysendfile/\n"
+                  "transfers:\nhttps://github.com/giampaolo/pysendfile/\n"
             if term_supports_colors():
                 msg = '\x1b[1m%s\x1b[0m' % msg
             sys.stderr.write(msg)

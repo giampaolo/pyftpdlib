@@ -142,21 +142,20 @@ Quick start
     >>>
     >>> server = FTPServer(("127.0.0.1", 21), handler)
     >>> server.serve_forever()
-    `13-02-19 10:55:42 <I>`__ >>> starting FTP server on 127.0.0.1:21 <<<
-    `13-02-19 10:55:42 <I>`__ poller: <class 'pyftpdlib.ioloop.Epoll'>
-    `13-02-19 10:55:42 <I>`__ masquerade (NAT) address: None
-    `13-02-19 10:55:42 <I>`__ passive ports: None
-    `13-02-19 10:55:42 <I>`__ use sendfile(2): True
-    `13-02-19 10:55:45 <I>`__ 127.0.0.1:34178-`FTP session opened (connect)
-    [I 13-02-19 10:55:48 <]>`__ 127.0.0.1:34178-`USER 'user' logged in.
-    [I 13-02-19 10:56:27 <user]>`__ 127.0.0.1:34179-`RETR /home/giampaolo/.vimrc completed=1 bytes=1700 seconds=0.001
-    [I 13-02-19 10:56:39 <user]>`__ 127.0.0.1:34179-`FTP session closed (disconnect).
-
+    [I 13-02-19 10:55:42] >>> starting FTP server on 127.0.0.1:21 <<<
+    [I 13-02-19 10:55:42] poller: <class 'pyftpdlib.ioloop.Epoll'>
+    [I 13-02-19 10:55:42] masquerade (NAT) address: None
+    [I 13-02-19 10:55:42] passive ports: None
+    [I 13-02-19 10:55:42] use sendfile(2): True
+    [I 13-02-19 10:55:45] 127.0.0.1:34178-[] FTP session opened (connect)
+    [I 13-02-19 10:55:48] 127.0.0.1:34178-[user] USER 'user' logged in.
+    [I 13-02-19 10:56:27] 127.0.0.1:34179-[user] RETR /home/giampaolo/.vimrc completed=1 bytes=1700 seconds=0.001
+    [I 13-02-19 10:56:39] 127.0.0.1:34179-[user] FTP session closed (disconnect).
 
 `other code samples <http://pythonhosted.org/pyftpdlib/tutorial.html>`__
 
-How to contribute
-=================
+Donate
+======
 
 A lot of time and effort went into making pyftpdlib as it is right now.
 If you feel pyftpdlib is useful to you or your business and want to support its

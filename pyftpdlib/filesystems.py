@@ -474,7 +474,7 @@ class AbstractedFS(object):
             mtime = timefunc(st.st_mtime)
             # if modification time > 6 months shows "month year"
             # else "month hh:mm";  this matches proftpd format, see:
-            # http://code.google.com/p/pyftpdlib/issues/detail?id=187
+            # https://github.com/giampaolo/pyftpdlib/issues/187
             if (now - st.st_mtime) > SIX_MONTHS:
                 fmtstr = "%d  %Y"
             else:

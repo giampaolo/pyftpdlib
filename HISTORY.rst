@@ -6,14 +6,14 @@ Version: 1.4.0 - (unreleased)
 **Enhancements**
 
 - #284: documentation was turned into RsT and hosted on pythonhosted.org
-- #293: project was migrated from Google Code to Github. Code moved from SVN
-  to GIT.
+- #293: project was migrated from Google Code to Github. Code was migrated from
+  SVN to GIT.
 - #294: use tox to automate testing on multiple python versions.
-- #295: use of travis continuos test integration.
+- #295: use travis-ci for continuos test integration.
 
 **Bug fixes**
 
-- #296: TypeError when using recent version of PyOpenSSL
+- #296: TypeError when using recent version of PyOpenSSL.
 
 
 Version: 1.3.1 - Date: 2014-04-12

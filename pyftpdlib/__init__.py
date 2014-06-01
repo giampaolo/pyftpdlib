@@ -95,7 +95,7 @@ Usage example:
 
 __ver__ = '1.4.0'
 __author__ = "Giampaolo Rodola' <g.rodola@gmail.com>"
-__web__ = 'http://code.google.com/p/pyftpdlib/'
+__web__ = 'https://github.com/giampaolo/pyftpdlib/'
 
 
 def _depwarn(msg):
