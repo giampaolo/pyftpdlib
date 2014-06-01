@@ -551,7 +551,7 @@ class TestFTPS(unittest.TestCase):
 # =====================================================================
 
 
-class SharedAuthorizerTests(unittest.TestCase):
+class _SharedAuthorizerTests(object):
     """Tests valid for both UnixAuthorizer and WindowsAuthorizer for
     those parts which share the same API.
     """
@@ -797,7 +797,7 @@ class SharedAuthorizerTests(unittest.TestCase):
 # =====================================================================
 
 
-class TestUnixAuthorizer(SharedAuthorizerTests):
+class TestUnixAuthorizer(unittest.TestCase, _SharedAuthorizerTests):
     """Unix authorizer specific tests."""
 
     authorizer_class = getattr(authorizers, "UnixAuthorizer", None)
@@ -807,6 +807,10 @@ class TestUnixAuthorizer(SharedAuthorizerTests):
             self.skipTest("UNIX only")
         if sys.version_info < (2, 5):
             self.skipTest("python >= 2.5 only")
+        try:
+            import spwd  # NOQA
+        except ImportError:
+            self.skipTest("spwd module not available")
         try:
             authorizers.UnixAuthorizer()
         except AuthorizerError:  # not root
@@ -900,7 +904,7 @@ class TestUnixAuthorizer(SharedAuthorizerTests):
 # =====================================================================
 
 
-class TestWindowsAuthorizer(SharedAuthorizerTests):
+class TestWindowsAuthorizer(unittest.TestCase, _SharedAuthorizerTests):
     """Windows authorizer specific tests."""
 
     authorizer_class = getattr(authorizers, "WindowsAuthorizer", None)
