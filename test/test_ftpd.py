@@ -2600,15 +2600,6 @@ class TestCallbacks(unittest.TestCase):
             def on_file_sent(self, file):
                 _file.append(file)
 
-            def on_file_received(self, file):
-                raise Exception
-
-            def on_incomplete_file_sent(self, file):
-                raise Exception
-
-            def on_incomplete_file_received(self, file):
-                raise Exception
-
         self._setUp(TestHandler)
         data = b('abcde12345') * 100000
         self.file.write(data)
@@ -2623,17 +2614,8 @@ class TestCallbacks(unittest.TestCase):
 
         class TestHandler(FTPHandler):
 
-            def on_file_sent(self, file):
-                raise Exception
-
             def on_file_received(self, file):
                 _file.append(file)
-
-            def on_incomplete_file_sent(self, file):
-                raise Exception
-
-            def on_incomplete_file_received(self, file):
-                raise Exception
 
         self._setUp(TestHandler)
         data = b('abcde12345') * 100000
@@ -2650,17 +2632,8 @@ class TestCallbacks(unittest.TestCase):
 
         class TestHandler(FTPHandler):
 
-            def on_file_sent(self, file):
-                raise Exception
-
-            def on_file_received(self, file):
-                raise Exception
-
             def on_incomplete_file_sent(self, file):
                 _file.append(file)
-
-            def on_incomplete_file_received(self, file):
-                raise Exception
 
         self._setUp(TestHandler)
         data = b('abcde12345') * 100000
@@ -2688,15 +2661,6 @@ class TestCallbacks(unittest.TestCase):
         _file = []
 
         class TestHandler(FTPHandler):
-
-            def on_file_sent(self, file):
-                raise Exception
-
-            def on_file_received(self, file):
-                raise Exception
-
-            def on_incomplete_file_sent(self, file):
-                raise Exception
 
             def on_incomplete_file_received(self, file):
                 _file.append(file)
@@ -2770,9 +2734,6 @@ class TestCallbacks(unittest.TestCase):
             def on_login(self, username):
                 user.append(username)
 
-            def on_login_failed(self, username, password):
-                raise Exception
-
         self._setUp(TestHandler)
         # shut down the server to avoid race conditions
         self.tearDown()
@@ -2783,9 +2744,6 @@ class TestCallbacks(unittest.TestCase):
 
         class TestHandler(FTPHandler):
             _auth_failed_timeout = 0
-
-            def on_login(self, username):
-                raise Exception
 
             def on_login_failed(self, username, password):
                 pair.append((username, password))
