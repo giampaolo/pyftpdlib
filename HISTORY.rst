@@ -10,6 +10,7 @@ Version: 1.4.0 - (unreleased)
   SVN to GIT.
 - #294: use tox to automate testing on multiple python versions.
 - #295: use travis-ci for continuos test integration.
+- #298: pysendfile and PyOpenSSL are now listed as extra deps in setup.py.
 
 **Bug fixes**
 

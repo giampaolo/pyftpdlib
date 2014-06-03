@@ -110,6 +110,10 @@ def main():
                   'sendfile', 'asynchronous', 'nonblocking', 'eventdriven',
                   'rfc959', 'rfc1123', 'rfc2228', 'rfc2428', 'rfc2640',
                   'rfc3659'],
+        extras_require={
+            'ssl': ["PyOpenSSL"],
+            'sendfile': ["pysendfile"],
+        },
         classifiers=[
             'Development Status :: 5 - Production/Stable',
             'Environment :: Console',
