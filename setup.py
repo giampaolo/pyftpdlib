@@ -59,6 +59,35 @@ def get_version():
         f.close()
 
 
+def term_supports_colors():
+    try:
+        import curses
+        assert sys.stderr.isatty()
+        curses.setupterm()
+        assert curses.tigetnum("colors") > 0
+    except Exception:
+        return False
+    else:
+        return True
+
+
+def hilite(s, ok=True, bold=False):
+    """Return an highlighted version of 's'."""
+    if not term_supports_colors():
+        return s
+    else:
+        attr = []
+        if ok is None:  # no color
+            pass
+        elif ok:   # green
+            attr.append('32')
+        else:   # red
+            attr.append('31')
+        if bold:
+            attr.append('1')
+        return '\x1b[%sm%s\x1b[0m' % (';'.join(attr), s)
+
+
 if sys.version_info < (2, 4):
     sys.exit('python version not supported (min 2.4)')
 
@@ -119,22 +148,17 @@ def main():
                 if hasattr(sendfile, 'has_sf_hdtr'):  # old 1.2.4 version
                     raise ImportError
         except ImportError:
-            def term_supports_colors():
-                try:
-                    import curses
-                    assert sys.stderr.isatty()
-                    curses.setupterm()
-                    assert curses.tigetnum("colors") > 0
-                except Exception:
-                    return False
-                else:
-                    return True
+            msg = "\nyou might want to install 'pysendfile' module to " \
+                  "speedup transfers:\n" \
+                  "https://github.com/giampaolo/pysendfile/\n"
+            sys.stderr.write(hilite(msg, ok=0, bold=1))
 
-            msg = "\nYou might want to install pysendfile module to speedup " \
-                  "transfers:\nhttps://github.com/giampaolo/pysendfile/\n"
-            if term_supports_colors():
-                msg = '\x1b[1m%s\x1b[0m' % msg
-            sys.stderr.write(msg)
+    try:
+        from OpenSSL import SSL  # NOQA
+    except ImportError:
+        msg = "\nyou might want to install 'PyOpenSSL' module to support " \
+              "FTPS\n"
+        sys.stderr.write(hilite(msg, ok=0, bold=1))
 
 
 if __name__ == '__main__':

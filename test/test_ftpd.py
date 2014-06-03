@@ -2053,6 +2053,8 @@ class TestFtpAbort(unittest.TestCase):
                 conn.close()
 
     @unittest.skipUnless(hasattr(socket, 'MSG_OOB'), "MSG_OOB not available")
+    @unittest.skipIf(sys.version_info < (2, 6),
+                     "does not work on python < 2.6")
     def test_oob_abor(self):
         # Send ABOR by following the RFC-959 directives of sending
         # Telnet IP/Synch sequence as OOB data.
