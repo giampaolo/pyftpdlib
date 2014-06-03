@@ -177,6 +177,7 @@ software to the
 Timeline
 ========
 
+- 2014-06-03: version `1.4.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.4.0.tar.gz>`__ released.
 - 2014-04-12: version `1.3.1 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.3.1.tar.gz>`__ released.
 - 2013-11-07: version `1.3.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.3.0.tar.gz>`__ released.
 - 2013-04-22: version `1.2.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.2.0.tar.gz>`__ released.

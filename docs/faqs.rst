@@ -259,17 +259,16 @@ sendfile()
 
 Starting from version 0.7.0 if
 `pysendfile <https://github.com/giampaolo/pysendfile/>`__ module is installed
-the data channel will use sendfile(2) system call by default instead of plain
-old socket.send() method. This applies to all uploads (RETR - from server to
-client). This shouldn't make any difference if you send regular files. If
-that's not the case (e.g. you overriden AbstractedFS.open() method so that it
-returns a file-like object) the data channel won't be able to transmit any
-data. Also, use of sendfile() might introduce some unexpected issues with "non
+sendfile(2) system call be used when uploading files (from server to client)
+via RETR command.
+Using sendfile(2) usually results in transfer rates from 2x to 3x faster
+and less CPU usage.
+Note: use of sendfile() might introduce some unexpected issues with "non
 regular filesystems" such as NFS, SMBFS/Samba, CIFS and network mounts in
 general, see: http://www.proftpd.org/docs/howto/Sendfile.html. If you bump into
 one this problems the fix consists in disabling sendfile() usage via
-FTPHandler.use*sendfile option:
-
+`FTPHandler.use_sendfile <api.html#pyftpdlib.handlers.FTPHandler.use_sendfile>`__
+option:
 
 .. code-block:: python
 
@@ -277,7 +276,6 @@ FTPHandler.use*sendfile option:
     handler = FTPHandler
     handler.use_senfile = False
     ...
-
 
 Globbing / STAT command implementation
 --------------------------------------

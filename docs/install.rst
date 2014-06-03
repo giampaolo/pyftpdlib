@@ -26,14 +26,17 @@ You might want to run tests to make sure pyftpdlib works:
 Additional dependencies
 =======================
 
-`PyOpenSSL <https://pypi.python.org/pypi/pyOpenSSL>`__, to support FTPS:
+`PyOpenSSL <https://pypi.python.org/pypi/pyOpenSSL>`__, to support
+`FTPS <http://pythonhosted.org/pyftpdlib/tutorial.html#ftps-ftp-over-tls-ssl-server>`__:
 
 .. code-block:: sh
 
     $ pip install PyOpenSSL
 
 `pysendfile <https://github.com/giampaolo/pysendfile>`__, if you're on UNIX,
-in order to speedup uploads (from server to client):
+in order to
+`speedup uploads <http://pythonhosted.org/pyftpdlib/faqs.html#sendfile>`__
+(from server to client):
 
 .. code-block:: sh
 
