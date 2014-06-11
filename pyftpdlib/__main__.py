@@ -59,7 +59,7 @@ class CustomizedOptionFormatter(optparse.IndentedHelpFormatter):
 
 def main():
     """Start a stand alone anonymous FTP server."""
-    usage = "python -m pyftpdlib.ftpserver [options]"
+    usage = "python -m pyftpdlib [options]"
     parser = optparse.OptionParser(usage=usage, description=main.__doc__,
                                    formatter=CustomizedOptionFormatter())
     parser.add_option('-i', '--interface', default=None, metavar="ADDRESS",
