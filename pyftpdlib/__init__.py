@@ -96,19 +96,3 @@ Usage example:
 __ver__ = '1.4.1'
 __author__ = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__ = 'https://github.com/giampaolo/pyftpdlib/'
-
-
-def _depwarn(msg):
-    """
-    Force DeprecationWarning to be temporarily shown (it's been
-    disabled by default starting from python 2.7 / 3.2), then
-    re-set the default behavior.
-    """
-    import warnings
-    orig_filters = warnings.filters[:]
-    try:
-        # warnings.simplefilter('default')
-        warnings.resetwarnings()
-        warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
-    finally:
-        warnings.filters = orig_filters

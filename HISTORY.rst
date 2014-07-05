@@ -3,6 +3,11 @@ Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 Version: 1.4.1 - (UNRELEASED)
 =============================
 
+**Enhancements**
+
+- #304: remove deprecated items from 1.0.0 which were left in place for
+  backward compatibility
+
 **Bug fixes**
 
 - #302: setup.py should not require pysendfile on Python >= 3.3.
