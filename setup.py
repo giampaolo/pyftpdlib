@@ -91,6 +91,13 @@ def hilite(s, ok=True, bold=False):
 if sys.version_info < (2, 4):
     sys.exit('python version not supported (min 2.4)')
 
+require_pysendfile = (os.name == 'posix' and sys.version_info >= (2, 5)
+                      and sys.version_info < (3, 3))
+
+extras_require = {'ssl': ["PyOpenSSL"]}
+if require_pysendfile:
+    extras_require.update({'sendfile': ['pysendfile']})
+
 VERSION = get_version()
 
 
@@ -110,10 +117,7 @@ def main():
                   'sendfile', 'asynchronous', 'nonblocking', 'eventdriven',
                   'rfc959', 'rfc1123', 'rfc2228', 'rfc2428', 'rfc2640',
                   'rfc3659'],
-        extras_require={
-            'ssl': ["PyOpenSSL"],
-            'sendfile': ["pysendfile"],
-        },
+        extras_require=extras_require,
         classifiers=[
             'Development Status :: 5 - Production/Stable',
             'Environment :: Console',
@@ -141,7 +145,7 @@ def main():
     )
 
     # suggest to install pysendfile
-    if os.name == 'posix' and sys.version_info >= (2, 5):
+    if require_pysendfile:
         try:
             # os.sendfile() appeared in python 3.3
             # http://bugs.python.org/issue10882

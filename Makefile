@@ -69,3 +69,4 @@ upload-docs:
 # git-tag a new release
 git-tag-release:
 	git tag -a release-`python -c "import setup; print(setup.VERSION)"` -m `git rev-list HEAD --count`:`git rev-parse --short HEAD`
+	@echo "now run 'git push --tags'"

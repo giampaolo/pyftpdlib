@@ -93,7 +93,7 @@ Usage example:
 """
 
 
-__ver__ = '1.4.0'
+__ver__ = '1.4.1'
 __author__ = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__ = 'https://github.com/giampaolo/pyftpdlib/'
 
