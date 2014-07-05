@@ -2,14 +2,12 @@
 # Note: make sure everything is in place with "svn list -R".
 
 include CREDITS
-include HISTORY
-include INSTALL
+include HISTORY.rst
 include LICENSE
 include make.bat
 include Makefile
 include MANIFEST.in
-include README
-include setup.py
+include README.rst
 recursive-include demo *.py *.pem
 recursive-include pyftpdlib *.py
 recursive-include test *.py *.pem
