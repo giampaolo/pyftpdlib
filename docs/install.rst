@@ -40,4 +40,4 @@ in order to
 
 .. code-block:: sh
 
-    $ pip install pyopenssl
+    $ pip install pysendfile
