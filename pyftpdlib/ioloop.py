@@ -97,6 +97,12 @@ try:
     import threading
 except ImportError:
     import dummy_threading as threading
+try:
+    import asyncio
+except ImportError:
+    _has_asyncio = False
+else:
+    _has_asyncio = True
 
 from pyftpdlib._compat import MAXSIZE, callable, b
 from pyftpdlib.log import logger, _config_logging
@@ -701,10 +707,73 @@ if hasattr(select, 'kqueue'):
 
 
 # ===================================================================
+# --- asyncio - Python >= 3.3
+# ===================================================================
+
+if _has_asyncio:
+
+    class Asyncio(_IOLoop):
+        """asyncio based poller."""
+
+        def __init__(self, loop=None):
+            _IOLoop.__init__(self)
+            self._asyncio_loop = loop if loop else asyncio.new_event_loop()
+
+        @classmethod
+        def instance(cls):
+            """Return a global IOLoop instance."""
+            if cls._instance is None:
+                cls._lock.acquire()
+                try:
+                    if cls._instance is None:
+                        cls._instance = cls(asyncio.get_event_loop())
+                finally:
+                    cls._lock.release()
+            return cls._instance
+
+        def register(self, fd, inst, events):
+            if events & self.READ:
+                self._asyncio_loop.add_reader(fd, self._read_ready, inst)
+            if events & self.WRITE:
+                self._asyncio_loop.add_writer(fd, self._write_ready, inst)
+            self.socket_map[fd] = inst
+
+        def unregister(self, fd):
+            try:
+                del self.socket_map[fd]
+            except KeyError:
+                pass
+            else:
+                self._asyncio_loop.remove_reader(fd)
+                self._asyncio_loop.remove_writer(fd)
+
+        def modify(self, fd, events):
+            inst = self.socket_map.get(fd)
+            if inst is not None:
+                self.unregister(fd)
+                self.register(fd, inst, events)
+
+        def poll(self, timeout):
+            if timeout:
+                self._asyncio_loop.call_later(timeout, self._asyncio_loop.stop)
+            self._asyncio_loop.run_forever()
+
+        def _read_ready(self, inst):
+            if inst.readable():
+                _read(inst)
+
+        def _write_ready(self, inst):
+            if inst.writable():
+                _write(inst)
+
+
+# ===================================================================
 # --- choose the better poller for this platform
 # ===================================================================
 
-if hasattr(select, 'epoll'):      # epoll() - Linux
+if _has_asyncio:                  # asyncio - Python >= 3.3
+    IOLoop = Asyncio
+elif hasattr(select, 'epoll'):    # epoll() - Linux
     IOLoop = Epoll
 elif hasattr(select, 'kqueue'):   # kqueue() - BSD / OSX
     IOLoop = Kqueue
