@@ -160,11 +160,11 @@ class FTPServer(Acceptor):
             return self._map_len() <= self.max_cons
 
     def _log_start(self):
-        if not logging.getLogger('pyftpdlib').handlers:
+        if (not logging.getLogger('pyftpdlib').handlers
+                and not logging.root.handlers):
             # If we get to this point it means the user hasn't
-            # configured logger. We want to log by default so
-            # we configure logging ourselves so that it will
-            # print to stderr.
+            # configured any logger. We want logging to be on
+            # by default (stderr).
             from pyftpdlib.ioloop import _config_logging
             _config_logging()
 
