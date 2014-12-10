@@ -174,8 +174,12 @@ class FTPServer(Acceptor):
         else:
             pasv_ports = None
         addr = self.address
-        logger.info(">>> starting FTP server on %s:%s, pid=%i <<<"
-                    % (addr[0], addr[1], os.getpid()))
+        if hasattr(self.handler, 'ssl_protocol'):
+            proto = "FTP+SSL"
+        else:
+            proto = "FTP"
+        logger.info(">>> starting %s server on %s:%s, pid=%i <<<"
+                    % (proto, addr[0], addr[1], os.getpid()))
         logger.info("poller: %r", self.ioloop.__class__)
         logger.info("masquerade (NAT) address: %s",
                     self.handler.masquerade_address)
