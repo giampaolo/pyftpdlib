@@ -65,7 +65,7 @@ def _stderr_supports_color():
 LEVEL = logging.INFO
 PREFIX = '[%(levelname)1.1s %(asctime)s]'
 COLOURED = _stderr_supports_color()
-TIME_FORMAT = "%y-%m-%d %H:%M:%S"
+TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 # taken and adapted from Tornado
