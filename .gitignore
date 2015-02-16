@@ -1,0 +1,4 @@
+dist/*
+build/*
+pyftpdlib.egg-info/*
+*.pyc
