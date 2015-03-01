@@ -39,23 +39,42 @@ from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler, ThrottledDTPHandler
 from pyftpdlib.servers import FTPServer
 
+import pyftpdlib.log
+import logging
+
 
 def main():
+    # be more verbose while logging
+    pyftpdlib.log.LEVEL = logging.DEBUG
+
     authorizer = DummyAuthorizer()
     authorizer.add_user('user', '12345', os.getcwd(), perm='elradfmw')
     authorizer.add_anonymous(os.getcwd())
 
     dtp_handler = ThrottledDTPHandler
-    dtp_handler.read_limit = 30720  # 30 Kb/sec (30 * 1024)
-    dtp_handler.write_limit = 30720  # 30 Kb/sec (30 * 1024)
+    dtp_handler.read_limit = 1024 * 1 * 1024  # inbound 1 Mb/sec (1 * 1024K)
+    dtp_handler.write_limit = 1024 * 1 * 1024  # outbound 1 Mb/sec (1 * 1024K)
+    dtp_handler.auto_sized_buffers = False
+
+    # Changing log line prefix
+    dtp_handler.log_prefix = '[%(username)s]@%(remote_ip)s'
 
     ftp_handler = FTPHandler
     ftp_handler.authorizer = authorizer
     # have the ftp handler use the alternative dtp handler class
     ftp_handler.dtp_handler = dtp_handler
 
-    server = FTPServer(('', 2121), ftp_handler)
-    server.serve_forever()
+    # set the same limit for passive ftp as for active
+    ftp_handler.passive_dtp.ac_in_buffer_size = dtp_handler.read_limit
+    ftp_handler.passive_dtp.ac_out_buffer_size = dtp_handler.write_limit
+
+    server = FTPServer(('::', 2121), ftp_handler)
+
+    # start ftp server and handle CTL C termination gracefully
+    try:
+        server.serve_forever()
+    finally:
+        server.close_all()
 
 if __name__ == '__main__':
     main()
