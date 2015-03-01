@@ -1,0 +1,4 @@
+dist/
+docs/_build/
+docs/html/
+pyftpdlib.egg-info/
