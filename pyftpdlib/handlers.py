@@ -897,6 +897,8 @@ class DTPHandler(AsyncChat):
                 self.transfer_finished = True
             else:
                 self.transfer_finished = len(self.producer_fifo) == 0
+                if self.transfer_finished:
+                    self.log("handle_close(empty fifo)", logfun=logger.debug)
             try:
                 if self.transfer_finished:
                     self._resp = ("226 Transfer complete.", logger.debug)
@@ -972,10 +974,14 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
        the data buffer sizes so that they are never greater than read
        and write limits which results in a less bursty and smoother
        throughput (default: True).
+
+     - (int) sleep_before_send: the maximum time to wait before write to
+       send buffer in second (defaults to 0 == no sleep).
     """
     read_limit = 0
     write_limit = 0
     auto_sized_buffers = True
+    sleep_before_send = 0
 
     def __init__(self, sock, cmd_channel):
         super(ThrottledDTPHandler, self).__init__(sock, cmd_channel)
@@ -1011,8 +1017,24 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
         return chunk
 
     def send(self, data):
+        if self.sleep_before_send:
+            self.log("sleep before send(%d)" % self.sleep_before_send,
+                     logfun=logger.debug)
+
+            def unsleep():
+                if self.receive:
+                    event = self.ioloop.READ
+                else:
+                    event = self.ioloop.WRITE
+                self.add_channel(events=event)
+
+            self.del_channel()
+            self._cancel_throttler()
+            self._throttler = self.ioloop.call_later(
+                self.sleep_before_send, unsleep, _errback=self.handle_error)
+
         num_sent = super(ThrottledDTPHandler, self).send(data)
-        if self.write_limit:
+        if self.write_limit and not self.sleep_before_send:
             self.log("send(%d)" % num_sent, logfun=logger.debug)
             self._throttle_bandwidth(num_sent, self.write_limit)
         return num_sent
@@ -1028,10 +1050,10 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
         now = timer()   # get current time
         self._timenext = now + 1.0  # TBD float
         self._datacount += len_chunk
-        if self._datacount >= (max_speed / 2):  # FIXME rate is to high! ck
+
+        # if half transfer rate reached, start throttling
+        if self._datacount >= (max_speed / 2):
             self._datacount = 0
-            # FIXME now = timer()
-            # FIXME sleepfor = (self._timenext - now) * 2.0
             sleepfor = (self._timenext - now) * 1.0     # TBD float
             self.log("throttle_bandwidth()", logfun=logger.debug)
             if sleepfor > 0:

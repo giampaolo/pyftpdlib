@@ -55,6 +55,7 @@ def main():
     dtp_handler.read_limit = 1024 * 1 * 1024  # inbound 1 Mb/sec (1 * 1024K)
     dtp_handler.write_limit = 1024 * 1 * 1024  # outbound 1 Mb/sec (1 * 1024K)
     dtp_handler.auto_sized_buffers = False
+    dtp_handler.self.sleep_before_send = 1
 
     # Changing log line prefix
     dtp_handler.log_prefix = '[%(username)s]@%(remote_ip)s'

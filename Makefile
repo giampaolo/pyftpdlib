@@ -8,7 +8,7 @@ FLAGS=
 VERSION:=$(shell $(PYTHON) -c "import sys; sys.stdout.write('.'.join(map(str, sys.version_info))[:3])")
 
 .PHONY: aLl test clean build uninstall nosetest pep8 pyflakes upload-src upload-docs docs test-contrib flake8
-all: test test-contrib pep8 docs
+all: test test-contrib pep8
 
 clean:
 	find . -type f -name \*.py[co] -delete
@@ -34,7 +34,7 @@ install: build
 	elif test $(PYTHON) = python2.5; then \
 		$(PYTHON) setup.py install; \
 	else \
-		$(PYTHON) setup.py install --user; \
+		$(PYTHON) setup.py install; \
 	fi
 
 uninstall:
