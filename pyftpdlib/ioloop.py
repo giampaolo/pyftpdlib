@@ -821,7 +821,8 @@ class Connector(Acceptor):
     clients.
     """
 
-    def connect_af_unspecified(self, addr, source_address=None):
+    def connect_af_unspecified(self, addr, source_address=None,
+                               in_buffer_size=0, out_buffer_size=0):
         """Same as connect() but guesses address family from addr.
         Return the address family just determined.
         """
@@ -849,6 +850,39 @@ class Connector(Acceptor):
                         source_address = (source_address[0][7:],
                                           source_address[1])
                     self.bind(source_address)
+
+                if in_buffer_size:
+                    # TODO: set buffer size for input; Need to allocate
+                    # buffers before connect(), since they can affect TCP
+                    # options (window scale, etc.).
+                    try:
+                        self.socket.setsockopt(socket.SOL_SOCKET,
+                                               socket.SO_RCVBUF, in_buffer_size)
+                        size = self.socket.getsockopt(socket.SOL_SOCKET,
+                                                      socket.SO_RCVBUF)
+                        self.log("handle_connect(SO_RCVBUF=%d)" % size,
+                                 logfun=logger.debug)
+                    except socket.error:
+                        self.log("setsockopt(SO_RCVBUF=%d) failed" %
+                                 in_buffer_size, logfun=logger.error)
+                        pass
+
+                if out_buffer_size:
+                    # TODO: set buffer size for output; Need to allocate
+                    # buffers before connect(), since they can affect TCP
+                    # options (window scale, etc.).
+                    try:
+                        self.socket.setsockopt(socket.SOL_SOCKET,
+                                               socket.SO_SNDBUF, out_buffer_size)
+                        size = self.socket.getsockopt(socket.SOL_SOCKET,
+                                                      socket.SO_SNDBUF)
+                        self.log("handle_connect(SO_SNDBUF=%d)" % size,
+                                 logfun=logger.debug)
+                    except socket.error:
+                        self.log("setsockopt(SO_SNDBUF=%d) failed" %
+                                 out_buffer_size, logfun=logger.error)
+                        pass
+
                 self.connect((host, port))
             except socket.error:
                 err = sys.exc_info()[1]

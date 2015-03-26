@@ -272,9 +272,16 @@ class PassiveDTP(Acceptor):
      - (int) backlog: the maximum number of queued connections passed
        to listen(). If a connection request arrives when the queue is
        full the client may raise ECONNRESET. Defaults to 5.
+
+     - (int) ac_out_buffer_size: outgoing data buffer size (defaults 65536)
+
+     - (int) ac_in_buffer_size: incoming data buffer size (defaults 65536)
     """
     timeout = 30
     backlog = None
+    # TODO: configure or init option? ck
+    ac_in_buffer_size = 1 * 64 * 1024   # TBD
+    ac_out_buffer_size = 1 * 64 * 1024  # TBD
 
     def __init__(self, cmd_channel, extmode=False):
         """Initialize the passive data server.
@@ -305,6 +312,34 @@ class PassiveDTP(Acceptor):
             af = self.cmd_channel._af
 
         self.create_socket(af, socket.SOCK_STREAM)
+
+        # set sockopt too
+        # FIXME use SO_NWRITE number of bytes written not yet sent by the
+        # protocol (get only) too
+
+        # XXX set buffer size for input; Need to allocate buffers before
+        # connect(), since they can affect TCP options (window scale, etc.).
+        try:
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF,
+                                   self.ac_in_buffer_size)
+            size = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+            self.log("PassiveDTP(SO_RCVBUF=%d)" % size, logfun=logger.debug)
+        except socket.error:
+            self.log("setsockopt(SO_RCVBUF=%d) failed" % self.ac_in_buffer_size,
+                     logfun=logger.error)
+            pass
+
+        # XXX set buffer size for output; Need to allocate buffers before
+        # connect(), since they can affect TCP options (window scale, etc.).
+        try:
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF,
+                                   self.ac_out_buffer_size)
+            size = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+            self.log("PassiveDTP(SO_SNDBUF=%d)" % size, logfun=logger.debug)
+        except socket.error:
+            self.log("setsockopt(SO_SNDBUF=%d) failed" % self.ac_out_buffer_size,
+                     logfun=logger.error)
+            pass
 
         if self.cmd_channel.passive_ports is None:
             # By using 0 as port number value we let kernel choose a
@@ -435,8 +470,15 @@ class ActiveDTP(Connector):
 
      - (int) timeout: the timeout for us to establish connection with
        the client's listening data socket.
+
+     - (int) ac_out_buffer_size: outgoing data buffer size (defaults 65536)
+
+     - (int) ac_in_buffer_size: incoming data buffer size (defaults 65536)
     """
     timeout = 30
+    # TODO: configure or init option? ck
+    ac_in_buffer_size = 1 * 64 * 1024   # TBD
+    ac_out_buffer_size = 1 * 64 * 1024  # TBD
 
     def __init__(self, ip, port, cmd_channel):
         """Initialize the active data channel attemping to connect
@@ -467,7 +509,11 @@ class ActiveDTP(Connector):
         source_ip = self.cmd_channel.socket.getsockname()[0]
         # dual stack IPv4/IPv6 support
         try:
-            self.connect_af_unspecified((ip, port), (source_ip, 0))
+            # FIXME: configure socket buffer to increase TCP Send Window Size!
+            self.connect_af_unspecified((ip, port), (source_ip, 0),
+                                        self.ac_in_buffer_size,
+                                        self.ac_out_buffer_size)
+
         except (socket.gaierror, socket.error):
             self.handle_close()
 
@@ -558,14 +604,14 @@ class DTPHandler(AsyncChat):
        timeout triggers, the remote client will be kicked off
        (defaults 300).
 
-     - (int) ac_in_buffer_size: incoming data buffer size (defaults 65536)
+     - (int) ac_in_buffer_size: incoming control data buffer size (defaults 65536)
 
-     - (int) ac_out_buffer_size: outgoing data buffer size (defaults 65536)
+     - (int) ac_out_buffer_size: outgoing control data buffer size (defaults 65536)
     """
 
     timeout = 300
-    ac_in_buffer_size = 65536
-    ac_out_buffer_size = 65536
+    ac_in_buffer_size = 1 * 64 * 1024   # default
+    ac_out_buffer_size = 1 * 64 * 1024  # default
 
     def __init__(self, sock, cmd_channel):
         """Initialize the command channel.
@@ -851,6 +897,8 @@ class DTPHandler(AsyncChat):
                 self.transfer_finished = True
             else:
                 self.transfer_finished = len(self.producer_fifo) == 0
+                if self.transfer_finished:
+                    self.log("handle_close(empty fifo)", logfun=logger.debug)
             try:
                 if self.transfer_finished:
                     self._resp = ("226 Transfer complete.", logger.debug)
@@ -926,10 +974,14 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
        the data buffer sizes so that they are never greater than read
        and write limits which results in a less bursty and smoother
        throughput (default: True).
+
+     - (int) sleep_before_send: the maximum time to wait before write to
+       send buffer in second (defaults to 0 == no sleep).
     """
     read_limit = 0
     write_limit = 0
     auto_sized_buffers = True
+    sleep_before_send = 0
 
     def __init__(self, sock, cmd_channel):
         super(ThrottledDTPHandler, self).__init__(sock, cmd_channel)
@@ -941,9 +993,16 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
             if self.read_limit:
                 while self.ac_in_buffer_size > self.read_limit:
                     self.ac_in_buffer_size /= 2
+                self.log("ThrottledDTPHandler(ac_in_buffer_size=%d)" %
+                         self.ac_in_buffer_size, logfun=logger.debug)
             if self.write_limit:
                 while self.ac_out_buffer_size > self.write_limit:
                     self.ac_out_buffer_size /= 2
+                self.log("ThrottledDTPHandler(ac_out_buffer_size=%d)" %
+                         self.ac_out_buffer_size, logfun=logger.debug)
+        else:
+            self.ac_in_buffer_size = self.read_limit
+            self.ac_out_buffer_size = self.write_limit
         self.ac_in_buffer_size = int(self.ac_in_buffer_size)
         self.ac_out_buffer_size = int(self.ac_out_buffer_size)
 
@@ -953,12 +1012,30 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
     def recv(self, buffer_size):
         chunk = super(ThrottledDTPHandler, self).recv(buffer_size)
         if self.read_limit:
+            self.log("recv(%d)" % len(chunk), logfun=logger.debug)
             self._throttle_bandwidth(len(chunk), self.read_limit)
         return chunk
 
     def send(self, data):
+        if self.sleep_before_send:
+            self.log("sleep before send(%d)" % self.sleep_before_send,
+                     logfun=logger.debug)
+
+            def unsleep():
+                if self.receive:
+                    event = self.ioloop.READ
+                else:
+                    event = self.ioloop.WRITE
+                self.add_channel(events=event)
+
+            self.del_channel()
+            self._cancel_throttler()
+            self._throttler = self.ioloop.call_later(
+                self.sleep_before_send, unsleep, _errback=self.handle_error)
+
         num_sent = super(ThrottledDTPHandler, self).send(data)
-        if self.write_limit:
+        if self.write_limit and not self.sleep_before_send:
+            self.log("send(%d)" % num_sent, logfun=logger.debug)
             self._throttle_bandwidth(num_sent, self.write_limit)
         return num_sent
 
@@ -970,13 +1047,19 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
         """A method which counts data transmitted so that you burst to
         no more than x Kb/sec average.
         """
+        now = timer()   # get current time
+        self._timenext = now + 1.0  # TBD float
         self._datacount += len_chunk
-        if self._datacount >= max_speed:
+
+        # if half transfer rate reached, start throttling
+        if self._datacount >= (max_speed / 2):
             self._datacount = 0
-            now = timer()
-            sleepfor = (self._timenext - now) * 2
+            sleepfor = (self._timenext - now) * 1.0     # TBD float
+            self.log("throttle_bandwidth()", logfun=logger.debug)
             if sleepfor > 0:
                 # we've passed bandwidth limits
+                self.log("sleep(%f)" % sleepfor, logfun=logger.debug)
+
                 def unsleep():
                     if self.receive:
                         event = self.ioloop.READ
@@ -988,7 +1071,7 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
                 self._cancel_throttler()
                 self._throttler = self.ioloop.call_later(
                     sleepfor, unsleep, _errback=self.handle_error)
-            self._timenext = now + 1
+            self._timenext = now + 1.0  # TBD float
 
     def close(self):
         self._cancel_throttler()
@@ -1848,8 +1931,9 @@ class FTPHandler(AsyncChat):
          - (int) bytes:
             number of bytes transmitted.
         """
-        line = '%s %s completed=%s bytes=%s seconds=%s' % \
-            (cmd, filename, completed and 1 or 0, bytes, elapsed)
+        line = '%s %s completed=%s bytes=%d seconds=%s bandwith=%d Kb/sec' % \
+            (cmd, filename, completed and 1 or 0, bytes, elapsed,
+             int(bytes / (elapsed + 0.001) / 1024))  # XXX
         self.log(line)
 
     # --- connection
