@@ -149,6 +149,7 @@ class LogFormatter(logging.Formatter):
         return formatted.replace("\n", "\n    ")
 
 
+# TODO: write tests
 def _config_logging():
     # Little speed up
     if "%(process)d" not in PREFIX:
