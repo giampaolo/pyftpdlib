@@ -150,6 +150,13 @@ class LogFormatter(logging.Formatter):
 
 
 def _config_logging():
+    # Little speed up
+    if "%(process)d" not in PREFIX:
+        logging.logProcesses = False
+    if "%(processName)s" not in PREFIX:
+        logging.logMultiprocessing = False
+    if "%(thread)d" not in PREFIX and "%(threadName)s" not in PREFIX:
+        logging.logThreads = False
     channel = logging.StreamHandler()
     channel.setFormatter(LogFormatter())
     logger = logging.getLogger('pyftpdlib')
