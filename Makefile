@@ -42,6 +42,13 @@ test: install
 test-contrib: install
 	$(PYTHON) test/test_contrib.py
 
+# Run a specific test by name; e.g. "make test-by-name retr" will run
+# all test methods containing "retr" in their name.
+# Requires "pip install nose".
+test-by-name:
+	@$(PYTHON) -m nose $(TSCRIPT) --nocapture -v -m $(filter-out $@,$(MAKECMDGOALS))
+
+
 nosetest: install
 	# $ make nosetest FLAGS=test_name
 	nosetests $(TSCRIPT) -v -m $(FLAGS)
