@@ -77,3 +77,8 @@ upload-docs:
 git-tag-release:
 	git tag -a release-`python -c "import setup; print(setup.VERSION)"` -m `git rev-list HEAD --count`:`git rev-parse --short HEAD`
 	@echo "now run 'git push --tags'"
+
+# install GIT pre-commit hook
+install-git-hooks:
+	ln -sf ../../.git-pre-commit .git/hooks/pre-commit
+	chmod +x .git/hooks/pre-commit
