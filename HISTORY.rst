@@ -7,6 +7,7 @@ Version: 1.4.1 - (UNRELEASED)
 
 - #304: remove deprecated items from 1.0.0 which were left in place for
   backward compatibility
+- #324: FTPHandler.started attribute, to figure out when client connected.
 
 **Bug fixes**
 

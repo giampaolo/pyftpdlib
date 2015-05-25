@@ -1185,6 +1185,7 @@ class FTPHandler(AsyncChat):
         self.data_channel = None
         self.remote_ip = ""
         self.remote_port = ""
+        self.started = time.time()
 
         # private session attributes
         self._last_response = ""
@@ -1648,7 +1649,7 @@ class FTPHandler(AsyncChat):
                     self.data_channel.push_with_producer(data)
                 if self.data_channel is not None:
                     self.data_channel.close_when_done()
-            except:
+            except Exception:
                 # dealing with this exception is up to DTP (see bug #84)
                 self.data_channel.handle_error()
 
@@ -1715,7 +1716,7 @@ class FTPHandler(AsyncChat):
                 if self.data_channel is not None:
                     self.data_channel.cmd = cmd
                     self.data_channel.close_when_done()
-            except:
+            except Exception:
                 # dealing with this exception is up to DTP (see bug #84)
                 self.data_channel.handle_error()
         else:
@@ -3064,9 +3065,7 @@ else:
             self._error = True
             try:
                 raise
-            except (KeyboardInterrupt, SystemExit):
-                raise
-            except:
+            except Exception:
                 self.log_exception(self)
             # when facing an unhandled exception in here it's better
             # to rely on base class (FTPHandler or DTPHandler)

@@ -197,7 +197,7 @@ def cleanup():
         try:
             sys.stderr.write("garbage: %s\n" % repr(x))
             x.close()
-        except:
+        except Exception:
             pass
     map.clear()
 

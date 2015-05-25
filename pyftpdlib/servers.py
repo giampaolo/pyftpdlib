@@ -249,7 +249,7 @@ class FTPServer(Acceptor):
 
             try:
                 handler.handle()
-            except:
+            except Exception:
                 handler.handle_error()
             else:
                 return handler
