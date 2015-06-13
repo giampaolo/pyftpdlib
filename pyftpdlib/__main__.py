@@ -68,7 +68,7 @@ def main():
     parser.add_option('-p', '--port', type="int", default=2121, metavar="PORT",
                       help="specify port number to run on (default 2121)")
     parser.add_option('-w', '--write', action="store_true", default=False,
-                      help="grants write access for the anonymous user "
+                      help="grants write access for logged in user "
                            "(default read-only)")
     parser.add_option('-d', '--directory', default=getcwdu(), metavar="FOLDER",
                       help="specify the directory to share (default current "
@@ -82,6 +82,13 @@ def main():
                       help="print pyftpdlib version and exit")
     parser.add_option('-V', '--verbose', action='store_true',
                       help="activate a more verbose logging")
+    parser.add_option('-u', '--username', type=str, default=None,
+                      help="specify username to login with (anonymous login "
+                           "will be disabled and password required "
+                           "if supplied)")
+    parser.add_option('--password', type=str, default=None,
+                      help="specify a password to login with (username "
+                           "required to be useful)")
 
     options, args = parser.parse_args()
     if options.version:
@@ -109,7 +116,15 @@ def main():
 
     authorizer = DummyAuthorizer()
     perm = options.write and "elradfmwM" or "elr"
-    authorizer.add_anonymous(options.directory, perm=perm)
+    if options.username:
+        if not options.password:
+            parser.error("if username is supplied, password is required")
+        authorizer.add_user(options.username,
+                            options.password,
+                            options.directory,
+                            perm=perm)
+    else:
+        authorizer.add_anonymous(options.directory, perm=perm)
     handler = FTPHandler
     handler.authorizer = authorizer
     handler.masquerade_address = options.nat_address
