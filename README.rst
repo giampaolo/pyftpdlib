@@ -252,4 +252,4 @@ Some famous trademarks which adopted pyftpdlib (`complete list <http://pythonhos
 .. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/openvms.png
   :target: http://www.openvms.org/
 .. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/smartfile.jpg
-  :target: http://www.openvms.org/
+  :target: http://www.smartfile.com
