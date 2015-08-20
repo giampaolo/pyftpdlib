@@ -1053,7 +1053,7 @@ class BufferedIteratorProducer(object):
 
 # --- FTP
 
-class FTPHandler(AsyncChat):
+class FTPHandler(_AsyncChatNewStyle):
     """Implements the FTP server Protocol Interpreter (see RFC-959),
     handling commands received from the client on the control channel.
 
