@@ -957,7 +957,7 @@ def test_main():
     finally:
         cleanup()
         # force interpreter exit in case the FTP server thread is hanging
-        os._exit(0)
+        # os._exit(0)
 
 if __name__ == '__main__':
     test_main()
