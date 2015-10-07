@@ -632,9 +632,9 @@ class DTPHandler(AsyncChat):
     __str__ = __repr__
 
     def _use_sendfile(self, producer):
-        return (self.cmd_channel.use_sendfile
-                and isinstance(producer, FileProducer)
-                and producer.type == 'i')
+        return (self.cmd_channel.use_sendfile and
+                isinstance(producer, FileProducer) and
+                producer.type == 'i')
 
     def push(self, data):
         self._initialized = True
@@ -2370,15 +2370,15 @@ class FTPHandler(AsyncChat):
     def ftp_ABOR(self, line):
         """Abort the current data transfer."""
         # ABOR received while no data channel exists
-        if (self._dtp_acceptor is None
-                and self._dtp_connector is None
-                and self.data_channel is None):
+        if (self._dtp_acceptor is None and
+                self._dtp_connector is None and
+                self.data_channel is None):
             self.respond("225 No transfer to abort.")
             return
         else:
             # a PASV or PORT was received but connection wasn't made yet
-            if (self._dtp_acceptor is not None
-                    or self._dtp_connector is not None):
+            if (self._dtp_acceptor is not None or
+                    self._dtp_connector is not None):
                 self._shutdown_connecting_dtp()
                 resp = "225 ABOR command successful; data channel closed."
 

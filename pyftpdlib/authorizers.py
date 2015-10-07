@@ -234,8 +234,8 @@ class DummyAuthorizer(object):
             if self._issubpath(path, dir):
                 if recursive:
                     return perm in operm
-                if (path == dir or os.path.dirname(path) == dir
-                        and not os.path.isdir(path)):
+                if (path == dir or os.path.dirname(path) == dir and not
+                        os.path.isdir(path)):
                     return perm in operm
 
         return perm in self.user_table[username]['perm']
@@ -257,9 +257,9 @@ class DummyAuthorizer(object):
         for p in perm:
             if p not in self.read_perms + self.write_perms:
                 raise ValueError('no such permission %r' % p)
-            if (username == 'anonymous'
-                    and p in self.write_perms
-                    and not warned):
+            if (username == 'anonymous' and
+                    p in self.write_perms and not
+                    warned):
                 warnings.warn("write permissions assigned to anonymous user.",
                               RuntimeWarning)
                 warned = 1
@@ -325,8 +325,8 @@ class _Base(object):
         """Overrides the options specified in the class constructor
         for a specific user.
         """
-        if (not password and not homedir and not perm and not msg_login
-                and not msg_quit):
+        if (not password and not homedir and not perm and not msg_login and not
+                msg_quit):
             raise AuthorizerError(
                 "at least one keyword argument must be specified")
         if self.allowed_users and username not in self.allowed_users:

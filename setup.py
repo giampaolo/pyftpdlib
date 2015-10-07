@@ -91,8 +91,8 @@ def hilite(s, ok=True, bold=False):
 if sys.version_info < (2, 4):
     sys.exit('python version not supported (min 2.4)')
 
-require_pysendfile = (os.name == 'posix' and sys.version_info >= (2, 5)
-                      and sys.version_info < (3, 3))
+require_pysendfile = (os.name == 'posix' and sys.version_info >= (2, 5) and
+                      sys.version_info < (3, 3))
 
 extras_require = {'ssl': ["PyOpenSSL"]}
 if require_pysendfile:

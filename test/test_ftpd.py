@@ -44,6 +44,16 @@ import tempfile
 import threading
 import time
 import warnings
+
+from pyftpdlib._compat import PY3, u, b, getcwdu, callable, unicode, wraps
+from pyftpdlib.authorizers import DummyAuthorizer, AuthenticationFailed
+from pyftpdlib.filesystems import AbstractedFS
+from pyftpdlib.handlers import (FTPHandler, DTPHandler, ThrottledDTPHandler,
+                                SUPPORTS_HYBRID_IPV6)
+from pyftpdlib.ioloop import IOLoop
+from pyftpdlib.servers import FTPServer
+import pyftpdlib.__main__
+
 try:
     from StringIO import StringIO as BytesIO
 except ImportError:
@@ -66,15 +76,6 @@ if os.name == 'posix':
         import sendfile
     except ImportError:
         pass
-
-from pyftpdlib._compat import PY3, u, b, getcwdu, callable, unicode, wraps
-from pyftpdlib.authorizers import DummyAuthorizer, AuthenticationFailed
-from pyftpdlib.filesystems import AbstractedFS
-from pyftpdlib.handlers import (FTPHandler, DTPHandler, ThrottledDTPHandler,
-                                SUPPORTS_HYBRID_IPV6)
-from pyftpdlib.ioloop import IOLoop
-from pyftpdlib.servers import FTPServer
-import pyftpdlib.__main__
 
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
@@ -346,9 +347,11 @@ class TestAbstractedFS(unittest.TestCase):
 
     def test_ftp2fs(self):
         # Tests for ftp2fs method.
+        def join(x, y):
+            return os.path.join(x, y.replace('/', os.sep))
+
         ae = self.assertEqual
         fs = AbstractedFS(u('/'), None)
-        join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
 
         def goforit(root):
             fs._root = root
@@ -395,9 +398,11 @@ class TestAbstractedFS(unittest.TestCase):
 
     def test_fs2ftp(self):
         # Tests for fs2ftp method.
+        def join(x, y):
+            return os.path.join(x, y.replace('/', os.sep))
+
         ae = self.assertEqual
         fs = AbstractedFS(u('/'), None)
-        join = lambda x, y: os.path.join(x, y.replace('/', os.sep))
 
         def goforit(root):
             fs._root = root
@@ -646,7 +651,9 @@ class TestCallLater(unittest.TestCase):
             time.sleep(timeout)
 
     def test_interface(self):
-        fun = lambda: 0
+        def fun():
+            return 0
+
         self.assertRaises(AssertionError, self.ioloop.call_later, -1, fun)
         x = self.ioloop.call_later(3, fun)
         self.assertEqual(x.cancelled, False)
@@ -657,8 +664,10 @@ class TestCallLater(unittest.TestCase):
         self.assertRaises(AssertionError, x.cancel)
 
     def test_order(self):
+        def fun(x):
+            l.append(x)
+
         l = []
-        fun = lambda x: l.append(x)
         for x in [0.05, 0.04, 0.03, 0.02, 0.01]:
             self.ioloop.call_later(x, fun, x)
         self.scheduler()
@@ -668,8 +677,10 @@ class TestCallLater(unittest.TestCase):
     # provides time with a better precision than 1 second.
     if not str(time.time()).endswith('.0'):
         def test_reset(self):
+            def fun(x):
+                l.append(x)
+
             l = []
-            fun = lambda x: l.append(x)
             self.ioloop.call_later(0.01, fun, 0.01)
             self.ioloop.call_later(0.02, fun, 0.02)
             self.ioloop.call_later(0.03, fun, 0.03)
@@ -681,8 +692,10 @@ class TestCallLater(unittest.TestCase):
             self.assertEqual(l, [0.01, 0.02, 0.03, 0.05, 0.04])
 
     def test_cancel(self):
+        def fun(x):
+            l.append(x)
+
         l = []
-        fun = lambda x: l.append(x)
         self.ioloop.call_later(0.01, fun, 0.01).cancel()
         self.ioloop.call_later(0.02, fun, 0.02)
         self.ioloop.call_later(0.03, fun, 0.03)
@@ -715,7 +728,9 @@ class TestCallEvery(unittest.TestCase):
             self.ioloop.sched.poll()
 
     def test_interface(self):
-        fun = lambda: 0
+        def fun():
+            return 0
+
         self.assertRaises(AssertionError, self.ioloop.call_every, -1, fun)
         x = self.ioloop.call_every(3, fun)
         self.assertEqual(x.cancelled, False)
@@ -727,8 +742,10 @@ class TestCallEvery(unittest.TestCase):
 
     def test_only_once(self):
         # make sure that callback is called only once per-loop
+        def fun():
+            l1.append(None)
+
         l1 = []
-        fun = lambda: l1.append(None)
         self.ioloop.call_every(0, fun)
         self.ioloop.sched.poll()
         self.assertEqual(l1, [None])
@@ -736,8 +753,10 @@ class TestCallEvery(unittest.TestCase):
     def test_multi_0_timeout(self):
         # make sure a 0 timeout callback is called as many times
         # as the number of loops
+        def fun():
+            l.append(None)
+
         l = []
-        fun = lambda: l.append(None)
         self.ioloop.call_every(0, fun)
         for x in range(100):
             self.ioloop.sched.poll()
@@ -748,13 +767,17 @@ class TestCallEvery(unittest.TestCase):
         def test_low_and_high_timeouts(self):
             # make sure a callback with a lower timeout is called more
             # frequently than another with a greater timeout
+            def fun():
+                l1.append(None)
+
             l1 = []
-            fun = lambda: l1.append(None)
             self.ioloop.call_every(0.001, fun)
             self.scheduler()
 
+            def fun():
+                l2.append(None)
+
             l2 = []
-            fun = lambda: l2.append(None)
             self.ioloop.call_every(0.005, fun)
             self.scheduler(timeout=0.01)
 
@@ -762,8 +785,10 @@ class TestCallEvery(unittest.TestCase):
 
     def test_cancel(self):
         # make sure a cancelled callback doesn't get called anymore
+        def fun():
+            l.append(None)
+
         l = []
-        fun = lambda: l.append(None)
         call = self.ioloop.call_every(0.001, fun)
         self.scheduler()
         len_l = len(l)
@@ -1874,7 +1899,8 @@ class TestFtpListingCmds(unittest.TestCase):
 
     def test_mlst(self):
         # utility function for extracting the line of interest
-        mlstline = lambda cmd: self.client.voidcmd(cmd).split('\n')[1]
+        def mlstline(cmd):
+            return self.client.voidcmd(cmd).split('\n')[1]
 
         # the fact set must be preceded by a space
         self.assertTrue(mlstline('mlst').startswith(' '))
@@ -2082,8 +2108,8 @@ class TestThrottleBandwidth(unittest.TestCase):
 
             def _throttle_bandwidth(self, *args, **kwargs):
                 ThrottledDTPHandler._throttle_bandwidth(self, *args, **kwargs)
-                if (self._throttler is not None
-                        and not self._throttler.cancelled):
+                if (self._throttler is not None and not
+                        self._throttler.cancelled):
                     self._throttler.call()
                     self._throttler = None
 
@@ -3086,7 +3112,9 @@ class TestIPv6MixedEnvironment(unittest.TestCase):
         self.server.stop()
 
     def test_port_v4(self):
-        noop = lambda x: x
+        def noop(x):
+            return x
+
         self.client = self.client_class()
         self.client.connect('127.0.0.1', self.server.port)
         self.client.set_pasv(False)
@@ -3095,7 +3123,9 @@ class TestIPv6MixedEnvironment(unittest.TestCase):
         self.client.retrlines('list', noop)
 
     def test_pasv_v4(self):
-        noop = lambda x: x
+        def noop(x):
+            return x
+
         self.client = self.client_class()
         self.client.connect('127.0.0.1', self.server.port)
         self.client.set_pasv(True)
@@ -3126,7 +3156,9 @@ class TestIPv6MixedEnvironment(unittest.TestCase):
             self.fail("Server didn't connect to passive socket")
 
     def test_epsv_v4(self):
-        mlstline = lambda cmd: self.client.voidcmd(cmd).split('\n')[1]
+        def mlstline(cmd):
+            return self.client.voidcmd(cmd).split('\n')[1]
+
         self.client = self.client_class()
         self.client.connect('127.0.0.1', self.server.port)
         self.client.sock.settimeout(TIMEOUT)
@@ -3415,7 +3447,9 @@ class TestUnicodePathNames(unittest.TestCase):
 
     def test_mlst(self):
         # utility function for extracting the line of interest
-        mlstline = lambda cmd: self.client.voidcmd(cmd).split('\n')[1]
+        def mlstline(cmd):
+            return self.client.voidcmd(cmd).split('\n')[1]
+
         if self.utf8fs:
             self.assertTrue('type=dir' in
                             mlstline('mlst ' + TESTFN_UNICODE))

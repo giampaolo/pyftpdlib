@@ -41,6 +41,14 @@ import string
 import sys
 import warnings
 
+from pyftpdlib.authorizers import AuthenticationFailed, AuthorizerError
+from pyftpdlib import authorizers
+from pyftpdlib import handlers
+from pyftpdlib import filesystems
+from pyftpdlib import servers
+from pyftpdlib._compat import b, getcwdu, unicode
+from test_ftpd import *  # NOQA
+
 if sys.version_info < (2, 7):
     import unittest2 as unittest  # pip install unittest2
 else:
@@ -60,14 +68,6 @@ try:
     from pywintypes import error as Win32ExtError
 except ImportError:
     pass
-
-from pyftpdlib.authorizers import AuthenticationFailed, AuthorizerError
-from pyftpdlib import authorizers
-from pyftpdlib import handlers
-from pyftpdlib import filesystems
-from pyftpdlib import servers
-from pyftpdlib._compat import b, getcwdu, unicode
-from test_ftpd import *  # NOQA
 
 
 FTPS_SUPPORT = (hasattr(ftplib, 'FTP_TLS') and

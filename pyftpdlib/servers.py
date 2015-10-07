@@ -160,8 +160,8 @@ class FTPServer(Acceptor):
             return self._map_len() <= self.max_cons
 
     def _log_start(self):
-        if (not logging.getLogger('pyftpdlib').handlers
-                and not logging.root.handlers):
+        if (not logging.getLogger('pyftpdlib').handlers and not
+                logging.root.handlers):
             # If we get to this point it means the user hasn't
             # configured any logger. We want logging to be on
             # by default (stderr).
@@ -380,8 +380,8 @@ class _SpawnerBase(FTPServer):
                         raise
                 else:
                     if poll_timeout:
-                        if (soonest_timeout is None
-                                or soonest_timeout > poll_timeout):
+                        if (soonest_timeout is None or
+                                soonest_timeout > poll_timeout):
                             soonest_timeout = poll_timeout
         finally:
             ioloop.close()
