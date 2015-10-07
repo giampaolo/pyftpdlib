@@ -483,7 +483,17 @@ class _BasePollEpoll(_IOLoop):
             self._poller.unregister(fd)
 
     def modify(self, fd, events):
-        self._poller.modify(fd, events)
+        try:
+            self._poller.modify(fd, events)
+        except OSError:
+            err = sys.exc_info()[1]
+            if err.args[0] == errno.ENOENT and fd in self.socket_map:
+                # XXX - see:
+                # https://github.com/giampaolo/pyftpdlib/issues/329
+                instance = self.socket_map[fd]
+                self.register(fd, instance, events)
+            else:
+                raise
 
     def poll(self, timeout):
         try:

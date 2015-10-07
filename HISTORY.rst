@@ -13,6 +13,7 @@ Version: 1.4.1 - (UNRELEASED)
 
 - #302: setup.py should not require pysendfile on Python >= 3.3.
 - #313: configuring root logger has no effect on pyftpdlib logging.
+- #329: IOLoop throws OSError on Linux.
 
 
 Version: 1.4.0 - Date: 2014-06-03
