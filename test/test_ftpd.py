@@ -93,6 +93,7 @@ TIMEOUT = 2
 BUFSIZE = 1024
 INTERRUPTED_TRANSF_SIZE = 32768
 NO_RETRIES = 5
+OSX = sys.platform.startswith("darwin")
 
 
 def try_address(host, port=0, family=socket.AF_INET):
@@ -214,8 +215,8 @@ def retry_before_failing(ntimes=None):
                 try:
                     return fun(*args, **kwargs)
                 except AssertionError:
-                    pass
-            raise
+                    err = sys.exc_info()[1]
+            raise err
         return wrapper
     return decorator
 
@@ -2081,6 +2082,7 @@ class TestFtpAbort(unittest.TestCase):
     @unittest.skipUnless(hasattr(socket, 'MSG_OOB'), "MSG_OOB not available")
     @unittest.skipIf(sys.version_info < (2, 6),
                      "does not work on python < 2.6")
+    @unittest.skipIf(OSX, "does not work on OSX")
     def test_oob_abor(self):
         # Send ABOR by following the RFC-959 directives of sending
         # Telnet IP/Synch sequence as OOB data.
