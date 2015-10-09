@@ -634,7 +634,8 @@ class DTPHandler(AsyncChat):
     def _use_sendfile(self, producer):
         return (self.cmd_channel.use_sendfile and
                 isinstance(producer, FileProducer) and
-                producer.type == 'i')
+                producer.type == 'i' and
+                hasattr(producer.file, 'fileno'))
 
     def push(self, data):
         self._initialized = True
