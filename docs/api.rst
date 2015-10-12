@@ -361,7 +361,7 @@ Server (acceptor)
     Number of maximum connections accepted for the same IP address (default
     ``0`` == no limit).
 
-  .. method:: serve_forever(timeout=None, blocking=False, handle_exit=True)
+  .. method:: serve_forever(timeout=None, blocking=True, handle_exit=True)
 
     Starts the asynchronous IO loop.
 

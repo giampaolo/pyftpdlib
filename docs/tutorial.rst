@@ -197,14 +197,19 @@ method.
 
     from pyftpdlib.handlers import FTPHandler
     from pyftpdlib.servers import FTPServer
-    from pyftpdlib.authorizers import DummyAuthorizer
+    from pyftpdlib.authorizers import DummyAuthorizer, AuthenticationFailed
 
 
     class DummyMD5Authorizer(DummyAuthorizer):
 
         def validate_authentication(self, username, password, handler):
-            hash = md5(password).hexdigest()
-            return self.user_table[username]['pwd'] == hash
+        hash = md5(b(password)).hexdigest()
+        try:
+            if self.user_table[username]['pwd'] != hash:
+                raise KeyError
+        except KeyError:
+            raise AuthenticationFailed
+
 
     def main():
         # get a hash digest from a clear-text password
