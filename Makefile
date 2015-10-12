@@ -36,6 +36,30 @@ install: build
 uninstall:
 	pip-`$(PYTHON) -c "import sys; sys.stdout.write('.'.join(map(str, sys.version_info)[:2]))"` uninstall -y -v pyftpdlib
 
+# useful deps which are nice to have while developing / testing
+setup-dev-env: install-git-hooks
+	python -c  "import urllib2, ssl; \
+				context = ssl._create_unverified_context() if hasattr(ssl, '_create_unverified_context') else None; \
+				kw = dict(context=context) if context else {}; \
+				r = urllib2.urlopen('https://bootstrap.pypa.io/get-pip.py', **kw); \
+				open('/tmp/get-pip.py', 'w').write(r.read());"
+	$(PYTHON) /tmp/get-pip.py --user
+	rm /tmp/get-pip.py
+	$(PYTHON) -m pip install --user --upgrade pip
+	$(PYTHON) -m pip install --user --upgrade \
+		coverage  \
+		flake8 \
+		ipdb \
+		mock==1.0.1 \
+		nose \
+		pep8 \
+		pyflakes \
+		pyopenssl \
+		pysendfile \
+		sphinx \
+		sphinx-pypi-upload \
+		unittest2 \
+
 test: install
 	$(PYTHON) $(TSCRIPT)
 
