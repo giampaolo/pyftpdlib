@@ -203,12 +203,12 @@ method.
     class DummyMD5Authorizer(DummyAuthorizer):
 
         def validate_authentication(self, username, password, handler):
-        hash = md5(b(password)).hexdigest()
-        try:
-            if self.user_table[username]['pwd'] != hash:
-                raise KeyError
-        except KeyError:
-            raise AuthenticationFailed
+            hash = md5(b(password)).hexdigest()
+            try:
+                if self.user_table[username]['pwd'] != hash:
+                    raise KeyError
+            except KeyError:
+                raise AuthenticationFailed
 
 
     def main():
