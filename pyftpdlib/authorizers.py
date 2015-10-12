@@ -781,10 +781,10 @@ else:
 
          >>> from pyftpdlib.contrib.authorizers import WindowsAuthorizer
          >>> # accept all except Administrator
-         >>> auth = UnixAuthorizer(rejected_users=["Administrator"])
+         >>> auth = WindowsAuthorizer(rejected_users=["Administrator"])
          >>>
          >>> # accept some users only
-         >>> auth = UnixAuthorizer(allowed_users=["matt", "jay"])
+         >>> auth = WindowsAuthorizer(allowed_users=["matt", "jay"])
          >>>
          >>> # set specific options for a user
          >>> auth.override_user("matt", password="foo", perm="elr")
