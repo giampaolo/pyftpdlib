@@ -3327,9 +3327,6 @@ class TestCornerCases(unittest.TestCase):
             self.assertTrue(isinstance(fd, int), fd)
 
 
-# TODO: disabled as on certain platforms (OSX and Windows) produces
-# failures with python3. Will have to get back to this and fix it.
-@unittest.skipIf(OSX or WINDOWS, "todo")
 class TestUnicodePathNames(unittest.TestCase):
     """Test FTP commands and responses by using path names with non
     ASCII characters.
@@ -3338,6 +3335,11 @@ class TestUnicodePathNames(unittest.TestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        if OSX or WINDOWS:
+            # TODO: disabled as on certain platforms (OSX and Windows)
+            # produces failures with python3. Will have to get back to
+            # this and fix it.
+            self.skipTest("fails on OSX or Windows")
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class()
