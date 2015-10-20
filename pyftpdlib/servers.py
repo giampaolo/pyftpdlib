@@ -298,8 +298,9 @@ class _SpawnerBase(FTPServer):
     _lock = None
     _exit = None
 
-    def __init__(self, address, handler, ioloop=None):
-        FTPServer.__init__(self, address, handler, ioloop)
+    def __init__(self, address_or_socket, handler, ioloop=None, backlog=100):
+        FTPServer.__init__(self, address_or_socket, handler,
+                           ioloop=ioloop, backlog=backlog)
         self._active_tasks = []
 
     def _start_task(self, *args, **kwargs):
