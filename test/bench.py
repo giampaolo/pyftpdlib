@@ -213,7 +213,7 @@ def register_memory():
     # the private working set via get_memory_maps().private*.
     def get_mem(proc):
         if os.name == 'posix':
-            mem = proc.get_ext_memory_info()
+            mem = proc.memory_info_ex()
             counter = mem.rss
             if 'shared' in mem._fields:
                 counter -= mem.shared
@@ -224,7 +224,7 @@ def register_memory():
 
     if SERVER_PROC is not None:
         mem = get_mem(SERVER_PROC)
-        for child in SERVER_PROC.get_children():
+        for child in SERVER_PROC.children():
             mem += get_mem(child)
         server_memory.append(bytes2human(mem))
 

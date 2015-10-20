@@ -16,6 +16,7 @@ Version: 1.4.1 - (UNRELEASED)
 - #329: IOLoop throws OSError on Linux.
 - #337: MultiprocessFTPServer and ThreadedFTPServer do not accept backlog
   argument.
+- #338: benchmark script uses old psutil API.
 
 
 Version: 1.4.0 - Date: 2014-06-03
