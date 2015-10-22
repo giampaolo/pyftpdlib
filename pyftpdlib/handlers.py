@@ -638,12 +638,18 @@ class DTPHandler(AsyncChat):
 
     def push(self, data):
         self._initialized = True
-        self.ioloop.modify(self._fileno, self.ioloop.WRITE)
+        if self._fileno not in self.ioloop.socket_map:
+            self.ioloop.register(self._fileno, self, self.ioloop.WRITE)
+        else:
+            self.ioloop.modify(self._fileno, self.ioloop.WRITE)
         AsyncChat.push(self, data)
 
     def push_with_producer(self, producer):
         self._initialized = True
-        self.ioloop.modify(self._fileno, self.ioloop.WRITE)
+        if self._fileno not in self.ioloop.socket_map:
+            self.ioloop.register(self._fileno, self, self.ioloop.WRITE)
+        else:
+            self.ioloop.modify(self._fileno, self.ioloop.WRITE)
         if self._use_sendfile(producer):
             self._offset = producer.file.tell()
             self._filefd = self.file_obj.fileno()
@@ -706,7 +712,10 @@ class DTPHandler(AsyncChat):
          - (str) type: current transfer type, 'a' (ASCII) or 'i' (binary).
         """
         self._initialized = True
-        self.ioloop.modify(self._fileno, self.ioloop.READ)
+        if self._fileno not in self.ioloop.socket_map:
+            self.ioloop.register(self._fileno, self, self.ioloop.READ)
+        else:
+            self.ioloop.modify(self._fileno, self.ioloop.READ)
         self.cmd = cmd
         if type == 'a':
             if os.linesep == '\r\n':
