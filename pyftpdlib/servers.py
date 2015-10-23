@@ -165,8 +165,8 @@ class FTPServer(Acceptor):
             # If we get to this point it means the user hasn't
             # configured any logger. We want logging to be on
             # by default (stderr).
-            from pyftpdlib.log import _config_logging
-            _config_logging()
+            from pyftpdlib.log import config_logging
+            config_logging()
 
         if self.handler.passive_ports:
             pasv_ports = "%s->%s" % (self.handler.passive_ports[0],

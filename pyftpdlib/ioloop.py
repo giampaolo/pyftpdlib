@@ -99,7 +99,7 @@ except ImportError:
     import dummy_threading as threading
 
 from pyftpdlib._compat import MAXSIZE, callable, b
-from pyftpdlib.log import logger, _config_logging
+from pyftpdlib.log import logger, config_logging
 
 
 timer = getattr(time, 'monotonic', time.time)
@@ -324,7 +324,7 @@ class _IOLoop(object):
                 # configured logging. We want to log by default so
                 # we configure logging ourselves so that it will
                 # print to stderr.
-                _config_logging()
+                config_logging()
 
         if blocking:
             # localize variable access to minimize overhead
