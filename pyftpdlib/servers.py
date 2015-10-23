@@ -160,6 +160,9 @@ class FTPServer(Acceptor):
             return self._map_len() <= self.max_cons
 
     def _log_start(self):
+        def get_fqname(obj):
+            return obj.__module__ + "." + obj.__class__.__name__
+
         if (not logging.getLogger('pyftpdlib').handlers and not
                 logging.root.handlers):
             # If we get to this point it means the user hasn't
@@ -188,13 +191,21 @@ class FTPServer(Acceptor):
             logger.info("concurrency model: multi-process")
         elif issubclass(self.__class__, FTPServer):
             logger.info("concurrency model: async")
-        logger.info("poller: %r", self.ioloop.__class__)
-        logger.info("handler: %r", self.handler)
+
         logger.info("masquerade (NAT) address: %s",
                     self.handler.masquerade_address)
         logger.info("passive ports: %s", pasv_ports)
+        logger.debug("poller: %r", get_fqname(self.ioloop))
+        logger.debug("authorizer: %r", get_fqname(self.handler.authorizer))
         if os.name == 'posix':
-            logger.info("use sendfile(2): %s", self.handler.use_sendfile)
+            logger.debug("use sendfile(2): %s", self.handler.use_sendfile)
+        logger.debug("handler: %r", get_fqname(self.handler))
+        logger.debug("max connections: %s", self.max_cons or "unlimited")
+        logger.debug("max connections per ip: %s",
+                     self.max_cons_per_ip or "unlimited")
+        logger.debug("timeout: %s", self.handler.timeout or "unlimited")
+        logger.debug("banner: %r", self.handler.banner)
+        logger.debug("max login attempts: %r", self.handler.max_login_attempts)
 
     def serve_forever(self, timeout=None, blocking=True, handle_exit=True):
         """Start serving.
@@ -218,11 +229,12 @@ class FTPServer(Acceptor):
             try:
                 self.ioloop.loop(timeout, blocking)
             except (KeyboardInterrupt, SystemExit):
-                pass
+                logger.info("received interrupt signal")
             if blocking:
                 if log:
                     logger.info(
-                        ">>> shutting down FTP server (%s active fds) <<<",
+                        ">>> shutting down FTP server (%s active socket "
+                        "fds) <<<",
                         self._map_len())
                 self.close_all()
         else:
