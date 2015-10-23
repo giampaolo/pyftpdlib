@@ -180,7 +180,16 @@ class FTPServer(Acceptor):
             proto = "FTP"
         logger.info(">>> starting %s server on %s:%s, pid=%i <<<"
                     % (proto, addr[0], addr[1], os.getpid()))
+        if ('ThreadedFTPServer' in __all__ and
+                issubclass(self.__class__, ThreadedFTPServer)):
+            logger.info("concurrency model: multi-thread")
+        elif ('MultiprocessFTPServer' in __all__ and
+                issubclass(self.__class__, MultiprocessFTPServer)):
+            logger.info("concurrency model: multi-process")
+        elif issubclass(self.__class__, FTPServer):
+            logger.info("concurrency model: async")
         logger.info("poller: %r", self.ioloop.__class__)
+        logger.info("handler: %r", self.handler)
         logger.info("masquerade (NAT) address: %s",
                     self.handler.masquerade_address)
         logger.info("passive ports: %s", pasv_ports)
@@ -415,7 +424,6 @@ class _SpawnerBase(FTPServer):
 
     def _log_start(self):
         FTPServer._log_start(self)
-        logger.info("dispatcher: %r", self.__class__)
 
     def serve_forever(self, timeout=None, blocking=True, handle_exit=True):
         self._exit.clear()

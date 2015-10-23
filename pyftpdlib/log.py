@@ -150,7 +150,7 @@ class LogFormatter(logging.Formatter):
 
 
 # TODO: write tests
-def config_logging(level=LEVEL, prefix=PREFIX):
+def config_logging(level=LEVEL, prefix=PREFIX, other_loggers=None):
     # Little speed up
     if "%(process)d" not in prefix:
         logging.logProcesses = False
@@ -158,8 +158,12 @@ def config_logging(level=LEVEL, prefix=PREFIX):
         logging.logMultiprocessing = False
     if "%(thread)d" not in prefix and "%(threadName)s" not in prefix:
         logging.logThreads = False
-    channel = logging.StreamHandler()
-    channel.setFormatter(LogFormatter())
-    logger = logging.getLogger('pyftpdlib')
-    logger.setLevel(level)
-    logger.addHandler(channel)
+    handler = logging.StreamHandler()
+    handler.setFormatter(LogFormatter())
+    loggers = [logging.getLogger('pyftpdlib')]
+    if other_loggers is not None:
+        loggers.extend(other_loggers)
+    for logger in loggers:
+        logger.propagate = False
+        logger.setLevel(level)
+        logger.addHandler(handler)
