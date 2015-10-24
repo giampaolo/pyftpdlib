@@ -5,8 +5,8 @@ Compatibility module similar to six which helps maintaining
 a single code base working with python from 2.6 to 3.x.
 """
 
-import sys
 import os
+import sys
 
 PY3 = sys.version_info[0] == 3
 

@@ -35,10 +35,10 @@ It temporarily impersonate the system users every time they are going
 to perform a filesystem operations.
 """
 
-from pyftpdlib.handlers import FTPHandler
-from pyftpdlib.servers import FTPServer
 from pyftpdlib.authorizers import UnixAuthorizer
 from pyftpdlib.filesystems import UnixFilesystem
+from pyftpdlib.handlers import FTPHandler
+from pyftpdlib.servers import FTPServer
 
 
 def main():

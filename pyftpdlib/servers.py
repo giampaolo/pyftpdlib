@@ -59,17 +59,18 @@ This way the handler handling that connections will be free to block
 without hanging the whole FTP server.
 """
 
-import os
-import traceback
-import sys
 import errno
-import select
 import logging
+import os
+import select
 import signal
+import sys
 import time
+import traceback
 
+from pyftpdlib.ioloop import Acceptor
+from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.log import logger
-from pyftpdlib.ioloop import Acceptor, IOLoop
 
 
 __all__ = ['FTPServer']

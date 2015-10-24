@@ -36,9 +36,9 @@ It also provides a mechanism to (temporarily) impersonate the system
 users every time they are going to perform filesystem operations.
 """
 
+from pyftpdlib.authorizers import WindowsAuthorizer
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer
-from pyftpdlib.authorizers import WindowsAuthorizer
 
 
 def main():

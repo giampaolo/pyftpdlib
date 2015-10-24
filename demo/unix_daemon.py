@@ -55,18 +55,18 @@ Authors:
  - Giampaolo Rodola' - g.rodola <at> gmail.com
 """
 
-import os
+import atexit
 import errno
+import optparse
+import os
+import signal
 import sys
 import time
-import optparse
-import signal
-import atexit
 
-from pyftpdlib.handlers import FTPHandler
-from pyftpdlib.servers import FTPServer
 from pyftpdlib.authorizers import UnixAuthorizer
 from pyftpdlib.filesystems import UnixFilesystem
+from pyftpdlib.handlers import FTPHandler
+from pyftpdlib.servers import FTPServer
 
 
 # overridable options

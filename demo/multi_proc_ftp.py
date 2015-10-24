@@ -37,9 +37,9 @@ filesystem is too slow.
 POSIX only; requires python >= 2.6.
 """
 
+from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import MultiprocessFTPServer
-from pyftpdlib.authorizers import DummyAuthorizer
 
 
 def main():

@@ -35,14 +35,14 @@ $ python -m pyftpdlib
 """
 
 import optparse
-import sys
 import os
+import sys
 
 from pyftpdlib import __ver__
+from pyftpdlib._compat import getcwdu
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer
-from pyftpdlib._compat import getcwdu
 
 
 class CustomizedOptionFormatter(optparse.IndentedHelpFormatter):

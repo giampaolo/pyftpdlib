@@ -36,9 +36,9 @@ If client sends more than 300 requests per-second it will be
 disconnected and won't be able to re-connect for 1 hour.
 """
 
+from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer
-from pyftpdlib.authorizers import DummyAuthorizer
 
 
 class AntiFloodHandler(FTPHandler):

@@ -29,9 +29,9 @@
 #  ======================================================================
 
 import os
-import time
-import tempfile
 import stat
+import tempfile
+import time
 try:
     from stat import filemode as _filemode  # PY 3.3
 except ImportError:
@@ -42,7 +42,9 @@ try:
 except ImportError:
     pwd = grp = None
 
-from pyftpdlib._compat import PY3, u, unicode
+from pyftpdlib._compat import PY3
+from pyftpdlib._compat import u
+from pyftpdlib._compat import unicode
 
 
 __all__ = ['FilesystemError', 'AbstractedFS']

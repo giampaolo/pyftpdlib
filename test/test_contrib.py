@@ -41,12 +41,14 @@ import string
 import sys
 import warnings
 
-from pyftpdlib.authorizers import AuthenticationFailed, AuthorizerError
 from pyftpdlib import authorizers
-from pyftpdlib import handlers
 from pyftpdlib import filesystems
+from pyftpdlib import handlers
 from pyftpdlib import servers
-from pyftpdlib._compat import getcwdu, unicode
+from pyftpdlib._compat import getcwdu
+from pyftpdlib._compat import unicode
+from pyftpdlib.authorizers import AuthenticationFailed
+from pyftpdlib.authorizers import AuthorizerError
 from test_ftpd import *  # NOQA
 
 if sys.version_info < (2, 7):

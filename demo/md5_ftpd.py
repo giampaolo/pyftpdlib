@@ -32,13 +32,14 @@
 """A basic ftpd storing passwords as hash digests (platform independent).
 """
 
+from hashlib import md5
 import os
 import sys
-from hashlib import md5
 
+from pyftpdlib.authorizers import AuthenticationFailed
+from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer
-from pyftpdlib.authorizers import DummyAuthorizer, AuthenticationFailed
 
 
 class DummyMD5Authorizer(DummyAuthorizer):

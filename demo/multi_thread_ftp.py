@@ -35,9 +35,9 @@ Useful if your handler class contains blocking calls or your
 filesystem is too slow.
 """
 
+from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import ThreadedFTPServer
-from pyftpdlib.authorizers import DummyAuthorizer
 
 
 def main():

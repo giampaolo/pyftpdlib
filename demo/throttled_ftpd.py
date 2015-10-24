@@ -36,7 +36,8 @@ speed of downloads and uploads.
 import os
 
 from pyftpdlib.authorizers import DummyAuthorizer
-from pyftpdlib.handlers import FTPHandler, ThrottledDTPHandler
+from pyftpdlib.handlers import FTPHandler
+from pyftpdlib.handlers import ThrottledDTPHandler
 from pyftpdlib.servers import FTPServer
 
 

@@ -49,7 +49,9 @@ import os
 import sys
 import warnings
 
-from pyftpdlib._compat import PY3, unicode, getcwdu
+from pyftpdlib._compat import PY3
+from pyftpdlib._compat import unicode
+from pyftpdlib._compat import getcwdu
 
 
 __all__ = ['DummyAuthorizer',

@@ -47,12 +47,22 @@ except ImportError:
     pwd = grp = None
 
 from pyftpdlib import __ver__
-from pyftpdlib.authorizers import (DummyAuthorizer, AuthenticationFailed,
-                                   AuthorizerError)
-from pyftpdlib._compat import PY3, b, u, getcwdu, unicode, xrange
-from pyftpdlib.filesystems import FilesystemError, AbstractedFS
-from pyftpdlib.ioloop import (AsyncChat, Connector, Acceptor, timer,
-                              _DISCONNECTED)
+from pyftpdlib._compat import b
+from pyftpdlib._compat import getcwdu
+from pyftpdlib._compat import PY3
+from pyftpdlib._compat import u
+from pyftpdlib._compat import unicode
+from pyftpdlib._compat import xrange
+from pyftpdlib.authorizers import AuthenticationFailed
+from pyftpdlib.authorizers import AuthorizerError
+from pyftpdlib.authorizers import DummyAuthorizer
+from pyftpdlib.filesystems import AbstractedFS
+from pyftpdlib.filesystems import FilesystemError
+from pyftpdlib.ioloop import _DISCONNECTED
+from pyftpdlib.ioloop import Acceptor
+from pyftpdlib.ioloop import AsyncChat
+from pyftpdlib.ioloop import Connector
+from pyftpdlib.ioloop import timer
 from pyftpdlib.log import logger
 
 

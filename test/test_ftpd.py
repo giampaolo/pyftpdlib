@@ -47,11 +47,19 @@ import threading
 import time
 import warnings
 
-from pyftpdlib._compat import PY3, u, b, getcwdu, callable, unicode
-from pyftpdlib.authorizers import DummyAuthorizer, AuthenticationFailed
+from pyftpdlib._compat import b
+from pyftpdlib._compat import callable
+from pyftpdlib._compat import getcwdu
+from pyftpdlib._compat import PY3
+from pyftpdlib._compat import u
+from pyftpdlib._compat import unicode
+from pyftpdlib.authorizers import AuthenticationFailed
+from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.filesystems import AbstractedFS
-from pyftpdlib.handlers import (FTPHandler, DTPHandler, ThrottledDTPHandler,
-                                SUPPORTS_HYBRID_IPV6)
+from pyftpdlib.handlers import DTPHandler
+from pyftpdlib.handlers import FTPHandler
+from pyftpdlib.handlers import SUPPORTS_HYBRID_IPV6
+from pyftpdlib.handlers import ThrottledDTPHandler
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
 import pyftpdlib.__main__
