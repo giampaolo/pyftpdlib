@@ -74,15 +74,14 @@ except ImportError:
 
 FTPS_SUPPORT = (hasattr(ftplib, 'FTP_TLS') and
                 hasattr(handlers, 'TLS_FTPHandler'))
-if not FTPS_SUPPORT:
-    if sys.version_info < (2, 7):
-        FTPS_UNSUPPORT_REASON = "requires python 2.7+"
-    elif ssl is None:
-        FTPS_UNSUPPORT_REASON = "requires ssl module"
-    elif not hasattr(handlers, 'TLS_FTPHandler'):
-        FTPS_UNSUPPORT_REASON = "requires PyOpenSSL module"
-    else:
-        FTPS_UNSUPPORT_REASON = "FTPS test skipped"
+if sys.version_info < (2, 7):
+    FTPS_UNSUPPORT_REASON = "requires python 2.7+"
+elif ssl is None:
+    FTPS_UNSUPPORT_REASON = "requires ssl module"
+elif not hasattr(handlers, 'TLS_FTPHandler'):
+    FTPS_UNSUPPORT_REASON = "requires PyOpenSSL module"
+else:
+    FTPS_UNSUPPORT_REASON = "FTPS test skipped"
 
 CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                         'keycert.pem'))
@@ -130,10 +129,9 @@ if FTPS_SUPPORT:
         server_class = FTPSServer
         client_class = FTPSClient
 else:
+    @unittest.skipIf(True, FTPS_UNSUPPORT_REASON)
     class TLSTestMixin:
-
-        def setUp(self):
-            self.skipTest(FTPS_UNSUPPORT_REASON)
+        pass
 
 
 class TestFtpAuthenticationTLSMixin(TLSTestMixin, TestFtpAuthentication):
@@ -315,10 +313,9 @@ if MPROCESS_SUPPORT:
     class MProcFTPTestMixin:
         server_class = MultiProcFTPd
 else:
+    @unittest.skipIf(True, "multiprocessing module not installed")
     class MProcFTPTestMixin:
-
-        def setUp(self):
-            self.skipTest("multiprocessing module not installed")
+        pass
 
 
 class TestFtpAuthenticationMProcMixin(MProcFTPTestMixin,
@@ -383,12 +380,11 @@ class TestFTPServerMProcMixin(MProcFTPTestMixin, TestFTPServer):
 # =====================================================================
 
 
+@unittest.skipUnless(FTPS_SUPPORT, FTPS_UNSUPPORT_REASON)
 class TestFTPS(unittest.TestCase):
     """Specific tests fot TSL_FTPHandler class."""
 
     def setUp(self):
-        if not FTPS_SUPPORT:
-            self.skipTest(FTPS_UNSUPPORT_REASON)
         self.server = FTPSServer()
         self.server.start()
         self.client = ftplib.FTP_TLS()
@@ -792,14 +788,13 @@ class _SharedAuthorizerTests(object):
 # =====================================================================
 
 
+@unittest.skipUnless(os.name == 'posix', "UNIX only")
 class TestUnixAuthorizer(_SharedAuthorizerTests, unittest.TestCase):
     """Unix authorizer specific tests."""
 
     authorizer_class = getattr(authorizers, "UnixAuthorizer", None)
 
     def setUp(self):
-        if os.name != 'posix':
-            self.skipTest("UNIX only")
         try:
             import spwd  # NOQA
         except ImportError:
@@ -896,19 +891,18 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, unittest.TestCase):
 # --- Windows authorizer
 # =====================================================================
 
+try:
+    import win32api
+except ImportError:
+    win32api = None
 
+
+@unittest.skipUnless(os.name == 'nt', "Windows only")
+@unittest.skipUnless(win32api is not None, "win32 lib not installed")
 class TestWindowsAuthorizer(_SharedAuthorizerTests, unittest.TestCase):
     """Windows authorizer specific tests."""
 
     authorizer_class = getattr(authorizers, "WindowsAuthorizer", None)
-
-    def setUp(self):
-        if os.name != 'nt':
-            self.skipTest("Windows only")
-        try:
-            import win32api  # NOQA
-        except ImportError:
-            self.skipTest("pywin32 not installed")
 
     def test_wrong_anonymous_credentials(self):
         user = self.get_current_user()
@@ -921,21 +915,18 @@ class TestWindowsAuthorizer(_SharedAuthorizerTests, unittest.TestCase):
 # --- UNIX filesystem
 # =====================================================================
 
-if os.name == 'posix':
-    class TestUnixFilesystem(unittest.TestCase):
 
-        def setUp(self):
-            if os.name != 'posix':
-                self.skipTest("UNIX only")
+@unittest.skipUnless(os.name == 'posix', "UNIX only")
+class TestUnixFilesystem(unittest.TestCase):
 
-        def test_case(self):
-            root = getcwdu()
-            fs = filesystems.UnixFilesystem(root, None)
-            self.assertEqual(fs.root, root)
-            self.assertEqual(fs.cwd, root)
-            cdup = os.path.dirname(root)
-            self.assertEqual(fs.ftp2fs(u('..')), cdup)
-            self.assertEqual(fs.fs2ftp(root), root)
+    def test_case(self):
+        root = getcwdu()
+        fs = filesystems.UnixFilesystem(root, None)
+        self.assertEqual(fs.root, root)
+        self.assertEqual(fs.cwd, root)
+        cdup = os.path.dirname(root)
+        self.assertEqual(fs.ftp2fs(u('..')), cdup)
+        self.assertEqual(fs.fs2ftp(root), root)
 
 
 # =====================================================================

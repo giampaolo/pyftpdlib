@@ -134,9 +134,8 @@ class FTPServer(Acceptor):
             sock = address_or_socket
             sock.setblocking(0)
             self.set_socket(sock)
-            self._af = sock.family
         else:
-            self._af = self.bind_af_unspecified(address_or_socket)
+            self.bind_af_unspecified(address_or_socket)
         self.listen(backlog)
 
     @property

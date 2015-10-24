@@ -1681,14 +1681,13 @@ class TestFtpStoreData(unittest.TestCase):
             self.assertEqual(f.read(), "")
 
 
+@unittest.skipUnless(os.name == 'posix', "POSIX only")
+@unittest.skipIf(sys.version_info < (3, 3) and sendfile is None,
+                 "pysendfile not installed")
 class TestFtpStoreDataNoSendfile(TestFtpStoreData):
     """Test STOR, STOU, APPE, REST, TYPE not using sendfile()."""
 
     def setUp(self):
-        if os.name != 'posix':
-            self.skipTest("POSIX only")
-        if sys.version_info < (3, 3) and sendfile is None:
-            self.skipTest("pysendfile not installed")
         TestFtpStoreData.setUp(self)
         self.server.handler.use_sendfile = False
 
@@ -1807,14 +1806,13 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.assertEqual(self.dummyfile.read(), b"")
 
 
+@unittest.skipUnless(os.name == 'posix', "POSIX only")
+@unittest.skipIf(sys.version_info < (3, 3) and sendfile is None,
+                 "pysendfile not installed")
 class TestFtpRetrieveDataNoSendfile(TestFtpRetrieveData):
     """Test RETR, REST, TYPE by not using sendfile()."""
 
     def setUp(self):
-        if os.name != 'posix':
-            self.skipTest("POSIX only")
-        if sys.version_info < (3, 3) and sendfile is None:
-            self.skipTest("pysendfile not installed")
         TestFtpRetrieveData.setUp(self)
         self.server.handler.use_sendfile = False
 
@@ -2967,6 +2965,7 @@ class _TestNetworkProtocols(object):
                           'eprt |%s|%s|%s|' % (self.proto, self.HOST, 2000))
 
 
+@unittest.skipUnless(SUPPORTS_IPV4, "IPv4 not supported")
 class TestIPv4Environment(_TestNetworkProtocols, unittest.TestCase):
     """Test PASV, EPSV, PORT and EPRT commands.
 
@@ -2976,11 +2975,6 @@ class TestIPv4Environment(_TestNetworkProtocols, unittest.TestCase):
     server_class = FTPd
     client_class = ftplib.FTP
     HOST = '127.0.0.1'
-
-    def setUp(self):
-        super(TestIPv4Environment, self).setUp()
-        if not SUPPORTS_IPV4:
-            self.skipTest("IPv4 not supported")
 
     @disable_log_warning
     def test_port_v4(self):
@@ -3020,6 +3014,7 @@ class TestIPv4Environment(_TestNetworkProtocols, unittest.TestCase):
             s.connect((host, port))
 
 
+@unittest.skipUnless(SUPPORTS_IPV6, "IPv6 not supported")
 class TestIPv6Environment(_TestNetworkProtocols, unittest.TestCase):
     """Test PASV, EPSV, PORT and EPRT commands.
 
@@ -3029,11 +3024,6 @@ class TestIPv6Environment(_TestNetworkProtocols, unittest.TestCase):
     server_class = FTPd
     client_class = ftplib.FTP
     HOST = '::1'
-
-    def setUp(self):
-        super(TestIPv6Environment, self).setUp()
-        if not SUPPORTS_IPV6:
-            self.skipTest("IPv6 not supported")
 
     def test_port_v6(self):
         # PORT is not supposed to work
@@ -3052,6 +3042,7 @@ class TestIPv6Environment(_TestNetworkProtocols, unittest.TestCase):
         self.assertIn('foreign address', resp)
 
 
+@unittest.skipUnless(SUPPORTS_HYBRID_IPV6, "IPv4/6 dual stack not supported")
 class TestIPv6MixedEnvironment(unittest.TestCase):
     """By running the server by specifying "::" as IP address the
     server is supposed to listen on all interfaces, supporting both
@@ -3065,8 +3056,6 @@ class TestIPv6MixedEnvironment(unittest.TestCase):
     HOST = "::"
 
     def setUp(self):
-        if not SUPPORTS_HYBRID_IPV6:
-            self.skipTest("IPv4/6 dual stack not supported")
         self.server = self.server_class((self.HOST, 0))
         self.server.start()
         self.client = None
@@ -3282,6 +3271,10 @@ class TestCornerCases(unittest.TestCase):
             self.assertTrue(isinstance(fd, int), fd)
 
 
+# TODO: disabled as on certain platforms (OSX and Windows)
+# produces failures with python3. Will have to get back to
+# this and fix it.
+@unittest.skipIf(OSX or WINDOWS, "fails on OSX or Windows")
 class TestUnicodePathNames(unittest.TestCase):
     """Test FTP commands and responses by using path names with non
     ASCII characters.
@@ -3290,11 +3283,6 @@ class TestUnicodePathNames(unittest.TestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
-        if OSX or WINDOWS:
-            # TODO: disabled as on certain platforms (OSX and Windows)
-            # produces failures with python3. Will have to get back to
-            # this and fix it.
-            self.skipTest("fails on OSX or Windows")
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class()

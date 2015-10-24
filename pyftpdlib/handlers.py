@@ -303,12 +303,12 @@ class PassiveDTP(Acceptor):
         else:
             masqueraded_ip = None
 
-        if self.cmd_channel.server._af != socket.AF_INET:
+        if self.cmd_channel.server.socket.family != socket.AF_INET:
             # dual stack IPv4/IPv6 support
             af = self.bind_af_unspecified((local_ip, 0))
             self.socket.close()
         else:
-            af = self.cmd_channel._af
+            af = self.cmd_channel.socket.family
 
         self.create_socket(af, socket.SOCK_STREAM)
 
@@ -1201,7 +1201,6 @@ class FTPHandler(AsyncChat):
         self._current_type = 'a'
         self._restart_position = 0
         self._quit_pending = False
-        self._af = -1
         self._in_buffer = []
         self._in_buffer_len = 0
         self._epsvall = False
@@ -1255,7 +1254,6 @@ class FTPHandler(AsyncChat):
             return
         else:
             self.log("FTP session opened (connect)")
-            self._af = self.socket.family
 
         # try to handle urgent data inline
         try:
@@ -1974,7 +1972,8 @@ class FTPHandler(AsyncChat):
 
         if af == "1":
             # test if AF_INET6 and IPV6_V6ONLY
-            if self._af == socket.AF_INET6 and not SUPPORTS_HYBRID_IPV6:
+            if (self.socket.family == socket.AF_INET6 and not
+                    SUPPORTS_HYBRID_IPV6):
                 self.respond('522 Network protocol not supported (use 2).')
             else:
                 try:
@@ -1989,12 +1988,12 @@ class FTPHandler(AsyncChat):
                 else:
                     self._make_eport(ip, port)
         elif af == "2":
-            if self._af == socket.AF_INET:
+            if self.socket.family == socket.AF_INET:
                 self.respond('522 Network protocol not supported (use 1).')
             else:
                 self._make_eport(ip, port)
         else:
-            if self._af == socket.AF_INET:
+            if self.socket.family == socket.AF_INET:
                 self.respond('501 Unknown network protocol (use 1).')
             else:
                 self.respond('501 Unknown network protocol (use 2).')
@@ -2025,13 +2024,13 @@ class FTPHandler(AsyncChat):
             self._make_epasv(extmode=True)
         # IPv4
         elif line == "1":
-            if self._af != socket.AF_INET:
+            if self.socket.family != socket.AF_INET:
                 self.respond('522 Network protocol not supported (use 2).')
             else:
                 self._make_epasv(extmode=True)
         # IPv6
         elif line == "2":
-            if self._af == socket.AF_INET:
+            if self.socket.family == socket.AF_INET:
                 self.respond('522 Network protocol not supported (use 1).')
             else:
                 self._make_epasv(extmode=True)
@@ -2040,7 +2039,7 @@ class FTPHandler(AsyncChat):
             self.respond(
                 '220 Other commands other than EPSV are now disabled.')
         else:
-            if self._af == socket.AF_INET:
+            if self.socket.family == socket.AF_INET:
                 self.respond('501 Unknown network protocol (use 1).')
             else:
                 self.respond('501 Unknown network protocol (use 2).')
