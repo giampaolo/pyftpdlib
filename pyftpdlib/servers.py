@@ -333,8 +333,7 @@ class _SpawnerBase(FTPServer):
 
     def _loop(self, handler):
         """Serve handler's IO loop in a separate thread or process."""
-        ioloop = IOLoop()
-        try:
+        with IOLoop() as ioloop:
             handler.ioloop = ioloop
             try:
                 handler.add_channel()
@@ -403,8 +402,6 @@ class _SpawnerBase(FTPServer):
                         if (soonest_timeout is None or
                                 soonest_timeout > poll_timeout):
                             soonest_timeout = poll_timeout
-        finally:
-            ioloop.close()
 
     def handle_accepted(self, sock, addr):
         handler = FTPServer.handle_accepted(self, sock, addr)

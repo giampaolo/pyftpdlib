@@ -276,6 +276,12 @@ class _IOLoop(object):
         self.socket_map = {}
         self.sched = _Scheduler()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
     @classmethod
     def instance(cls):
         """Return a global IOLoop instance."""
