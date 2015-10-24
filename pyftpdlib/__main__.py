@@ -38,11 +38,11 @@ import optparse
 import os
 import sys
 
-from pyftpdlib import __ver__
-from pyftpdlib._compat import getcwdu
-from pyftpdlib.authorizers import DummyAuthorizer
-from pyftpdlib.handlers import FTPHandler
-from pyftpdlib.servers import FTPServer
+from . import __ver__
+from ._compat import getcwdu
+from .authorizers import DummyAuthorizer
+from .handlers import FTPHandler
+from .servers import FTPServer
 
 
 class CustomizedOptionFormatter(optparse.IndentedHelpFormatter):

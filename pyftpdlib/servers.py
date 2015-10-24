@@ -68,9 +68,9 @@ import sys
 import time
 import traceback
 
-from pyftpdlib.ioloop import Acceptor
-from pyftpdlib.ioloop import IOLoop
-from pyftpdlib.log import logger
+from .ioloop import Acceptor
+from .ioloop import IOLoop
+from .log import logger
 
 
 __all__ = ['FTPServer']

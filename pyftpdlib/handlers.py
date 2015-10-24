@@ -46,24 +46,24 @@ try:
 except ImportError:
     pwd = grp = None
 
-from pyftpdlib import __ver__
-from pyftpdlib._compat import b
-from pyftpdlib._compat import getcwdu
-from pyftpdlib._compat import PY3
-from pyftpdlib._compat import u
-from pyftpdlib._compat import unicode
-from pyftpdlib._compat import xrange
-from pyftpdlib.authorizers import AuthenticationFailed
-from pyftpdlib.authorizers import AuthorizerError
-from pyftpdlib.authorizers import DummyAuthorizer
-from pyftpdlib.filesystems import AbstractedFS
-from pyftpdlib.filesystems import FilesystemError
-from pyftpdlib.ioloop import _DISCONNECTED
-from pyftpdlib.ioloop import Acceptor
-from pyftpdlib.ioloop import AsyncChat
-from pyftpdlib.ioloop import Connector
-from pyftpdlib.ioloop import timer
-from pyftpdlib.log import logger
+from . import __ver__
+from ._compat import b
+from ._compat import getcwdu
+from ._compat import PY3
+from ._compat import u
+from ._compat import unicode
+from ._compat import xrange
+from .authorizers import AuthenticationFailed
+from .authorizers import AuthorizerError
+from .authorizers import DummyAuthorizer
+from .filesystems import AbstractedFS
+from .filesystems import FilesystemError
+from .ioloop import _DISCONNECTED
+from .ioloop import Acceptor
+from .ioloop import AsyncChat
+from .ioloop import Connector
+from .ioloop import timer
+from .log import logger
 
 
 def _import_sendfile():

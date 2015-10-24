@@ -98,9 +98,9 @@ try:
 except ImportError:
     import dummy_threading as threading
 
-from pyftpdlib._compat import callable
-from pyftpdlib.log import config_logging
-from pyftpdlib.log import logger
+from ._compat import callable
+from .log import config_logging
+from .log import logger
 
 
 timer = getattr(time, 'monotonic', time.time)

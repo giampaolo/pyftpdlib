@@ -43,7 +43,7 @@ try:
 except ImportError:
     curses = None
 
-from pyftpdlib._compat import unicode
+from ._compat import unicode
 
 
 # default logger

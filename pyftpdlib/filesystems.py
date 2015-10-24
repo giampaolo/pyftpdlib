@@ -42,9 +42,9 @@ try:
 except ImportError:
     pwd = grp = None
 
-from pyftpdlib._compat import PY3
-from pyftpdlib._compat import u
-from pyftpdlib._compat import unicode
+from ._compat import PY3
+from ._compat import u
+from ._compat import unicode
 
 
 __all__ = ['FilesystemError', 'AbstractedFS']
