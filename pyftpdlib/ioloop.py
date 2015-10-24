@@ -228,8 +228,7 @@ class _CallLater(object):
         try:
             try:
                 self._target(*self._args, **self._kwargs)
-            except Exception:
-                exc = sys.exc_info()[1]
+            except Exception as exc:
                 if self._errback is not None:
                     self._errback()
                 else:
@@ -382,8 +381,7 @@ class _IOLoop(object):
         for inst in instances:
             try:
                 inst.close()
-            except OSError:
-                err = sys.exc_info()[1]
+            except OSError as err:
                 if err.args[0] != errno.EBADF:
                     logger.error(traceback.format_exc())
             except Exception:
@@ -440,8 +438,7 @@ class Select(_IOLoop):
     def poll(self, timeout):
         try:
             r, w, e = select.select(self._r, self._w, [], timeout)
-        except select.error:
-            err = sys.exc_info()[1]
+        except select.error as err:
             if err.args[0] == errno.EINTR:
                 return
             raise
@@ -489,8 +486,7 @@ class _BasePollEpoll(_IOLoop):
     def modify(self, fd, events):
         try:
             self._poller.modify(fd, events)
-        except OSError:
-            err = sys.exc_info()[1]
+        except OSError as err:
             if err.args[0] == errno.ENOENT and fd in self.socket_map:
                 # XXX - see:
                 # https://github.com/giampaolo/pyftpdlib/issues/329
@@ -502,8 +498,8 @@ class _BasePollEpoll(_IOLoop):
     def poll(self, timeout):
         try:
             events = self._poller.poll(timeout or -1)  # -1 waits indefinitely
-        except (IOError, select.error):  # for epoll() and poll() respectively
-            err = sys.exc_info()[1]
+        except (IOError, select.error) as err:
+            # for epoll() and poll() respectively
             if err.args[0] == errno.EINTR:
                 return
             raise
@@ -649,8 +645,7 @@ if hasattr(select, 'kqueue'):
             else:
                 try:
                     self._control(fd, events, select.KQ_EV_DELETE)
-                except OSError:
-                    err = sys.exc_info()[1]
+                except OSError as err:
                     if err.errno != errno.EBADF:
                         raise
 
@@ -685,8 +680,7 @@ if hasattr(select, 'kqueue'):
             try:
                 kevents = self._kqueue.control(None, _len(self.socket_map),
                                                timeout)
-            except OSError:
-                err = sys.exc_info()[1]
+            except OSError as err:
                 if err.args[0] == errno.EINTR:
                     return
                 raise
@@ -775,8 +769,7 @@ class Acceptor(asyncore.dispatcher):
                 self.create_socket(af, socktype)
                 self.set_reuse_addr()
                 self.bind(sa)
-            except socket.error:
-                err = sys.exc_info()[1]
+            except socket.error as err:
                 if self.socket is not None:
                     self.socket.close()
                     self.del_channel()
@@ -810,8 +803,7 @@ class Acceptor(asyncore.dispatcher):
         except TypeError:
             # sometimes accept() might return None (see issue 91)
             return
-        except socket.error:
-            err = sys.exc_info()[1]
+        except socket.error as err:
             # ECONNABORTED might be thrown on *BSD (see issue 105)
             if err.args[0] != errno.ECONNABORTED:
                 raise
@@ -864,8 +856,7 @@ class Connector(Acceptor):
                                           source_address[1])
                     self.bind(source_address)
                 self.connect((host, port))
-            except socket.error:
-                err = sys.exc_info()[1]
+            except socket.error as err:
                 if self.socket is not None:
                     self.socket.close()
                     self.del_channel()
@@ -908,11 +899,10 @@ class AsyncChat(asynchat.async_chat):
     def send(self, data):
         try:
             return self.socket.send(data)
-        except socket.error:
-            why = sys.exc_info()[1]
-            if why.args[0] in _RETRY:
+        except socket.error as err:
+            if err.args[0] in _RETRY:
                 return 0
-            elif why.args[0] in _DISCONNECTED:
+            elif err.args[0] in _DISCONNECTED:
                 self.handle_close()
                 return 0
             else:
@@ -921,9 +911,8 @@ class AsyncChat(asynchat.async_chat):
     def recv(self, buffer_size):
         try:
             data = self.socket.recv(buffer_size)
-        except socket.error:
-            why = sys.exc_info()[1]
-            if why.args[0] in _DISCONNECTED:
+        except socket.error as err:
+            if err.args[0] in _DISCONNECTED:
                 self.handle_close()
                 return ''
             else:

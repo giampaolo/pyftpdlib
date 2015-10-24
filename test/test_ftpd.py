@@ -129,8 +129,7 @@ def safe_remove(*files):
     for file in files:
         try:
             os.remove(file)
-        except OSError:
-            err = sys.exc_info()[1]
+        except OSError as err:
             if err.errno != errno.ENOENT:
                 raise
 
@@ -139,8 +138,7 @@ def safe_rmdir(dir):
     "Convenience function for removing temporary test directories"
     try:
         os.rmdir(dir)
-    except OSError:
-        err = sys.exc_info()[1]
+    except OSError as err:
         if err.errno != errno.ENOENT:
             raise
 
@@ -149,8 +147,7 @@ def safe_mkdir(dir):
     "Convenience function for creating a directory"
     try:
         os.mkdir(dir)
-    except OSError:
-        err = sys.exc_info()[1]
+    except OSError as err:
         if err.errno != errno.EEXIST:
             raise
 
@@ -222,8 +219,8 @@ def retry_before_failing(ntimes=None):
             for x in range(ntimes or NO_RETRIES):
                 try:
                     return fun(*args, **kwargs)
-                except AssertionError:
-                    err = sys.exc_info()[1]
+                except AssertionError as _:
+                    err = _
             raise err
         return wrapper
     return decorator
@@ -1290,8 +1287,7 @@ class TestFtpFsOperations(unittest.TestCase):
         # make sure we can't use mdtm against directories
         try:
             self.client.sendcmd('mdtm ' + self.tempdir)
-        except ftplib.error_perm:
-            err = sys.exc_info()[1]
+        except ftplib.error_perm as err:
             self.assertTrue("not retrievable" in str(err))
         else:
             self.fail('Exception not raised')
@@ -1329,8 +1325,7 @@ class TestFtpFsOperations(unittest.TestCase):
         # make sure we can't use size against directories
         try:
             self.client.sendcmd('size ' + self.tempdir)
-        except ftplib.error_perm:
-            err = sys.exc_info()[1]
+        except ftplib.error_perm as err:
             self.assertTrue("not retrievable" in str(err))
         else:
             self.fail('Exception not raised')
@@ -1927,8 +1922,8 @@ class TestFtpListingCmds(unittest.TestCase):
         self.addCleanup(safe_rmdir, dir)
         try:
             self.client.retrlines('mlsd ' + TESTFN, lambda x: x)
-        except ftplib.error_perm:
-            resp = sys.exc_info()[1]
+        except ftplib.error_perm as err:
+            resp = str(err)
             # if path is a file a 501 response code is expected
             self.assertEqual(str(resp)[0:3], "501")
         else:
@@ -2479,8 +2474,7 @@ class TestConfigurableOptions(unittest.TestCase):
                     sock.bind((HOST, port))
                     sock.settimeout(TIMEOUT)
                     break
-                except socket.error:
-                    err = sys.exc_info()[1]
+                except socket.error as err:
                     if err.args[0] == errno.EACCES:
                         # root privileges needed
                         if sock is not None:
@@ -2885,8 +2879,7 @@ class _TestNetworkProtocols(object):
         """Send a command and return response, also if the command failed."""
         try:
             return self.client.sendcmd(cmd)
-        except ftplib.Error:
-            err = sys.exc_info()[1]
+        except ftplib.Error as err:
             return str(err)
 
     @disable_log_warning
@@ -2896,8 +2889,7 @@ class _TestNetworkProtocols(object):
             try:
                 self.client.sendcmd('eprt |%s|%s|%s|' % (self.other_proto,
                                     self.server.host, self.server.port))
-            except ftplib.error_perm:
-                err = sys.exc_info()[1]
+            except ftplib.error_perm as err:
                 self.assertEqual(str(err)[0:3], "522")
             else:
                 self.fail("Exception not raised")
@@ -2948,8 +2940,7 @@ class _TestNetworkProtocols(object):
         # test wrong proto
         try:
             self.client.sendcmd('epsv ' + self.other_proto)
-        except ftplib.error_perm:
-            err = sys.exc_info()[1]
+        except ftplib.error_perm as err:
             self.assertEqual(str(err)[0:3], "522")
         else:
             self.fail("Exception not raised")
@@ -3260,8 +3251,7 @@ class TestCornerCases(unittest.TestCase):
             self.client.sock.settimeout(.1)
             try:
                 resp = self.client.sendport(HOST, port)
-            except ftplib.error_temp:
-                err = sys.exc_info()[1]
+            except ftplib.error_temp as err:
                 self.assertEqual(str(err)[:3], '425')
             except (socket.timeout, getattr(ssl, "SSLError", object())):
                 pass

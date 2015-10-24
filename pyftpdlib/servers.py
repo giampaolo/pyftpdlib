@@ -337,8 +337,7 @@ class _SpawnerBase(FTPServer):
             handler.ioloop = ioloop
             try:
                 handler.add_channel()
-            except EnvironmentError:
-                err = sys.exc_info()[1]
+            except EnvironmentError as err:
                 if err.errno == errno.EBADF:
                     # we might get here in case the other end quickly
                     # disconnected (see test_quick_connect())
@@ -379,10 +378,9 @@ class _SpawnerBase(FTPServer):
                     # note: these two exceptions are raised in all sub
                     # processes
                     self._exit.set()
-                except select.error:
+                except select.error as err:
                     # on Windows we can get WSAENOTSOCK if the client
                     # rapidly connect and disconnects
-                    err = sys.exc_info()[1]
                     if os.name == 'nt' and err.args[0] == 10038:
                         for fd in list(ioloop.socket_map.keys()):
                             try:
@@ -464,8 +462,7 @@ class _SpawnerBase(FTPServer):
                         # as the process hangs on kqueue.control() or
                         # select.select(). Use SIGKILL instead.
                         os.kill(t.pid, signal.SIGKILL)
-                except OSError:
-                    err = sys.exc_info()[1]
+                except OSError as err:
                     if err.errno != errno.ESRCH:
                         raise
 
@@ -490,8 +487,7 @@ class _SpawnerBase(FTPServer):
                         warn(msg + "; sending SIGKILL as last resort")
                         try:
                             os.kill(t.pid, signal.SIGKILL)
-                        except OSError:
-                            err = sys.exc_info()[1]
+                        except OSError as err:
                             if err.errno != errno.ESRCH:
                                 raise
                     else:

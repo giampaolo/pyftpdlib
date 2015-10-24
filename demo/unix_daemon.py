@@ -82,8 +82,7 @@ def pid_exists(pid):
     """Return True if a process with the given PID is currently running."""
     try:
         os.kill(pid, 0)
-    except OSError:
-        err = sys.exc_info()[1]
+    except OSError as err:
         return err.errno == errno.EPERM
     else:
         return True
@@ -94,8 +93,7 @@ def get_pid():
     try:
         with open(PID_FILE) as f:
             return int(f.read().strip())
-    except IOError:
-        err = sys.exc_info()[1]
+    except IOError as err:
         if err.errno != errno.ENOENT:
             raise
 
@@ -114,9 +112,8 @@ def stop():
         sys.stdout.flush()
         try:
             os.kill(pid, sig)
-        except OSError:
-            e = sys.exc_info()[1]
-            if e.errno == errno.ESRCH:
+        except OSError as err:
+            if err.errno == errno.ESRCH:
                 print("\nstopped (pid %s)" % pid)
                 return
             else:

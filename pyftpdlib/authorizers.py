@@ -46,7 +46,6 @@ interact with UNIX and Windows password database.
 
 import errno
 import os
-import sys
 import warnings
 
 from ._compat import PY3
@@ -636,8 +635,7 @@ else:
             """
             try:
                 file = open('/etc/shells', 'r')
-            except IOError:
-                err = sys.exc_info()[1]
+            except IOError as err:
                 if err.errno == errno.ENOENT:
                     return True
                 raise
@@ -733,8 +731,7 @@ else:
             try:
                 sid = win32security.ConvertSidToStringSid(
                     win32security.LookupAccountName(None, username)[0])
-            except pywintypes.error:
-                err = sys.exc_info()[1]
+            except pywintypes.error as err:
                 raise AuthorizerError(err)
             path = r"SOFTWARE\Microsoft\Windows NT" \
                    r"\CurrentVersion\ProfileList" + "\\" + sid

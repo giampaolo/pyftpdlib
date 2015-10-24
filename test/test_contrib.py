@@ -406,11 +406,10 @@ class TestFTPS(unittest.TestCase):
     def assertRaisesWithMsg(self, excClass, msg, callableObj, *args, **kwargs):
         try:
             callableObj(*args, **kwargs)
-        except excClass:
-            why = sys.exc_info()[1]
-            if str(why) == msg:
+        except excClass as err:
+            if str(err) == msg:
                 return
-            raise self.failureException("%s != %s" % (str(why), msg))
+            raise self.failureException("%s != %s" % (str(err), msg))
         else:
             if hasattr(excClass, '__name__'):
                 excName = excClass.__name__
@@ -478,8 +477,7 @@ class TestFTPS(unittest.TestCase):
         self.client.login()
         try:
             sock = self.client.sock.unwrap()
-        except socket.error:
-            err = sys.exc_info()[1]
+        except socket.error as err:
             if err.errno == 0:
                 return
             raise
@@ -583,11 +581,10 @@ class _SharedAuthorizerTests(object):
     def assertRaisesWithMsg(self, excClass, msg, callableObj, *args, **kwargs):
         try:
             callableObj(*args, **kwargs)
-        except excClass:
-            why = sys.exc_info()[1]
-            if str(why) == msg:
+        except excClass as err:
+            if str(err) == msg:
                 return
-            raise self.failureException("%s != %s" % (str(why), msg))
+            raise self.failureException("%s != %s" % (str(err), msg))
         else:
             if hasattr(excClass, '__name__'):
                 excName = excClass.__name__

@@ -323,8 +323,7 @@ class PassiveDTP(Acceptor):
                 self.set_reuse_addr()
                 try:
                     self.bind((local_ip, port))
-                except socket.error:
-                    err = sys.exc_info()[1]
+                except socket.error as err:
                     if err.args[0] == errno.EADDRINUSE:  # port already in use
                         if ports:
                             continue
@@ -601,8 +600,7 @@ class DTPHandler(AsyncChat):
         self._initialized = False
         try:
             AsyncChat.__init__(self, sock, ioloop=cmd_channel.ioloop)
-        except socket.error:
-            err = sys.exc_info()[1]
+        except socket.error as err:
             # if we get an exception here we want the dispatcher
             # instance to set socket attribute before closing, see:
             # https://github.com/giampaolo/pyftpdlib/issues/188
@@ -675,8 +673,7 @@ class DTPHandler(AsyncChat):
         try:
             sent = sendfile(self._fileno, self._filefd, self._offset,
                             self.ac_out_buffer_size)
-        except OSError:
-            err = sys.exc_info()[1]
+        except OSError as err:
             if err.errno in (errno.EAGAIN, errno.EWOULDBLOCK, errno.EBUSY):
                 return
             elif err.errno in _DISCONNECTED:
@@ -798,8 +795,7 @@ class DTPHandler(AsyncChat):
                 chunk = self._data_wrapper(chunk)
             try:
                 self.file_obj.write(chunk)
-            except OSError:
-                err = sys.exc_info()[1]
+            except OSError as err:
                 raise _FileReadWriteError(err)
 
     handle_read_event = handle_read  # small speedup
@@ -839,8 +835,7 @@ class DTPHandler(AsyncChat):
             raise
         # an error could occur in case we fail reading / writing
         # from / to file (e.g. file system gets full)
-        except _FileReadWriteError:
-            err = sys.exc_info()[1]
+        except _FileReadWriteError as err:
             error = _strerror(err.args[0])
         except Exception:
             # some other exception occurred;  we don't want to provide
@@ -1035,8 +1030,7 @@ class FileProducer(object):
         """Attempt a chunk of data of size self.buffer_size."""
         try:
             data = self.file.read(self.buffer_size)
-        except OSError:
-            err = sys.exc_info()[1]
+        except OSError as err:
             raise _FileReadWriteError(err)
         else:
             if self._data_wrapper is not None:
@@ -1233,8 +1227,7 @@ class FTPHandler(AsyncChat):
 
         try:
             AsyncChat.__init__(self, conn, ioloop=ioloop)
-        except socket.error:
-            err = sys.exc_info()[1]
+        except socket.error as err:
             # if we get an exception here we want the dispatcher
             # instance to set socket attribute before closing, see:
             # https://github.com/giampaolo/pyftpdlib/issues/188
@@ -1250,8 +1243,7 @@ class FTPHandler(AsyncChat):
         # connection properties
         try:
             self.remote_ip, self.remote_port = self.socket.getpeername()[:2]
-        except socket.error:
-            err = sys.exc_info()[1]
+        except socket.error as err:
             # A race condition  may occur if the other end is closing
             # before we can get the peername, hence ENOTCONN (see issue
             # #100) while EINVAL can occur on OSX (see issue #143).
@@ -2090,8 +2082,7 @@ class FTPHandler(AsyncChat):
         #   formats in which case we fall back on cwd as default.
         try:
             iterator = self.run_as_current_user(self.fs.get_list_dir, path)
-        except (OSError, FilesystemError):
-            err = sys.exc_info()[1]
+        except (OSError, FilesystemError) as err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -2111,8 +2102,7 @@ class FTPHandler(AsyncChat):
                 # if path is a file we just list its name
                 self.fs.lstat(path)  # raise exc in case of problems
                 listing = [os.path.basename(path)]
-        except (OSError, FilesystemError):
-            err = sys.exc_info()[1]
+        except (OSError, FilesystemError) as err:
             self.respond('550 %s.' % _strerror(err))
         else:
             data = ''
@@ -2156,8 +2146,7 @@ class FTPHandler(AsyncChat):
                 self.fs.format_mlsx, basedir, [basename], perms,
                 self._current_facts, ignore_err=False)
             data = b''.join(iterator)
-        except (OSError, FilesystemError):
-            err = sys.exc_info()[1]
+        except (OSError, FilesystemError) as err:
             self.respond('550 %s.' % _strerror(err))
         else:
             data = data.decode('utf8', self.unicode_errors)
@@ -2182,8 +2171,7 @@ class FTPHandler(AsyncChat):
             return
         try:
             listing = self.run_as_current_user(self.fs.listdir, path)
-        except (OSError, FilesystemError):
-            err = sys.exc_info()[1]
+        except (OSError, FilesystemError) as err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -2202,8 +2190,7 @@ class FTPHandler(AsyncChat):
         self._restart_position = 0
         try:
             fd = self.run_as_current_user(self.fs.open, file, 'rb')
-        except (EnvironmentError, FilesystemError):
-            err = sys.exc_info()[1]
+        except (EnvironmentError, FilesystemError) as err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
             return
@@ -2223,8 +2210,7 @@ class FTPHandler(AsyncChat):
                     ok = 1
                 except ValueError:
                     why = "Invalid REST parameter"
-                except (EnvironmentError, FilesystemError):
-                    err = sys.exc_info()[1]
+                except (EnvironmentError, FilesystemError) as err:
                     why = _strerror(err)
                 if not ok:
                     fd.close()
@@ -2256,8 +2242,7 @@ class FTPHandler(AsyncChat):
             mode = 'r+'
         try:
             fd = self.run_as_current_user(self.fs.open, file, mode + 'b')
-        except (EnvironmentError, FilesystemError):
-            err = sys.exc_info()[1]
+        except (EnvironmentError, FilesystemError) as err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
             return
@@ -2277,8 +2262,7 @@ class FTPHandler(AsyncChat):
                     ok = 1
                 except ValueError:
                     why = "Invalid REST parameter"
-                except (EnvironmentError, FilesystemError):
-                    err = sys.exc_info()[1]
+                except (EnvironmentError, FilesystemError) as err:
                     why = _strerror(err)
                 if not ok:
                     fd.close()
@@ -2327,8 +2311,7 @@ class FTPHandler(AsyncChat):
         try:
             fd = self.run_as_current_user(self.fs.mkstemp, prefix=prefix,
                                           dir=basedir)
-        except (EnvironmentError, FilesystemError):
-            err = sys.exc_info()[1]
+        except (EnvironmentError, FilesystemError) as err:
             # likely, we hit the max number of retries to find out a
             # file with a unique name
             if getattr(err, "errno", -1) == errno.EEXIST:
@@ -2460,7 +2443,7 @@ class FTPHandler(AsyncChat):
             self.authorizer.validate_authentication(self.username, line, self)
             home = self.authorizer.get_home_dir(self.username)
             msg_login = self.authorizer.get_msg_login(self.username)
-        except (AuthenticationFailed, AuthorizerError):
+        except (AuthenticationFailed, AuthorizerError) as err:
             def auth_failed(username, password, msg):
                 self.add_channel()
                 if hasattr(self, '_closed') and not self._closed:
@@ -2474,7 +2457,7 @@ class FTPHandler(AsyncChat):
                     self.log("USER '%s' failed login." % username)
                 self.on_login_failed(username, password)
 
-            msg = str(sys.exc_info()[1])
+            msg = str(err)
             if not msg:
                 if self.username == 'anonymous':
                     msg = "Anonymous access not allowed."
@@ -2552,8 +2535,7 @@ class FTPHandler(AsyncChat):
         init_cwd = getcwdu()
         try:
             self.run_as_current_user(self.fs.chdir, path)
-        except (OSError, FilesystemError):
-            err = sys.exc_info()[1]
+        except (OSError, FilesystemError) as err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -2599,8 +2581,7 @@ class FTPHandler(AsyncChat):
             return
         try:
             size = self.run_as_current_user(self.fs.getsize, path)
-        except (OSError, FilesystemError):
-            err = sys.exc_info()[1]
+        except (OSError, FilesystemError) as err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -2622,8 +2603,7 @@ class FTPHandler(AsyncChat):
         try:
             secs = self.run_as_current_user(self.fs.getmtime, path)
             lmt = time.strftime("%Y%m%d%H%M%S", timefunc(secs))
-        except (ValueError, OSError, FilesystemError):
-            err = sys.exc_info()[1]
+        except (ValueError, OSError, FilesystemError) as err:
             if isinstance(err, ValueError):
                 # It could happen if file's last modification time
                 # happens to be too old (prior to year 1900)
@@ -2642,8 +2622,7 @@ class FTPHandler(AsyncChat):
         line = self.fs.fs2ftp(path)
         try:
             self.run_as_current_user(self.fs.mkdir, path)
-        except (OSError, FilesystemError):
-            err = sys.exc_info()[1]
+        except (OSError, FilesystemError) as err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -2664,8 +2643,7 @@ class FTPHandler(AsyncChat):
             return
         try:
             self.run_as_current_user(self.fs.rmdir, path)
-        except (OSError, FilesystemError):
-            err = sys.exc_info()[1]
+        except (OSError, FilesystemError) as err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -2677,8 +2655,7 @@ class FTPHandler(AsyncChat):
         """
         try:
             self.run_as_current_user(self.fs.remove, path)
-        except (OSError, FilesystemError):
-            err = sys.exc_info()[1]
+        except (OSError, FilesystemError) as err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -2708,8 +2685,7 @@ class FTPHandler(AsyncChat):
         self._rnfr = None
         try:
             self.run_as_current_user(self.fs.rename, src, path)
-        except (OSError, FilesystemError):
-            err = sys.exc_info()[1]
+        except (OSError, FilesystemError) as err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
@@ -2812,8 +2788,7 @@ class FTPHandler(AsyncChat):
             line = self.fs.fs2ftp(path)
             try:
                 iterator = self.run_as_current_user(self.fs.get_list_dir, path)
-            except (OSError, FilesystemError):
-                err = sys.exc_info()[1]
+            except (OSError, FilesystemError) as err:
                 why = _strerror(err)
                 self.respond('550 %s.' % why)
             else:
@@ -2857,8 +2832,7 @@ class FTPHandler(AsyncChat):
             # actually the only command able to accept options is MLST
             if cmd.upper() != 'MLST' or 'MLST' not in self.proto_cmds:
                 raise ValueError('Unsupported command "%s"' % cmd)
-        except ValueError:
-            err = sys.exc_info()[1]
+        except ValueError as err:
             self.respond('501 %s.' % err)
         else:
             facts = [x.lower() for x in arg.split(';')]
@@ -2932,8 +2906,7 @@ class FTPHandler(AsyncChat):
         else:
             try:
                 self.run_as_current_user(self.fs.chmod, path, mode)
-            except (OSError, FilesystemError):
-                err = sys.exc_info()[1]
+            except (OSError, FilesystemError) as err:
                 why = _strerror(err)
                 self.respond('550 %s.' % why)
             else:
@@ -3042,8 +3015,7 @@ else:
                 self.socket.do_handshake()
             except (SSL.WantReadError, SSL.WantWriteError):
                 return
-            except SSL.SysCallError:
-                err = sys.exc_info()[1]
+            except SSL.SysCallError as err:
                 retval, desc = err.args
                 if (retval == -1 and desc == 'Unexpected EOF') or retval > 0:
                     return self.handle_close()
@@ -3106,8 +3078,7 @@ else:
             except SSL.ZeroReturnError:
                 super(SSLConnection, self).handle_close()
                 return 0
-            except SSL.SysCallError:
-                err = sys.exc_info()[1]
+            except SSL.SysCallError as err:
                 errnum, errstr = err.args
                 if errnum == errno.EWOULDBLOCK:
                     return 0
@@ -3125,8 +3096,7 @@ else:
             except SSL.ZeroReturnError:
                 super(SSLConnection, self).handle_close()
                 return b''
-            except SSL.SysCallError:
-                err = sys.exc_info()[1]
+            except SSL.SysCallError as err:
                 errnum, errstr = err.args
                 if errnum in _DISCONNECTED or errstr == 'Unexpected EOF':
                     super(SSLConnection, self).handle_close()
@@ -3146,8 +3116,7 @@ else:
                 # connection has gone away
                 try:
                     os.write(self.socket.fileno(), b'')
-                except (OSError, socket.error):
-                    err = sys.exc_info()[1]
+                except (OSError, socket.error) as err:
                     if err.args[0] in (errno.EINTR, errno.EWOULDBLOCK,
                                        errno.ENOBUFS):
                         return
@@ -3182,24 +3151,21 @@ else:
                 pass
             except SSL.ZeroReturnError:
                 super(SSLConnection, self).close()
-            except SSL.SysCallError:
-                err = sys.exc_info()[1]
+            except SSL.SysCallError as err:
                 errnum, errstr = err.args
                 if errnum in _DISCONNECTED or errstr == 'Unexpected EOF':
                     super(SSLConnection, self).close()
                 else:
                     raise
-            except SSL.Error:
+            except SSL.Error as err:
                 # see:
                 # https://github.com/giampaolo/pyftpdlib/issues/171
                 # https://bugs.launchpad.net/pyopenssl/+bug/785985
-                err = sys.exc_info()[1]
                 if err.args and not err.args[0]:
                     pass
                 else:
                     raise
-            except socket.error:
-                err = sys.exc_info()[1]
+            except socket.error as err:
                 if err.args[0] in _DISCONNECTED:
                     super(SSLConnection, self).close()
                 else:
