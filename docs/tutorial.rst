@@ -190,6 +190,7 @@ method.
 .. code-block:: python
 
     import os
+    import sys
     from hashlib import md5
 
     from pyftpdlib.handlers import FTPHandler
@@ -200,7 +201,9 @@ method.
     class DummyMD5Authorizer(DummyAuthorizer):
 
         def validate_authentication(self, username, password, handler):
-            hash = md5(b(password)).hexdigest()
+            if sys.version_info >= (3, 0):
+                password = md5(password.encode('latin1'))
+            hash = md5(password).hexdigest()
             try:
                 if self.user_table[username]['pwd'] != hash:
                     raise KeyError

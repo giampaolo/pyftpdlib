@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #  ======================================================================
-#  Copyright (C) 2007-2014 Giampaolo Rodola' <g.rodola@gmail.com>
+#  Copyright (C) 2007-2016 Giampaolo Rodola' <g.rodola@gmail.com>
 #
 #                         All Rights Reserved
 #
@@ -29,6 +29,7 @@
 #  ======================================================================
 
 import asynchat
+import contextlib
 import errno
 import glob
 import logging
@@ -48,7 +49,7 @@ except ImportError:
 from pyftpdlib import __ver__
 from pyftpdlib.authorizers import (DummyAuthorizer, AuthenticationFailed,
                                    AuthorizerError)
-from pyftpdlib._compat import PY3, b, u, getcwdu, unicode, xrange, next
+from pyftpdlib._compat import PY3, b, u, getcwdu, unicode, xrange
 from pyftpdlib.filesystems import FilesystemError, AbstractedFS
 from pyftpdlib.ioloop import (AsyncChat, Connector, Acceptor, timer,
                               _DISCONNECTED)
@@ -240,18 +241,13 @@ def _support_hybrid_ipv6():
     """
     # Note: IPPROTO_IPV6 constant is broken on Windows, see:
     # http://bugs.python.org/issue6926
-    sock = None
     try:
-        try:
-            if not socket.has_ipv6:
-                return False
-            sock = socket.socket(socket.AF_INET6)
-            return not sock.getsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY)
-        except (socket.error, AttributeError):
+        if not socket.has_ipv6:
             return False
-    finally:
-        if sock is not None:
-            sock.close()
+        with contextlib.closing(socket.socket(socket.AF_INET6)) as sock:
+            return not sock.getsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY)
+    except (socket.error, AttributeError):
+        return False
 
 SUPPORTS_HYBRID_IPV6 = _support_hybrid_ipv6()
 
@@ -694,15 +690,15 @@ class DTPHandler(AsyncChat):
         where CRLF ('\r\n') gets delivered in two chunks.
         """
         if self._had_cr:
-            chunk = b('\r') + chunk
+            chunk = b'\r' + chunk
 
-        if chunk.endswith(b('\r')):
+        if chunk.endswith(b'\r'):
             self._had_cr = True
             chunk = chunk[:-1]
         else:
             self._had_cr = False
 
-        return chunk.replace(b('\r\n'), b(os.linesep))
+        return chunk.replace(b'\r\n', b(os.linesep))
 
     def enable_receiving(self, type, cmd):
         """Enable receiving of data over the channel. Depending on the
@@ -1021,7 +1017,7 @@ class FileProducer(object):
         self.file = file
         self.type = type
         if type == 'a' and os.linesep != '\r\n':
-            self._data_wrapper = lambda x: x.replace(b(os.linesep), b('\r\n'))
+            self._data_wrapper = lambda x: x.replace(b(os.linesep), b'\r\n')
         else:
             self._data_wrapper = None
 
@@ -1057,7 +1053,7 @@ class BufferedIteratorProducer(object):
                 buffer.append(next(self.iterator))
             except StopIteration:
                 break
-        return b('').join(buffer)
+        return b''.join(buffer)
 
 
 # --- FTP
@@ -1239,7 +1235,7 @@ class FTPHandler(AsyncChat):
                 return
             self.handle_error()
             return
-        self.set_terminator(b("\r\n"))
+        self.set_terminator(b"\r\n")
 
         # connection properties
         try:
@@ -1363,7 +1359,7 @@ class FTPHandler(AsyncChat):
         if self._idler is not None and not self._idler.cancelled:
             self._idler.reset()
 
-        line = b('').join(self._in_buffer)
+        line = b''.join(self._in_buffer)
         try:
             line = self.decode(line)
         except UnicodeDecodeError:
@@ -2149,7 +2145,7 @@ class FTPHandler(AsyncChat):
             iterator = self.run_as_current_user(
                 self.fs.format_mlsx, basedir, [basename], perms,
                 self._current_facts, ignore_err=False)
-            data = b('').join(iterator)
+            data = b''.join(iterator)
         except (OSError, FilesystemError):
             err = sys.exc_info()[1]
             self.respond('550 %s.' % _strerror(err))
@@ -2202,30 +2198,34 @@ class FTPHandler(AsyncChat):
             self.respond('550 %s.' % why)
             return
 
-        if rest_pos:
-            # Make sure that the requested offset is valid (within the
-            # size of the file being resumed).
-            # According to RFC-1123 a 554 reply may result in case that
-            # the existing file cannot be repositioned as specified in
-            # the REST.
-            ok = 0
-            try:
-                if rest_pos > self.fs.getsize(file):
-                    raise ValueError
-                fd.seek(rest_pos)
-                ok = 1
-            except ValueError:
-                why = "Invalid REST parameter"
-            except (EnvironmentError, FilesystemError):
-                err = sys.exc_info()[1]
-                why = _strerror(err)
-            if not ok:
-                fd.close()
-                self.respond('554 %s' % why)
-                return
-        producer = FileProducer(fd, self._current_type)
-        self.push_dtp_data(producer, isproducer=True, file=fd, cmd="RETR")
-        return file
+        try:
+            if rest_pos:
+                # Make sure that the requested offset is valid (within the
+                # size of the file being resumed).
+                # According to RFC-1123 a 554 reply may result in case that
+                # the existing file cannot be repositioned as specified in
+                # the REST.
+                ok = 0
+                try:
+                    if rest_pos > self.fs.getsize(file):
+                        raise ValueError
+                    fd.seek(rest_pos)
+                    ok = 1
+                except ValueError:
+                    why = "Invalid REST parameter"
+                except (EnvironmentError, FilesystemError):
+                    err = sys.exc_info()[1]
+                    why = _strerror(err)
+                if not ok:
+                    fd.close()
+                    self.respond('554 %s' % why)
+                    return
+            producer = FileProducer(fd, self._current_type)
+            self.push_dtp_data(producer, isproducer=True, file=fd, cmd="RETR")
+            return file
+        except Exception:
+            fd.close()
+            raise
 
     def ftp_STOR(self, file, mode='w'):
         """Store a file (transfer from the client to the server).
@@ -2252,38 +2252,42 @@ class FTPHandler(AsyncChat):
             self.respond('550 %s.' % why)
             return
 
-        if rest_pos:
-            # Make sure that the requested offset is valid (within the
-            # size of the file being resumed).
-            # According to RFC-1123 a 554 reply may result in case
-            # that the existing file cannot be repositioned as
-            # specified in the REST.
-            ok = 0
-            try:
-                if rest_pos > self.fs.getsize(file):
-                    raise ValueError
-                fd.seek(rest_pos)
-                ok = 1
-            except ValueError:
-                why = "Invalid REST parameter"
-            except (EnvironmentError, FilesystemError):
-                err = sys.exc_info()[1]
-                why = _strerror(err)
-            if not ok:
-                fd.close()
-                self.respond('554 %s' % why)
-                return
+        try:
+            if rest_pos:
+                # Make sure that the requested offset is valid (within the
+                # size of the file being resumed).
+                # According to RFC-1123 a 554 reply may result in case
+                # that the existing file cannot be repositioned as
+                # specified in the REST.
+                ok = 0
+                try:
+                    if rest_pos > self.fs.getsize(file):
+                        raise ValueError
+                    fd.seek(rest_pos)
+                    ok = 1
+                except ValueError:
+                    why = "Invalid REST parameter"
+                except (EnvironmentError, FilesystemError):
+                    err = sys.exc_info()[1]
+                    why = _strerror(err)
+                if not ok:
+                    fd.close()
+                    self.respond('554 %s' % why)
+                    return
 
-        if self.data_channel is not None:
-            resp = "Data connection already open. Transfer starting."
-            self.respond("125 " + resp)
-            self.data_channel.file_obj = fd
-            self.data_channel.enable_receiving(self._current_type, cmd)
-        else:
-            resp = "File status okay. About to open data connection."
-            self.respond("150 " + resp)
-            self._in_dtp_queue = (fd, cmd)
-        return file
+            if self.data_channel is not None:
+                resp = "Data connection already open. Transfer starting."
+                self.respond("125 " + resp)
+                self.data_channel.file_obj = fd
+                self.data_channel.enable_receiving(self._current_type, cmd)
+            else:
+                resp = "File status okay. About to open data connection."
+                self.respond("150 " + resp)
+                self._in_dtp_queue = (fd, cmd)
+            return file
+        except Exception:
+            fd.close()
+            raise
 
     def ftp_STOU(self, line):
         """Store a file on the server with a unique name.
@@ -2325,25 +2329,29 @@ class FTPHandler(AsyncChat):
             self.respond("450 %s." % why)
             return
 
-        if not self.authorizer.has_perm(self.username, 'w', fd.name):
-            try:
-                fd.close()
-                self.run_as_current_user(self.fs.remove, fd.name)
-            except (OSError, FilesystemError):
-                pass
-            self.respond("550 Not enough privileges.")
-            return
+        try:
+            if not self.authorizer.has_perm(self.username, 'w', fd.name):
+                try:
+                    fd.close()
+                    self.run_as_current_user(self.fs.remove, fd.name)
+                except (OSError, FilesystemError):
+                    pass
+                self.respond("550 Not enough privileges.")
+                return
 
-        # now just acts like STOR except that restarting isn't allowed
-        filename = os.path.basename(fd.name)
-        if self.data_channel is not None:
-            self.respond("125 FILE: %s" % filename)
-            self.data_channel.file_obj = fd
-            self.data_channel.enable_receiving(self._current_type, "STOU")
-        else:
-            self.respond("150 FILE: %s" % filename)
-            self._in_dtp_queue = (fd, "STOU")
-        return filename
+            # now just acts like STOR except that restarting isn't allowed
+            filename = os.path.basename(fd.name)
+            if self.data_channel is not None:
+                self.respond("125 FILE: %s" % filename)
+                self.data_channel.file_obj = fd
+                self.data_channel.enable_receiving(self._current_type, "STOU")
+            else:
+                self.respond("150 FILE: %s" % filename)
+                self._in_dtp_queue = (fd, "STOU")
+            return filename
+        except Exception:
+            fd.close()
+            raise
 
     def ftp_APPE(self, file):
         """Append data to an existing file on the server.
@@ -3103,16 +3111,16 @@ else:
             try:
                 return super(SSLConnection, self).recv(buffer_size)
             except (SSL.WantReadError, SSL.WantWriteError):
-                return b('')
+                return b''
             except SSL.ZeroReturnError:
                 super(SSLConnection, self).handle_close()
-                return b('')
+                return b''
             except SSL.SysCallError:
                 err = sys.exc_info()[1]
                 errnum, errstr = err.args
                 if errnum in _DISCONNECTED or errstr == 'Unexpected EOF':
                     super(SSLConnection, self).handle_close()
-                    return b('')
+                    return b''
                 else:
                     raise
 
@@ -3127,7 +3135,7 @@ else:
                 # write call is done first, to try to detect if the
                 # connection has gone away
                 try:
-                    os.write(self.socket.fileno(), b(''))
+                    os.write(self.socket.fileno(), b'')
                 except (OSError, socket.error):
                     err = sys.exc_info()[1]
                     if err.args[0] in (errno.EINTR, errno.EWOULDBLOCK,

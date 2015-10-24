@@ -2,7 +2,7 @@
 
 #  pyftpdlib is released under the MIT license, reproduced below:
 #  ========================================================================
-#  Copyright (C) 2007-2014 Giampaolo Rodola' <g.rodola@gmail.com>
+#  Copyright (C) 2007-2016 Giampaolo Rodola' <g.rodola@gmail.com>
 #
 #                         All Rights Reserved
 #
@@ -46,7 +46,7 @@ from pyftpdlib import authorizers
 from pyftpdlib import handlers
 from pyftpdlib import filesystems
 from pyftpdlib import servers
-from pyftpdlib._compat import b, getcwdu, unicode
+from pyftpdlib._compat import getcwdu, unicode
 from test_ftpd import *  # NOQA
 
 if sys.version_info < (2, 7):
@@ -482,13 +482,13 @@ class TestFTPS(unittest.TestCase):
                 return
             raise
         sock.settimeout(TIMEOUT)
-        sock.sendall(b('noop'))
+        sock.sendall(b'noop')
         try:
             chunk = sock.recv(1024)
         except socket.error:
             pass
         else:
-            self.assertEqual(chunk, b(""))
+            self.assertEqual(chunk, b"")
 
     def test_tls_control_required(self):
         self.server.handler.tls_control_required = True

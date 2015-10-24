@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #  ======================================================================
-#  Copyright (C) 2007-2014 Giampaolo Rodola' <g.rodola@gmail.com>
+#  Copyright (C) 2007-2016 Giampaolo Rodola' <g.rodola@gmail.com>
 #
 #                         All Rights Reserved
 #
@@ -98,7 +98,7 @@ try:
 except ImportError:
     import dummy_threading as threading
 
-from pyftpdlib._compat import MAXSIZE, callable, b
+from pyftpdlib._compat import callable
 from pyftpdlib.log import logger, config_logging
 
 
@@ -181,8 +181,8 @@ class _CallLater(object):
 
     def __init__(self, seconds, target, *args, **kwargs):
         assert callable(target), "%s is not callable" % target
-        assert MAXSIZE >= seconds >= 0, "%s is not greater than or equal " \
-                                        "to 0 seconds" % seconds
+        assert sys.maxsize >= seconds >= 0, \
+            "%s is not greater than or equal to 0 seconds" % seconds
         self._delay = seconds
         self._target = target
         self._args = args
@@ -279,12 +279,9 @@ class _IOLoop(object):
     def instance(cls):
         """Return a global IOLoop instance."""
         if cls._instance is None:
-            cls._lock.acquire()
-            try:
+            with cls._lock:
                 if cls._instance is None:
                     cls._instance = cls()
-            finally:
-                cls._lock.release()
         return cls._instance
 
     def register(self, fd, instance, events):
@@ -921,7 +918,7 @@ class AsyncChat(asynchat.async_chat):
             why = sys.exc_info()[1]
             if why.args[0] in _DISCONNECTED:
                 self.handle_close()
-                return b('')
+                return ''
             else:
                 raise
         else:
@@ -929,7 +926,7 @@ class AsyncChat(asynchat.async_chat):
                 # a closed connection is indicated by signaling
                 # a read condition, and having recv() return 0.
                 self.handle_close()
-                return b('')
+                return ''
             else:
                 return data
 

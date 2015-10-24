@@ -2,7 +2,7 @@
 
 #  pyftpdlib is released under the MIT license, reproduced below:
 #  ======================================================================
-#  Copyright (C) 2007-2014 Giampaolo Rodola' <g.rodola@gmail.com>
+#  Copyright (C) 2007-2016 Giampaolo Rodola' <g.rodola@gmail.com>
 #
 #                         All Rights Reserved
 #
@@ -45,8 +45,7 @@ except ImportError:
 def get_version():
     INIT = os.path.abspath(os.path.join(os.path.dirname(__file__),
                            'pyftpdlib', '__init__.py'))
-    f = open(INIT, 'r')
-    try:
+    with open(INIT, 'r') as f:
         for line in f:
             if line.startswith('__ver__'):
                 ret = eval(line.strip().split(' = ')[1])
@@ -55,8 +54,6 @@ def get_version():
                     assert num.isdigit(), ret
                 return ret
         raise ValueError("couldn't find version string")
-    finally:
-        f.close()
 
 
 def term_supports_colors():

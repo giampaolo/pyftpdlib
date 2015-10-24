@@ -2,7 +2,7 @@
 
 #  pyftpdlib is released under the MIT license, reproduced below:
 #  ======================================================================
-#  Copyright (C) 2007-2014 Giampaolo Rodola' <g.rodola@gmail.com>
+#  Copyright (C) 2007-2016 Giampaolo Rodola' <g.rodola@gmail.com>
 #
 #                         All Rights Reserved
 #
@@ -55,8 +55,6 @@ Authors:
  - Giampaolo Rodola' - g.rodola <at> gmail.com
 """
 
-from __future__ import with_statement
-
 import os
 import errno
 import sys
@@ -78,11 +76,6 @@ PID_FILE = "/var/run/pyftpdlib.pid"
 LOG_FILE = "/var/log/pyftpdlib.log"
 WORKDIR = os.getcwd()
 UMASK = 0
-
-
-def print_(s):
-    sys.stdout.write(s + '\n')
-    sys.stdout.flush()
 
 
 def pid_exists(pid):
@@ -124,7 +117,7 @@ def stop():
         except OSError:
             e = sys.exc_info()[1]
             if e.errno == errno.ESRCH:
-                print_("\nstopped (pid %s)" % pid)
+                print("\nstopped (pid %s)" % pid)
                 return
             else:
                 raise
@@ -140,9 +133,9 @@ def status():
     """Print daemon status and exit."""
     pid = get_pid()
     if not pid or not pid_exists(pid):
-        print_("daemon not running")
+        print("daemon not running")
     else:
-        print_("daemon running with pid %s" % pid)
+        print("daemon running with pid %s" % pid)
     sys.exit(0)
 
 
@@ -186,9 +179,8 @@ def daemonize():
 
         # write pidfile
         pid = str(os.getpid())
-        f = open(PID_FILE, 'w')
-        f.write("%s\n" % pid)
-        f.close()
+        with open(PID_FILE, 'w') as f:
+            f.write("%s\n" % pid)
         atexit.register(lambda: os.remove(PID_FILE))
 
     pid = get_pid()

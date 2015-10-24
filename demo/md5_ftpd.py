@@ -2,7 +2,7 @@
 
 #  pyftpdlib is released under the MIT license, reproduced below:
 #  ======================================================================
-#  Copyright (C) 2007-2014 Giampaolo Rodola' <g.rodola@gmail.com>
+#  Copyright (C) 2007-2016 Giampaolo Rodola' <g.rodola@gmail.com>
 #
 #                         All Rights Reserved
 #
@@ -33,18 +33,20 @@
 """
 
 import os
+import sys
 from hashlib import md5
 
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.authorizers import DummyAuthorizer, AuthenticationFailed
-from pyftpdlib._compat import b
 
 
 class DummyMD5Authorizer(DummyAuthorizer):
 
     def validate_authentication(self, username, password, handler):
-        hash = md5(b(password)).hexdigest()
+        if sys.version_info >= (3, 0):
+            password = md5(password.encode('latin1'))
+        hash = md5(password).hexdigest()
         try:
             if self.user_table[username]['pwd'] != hash:
                 raise KeyError
@@ -54,7 +56,7 @@ class DummyMD5Authorizer(DummyAuthorizer):
 
 def main():
     # get a hash digest from a clear-text password
-    hash = md5(b('12345')).hexdigest()
+    hash = md5(b'12345').hexdigest()
     authorizer = DummyMD5Authorizer()
     authorizer.add_user('user', hash, os.getcwd(), perm='elradfmw')
     authorizer.add_anonymous(os.getcwd())

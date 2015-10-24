@@ -2,7 +2,7 @@
 
 #  pyftpdlib is released under the MIT license, reproduced below:
 #  ======================================================================
-#  Copyright (C) 2007-2014 Giampaolo Rodola' <g.rodola@gmail.com>
+#  Copyright (C) 2007-2016 Giampaolo Rodola' <g.rodola@gmail.com>
 #
 #                         All Rights Reserved
 #
@@ -89,7 +89,7 @@ Example usages:
 #   300 concurrent clients (QUIT)                          0.00 secs
 
 
-from __future__ import with_statement, division
+from __future__ import division
 import asynchat
 import asyncore
 import atexit
@@ -120,20 +120,6 @@ SERVER_PROC = None
 TIMEOUT = None
 PY3 = sys.version_info >= (3, 0)
 
-if PY3:
-    import builtins
-    print_ = getattr(builtins, "print")
-
-    def b(s):
-        return s.encode("latin-1")
-else:
-    def print_(s):
-        sys.stdout.write(s + '\n')
-        sys.stdout.flush()
-
-    def b(s):
-        return s
-
 
 if not sys.stdout.isatty() or os.name != 'posix':
     def hilite(s, *args, **kwargs):
@@ -163,7 +149,7 @@ def print_bench(what, value, unit=""):
                         unit)
     if server_memory:
         s += "%s" % hilite(server_memory.pop())
-    print_(s.strip())
+    print(s.strip())
 
 
 # http://goo.gl/zeJZl
@@ -284,7 +270,7 @@ def stor(ftp, size):
     """
     ftp.voidcmd('TYPE I')
     with contextlib.closing(ftp.transfercmd("STOR " + TESTFN)) as conn:
-        chunk = b('x') * BUFFER_LEN
+        chunk = b'x' * BUFFER_LEN
         total_sent = 0
         while 1:
             sent = conn.send(chunk)
@@ -326,7 +312,7 @@ def bytes_per_second(ftp, retr=True):
         ftp.voidcmd('TYPE I')
         with contextlib.closing(ftp.transfercmd("STOR " + TESTFN)) as conn:
             register_memory()
-            chunk = b('x') * BUFFER_LEN
+            chunk = b'x' * BUFFER_LEN
             stop_at = time.time() + 1
             while stop_at > time.time():
                 bytes += conn.send(chunk)
@@ -372,11 +358,11 @@ class AsyncWriter(asynchat.async_chat):
         def __init__(self, size):
             self.size = size
             self.sent = 0
-            self.chunk = b('x') * BUFFER_LEN
+            self.chunk = b'x' * BUFFER_LEN
 
         def more(self):
             if self.sent >= self.size:
-                return b('')
+                return b''
             self.sent += len(self.chunk)
             return self.chunk
 
@@ -394,8 +380,8 @@ class AsyncQuit(asynchat.async_chat):
     def __init__(self, sock):
         asynchat.async_chat.__init__(self, sock)
         self.in_buffer = []
-        self.set_terminator(b('\r\n'))
-        self.push(b('QUIT\r\n'))
+        self.set_terminator(b'\r\n')
+        self.push(b'QUIT\r\n')
 
     def collect_incoming_data(self, data):
         self.in_buffer.append(data)
@@ -545,7 +531,7 @@ def main():
     # start benchmark
     if SERVER_PROC is not None:
         register_memory()
-        print_("(starting with %s of memory being used)" % (
+        print("(starting with %s of memory being used)" % (
             hilite(server_memory.pop())))
     if options.benchmark == 'transfer':
         bench_stor()

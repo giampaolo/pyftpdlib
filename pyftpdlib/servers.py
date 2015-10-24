@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #  ======================================================================
-#  Copyright (C) 2007-2014 Giampaolo Rodola' <g.rodola@gmail.com>
+#  Copyright (C) 2007-2016 Giampaolo Rodola' <g.rodola@gmail.com>
 #
 #                         All Rights Reserved
 #
@@ -420,16 +420,13 @@ class _SpawnerBase(FTPServer):
             if hasattr(t, 'pid'):
                 handler.close()
 
-            self._lock.acquire()
-            try:
+            with self._lock:
                 # clean finished tasks
                 for task in self._active_tasks[:]:
                     if not task.is_alive():
                         self._active_tasks.remove(task)
                 # add the new task
                 self._active_tasks.append(t)
-            finally:
-                self._lock.release()
 
     def _log_start(self):
         FTPServer._log_start(self)
