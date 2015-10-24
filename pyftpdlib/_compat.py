@@ -2,7 +2,7 @@
 
 """
 Compatibility module similar to six which helps maintaining
-a single code base working with python from 2.4 to 3.x.
+a single code base working with python from 2.6 to 3.x.
 """
 
 import sys

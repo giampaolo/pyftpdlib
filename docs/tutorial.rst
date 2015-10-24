@@ -190,10 +190,7 @@ method.
 .. code-block:: python
 
     import os
-    try:
     from hashlib import md5
-    except ImportError:
-    from md5 import new as md5  # Python < 2.5
 
     from pyftpdlib.handlers import FTPHandler
     from pyftpdlib.servers import FTPServer

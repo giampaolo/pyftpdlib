@@ -25,13 +25,7 @@ build: clean
 	$(PYTHON) setup.py build
 
 install: build
-	if test $(PYTHON) = python2.4; then \
-		$(PYTHON) setup.py install; \
-	elif test $(PYTHON) = python2.5; then \
-		$(PYTHON) setup.py install; \
-	else \
-		$(PYTHON) setup.py install --user; \
-	fi
+	$(PYTHON) setup.py install --user;
 
 uninstall:
 	pip-`$(PYTHON) -c "import sys; sys.stdout.write('.'.join(map(str, sys.version_info)[:2]))"` uninstall -y -v pyftpdlib

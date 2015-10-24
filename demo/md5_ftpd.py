@@ -33,11 +33,7 @@
 """
 
 import os
-try:
-    from hashlib import md5
-except ImportError:
-    # backward compatibility with Python < 2.5
-    from md5 import new as md5
+from hashlib import md5
 
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer

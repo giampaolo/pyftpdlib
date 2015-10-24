@@ -60,7 +60,6 @@ without hanging the whole FTP server.
 """
 
 import os
-import socket
 import traceback
 import sys
 import errno
@@ -134,13 +133,7 @@ class FTPServer(Acceptor):
             sock = address_or_socket
             sock.setblocking(0)
             self.set_socket(sock)
-            if hasattr(sock, 'family'):
-                self._af = sock.family
-            else:
-                # python 2.4
-                ip, port = self.socket.getsockname()[:2]
-                self._af = socket.getaddrinfo(ip, port, socket.AF_UNSPEC,
-                                              socket.SOCK_STREAM)[0][0]
+            self._af = sock.family
         else:
             self._af = self.bind_af_unspecified(address_or_socket)
         self.listen(backlog)

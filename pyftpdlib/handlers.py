@@ -1257,13 +1257,7 @@ class FTPHandler(AsyncChat):
             return
         else:
             self.log("FTP session opened (connect)")
-
-        if hasattr(self.socket, 'family'):
             self._af = self.socket.family
-        else:  # python < 2.5
-            ip, port = self.socket.getsockname()[:2]
-            self._af = socket.getaddrinfo(ip, port, socket.AF_UNSPEC,
-                                          socket.SOCK_STREAM)[0][0]
 
         # try to handle urgent data inline
         try:

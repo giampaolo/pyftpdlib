@@ -448,7 +448,7 @@ class TestFTPS(unittest.TestCase):
         # secured
         self.client.prot_p()
         sock = self.client.transfercmd('list')
-        try:
+        with contextlib.closing(sock):
             sock.settimeout(TIMEOUT)
             while 1:
                 if not sock.recv(1024):
@@ -457,18 +457,14 @@ class TestFTPS(unittest.TestCase):
             self.assertTrue(isinstance(sock, ssl.SSLSocket))
             # unsecured
             self.client.prot_c()
-        finally:
-            sock.close()
         sock = self.client.transfercmd('list')
-        try:
+        with contextlib.closing(sock):
             sock.settimeout(TIMEOUT)
             while 1:
                 if not sock.recv(1024):
                     self.client.voidresp()
                     break
             self.assertFalse(isinstance(sock, ssl.SSLSocket))
-        finally:
-            sock.close()
 
     def test_feat(self):
         feat = self.client.sendcmd('feat')
@@ -805,8 +801,6 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, unittest.TestCase):
     def setUp(self):
         if os.name != 'posix':
             self.skipTest("UNIX only")
-        if sys.version_info < (2, 5):
-            self.skipTest("python >= 2.5 only")
         try:
             import spwd  # NOQA
         except ImportError:

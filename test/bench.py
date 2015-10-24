@@ -35,7 +35,7 @@ FTP server benchmark script.
 In order to run this you must have a listening FTP server with a user
 with writing permissions configured.
 This is a stand-alone script which does not depend from pyftpdlib.
-It just requires python >= 2.5.
+It just requires python >= 2.6.
 
 Example usages:
   python bench.py -u USER -p PASSWORD
@@ -90,15 +90,15 @@ Example usages:
 
 
 from __future__ import with_statement, division
-import ftplib
-import sys
-import os
-import atexit
-import time
-import optparse
-import contextlib
-import asyncore
 import asynchat
+import asyncore
+import atexit
+import contextlib
+import ftplib
+import optparse
+import os
+import sys
+import time
 try:
     import resource
 except ImportError:
@@ -268,14 +268,13 @@ def connect():
 def retr(ftp):
     """Same as ftplib's retrbinary() but discard the received data."""
     ftp.voidcmd('TYPE I')
-    conn = ftp.transfercmd("RETR " + TESTFN)
-    recv_bytes = 0
-    while 1:
-        data = conn.recv(BUFFER_LEN)
-        if not data:
-            break
-        recv_bytes += len(data)
-    conn.close()
+    with contextlib.closing(ftp.transfercmd("RETR " + TESTFN)) as conn:
+        recv_bytes = 0
+        while 1:
+            data = conn.recv(BUFFER_LEN)
+            if not data:
+                break
+            recv_bytes += len(data)
     ftp.voidresp()
 
 
@@ -284,15 +283,14 @@ def stor(ftp, size):
     instead of reading it from a real file.
     """
     ftp.voidcmd('TYPE I')
-    conn = ftp.transfercmd("STOR " + TESTFN)
-    chunk = b('x') * BUFFER_LEN
-    total_sent = 0
-    while 1:
-        sent = conn.send(chunk)
-        total_sent += sent
-        if total_sent >= size:
-            break
-    conn.close()
+    with contextlib.closing(ftp.transfercmd("STOR " + TESTFN)) as conn:
+        chunk = b('x') * BUFFER_LEN
+        total_sent = 0
+        while 1:
+            sent = conn.send(chunk)
+            total_sent += sent
+            if total_sent >= size:
+                break
     ftp.voidresp()
 
 
@@ -305,34 +303,33 @@ def bytes_per_second(ftp, retr=True):
             conn = ftp.transfercmd("retr " + TESTFN)
             return conn
 
-        conn = request_file()
-        register_memory()
-        stop_at = time.time() + 1.0
-        while stop_at > time.time():
-            chunk = conn.recv(BUFFER_LEN)
-            if not chunk:
-                a = time.time()
-                while conn.recv(BUFFER_LEN):
-                    break
-                conn.close()
-                ftp.voidresp()
-                conn = request_file()
-                stop_at += time.time() - a
-            bytes += len(chunk)
-        conn.close()
+        with contextlib.closing(request_file()) as conn:
+            register_memory()
+            stop_at = time.time() + 1.0
+            while stop_at > time.time():
+                chunk = conn.recv(BUFFER_LEN)
+                if not chunk:
+                    a = time.time()
+                    while conn.recv(BUFFER_LEN):
+                        break
+                    conn.close()
+                    ftp.voidresp()
+                    # TODO: close this fd
+                    conn = request_file()
+                    stop_at += time.time() - a
+                bytes += len(chunk)
         try:
             ftp.voidresp()
         except (ftplib.error_temp, ftplib.error_perm):
             pass
     else:
         ftp.voidcmd('TYPE I')
-        conn = ftp.transfercmd("STOR " + TESTFN)
-        register_memory()
-        chunk = b('x') * BUFFER_LEN
-        stop_at = time.time() + 1
-        while stop_at > time.time():
-            bytes += conn.send(chunk)
-        conn.close()
+        with contextlib.closing(ftp.transfercmd("STOR " + TESTFN)) as conn:
+            register_memory()
+            chunk = b('x') * BUFFER_LEN
+            stop_at = time.time() + 1
+            while stop_at > time.time():
+                bytes += conn.send(chunk)
         ftp.voidresp()
 
     ftp.quit()

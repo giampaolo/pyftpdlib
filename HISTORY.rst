@@ -1,6 +1,6 @@
 Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 
-Version: 1.4.1 - (UNRELEASED)
+Version: 1.5.0 - (UNRELEASED)
 =============================
 
 **Enhancements**
@@ -8,6 +8,7 @@ Version: 1.4.1 - (UNRELEASED)
 - #304: remove deprecated items from 1.0.0 which were left in place for
   backward compatibility
 - #324: FTPHandler.started attribute, to figure out when client connected.
+- #340: dropped python 2.4 and 2.5 support.
 
 **Bug fixes**
 

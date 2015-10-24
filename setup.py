@@ -88,8 +88,8 @@ def hilite(s, ok=True, bold=False):
         return '\x1b[%sm%s\x1b[0m' % (';'.join(attr), s)
 
 
-if sys.version_info < (2, 4):
-    sys.exit('python version not supported (min 2.4)')
+if sys.version_info < (2, 6):
+    sys.exit('python version not supported (< 2.6)')
 
 require_pysendfile = (os.name == 'posix' and sys.version_info >= (2, 5) and
                       sys.version_info < (3, 3))
@@ -131,8 +131,6 @@ def main():
             'Topic :: System :: Filesystems',
             'Programming Language :: Python',
             'Programming Language :: Python :: 2',
-            'Programming Language :: Python :: 2.4',
-            'Programming Language :: Python :: 2.5',
             'Programming Language :: Python :: 2.6',
             'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3',

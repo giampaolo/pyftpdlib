@@ -388,7 +388,6 @@ class _Base(object):
 # --- UNIX
 # ===================================================================
 
-# Note: requires python >= 2.5
 try:
     import crypt
     import pwd
