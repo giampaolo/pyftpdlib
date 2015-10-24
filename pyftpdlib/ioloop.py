@@ -534,12 +534,10 @@ if hasattr(select, 'poll'):
         _ERROR = select.POLLERR | select.POLLHUP | select.POLLNVAL
         _poller = select.poll
 
-        # select.poll() on py < 2.6 has no 'modify' method
-        if not hasattr(select.poll(), 'modify'):
-            def modify(self, fd, events):
-                inst = self.socket_map[fd]
-                self.unregister(fd)
-                self.register(fd, inst, events)
+        def modify(self, fd, events):
+            inst = self.socket_map[fd]
+            self.unregister(fd)
+            self.register(fd, inst, events)
 
         def poll(self, timeout):
             # poll() timeout is expressed in milliseconds
