@@ -28,7 +28,7 @@ install: build
 	$(PYTHON) setup.py install --user;
 
 uninstall:
-	pip-`$(PYTHON) -c "import sys; sys.stdout.write('.'.join(map(str, sys.version_info)[:2]))"` uninstall -y -v pyftpdlib
+	pip-`$(PYTHON) -c "import sys; sys.stdout.write('.'.join(list(map(str, sys.version_info))[:2]))"` uninstall -y -v pyftpdlib
 
 # useful deps which are nice to have while developing / testing
 setup-dev-env: install-git-hooks

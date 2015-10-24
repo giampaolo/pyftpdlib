@@ -228,7 +228,8 @@ class _CallLater(object):
         try:
             try:
                 self._target(*self._args, **self._kwargs)
-            except Exception as exc:
+            except Exception as _:
+                exc = _
                 if self._errback is not None:
                     self._errback()
                 else:
@@ -912,7 +913,7 @@ class AsyncChat(asynchat.async_chat):
         except socket.error as err:
             if err.args[0] in _DISCONNECTED:
                 self.handle_close()
-                return ''
+                return b''
             else:
                 raise
         else:
@@ -920,7 +921,7 @@ class AsyncChat(asynchat.async_chat):
                 # a closed connection is indicated by signaling
                 # a read condition, and having recv() return 0.
                 self.handle_close()
-                return ''
+                return b''
             else:
                 return data
 
