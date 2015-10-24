@@ -206,6 +206,10 @@ class FTPServer(Acceptor):
         logger.debug("timeout: %s", self.handler.timeout or "unlimited")
         logger.debug("banner: %r", self.handler.banner)
         logger.debug("max login attempts: %r", self.handler.max_login_attempts)
+        if getattr(self.handler, 'certfile'):
+            logger.debug("SSL certfile: %r", self.handler.certfile)
+        if getattr(self.handler, 'keyfile'):
+            logger.debug("SSL keyfile: %r", self.handler.keyfile)
 
     def serve_forever(self, timeout=None, blocking=True, handle_exit=True):
         """Start serving.
