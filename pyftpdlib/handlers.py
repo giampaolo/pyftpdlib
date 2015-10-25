@@ -33,6 +33,7 @@ from .authorizers import DummyAuthorizer
 from .filesystems import AbstractedFS
 from .filesystems import FilesystemError
 from .ioloop import _ERRNOS_DISCONNECTED
+from .ioloop import _ERRNO_RETRY
 from .ioloop import Acceptor
 from .ioloop import AsyncChat
 from .ioloop import Connector
@@ -648,7 +649,7 @@ class DTPHandler(AsyncChat):
             sent = sendfile(self._fileno, self._filefd, self._offset,
                             self.ac_out_buffer_size)
         except OSError as err:
-            if err.errno in (errno.EAGAIN, errno.EWOULDBLOCK, errno.EBUSY):
+            if err.errno in _ERRNO_RETRY or err.errno == errno.EBUSY:
                 return
             elif err.errno in _ERRNOS_DISCONNECTED:
                 self.handle_close()
