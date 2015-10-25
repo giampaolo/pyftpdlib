@@ -20,6 +20,7 @@ interact with UNIX and Windows password database.
 
 import errno
 import os
+import sys
 import warnings
 
 from ._compat import PY3
@@ -632,13 +633,6 @@ else:
 # --- Windows
 # ===================================================================
 
-try:
-    import _winreg as winreg
-except ImportError:
-    try:
-        import winreg  # PY3
-    except ImportError:
-        pass
 # Note: requires pywin32 extension
 try:
     import pywintypes
@@ -649,6 +643,11 @@ try:
 except ImportError:
     pass
 else:
+    if sys.version_info < (3, 0):
+        import _winreg as winreg
+    else:
+        import winreg
+
     __all__.extend(['BaseWindowsAuthorizer', 'WindowsAuthorizer'])
 
     class BaseWindowsAuthorizer(object):

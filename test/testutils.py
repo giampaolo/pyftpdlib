@@ -195,13 +195,14 @@ class FTPd(threading.Thread):
     handler = FTPHandler
     server_class = FTPServer
     daemon = True
+    _lock = threading.Lock()
+    _flag = threading.Event()
 
     def __init__(self, addr=None):
         threading.Thread.__init__(self)
-        self.__serving = False
-        self.__stopped = False
-        self.__lock = threading.Lock()
-        self.__flag = threading.Event()
+        self._timeout = None
+        self._serving = False
+        self._stopped = False
         if addr is None:
             addr = (HOST, 0)
 
@@ -218,7 +219,7 @@ class FTPd(threading.Thread):
 
     def __repr__(self):
         status = [self.__class__.__module__ + "." + self.__class__.__name__]
-        if self.__serving:
+        if self._serving:
             status.append('active')
         else:
             status.append('inactive')
@@ -227,26 +228,26 @@ class FTPd(threading.Thread):
 
     @property
     def running(self):
-        return self.__serving
+        return self._serving
 
     def start(self, timeout=0.001):
         """Start serving until an explicit stop() request.
         Polls for shutdown every 'timeout' seconds.
         """
-        if self.__serving:
+        if self._serving:
             raise RuntimeError("Server already started")
-        if self.__stopped:
+        if self._stopped:
             # ensure the server can be started again
             FTPd.__init__(self, self.server.socket.getsockname(), self.handler)
         self.__timeout = timeout
         threading.Thread.start(self)
-        self.__flag.wait()
+        self._flag.wait()
 
     def run(self):
-        self.__serving = True
-        self.__flag.set()
-        while self.__serving:
-            with self.__lock:
+        self._serving = True
+        self._flag.set()
+        while self._serving:
+            with self._lock:
                 self.server.serve_forever(timeout=self.__timeout,
                                           blocking=False)
         self.server.close_all()
@@ -256,10 +257,10 @@ class FTPd(threading.Thread):
         clients) by telling the serve_forever() loop to stop and
         waits until it does.
         """
-        if not self.__serving:
+        if not self._serving:
             raise RuntimeError("Server not started yet")
-        self.__serving = False
-        self.__stopped = True
+        self._serving = False
+        self._stopped = True
         self.join(timeout=3)
         if threading.activeCount() > 1:
             warn("test FTP server thread is still running")

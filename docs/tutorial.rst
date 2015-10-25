@@ -418,8 +418,6 @@ which include both and is available
 
 .. code-block:: python
 
-    #!/usr/bin/env python
-
     """
     An RFC-4217 asynchronous FTPS server supporting both SSL and TLS.
     Requires PyOpenSSL module (http://pypi.python.org/pypi/pyOpenSSL).
