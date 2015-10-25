@@ -638,7 +638,7 @@ if hasattr(select, 'kqueue'):
                 try:
                     self._control(fd, events, select.KQ_EV_DELETE)
                 except OSError as err:
-                    if err.errno != errno.EBADF:
+                    if err.errno not in (errno.EBADF, errno.ENOENT):
                         raise
 
         def modify(self, fd, events):
@@ -757,7 +757,8 @@ class Acceptor(asyncore.dispatcher):
                 self.create_socket(af, socktype)
                 self.set_reuse_addr()
                 self.bind(sa)
-            except socket.error as err:
+            except socket.error as _:
+                err = _
                 if self.socket is not None:
                     self.socket.close()
                     self.del_channel()

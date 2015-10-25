@@ -59,7 +59,7 @@ OSX = sys.platform.startswith("darwin")
 POSIX = os.name == 'posix'
 WINDOWS = os.name == 'nt'
 TRAVIS = bool(os.environ.get('TRAVIS'))
-VERBOSITY = 2
+VERBOSITY = 1 if os.getenv('SILENT') else 2
 
 
 def try_address(host, port=0, family=socket.AF_INET):

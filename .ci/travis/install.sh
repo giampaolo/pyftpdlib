@@ -41,3 +41,5 @@ fi
 if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]] || [[ $PYVER == 'py26' ]]; then
     pip install -U ipaddress unittest2
 fi
+
+pip install -U pyopenssl pysendfile flake8
