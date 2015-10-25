@@ -214,14 +214,8 @@ def timethis(what):
 
 def connect():
     """Connect to FTP server, login and return an ftplib.FTP instance."""
-    if sys.version_info >= (2, 6):
-        # 'timeout' parameter is >= 2.6 only
-        ftp = ftplib.FTP(timeout=TIMEOUT)
-        ftp.connect(HOST, PORT)
-    else:
-        ftp = ftplib.FTP()
-        ftp.connect(HOST, PORT)
-        ftp.sock.settimeout(TIMEOUT)
+    ftp = ftplib.FTP(timeout=TIMEOUT)
+    ftp.connect(HOST, PORT)
     ftp.login(USER, PASSWORD)
     return ftp
 
