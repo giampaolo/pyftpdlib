@@ -42,7 +42,6 @@ import sys
 import warnings
 
 from pyftpdlib import authorizers
-from pyftpdlib import filesystems
 from pyftpdlib import handlers
 from pyftpdlib import servers
 from pyftpdlib._compat import getcwdu
@@ -909,24 +908,6 @@ class TestWindowsAuthorizer(_SharedAuthorizerTests, unittest.TestCase):
         self.assertRaises(Win32ExtError, self.authorizer_class,
                           anonymous_user=user,
                           anonymous_password='$|1wrongpasswd')
-
-
-# =====================================================================
-# --- UNIX filesystem
-# =====================================================================
-
-
-@unittest.skipUnless(os.name == 'posix', "UNIX only")
-class TestUnixFilesystem(unittest.TestCase):
-
-    def test_case(self):
-        root = getcwdu()
-        fs = filesystems.UnixFilesystem(root, None)
-        self.assertEqual(fs.root, root)
-        self.assertEqual(fs.cwd, root)
-        cdup = os.path.dirname(root)
-        self.assertEqual(fs.ftp2fs(u('..')), cdup)
-        self.assertEqual(fs.fs2ftp(root), root)
 
 
 # =====================================================================
