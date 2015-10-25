@@ -11,13 +11,14 @@ from pyftpdlib._compat import getcwdu
 from pyftpdlib._compat import u
 from pyftpdlib.filesystems import AbstractedFS
 from testutils import HOME
+from testutils import POSIX
 from testutils import safe_remove
 from testutils import TESTFN
 from testutils import touch
 from testutils import unittest
 from testutils import VERBOSITY
 
-if os.name == 'posix':
+if POSIX:
     from pyftpdlib.filesystems import UnixFilesystem
 
 
@@ -201,7 +202,7 @@ class TestAbstractedFS(unittest.TestCase):
                     safe_remove(TESTFN)
 
 
-@unittest.skipUnless(os.name == 'posix', "UNIX only")
+@unittest.skipUnless(POSIX, "UNIX only")
 class TestUnixFilesystem(unittest.TestCase):
 
     def test_case(self):

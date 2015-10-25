@@ -4,10 +4,10 @@
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
 
-import os
 import time
 
 from pyftpdlib.ioloop import IOLoop
+from testutils import POSIX
 from testutils import unittest
 from testutils import VERBOSITY
 
@@ -141,7 +141,7 @@ class TestCallEvery(unittest.TestCase):
         self.assertEqual(len(l), 100)
 
     # run it on systems where time.time() has a higher precision
-    if os.name == 'posix':
+    if POSIX:
         def test_low_and_high_timeouts(self):
             # make sure a callback with a lower timeout is called more
             # frequently than another with a greater timeout

@@ -18,13 +18,15 @@ from pyftpdlib.authorizers import AuthorizerError
 from pyftpdlib.authorizers import DummyAuthorizer
 from testutils import HOME
 from testutils import PASSWD
+from testutils import POSIX
 from testutils import TESTFN
 from testutils import touch
 from testutils import unittest
 from testutils import USER
 from testutils import VERBOSITY
+from testutils import WINDOWS
 
-if os.name == 'posix':
+if POSIX:
     import pwd
     try:
         from pyftpdlib.authorizers import UnixAuthorizer
@@ -33,7 +35,7 @@ if os.name == 'posix':
 else:
     UnixAuthorizer = None
 
-if os.name == 'nt':
+if WINDOWS:
     from pywintypes import error as Win32ExtError
     from pyftpdlib.authorizers import WindowsAuthorizer
 else:
@@ -199,13 +201,13 @@ class _SharedAuthorizerTests(object):
         return self.authorizer_class._get_system_users()
 
     def get_current_user(self):
-        if os.name == 'posix':
+        if POSIX:
             return pwd.getpwuid(os.getuid()).pw_name
         else:
             return os.environ['USERNAME']
 
     def get_current_user_homedir(self):
-        if os.name == 'posix':
+        if POSIX:
             return pwd.getpwuid(os.getuid()).pw_dir
         else:
             return os.environ['USERPROFILE']
@@ -433,7 +435,9 @@ class _SharedAuthorizerTests(object):
 # =====================================================================
 
 
-@unittest.skipUnless(os.name == 'posix', "UNIX only")
+@unittest.skipUnless(POSIX, "UNIX only")
+@unittest.skipUnless(UnixAuthorizer is not None,
+                     "UnixAuthorizer class not available")
 class TestUnixAuthorizer(_SharedAuthorizerTests, unittest.TestCase):
     """Unix authorizer specific tests."""
 
@@ -533,7 +537,7 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, unittest.TestCase):
 # =====================================================================
 
 
-@unittest.skipUnless(os.name == 'nt', "Windows only")
+@unittest.skipUnless(WINDOWS, "Windows only")
 class TestWindowsAuthorizer(_SharedAuthorizerTests, unittest.TestCase):
     """Windows authorizer specific tests."""
 

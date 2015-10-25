@@ -55,6 +55,7 @@ BUFSIZE = 1024
 INTERRUPTED_TRANSF_SIZE = 32768
 NO_RETRIES = 5
 OSX = sys.platform.startswith("darwin")
+POSIX = os.name == 'posix'
 WINDOWS = os.name == 'nt'
 TRAVIS = bool(os.environ.get('TRAVIS'))
 VERBOSITY = 2

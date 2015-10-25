@@ -40,6 +40,7 @@ from testutils import HOST
 from testutils import INTERRUPTED_TRANSF_SIZE
 from testutils import OSX
 from testutils import PASSWD
+from testutils import POSIX
 from testutils import remove_test_files
 from testutils import retry_before_failing
 from testutils import safe_mkdir
@@ -76,7 +77,7 @@ if not hasattr(unittest.TestCase, "assertRaisesRegex"):
     unittest.TestCase.assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
 
 sendfile = None
-if os.name == 'posix':
+if POSIX:
     try:
         import sendfile
     except ImportError:
@@ -628,7 +629,7 @@ class TestFtpFsOperations(unittest.TestCase):
                 return mode
 
             # on Windows it is possible to set read-only flag only
-            if os.name == 'nt':
+            if WINDOWS:
                 self.client.sendcmd('site chmod 777 ' + self.tempfile)
                 self.assertEqual(getmode(), '0666')
                 self.client.sendcmd('site chmod 444 ' + self.tempfile)
@@ -955,7 +956,7 @@ class TestFtpStoreData(unittest.TestCase):
             self.assertEqual(f.read(), "")
 
 
-@unittest.skipUnless(os.name == 'posix', "POSIX only")
+@unittest.skipUnless(POSIX, "POSIX only")
 @unittest.skipIf(sys.version_info < (3, 3) and sendfile is None,
                  "pysendfile not installed")
 class TestFtpStoreDataNoSendfile(TestFtpStoreData):
@@ -1080,7 +1081,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.assertEqual(self.dummyfile.read(), b"")
 
 
-@unittest.skipUnless(os.name == 'posix', "POSIX only")
+@unittest.skipUnless(POSIX, "POSIX only")
 @unittest.skipIf(sys.version_info < (3, 3) and sendfile is None,
                  "pysendfile not installed")
 class TestFtpRetrieveDataNoSendfile(TestFtpRetrieveData):
@@ -1218,12 +1219,12 @@ class TestFtpListingCmds(unittest.TestCase):
         self.assertTrue("size" in resp)
         self.assertTrue("perm" in resp)
         self.assertTrue("modify" in resp)
-        if os.name == 'posix':
+        if POSIX:
             self.assertTrue("unique" in resp)
             self.assertTrue("unix.mode" in resp)
             self.assertTrue("unix.uid" in resp)
             self.assertTrue("unix.gid" in resp)
-        elif os.name == 'nt':
+        elif WINDOWS:
             self.assertTrue("create" in resp)
 
     def test_stat(self):
