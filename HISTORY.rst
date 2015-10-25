@@ -18,6 +18,7 @@ Version: 1.5.0 - (UNRELEASED)
 - #337: MultiprocessFTPServer and ThreadedFTPServer do not accept backlog
   argument.
 - #338: benchmark script uses old psutil API.
+- #343: recv() does not handle EBUSY.
 
 
 Version: 1.4.0 - Date: 2014-06-03

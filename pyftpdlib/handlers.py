@@ -33,10 +33,11 @@ from .authorizers import DummyAuthorizer
 from .filesystems import AbstractedFS
 from .filesystems import FilesystemError
 from .ioloop import _ERRNOS_DISCONNECTED
-from .ioloop import _ERRNO_RETRY
+from .ioloop import _ERRNOS_RETRY
 from .ioloop import Acceptor
 from .ioloop import AsyncChat
 from .ioloop import Connector
+from .ioloop import RetryError
 from .ioloop import timer
 from .log import logger
 
@@ -649,7 +650,7 @@ class DTPHandler(AsyncChat):
             sent = sendfile(self._fileno, self._filefd, self._offset,
                             self.ac_out_buffer_size)
         except OSError as err:
-            if err.errno in _ERRNO_RETRY or err.errno == errno.EBUSY:
+            if err.errno in _ERRNOS_RETRY or err.errno == errno.EBUSY:
                 return
             elif err.errno in _ERRNOS_DISCONNECTED:
                 self.handle_close()
@@ -758,6 +759,8 @@ class DTPHandler(AsyncChat):
         """Called when there is data waiting to be read."""
         try:
             chunk = self.recv(self.ac_in_buffer_size)
+        except RetryError:
+            pass
         except socket.error:
             self.handle_error()
         else:
@@ -3079,6 +3082,8 @@ else:
                     return b''
                 else:
                     raise
+            except RetryError:
+                pass
 
         def _do_ssl_shutdown(self):
             """Executes a SSL_shutdown() call to revert the connection

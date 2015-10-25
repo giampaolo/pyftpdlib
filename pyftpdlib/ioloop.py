@@ -97,6 +97,10 @@ if hasattr(errno, "WSAEWOULDBLOCK"):
     _ERRNOS_RETRY.add(errno.WSAEWOULDBLOCK)
 
 
+class RetryError(Exception):
+    pass
+
+
 # ===================================================================
 # --- scheduler
 # ===================================================================
@@ -896,11 +900,11 @@ class AsyncChat(asynchat.async_chat):
         try:
             data = self.socket.recv(buffer_size)
         except socket.error as err:
-            # TODO: we should probably handle also _ERRNO_RETRY aka
-            # EAGAIN here.
             if err.args[0] in _ERRNOS_DISCONNECTED:
                 self.handle_close()
                 return b''
+            elif err.args[0] in _ERRNOS_RETRY:
+                raise RetryError
             else:
                 raise
         else:
@@ -911,6 +915,13 @@ class AsyncChat(asynchat.async_chat):
                 return b''
             else:
                 return data
+
+    def handle_read(self):
+        try:
+            asynchat.async_chat.handle_read(self)
+        except RetryError:
+            # This can be raised by (the overridden) recv().
+            pass
 
     def initiate_send(self):
         asynchat.async_chat.initiate_send(self)
