@@ -193,6 +193,7 @@ class FTPd(threading.Thread):
     """
     handler = FTPHandler
     server_class = FTPServer
+    daemon = True
 
     def __init__(self, addr=None):
         threading.Thread.__init__(self)
