@@ -300,7 +300,7 @@ class PassiveDTP(Acceptor):
                 try:
                     self.bind((local_ip, port))
                 except socket.error as err:
-                    if err.args[0] == errno.EADDRINUSE:  # port already in use
+                    if err.errno == errno.EADDRINUSE:  # port already in use
                         if ports:
                             continue
                         # If cannot use one of the ports in the configured
@@ -584,7 +584,7 @@ class DTPHandler(AsyncChat):
                 self, socket.socket(), ioloop=cmd_channel.ioloop)
             # https://github.com/giampaolo/pyftpdlib/issues/143
             self.close()
-            if err.args[0] == errno.EINVAL:
+            if err.errno == errno.EINVAL:
                 return
             self.handle_error()
             return
@@ -814,7 +814,7 @@ class DTPHandler(AsyncChat):
         # an error could occur in case we fail reading / writing
         # from / to file (e.g. file system gets full)
         except _FileReadWriteError as err:
-            error = _strerror(err.args[0])
+            error = _strerror(err.errno)
         except Exception:
             # some other exception occurred;  we don't want to provide
             # confidential error messages
@@ -1210,7 +1210,7 @@ class FTPHandler(AsyncChat):
             # https://github.com/giampaolo/pyftpdlib/issues/188
             AsyncChat.__init__(self, socket.socket(), ioloop=ioloop)
             self.close()
-            if err.args[0] == errno.EINVAL:
+            if err.errno == errno.EINVAL:
                 # https://github.com/giampaolo/pyftpdlib/issues/143
                 return
             self.handle_error()
@@ -1225,7 +1225,7 @@ class FTPHandler(AsyncChat):
             # before we can get the peername, hence ENOTCONN (see issue
             # #100) while EINVAL can occur on OSX (see issue #143).
             self.connected = False
-            if err.args[0] in (errno.ENOTCONN, errno.EINVAL):
+            if err.errno in (errno.ENOTCONN, errno.EINVAL):
                 self.close()
             else:
                 self.handle_error()
@@ -3096,10 +3096,10 @@ else:
                 try:
                     os.write(self.socket.fileno(), b'')
                 except (OSError, socket.error) as err:
-                    if err.args[0] in (errno.EINTR, errno.EWOULDBLOCK,
-                                       errno.ENOBUFS):
+                    if err.errno in (errno.EINTR, errno.EWOULDBLOCK,
+                                     errno.ENOBUFS):
                         return
-                    elif err.args[0] in _ERRNOS_DISCONNECTED:
+                    elif err.errno in _ERRNOS_DISCONNECTED:
                         return super(SSLConnection, self).close()
                     else:
                         raise
@@ -3141,12 +3141,12 @@ else:
                 # see:
                 # https://github.com/giampaolo/pyftpdlib/issues/171
                 # https://bugs.launchpad.net/pyopenssl/+bug/785985
-                if err.args and not err.args[0]:
+                if err.args and not err.errno:
                     pass
                 else:
                     raise
             except socket.error as err:
-                if err.args[0] in _ERRNOS_DISCONNECTED:
+                if err.errno in _ERRNOS_DISCONNECTED:
                     super(SSLConnection, self).close()
                 else:
                     raise

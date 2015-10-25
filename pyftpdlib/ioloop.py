@@ -376,7 +376,7 @@ class _IOLoop(object):
             try:
                 inst.close()
             except OSError as err:
-                if err.args[0] != errno.EBADF:
+                if err.errno != errno.EBADF:
                     logger.error(traceback.format_exc())
             except Exception:
                 logger.error(traceback.format_exc())
@@ -433,7 +433,7 @@ class Select(_IOLoop):
         try:
             r, w, e = select.select(self._r, self._w, [], timeout)
         except select.error as err:
-            if err.args[0] == errno.EINTR:
+            if err.errno == errno.EINTR:
                 return
             raise
 
@@ -481,7 +481,7 @@ class _BasePollEpoll(_IOLoop):
         try:
             self._poller.modify(fd, events)
         except OSError as err:
-            if err.args[0] == errno.ENOENT and fd in self.socket_map:
+            if err.errno == errno.ENOENT and fd in self.socket_map:
                 # XXX - see:
                 # https://github.com/giampaolo/pyftpdlib/issues/329
                 instance = self.socket_map[fd]
@@ -494,7 +494,7 @@ class _BasePollEpoll(_IOLoop):
             events = self._poller.poll(timeout or -1)  # -1 waits indefinitely
         except (IOError, select.error) as err:
             # for epoll() and poll() respectively
-            if err.args[0] == errno.EINTR:
+            if err.errno == errno.EINTR:
                 return
             raise
         # localize variable access to minimize overhead
@@ -673,7 +673,7 @@ if hasattr(select, 'kqueue'):
                 kevents = self._kqueue.control(None, _len(self.socket_map),
                                                timeout)
             except OSError as err:
-                if err.args[0] == errno.EINTR:
+                if err.errno == errno.EINTR:
                     return
                 raise
             for kevent in kevents:
@@ -793,7 +793,7 @@ class Acceptor(asyncore.dispatcher):
             return
         except socket.error as err:
             # ECONNABORTED might be thrown on *BSD (see issue 105)
-            if err.args[0] != errno.ECONNABORTED:
+            if err.errno != errno.ECONNABORTED:
                 raise
         else:
             # sometimes addr == None instead of (ip, port) (see issue 104)
@@ -888,9 +888,9 @@ class AsyncChat(asynchat.async_chat):
         try:
             return self.socket.send(data)
         except socket.error as err:
-            if err.args[0] in _ERRNOS_RETRY:
+            if err.errno in _ERRNOS_RETRY:
                 return 0
-            elif err.args[0] in _ERRNOS_DISCONNECTED:
+            elif err.errno in _ERRNOS_DISCONNECTED:
                 self.handle_close()
                 return 0
             else:
@@ -900,10 +900,10 @@ class AsyncChat(asynchat.async_chat):
         try:
             data = self.socket.recv(buffer_size)
         except socket.error as err:
-            if err.args[0] in _ERRNOS_DISCONNECTED:
+            if err.errno in _ERRNOS_DISCONNECTED:
                 self.handle_close()
                 return b''
-            elif err.args[0] in _ERRNOS_RETRY:
+            elif err.errno in _ERRNOS_RETRY:
                 raise RetryError
             else:
                 raise

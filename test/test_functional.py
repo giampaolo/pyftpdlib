@@ -1747,7 +1747,7 @@ class TestConfigurableOptions(unittest.TestCase):
                     sock.settimeout(TIMEOUT)
                     break
                 except socket.error as err:
-                    if err.args[0] == errno.EACCES:
+                    if err.errno == errno.EACCES:
                         # root privileges needed
                         if sock is not None:
                             sock.close()
