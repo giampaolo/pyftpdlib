@@ -25,9 +25,13 @@ from testutils import VERBOSITY
 
 if os.name == 'posix':
     import pwd
-    from pyftpdlib.authorizers import UnixAuthorizer
+    try:
+        from pyftpdlib.authorizers import UnixAuthorizer
+    except ImportError:
+        UnixAuthorizer = None
 else:
     UnixAuthorizer = None
+
 if os.name == 'nt':
     from pywintypes import error as Win32ExtError
     from pyftpdlib.authorizers import WindowsAuthorizer
