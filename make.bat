@@ -14,7 +14,7 @@ if "%PYTHON%" == "" (
     set PYTHON=C:\Python27\python.exe
 )
 if "%TSCRIPT%" == "" (
-    set TSCRIPT=test\test_ftpd.py
+    set TSCRIPT=test\runner.py
 )
 
 
@@ -25,7 +25,6 @@ if "%1" == "help" (
     echo   install       compile and install
     echo   uninstall     uninstall
     echo   test          run tests
-    echo   test-contrib  run contrib tests
     goto :eof
 )
 
@@ -65,13 +64,6 @@ if "%1" == "test" (
     :test
     call :install
     %PYTHON% %TSCRIPT%
-    goto :eof
-)
-
-if "%1" == "test-contrib" (
-    :test
-    call :install
-    %PYTHON% test\test_contrib.py
     goto :eof
 )
 

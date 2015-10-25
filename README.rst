@@ -62,7 +62,7 @@ Features
   `UNIX <http://pythonhosted.org/pyftpdlib/tutorial.html#unix-ftp-server>`__
   and
   `Windows <http://pythonhosted.org/pyftpdlib/tutorial.html#windows-ftp-server>`__.
-- `Test coverage <https://github.com/giampaolo/pyftpdlib/blob/master/test/test_ftpd.py>`__
+- `Test coverage <https://github.com/giampaolo/pyftpdlib/blob/master/test/>`__
   close to 100%.
 
 Performances

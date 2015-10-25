@@ -3,7 +3,7 @@
 # $ make install PYTHON=python3.3
 
 PYTHON=python
-TSCRIPT=test/test_ftpd.py
+TSCRIPT=test/runner.py
 FLAGS=
 
 all: test
@@ -57,15 +57,17 @@ setup-dev-env: install-git-hooks
 test: install
 	$(PYTHON) $(TSCRIPT)
 
-test-contrib: install
-	$(PYTHON) test/test_contrib.py
+test-functional: install
+	$(PYTHON) test/test_functional.py
+
+test-functional-ssl: install
+	$(PYTHON) test/test_functional_ssl.py
 
 # Run a specific test by name; e.g. "make test-by-name retr" will run
 # all test methods containing "retr" in their name.
 # Requires "pip install nose".
 test-by-name:
-	@$(PYTHON) -m nose $(TSCRIPT) --nocapture -v -m $(filter-out $@,$(MAKECMDGOALS))
-
+	@$(PYTHON) -m nose test/test_*.py --nocapture -v -m $(filter-out $@,$(MAKECMDGOALS))
 
 nosetest: install
 	# $ make nosetest FLAGS=test_name
