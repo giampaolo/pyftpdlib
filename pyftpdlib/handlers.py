@@ -32,7 +32,7 @@ from .authorizers import AuthorizerError
 from .authorizers import DummyAuthorizer
 from .filesystems import AbstractedFS
 from .filesystems import FilesystemError
-from .ioloop import _DISCONNECTED
+from .ioloop import _ERRNOS_DISCONNECTED
 from .ioloop import Acceptor
 from .ioloop import AsyncChat
 from .ioloop import Connector
@@ -650,7 +650,7 @@ class DTPHandler(AsyncChat):
         except OSError as err:
             if err.errno in (errno.EAGAIN, errno.EWOULDBLOCK, errno.EBUSY):
                 return
-            elif err.errno in _DISCONNECTED:
+            elif err.errno in _ERRNOS_DISCONNECTED:
                 self.handle_close()
             else:
                 raise
@@ -3055,7 +3055,8 @@ else:
                 errnum, errstr = err.args
                 if errnum == errno.EWOULDBLOCK:
                     return 0
-                elif errnum in _DISCONNECTED or errstr == 'Unexpected EOF':
+                elif (errnum in _ERRNOS_DISCONNECTED or
+                        errstr == 'Unexpected EOF'):
                     super(SSLConnection, self).handle_close()
                     return 0
                 else:
@@ -3071,7 +3072,8 @@ else:
                 return b''
             except SSL.SysCallError as err:
                 errnum, errstr = err.args
-                if errnum in _DISCONNECTED or errstr == 'Unexpected EOF':
+                if (errnum in _ERRNOS_DISCONNECTED or
+                        errstr == 'Unexpected EOF'):
                     super(SSLConnection, self).handle_close()
                     return b''
                 else:
@@ -3093,7 +3095,7 @@ else:
                     if err.args[0] in (errno.EINTR, errno.EWOULDBLOCK,
                                        errno.ENOBUFS):
                         return
-                    elif err.args[0] in _DISCONNECTED:
+                    elif err.args[0] in _ERRNOS_DISCONNECTED:
                         return super(SSLConnection, self).close()
                     else:
                         raise
@@ -3126,7 +3128,8 @@ else:
                 super(SSLConnection, self).close()
             except SSL.SysCallError as err:
                 errnum, errstr = err.args
-                if errnum in _DISCONNECTED or errstr == 'Unexpected EOF':
+                if (errnum in _ERRNOS_DISCONNECTED or
+                        errstr == 'Unexpected EOF'):
                     super(SSLConnection, self).close()
                 else:
                     raise
@@ -3139,7 +3142,7 @@ else:
                 else:
                     raise
             except socket.error as err:
-                if err.args[0] in _DISCONNECTED:
+                if err.args[0] in _ERRNOS_DISCONNECTED:
                     super(SSLConnection, self).close()
                 else:
                     raise

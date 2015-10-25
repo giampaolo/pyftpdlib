@@ -81,6 +81,21 @@ timer = getattr(time, 'monotonic', time.time)
 _read = asyncore.read
 _write = asyncore.write
 
+# These errnos indicate that a connection has been abruptly terminated.
+_ERRNOS_DISCONNECTED = set((
+    errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN, errno.ECONNABORTED,
+    errno.EPIPE, errno.EBADF))
+if hasattr(errno, "WSAECONNRESET"):
+    _ERRNOS_DISCONNECTED.add(errno.WSAECONNRESET)
+if hasattr(errno, "WSAECONNABORTED"):
+    _ERRNOS_DISCONNECTED.add(errno.WSAECONNABORTED)
+
+# These errnos indicate that a non-blocking operation must be retried
+# at a later time.
+_ERRNOS_RETRY = set((errno.EAGAIN, errno.EWOULDBLOCK))
+if hasattr(errno, "WSAEWOULDBLOCK"):
+    _ERRNOS_RETRY.add(errno.WSAEWOULDBLOCK)
+
 
 # ===================================================================
 # --- scheduler
@@ -704,10 +719,6 @@ else:                             # select() - POSIX and Windows
 # these are overridden in order to register() and unregister()
 # file descriptors against the new pollers
 
-_DISCONNECTED = frozenset((errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN,
-                           errno.ECONNABORTED, errno.EPIPE, errno.EBADF))
-_RETRY = frozenset((errno.EAGAIN, errno.EWOULDBLOCK))
-
 
 class Acceptor(asyncore.dispatcher):
     """Same as base asyncore.dispatcher and supposed to be used to
@@ -873,9 +884,9 @@ class AsyncChat(asynchat.async_chat):
         try:
             return self.socket.send(data)
         except socket.error as err:
-            if err.args[0] in _RETRY:
+            if err.args[0] in _ERRNOS_RETRY:
                 return 0
-            elif err.args[0] in _DISCONNECTED:
+            elif err.args[0] in _ERRNOS_DISCONNECTED:
                 self.handle_close()
                 return 0
             else:
@@ -885,7 +896,7 @@ class AsyncChat(asynchat.async_chat):
         try:
             data = self.socket.recv(buffer_size)
         except socket.error as err:
-            if err.args[0] in _DISCONNECTED:
+            if err.args[0] in _ERRNOS_DISCONNECTED:
                 self.handle_close()
                 return b''
             else:
