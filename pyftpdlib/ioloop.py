@@ -896,6 +896,8 @@ class AsyncChat(asynchat.async_chat):
         try:
             data = self.socket.recv(buffer_size)
         except socket.error as err:
+            # TODO: we should probably handle also _ERRNO_RETRY aka
+            # EAGAIN here.
             if err.args[0] in _ERRNOS_DISCONNECTED:
                 self.handle_close()
                 return b''
