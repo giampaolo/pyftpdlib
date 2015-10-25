@@ -2113,36 +2113,6 @@ class TestCallbacks(unittest.TestCase):
         self.assertEqual(users, [])
 
 
-class TestFTPServer(unittest.TestCase):
-    """Tests for *FTPServer classes."""
-    server_class = FTPd
-    client_class = ftplib.FTP
-
-    def setUp(self):
-        self.server = None
-        self.client = None
-
-    def tearDown(self):
-        if self.client is not None:
-            self.client.close()
-        if self.server is not None:
-            self.server.stop()
-
-    def test_sock_instead_of_addr(self):
-        # pass a socket object instead of an address tuple to FTPServer
-        # constructor
-        with contextlib.closing(socket.socket()) as sock:
-            sock.bind((HOST, 0))
-            sock.listen(5)
-            ip, port = sock.getsockname()[:2]
-            self.server = self.server_class(sock)
-            self.server.start()
-            self.client = self.client_class()
-            self.client.connect(ip, port)
-            self.client.sock.settimeout(TIMEOUT)
-            self.client.login(USER, PASSWD)
-
-
 class _TestNetworkProtocols(object):
     """Test PASV, EPSV, PORT and EPRT commands.
 

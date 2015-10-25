@@ -12,6 +12,5 @@ fi
 
 pip install flake8 pyopenssl
 python setup.py install
-python test/test_ftpd.py
-python test/test_contrib.py
+python test/runner.py
 flake8
