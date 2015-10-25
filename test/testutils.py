@@ -13,6 +13,7 @@ import socket
 import sys
 import tempfile
 import threading
+import time
 import warnings
 
 from pyftpdlib._compat import callable
@@ -195,6 +196,7 @@ class FTPd(threading.Thread):
     handler = FTPHandler
     server_class = FTPServer
     daemon = True
+    shutdown_after = 10
     _lock = threading.Lock()
     _flag = threading.Event()
 
@@ -239,7 +241,7 @@ class FTPd(threading.Thread):
         if self._stopped:
             # ensure the server can be started again
             FTPd.__init__(self, self.server.socket.getsockname(), self.handler)
-        self.__timeout = timeout
+        self._timeout = timeout
         threading.Thread.start(self)
         self._flag.wait()
 
@@ -248,9 +250,15 @@ class FTPd(threading.Thread):
         self._flag.set()
         while self._serving:
             with self._lock:
-                self.server.serve_forever(timeout=self.__timeout,
+                self.server.serve_forever(timeout=self._timeout,
                                           blocking=False)
+            if self.shutdown_after:
+                now = time.time()
+                if now >= now + self.shutdown_after:
+                    print("shutting down test FTPd due to timeout")
+                    break
         self.server.close_all()
+        raise Exception("shut down test FTPd due to timeout")
 
     def stop(self):
         """Stop serving (also disconnecting all currently connected
