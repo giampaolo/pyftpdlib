@@ -59,9 +59,8 @@ class TestFTPServer(unittest.TestCase):
             ip, port = sock.getsockname()[:2]
             self.server = self.server_class(sock)
             self.server.start()
-            self.client = self.client_class()
+            self.client = self.client_class(timeout=TIMEOUT)
             self.client.connect(ip, port)
-            self.client.sock.settimeout(TIMEOUT)
             self.client.login(USER, PASSWD)
 
 

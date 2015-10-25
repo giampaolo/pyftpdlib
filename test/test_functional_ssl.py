@@ -209,9 +209,8 @@ class TestFTPS(unittest.TestCase):
     def setUp(self):
         self.server = FTPSServer()
         self.server.start()
-        self.client = ftplib.FTP_TLS()
+        self.client = ftplib.FTP_TLS(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
-        self.client.sock.settimeout(2)
 
     def tearDown(self):
         self.client.ssl_version = ssl.PROTOCOL_SSLv23
@@ -268,7 +267,6 @@ class TestFTPS(unittest.TestCase):
         self.client.prot_p()
         sock = self.client.transfercmd('list')
         with contextlib.closing(sock):
-            sock.settimeout(TIMEOUT)
             while 1:
                 if not sock.recv(1024):
                     self.client.voidresp()
@@ -278,7 +276,6 @@ class TestFTPS(unittest.TestCase):
             self.client.prot_c()
         sock = self.client.transfercmd('list')
         with contextlib.closing(sock):
-            sock.settimeout(TIMEOUT)
             while 1:
                 if not sock.recv(1024):
                     self.client.voidresp()
