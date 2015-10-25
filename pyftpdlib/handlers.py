@@ -3082,8 +3082,6 @@ else:
                     return b''
                 else:
                     raise
-            except RetryError:
-                pass
 
         def _do_ssl_shutdown(self):
             """Executes a SSL_shutdown() call to revert the connection
