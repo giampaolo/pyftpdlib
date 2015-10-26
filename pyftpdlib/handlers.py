@@ -2995,6 +2995,16 @@ else:
         def __init__(self, *args, **kwargs):
             super(SSLConnection, self).__init__(*args, **kwargs)
             self._error = False
+            self._handshake_want_read = False
+            self._handshake_want_write = False
+
+        def readable(self):
+            return self._handshake_want_read or \
+                super(SSLConnection, self).readable()
+
+        def writable(self):
+            return self._handshake_want_write or \
+                super(SSLConnection, self).writable()
 
         def secure_connection(self, ssl_context):
             """Secure the connection switching from plain-text to
@@ -3025,13 +3035,15 @@ else:
         def _do_ssl_handshake(self):
             self._ssl_accepting = True
             try:
+                self._handshake_want_read = False
+                self._handshake_want_write = False
                 self.socket.do_handshake()
-            except (SSL.WantReadError, SSL.WantWriteError) as err:
-                debug(
-                    "call: _do_ssl_handshake, err: %r" % (
-                        err.__class__.__name__),
-                    inst=self)
-                return
+            except SSL.WantReadError:
+                self._handshake_want_read = True
+                debug("call: _do_ssl_handshake, err: want-read", inst=self)
+            except SSL.WantWriteError:
+                self._handshake_want_write = True
+                debug("call: _do_ssl_handshake, err: want-write", inst=self)
             except SSL.SysCallError as err:
                 debug("call: _do_ssl_handshake, err: %r" % err, inst=self)
                 retval, desc = err.args
