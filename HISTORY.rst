@@ -9,6 +9,7 @@ Version: 1.5.0 - (UNRELEASED)
   backward compatibility
 - #324: FTPHandler.started attribute, to figure out when client connected.
 - #340: dropped python 2.4 and 2.5 support.
+- #344: bench.py script --ssl option.
 
 **Bug fixes**
 

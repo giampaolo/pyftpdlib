@@ -93,6 +93,7 @@ TESTFN = "$testfile"
 BUFFER_LEN = 8192
 SERVER_PROC = None
 TIMEOUT = None
+SSL = False
 PY3 = sys.version_info >= (3, 0)
 
 
@@ -214,9 +215,12 @@ def timethis(what):
 
 def connect():
     """Connect to FTP server, login and return an ftplib.FTP instance."""
-    ftp = ftplib.FTP(timeout=TIMEOUT)
+    ftp_class = ftplib.FTP if not SSL else ftplib.FTP_TLS
+    ftp = ftp_class(timeout=TIMEOUT)
     ftp.connect(HOST, PORT)
     ftp.login(USER, PASSWORD)
+    if SSL:
+        ftp.prot_p()  # secure data connection
     return ftp
 
 
@@ -378,7 +382,7 @@ class OptFormatter(optparse.IndentedHelpFormatter):
 
 
 def main():
-    global HOST, PORT, USER, PASSWORD, SERVER_PROC, TIMEOUT
+    global HOST, PORT, USER, PASSWORD, SERVER_PROC, TIMEOUT, SSL
     USAGE = "%s -u USERNAME -p PASSWORD [-H] [-P] [-b] [-n] [-s] [-k]" % (
         __file__)
     parser = optparse.OptionParser(usage=USAGE,
@@ -405,6 +409,8 @@ def main():
                            "usage")
     parser.add_option('-t', '--timeout', dest='timeout',
                       default=TIMEOUT, type="int", help="the socket timeout")
+    parser.add_option('--ssl', action='store_true', dest='ssl',
+                      help="whether to use FTPS")
 
     options, args = parser.parse_args()
     if not options.user or not options.password:
@@ -415,6 +421,9 @@ def main():
         HOST = options.host
         PORT = options.port
         TIMEOUT = options.timeout
+        SSL = bool(options.ssl)
+        if SSL and sys.version_info < (2, 7):
+            sys.exit("--ssl option requires python >= 2.7")
         try:
             FILE_SIZE = human2bytes(options.filesize)
         except (ValueError, AssertionError):
