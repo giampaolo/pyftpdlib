@@ -3191,9 +3191,12 @@ else:
                 done = self.socket.shutdown()
                 if not (laststate & SSL.RECEIVED_SHUTDOWN):
                     self.socket.set_shutdown(SSL.SENT_SHUTDOWN)
-            except (SSL.WantReadError, SSL.WantWriteError) as err:
-                debug("call: _do_ssl_shutdown() -> shutdown(), err: %r" % err,
-                      inst=self)
+            except SSL.WantReadError:
+                self._ssl_want_read = True
+                debug("call: _do_ssl_shutdown, err: want-read", inst=self)
+            except SSL.WantWriteError:
+                self._ssl_want_write = True
+                debug("call: _do_ssl_shutdown, err: want-write", inst=self)
             except SSL.ZeroReturnError as err:
                 debug(
                     "call: _do_ssl_shutdown() -> shutdown(), err: zero-return",
