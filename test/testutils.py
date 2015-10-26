@@ -262,9 +262,7 @@ class FTPd(threading.Thread):
                         print("shutting down test FTPd due to timeout")
                         self.server.close_all()
                         raise Exception("test FTPd shutdown due to timeout")
-            print(IOLoop.instance())
             self.server.close_all()
-            print(IOLoop.instance())
         finally:
             self._flag_stopped.set()
 
