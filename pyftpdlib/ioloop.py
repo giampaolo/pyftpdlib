@@ -897,6 +897,15 @@ class AsyncChat(asynchat.async_chat):
     def del_channel(self, map=None):
         self.ioloop.unregister(self._fileno)
 
+    def modify_ioloop_events(self, events):
+        if self._fileno not in self.ioloop.socket_map:
+            debug(
+                "call: modify_ioloop_events(), fd was no longer in "
+                "socket_map, had to register() it again", inst=self)
+            self.ioloop.register(self._fileno, self, events)
+        else:
+            self.ioloop.modify(self._fileno, events)
+
     # send() and recv() overridden as a fix around various bugs:
     # - http://bugs.python.org/issue1736101
     # - https://github.com/giampaolo/pyftpdlib/issues/104
