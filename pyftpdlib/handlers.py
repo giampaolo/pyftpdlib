@@ -3121,11 +3121,6 @@ else:
         def recv(self, buffer_size):
             try:
                 return super(SSLConnection, self).recv(buffer_size)
-            except (SSL.WantReadError, SSL.WantWriteError) as err:
-                debug(
-                    "call: recv(), err: %r" % (err.__class__.__name__),
-                    inst=self)
-                raise RetryError
             except SSL.WantReadError:
                 self._ssl_want_read = True
                 debug("call: recv(), err: want-read", inst=self)
