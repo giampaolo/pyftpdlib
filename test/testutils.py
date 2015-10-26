@@ -198,7 +198,8 @@ class FTPd(threading.Thread):
     daemon = True
     shutdown_after = 10
     _lock = threading.Lock()
-    _flag = threading.Event()
+    _flag_started = threading.Event()
+    _flag_stopped = threading.Event()
 
     def __init__(self, addr=None):
         threading.Thread.__init__(self)
@@ -243,24 +244,27 @@ class FTPd(threading.Thread):
             FTPd.__init__(self, self.server.socket.getsockname(), self.handler)
         self._timeout = timeout
         threading.Thread.start(self)
-        self._flag.wait()
+        self._flag_started.wait()
 
     def run(self):
         self._serving = True
-        self._flag.set()
+        self._flag_started.set()
         started = time.time()
-        while self._serving:
-            with self._lock:
-                self.server.serve_forever(timeout=self._timeout,
-                                          blocking=False)
-            if (self.shutdown_after and
-                    time.time() >= started + self.shutdown_after):
-                now = time.time()
-                if now <= now + self.shutdown_after:
-                    print("shutting down test FTPd due to timeout")
-                    self.server.close_all()
-                    raise Exception("test FTPd shutdown due to timeout")
-        self.server.close_all()
+        try:
+            while self._serving:
+                with self._lock:
+                    self.server.serve_forever(timeout=self._timeout,
+                                              blocking=False)
+                if (self.shutdown_after and
+                        time.time() >= started + self.shutdown_after):
+                    now = time.time()
+                    if now <= now + self.shutdown_after:
+                        print("shutting down test FTPd due to timeout")
+                        self.server.close_all()
+                        raise Exception("test FTPd shutdown due to timeout")
+            self.server.close_all()
+        finally:
+            self._flag_stopped.set()
 
     def stop(self):
         """Stop serving (also disconnecting all currently connected
@@ -270,8 +274,9 @@ class FTPd(threading.Thread):
         if not self._serving:
             raise RuntimeError("Server not started yet")
         if not self._stopped:
+            self.join(timeout=3)
+            if threading.active_count() > 1:
+                warn("test FTP server thread is still running")
+            self._flag_stopped.wait()
             self._serving = False
             self._stopped = True
-            self.join(timeout=3)
-            if threading.activeCount() > 1:
-                warn("test FTP server thread is still running")
