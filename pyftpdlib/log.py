@@ -123,6 +123,13 @@ class LogFormatter(logging.Formatter):
         return formatted.replace("\n", "\n    ")
 
 
+def debug(s, inst=None):
+    s = "[debug] " + s
+    if inst is not None:
+        s += " (%r)" % inst
+    logger.debug(s)
+
+
 # TODO: write tests
 def config_logging(level=LEVEL, prefix=PREFIX, other_loggers=None):
     # Little speed up

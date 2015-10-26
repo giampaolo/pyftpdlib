@@ -10,6 +10,7 @@ Version: 1.5.0 - (UNRELEASED)
 - #324: FTPHandler.started attribute, to figure out when client connected.
 - #340: dropped python 2.4 and 2.5 support.
 - #344: bench.py script --ssl option.
+- #346: provide more debugging info.
 
 **Bug fixes**
 

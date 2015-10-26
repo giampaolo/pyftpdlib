@@ -39,6 +39,7 @@ from .ioloop import AsyncChat
 from .ioloop import Connector
 from .ioloop import RetryError
 from .ioloop import timer
+from .log import debug
 from .log import logger
 
 
@@ -404,10 +405,13 @@ class PassiveDTP(Acceptor):
 
     def close(self):
         if not self._closed:
+            debug("call: close()", inst=self)
             self._closed = True
             Acceptor.close(self)
             if self._idler is not None and not self._idler.cancelled:
                 self._idler.cancel()
+        else:
+            debug("call: close() had already been called", inst=self)
 
 
 class ActiveDTP(Connector):
@@ -520,11 +524,14 @@ class ActiveDTP(Connector):
 
     def close(self):
         if not self._closed:
+            debug("call: close()", inst=self)
             self._closed = True
             if self.socket is not None:
                 Connector.close(self)
             if self._idler is not None and not self._idler.cancelled:
                 self._idler.cancel()
+        else:
+            debug("call: close() had already been called", inst=self)
 
 
 class DTPHandler(AsyncChat):
@@ -607,7 +614,7 @@ class DTPHandler(AsyncChat):
         status.append("(addr=%s, user=%r, receive=%r, file=%r)"
                       % (addr, self.cmd_channel.username or '',
                          self.receive, getattr(self.file_obj, 'name', '')))
-        return '<%s at %#x>' % (' '.join(status), id(self))
+        return '<%s>' % (' '.join(status))
 
     __str__ = __repr__
 
@@ -619,6 +626,9 @@ class DTPHandler(AsyncChat):
     def push(self, data):
         self._initialized = True
         if self._fileno not in self.ioloop.socket_map:
+            debug(
+                "call: push() -> ioloop.modify(), fd was no longer in "
+                "socket_map, had to register() it again", inst=self)
             self.ioloop.register(self._fileno, self, self.ioloop.WRITE)
         else:
             self.ioloop.modify(self._fileno, self.ioloop.WRITE)
@@ -627,15 +637,20 @@ class DTPHandler(AsyncChat):
     def push_with_producer(self, producer):
         self._initialized = True
         if self._fileno not in self.ioloop.socket_map:
+            debug(
+                "call: push_wit_producer() -> ioloop.modify(), fd was no "
+                "longer in socket_map, had to register() it again", inst=self)
             self.ioloop.register(self._fileno, self, self.ioloop.WRITE)
         else:
             self.ioloop.modify(self._fileno, self.ioloop.WRITE)
         if self._use_sendfile(producer):
+            debug("call: push_with_producer() using sendfile(2)", inst=self)
             self._offset = producer.file.tell()
             self._filefd = self.file_obj.fileno()
             self.initiate_sendfile()
             self.initiate_send = self.initiate_sendfile
         else:
+            debug("call: push_with_producer() using send(2)", inst=self)
             AsyncChat.push_with_producer(self, producer)
 
     def close_when_done(self):
@@ -692,6 +707,9 @@ class DTPHandler(AsyncChat):
         """
         self._initialized = True
         if self._fileno not in self.ioloop.socket_map:
+            debug(
+                "call: enable_receiving() -> ioloop.modify(), fd was no "
+                "longer in socket_map, had to register() it again", inst=self)
             self.ioloop.register(self._fileno, self, self.ioloop.READ)
         else:
             self.ioloop.modify(self._fileno, self.ioloop.READ)
@@ -853,6 +871,7 @@ class DTPHandler(AsyncChat):
         """Close the data channel, first attempting to close any remaining
         file handles."""
         if not self._closed:
+            debug("call: close()", inst=self)
             self._closed = True
             # RFC-959 says we must close the connection before replying
             AsyncChat.close(self)
@@ -1210,6 +1229,7 @@ class FTPHandler(AsyncChat):
             # https://github.com/giampaolo/pyftpdlib/issues/188
             AsyncChat.__init__(self, socket.socket(), ioloop=ioloop)
             self.close()
+            debug("call: FTPHandler.__init__, err %r" % err, self)
             if err.errno == errno.EINVAL:
                 # https://github.com/giampaolo/pyftpdlib/issues/143
                 return
@@ -1221,6 +1241,8 @@ class FTPHandler(AsyncChat):
         try:
             self.remote_ip, self.remote_port = self.socket.getpeername()[:2]
         except socket.error as err:
+            debug("call: FTPHandler.__init__, err on getpeername() %r" % err,
+                  self)
             # A race condition  may occur if the other end is closing
             # before we can get the peername, hence ENOTCONN (see issue
             # #100) while EINVAL can occur on OSX (see issue #143).
@@ -1236,8 +1258,9 @@ class FTPHandler(AsyncChat):
         # try to handle urgent data inline
         try:
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_OOBINLINE, 1)
-        except socket.error:
-            pass
+        except socket.error as err:
+            debug("call: FTPHandler.__init__, err on SO_OOBINLINE %r" % err,
+                  self)
 
         # disable Nagle algorithm for the control socket only, resulting
         # in significantly better performances
@@ -1245,7 +1268,9 @@ class FTPHandler(AsyncChat):
             try:
                 self.socket.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
             except socket.error:
-                pass
+                debug(
+                    "call: FTPHandler.__init__, err on TCP_NODELAY %r" % err,
+                    self)
 
         # remove this instance from IOLoop's socket_map
         if not self.connected:
@@ -1260,7 +1285,7 @@ class FTPHandler(AsyncChat):
         status = [self.__class__.__module__ + "." + self.__class__.__name__]
         status.append("(addr=%s:%s, user=%r)" % (self.remote_ip,
                       self.remote_port, self.username or ''))
-        return '<%s at %#x>' % (' '.join(status), id(self))
+        return '<%s>' % (' '.join(status))
 
     __str__ = __repr__
 
@@ -1489,6 +1514,7 @@ class FTPHandler(AsyncChat):
     def close(self):
         """Close the current channel disconnecting the client."""
         if not self._closed:
+            debug("call: close()", inst=self)
             self._closed = True
             self._closing = False
             self.connected = False
@@ -1529,6 +1555,8 @@ class FTPHandler(AsyncChat):
             if self.remote_ip:
                 self.ioloop.call_later(0, self.on_disconnect,
                                        _errback=self.handle_error)
+        else:
+            debug("call: close() had already been called", inst=self)
 
     def _shutdown_connecting_dtp(self):
         """Close any ActiveDTP or PassiveDTP instance waiting to
@@ -2972,14 +3000,22 @@ else:
             """Secure the connection switching from plain-text to
             SSL/TLS.
             """
+            debug("securing SSL connection", self)
             try:
                 self.socket = SSL.Connection(ssl_context, self.socket)
-            except socket.error:
+            except socket.error as err:
+                # may happen in case the client connects/disconnects
+                # very quickly
+                debug(
+                    "call: secure_connection(); can't secure SSL connection "
+                    "%r; closing" % err, self)
                 self.close()
             except ValueError:
                 # may happen in case the client connects/disconnects
                 # very quickly
                 if self.socket.fileno() == -1:
+                    debug(
+                        "ValueError and fd == -1 on secure_connection()", self)
                     return
                 raise
             else:
@@ -2990,16 +3026,23 @@ else:
             self._ssl_accepting = True
             try:
                 self.socket.do_handshake()
-            except (SSL.WantReadError, SSL.WantWriteError):
+            except (SSL.WantReadError, SSL.WantWriteError) as err:
+                debug(
+                    "call: _do_ssl_handshake, err: %r" % (
+                        err.__class__.__name__),
+                    inst=self)
                 return
             except SSL.SysCallError as err:
+                debug("call: _do_ssl_handshake, err: %r" % err, inst=self)
                 retval, desc = err.args
                 if (retval == -1 and desc == 'Unexpected EOF') or retval > 0:
                     return self.handle_close()
                 raise
-            except SSL.Error:
+            except SSL.Error as err:
+                debug("call: _do_ssl_handshake, err: %r" % err, inst=self)
                 return self.handle_failed_ssl_handshake()
             else:
+                debug("SSL connection established", self)
                 self._ssl_accepting = False
                 self._ssl_established = True
                 self.handle_ssl_established()
@@ -3050,12 +3093,18 @@ else:
                 data = bytes(data)
             try:
                 return super(SSLConnection, self).send(data)
-            except (SSL.WantReadError, SSL.WantWriteError):
+            except (SSL.WantReadError, SSL.WantWriteError) as err:
+                debug(
+                    "call: send(), err: %r" % (err.__class__.__name__),
+                    inst=self)
                 return 0
-            except SSL.ZeroReturnError:
+            except SSL.ZeroReturnError as err:
+                debug(
+                    "call: send() -> shutdown(), err: zero-return", inst=self)
                 super(SSLConnection, self).handle_close()
                 return 0
             except SSL.SysCallError as err:
+                debug("call: send(), err: %r" % err, inst=self)
                 errnum, errstr = err.args
                 if errnum == errno.EWOULDBLOCK:
                     return 0
@@ -3069,12 +3118,18 @@ else:
         def recv(self, buffer_size):
             try:
                 return super(SSLConnection, self).recv(buffer_size)
-            except (SSL.WantReadError, SSL.WantWriteError):
-                return b''
-            except SSL.ZeroReturnError:
+            except (SSL.WantReadError, SSL.WantWriteError) as err:
+                debug(
+                    "call: recv(), err: %r" % (err.__class__.__name__),
+                    inst=self)
+                raise RetryError
+            except SSL.ZeroReturnError as err:
+                debug("call: recv() -> shutdown(), err: zero-return",
+                      inst=self)
                 super(SSLConnection, self).handle_close()
                 return b''
             except SSL.SysCallError as err:
+                debug("call: recv(), err: %r" % err, inst=self)
                 errnum, errstr = err.args
                 if (errnum in _ERRNOS_DISCONNECTED or
                         errstr == 'Unexpected EOF'):
@@ -3096,6 +3151,9 @@ else:
                 try:
                     os.write(self.socket.fileno(), b'')
                 except (OSError, socket.error) as err:
+                    debug(
+                        "call: _do_ssl_shutdown() -> os.write, err: %r" % err,
+                        inst=self)
                     if err.errno in (errno.EINTR, errno.EWOULDBLOCK,
                                      errno.ENOBUFS):
                         return
@@ -3126,11 +3184,17 @@ else:
                 done = self.socket.shutdown()
                 if not (laststate & SSL.RECEIVED_SHUTDOWN):
                     self.socket.set_shutdown(SSL.SENT_SHUTDOWN)
-            except (SSL.WantReadError, SSL.WantWriteError):
-                pass
-            except SSL.ZeroReturnError:
+            except (SSL.WantReadError, SSL.WantWriteError) as err:
+                debug("call: _do_ssl_shutdown() -> shutdown(), err: %r" % err,
+                      inst=self)
+            except SSL.ZeroReturnError as err:
+                debug(
+                    "call: _do_ssl_shutdown() -> shutdown(), err: zero-return",
+                    inst=self)
                 super(SSLConnection, self).close()
             except SSL.SysCallError as err:
+                debug("call: _do_ssl_shutdown() -> shutdown(), err: %r" % err,
+                      inst=self)
                 errnum, errstr = err.args
                 if (errnum in _ERRNOS_DISCONNECTED or
                         errstr == 'Unexpected EOF'):
@@ -3138,6 +3202,8 @@ else:
                 else:
                     raise
             except SSL.Error as err:
+                debug("call: _do_ssl_shutdown() -> shutdown(), err: %r" % err,
+                      inst=self)
                 # see:
                 # https://github.com/giampaolo/pyftpdlib/issues/171
                 # https://bugs.launchpad.net/pyopenssl/+bug/785985
@@ -3146,15 +3212,23 @@ else:
                 else:
                     raise
             except socket.error as err:
+                debug("call: _do_ssl_shutdown() -> shutdown(), err: %r" % err,
+                      inst=self)
                 if err.errno in _ERRNOS_DISCONNECTED:
                     super(SSLConnection, self).close()
                 else:
                     raise
             else:
                 if done:
+                    debug("call: _do_ssl_shutdown(), shutdown completed",
+                          inst=self)
                     self._ssl_established = False
                     self._ssl_closing = False
                     self.handle_ssl_shutdown()
+                else:
+                    debug(
+                        "call: _do_ssl_shutdown(), shutdown not completed yet",
+                        inst=self)
 
         def close(self):
             if self._ssl_established and not self._error:

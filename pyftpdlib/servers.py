@@ -44,6 +44,7 @@ import traceback
 
 from .ioloop import Acceptor
 from .ioloop import IOLoop
+from .log import debug
 from .log import logger
 
 
@@ -314,6 +315,8 @@ class _SpawnerBase(FTPServer):
                 if err.errno == errno.EBADF:
                     # we might get here in case the other end quickly
                     # disconnected (see test_quick_connect())
+                    debug("call: %s._loop(); add_channel() returned EBADF",
+                          self)
                     return
                 else:
                     raise

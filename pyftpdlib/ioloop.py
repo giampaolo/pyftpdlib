@@ -74,6 +74,7 @@ except ImportError:
 
 from ._compat import callable
 from .log import config_logging
+from .log import debug
 from .log import logger
 
 
@@ -143,6 +144,7 @@ class _Scheduler(object):
         # entire queue
         if (self._cancellations > 512 and
                 self._cancellations > (len(self._tasks) >> 1)):
+            debug("re-heapifying %s cancelled tasks" % self._cancellations)
             self.reheapify()
 
         try:
@@ -275,6 +277,14 @@ class _IOLoop(object):
     def __exit__(self, *args):
         self.close()
 
+    def __repr__(self):
+        status = [self.__class__.__module__ + "." + self.__class__.__name__]
+        status.append("(fds=%s, tasks=%s)" % (
+            len(self.socket_map), len(self.sched._tasks)))
+        return '<%s at %#x>' % (' '.join(status), id(self))
+
+    __str__ = __repr__
+
     @classmethod
     def instance(cls):
         """Return a global IOLoop instance."""
@@ -368,6 +378,7 @@ class _IOLoop(object):
 
     def close(self):
         """Closes the IOLoop, freeing any resources used."""
+        debug("closing IOLoop", self)
         self.__class__._instance = None
 
         # free connections
@@ -416,7 +427,7 @@ class Select(_IOLoop):
         try:
             del self.socket_map[fd]
         except KeyError:
-            pass
+            debug("call: unregister(); fd was no longer in socket_map", self)
         for l in (self._r, self._w):
             try:
                 l.remove(fd)
@@ -428,6 +439,8 @@ class Select(_IOLoop):
         if inst is not None:
             self.unregister(fd)
             self.register(fd, inst, events)
+        else:
+            debug("call: modify(); fd was no longer in socket_map", self)
 
     def poll(self, timeout):
         try:
@@ -473,7 +486,7 @@ class _BasePollEpoll(_IOLoop):
         try:
             del self.socket_map[fd]
         except KeyError:
-            pass
+            debug("call: unregister(); fd was no longer in socket_map", self)
         else:
             self._poller.unregister(fd)
 
@@ -791,11 +804,15 @@ class Acceptor(asyncore.dispatcher):
             sock, addr = self.accept()
         except TypeError:
             # sometimes accept() might return None (see issue 91)
+            debug("call: handle_accept(); accept() returned None", self)
             return
         except socket.error as err:
             # ECONNABORTED might be thrown on *BSD (see issue 105)
             if err.errno != errno.ECONNABORTED:
                 raise
+            else:
+                debug("call: handle_accept(); accept() returned ECONNABORTED",
+                      self)
         else:
             # sometimes addr == None instead of (ip, port) (see issue 104)
             if addr is not None:
@@ -889,6 +906,7 @@ class AsyncChat(asynchat.async_chat):
         try:
             return self.socket.send(data)
         except socket.error as err:
+            debug("call: send(), err: %s" % err, inst=self)
             if err.errno in _ERRNOS_RETRY:
                 return 0
             elif err.errno in _ERRNOS_DISCONNECTED:
@@ -901,6 +919,7 @@ class AsyncChat(asynchat.async_chat):
         try:
             data = self.socket.recv(buffer_size)
         except socket.error as err:
+            debug("call: recv(), err: %s" % err, inst=self)
             if err.errno in _ERRNOS_DISCONNECTED:
                 self.handle_close()
                 return b''
@@ -936,6 +955,9 @@ class AsyncChat(asynchat.async_chat):
             if self._current_io_events != wanted:
                 self.ioloop.modify(self._fileno, wanted)
                 self._current_io_events = wanted
+        else:
+            debug("call: initiate_send(); called with no connection",
+                  inst=self)
 
     def close_when_done(self):
         if len(self.producer_fifo) == 0:
