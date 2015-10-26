@@ -93,6 +93,7 @@ TESTFN = "$testfile"
 BUFFER_LEN = 8192
 SERVER_PROC = None
 TIMEOUT = None
+FILE_SIZE = "10M"
 SSL = False
 PY3 = sys.version_info >= (3, 0)
 
@@ -237,7 +238,7 @@ def retr(ftp):
     ftp.voidresp()
 
 
-def stor(ftp, size):
+def stor(ftp):
     """Same as ftplib's storbinary() but just sends dummy data
     instead of reading it from a real file.
     """
@@ -248,7 +249,7 @@ def stor(ftp, size):
         while 1:
             sent = conn.send(chunk)
             total_sent += sent
-            if total_sent >= size:
+            if total_sent >= FILE_SIZE:
                 break
     ftp.voidresp()
 
@@ -382,7 +383,7 @@ class OptFormatter(optparse.IndentedHelpFormatter):
 
 
 def main():
-    global HOST, PORT, USER, PASSWORD, SERVER_PROC, TIMEOUT, SSL
+    global HOST, PORT, USER, PASSWORD, SERVER_PROC, TIMEOUT, SSL, FILE_SIZE
     USAGE = "%s -u USERNAME -p PASSWORD [-H] [-P] [-b] [-n] [-s] [-k]" % (
         __file__)
     parser = optparse.OptionParser(usage=USAGE,
@@ -460,7 +461,7 @@ def main():
             return clients
 
         def bench_multi_retr(clients):
-            stor(clients[0], FILE_SIZE)
+            stor(clients[0])
             with timethis("%s concurrent clients (RETR %s file)" % (
                     howmany, bytes2human(FILE_SIZE))):
                 for ftp in clients:
