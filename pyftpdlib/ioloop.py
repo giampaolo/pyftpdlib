@@ -960,6 +960,9 @@ class AsyncChat(asynchat.async_chat):
             if not self.producer_fifo:
                 wanted = self.ioloop.READ
             else:
+                # In FTPHandler, we also want to listen for user input
+                # hence the READ. DTPHandler has its own initiate_send()
+                # which will either READ or WRITE.
                 wanted = self.ioloop.READ | self.ioloop.WRITE
             if self._current_io_events != wanted:
                 self.ioloop.modify(self._fileno, wanted)

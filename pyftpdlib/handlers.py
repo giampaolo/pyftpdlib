@@ -626,11 +626,13 @@ class DTPHandler(AsyncChat):
     def push(self, data):
         self._initialized = True
         self.modify_ioloop_events(self.ioloop.WRITE)
+        self._current_io_events = self.ioloop.WRITE
         AsyncChat.push(self, data)
 
     def push_with_producer(self, producer):
         self._initialized = True
         self.modify_ioloop_events(self.ioloop.WRITE)
+        self._current_io_events = self.ioloop.WRITE
         if self._use_sendfile(producer):
             debug("call: push_with_producer() using sendfile(2)", inst=self)
             self._offset = producer.file.tell()
@@ -695,6 +697,7 @@ class DTPHandler(AsyncChat):
         """
         self._initialized = True
         self.modify_ioloop_events(self.ioloop.READ)
+        self._current_io_events = self.ioloop.READ
         self.cmd = cmd
         if type == 'a':
             if os.linesep == '\r\n':
