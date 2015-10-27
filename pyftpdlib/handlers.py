@@ -626,13 +626,13 @@ class DTPHandler(AsyncChat):
     def push(self, data):
         self._initialized = True
         self.modify_ioloop_events(self.ioloop.WRITE)
-        self._current_io_events = self.ioloop.WRITE
+        self._wanted_io_events = self.ioloop.WRITE
         AsyncChat.push(self, data)
 
     def push_with_producer(self, producer):
         self._initialized = True
         self.modify_ioloop_events(self.ioloop.WRITE)
-        self._current_io_events = self.ioloop.WRITE
+        self._wanted_io_events = self.ioloop.WRITE
         if self._use_sendfile(producer):
             debug("call: push_with_producer() using sendfile(2)", inst=self)
             self._offset = producer.file.tell()
@@ -697,7 +697,7 @@ class DTPHandler(AsyncChat):
         """
         self._initialized = True
         self.modify_ioloop_events(self.ioloop.READ)
-        self._current_io_events = self.ioloop.READ
+        self._wanted_io_events = self.ioloop.READ
         self.cmd = cmd
         if type == 'a':
             if os.linesep == '\r\n':
@@ -3017,18 +3017,36 @@ else:
                 self.socket.set_accept_state()
                 self._ssl_accepting = True
 
+        @contextlib.contextmanager
+        def _handle_ssl_want_rw(self):
+            prev_row_pending = self._ssl_want_read or self._ssl_want_write
+            try:
+                yield
+            except SSL.WantReadError:
+                self._ssl_want_read = True
+            except SSL.WantWriteError:
+                self._ssl_want_write = True
+
+            if (self._ssl_want_read or self._ssl_want_write):
+                if self._ssl_want_read:
+                    self.modify_ioloop_events(
+                        self._wanted_io_events | self.ioloop.READ)
+                if self._ssl_want_write:
+                    self.modify_ioloop_events(
+                        self._wanted_io_events | self.ioloop.WRITE)
+            else:
+                if prev_row_pending:
+                    self.modify_ioloop_events(self._wanted_io_events)
+
         def _do_ssl_handshake(self):
             self._ssl_accepting = True
             self._ssl_want_read = False
             self._ssl_want_write = False
             try:
                 self.socket.do_handshake()
-            except SSL.WantReadError:
-                self._ssl_want_read = True
-                debug("call: _do_ssl_handshake, err: want-read", inst=self)
-            except SSL.WantWriteError:
-                self._ssl_want_write = True
-                debug("call: _do_ssl_handshake, err: want-write", inst=self)
+            # this is handled in _handle_ssl_want_rw() ctx manager
+            except (SSL.WantReadError, SSL.WantWriteError):
+                raise
             except SSL.SysCallError as err:
                 debug("call: _do_ssl_handshake, err: %r" % err, inst=self)
                 retval, desc = err.args
@@ -3056,22 +3074,24 @@ else:
             raise NotImplementedError("must be implemented in subclass")
 
         def handle_read_event(self):
-            self._ssl_want_read = False
-            if self._ssl_accepting:
-                self._do_ssl_handshake()
-            elif self._ssl_closing:
-                self._do_ssl_shutdown()
-            else:
-                super(SSLConnection, self).handle_read_event()
+            with self._handle_ssl_want_rw():
+                self._ssl_want_read = False
+                if self._ssl_accepting:
+                    self._do_ssl_handshake()
+                elif self._ssl_closing:
+                    self._do_ssl_shutdown()
+                else:
+                    super(SSLConnection, self).handle_read_event()
 
         def handle_write_event(self):
-            self._ssl_want_write = False
-            if self._ssl_accepting:
-                self._do_ssl_handshake()
-            elif self._ssl_closing:
-                self._do_ssl_shutdown()
-            else:
-                super(SSLConnection, self).handle_write_event()
+            with self._handle_ssl_want_rw():
+                self._ssl_want_write = False
+                if self._ssl_accepting:
+                    self._do_ssl_handshake()
+                elif self._ssl_closing:
+                    self._do_ssl_shutdown()
+                else:
+                    super(SSLConnection, self).handle_write_event()
 
         def handle_error(self):
             self._error = True
@@ -3093,13 +3113,12 @@ else:
             try:
                 return super(SSLConnection, self).send(data)
             except SSL.WantReadError:
-                # TODO: not actually sure this can ever happen.
-                self._ssl_want_read = True
                 debug("call: send(), err: want-read", inst=self)
+                self._ssl_want_read = True
                 return 0
             except SSL.WantWriteError:
-                self._ssl_want_write = True
                 debug("call: send(), err: want-write", inst=self)
+                self._ssl_want_write = True
                 return 0
             except SSL.ZeroReturnError as err:
                 debug(
@@ -3122,13 +3141,12 @@ else:
             try:
                 return super(SSLConnection, self).recv(buffer_size)
             except SSL.WantReadError:
-                self._ssl_want_read = True
                 debug("call: recv(), err: want-read", inst=self)
+                self._ssl_want_read = True
                 raise RetryError
             except SSL.WantWriteError:
-                # TODO: not actually sure this can ever happen.
-                self._ssl_want_write = True
                 debug("call: recv(), err: want-write", inst=self)
+                self._ssl_want_write = True
                 raise RetryError
             except SSL.ZeroReturnError as err:
                 debug("call: recv() -> shutdown(), err: zero-return",
@@ -3191,12 +3209,9 @@ else:
                 done = self.socket.shutdown()
                 if not (laststate & SSL.RECEIVED_SHUTDOWN):
                     self.socket.set_shutdown(SSL.SENT_SHUTDOWN)
-            except SSL.WantReadError:
-                self._ssl_want_read = True
-                debug("call: _do_ssl_shutdown, err: want-read", inst=self)
-            except SSL.WantWriteError:
-                self._ssl_want_write = True
-                debug("call: _do_ssl_shutdown, err: want-write", inst=self)
+            # this is handled in _handle_ssl_want_rw() ctx manager
+            except (SSL.WantReadError, SSL.WantWriteError):
+                raise
             except SSL.ZeroReturnError as err:
                 debug(
                     "call: _do_ssl_shutdown() -> shutdown(), err: zero-return",

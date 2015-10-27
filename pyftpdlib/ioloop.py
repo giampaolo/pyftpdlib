@@ -886,6 +886,7 @@ class AsyncChat(asynchat.async_chat):
 
     def __init__(self, sock, ioloop=None):
         self.ioloop = ioloop or IOLoop.instance()
+        self._wanted_io_events = self.ioloop.READ
         self._current_io_events = self.ioloop.READ
         self._closed = False
         self._closing = False
@@ -904,7 +905,9 @@ class AsyncChat(asynchat.async_chat):
                 "socket_map, had to register() it again", inst=self)
             self.ioloop.register(self._fileno, self, events)
         else:
-            self.ioloop.modify(self._fileno, events)
+            if events != self._current_io_events:
+                self.ioloop.modify(self._fileno, events)
+        self._current_io_events = events
 
     # send() and recv() overridden as a fix around various bugs:
     # - http://bugs.python.org/issue1736101
@@ -964,9 +967,9 @@ class AsyncChat(asynchat.async_chat):
                 # hence the READ. DTPHandler has its own initiate_send()
                 # which will either READ or WRITE.
                 wanted = self.ioloop.READ | self.ioloop.WRITE
-            if self._current_io_events != wanted:
+            if self._wanted_io_events != wanted:
                 self.ioloop.modify(self._fileno, wanted)
-                self._current_io_events = wanted
+                self._wanted_io_events = wanted
         else:
             debug("call: initiate_send(); called with no connection",
                   inst=self)

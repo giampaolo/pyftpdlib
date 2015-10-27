@@ -21,8 +21,8 @@ Version: 1.5.0 - (UNRELEASED)
   argument.
 - #338: benchmark script uses old psutil API.
 - #343: recv() does not handle EBUSY.
-- #347: SSL handshake may file due to WantReadError and WantWriteError not
-  being taken into account.
+- #347: SSL WantReadError and WantWriteError errors are not properly taken into
+  account.
 
 
 Version: 1.4.0 - Date: 2014-06-03
