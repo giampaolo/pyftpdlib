@@ -92,7 +92,7 @@ class TestFtpAuthentication(unittest.TestCase):
 
     def setUp(self):
         self.server = self.server_class()
-        self.server.handler._auth_failed_timeout = 0.001
+        self.server.handler.auth_failed_timeout = 0.001
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
@@ -100,7 +100,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.dummyfile = BytesIO()
 
     def tearDown(self):
-        self.server.handler._auth_failed_timeout = 5
+        self.server.handler.auth_failed_timeout = 5
         self.client.close()
         self.server.stop()
         if not self.file.closed:
@@ -1575,7 +1575,7 @@ class TestConfigurableOptions(unittest.TestCase):
         self.server.server.max_cons_per_ip = 0
         self.server.handler.banner = "pyftpdlib ready."
         self.server.handler.max_login_attempts = 3
-        self.server.handler._auth_failed_timeout = 5
+        self.server.handler.auth_failed_timeout = 5
         self.server.handler.masquerade_address = None
         self.server.handler.masquerade_address_map = {}
         self.server.handler.permit_privileged_ports = False
@@ -1659,7 +1659,7 @@ class TestConfigurableOptions(unittest.TestCase):
     def test_max_login_attempts(self):
         # Test FTPHandler.max_login_attempts attribute.
         self.server.handler.max_login_attempts = 1
-        self.server.handler._auth_failed_timeout = 0
+        self.server.handler.auth_failed_timeout = 0
         self.assertRaises(ftplib.error_perm, self.client.login, 'wrong',
                           'wrong')
         # socket.error (Windows) or EOFError (Linux) exceptions are
@@ -1971,7 +1971,7 @@ class TestCallbacks(unittest.TestCase):
         user = []
 
         class TestHandler(FTPHandler):
-            _auth_failed_timeout = 0
+            auth_failed_timeout = 0
 
             def on_login(self, username):
                 user.append(username)
@@ -1985,7 +1985,7 @@ class TestCallbacks(unittest.TestCase):
         pair = []
 
         class TestHandler(FTPHandler):
-            _auth_failed_timeout = 0
+            auth_failed_timeout = 0
 
             def on_login_failed(self, username, password):
                 pair.append((username, password))

@@ -11,6 +11,8 @@ Version: 1.5.0 - (UNRELEASED)
 - #340: dropped python 2.4 and 2.5 support.
 - #344: bench.py script --ssl option.
 - #346: provide more debugging info.
+- #348: FTPHandler has a new "auth_failed_timeout" class attribute (previously
+  this was called _auth_failed_timeout).
 
 **Bug fixes**
 
@@ -23,6 +25,11 @@ Version: 1.5.0 - (UNRELEASED)
 - #343: recv() does not handle EBUSY.
 - #347: SSL WantReadError and WantWriteError errors are not properly taken into
   account.
+
+**Incompatible API changes**
+
+- FTPHandler._auth_failed_timeout has been renamed to
+  FTPHandler.auth_failed_timeout.
 
 
 Version: 1.4.0 - Date: 2014-06-03

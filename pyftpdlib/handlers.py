@@ -1154,6 +1154,7 @@ class FTPHandler(AsyncChat):
     tcp_no_delay = hasattr(socket, "TCP_NODELAY")
     unicode_errors = 'replace'
     log_prefix = '%(remote_ip)s:%(remote_port)s-[%(username)s]'
+    auth_failed_timeout = 3
 
     def __init__(self, conn, server, ioloop=None):
         """Initialize the command channel.
@@ -2412,8 +2413,6 @@ class FTPHandler(AsyncChat):
             self.respond('331 %s, send password.' % msg, logfun=logging.info)
         self.username = line
 
-    _auth_failed_timeout = 5
-
     def ftp_PASS(self, line):
         """Check username's password against the authorizer."""
         if self.authenticated:
@@ -2451,7 +2450,7 @@ class FTPHandler(AsyncChat):
                 # response string should be capitalized as per RFC-959
                 msg = msg.capitalize()
             self.del_channel()
-            self.ioloop.call_later(self._auth_failed_timeout, auth_failed,
+            self.ioloop.call_later(self.auth_failed_timeout, auth_failed,
                                    self.username, line, msg,
                                    _errback=self.handle_error)
             self.username = ""
