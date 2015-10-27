@@ -898,7 +898,7 @@ class AsyncChat(asynchat.async_chat):
     def del_channel(self, map=None):
         self.ioloop.unregister(self._fileno)
 
-    def modify_ioloop_events(self, events):
+    def modify_ioloop_events(self, events, logdebug=False):
         if self._fileno not in self.ioloop.socket_map:
             debug(
                 "call: modify_ioloop_events(), fd was no longer in "
@@ -906,6 +906,17 @@ class AsyncChat(asynchat.async_chat):
             self.ioloop.register(self._fileno, self, events)
         else:
             if events != self._current_io_events:
+                if logdebug:
+                    if events == self.ioloop.READ:
+                        ev = "R"
+                    elif events == self.ioloop.WRITE:
+                        ev = "W"
+                    elif events == self.ioloop.READ | self.ioloop.WRITE:
+                        ev = "RW"
+                    else:
+                        ev = events
+                    debug("call: IOLoop.modify(); setting %r IO events" % ev,
+                          self)
                 self.ioloop.modify(self._fileno, events)
         self._current_io_events = events
 

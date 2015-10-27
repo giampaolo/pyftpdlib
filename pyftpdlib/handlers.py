@@ -410,8 +410,6 @@ class PassiveDTP(Acceptor):
             Acceptor.close(self)
             if self._idler is not None and not self._idler.cancelled:
                 self._idler.cancel()
-        else:
-            debug("call: close() had already been called", inst=self)
 
 
 class ActiveDTP(Connector):
@@ -530,8 +528,6 @@ class ActiveDTP(Connector):
                 Connector.close(self)
             if self._idler is not None and not self._idler.cancelled:
                 self._idler.cancel()
-        else:
-            debug("call: close() had already been called", inst=self)
 
 
 class DTPHandler(AsyncChat):
@@ -1540,8 +1536,6 @@ class FTPHandler(AsyncChat):
             if self.remote_ip:
                 self.ioloop.call_later(0, self.on_disconnect,
                                        _errback=self.handle_error)
-        else:
-            debug("call: close() had already been called", inst=self)
 
     def _shutdown_connecting_dtp(self):
         """Close any ActiveDTP or PassiveDTP instance waiting to
@@ -3023,17 +3017,18 @@ else:
             try:
                 yield
             except SSL.WantReadError:
+                # we should never get here; it's just for extra safety
                 self._ssl_want_read = True
             except SSL.WantWriteError:
+                # we should never get here; it's just for extra safety
                 self._ssl_want_write = True
 
-            if (self._ssl_want_read or self._ssl_want_write):
-                if self._ssl_want_read:
-                    self.modify_ioloop_events(
-                        self._wanted_io_events | self.ioloop.READ)
-                if self._ssl_want_write:
-                    self.modify_ioloop_events(
-                        self._wanted_io_events | self.ioloop.WRITE)
+            if self._ssl_want_read:
+                self.modify_ioloop_events(
+                    self._wanted_io_events | self.ioloop.READ, logdebug=True)
+            elif self._ssl_want_write:
+                self.modify_ioloop_events(
+                    self._wanted_io_events | self.ioloop.WRITE, logdebug=True)
             else:
                 if prev_row_pending:
                     self.modify_ioloop_events(self._wanted_io_events)
@@ -3044,9 +3039,12 @@ else:
             self._ssl_want_write = False
             try:
                 self.socket.do_handshake()
-            # this is handled in _handle_ssl_want_rw() ctx manager
-            except (SSL.WantReadError, SSL.WantWriteError):
-                raise
+            except SSL.WantReadError:
+                self._ssl_want_read = True
+                debug("call: _do_ssl_handshake, err: want-read", inst=self)
+            except SSL.WantWriteError:
+                self._ssl_want_write = True
+                debug("call: _do_ssl_handshake, err: want-write", inst=self)
             except SSL.SysCallError as err:
                 debug("call: _do_ssl_handshake, err: %r" % err, inst=self)
                 retval, desc = err.args
@@ -3209,9 +3207,12 @@ else:
                 done = self.socket.shutdown()
                 if not (laststate & SSL.RECEIVED_SHUTDOWN):
                     self.socket.set_shutdown(SSL.SENT_SHUTDOWN)
-            # this is handled in _handle_ssl_want_rw() ctx manager
-            except (SSL.WantReadError, SSL.WantWriteError):
-                raise
+            except SSL.WantReadError:
+                self._ssl_want_read = True
+                debug("call: _do_ssl_shutdown, err: want-read", inst=self)
+            except SSL.WantWriteError:
+                self._ssl_want_write = True
+                debug("call: _do_ssl_shutdown, err: want-write", inst=self)
             except SSL.ZeroReturnError as err:
                 debug(
                     "call: _do_ssl_shutdown() -> shutdown(), err: zero-return",
