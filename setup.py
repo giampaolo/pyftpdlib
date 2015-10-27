@@ -7,8 +7,10 @@
 $ python setup.py install
 """
 
+from __future__ import print_function
 import os
 import sys
+import textwrap
 try:
     from setuptools import setup
 except ImportError:
@@ -49,10 +51,10 @@ def hilite(s, ok=True, bold=False):
         attr = []
         if ok is None:  # no color
             pass
-        elif ok:   # green
-            attr.append('32')
-        else:   # red
-            attr.append('31')
+        elif ok:
+            attr.append('32')  # green
+        else:
+            attr.append('31')  # red
         if bold:
             attr.append('1')
         return '\x1b[%sm%s\x1b[0m' % (';'.join(attr), s)
@@ -123,17 +125,21 @@ def main():
                 if hasattr(sendfile, 'has_sf_hdtr'):  # old 1.2.4 version
                     raise ImportError
         except ImportError:
-            msg = "\nyou might want to install 'pysendfile' module to " \
-                  "speedup transfers:\n" \
-                  "https://github.com/giampaolo/pysendfile/\n"
-            sys.stderr.write(hilite(msg, ok=0, bold=1))
+            msg = textwrap.dedent("""
+                'pysendfile' third-party module is not installed. This is not
+                essential but it considerably speeds up file transfers.
+                You can install it with 'pip install pysendfile'.
+                More at: https://github.com/giampaolo/pysendfile""")
+            print(hilite(msg, ok=False), file=sys.stderr)
 
     try:
         from OpenSSL import SSL  # NOQA
     except ImportError:
-        msg = "\nyou might want to install 'PyOpenSSL' module to support " \
-              "FTPS\n"
-        sys.stderr.write(hilite(msg, ok=0, bold=1))
+        msg = textwrap.dedent("""
+            'pyopenssl' third-party module is not installed. This means
+            FTPS support will be disabled. You can install it with:
+            'pip install pyopenssl'.""")
+        print(hilite(msg, ok=False), file=sys.stderr)
 
 
 if __name__ == '__main__':
