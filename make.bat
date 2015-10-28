@@ -14,7 +14,7 @@ if "%PYTHON%" == "" (
     set PYTHON=C:\Python27\python.exe
 )
 if "%TSCRIPT%" == "" (
-    set TSCRIPT=test\runner.py
+    set TSCRIPT=pyftpdlib\test\runner.py
 )
 
 

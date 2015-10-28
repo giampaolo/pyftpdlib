@@ -16,15 +16,15 @@ from pyftpdlib._compat import unicode
 from pyftpdlib.authorizers import AuthenticationFailed
 from pyftpdlib.authorizers import AuthorizerError
 from pyftpdlib.authorizers import DummyAuthorizer
-from testutils import HOME
-from testutils import PASSWD
-from testutils import POSIX
-from testutils import TESTFN
-from testutils import touch
-from testutils import unittest
-from testutils import USER
-from testutils import VERBOSITY
-from testutils import WINDOWS
+from pyftpdlib.test import HOME
+from pyftpdlib.test import PASSWD
+from pyftpdlib.test import POSIX
+from pyftpdlib.test import TESTFN
+from pyftpdlib.test import touch
+from pyftpdlib.test import unittest
+from pyftpdlib.test import USER
+from pyftpdlib.test import VERBOSITY
+from pyftpdlib.test import WINDOWS
 
 if POSIX:
     import pwd

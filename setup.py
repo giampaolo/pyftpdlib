@@ -83,7 +83,13 @@ def main():
         author="Giampaolo Rodola'",
         author_email='g.rodola@gmail.com',
         url='https://github.com/giampaolo/pyftpdlib/',
-        packages=['pyftpdlib'],
+        packages=['pyftpdlib', 'pyftpdlib.test'],
+        package_data={
+            "pyftpdlib.test": [
+                "README",
+                'keycert.pem',
+                ],
+            },
         keywords=['ftp', 'ftps', 'server', 'ftpd', 'daemon', 'python', 'ssl',
                   'sendfile', 'asynchronous', 'nonblocking', 'eventdriven',
                   'rfc959', 'rfc1123', 'rfc2228', 'rfc2428', 'rfc2640',

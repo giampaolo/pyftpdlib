@@ -13,6 +13,7 @@ Version: 1.5.0 - (UNRELEASED)
 - #346: provide more debugging info.
 - #348: FTPHandler has a new "auth_failed_timeout" class attribute (previously
   this was called _auth_failed_timeout).
+- #350: tests now live in pyftpdlib module namespace.
 
 **Bug fixes**
 

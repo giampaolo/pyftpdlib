@@ -3,7 +3,7 @@
 # $ make install PYTHON=python3.3
 
 PYTHON=python
-TSCRIPT=test/runner.py
+TSCRIPT=pyftpdlib/test/runner.py
 FLAGS=
 
 all: test
@@ -58,16 +58,16 @@ test: install
 	$(PYTHON) $(TSCRIPT)
 
 test-functional: install
-	$(PYTHON) test/test_functional.py
+	$(PYTHON) pyftpdlib/test/test_functional.py
 
 test-functional-ssl: install
-	$(PYTHON) test/test_functional_ssl.py
+	$(PYTHON) pyftpdlib/test/test_functional_ssl.py
 
 # Run a specific test by name; e.g. "make test-by-name retr" will run
 # all test methods containing "retr" in their name.
 # Requires "pip install nose".
 test-by-name:
-	@$(PYTHON) -m nose test/test_*.py --nocapture -v -m $(filter-out $@,$(MAKECMDGOALS))
+	@$(PYTHON) -m nose pyftpdlib/test/test_*.py --nocapture -v -m $(filter-out $@,$(MAKECMDGOALS))
 
 nosetest: install
 	# $ make nosetest FLAGS=test_name

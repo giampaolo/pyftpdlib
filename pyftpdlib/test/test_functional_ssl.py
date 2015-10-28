@@ -15,29 +15,29 @@ except ImportError:
     ssl = None
 
 from pyftpdlib import handlers
-from test_functional import TestCallbacks
-from test_functional import TestConfigurableOptions
-from test_functional import TestCornerCases
-from test_functional import TestFtpAbort
-from test_functional import TestFtpAuthentication
-from test_functional import TestFtpCmdsSemantic
-from test_functional import TestFtpDummyCmds
-from test_functional import TestFtpFsOperations
-from test_functional import TestFtpListingCmds
-from test_functional import TestFtpRetrieveData
-from test_functional import TestFtpStoreData
-from test_functional import TestIPv4Environment
-from test_functional import TestIPv6Environment
-from test_functional import TestTimeouts
-from testutils import configure_logging
-from testutils import FTPd
-from testutils import PASSWD
-from testutils import remove_test_files
-from testutils import TIMEOUT
-from testutils import TRAVIS
-from testutils import unittest
-from testutils import USER
-from testutils import VERBOSITY
+from pyftpdlib.test import configure_logging
+from pyftpdlib.test import FTPd
+from pyftpdlib.test import PASSWD
+from pyftpdlib.test import remove_test_files
+from pyftpdlib.test import TIMEOUT
+from pyftpdlib.test import TRAVIS
+from pyftpdlib.test import unittest
+from pyftpdlib.test import USER
+from pyftpdlib.test import VERBOSITY
+from pyftpdlib.test.test_functional import TestCallbacks
+from pyftpdlib.test.test_functional import TestConfigurableOptions
+from pyftpdlib.test.test_functional import TestCornerCases
+from pyftpdlib.test.test_functional import TestFtpAbort
+from pyftpdlib.test.test_functional import TestFtpAuthentication
+from pyftpdlib.test.test_functional import TestFtpCmdsSemantic
+from pyftpdlib.test.test_functional import TestFtpDummyCmds
+from pyftpdlib.test.test_functional import TestFtpFsOperations
+from pyftpdlib.test.test_functional import TestFtpListingCmds
+from pyftpdlib.test.test_functional import TestFtpRetrieveData
+from pyftpdlib.test.test_functional import TestFtpStoreData
+from pyftpdlib.test.test_functional import TestIPv4Environment
+from pyftpdlib.test.test_functional import TestIPv6Environment
+from pyftpdlib.test.test_functional import TestTimeouts
 
 
 FTPS_SUPPORT = (hasattr(ftplib, 'FTP_TLS') and

@@ -7,10 +7,10 @@
 import os
 import sys
 
-from testutils import configure_logging
-from testutils import remove_test_files
-from testutils import unittest
-from testutils import VERBOSITY
+from pyftpdlib.test import configure_logging
+from pyftpdlib.test import remove_test_files
+from pyftpdlib.test import unittest
+from pyftpdlib.test import VERBOSITY
 
 
 HERE = os.path.abspath(os.path.dirname(__file__))

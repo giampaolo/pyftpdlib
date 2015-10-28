@@ -7,9 +7,9 @@
 import time
 
 from pyftpdlib.ioloop import IOLoop
-from testutils import POSIX
-from testutils import unittest
-from testutils import VERBOSITY
+from pyftpdlib.test import POSIX
+from pyftpdlib.test import unittest
+from pyftpdlib.test import VERBOSITY
 
 
 class TestCallLater(unittest.TestCase):

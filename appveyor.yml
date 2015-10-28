@@ -60,7 +60,7 @@ install:
 build: off
 
 test_script:
-  - "%WITH_COMPILER% %PYTHON%/python test/runner.py"
+  - "%WITH_COMPILER% %PYTHON%/python pyftpdlib/test/runner.py"
 
 artifacts:
   - path: dist\*

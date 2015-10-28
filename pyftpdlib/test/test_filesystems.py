@@ -10,13 +10,13 @@ import tempfile
 from pyftpdlib._compat import getcwdu
 from pyftpdlib._compat import u
 from pyftpdlib.filesystems import AbstractedFS
-from testutils import HOME
-from testutils import POSIX
-from testutils import safe_remove
-from testutils import TESTFN
-from testutils import touch
-from testutils import unittest
-from testutils import VERBOSITY
+from pyftpdlib.test import HOME
+from pyftpdlib.test import POSIX
+from pyftpdlib.test import safe_remove
+from pyftpdlib.test import TESTFN
+from pyftpdlib.test import touch
+from pyftpdlib.test import unittest
+from pyftpdlib.test import VERBOSITY
 
 if POSIX:
     from pyftpdlib.filesystems import UnixFilesystem
