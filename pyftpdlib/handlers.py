@@ -626,7 +626,7 @@ class DTPHandler(AsyncChat):
         else:
             if not hasattr(self.file_obj, "fileno"):
                 debug("starting transfer not using sendfile(2) %r has no "
-                      "fileno() method", self.file_obj)
+                      "fileno() method" % self.file_obj, self)
                 return False
         if not producer.type == 'i':
             debug("starting transfer not using sendfile(2) (text file "
