@@ -14,6 +14,8 @@ Version: 1.5.0 - (UNRELEASED)
 - #348: FTPHandler has a new "auth_failed_timeout" class attribute (previously
   this was called _auth_failed_timeout).
 - #350: tests now live in pyftpdlib module namespace.
+- #365: sendfile() is now used in case we're using SSL but data connection is
+  in clear text.
 
 **Bug fixes**
 

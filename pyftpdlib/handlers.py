@@ -615,9 +615,25 @@ class DTPHandler(AsyncChat):
     __str__ = __repr__
 
     def _use_sendfile(self, producer):
-        return (self.cmd_channel.use_sendfile and
-                isinstance(producer, FileProducer) and
-                producer.type == 'i')
+        if not self.cmd_channel.use_sendfile:
+            debug("starting transfer not using sendfile(2) as per server "
+                  "config", self)
+            return False
+        if not isinstance(producer, FileProducer):
+            debug("starting transfer not using sendfile(2) (directory "
+                  "listing)", self)
+            return False
+        else:
+            if not hasattr(self.file_obj, "fileno"):
+                debug("starting transfer not using sendfile(2) %r has no "
+                      "fileno() method", self.file_obj)
+                return False
+        if not producer.type == 'i':
+            debug("starting transfer not using sendfile(2) (text file "
+                  "transfer)", self)
+            return False
+        debug("starting transfer using sendfile()", self)
+        return True
 
     def push(self, data):
         self._initialized = True
@@ -630,13 +646,12 @@ class DTPHandler(AsyncChat):
         self.modify_ioloop_events(self.ioloop.WRITE)
         self._wanted_io_events = self.ioloop.WRITE
         if self._use_sendfile(producer):
-            debug("call: push_with_producer() using sendfile(2)", inst=self)
             self._offset = producer.file.tell()
             self._filefd = self.file_obj.fileno()
             self.initiate_sendfile()
             self.initiate_send = self.initiate_sendfile
         else:
-            debug("call: push_with_producer() using send(2)", inst=self)
+            debug("starting transfer using send()", self)
             AsyncChat.push_with_producer(self, producer)
 
     def close_when_done(self):
@@ -3273,7 +3288,13 @@ else:
                 self.secure_connection(self.cmd_channel.ssl_context)
 
         def _use_sendfile(self, producer):
-            return False
+            if isinstance(self.socket, SSL.Connection):
+                debug(
+                    "starting transfer not using sendfile(2) (SSL connection)",
+                    self)
+                return False
+            else:
+                return super(TLS_DTPHandler, self)._use_sendfile(producer)
 
         def handle_failed_ssl_handshake(self):
             # TLS/SSL handshake failure, probably client's fault which
