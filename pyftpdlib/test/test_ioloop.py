@@ -4,12 +4,117 @@
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
 
+import contextlib
+import socket
 import time
 
+from pyftpdlib.ioloop import AsyncChat
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.test import POSIX
 from pyftpdlib.test import unittest
 from pyftpdlib.test import VERBOSITY
+import pyftpdlib.ioloop
+
+
+if hasattr(socket, 'socketpair'):
+    socketpair = socket.socketpair
+else:
+    def socketpair(family=socket.AF_INET, type=socket.SOCK_STREAM, proto=0):
+        with contextlib.closing(socket.socket(family, type, proto)) as l:
+            l.bind(("localhost", 0))
+            l.listen()
+            c = socket.socket(family, type, proto)
+            try:
+                c.connect(l.getsockname())
+                caddr = c.getsockname()
+                while True:
+                    a, addr = l.accept()
+                    # check that we've got the correct client
+                    if addr == caddr:
+                        return c, a
+                    a.close()
+            except OSError:
+                c.close()
+                raise
+
+
+# TODO: write more tests.
+class BaseIOLoopTestCase(object):
+
+    ioloop_class = None
+
+    def make_socketpair(self):
+        rd, wr = socketpair()
+        self.addCleanup(rd.close)
+        self.addCleanup(wr.close)
+        return rd, wr
+
+    def test_register(self):
+        s = self.ioloop_class()
+        self.addCleanup(s.close)
+        rd, wr = self.make_socketpair()
+        handler = AsyncChat(rd)
+        s.register(rd, handler, s.READ)
+        s.register(wr, handler, s.WRITE)
+        self.assertIn(rd, s.socket_map)
+        self.assertIn(wr, s.socket_map)
+        return (s, rd, wr)
+
+    def test_unregister(self):
+        s, rd, wr = self.test_register()
+        s.unregister(rd)
+        s.unregister(wr)
+        self.assertNotIn(rd, s.socket_map)
+        self.assertNotIn(wr, s.socket_map)
+
+    def test_unregister_twice(self):
+        s, rd, wr = self.test_register()
+        s.unregister(rd)
+        s.unregister(rd)
+        s.unregister(wr)
+        s.unregister(wr)
+
+    def test_modify(self):
+        s, rd, wr = self.test_register()
+        s.modify(rd, s.WRITE)
+        s.modify(wr, s.READ)
+
+    def test_close(self):
+        s, rd, wr = self.test_register()
+        s.close()
+        self.assertEqual(s.socket_map, {})
+
+
+class DefaultIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
+    ioloop_class = pyftpdlib.ioloop.IOLoop
+
+
+class SelectIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
+    ioloop_class = pyftpdlib.ioloop.Select
+
+
+@unittest.skipUnless(hasattr(pyftpdlib.ioloop, 'Poll'),
+                     "poll() not available on this platform")
+class PollIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
+    ioloop_class = getattr(pyftpdlib.ioloop, "Poll", None)
+
+
+@unittest.skipUnless(hasattr(pyftpdlib.ioloop, 'Epoll'),
+                     "epoll() not available on this platform (Linux only)")
+class EpollIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
+    ioloop_class = getattr(pyftpdlib.ioloop, "Epoll", None)
+
+
+@unittest.skipUnless(hasattr(pyftpdlib.ioloop, 'DevPoll'),
+                     "/dev/poll not available on this platform (Solaris only)")
+class DevPollIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
+    ioloop_class = getattr(pyftpdlib.ioloop, "DevPoll", None)
+
+
+@unittest.skipUnless(hasattr(pyftpdlib.ioloop, 'Kqueue'),
+                     "/dev/poll not available on this platform (BSD only)")
+class KqueueIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
+    ioloop_class = getattr(pyftpdlib.ioloop, "Kqueue", None)
 
 
 class TestCallLater(unittest.TestCase):
