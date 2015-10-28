@@ -129,7 +129,13 @@ class FTPServer(Acceptor):
 
     def _log_start(self):
         def get_fqname(obj):
-            return obj.__module__ + "." + obj.__class__.__name__
+            try:
+                return obj.__module__ + "." + obj.__class__.__name__
+            except AttributeError:
+                try:
+                    return obj.__module__ + "." + obj.__name__
+                except AttributeError:
+                    return str(obj)
 
         if (not logging.getLogger('pyftpdlib').handlers and not
                 logging.root.handlers):
@@ -174,9 +180,9 @@ class FTPServer(Acceptor):
         logger.debug("timeout: %s", self.handler.timeout or "unlimited")
         logger.debug("banner: %r", self.handler.banner)
         logger.debug("max login attempts: %r", self.handler.max_login_attempts)
-        if getattr(self.handler, 'certfile'):
+        if getattr(self.handler, 'certfile', None):
             logger.debug("SSL certfile: %r", self.handler.certfile)
-        if getattr(self.handler, 'keyfile'):
+        if getattr(self.handler, 'keyfile', None):
             logger.debug("SSL keyfile: %r", self.handler.keyfile)
 
     def serve_forever(self, timeout=None, blocking=True, handle_exit=True):
