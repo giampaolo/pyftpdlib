@@ -536,7 +536,7 @@ def main():
         bench_stor()
         bench_retr()
     elif options.benchmark == 'concurrence':
-        bench_multi()
+        bench_multi(options.clients)
     elif options.benchmark == 'all':
         bench_stor()
         bench_retr()
