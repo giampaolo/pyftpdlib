@@ -512,6 +512,9 @@ def main():
         register_memory()
         print("(starting with %s of memory being used)" % (
             hilite(server_memory.pop())))
+    if options.benchmark == 'download':
+        stor(ftp)
+        bench_retr()
     if options.benchmark == 'transfer':
         bench_stor()
         bench_retr()

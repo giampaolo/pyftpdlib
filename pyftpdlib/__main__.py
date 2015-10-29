@@ -8,6 +8,7 @@ Start a stand alone anonymous FTP server from the command line as in:
 $ python -m pyftpdlib
 """
 
+import logging
 import optparse
 import os
 import sys
@@ -16,6 +17,7 @@ from . import __ver__
 from ._compat import getcwdu
 from .authorizers import DummyAuthorizer
 from .handlers import FTPHandler
+from .log import config_logging
 from .servers import FTPServer
 
 
@@ -61,9 +63,7 @@ def main():
     if options.version:
         sys.exit("pyftpdlib %s" % __ver__)
     if options.verbose:
-        import logging
-        import pyftpdlib.log
-        pyftpdlib.log.LEVEL = logging.DEBUG
+        config_logging(level=logging.DEBUG)
 
     passive_ports = None
     if options.range:

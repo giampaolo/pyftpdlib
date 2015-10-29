@@ -28,6 +28,7 @@ Version: 1.5.0 - (UNRELEASED)
 - #343: recv() does not handle EBUSY.
 - #347: SSL WantReadError and WantWriteError errors are not properly taken into
   account.
+- #357: python -m pyftpdlib --verbose option doesn't work
 
 **Incompatible API changes**
 
