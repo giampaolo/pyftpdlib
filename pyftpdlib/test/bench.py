@@ -367,8 +367,8 @@ def bench_multi(howmany):
             asyncore.loop(use_poll=True)
 
     clients = bench_multi_connect()
-    bench_stor("STOR (1 file with %s idle clients)" % len(clients))
-    bench_retr("RETR (1 file with %s idle clients)" % len(clients))
+    bench_stor(title="STOR (1 file with %s idle clients)" % len(clients))
+    bench_retr(title="RETR (1 file with %s idle clients)" % len(clients))
     bench_multi_retr(clients)
     bench_multi_stor(clients)
     bench_multi_quit(clients)
