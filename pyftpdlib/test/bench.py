@@ -64,7 +64,7 @@ Example usages:
 #   300 concurrent clients (QUIT)                          0.00 secs
 
 
-from __future__ import division
+from __future__ import division, print_function
 import asynchat
 import asyncore
 import atexit
@@ -263,7 +263,7 @@ def stor(ftp=None):
 
 def bytes_per_second(ftp, retr=True):
     """Return the number of bytes transmitted in 1 second."""
-    bytes = 0
+    tot_bytes = 0
     if retr:
         def request_file():
             ftp.voidcmd('TYPE I')
@@ -283,7 +283,7 @@ def bytes_per_second(ftp, retr=True):
                     ftp.voidresp()
                     conn = request_file()
                     stop_at += time.time() - a
-                bytes += len(chunk)
+                tot_bytes += len(chunk)
 
         conn.close()
         try:
@@ -297,34 +297,36 @@ def bytes_per_second(ftp, retr=True):
             chunk = b'x' * BUFFER_LEN
             stop_at = time.time() + 1
             while stop_at > time.time():
-                bytes += conn.send(chunk)
+                tot_bytes += conn.send(chunk)
         ftp.voidresp()
 
-    return bytes
+    return tot_bytes
 
 
 def cleanup():
     ftp = connect()
     try:
-        ftp.delete(TESTFN)
-    except (ftplib.error_perm, ftplib.error_temp):
-        pass
+        if TESTFN in ftp.nlst():
+            ftp.delete(TESTFN + 'a')
+    except (ftplib.error_perm, ftplib.error_temp) as err:
+        msg = "could not delete %r test file on cleanup: %r" % (TESTFN, err)
+        print(hilite(msg, ok=False), file=sys.stderr)
     ftp.quit()
 
 
 def bench_stor(ftp=None, title="STOR (client -> server)"):
     if ftp is None:
         ftp = connect()
-    bytes = bytes_per_second(ftp, retr=False)
-    print_bench(title, round(bytes / 1024.0 / 1024.0, 2), "MB/sec")
+    tot_bytes = bytes_per_second(ftp, retr=False)
+    print_bench(title, round(tot_bytes / 1024.0 / 1024.0, 2), "MB/sec")
     ftp.quit()
 
 
 def bench_retr(ftp=None, title="RETR (server -> client)"):
     if ftp is None:
         ftp = connect()
-    bytes = bytes_per_second(ftp, retr=True)
-    print_bench(title, round(bytes / 1024.0 / 1024.0, 2), "MB/sec")
+    tot_bytes = bytes_per_second(ftp, retr=True)
+    print_bench(title, round(tot_bytes / 1024.0 / 1024.0, 2), "MB/sec")
     ftp.quit()
 
 
@@ -543,6 +545,7 @@ def main():
         bench_multi(options.clients)
     else:
         sys.exit("invalid 'benchmark' parameter %r" % options.benchmark)
+
 
 if __name__ == '__main__':
     main()
