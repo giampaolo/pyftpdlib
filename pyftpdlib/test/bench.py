@@ -273,10 +273,11 @@ def bytes_per_second(ftp, retr=True):
                         break
                     conn.close()
                     ftp.voidresp()
-                    # TODO: close this fd
                     conn = request_file()
                     stop_at += time.time() - a
                 bytes += len(chunk)
+
+        conn.close()
         try:
             ftp.voidresp()
         except (ftplib.error_temp, ftplib.error_perm):
