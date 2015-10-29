@@ -986,6 +986,9 @@ class TestSendfile(unittest.TestCase):
         safe_remove(TESTFN)
 
     def test_fallback(self):
+        # Makes sure that if sendfile() fails and no bytes were
+        # transmitted yet the server falls back on using plain
+        # send()
         data = b'abcde12345' * 100000
         self.dummy_sendfile.write(data)
         self.dummy_sendfile.seek(0)
