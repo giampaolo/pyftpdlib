@@ -384,8 +384,8 @@ class OptFormatter(optparse.IndentedHelpFormatter):
 
 def main():
     global HOST, PORT, USER, PASSWORD, SERVER_PROC, TIMEOUT, SSL, FILE_SIZE
-    USAGE = "%s -u USERNAME -p PASSWORD [-H] [-P] [-b] [-n] [-s] [-k]" % (
-        __file__)
+    USAGE = "%s -u USERNAME -p PASSWORD [-H] [-P] [-b] [-n] [-s] [-k] " \
+            "[-t] [-S]" % (__file__)
     parser = optparse.OptionParser(usage=USAGE,
                                    epilog=__doc__[__doc__.find('Example'):],
                                    formatter=OptFormatter())
@@ -397,7 +397,8 @@ def main():
                       type=int)
     parser.add_option('-b', '--benchmark', dest='benchmark',
                       default='transfer',
-                      help="benchmark type ('transfer', 'concurrence', 'all')")
+                      help="benchmark type ('transfer', 'download', 'upload', "
+                           "'concurrence', 'all')")
     parser.add_option('-n', '--clients', dest='clients', default=200,
                       type="int",
                       help="number of concurrent clients used by "
@@ -410,7 +411,7 @@ def main():
                            "usage")
     parser.add_option('-t', '--timeout', dest='timeout',
                       default=TIMEOUT, type="int", help="the socket timeout")
-    parser.add_option('--ssl', action='store_true', dest='ssl',
+    parser.add_option('-S', '--ssl', action='store_true', dest='ssl',
                       help="whether to use FTPS")
 
     options, args = parser.parse_args()
@@ -434,12 +435,16 @@ def main():
                 raise ImportError("-p option requires psutil module")
             SERVER_PROC = psutil.Process(options.pid)
 
-    def bench_stor(title="STOR (client -> server)"):
-        bytes = bytes_per_second(connect(), retr=False)
+    def bench_stor(client=None, title="STOR (client -> server)"):
+        if client is None:
+            client = connect()
+        bytes = bytes_per_second(client, retr=False)
         print_bench(title, round(bytes / 1024.0 / 1024.0, 2), "MB/sec")
 
-    def bench_retr(title="RETR (server -> client)"):
-        bytes = bytes_per_second(connect(), retr=True)
+    def bench_retr(client=None, title="RETR (server -> client)"):
+        if client is None:
+            client = connect()
+        bytes = bytes_per_second(client, retr=True)
         print_bench(title, round(bytes / 1024.0 / 1024.0, 2), "MB/sec")
 
     def bench_multi():
@@ -513,11 +518,16 @@ def main():
         print("(starting with %s of memory being used)" % (
             hilite(server_memory.pop())))
     if options.benchmark == 'download':
-        stor(ftp)
-        bench_retr()
-    if options.benchmark == 'transfer':
-        bench_stor()
-        bench_retr()
+        with contextlib.closing(connect()) as ftp:
+            stor(ftp)
+            bench_retr(ftp)
+    elif options.benchmark == 'upload':
+        with contextlib.closing(connect()) as ftp:
+            bench_stor()
+    elif options.benchmark == 'transfer':
+        with contextlib.closing(connect()) as ftp:
+            bench_stor()
+            bench_retr()
     elif options.benchmark == 'concurrence':
         bench_multi()
     elif options.benchmark == 'all':
