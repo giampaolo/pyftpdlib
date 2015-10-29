@@ -37,6 +37,7 @@ from pyftpdlib.test.test_functional import TestFtpRetrieveData
 from pyftpdlib.test.test_functional import TestFtpStoreData
 from pyftpdlib.test.test_functional import TestIPv4Environment
 from pyftpdlib.test.test_functional import TestIPv6Environment
+from pyftpdlib.test.test_functional import TestSendfile
 from pyftpdlib.test.test_functional import TestTimeouts
 
 
@@ -111,6 +112,13 @@ class TestFtpStoreDataTLSMixin(TLSTestMixin, TestFtpStoreData):
     @unittest.skipIf(1, "fails with SSL")
     def test_stou(self):
         pass
+
+
+class TestSendFileTLSMixin(TLSTestMixin, TestSendfile):
+
+    def test_fallback(self):
+        self.client.prot_c()
+        super(TestSendFileTLSMixin, self).test_fallback()
 
 
 class TestFtpRetrieveDataTLSMixin(TLSTestMixin, TestFtpRetrieveData):

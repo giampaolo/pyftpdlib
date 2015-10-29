@@ -20,6 +20,8 @@ import tempfile
 import time
 import warnings
 
+import mock
+
 from pyftpdlib._compat import b
 from pyftpdlib._compat import PY3
 from pyftpdlib._compat import u
@@ -957,6 +959,56 @@ class TestFtpStoreDataNoSendfile(TestFtpStoreData):
     def tearDown(self):
         TestFtpStoreData.tearDown(self)
         self.server.handler.use_sendfile = True
+
+
+@unittest.skipUnless(POSIX, "POSIX only")
+@unittest.skipIf(sys.version_info < (3, 3) and sendfile is None,
+                 "pysendfile not installed")
+class TestSendfile(unittest.TestCase):
+    """Sendfile specific tests."""
+    server_class = FTPd
+    client_class = ftplib.FTP
+
+    def setUp(self):
+        self.server = self.server_class()
+        self.server.start()
+        self.client = self.client_class(timeout=TIMEOUT)
+        self.client.connect(self.server.host, self.server.port)
+        self.client.login(USER, PASSWD)
+        self.dummy_recvfile = BytesIO()
+        self.dummy_sendfile = BytesIO()
+
+    def tearDown(self):
+        self.client.close()
+        self.server.stop()
+        self.dummy_recvfile.close()
+        self.dummy_sendfile.close()
+        safe_remove(TESTFN)
+
+    def test_fallback(self):
+        data = b'abcde12345' * 100000
+        self.dummy_sendfile.write(data)
+        self.dummy_sendfile.seek(0)
+        self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
+        with mock.patch('pyftpdlib.handlers.sendfile',
+                        side_effect=OSError(errno.EINVAL)) as fun:
+            try:
+                self.client.retrbinary(
+                    'retr ' + TESTFN, self.dummy_recvfile.write)
+                assert fun.called
+                self.dummy_recvfile.seek(0)
+                datafile = self.dummy_recvfile.read()
+                self.assertEqual(len(data), len(datafile))
+                self.assertEqual(hash(data), hash(datafile))
+            finally:
+                # We do not use os.remove() because file could still be
+                # locked by ftpd thread.  If DELE through FTP fails try
+                # os.remove() as last resort.
+                if os.path.exists(TESTFN):
+                    try:
+                        self.client.delete(TESTFN)
+                    except (ftplib.Error, EOFError, socket.error):
+                        safe_remove(TESTFN)
 
 
 class TestFtpRetrieveData(unittest.TestCase):
@@ -2764,8 +2816,10 @@ class TestCommandLineParser(unittest.TestCase):
         self.assertRaises(SystemExit, pyftpdlib.__main__.main)
 
     def test_V_option(self):
-        sys.argv += ["-V"]
-        pyftpdlib.__main__.main()
+        with mock.patch('pyftpdlib.__main__.config_logging') as fun:
+            sys.argv += ["-V"]
+            pyftpdlib.__main__.main()
+            fun.assert_called_once_with(level=logging.DEBUG)
 
         # unexpected argument
         sys.argv = self.SYSARGV[:]

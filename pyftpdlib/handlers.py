@@ -243,6 +243,12 @@ class _FileReadWriteError(OSError):
     """Exception raised when reading or writing a file during a transfer."""
 
 
+class _GiveUpOnSendfile(Exception):
+    """Exception raised in case use of sendfile() fails on first try,
+    in which case send() will be used.
+    """
+
+
 # --- DTP classes
 
 class PassiveDTP(Acceptor):
@@ -648,11 +654,15 @@ class DTPHandler(AsyncChat):
         if self._use_sendfile(producer):
             self._offset = producer.file.tell()
             self._filefd = self.file_obj.fileno()
-            self.initiate_sendfile()
-            self.initiate_send = self.initiate_sendfile
-        else:
-            debug("starting transfer using send()", self)
-            AsyncChat.push_with_producer(self, producer)
+            try:
+                self.initiate_sendfile()
+            except _GiveUpOnSendfile:
+                pass
+            else:
+                self.initiate_send = self.initiate_sendfile
+                return
+        debug("starting transfer using send()", self)
+        AsyncChat.push_with_producer(self, producer)
 
     def close_when_done(self):
         asynchat.async_chat.close_when_done(self)
@@ -671,7 +681,12 @@ class DTPHandler(AsyncChat):
             elif err.errno in _ERRNOS_DISCONNECTED:
                 self.handle_close()
             else:
-                raise
+                if self.tot_bytes_sent == 0:
+                    logger.warning(
+                        "sendfile() failed; falling back on using plain send")
+                    raise _GiveUpOnSendfile
+                else:
+                    raise
         else:
             if sent == 0:
                 # this signals the channel that the transfer is completed
