@@ -97,6 +97,8 @@ FILE_SIZE = "10M"
 SSL = False
 PY3 = sys.version_info >= (3, 0)
 
+server_memory = []
+
 
 if not sys.stdout.isatty() or os.name != 'posix':
     def hilite(s, *args, **kwargs):
@@ -115,9 +117,6 @@ else:
         if bold:
             attr.append('1')
         return '\x1b[%sm%s\x1b[0m' % (';'.join(attr), string)
-
-
-server_memory = []
 
 
 def print_bench(what, value, unit=""):
@@ -305,6 +304,75 @@ def cleanup():
     ftp.quit()
 
 
+def bench_stor(client=None, title="STOR (client -> server)"):
+    if client is None:
+        client = connect()
+    bytes = bytes_per_second(client, retr=False)
+    print_bench(title, round(bytes / 1024.0 / 1024.0, 2), "MB/sec")
+
+
+def bench_retr(client=None, title="RETR (server -> client)"):
+    if client is None:
+        client = connect()
+    bytes = bytes_per_second(client, retr=True)
+    print_bench(title, round(bytes / 1024.0 / 1024.0, 2), "MB/sec")
+
+
+def bench_multi(howmany):
+    # The OS usually sets a limit of 1024 as the maximum number of
+    # open file descriptors for the current process.
+    # Let's set the highest number possible, just to be sure.
+    if howmany > 500 and resource is not None:
+        soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+        resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard))
+
+    def bench_multi_connect():
+        with timethis("%i concurrent clients (connect, login)" % howmany):
+            clients = []
+            for x in range(howmany):
+                clients.append(connect())
+            register_memory()
+        return clients
+
+    def bench_multi_retr(clients):
+        stor(clients[0])
+        with timethis("%s concurrent clients (RETR %s file)" % (
+                howmany, bytes2human(FILE_SIZE))):
+            for ftp in clients:
+                ftp.voidcmd('TYPE I')
+                conn = ftp.transfercmd("RETR " + TESTFN)
+                AsyncReader(conn)
+            register_memory()
+            asyncore.loop(use_poll=True)
+        for ftp in clients:
+            ftp.voidresp()
+
+    def bench_multi_stor(clients):
+        with timethis("%s concurrent clients (STOR %s file)" % (
+                howmany, bytes2human(FILE_SIZE))):
+            for ftp in clients:
+                ftp.voidcmd('TYPE I')
+                conn = ftp.transfercmd("STOR " + TESTFN)
+                AsyncWriter(conn, 1024 * 1024 * 5)
+            register_memory()
+            asyncore.loop(use_poll=True)
+        for ftp in clients:
+            ftp.voidresp()
+
+    def bench_multi_quit(clients):
+        for ftp in clients:
+            AsyncQuit(ftp.sock)
+        with timethis("%i concurrent clients (QUIT)" % howmany):
+            asyncore.loop(use_poll=True)
+
+    clients = bench_multi_connect()
+    bench_stor("STOR (1 file with %s idle clients)" % len(clients))
+    bench_retr("RETR (1 file with %s idle clients)" % len(clients))
+    bench_multi_retr(clients)
+    bench_multi_stor(clients)
+    bench_multi_quit(clients)
+
+
 class AsyncReader(asyncore.dispatcher):
     """Just read data from a connected socket, asynchronously."""
 
@@ -435,74 +503,6 @@ def main():
                 raise ImportError("-p option requires psutil module")
             SERVER_PROC = psutil.Process(options.pid)
 
-    def bench_stor(client=None, title="STOR (client -> server)"):
-        if client is None:
-            client = connect()
-        bytes = bytes_per_second(client, retr=False)
-        print_bench(title, round(bytes / 1024.0 / 1024.0, 2), "MB/sec")
-
-    def bench_retr(client=None, title="RETR (server -> client)"):
-        if client is None:
-            client = connect()
-        bytes = bytes_per_second(client, retr=True)
-        print_bench(title, round(bytes / 1024.0 / 1024.0, 2), "MB/sec")
-
-    def bench_multi():
-        howmany = options.clients
-
-        # The OS usually sets a limit of 1024 as the maximum number of
-        # open file descriptors for the current process.
-        # Let's set the highest number possible, just to be sure.
-        if howmany > 500 and resource is not None:
-            soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
-            resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard))
-
-        def bench_multi_connect():
-            with timethis("%i concurrent clients (connect, login)" % howmany):
-                clients = []
-                for x in range(howmany):
-                    clients.append(connect())
-                register_memory()
-            return clients
-
-        def bench_multi_retr(clients):
-            stor(clients[0])
-            with timethis("%s concurrent clients (RETR %s file)" % (
-                    howmany, bytes2human(FILE_SIZE))):
-                for ftp in clients:
-                    ftp.voidcmd('TYPE I')
-                    conn = ftp.transfercmd("RETR " + TESTFN)
-                    AsyncReader(conn)
-                register_memory()
-                asyncore.loop(use_poll=True)
-            for ftp in clients:
-                ftp.voidresp()
-
-        def bench_multi_stor(clients):
-            with timethis("%s concurrent clients (STOR %s file)" % (
-                    howmany, bytes2human(FILE_SIZE))):
-                for ftp in clients:
-                    ftp.voidcmd('TYPE I')
-                    conn = ftp.transfercmd("STOR " + TESTFN)
-                    AsyncWriter(conn, 1024 * 1024 * 5)
-                register_memory()
-                asyncore.loop(use_poll=True)
-            for ftp in clients:
-                ftp.voidresp()
-
-        def bench_multi_quit(clients):
-            for ftp in clients:
-                AsyncQuit(ftp.sock)
-            with timethis("%i concurrent clients (QUIT)" % howmany):
-                asyncore.loop(use_poll=True)
-
-        clients = bench_multi_connect()
-        bench_stor("STOR (1 file with %s idle clients)" % len(clients))
-        bench_retr("RETR (1 file with %s idle clients)" % len(clients))
-        bench_multi_retr(clients)
-        bench_multi_stor(clients)
-        bench_multi_quit(clients)
-
     # before starting make sure we have write permissions
     ftp = connect()
     conn = ftp.transfercmd("STOR " + TESTFN)
@@ -533,7 +533,7 @@ def main():
     elif options.benchmark == 'all':
         bench_stor()
         bench_retr()
-        bench_multi()
+        bench_multi(options.clients)
     else:
         sys.exit("invalid 'benchmark' parameter %r" % options.benchmark)
 
