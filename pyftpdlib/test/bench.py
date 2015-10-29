@@ -237,10 +237,15 @@ def retr(ftp):
     ftp.voidresp()
 
 
-def stor(ftp):
+def stor(ftp=None):
     """Same as ftplib's storbinary() but just sends dummy data
     instead of reading it from a real file.
     """
+    if ftp is None:
+        ftp = connect()
+        quit = True
+    else:
+        quit = False
     ftp.voidcmd('TYPE I')
     with contextlib.closing(ftp.transfercmd("STOR " + TESTFN)) as conn:
         chunk = b'x' * BUFFER_LEN
@@ -251,6 +256,9 @@ def stor(ftp):
             if total_sent >= FILE_SIZE:
                 break
     ftp.voidresp()
+    if quit:
+        ftp.quit()
+    return ftp
 
 
 def bytes_per_second(ftp, retr=True):
@@ -292,7 +300,6 @@ def bytes_per_second(ftp, retr=True):
                 bytes += conn.send(chunk)
         ftp.voidresp()
 
-    ftp.quit()
     return bytes
 
 
@@ -305,18 +312,20 @@ def cleanup():
     ftp.quit()
 
 
-def bench_stor(client=None, title="STOR (client -> server)"):
-    if client is None:
-        client = connect()
-    bytes = bytes_per_second(client, retr=False)
+def bench_stor(ftp=None, title="STOR (client -> server)"):
+    if ftp is None:
+        ftp = connect()
+    bytes = bytes_per_second(ftp, retr=False)
     print_bench(title, round(bytes / 1024.0 / 1024.0, 2), "MB/sec")
+    ftp.quit()
 
 
-def bench_retr(client=None, title="RETR (server -> client)"):
-    if client is None:
-        client = connect()
-    bytes = bytes_per_second(client, retr=True)
+def bench_retr(ftp=None, title="RETR (server -> client)"):
+    if ftp is None:
+        ftp = connect()
+    bytes = bytes_per_second(ftp, retr=True)
     print_bench(title, round(bytes / 1024.0 / 1024.0, 2), "MB/sec")
+    ftp.quit()
 
 
 def bench_multi(howmany):
@@ -519,16 +528,13 @@ def main():
         print("(starting with %s of memory being used)" % (
             hilite(server_memory.pop())))
     if options.benchmark == 'download':
-        with contextlib.closing(connect()) as ftp:
-            stor(ftp)
-            bench_retr(ftp)
+        stor()
+        bench_retr()
     elif options.benchmark == 'upload':
-        with contextlib.closing(connect()) as ftp:
-            bench_stor()
+        bench_stor()
     elif options.benchmark == 'transfer':
-        with contextlib.closing(connect()) as ftp:
-            bench_stor()
-            bench_retr()
+        bench_stor()
+        bench_retr()
     elif options.benchmark == 'concurrence':
         bench_multi()
     elif options.benchmark == 'all':
