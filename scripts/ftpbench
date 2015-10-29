@@ -10,17 +10,18 @@ FTP server benchmark script.
 In order to run this you must have a listening FTP server with a user
 with writing permissions configured.
 This is a stand-alone script which does not depend from pyftpdlib.
-It just requires python >= 2.6.
+It just requires python >= 2.6 (and optionally psutil to keep track
+of FTP server memory usage).
 
 Example usages:
-  python bench.py -u USER -p PASSWORD
-  python bench.py -u USER -p PASSWORD -H ftp.domain.com -P 21   # host / port
-  python bench.py -u USER -p PASSWORD -b transfer
-  python bench.py -u USER -p PASSWORD -b concurrence
-  python bench.py -u USER -p PASSWORD -b all
-  python bench.py -u USER -p PASSWORD -b concurrence -n 500     # 500 clients
-  python bench.py -u USER -p PASSWORD -b concurrence -s 20M     # file size
-  python bench.py -u USER -p PASSWORD -b concurrence -p 3521    # memory usage
+  ftpbench -u USER -p PASSWORD
+  ftpbench -u USER -p PASSWORD -H ftp.domain.com -P 21   # host / port
+  ftpbench -u USER -p PASSWORD -b transfer
+  ftpbench -u USER -p PASSWORD -b concurrence
+  ftpbench -u USER -p PASSWORD -b all
+  ftpbench -u USER -p PASSWORD -b concurrence -n 500     # 500 clients
+  ftpbench -u USER -p PASSWORD -b concurrence -s 20M     # file size
+  ftpbench -u USER -p PASSWORD -b concurrence -p 3521    # memory usage
 """
 
 # Some benchmarks (Linux 3.0.0, Intel core duo - 3.1 Ghz).
@@ -307,7 +308,7 @@ def cleanup():
     ftp = connect()
     try:
         if TESTFN in ftp.nlst():
-            ftp.delete(TESTFN + 'a')
+            ftp.delete(TESTFN)
     except (ftplib.error_perm, ftplib.error_temp) as err:
         msg = "could not delete %r test file on cleanup: %r" % (TESTFN, err)
         print(hilite(msg, ok=False), file=sys.stderr)
@@ -465,7 +466,7 @@ class OptFormatter(optparse.IndentedHelpFormatter):
 def main():
     global HOST, PORT, USER, PASSWORD, SERVER_PROC, TIMEOUT, SSL, FILE_SIZE
     USAGE = "%s -u USERNAME -p PASSWORD [-H] [-P] [-b] [-n] [-s] [-k] " \
-            "[-t] [-S]" % (__file__)
+            "[-t] [-S]" % (os.path.basename(__file__))
     parser = optparse.OptionParser(usage=USAGE,
                                    epilog=__doc__[__doc__.find('Example'):],
                                    formatter=OptFormatter())
@@ -487,8 +488,8 @@ def main():
                       help="file size used by 'concurrence' benchmark "
                            "(e.g. '10M')")
     parser.add_option('-k', '--pid', dest='pid', default=None, type="int",
-                      help="the PID of the server process to bench memory "
-                           "usage")
+                      help="the PID of the FTP server process, to track its "
+                           "memory usage")
     parser.add_option('-t', '--timeout', dest='timeout',
                       default=TIMEOUT, type="int", help="the socket timeout")
     parser.add_option('-S', '--ssl', action='store_true', dest='ssl',

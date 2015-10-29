@@ -10,4 +10,4 @@ include MANIFEST.in
 include README.rst
 recursive-include demo *.py *.pem *README*
 recursive-include pyftpdlib *.py *.pem *README*
-
+recursive-include scripts *

@@ -84,6 +84,7 @@ def main():
         author_email='g.rodola@gmail.com',
         url='https://github.com/giampaolo/pyftpdlib/',
         packages=['pyftpdlib', 'pyftpdlib.test'],
+        scripts=['scripts/ftpbench.py'],
         package_data={
             "pyftpdlib.test": [
                 "README",

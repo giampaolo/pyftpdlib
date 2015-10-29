@@ -18,6 +18,8 @@ Version: 1.5.0 - (UNRELEASED)
   in clear text.
 - #361: benchmark script now allows to benchmark downloads and uploads only
   (instead of both).
+- #362: 'ftpbench' script is now installed as a system script on 'setup.py
+  install'.
 
 **Bug fixes**
 
