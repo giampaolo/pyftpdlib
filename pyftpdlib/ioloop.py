@@ -890,6 +890,7 @@ class AsyncChat(asynchat.async_chat):
         self._current_io_events = self.ioloop.READ
         self._closed = False
         self._closing = False
+        self._fileno = sock.fileno()
         asynchat.async_chat.__init__(self, sock)
 
     def add_channel(self, map=None, events=None):
@@ -897,6 +898,10 @@ class AsyncChat(asynchat.async_chat):
 
     def del_channel(self, map=None):
         self.ioloop.unregister(self._fileno)
+
+    def connect(self, addr):
+        self.modify_ioloop_events(self.ioloop.READ | self.ioloop.WRITE)
+        asynchat.async_chat.connect(self, addr)
 
     def modify_ioloop_events(self, events, logdebug=False):
         if self._fileno not in self.ioloop.socket_map:
