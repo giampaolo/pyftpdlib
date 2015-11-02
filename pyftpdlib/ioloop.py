@@ -928,7 +928,7 @@ class AsyncChat(asynchat.async_chat):
         else:
             debug(
                 "call: modify_ioloop_events(), handler had already been "
-                "close()d", inst=self)
+                "close()d, skipping modify()", inst=self)
 
     # send() and recv() overridden as a fix around various bugs:
     # - http://bugs.python.org/issue1736101
