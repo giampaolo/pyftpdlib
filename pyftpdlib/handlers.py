@@ -2443,6 +2443,59 @@ class FTPHandler(AsyncChat):
             self.respond('331 %s, send password.' % msg, logfun=logging.info)
         self.username = line
 
+    def handle_auth_failed(self, msg, password):
+        def callback(username, password, msg):
+            self.add_channel()
+            if hasattr(self, '_closed') and not self._closed:
+                self.attempted_logins += 1
+                if self.attempted_logins >= self.max_login_attempts:
+                    msg += " Disconnecting."
+                    self.respond("530 " + msg)
+                    self.close_when_done()
+                else:
+                    self.respond("530 " + msg)
+                self.log("USER '%s' failed login." % username)
+            self.on_login_failed(username, password)
+
+        self.del_channel()
+        if not msg:
+            if self.username == 'anonymous':
+                msg = "Anonymous access not allowed."
+            else:
+                msg = "Authentication failed."
+        else:
+            # response string should be capitalized as per RFC-959
+            msg = msg.capitalize()
+        self.ioloop.call_later(self.auth_failed_timeout, callback,
+                               self.username, password, msg,
+                               _errback=self.handle_error)
+        self.username = ""
+
+    def handle_auth_success(self, home, password, msg_login):
+        if not isinstance(home, unicode):
+            if PY3:
+                raise TypeError('type(home) != text')
+            else:
+                warnings.warn(
+                    '%s.get_home_dir returned a non-unicode string; now '
+                    'casting to unicode' % (
+                        self.authorizer.__class__.__name__),
+                    RuntimeWarning)
+                home = home.decode('utf8')
+
+        if len(msg_login) <= 75:
+            self.respond('230 %s' % msg_login)
+        else:
+            self.push("230-%s\r\n" % msg_login)
+            self.respond("230 ")
+        self.log("USER '%s' logged in." % self.username)
+        self.authenticated = True
+        self.password = password
+        self.attempted_logins = 0
+
+        self.fs = self.abstracted_fs(home, self)
+        self.on_login(self.username)
+
     def ftp_PASS(self, line):
         """Check username's password against the authorizer."""
         if self.authenticated:
@@ -2457,57 +2510,9 @@ class FTPHandler(AsyncChat):
             home = self.authorizer.get_home_dir(self.username)
             msg_login = self.authorizer.get_msg_login(self.username)
         except (AuthenticationFailed, AuthorizerError) as err:
-            def auth_failed(username, password, msg):
-                self.add_channel()
-                if hasattr(self, '_closed') and not self._closed:
-                    self.attempted_logins += 1
-                    if self.attempted_logins >= self.max_login_attempts:
-                        msg += " Disconnecting."
-                        self.respond("530 " + msg)
-                        self.close_when_done()
-                    else:
-                        self.respond("530 " + msg)
-                    self.log("USER '%s' failed login." % username)
-                self.on_login_failed(username, password)
-
-            msg = str(err)
-            if not msg:
-                if self.username == 'anonymous':
-                    msg = "Anonymous access not allowed."
-                else:
-                    msg = "Authentication failed."
-            else:
-                # response string should be capitalized as per RFC-959
-                msg = msg.capitalize()
-            self.del_channel()
-            self.ioloop.call_later(self.auth_failed_timeout, auth_failed,
-                                   self.username, line, msg,
-                                   _errback=self.handle_error)
-            self.username = ""
+            self.handle_auth_failed(str(err), line)
         else:
-            if not isinstance(home, unicode):
-                if PY3:
-                    raise ValueError('type(home) != text')
-                else:
-                    warnings.warn(
-                        '%s.get_home_dir returned a non-unicode string; now '
-                        'casting to unicode' % (
-                            self.authorizer.__class__.__name__),
-                        RuntimeWarning)
-                    home = home.decode('utf8')
-
-            if len(msg_login) <= 75:
-                self.respond('230 %s' % msg_login)
-            else:
-                self.push("230-%s\r\n" % msg_login)
-                self.respond("230 ")
-            self.log("USER '%s' logged in." % self.username)
-            self.authenticated = True
-            self.password = line
-            self.attempted_logins = 0
-
-            self.fs = self.abstracted_fs(home, self)
-            self.on_login(self.username)
+            self.handle_auth_success(home, line, msg_login)
 
     def ftp_REIN(self, line):
         """Reinitialize user's current session."""
