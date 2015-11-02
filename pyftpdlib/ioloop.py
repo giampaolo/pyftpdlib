@@ -904,26 +904,31 @@ class AsyncChat(asynchat.async_chat):
         asynchat.async_chat.connect(self, addr)
 
     def modify_ioloop_events(self, events, logdebug=False):
-        if self._fileno not in self.ioloop.socket_map:
-            debug(
-                "call: modify_ioloop_events(), fd was no longer in "
-                "socket_map, had to register() it again", inst=self)
-            self.ioloop.register(self._fileno, self, events)
+        if not self._closed:
+            if self._fileno not in self.ioloop.socket_map:
+                debug(
+                    "call: modify_ioloop_events(), fd was no longer in "
+                    "socket_map, had to register() it again", inst=self)
+                self.ioloop.register(self._fileno, self, events)
+            else:
+                if events != self._current_io_events:
+                    if logdebug:
+                        if events == self.ioloop.READ:
+                            ev = "R"
+                        elif events == self.ioloop.WRITE:
+                            ev = "W"
+                        elif events == self.ioloop.READ | self.ioloop.WRITE:
+                            ev = "RW"
+                        else:
+                            ev = events
+                        debug("call: IOLoop.modify(); setting %r IO events" % (
+                            ev), self)
+                    self.ioloop.modify(self._fileno, events)
+            self._current_io_events = events
         else:
-            if events != self._current_io_events:
-                if logdebug:
-                    if events == self.ioloop.READ:
-                        ev = "R"
-                    elif events == self.ioloop.WRITE:
-                        ev = "W"
-                    elif events == self.ioloop.READ | self.ioloop.WRITE:
-                        ev = "RW"
-                    else:
-                        ev = events
-                    debug("call: IOLoop.modify(); setting %r IO events" % ev,
-                          self)
-                self.ioloop.modify(self._fileno, events)
-        self._current_io_events = events
+            debug(
+                "call: modify_ioloop_events(), handler had already been "
+                "close()d", inst=self)
 
     # send() and recv() overridden as a fix around various bugs:
     # - http://bugs.python.org/issue1736101
