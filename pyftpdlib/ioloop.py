@@ -60,7 +60,6 @@ import asynchat
 import asyncore
 import errno
 import heapq
-import logging
 import os
 import select
 import socket
@@ -75,6 +74,7 @@ except ImportError:
 from ._compat import callable
 from .log import config_logging
 from .log import debug
+from .log import is_logging_configured
 from .log import logger
 
 
@@ -325,7 +325,7 @@ class _IOLoop(object):
         """
         if not _IOLoop._started_once:
             _IOLoop._started_once = True
-            if not logging.getLogger('pyftpdlib').handlers:
+            if not is_logging_configured():
                 # If we get to this point it means the user hasn't
                 # configured logging. We want to log by default so
                 # we configure logging ourselves so that it will

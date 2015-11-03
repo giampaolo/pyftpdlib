@@ -130,6 +130,14 @@ def debug(s, inst=None):
     logger.debug(s)
 
 
+def is_logging_configured():
+    if logging.getLogger('pyftpdlib').handlers:
+        return True
+    if logging.root.handlers:
+        return True
+    return False
+
+
 # TODO: write tests
 def config_logging(level=LEVEL, prefix=PREFIX, other_loggers=None):
     # Little speed up

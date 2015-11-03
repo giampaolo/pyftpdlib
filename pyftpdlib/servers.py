@@ -34,7 +34,6 @@ without hanging the whole FTP server.
 """
 
 import errno
-import logging
 import os
 import select
 import signal
@@ -44,7 +43,9 @@ import traceback
 
 from .ioloop import Acceptor
 from .ioloop import IOLoop
+from .log import config_logging
 from .log import debug
+from .log import is_logging_configured
 from .log import logger
 
 
@@ -137,12 +138,10 @@ class FTPServer(Acceptor):
                 except AttributeError:
                     return str(obj)
 
-        if (not logging.getLogger('pyftpdlib').handlers and not
-                logging.root.handlers):
+        if not is_logging_configured():
             # If we get to this point it means the user hasn't
             # configured any logger. We want logging to be on
             # by default (stderr).
-            from pyftpdlib.log import config_logging
             config_logging()
 
         if self.handler.passive_ports:
