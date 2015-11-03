@@ -221,14 +221,13 @@ class _CallLater(object):
         assert not self.cancelled, "already cancelled"
         exc = None
         try:
-            try:
-                self._target(*self._args, **self._kwargs)
-            except Exception as _:
-                exc = _
-                if self._errback is not None:
-                    self._errback()
-                else:
-                    raise
+            self._target(*self._args, **self._kwargs)
+        except Exception as _:
+            exc = _
+            if self._errback is not None:
+                self._errback()
+            else:
+                raise
         finally:
             self._post_call(exc)
 

@@ -145,6 +145,5 @@ def config_logging(level=LEVEL, prefix=PREFIX, other_loggers=None):
     if other_loggers is not None:
         loggers.extend(other_loggers)
     for logger in loggers:
-        logger.propagate = False  # avoid duplicated lines
         logger.setLevel(level)
         logger.addHandler(handler)
