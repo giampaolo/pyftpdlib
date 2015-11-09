@@ -751,8 +751,10 @@ class AsyncChat(asynchat.async_chat):
         self._fileno = sock.fileno() if sock else None
         asynchat.async_chat.__init__(self, sock)
 
+    # --- IO loop related methods
+
     def add_channel(self, map=None, events=None):
-        events = events or self.ioloop.READ
+        events = events if events is not None else self.ioloop.READ
         self.ioloop.register(self._fileno, self, events)
         self._wanted_io_events = events
         self._current_io_events = events
@@ -760,6 +762,36 @@ class AsyncChat(asynchat.async_chat):
     def del_channel(self, map=None):
         if self._fileno is not None:
             self.ioloop.unregister(self._fileno)
+
+    def modify_ioloop_events(self, events, logdebug=False):
+        if not self._closed:
+            assert self._fileno, repr(self._fileno)
+            if self._fileno not in self.ioloop.socket_map:
+                debug(
+                    "call: modify_ioloop_events(), fd was no longer in "
+                    "socket_map, had to register() it again", inst=self)
+                self.add_channel(events=events)
+            else:
+                if events != self._current_io_events:
+                    if logdebug:
+                        if events == self.ioloop.READ:
+                            ev = "R"
+                        elif events == self.ioloop.WRITE:
+                            ev = "W"
+                        elif events == self.ioloop.READ | self.ioloop.WRITE:
+                            ev = "RW"
+                        else:
+                            ev = events
+                        debug("call: IOLoop.modify(); setting %r IO events" % (
+                            ev), self)
+                    self.ioloop.modify(self._fileno, events)
+            self._current_io_events = events
+        else:
+            debug(
+                "call: modify_ioloop_events(), handler had already been "
+                "close()d, skipping modify()", inst=self)
+
+    # --- overridden asynchat methods
 
     def connect(self, addr):
         self.modify_ioloop_events(self.ioloop.WRITE)
@@ -805,33 +837,6 @@ class AsyncChat(asynchat.async_chat):
             self.del_channel()
             raise socket.error(err)
         return af
-
-    def modify_ioloop_events(self, events, logdebug=False):
-        if not self._closed:
-            if self._fileno not in self.ioloop.socket_map:
-                debug(
-                    "call: modify_ioloop_events(), fd was no longer in "
-                    "socket_map, had to register() it again", inst=self)
-                self.ioloop.register(self._fileno, self, events)
-            else:
-                if events != self._current_io_events:
-                    if logdebug:
-                        if events == self.ioloop.READ:
-                            ev = "R"
-                        elif events == self.ioloop.WRITE:
-                            ev = "W"
-                        elif events == self.ioloop.READ | self.ioloop.WRITE:
-                            ev = "RW"
-                        else:
-                            ev = events
-                        debug("call: IOLoop.modify(); setting %r IO events" % (
-                            ev), self)
-                    self.ioloop.modify(self._fileno, events)
-            self._current_io_events = events
-        else:
-            debug(
-                "call: modify_ioloop_events(), handler had already been "
-                "close()d, skipping modify()", inst=self)
 
     # send() and recv() overridden as a fix around various bugs:
     # - http://bugs.python.org/issue1736101
