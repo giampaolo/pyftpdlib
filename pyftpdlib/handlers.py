@@ -275,7 +275,6 @@ class PassiveDTP(Acceptor):
         self.log = cmd_channel.log
         self.log_exception = cmd_channel.log_exception
         self._closed = False
-        self._idler = None
         Acceptor.__init__(self, ioloop=cmd_channel.ioloop)
 
         local_ip = self.cmd_channel.socket.getsockname()[0]
@@ -351,9 +350,7 @@ class PassiveDTP(Acceptor):
             self.cmd_channel.respond('229 Entering extended passive mode '
                                      '(|||%d|).' % port)
         if self.timeout:
-            self._idler = self.ioloop.call_later(self.timeout,
-                                                 self.handle_timeout,
-                                                 _errback=self.handle_error)
+            self.call_later(self.timeout, self.handle_timeout)
 
     # --- connection / overridden
 
@@ -414,8 +411,6 @@ class PassiveDTP(Acceptor):
             debug("call: close()", inst=self)
             self._closed = True
             Acceptor.close(self)
-            if self._idler is not None and not self._idler.cancelled:
-                self._idler.cancel()
 
 
 class ActiveDTP(Connector):

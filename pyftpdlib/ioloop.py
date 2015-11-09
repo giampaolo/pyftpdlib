@@ -239,10 +239,10 @@ class _CallLater(object):
 
     def cancel(self):
         """Unschedule this call."""
-        assert not self.cancelled, "already cancelled"
-        self.cancelled = True
-        self._target = self._args = self._kwargs = self._errback = None
-        self._sched.unregister(self)
+        if not self.cancelled:
+            self.cancelled = True
+            self._target = self._args = self._kwargs = self._errback = None
+            self._sched.unregister(self)
 
 
 class _CallEvery(_CallLater):
@@ -749,6 +749,7 @@ class AsyncChat(asynchat.async_chat):
         self._closed = False
         self._closing = False
         self._fileno = sock.fileno() if sock else None
+        self._tasks = []
         asynchat.async_chat.__init__(self, sock)
 
     # --- IO loop related methods
@@ -791,6 +792,18 @@ class AsyncChat(asynchat.async_chat):
             debug(
                 "call: modify_ioloop_events(), handler had already been "
                 "close()d, skipping modify()", inst=self)
+
+    # --- utils
+
+    def call_later(self, seconds, target, *args, **kwargs):
+        """Same as self.ioloop.call_later but also cancel()s the
+        scheduled function on close().
+        """
+        if '_errback' not in kwargs and hasattr(self, 'handle_error'):
+            kwargs['_errback'] = self.handle_error
+        callback = self.ioloop.call_later(seconds, target, *args, **kwargs)
+        self._tasks.append(callback)
+        return callback
 
     # --- overridden asynchat methods
 
@@ -910,6 +923,17 @@ class AsyncChat(asynchat.async_chat):
         else:
             self._closing = True
             asynchat.async_chat.close_when_done(self)
+
+    def close(self):
+        try:
+            asynchat.async_chat.close(self)
+        finally:
+            for fun in self._tasks:
+                try:
+                    fun.cancel()
+                except Exception:
+                    logger.error(traceback.format_exc())
+            self._tasks = []
 
 
 class Connector(AsyncChat):
