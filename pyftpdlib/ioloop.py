@@ -843,7 +843,10 @@ class AsyncChat(asynchat.async_chat):
         asynchat.async_chat.__init__(self, sock)
 
     def add_channel(self, map=None, events=None):
-        self.ioloop.register(self._fileno, self, events or self.ioloop.READ)
+        events = events or self.ioloop.READ
+        self.ioloop.register(self._fileno, self, events)
+        self._wanted_io_events = events
+        self._current_io_events = events
 
     def del_channel(self, map=None):
         if self._fileno is not None:
@@ -992,3 +995,12 @@ class AsyncChat(asynchat.async_chat):
         else:
             self._closing = True
             asynchat.async_chat.close_when_done(self)
+
+
+class Connector(AsyncChat):
+    """Same as base asyncore.dispatcher and supposed to be used for
+    clients.
+    """
+
+    def add_channel(self, map=None, events=None):
+        AsyncChat.add_channel(self, map=map, events=self.ioloop.WRITE)
