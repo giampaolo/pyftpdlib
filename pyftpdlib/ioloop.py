@@ -478,7 +478,13 @@ class _BasePollEpoll(_IOLoop):
         self._poller = self._poller()
 
     def register(self, fd, instance, events):
-        self._poller.register(fd, events)
+        try:
+            self._poller.register(fd, events)
+        except EnvironmentError as err:
+            if err.errno == errno.EEXIST:
+                debug("call: register(); poller raised EEXIST; ignored", self)
+            else:
+                raise
         self.socket_map[fd] = instance
 
     def unregister(self, fd):
@@ -644,7 +650,14 @@ if hasattr(select, 'kqueue'):
 
         def register(self, fd, instance, events):
             self.socket_map[fd] = instance
-            self._control(fd, events, select.KQ_EV_ADD)
+            try:
+                self._control(fd, events, select.KQ_EV_ADD)
+            except EnvironmentError as err:
+                if err.errno == errno.EEXIST:
+                    debug("call: register(); poller raised EEXIST; ignored",
+                          self)
+                else:
+                    raise
             self._active[fd] = events
 
         def unregister(self, fd):
