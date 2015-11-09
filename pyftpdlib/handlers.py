@@ -274,7 +274,6 @@ class PassiveDTP(Acceptor):
         self.cmd_channel = cmd_channel
         self.log = cmd_channel.log
         self.log_exception = cmd_channel.log_exception
-        self._closed = False
         Acceptor.__init__(self, ioloop=cmd_channel.ioloop)
 
         local_ip = self.cmd_channel.socket.getsockname()[0]
@@ -407,10 +406,8 @@ class PassiveDTP(Acceptor):
             logger.critical(traceback.format_exc())
 
     def close(self):
-        if not self._closed:
-            debug("call: close()", inst=self)
-            self._closed = True
-            Acceptor.close(self)
+        debug("call: close()", inst=self)
+        Acceptor.close(self)
 
 
 class ActiveDTP(Connector):
@@ -434,7 +431,6 @@ class ActiveDTP(Connector):
         self.cmd_channel = cmd_channel
         self.log = cmd_channel.log
         self.log_exception = cmd_channel.log_exception
-        self._closed = False
         self._idler = None
         if self.timeout:
             self._idler = self.ioloop.call_later(self.timeout,
@@ -522,11 +518,9 @@ class ActiveDTP(Connector):
             logger.critical(traceback.format_exc())
 
     def close(self):
+        debug("call: close()", inst=self)
         if not self._closed:
-            debug("call: close()", inst=self)
-            self._closed = True
-            if self.socket is not None:
-                Connector.close(self)
+            Connector.close(self)
             if self._idler is not None and not self._idler.cancelled:
                 self._idler.cancel()
 
@@ -570,7 +564,6 @@ class DTPHandler(AsyncChat):
         self.log_exception = cmd_channel.log_exception
         self._data_wrapper = None
         self._lastdata = 0
-        self._closed = False
         self._had_cr = False
         self._start_time = timer()
         self._resp = ()
@@ -876,9 +869,8 @@ class DTPHandler(AsyncChat):
     def close(self):
         """Close the data channel, first attempting to close any remaining
         file handles."""
+        debug("call: close()", inst=self)
         if not self._closed:
-            debug("call: close()", inst=self)
-            self._closed = True
             # RFC-959 says we must close the connection before replying
             AsyncChat.close(self)
             if self._resp:
@@ -1212,7 +1204,6 @@ class FTPHandler(AsyncChat):
         self._dtp_connector = None
         self._in_dtp_queue = None
         self._out_dtp_queue = None
-        self._closed = False
         self._extra_feats = []
         self._current_facts = ['type', 'perm', 'size', 'modify']
         self._rnfr = None
@@ -1520,11 +1511,8 @@ class FTPHandler(AsyncChat):
 
     def close(self):
         """Close the current channel disconnecting the client."""
+        debug("call: close()", inst=self)
         if not self._closed:
-            debug("call: close()", inst=self)
-            self._closed = True
-            self._closing = False
-            self.connected = False
             AsyncChat.close(self)
 
             self._shutdown_connecting_dtp()

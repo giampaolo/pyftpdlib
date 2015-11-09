@@ -934,6 +934,9 @@ class AsyncChat(asynchat.async_chat):
                 except Exception:
                     logger.error(traceback.format_exc())
             self._tasks = []
+            self._closed = True
+            self._closing = False
+            self.connected = False
 
 
 class Connector(AsyncChat):
