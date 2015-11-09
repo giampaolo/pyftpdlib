@@ -36,7 +36,6 @@ from .ioloop import _ERRNOS_DISCONNECTED
 from .ioloop import _ERRNOS_RETRY
 from .ioloop import Acceptor
 from .ioloop import AsyncChat
-from .ioloop import Connector
 from .ioloop import RetryError
 from .ioloop import timer
 from .log import debug
@@ -418,7 +417,7 @@ class PassiveDTP(Acceptor):
                 self._idler.cancel()
 
 
-class ActiveDTP(Connector):
+class ActiveDTP(AsyncChat):
     """Connects to remote client and dispatches the resulting connection
     to DTPHandler. Used for handling PORT command.
 
@@ -435,7 +434,7 @@ class ActiveDTP(Connector):
          - (int) port: the remote port.
          - (instance) cmd_channel: the command channel class instance.
         """
-        Connector.__init__(self, ioloop=cmd_channel.ioloop)
+        AsyncChat.__init__(self, ioloop=cmd_channel.ioloop)
         self.cmd_channel = cmd_channel
         self.log = cmd_channel.log
         self.log_exception = cmd_channel.log_exception
@@ -531,7 +530,7 @@ class ActiveDTP(Connector):
             debug("call: close()", inst=self)
             self._closed = True
             if self.socket is not None:
-                Connector.close(self)
+                AsyncChat.close(self)
             if self._idler is not None and not self._idler.cancelled:
                 self._idler.cancel()
 

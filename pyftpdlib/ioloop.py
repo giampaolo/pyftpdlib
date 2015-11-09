@@ -827,10 +827,31 @@ class Acceptor(asyncore.dispatcher):
             pass
 
 
-class Connector(Acceptor):
-    """Same as base asyncore.dispatcher and supposed to be used for
-    clients.
+class AsyncChat(asynchat.async_chat):
+    """Same as asynchat.async_chat, only working with the new IO poller
+    and being more clever in avoid registering for read events when
+    it shouldn't.
     """
+
+    def __init__(self, sock=None, ioloop=None):
+        self.ioloop = ioloop or IOLoop.instance()
+        self._wanted_io_events = self.ioloop.READ
+        self._current_io_events = self.ioloop.READ
+        self._closed = False
+        self._closing = False
+        self._fileno = sock.fileno() if sock else None
+        asynchat.async_chat.__init__(self, sock)
+
+    def add_channel(self, map=None, events=None):
+        self.ioloop.register(self._fileno, self, events or self.ioloop.READ)
+
+    def del_channel(self, map=None):
+        if self._fileno is not None:
+            self.ioloop.unregister(self._fileno)
+
+    def connect(self, addr):
+        self.modify_ioloop_events(self.ioloop.WRITE)
+        asynchat.async_chat.connect(self, addr)
 
     def connect_af_unspecified(self, addr, source_address=None):
         """Same as connect() but guesses address family from addr.
@@ -872,35 +893,6 @@ class Connector(Acceptor):
             self.del_channel()
             raise socket.error(err)
         return af
-
-    def add_channel(self, map=None):
-        self.ioloop.register(self._fileno, self, self.ioloop.WRITE)
-
-
-class AsyncChat(asynchat.async_chat):
-    """Same as asynchat.async_chat, only working with the new IO poller
-    and being more clever in avoid registering for read events when
-    it shouldn't.
-    """
-
-    def __init__(self, sock, ioloop=None):
-        self.ioloop = ioloop or IOLoop.instance()
-        self._wanted_io_events = self.ioloop.READ
-        self._current_io_events = self.ioloop.READ
-        self._closed = False
-        self._closing = False
-        self._fileno = sock.fileno()
-        asynchat.async_chat.__init__(self, sock)
-
-    def add_channel(self, map=None, events=None):
-        self.ioloop.register(self._fileno, self, events or self.ioloop.READ)
-
-    def del_channel(self, map=None):
-        self.ioloop.unregister(self._fileno)
-
-    def connect(self, addr):
-        self.modify_ioloop_events(self.ioloop.READ | self.ioloop.WRITE)
-        asynchat.async_chat.connect(self, addr)
 
     def modify_ioloop_events(self, events, logdebug=False):
         if not self._closed:
