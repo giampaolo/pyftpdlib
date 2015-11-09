@@ -487,7 +487,14 @@ class _BasePollEpoll(_IOLoop):
         except KeyError:
             debug("call: unregister(); fd was no longer in socket_map", self)
         else:
-            self._poller.unregister(fd)
+            try:
+                self._poller.unregister(fd)
+            except EnvironmentError as err:
+                if err.errno in (errno.ENOENT, errno.EBADF):
+                    debug("call: unregister(); poller returned %r; "
+                          "ignoring it" % err, self)
+                else:
+                    raise
 
     def modify(self, fd, events):
         try:
@@ -649,8 +656,11 @@ if hasattr(select, 'kqueue'):
             else:
                 try:
                     self._control(fd, events, select.KQ_EV_DELETE)
-                except OSError as err:
-                    if err.errno not in (errno.EBADF, errno.ENOENT):
+                except EnvironmentError as err:
+                    if err.errno in (errno.ENOENT, errno.EBADF):
+                        debug("call: unregister(); poller returned %r; "
+                              "ignoring it" % err, self)
+                    else:
                         raise
 
         def modify(self, fd, events):
