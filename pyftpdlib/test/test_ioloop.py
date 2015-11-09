@@ -144,7 +144,7 @@ class TestCallLater(unittest.TestCase):
         self.assertEqual(x.cancelled, True)
         self.assertRaises(AssertionError, x.call)
         self.assertRaises(AssertionError, x.reset)
-        self.assertRaises(AssertionError, x.cancel)
+        x.cancel()
 
     def test_order(self):
         def fun(x):
@@ -221,7 +221,7 @@ class TestCallEvery(unittest.TestCase):
         self.assertEqual(x.cancelled, True)
         self.assertRaises(AssertionError, x.call)
         self.assertRaises(AssertionError, x.reset)
-        self.assertRaises(AssertionError, x.cancel)
+        x.cancel()
 
     def test_only_once(self):
         # make sure that callback is called only once per-loop
