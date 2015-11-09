@@ -3250,7 +3250,7 @@ else:
                 # see:
                 # https://github.com/giampaolo/pyftpdlib/issues/171
                 # https://bugs.launchpad.net/pyopenssl/+bug/785985
-                if err.args and not err.errno:
+                if err.args and not getattr(err, "errno", None):
                     pass
                 else:
                     raise
