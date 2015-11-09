@@ -754,6 +754,7 @@ class AsyncChat(asynchat.async_chat):
     # --- IO loop related methods
 
     def add_channel(self, map=None, events=None):
+        assert self._fileno, repr(self._fileno)
         events = events if events is not None else self.ioloop.READ
         self.ioloop.register(self._fileno, self, events)
         self._wanted_io_events = events
