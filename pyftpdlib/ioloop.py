@@ -736,97 +736,6 @@ else:                             # select() - POSIX and Windows
 # file descriptors against the new pollers
 
 
-class Acceptor(asyncore.dispatcher):
-    """Same as base asyncore.dispatcher and supposed to be used to
-    accept new connections.
-    """
-
-    def __init__(self, ioloop=None):
-        self.ioloop = ioloop or IOLoop.instance()
-        self._fileno = None  # py < 2.6
-        asyncore.dispatcher.__init__(self)
-
-    def bind_af_unspecified(self, addr):
-        """Same as bind() but guesses address family from addr.
-        Return the address family just determined.
-        """
-        assert self.socket is None
-        host, port = addr
-        if host == "":
-            # When using bind() "" is a symbolic name meaning all
-            # available interfaces. People might not know we're
-            # using getaddrinfo() internally, which uses None
-            # instead of "", so we'll make the conversion for them.
-            host = None
-        err = "getaddrinfo() returned an empty list"
-        info = socket.getaddrinfo(host, port, socket.AF_UNSPEC,
-                                  socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
-        for res in info:
-            self.socket = None
-            self.del_channel()
-            af, socktype, proto, canonname, sa = res
-            try:
-                self.create_socket(af, socktype)
-                self.set_reuse_addr()
-                self.bind(sa)
-            except socket.error as _:
-                err = _
-                if self.socket is not None:
-                    self.socket.close()
-                    self.del_channel()
-                    self.socket = None
-                continue
-            break
-        if self.socket is None:
-            self.del_channel()
-            raise socket.error(err)
-        return af
-
-    def add_channel(self, map=None):
-        self.ioloop.register(self._fileno, self, self.ioloop.READ)
-
-    def del_channel(self, map=None):
-        self.ioloop.unregister(self._fileno)
-
-    def listen(self, num):
-        asyncore.dispatcher.listen(self, num)
-        # XXX - this seems to be necessary, otherwise kqueue.control()
-        # won't return listening fd events
-        try:
-            if isinstance(self.ioloop, Kqueue):
-                self.ioloop.modify(self._fileno, self.ioloop.READ)
-        except NameError:
-            pass
-
-    def handle_accept(self):
-        try:
-            sock, addr = self.accept()
-        except TypeError:
-            # sometimes accept() might return None (see issue 91)
-            debug("call: handle_accept(); accept() returned None", self)
-            return
-        except socket.error as err:
-            # ECONNABORTED might be thrown on *BSD (see issue 105)
-            if err.errno != errno.ECONNABORTED:
-                raise
-            else:
-                debug("call: handle_accept(); accept() returned ECONNABORTED",
-                      self)
-        else:
-            # sometimes addr == None instead of (ip, port) (see issue 104)
-            if addr is not None:
-                self.handle_accepted(sock, addr)
-
-    def handle_accepted(self, sock, addr):
-        sock.close()
-        self.log_info('unhandled accepted event', 'warning')
-
-    # overridden for convenience; avoid to reuse address on Windows
-    if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
-        def set_reuse_addr(self):
-            pass
-
-
 class AsyncChat(asynchat.async_chat):
     """Same as asynchat.async_chat, only working with the new IO poller
     and being more clever in avoid registering for read events when
@@ -998,9 +907,92 @@ class AsyncChat(asynchat.async_chat):
 
 
 class Connector(AsyncChat):
-    """Same as base asyncore.dispatcher and supposed to be used for
+    """Same as base AsyncChat and supposed to be used for
     clients.
     """
 
     def add_channel(self, map=None, events=None):
         AsyncChat.add_channel(self, map=map, events=self.ioloop.WRITE)
+
+
+class Acceptor(AsyncChat):
+    """Same as base AsyncChat and supposed to be used to
+    accept new connections.
+    """
+
+    def add_channel(self, map=None, events=None):
+        AsyncChat.add_channel(self, map=map, events=self.ioloop.READ)
+
+    def bind_af_unspecified(self, addr):
+        """Same as bind() but guesses address family from addr.
+        Return the address family just determined.
+        """
+        assert self.socket is None
+        host, port = addr
+        if host == "":
+            # When using bind() "" is a symbolic name meaning all
+            # available interfaces. People might not know we're
+            # using getaddrinfo() internally, which uses None
+            # instead of "", so we'll make the conversion for them.
+            host = None
+        err = "getaddrinfo() returned an empty list"
+        info = socket.getaddrinfo(host, port, socket.AF_UNSPEC,
+                                  socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+        for res in info:
+            self.socket = None
+            self.del_channel()
+            af, socktype, proto, canonname, sa = res
+            try:
+                self.create_socket(af, socktype)
+                self.set_reuse_addr()
+                self.bind(sa)
+            except socket.error as _:
+                err = _
+                if self.socket is not None:
+                    self.socket.close()
+                    self.del_channel()
+                    self.socket = None
+                continue
+            break
+        if self.socket is None:
+            self.del_channel()
+            raise socket.error(err)
+        return af
+
+    def listen(self, num):
+        AsyncChat.listen(self, num)
+        # XXX - this seems to be necessary, otherwise kqueue.control()
+        # won't return listening fd events
+        try:
+            if isinstance(self.ioloop, Kqueue):
+                self.ioloop.modify(self._fileno, self.ioloop.READ)
+        except NameError:
+            pass
+
+    def handle_accept(self):
+        try:
+            sock, addr = self.accept()
+        except TypeError:
+            # sometimes accept() might return None (see issue 91)
+            debug("call: handle_accept(); accept() returned None", self)
+            return
+        except socket.error as err:
+            # ECONNABORTED might be thrown on *BSD (see issue 105)
+            if err.errno != errno.ECONNABORTED:
+                raise
+            else:
+                debug("call: handle_accept(); accept() returned ECONNABORTED",
+                      self)
+        else:
+            # sometimes addr == None instead of (ip, port) (see issue 104)
+            if addr is not None:
+                self.handle_accepted(sock, addr)
+
+    def handle_accepted(self, sock, addr):
+        sock.close()
+        self.log_info('unhandled accepted event', 'warning')
+
+    # overridden for convenience; avoid to reuse address on Windows
+    if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
+        def set_reuse_addr(self):
+            pass
