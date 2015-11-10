@@ -396,8 +396,9 @@ class AsyncReader(asyncore.dispatcher):
     def handle_read(self):
         try:
             chunk = self.socket.recv(BUFFER_LEN)
-        except (ssl.SSLWantReadError, ssl.SSLWantWriteError):
-            pass
+        except (ssl.SSLWantReadError, ssl.SSLWantWriteError) as err:
+            if DEBUG:
+                print(err)
         else:
             if not chunk:
                 self.close()
@@ -431,8 +432,9 @@ class AsyncWriter(asynchat.async_chat):
     def send(self, data):
         try:
             asynchat.async_chat.send(self, data)
-        except (ssl.SSLWantReadError, ssl.SSLWantWriteError):
-            pass
+        except (ssl.SSLWantReadError, ssl.SSLWantWriteError) as err:
+            if DEBUG:
+                print(err)
 
     def handle_error(self):
         raise
@@ -472,9 +474,10 @@ class OptFormatter(optparse.IndentedHelpFormatter):
 
 
 def main():
-    global HOST, PORT, USER, PASSWORD, SERVER_PROC, TIMEOUT, SSL, FILE_SIZE
+    global HOST, PORT, USER, PASSWORD, SERVER_PROC, TIMEOUT, SSL, FILE_SIZE, \
+           DEBUG
     USAGE = "%s -u USERNAME -p PASSWORD [-H] [-P] [-b] [-n] [-s] [-k] " \
-            "[-t] [-S]" % (os.path.basename(__file__))
+            "[-t] [-d] [-S]" % (os.path.basename(__file__))
     parser = optparse.OptionParser(usage=USAGE,
                                    epilog=__doc__[__doc__.find('Example'):],
                                    formatter=OptFormatter())
@@ -500,6 +503,8 @@ def main():
                            "memory usage")
     parser.add_option('-t', '--timeout', dest='timeout',
                       default=TIMEOUT, type="int", help="the socket timeout")
+    parser.add_option('-d', '--debug', action='store_true', dest='debug',
+                      help="whether to print debugging info")
     parser.add_option('-S', '--ssl', action='store_true', dest='ssl',
                       help="whether to use FTPS")
 
@@ -513,6 +518,7 @@ def main():
         PORT = options.port
         TIMEOUT = options.timeout
         SSL = bool(options.ssl)
+        DEBUG = options.debug
         if SSL and sys.version_info < (2, 7):
             sys.exit("--ssl option requires python >= 2.7")
         try:
