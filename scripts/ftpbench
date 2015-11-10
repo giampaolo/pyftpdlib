@@ -73,6 +73,7 @@ import contextlib
 import ftplib
 import optparse
 import os
+import ssl
 import sys
 import time
 try:
@@ -392,13 +393,14 @@ class AsyncReader(asyncore.dispatcher):
     def __init__(self, sock):
         asyncore.dispatcher.__init__(self, sock)
 
-    def writable(self):
-        return False
-
     def handle_read(self):
-        chunk = self.socket.recv(BUFFER_LEN)
-        if not chunk:
-            self.close()
+        try:
+            chunk = self.socket.recv(BUFFER_LEN)
+        except (ssl.SSLWantReadError, ssl.SSLWantWriteError):
+            pass
+        else:
+            if not chunk:
+                self.close()
 
     def handle_close(self):
         self.close()
@@ -425,6 +427,12 @@ class AsyncWriter(asynchat.async_chat):
         asynchat.async_chat.__init__(self, sock)
         self.push_with_producer(self.ChunkProducer(size))
         self.close_when_done()
+
+    def send(self, data):
+        try:
+            asynchat.async_chat.send(self, data)
+        except (ssl.SSLWantReadError, ssl.SSLWantWriteError):
+            pass
 
     def handle_error(self):
         raise
