@@ -100,6 +100,12 @@ SSL = False
 PY3 = sys.version_info >= (3, 0)
 
 server_memory = []
+# python >= 2.7.9
+SSLWantReadError = getattr(ssl, "SSLWantReadError", object())
+SSLWantWriteError = getattr(ssl, "SSLWantWriteError", object())
+# python <= 2.7.8
+SSL_ERROR_WANT_READ = getattr(ssl, "SSL_ERROR_WANT_READ", object())
+SSL_ERROR_WANT_WRITE = getattr(ssl, "SSL_ERROR_WANT_WRITE", object())
 
 
 if not sys.stdout.isatty() or os.name != 'posix':
@@ -367,7 +373,7 @@ def bench_multi(howmany):
             for ftp in clients:
                 ftp.voidcmd('TYPE I')
                 conn = ftp.transfercmd("STOR " + TESTFN)
-                AsyncWriter(conn, 1024 * 1024 * 5)
+                AsyncWriter(conn, FILE_SIZE)
             register_memory()
             asyncore.loop(use_poll=True)
         for ftp in clients:
@@ -387,21 +393,39 @@ def bench_multi(howmany):
     bench_multi_quit(clients)
 
 
-class AsyncReader(asyncore.dispatcher):
-    """Just read data from a connected socket, asynchronously."""
-
-    def __init__(self, sock):
-        asyncore.dispatcher.__init__(self, sock)
-
-    def handle_read(self):
-        try:
-            chunk = self.socket.recv(BUFFER_LEN)
-        except (ssl.SSLWantReadError, ssl.SSLWantWriteError) as err:
+@contextlib.contextmanager
+def handle_ssl_want_rw_errs():
+    try:
+        yield
+    except (SSLWantReadError, SSLWantWriteError) as err:
+        if DEBUG:
+            print(err)
+    except ssl.SSLError as err:
+        if err.args[0] in (SSL_ERROR_WANT_READ, SSL_ERROR_WANT_WRITE):
             if DEBUG:
                 print(err)
         else:
-            if not chunk:
-                self.close()
+            raise
+
+
+class AsyncReader(asyncore.dispatcher):
+    """Just read data from a connected socket, asynchronously."""
+
+    ac_in_buffer_size = 65536
+
+    def __init__(self, sock):
+        asyncore.dispatcher.__init__(self, sock)
+        if SSL:
+            self.handle_read = self.handle_read_ssl
+
+    def handle_read(self):
+        chunk = self.socket.recv(BUFFER_LEN)
+        if not chunk:
+            self.close()
+
+    def handle_read_ssl(self):
+        with handle_ssl_want_rw_errs():
+            self.handle_read()
 
     def handle_close(self):
         self.close()
@@ -412,6 +436,9 @@ class AsyncReader(asyncore.dispatcher):
 
 class AsyncWriter(asynchat.async_chat):
     """Just write dummy data to a connected socket, asynchronously."""
+
+    ac_out_buffer_size = 65536
+
     class ChunkProducer:
         def __init__(self, size):
             self.size = size
@@ -428,13 +455,12 @@ class AsyncWriter(asynchat.async_chat):
         asynchat.async_chat.__init__(self, sock)
         self.push_with_producer(self.ChunkProducer(size))
         self.close_when_done()
+        if SSL:
+            self.send = self.send_ssl
 
-    def send(self, data):
-        try:
-            asynchat.async_chat.send(self, data)
-        except (ssl.SSLWantReadError, ssl.SSLWantWriteError) as err:
-            if DEBUG:
-                print(err)
+    def send_ssl(self, data):
+        with handle_ssl_want_rw_errs():
+            return self.send(data)
 
     def handle_error(self):
         raise
