@@ -2987,6 +2987,7 @@ else:
         _ssl_accepting = False
         _ssl_established = False
         _ssl_closing = False
+        _ssl_requested = False
 
         def __init__(self, *args, **kwargs):
             super(SSLConnection, self).__init__(*args, **kwargs)
@@ -3007,6 +3008,7 @@ else:
             SSL/TLS.
             """
             debug("securing SSL connection", self)
+            self._ssl_requested = True
             try:
                 self.socket = SSL.Connection(ssl_context, self.socket)
             except socket.error as err:
@@ -3089,24 +3091,30 @@ else:
             raise NotImplementedError("must be implemented in subclass")
 
         def handle_read_event(self):
-            with self._handle_ssl_want_rw():
-                self._ssl_want_read = False
-                if self._ssl_accepting:
-                    self._do_ssl_handshake()
-                elif self._ssl_closing:
-                    self._do_ssl_shutdown()
-                else:
-                    super(SSLConnection, self).handle_read_event()
+            if not self._ssl_requested:
+                super(SSLConnection, self).handle_read_event()
+            else:
+                with self._handle_ssl_want_rw():
+                    self._ssl_want_read = False
+                    if self._ssl_accepting:
+                        self._do_ssl_handshake()
+                    elif self._ssl_closing:
+                        self._do_ssl_shutdown()
+                    else:
+                        super(SSLConnection, self).handle_read_event()
 
         def handle_write_event(self):
-            with self._handle_ssl_want_rw():
-                self._ssl_want_write = False
-                if self._ssl_accepting:
-                    self._do_ssl_handshake()
-                elif self._ssl_closing:
-                    self._do_ssl_shutdown()
-                else:
-                    super(SSLConnection, self).handle_write_event()
+            if not self._ssl_requested:
+                super(SSLConnection, self).handle_write_event()
+            else:
+                with self._handle_ssl_want_rw():
+                    self._ssl_want_write = False
+                    if self._ssl_accepting:
+                        self._do_ssl_handshake()
+                    elif self._ssl_closing:
+                        self._do_ssl_shutdown()
+                    else:
+                        super(SSLConnection, self).handle_write_event()
 
         def handle_error(self):
             self._error = True

@@ -22,6 +22,8 @@ Version: 1.5.0 - (UNRELEASED)
   (instead of both).
 - #362: 'ftpbench' script is now installed as a system script on 'setup.py
   install'.
+- #365: TLS FTP server is now 25% faster when dealing with clear-text
+  connections.
 
 **Bug fixes**
 
