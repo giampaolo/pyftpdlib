@@ -411,21 +411,17 @@ def handle_ssl_want_rw_errs():
 class AsyncReader(asyncore.dispatcher):
     """Just read data from a connected socket, asynchronously."""
 
-    ac_in_buffer_size = 65536
-
     def __init__(self, sock):
         asyncore.dispatcher.__init__(self, sock)
-        if SSL:
-            self.handle_read = self.handle_read_ssl
 
     def handle_read(self):
-        chunk = self.socket.recv(BUFFER_LEN)
+        if SSL:
+            with handle_ssl_want_rw_errs():
+                chunk = self.socket.recv(65536)
+        else:
+            chunk = self.socket.recv(65536)
         if not chunk:
             self.close()
-
-    def handle_read_ssl(self):
-        with handle_ssl_want_rw_errs():
-            self.handle_read()
 
     def handle_close(self):
         self.close()
@@ -434,33 +430,23 @@ class AsyncReader(asyncore.dispatcher):
         raise
 
 
-class AsyncWriter(asynchat.async_chat):
+class AsyncWriter(asyncore.dispatcher):
     """Just write dummy data to a connected socket, asynchronously."""
 
-    ac_out_buffer_size = 65536
-
-    class ChunkProducer:
-        def __init__(self, size):
-            self.size = size
-            self.sent = 0
-            self.chunk = b'x' * BUFFER_LEN
-
-        def more(self):
-            if self.sent >= self.size:
-                return b''
-            self.sent += len(self.chunk)
-            return self.chunk
-
     def __init__(self, sock, size):
-        asynchat.async_chat.__init__(self, sock)
-        self.push_with_producer(self.ChunkProducer(size))
-        self.close_when_done()
-        if SSL:
-            self.send = self.send_ssl
+        asyncore.dispatcher.__init__(self, sock)
+        self.size = size
+        self.sent = 0
+        self.chunk = b'x' * BUFFER_LEN
 
-    def send_ssl(self, data):
-        with handle_ssl_want_rw_errs():
-            return self.send(data)
+    def handle_write(self):
+        if SSL:
+            with handle_ssl_want_rw_errs():
+                self.sent += asyncore.dispatcher.send(self, self.chunk)
+        else:
+            self.sent += asyncore.dispatcher.send(self, self.chunk)
+        if self.sent >= self.size:
+            self.handle_close()
 
     def handle_error(self):
         raise
