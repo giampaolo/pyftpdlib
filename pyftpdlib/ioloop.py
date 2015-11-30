@@ -948,18 +948,20 @@ class AsyncChat(asynchat.async_chat):
             asynchat.async_chat.close_when_done(self)
 
     def close(self):
-        try:
-            asynchat.async_chat.close(self)
-        finally:
-            for fun in self._tasks:
-                try:
-                    fun.cancel()
-                except Exception:
-                    logger.error(traceback.format_exc())
-            self._tasks = []
+        if not self._closed:
             self._closed = True
-            self._closing = False
-            self.connected = False
+            try:
+                asynchat.async_chat.close(self)
+            finally:
+                for fun in self._tasks:
+                    try:
+                        fun.cancel()
+                    except Exception:
+                        logger.error(traceback.format_exc())
+                self._tasks = []
+                self._closed = True
+                self._closing = False
+                self.connected = False
 
 
 class Connector(AsyncChat):
