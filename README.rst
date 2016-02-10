@@ -1,16 +1,16 @@
-.. image:: https://pypip.in/d/pyftpdlib/badge.png
-    :target: https://crate.io/packages/pyftpdlib/
+.. image:: https://img.shields.io/pypi/dm/pyftpdlib.svg
+    :target: https://pypi.python.org/pypi/pyftpdlib/
     :alt: Download this month
 
-.. image:: https://pypip.in/v/pyftpdlib/badge.png
+.. image:: https://img.shields.io/pypi/v/pyftpdlib.svg
     :target: https://pypi.python.org/pypi/pyftpdlib/
     :alt: Latest version
 
-.. image:: https://pypip.in/license/pyftpdlib/badge.png
+.. image:: https://img.shields.io/pypi/l/pyftpdlib.svg
     :target: https://pypi.python.org/pypi/pyftpdlib/
     :alt: License
 
-.. image:: https://api.travis-ci.org/giampaolo/pyftpdlib.png?branch=master
+.. image:: https://img.shields.io/travis/giampaolo/pyftpdlib/master.svg
     :target: https://travis-ci.org/giampaolo/pyftpdlib
     :alt: Travis
 
