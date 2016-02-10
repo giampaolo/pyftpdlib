@@ -229,7 +229,7 @@ Timeline
 - 2007-03-06: pyftpdlib `ported on FreeBSD <http://www.freshports.org/ftp/py-pyftpdlib/>`__ systems to make users can easily install on it.
 - 2007-03-07: version `0.1.1 <http://pyftpdlib.googlecode.com/files/pyftpdlib*0.1.1.tar.gz>`__ released.
 - 2007-02-26: version `0.1.0 <http://pyftpdlib.googlecode.com/files/pyftpdlib*0.1.tar.gz>`__ released.
-- 2006-09-26: initial clunky thread-based progenitor `link <http://billiejoex.altervista.org/Prj*pftpd.htm>`__.
+- 2006-09-26: initial clunky thread-based progenitor `link <http://billiejoex.altervista.org/Prj_pftpd.htm>`__.
 
 Trademarks
 ==========
