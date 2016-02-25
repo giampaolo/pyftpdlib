@@ -6,6 +6,7 @@
 
 import contextlib
 import errno
+import select
 import socket
 import time
 
@@ -150,6 +151,20 @@ class DefaultIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
 
 class SelectIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
     ioloop_class = pyftpdlib.ioloop.Select
+
+    def test_select_eintr(self):
+        # EINTR is supposed to be ignored
+        with mock.patch('pyftpdlib.ioloop.select.select',
+                        side_effect=select.error()) as m:
+            m.side_effect.errno = errno.EINTR
+            s, rd, wr = self.test_register()
+            s.poll(0)
+        # ...but just that
+        with mock.patch('pyftpdlib.ioloop.select.select',
+                        side_effect=select.error()) as m:
+            m.side_effect.errno = errno.EBADF
+            s, rd, wr = self.test_register()
+            self.assertRaises(select.error, s.poll, 0)
 
 
 @unittest.skipUnless(hasattr(pyftpdlib.ioloop, 'Poll'),
