@@ -179,6 +179,16 @@ def retry_before_failing(ntimes=None):
     return decorator
 
 
+def get_server_handler():
+    """Return the first FTPHandler instance running in the IOLoop."""
+    ioloop = IOLoop.instance()
+    for fd in ioloop.socket_map:
+        instance = ioloop.socket_map[fd]
+        if isinstance(instance, FTPHandler):
+            return instance
+    raise RuntimeError("can't find any FTPHandler instance")
+
+
 # commented out as per bug http://bugs.python.org/issue10354
 # tempfile.template = 'tmp-pyftpdlib'
 

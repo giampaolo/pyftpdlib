@@ -37,6 +37,7 @@ from pyftpdlib.test import BUFSIZE
 from pyftpdlib.test import configure_logging
 from pyftpdlib.test import disable_log_warning
 from pyftpdlib.test import FTPd
+from pyftpdlib.test import get_server_handler
 from pyftpdlib.test import HOME
 from pyftpdlib.test import HOST
 from pyftpdlib.test import INTERRUPTED_TRANSF_SIZE
@@ -1634,6 +1635,7 @@ class TestConfigurableOptions(unittest.TestCase):
         self.server.handler.masquerade_address = None
         self.server.handler.masquerade_address_map = {}
         self.server.handler.permit_privileged_ports = False
+        self.server.handler.permit_foreign_addresses = False
         self.server.handler.passive_ports = None
         self.server.handler.use_gmt_times = True
         self.server.handler.tcp_no_delay = hasattr(socket, 'TCP_NODELAY')
@@ -1839,23 +1841,29 @@ class TestConfigurableOptions(unittest.TestCase):
     @unittest.skipUnless(hasattr(socket, 'TCP_NODELAY'),
                          'TCP_NODELAY not available')
     def test_tcp_no_delay(self):
-        def get_handler_socket():
-            # return the server's handler socket object
-            ioloop = IOLoop.instance()
-            for fd in ioloop.socket_map:
-                instance = ioloop.socket_map[fd]
-                if isinstance(instance, FTPHandler):
-                    break
-            return instance.socket
-
-        s = get_handler_socket()
+        s = get_server_handler().socket
         self.assertTrue(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
         self.client.quit()
         self.server.handler.tcp_no_delay = False
         self.client.connect(self.server.host, self.server.port)
         self.client.sendcmd('noop')
-        s = get_handler_socket()
+        s = get_server_handler().socket
         self.assertFalse(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
+
+    def test_permit_foreign_address_false(self):
+        handler = get_server_handler()
+        handler.permit_foreign_addresses = False
+        handler.remote_ip = '9.9.9.9'
+        with self.assertRaises(ftplib.error_perm) as cm:
+            self.client.makeport()
+        self.assertIn('foreign address', str(cm.exception))
+
+    def test_permit_foreign_address_true(self):
+        handler = get_server_handler()
+        handler.permit_foreign_addresses = True
+        handler.remote_ip = '9.9.9.9'
+        s = self.client.makeport()
+        s.close()
 
 
 class TestCallbacks(unittest.TestCase):

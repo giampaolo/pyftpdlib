@@ -12,3 +12,7 @@ exclude_lines =
     pragma: no cover
     if __name__ == .__main__.:
     except ImportError:
+    if os.name == 'nt':
+    raise NotImplementedError('must be implemented in subclass')
+    if hasattr(select, 'epoll'):
+    if hasattr(select, 'kqueue'):
