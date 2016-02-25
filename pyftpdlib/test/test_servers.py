@@ -138,8 +138,8 @@ class TestCornerCasesThreadMixin(ThreadFTPTestMixin, TestCornerCases):
     pass
 
 
-class TestFTPServerThreadMixin(ThreadFTPTestMixin, TestFTPServer):
-    pass
+# class TestFTPServerThreadMixin(ThreadFTPTestMixin, TestFTPServer):
+#     pass
 
 
 # =====================================================================
@@ -211,8 +211,8 @@ class TestCornerCasesMProcMixin(MProcFTPTestMixin, TestCornerCases):
     pass
 
 
-class TestFTPServerMProcMixin(MProcFTPTestMixin, TestFTPServer):
-    pass
+# class TestFTPServerMProcMixin(MProcFTPTestMixin, TestFTPServer):
+#     pass
 
 
 configure_logging()

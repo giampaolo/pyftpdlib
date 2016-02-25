@@ -8,6 +8,7 @@ import contextlib
 import errno
 import select
 import socket
+import sys
 import time
 
 from pyftpdlib._compat import PY3
@@ -184,6 +185,7 @@ class PollIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
     ioloop_class = getattr(pyftpdlib.ioloop, "Poll", None)
     poller_mock = "pyftpdlib.ioloop.Poll._poller"
 
+    @unittest.skipIf(sys.version_info[:2] == (3, 2), "")
     def test_eintr_on_poll(self):
         # EINTR is supposed to be ignored
         with mock.patch(self.poller_mock, return_vaue=mock.Mock()) as m:
