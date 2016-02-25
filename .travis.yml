@@ -4,9 +4,9 @@ matrix:
     include:
         - python: 2.6
         - python: 2.7
-        - python: 3.2
         - python: 3.3
         - python: 3.4
+        - python: 3.5
         - language: generic
           os: osx
           env: PYVER=py26
@@ -15,16 +15,17 @@ matrix:
           env: PYVER=py27
         - language: generic
           os: osx
-          env: PYVER=py32
-        - language: generic
-          os: osx
           env: PYVER=py33
         - language: generic
           os: osx
           env: PYVER=py34
+        # XXX - not supported yet
+        # - language: generic
+        #   os: osx
+        #   env: PYVER=py35
 install:
     - ./.ci/travis/install.sh
 script:
     - ./.ci/travis/run.sh
-# after_success:
-#   - coveralls  # upload reports to coveralls.io
+after_success:
+    - coveralls  # upload reports to coveralls.io

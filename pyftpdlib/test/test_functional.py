@@ -2406,7 +2406,7 @@ class TestCornerCases(unittest.TestCase):
             bytes = hbytes + pbytes
             cmd = 'PORT ' + ','.join(bytes) + '\r\n'
             self.client.sock.sendall(b(cmd))
-            self.client.quit()
+            self.client.getresp()
             s, addr = sock.accept()
             s.close()
 

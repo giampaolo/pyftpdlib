@@ -186,8 +186,7 @@ class PollIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
 
     def test_eintr_on_poll(self):
         # EINTR is supposed to be ignored
-        with mock.patch(self.poller_mock,
-                        return_vaue=mock.Mock()) as m:
+        with mock.patch(self.poller_mock, return_vaue=mock.Mock()) as m:
             if not PY3:
                 m.return_value.poll.side_effect = select.error
                 m.return_value.poll.side_effect.errno = errno.EINTR
@@ -197,8 +196,7 @@ class PollIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
             s.poll(0)
             assert m.called
         # ...but just that
-        with mock.patch(self.poller_mock,
-                        return_vaue=mock.Mock()) as m:
+        with mock.patch(self.poller_mock, return_vaue=mock.Mock()) as m:
             if not PY3:
                 m.return_value.poll.side_effect = select.error
                 m.return_value.poll.side_effect.errno = errno.EBADF
@@ -210,14 +208,12 @@ class PollIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
 
     def test_eexist_on_register(self):
         # EEXIST is supposed to be ignored
-        with mock.patch(self.poller_mock,
-                        return_vaue=mock.Mock()) as m:
+        with mock.patch(self.poller_mock, return_vaue=mock.Mock()) as m:
             m.return_value.register.side_effect = \
                 EnvironmentError(errno.EEXIST, "")
             s, rd, wr = self.test_register()
         # ...but just that
-        with mock.patch(self.poller_mock,
-                        return_vaue=mock.Mock()) as m:
+        with mock.patch(self.poller_mock, return_vaue=mock.Mock()) as m:
             m.return_value.register.side_effect = \
                 EnvironmentError(errno.EBADF, "")
             self.assertRaises(EnvironmentError, self.test_register)
@@ -225,15 +221,13 @@ class PollIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
     def test_enoent_ebadf_on_unregister(self):
         # ENOENT and EBADF are supposed to be ignored
         for errnum in (errno.EBADF, errno.ENOENT):
-            with mock.patch(self.poller_mock,
-                            return_vaue=mock.Mock()) as m:
+            with mock.patch(self.poller_mock, return_vaue=mock.Mock()) as m:
                 m.return_value.unregister.side_effect = \
                     EnvironmentError(errnum, "")
                 s, rd, wr = self.test_register()
                 s.unregister(rd)
         # ...but just those
-        with mock.patch(self.poller_mock,
-                        return_vaue=mock.Mock()) as m:
+        with mock.patch(self.poller_mock, return_vaue=mock.Mock()) as m:
             m.return_value.unregister.side_effect = \
                 EnvironmentError(errno.EEXIST, "")
             s, rd, wr = self.test_register()
@@ -241,8 +235,7 @@ class PollIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
 
     def test_enoent_on_modify(self):
         # ENOENT is supposed to be ignored
-        with mock.patch(self.poller_mock,
-                        return_vaue=mock.Mock()) as m:
+        with mock.patch(self.poller_mock, return_vaue=mock.Mock()) as m:
             m.return_value.modify.side_effect = \
                 OSError(errno.ENOENT, "")
             s, rd, wr = self.test_register()

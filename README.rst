@@ -14,6 +14,10 @@
     :target: https://travis-ci.org/giampaolo/pyftpdlib
     :alt: Travis
 
+.. image:: https://coveralls.io/repos/giampaolo/pyftpdlib/badge.svg?branch=master&service=github
+    :target: https://coveralls.io/github/giampaolo/pyftpdlib?branch=master
+    :alt: Test coverage (coverall.io)
+
 Quick links
 ===========
 

@@ -569,7 +569,7 @@ if hasattr(select, 'poll'):
 # --- /dev/poll - Solaris (introduced in python 3.3)
 # ===================================================================
 
-if hasattr(select, 'devpoll'):
+if hasattr(select, 'devpoll'):  # pragma: no cover
 
     class DevPoll(_BasePollEpoll):
         """/dev/poll based poller (introduced in python 3.3)."""
@@ -630,7 +630,7 @@ if hasattr(select, 'epoll'):
 # --- kqueue() - BSD / OSX
 # ===================================================================
 
-if hasattr(select, 'kqueue'):
+if hasattr(select, 'kqueue'):  # pragma: no cover
 
     class Kqueue(_IOLoop):
         """kqueue() based poller."""
