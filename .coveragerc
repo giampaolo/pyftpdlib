@@ -1,0 +1,14 @@
+[report]
+
+include =
+    *pyftpdlib*
+
+omit =
+    *pyftpdlib/_compat.py
+    *pyftpdlib/test/*
+    setup.py
+
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    except ImportError:

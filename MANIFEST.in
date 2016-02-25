@@ -1,5 +1,6 @@
 # Tells "python setup.py sdist" what files to include in the tarball.
 
+include .coveragerc
 include .git-pre-commit
 include CREDITS
 include HISTORY.rst

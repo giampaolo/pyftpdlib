@@ -20,6 +20,8 @@ clean:
 	rm -rf build
 	rm -rf dist
 	rm -rf docs/_build
+	rm -rf htmlcov
+	rm -rf .coverage
 
 build: clean
 	$(PYTHON) setup.py build
@@ -41,7 +43,7 @@ setup-dev-env: install-git-hooks
 	rm /tmp/get-pip.py
 	$(PYTHON) -m pip install --user --upgrade pip
 	$(PYTHON) -m pip install --user --upgrade \
-		coverage  \
+		coverage \
 		flake8 \
 		ipdb \
 		mock==1.0.1 \
@@ -72,6 +74,15 @@ test-by-name:
 nosetest: install
 	# $ make nosetest FLAGS=test_name
 	nosetests $(TSCRIPT) -v -m $(FLAGS)
+
+coverage: install
+	# Note: coverage options are controlled by .coveragerc file
+	rm -rf .coverage htmlcov
+	$(PYTHON) -m coverage run $(TSCRIPT)
+	$(PYTHON) -m coverage report
+	@echo "writing results to htmlcov/index.html"
+	$(PYTHON) -m coverage html
+	$(PYTHON) -m webbrowser -t htmlcov/index.html
 
 pep8:
 	pep8 pyftpdlib/ demo/ test/ setup.py --ignore E302
