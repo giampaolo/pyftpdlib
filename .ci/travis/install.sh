@@ -1,3 +1,4 @@
+    esac
 #!/bin/bash
 
 set -e
