@@ -422,6 +422,15 @@ class TestAsyncChat(unittest.TestCase):
                     assert send.called
                     assert handle_close.called
 
+    def test_connect_af_unspecified(self):
+        ac = AsyncChat()
+        with mock.patch.object(
+                ac, "connect",
+                side_effect=socket.error(errno.EBADF, "")) as m:
+            self.assertRaises(socket.error,
+                              ac.connect_af_unspecified, ("localhost", 0))
+            assert m.called
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=VERBOSITY)

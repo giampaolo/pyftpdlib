@@ -863,7 +863,8 @@ class AsyncChat(asynchat.async_chat):
                                           source_address[1])
                     self.bind(source_address)
                 self.connect((host, port))
-            except socket.error as err:
+            except socket.error as _:
+                err = _
                 if self.socket is not None:
                     self.socket.close()
                     self.del_channel()
