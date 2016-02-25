@@ -10,6 +10,7 @@ import select
 import socket
 import time
 
+from pyftpdlib._compat import PY3
 from pyftpdlib.ioloop import Acceptor
 from pyftpdlib.ioloop import AsyncChat
 from pyftpdlib.ioloop import IOLoop
@@ -181,22 +182,71 @@ class SelectIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
                      "poll() not available on this platform")
 class PollIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
     ioloop_class = getattr(pyftpdlib.ioloop, "Poll", None)
+    poller_mock = "pyftpdlib.ioloop.Poll._poller"
 
-    def test_poll_eintr(self, ):
+    def test_eintr_on_poll(self):
         # EINTR is supposed to be ignored
-        with mock.patch("pyftpdlib.ioloop.Poll._poller",
-                        return_vaue=mock.Mock()) as m_poll:
-            m_poll.return_value.poll.side_effect = select.error
-            m_poll.return_value.poll.side_effect.errno = errno.EINTR
+        with mock.patch(self.poller_mock,
+                        return_vaue=mock.Mock()) as m:
+            if not PY3:
+                m.return_value.poll.side_effect = select.error
+                m.return_value.poll.side_effect.errno = errno.EINTR
+            else:
+                m.return_value.poll.side_effect = OSError(errno.EINTR, "")
             s, rd, wr = self.test_register()
             s.poll(0)
+            assert m.called
         # ...but just that
-        with mock.patch("pyftpdlib.ioloop.Poll._poller",
-                        return_vaue=mock.Mock()) as m_poll:
-            m_poll.return_value.poll.side_effect = select.error
-            m_poll.return_value.poll.side_effect.errno = errno.EBADF
+        with mock.patch(self.poller_mock,
+                        return_vaue=mock.Mock()) as m:
+            if not PY3:
+                m.return_value.poll.side_effect = select.error
+                m.return_value.poll.side_effect.errno = errno.EBADF
+            else:
+                m.return_value.poll.side_effect = OSError(errno.EBADF, "")
             s, rd, wr = self.test_register()
             self.assertRaises(select.error, s.poll, 0)
+            assert m.called
+
+    def test_eexist_on_register(self):
+        # EEXIST is supposed to be ignored
+        with mock.patch(self.poller_mock,
+                        return_vaue=mock.Mock()) as m:
+            m.return_value.register.side_effect = \
+                EnvironmentError(errno.EEXIST, "")
+            s, rd, wr = self.test_register()
+        # ...but just that
+        with mock.patch(self.poller_mock,
+                        return_vaue=mock.Mock()) as m:
+            m.return_value.register.side_effect = \
+                EnvironmentError(errno.EBADF, "")
+            self.assertRaises(EnvironmentError, self.test_register)
+
+    def test_enoent_ebadf_on_unregister(self):
+        # ENOENT and EBADF are supposed to be ignored
+        for errnum in (errno.EBADF, errno.ENOENT):
+            with mock.patch(self.poller_mock,
+                            return_vaue=mock.Mock()) as m:
+                m.return_value.unregister.side_effect = \
+                    EnvironmentError(errnum, "")
+                s, rd, wr = self.test_register()
+                s.unregister(rd)
+        # ...but just those
+        with mock.patch(self.poller_mock,
+                        return_vaue=mock.Mock()) as m:
+            m.return_value.unregister.side_effect = \
+                EnvironmentError(errno.EEXIST, "")
+            s, rd, wr = self.test_register()
+            self.assertRaises(EnvironmentError, s.unregister, rd)
+
+    def test_enoent_on_modify(self):
+        # ENOENT is supposed to be ignored
+        with mock.patch(self.poller_mock,
+                        return_vaue=mock.Mock()) as m:
+            m.return_value.modify.side_effect = \
+                OSError(errno.ENOENT, "")
+            s, rd, wr = self.test_register()
+            s.modify(rd, s.READ)
 
 
 # ===================================================================
@@ -205,24 +255,9 @@ class PollIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
 
 @unittest.skipUnless(hasattr(pyftpdlib.ioloop, 'Epoll'),
                      "epoll() not available on this platform (Linux only)")
-class EpollIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
+class EpollIOLoopTestCase(PollIOLoopTestCase):
     ioloop_class = getattr(pyftpdlib.ioloop, "Epoll", None)
-
-    def test_epoll_eintr(self):
-        # EINTR is supposed to be ignored
-        with mock.patch("pyftpdlib.ioloop.Epoll._poller",
-                        return_vaue=mock.Mock()) as m_poll:
-            m_poll.return_value.poll.side_effect = select.error
-            m_poll.return_value.poll.side_effect.errno = errno.EINTR
-            s, rd, wr = self.test_register()
-            s.poll(0)
-        # ...but just that
-        with mock.patch("pyftpdlib.ioloop.Epoll._poller",
-                        return_vaue=mock.Mock()) as m_poll:
-            m_poll.return_value.poll.side_effect = select.error
-            m_poll.return_value.poll.side_effect.errno = errno.EBADF
-            s, rd, wr = self.test_register()
-            self.assertRaises(select.error, s.poll, 0)
+    poller_mock = "pyftpdlib.ioloop.Epoll._poller"
 
 
 # ===================================================================
