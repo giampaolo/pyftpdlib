@@ -151,6 +151,10 @@ class DefaultIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
     ioloop_class = pyftpdlib.ioloop.IOLoop
 
 
+# ===================================================================
+# select()
+# ===================================================================
+
 class SelectIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
     ioloop_class = pyftpdlib.ioloop.Select
 
@@ -169,23 +173,71 @@ class SelectIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
             self.assertRaises(select.error, s.poll, 0)
 
 
+# ===================================================================
+# poll()
+# ===================================================================
+
 @unittest.skipUnless(hasattr(pyftpdlib.ioloop, 'Poll'),
                      "poll() not available on this platform")
 class PollIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
     ioloop_class = getattr(pyftpdlib.ioloop, "Poll", None)
 
+    def test_poll_eintr(self, ):
+        # EINTR is supposed to be ignored
+        with mock.patch("pyftpdlib.ioloop.Poll._poller",
+                        return_vaue=mock.Mock()) as m_poll:
+            m_poll.return_value.poll.side_effect = select.error
+            m_poll.return_value.poll.side_effect.errno = errno.EINTR
+            s, rd, wr = self.test_register()
+            s.poll(0)
+        # ...but just that
+        with mock.patch("pyftpdlib.ioloop.Poll._poller",
+                        return_vaue=mock.Mock()) as m_poll:
+            m_poll.return_value.poll.side_effect = select.error
+            m_poll.return_value.poll.side_effect.errno = errno.EBADF
+            s, rd, wr = self.test_register()
+            self.assertRaises(select.error, s.poll, 0)
+
+
+# ===================================================================
+# epoll()
+# ===================================================================
 
 @unittest.skipUnless(hasattr(pyftpdlib.ioloop, 'Epoll'),
                      "epoll() not available on this platform (Linux only)")
 class EpollIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
     ioloop_class = getattr(pyftpdlib.ioloop, "Epoll", None)
 
+    def test_epoll_eintr(self):
+        # EINTR is supposed to be ignored
+        with mock.patch("pyftpdlib.ioloop.Epoll._poller",
+                        return_vaue=mock.Mock()) as m_poll:
+            m_poll.return_value.poll.side_effect = select.error
+            m_poll.return_value.poll.side_effect.errno = errno.EINTR
+            s, rd, wr = self.test_register()
+            s.poll(0)
+        # ...but just that
+        with mock.patch("pyftpdlib.ioloop.Epoll._poller",
+                        return_vaue=mock.Mock()) as m_poll:
+            m_poll.return_value.poll.side_effect = select.error
+            m_poll.return_value.poll.side_effect.errno = errno.EBADF
+            s, rd, wr = self.test_register()
+            self.assertRaises(select.error, s.poll, 0)
+
+
+# ===================================================================
+# /dev/poll
+# ===================================================================
 
 @unittest.skipUnless(hasattr(pyftpdlib.ioloop, 'DevPoll'),
                      "/dev/poll not available on this platform (Solaris only)")
 class DevPollIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
     ioloop_class = getattr(pyftpdlib.ioloop, "DevPoll", None)
 
+
+# ===================================================================
+# kqueue
+# ===================================================================
 
 @unittest.skipUnless(hasattr(pyftpdlib.ioloop, 'Kqueue'),
                      "/dev/poll not available on this platform (BSD only)")
