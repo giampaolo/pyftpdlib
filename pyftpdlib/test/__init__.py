@@ -223,15 +223,15 @@ class FTPd(threading.Thread):
     server_class = FTPServer
     daemon = True
     shutdown_after = 10
-    _lock = threading.Lock()
-    _flag_started = threading.Event()
-    _flag_stopped = threading.Event()
 
     def __init__(self, addr=None):
         threading.Thread.__init__(self)
         self._timeout = None
         self._serving = False
         self._stopped = False
+        self._lock = threading.Lock()
+        self._flag_started = threading.Event()
+        self._flag_stopped = threading.Event()
         if addr is None:
             addr = (HOST, 0)
 
@@ -298,10 +298,9 @@ class FTPd(threading.Thread):
         """
         if not self._serving:
             raise RuntimeError("Server not started yet")
-        if not self._stopped:
-            self._serving = False
-            self._stopped = True
-            self.join(timeout=3)
-            if threading.active_count() > 1:
-                warn("test FTP server thread is still running")
-            self._flag_stopped.wait()
+        self._serving = False
+        self._stopped = True
+        self.join(timeout=3)
+        if threading.active_count() > 1:
+            warn("test FTP server thread is still running")
+        self._flag_stopped.wait()
