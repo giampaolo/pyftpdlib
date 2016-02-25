@@ -10,6 +10,7 @@ import select
 import socket
 import time
 
+from pyftpdlib.ioloop import Acceptor
 from pyftpdlib.ioloop import AsyncChat
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.ioloop import RetryError
@@ -430,6 +431,17 @@ class TestAsyncChat(unittest.TestCase):
             self.assertRaises(socket.error,
                               ac.connect_af_unspecified, ("localhost", 0))
             assert m.called
+            self.assertIsNone(ac.socket)
+
+    def test_bind_af_unspecified(self):
+        ac = Acceptor()
+        with mock.patch.object(
+                ac, "bind",
+                side_effect=socket.error(errno.EBADF, "")) as m:
+            self.assertRaises(socket.error,
+                              ac.bind_af_unspecified, ("localhost", 0))
+            assert m.called
+            self.assertIsNone(ac.socket)
 
 
 if __name__ == '__main__':
