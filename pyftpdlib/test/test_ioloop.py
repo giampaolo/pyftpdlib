@@ -388,17 +388,16 @@ class TestAsyncChat(unittest.TestCase):
     def test_send_retry(self):
         ac = self.get_connected_handler()
         for errnum in pyftpdlib.ioloop._ERRNOS_RETRY:
-            with mock.patch.object(ac.socket, "send",
-                                   side_effect=socket.error(errnum, "")) as m:
+            with mock.patch("pyftpdlib.ioloop.socket.socket.send",
+                            side_effect=socket.error(errnum, "")) as m:
                 self.assertEqual(ac.send(b"x"), 0)
                 assert m.called
 
     def test_send_disconnect(self):
         ac = self.get_connected_handler()
         for errnum in pyftpdlib.ioloop._ERRNOS_DISCONNECTED:
-            with mock.patch.object(
-                    ac.socket, "send",
-                    side_effect=socket.error(errnum, "")) as send:
+            with mock.patch("pyftpdlib.ioloop.socket.socket.send",
+                            side_effect=socket.error(errnum, "")) as send:
                 with mock.patch.object(ac, "handle_close") as handle_close:
                     self.assertEqual(ac.send(b"x"), 0)
                     assert send.called
@@ -407,17 +406,16 @@ class TestAsyncChat(unittest.TestCase):
     def test_recv_retry(self):
         ac = self.get_connected_handler()
         for errnum in pyftpdlib.ioloop._ERRNOS_RETRY:
-            with mock.patch.object(ac.socket, "recv",
-                                   side_effect=socket.error(errnum, "")) as m:
+            with mock.patch("pyftpdlib.ioloop.socket.socket.recv",
+                            side_effect=socket.error(errnum, "")) as m:
                 self.assertRaises(RetryError, ac.recv, 1024)
                 assert m.called
 
     def test_recv_disconnect(self):
         ac = self.get_connected_handler()
         for errnum in pyftpdlib.ioloop._ERRNOS_DISCONNECTED:
-            with mock.patch.object(
-                    ac.socket, "recv",
-                    side_effect=socket.error(errnum, "")) as send:
+            with mock.patch("pyftpdlib.ioloop.socket.socket.recv",
+                            side_effect=socket.error(errnum, "")) as send:
                 with mock.patch.object(ac, "handle_close") as handle_close:
                     self.assertEqual(ac.recv(b"x"), b'')
                     assert send.called
