@@ -27,10 +27,10 @@ build: clean
 	$(PYTHON) setup.py build
 
 install: build
-	$(PYTHON) setup.py install --user;
+	$(PYTHON) setup.py develop --user
 
 uninstall:
-	pip-`$(PYTHON) -c "import sys; sys.stdout.write('.'.join(list(map(str, sys.version_info))[:2]))"` uninstall -y -v pyftpdlib
+	cd ..; $(PYTHON) -m pip uninstall -y -v pyftpdlib
 
 # useful deps which are nice to have while developing / testing
 setup-dev-env: install-git-hooks
@@ -64,6 +64,18 @@ test-functional: install
 
 test-functional-ssl: install
 	$(PYTHON) pyftpdlib/test/test_functional_ssl.py
+
+test-authorizers: install
+	$(PYTHON) pyftpdlib/test/test_authorizers.py
+
+test-filesystems: install
+	$(PYTHON) pyftpdlib/test/test_filesystems.py
+
+test-ioloop: install
+	$(PYTHON) pyftpdlib/test/test_ioloop.py
+
+test-servers: install
+	$(PYTHON) pyftpdlib/test/test_servers.py
 
 # Run a specific test by name; e.g. "make test-by-name retr" will run
 # all test methods containing "retr" in their name.
