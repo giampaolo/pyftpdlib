@@ -12,6 +12,7 @@ import time
 
 from pyftpdlib.ioloop import AsyncChat
 from pyftpdlib.ioloop import IOLoop
+from pyftpdlib.ioloop import RetryError
 from pyftpdlib.test import mock
 from pyftpdlib.test import POSIX
 from pyftpdlib.test import unittest
@@ -372,6 +373,54 @@ class TestCallEvery(unittest.TestCase):
             0.0, lambda: 1 // 0, _errback=lambda: l.append(True))
         self.scheduler()
         self.assertTrue(l)
+
+
+class TestAsyncChat(unittest.TestCase):
+
+    def get_connected_handler(self):
+        s = socket.socket()
+        self.addCleanup(s.close)
+        ac = AsyncChat(sock=s)
+        self.addCleanup(ac.close)
+        return ac
+
+    def test_send_retry(self):
+        ac = self.get_connected_handler()
+        for errnum in pyftpdlib.ioloop._ERRNOS_RETRY:
+            with mock.patch.object(ac.socket, "send",
+                                   side_effect=socket.error(errnum, "")) as m:
+                self.assertEqual(ac.send(b"x"), 0)
+                assert m.called
+
+    def test_send_disconnect(self):
+        ac = self.get_connected_handler()
+        for errnum in pyftpdlib.ioloop._ERRNOS_DISCONNECTED:
+            with mock.patch.object(
+                    ac.socket, "send",
+                    side_effect=socket.error(errnum, "")) as send:
+                with mock.patch.object(ac, "handle_close") as handle_close:
+                    self.assertEqual(ac.send(b"x"), 0)
+                    assert send.called
+                    assert handle_close.called
+
+    def test_recv_retry(self):
+        ac = self.get_connected_handler()
+        for errnum in pyftpdlib.ioloop._ERRNOS_RETRY:
+            with mock.patch.object(ac.socket, "recv",
+                                   side_effect=socket.error(errnum, "")) as m:
+                self.assertRaises(RetryError, ac.recv, 1024)
+                assert m.called
+
+    def test_recv_disconnect(self):
+        ac = self.get_connected_handler()
+        for errnum in pyftpdlib.ioloop._ERRNOS_DISCONNECTED:
+            with mock.patch.object(
+                    ac.socket, "recv",
+                    side_effect=socket.error(errnum, "")) as send:
+                with mock.patch.object(ac, "handle_close") as handle_close:
+                    self.assertEqual(ac.recv(b"x"), b'')
+                    assert send.called
+                    assert handle_close.called
 
 
 if __name__ == '__main__':
