@@ -32,6 +32,7 @@ from pyftpdlib.handlers import ThrottledDTPHandler
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.test import BUFSIZE
+from pyftpdlib.test import call_until
 from pyftpdlib.test import configure_logging
 from pyftpdlib.test import disable_log_warning
 from pyftpdlib.test import FTPd
@@ -1887,7 +1888,7 @@ class TestCallbacks(unittest.TestCase):
     def tearDown(self):
         if self.client is not None:
             self.client.close()
-        if self.server is not None and self.server.running:
+        if self.server is not None:
             self.server.stop()
         if self.file is not None:
             self.file.close()
@@ -1908,9 +1909,8 @@ class TestCallbacks(unittest.TestCase):
         self.file.write(data)
         self.file.close()
         self.client.retrbinary("retr " + TESTFN, lambda x: x)
-        # shut down the server to avoid race conditions
-        self.tearDown()
-        self.assertEqual(_file, [os.path.abspath(TESTFN)])
+        self.client.quit()  # prevent race conditions
+        call_until(lambda: _file, "ret == [os.path.abspath(TESTFN)]")
 
     def test_on_file_received(self):
         _file = []
@@ -1925,9 +1925,8 @@ class TestCallbacks(unittest.TestCase):
         self.dummyfile.write(data)
         self.dummyfile.seek(0)
         self.client.storbinary('stor ' + TESTFN, self.dummyfile)
-        # shut down the server to avoid race conditions
-        self.tearDown()
-        self.assertEqual(_file, [os.path.abspath(TESTFN)])
+        self.client.quit()  # prevent race conditions
+        call_until(lambda: _file, "ret == [os.path.abspath(TESTFN)]")
 
     @retry_before_failing()
     def test_on_incomplete_file_sent(self):
@@ -1952,10 +1951,8 @@ class TestCallbacks(unittest.TestCase):
                 if bytes_recv >= INTERRUPTED_TRANSF_SIZE or not chunk:
                     break
         self.assertEqual(self.client.getline()[:3], "426")
-
-        # shut down the server to avoid race conditions
-        self.tearDown()
-        self.assertEqual(_file, [os.path.abspath(TESTFN)])
+        self.client.quit()  # prevent race conditions
+        call_until(lambda: _file, "ret == [os.path.abspath(TESTFN)]")
 
     @unittest.skipIf(TRAVIS, "failing on Travis")
     @retry_before_failing()
@@ -1984,10 +1981,8 @@ class TestCallbacks(unittest.TestCase):
                     self.client.putcmd('abor')
                     break
         self.assertRaises(ftplib.error_temp, self.client.getresp)  # 426
-
-        # shut down the server to avoid race conditions
-        self.tearDown()
-        self.assertEqual(_file, [os.path.abspath(TESTFN)])
+        self.client.quit()  # prevent race conditions
+        call_until(lambda: _file, "ret == [os.path.abspath(TESTFN)]")
 
     def test_on_connect(self):
         flag = []
@@ -2000,7 +1995,8 @@ class TestCallbacks(unittest.TestCase):
         self._setUp(TestHandler, connect=False)
         self.client.connect(self.server.host, self.server.port)
         self.client.sendcmd('noop')
-        self.assertTrue(flag)
+        self.client.quit()  # prevent race conditions
+        call_until(lambda: flag, "ret == [None]")
 
     def test_on_disconnect(self):
         flag = []
@@ -2010,18 +2006,10 @@ class TestCallbacks(unittest.TestCase):
             def on_disconnect(self):
                 flag.append(None)
 
-        self._setUp(TestHandler, connect=False)
-        self.client.connect(self.server.host, self.server.port)
+        self._setUp(TestHandler)
         self.assertFalse(flag)
         self.client.sendcmd('quit')
-        try:
-            self.client.sendcmd('noop')
-        except (socket.error, EOFError):
-            pass
-        else:
-            self.fail('still connected')
-        self.tearDown()
-        self.assertTrue(flag)
+        call_until(lambda: flag, "ret == [None]")
 
     def test_on_login(self):
         user = []
@@ -2033,9 +2021,8 @@ class TestCallbacks(unittest.TestCase):
                 user.append(username)
 
         self._setUp(TestHandler)
-        # shut down the server to avoid race conditions
-        self.tearDown()
-        self.assertEqual(user, [USER])
+        self.client.quit()  # prevent race conditions
+        call_until(lambda: user, "ret == [USER]")
 
     def test_on_login_failed(self):
         pair = []
@@ -2048,9 +2035,8 @@ class TestCallbacks(unittest.TestCase):
 
         self._setUp(TestHandler, login=False)
         self.assertRaises(ftplib.error_perm, self.client.login, 'foo', 'bar')
-        # shut down the server to avoid race conditions
-        self.tearDown()
-        self.assertEqual(pair, [('foo', 'bar')])
+        self.client.quit()  # prevent race conditions
+        call_until(lambda: pair, "ret == [('foo', 'bar')]")
 
     def test_on_logout_quit(self):
         user = []
@@ -2061,10 +2047,8 @@ class TestCallbacks(unittest.TestCase):
                 user.append(username)
 
         self._setUp(TestHandler)
-        self.client.quit()
-        # shut down the server to avoid race conditions
-        self.tearDown()
-        self.assertEqual(user, [USER])
+        self.client.quit()  # prevent race conditions
+        call_until(lambda: user, "ret == [USER]")
 
     def test_on_logout_rein(self):
         user = []
@@ -2076,9 +2060,8 @@ class TestCallbacks(unittest.TestCase):
 
         self._setUp(TestHandler)
         self.client.sendcmd('rein')
-        # shut down the server to avoid race conditions
-        self.tearDown()
-        self.assertEqual(user, [USER])
+        self.client.quit()  # prevent race conditions
+        call_until(lambda: user, "ret == [USER]")
 
     def test_on_logout_user_issued_twice(self):
         users = []
@@ -2092,10 +2075,8 @@ class TestCallbacks(unittest.TestCase):
         # At this point user "user" is logged in. Re-login as anonymous,
         # then quit and expect queue == ["user", "anonymous"]
         self.client.login("anonymous")
-        self.client.quit()
-        # shut down the server to avoid race conditions
-        self.tearDown()
-        self.assertEqual(users, [USER, 'anonymous'])
+        self.client.quit()  # prevent race conditions
+        call_until(lambda: users, "ret == [USER, 'anonymous']")
 
     def test_on_logout_no_pass(self):
         # make sure on_logout() is not called if USER was provided
@@ -2109,10 +2090,8 @@ class TestCallbacks(unittest.TestCase):
 
         self._setUp(TestHandler, login=False)
         self.client.sendcmd("user foo")
-        self.client.quit()
-        # shut down the server to avoid race conditions
-        self.tearDown()
-        self.assertEqual(users, [])
+        self.client.quit()  # prevent race conditions
+        call_until(lambda: users, "ret == []")
 
 
 class _TestNetworkProtocols(object):

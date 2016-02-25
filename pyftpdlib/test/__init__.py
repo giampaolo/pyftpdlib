@@ -183,6 +183,19 @@ def retry_before_failing(ntimes=None):
     return decorator
 
 
+def call_until(fun, expr, timeout=TIMEOUT):
+    """Keep calling function for timeout secs and exit if eval()
+    expression is True.
+    """
+    stop_at = time.time() + timeout
+    while time.time() < stop_at:
+        ret = fun()
+        if eval(expr):
+            return ret
+        time.sleep(0.001)
+    raise RuntimeError('timed out (ret=%r)' % ret)
+
+
 def get_server_handler():
     """Return the first FTPHandler instance running in the IOLoop."""
     ioloop = IOLoop.instance()
