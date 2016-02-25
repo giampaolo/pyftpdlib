@@ -1774,6 +1774,7 @@ class TestConfigurableOptions(unittest.TestCase):
                 # not registered port; go on
                 try:
                     sock = socket.socket(self.client.af, socket.SOCK_STREAM)
+                    self.addCleanup(sock.close)
                     sock.settimeout(TIMEOUT)
                     sock.bind((HOST, port))
                     break
@@ -1793,7 +1794,6 @@ class TestConfigurableOptions(unittest.TestCase):
             # no usable privileged port was found
             sock = None
 
-        self.addCleanup(sock.close)
         self.server.handler.permit_privileged_ports = False
         self.assertRaises(ftplib.error_perm, self.client.sendport, HOST,
                           port)

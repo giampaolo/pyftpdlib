@@ -16,7 +16,6 @@ import threading
 import time
 import warnings
 
-from pyftpdlib._compat import callable
 from pyftpdlib._compat import getcwdu
 from pyftpdlib._compat import u
 from pyftpdlib.authorizers import DummyAuthorizer
@@ -136,15 +135,15 @@ def configure_logging():
     logger.addHandler(channel)
 
 
-def disable_log_warning(inst):
+def disable_log_warning(fun):
     """Temporarily set FTP server's logging level to ERROR."""
-
+    @functools.wraps(fun)
     def wrapper(self, *args, **kwargs):
         logger = logging.getLogger('pyftpdlib')
         level = logger.getEffectiveLevel()
         logger.setLevel(logging.ERROR)
         try:
-            return callable(self, *args, **kwargs)
+            return fun(self, *args, **kwargs)
         finally:
             logger.setLevel(level)
     return wrapper
