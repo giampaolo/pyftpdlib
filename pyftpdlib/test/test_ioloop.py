@@ -5,11 +5,13 @@
 # found in the LICENSE file.
 
 import contextlib
+import errno
 import socket
 import time
 
 from pyftpdlib.ioloop import AsyncChat
 from pyftpdlib.ioloop import IOLoop
+from pyftpdlib.test import mock
 from pyftpdlib.test import POSIX
 from pyftpdlib.test import unittest
 from pyftpdlib.test import VERBOSITY
@@ -79,10 +81,67 @@ class BaseIOLoopTestCase(object):
         s.modify(rd, s.WRITE)
         s.modify(wr, s.READ)
 
+    def test_loop(self):
+        # no timeout
+        s, rd, wr = self.test_register()
+        s.call_later(0, s.close)
+        s.loop()
+        # with timeout
+        s, rd, wr = self.test_register()
+        s.call_later(0, s.close)
+        s.loop(timeout=0.001)
+
     def test_close(self):
         s, rd, wr = self.test_register()
         s.close()
         self.assertEqual(s.socket_map, {})
+
+    def test_close_w_handler_exc(self):
+        # Simulate an exception when close()ing a socket handler.
+        # Exception should be logged and ignored.
+        class Handler(AsyncChat):
+            def close(self):
+                1 / 0
+
+        s = self.ioloop_class()
+        self.addCleanup(s.close)
+        rd, wr = self.make_socketpair()
+        handler = Handler(rd)
+        s.register(rd, handler, s.READ)
+        with mock.patch("pyftpdlib.ioloop.logger.error") as m:
+            s.close()
+            assert m.called
+            self.assertIn('ZeroDivisionError', m.call_args[0][0])
+
+    def test_close_w_handler_ebadf_exc(self):
+        # Simulate an exception when close()ing a socket handler.
+        # Exception should be ignored (and not logged).
+        class Handler(AsyncChat):
+            def close(self):
+                raise OSError(errno.EBADF, "")
+
+        s = self.ioloop_class()
+        self.addCleanup(s.close)
+        rd, wr = self.make_socketpair()
+        handler = Handler(rd)
+        s.register(rd, handler, s.READ)
+        with mock.patch("pyftpdlib.ioloop.logger.error") as m:
+            s.close()
+            assert not m.called
+
+    def test_close_w_callback_exc(self):
+        # Simulate an exception when close()ing the IO loop and a
+        # scheduled callback raises an exception on cancel().
+        with mock.patch("pyftpdlib.ioloop.logger.error") as logerr:
+            with mock.patch("pyftpdlib.ioloop._CallLater.cancel",
+                            side_effect=lambda: 1 / 0) as cancel:
+                s = self.ioloop_class()
+                self.addCleanup(s.close)
+                s.call_later(1, lambda: 0)
+                s.close()
+                assert cancel.called
+                assert logerr.called
+                self.assertIn('ZeroDivisionError', logerr.call_args[0][0])
 
 
 class DefaultIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
@@ -193,6 +252,19 @@ class TestCallLater(unittest.TestCase):
             0.0, lambda: 1 // 0, _errback=lambda: l.append(True))
         self.scheduler()
         self.assertEqual(l, [True])
+
+    def test__repr__(self):
+        repr(self.ioloop.call_later(0.01, lambda: 0, 0.01))
+
+    def test__lt__(self):
+        a = self.ioloop.call_later(0.01, lambda: 0, 0.01)
+        b = self.ioloop.call_later(0.02, lambda: 0, 0.02)
+        self.assertTrue(a < b)
+
+    def test__le__(self):
+        a = self.ioloop.call_later(0.01, lambda: 0, 0.01)
+        b = self.ioloop.call_later(0.02, lambda: 0, 0.02)
+        self.assertTrue(a <= b)
 
 
 class TestCallEvery(unittest.TestCase):
