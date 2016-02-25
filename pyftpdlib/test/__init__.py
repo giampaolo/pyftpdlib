@@ -15,6 +15,10 @@ import tempfile
 import threading
 import time
 import warnings
+try:
+    from unittest import mock  # py3
+except ImportError:
+    import mock  # NOQA - requires "pip install mock"
 
 from pyftpdlib._compat import getcwdu
 from pyftpdlib._compat import u
@@ -268,11 +272,10 @@ class FTPd(threading.Thread):
                         time.time() >= started + self.shutdown_after):
                     now = time.time()
                     if now <= now + self.shutdown_after:
-                        print("shutting down test FTPd due to timeout")
                         self.server.close_all()
                         raise Exception("test FTPd shutdown due to timeout")
-            self.server.close_all()
         finally:
+            self.server.close_all()
             self._flag_stopped.set()
 
     def stop(self):

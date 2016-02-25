@@ -743,7 +743,7 @@ class DTPHandler(AsyncChat):
         self.tot_bytes_sent += result
         return result
 
-    def refill_buffer(self):
+    def refill_buffer(self):  # pragma: no cover
         """Overridden as a fix around http://bugs.python.org/issue1740572
         (when the producer is consumed, close() was called instead of
         handle_close()).

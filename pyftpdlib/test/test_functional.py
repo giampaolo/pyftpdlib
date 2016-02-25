@@ -20,8 +20,6 @@ import tempfile
 import time
 import warnings
 
-import mock
-
 from pyftpdlib._compat import b
 from pyftpdlib._compat import PY3
 from pyftpdlib._compat import u
@@ -41,6 +39,7 @@ from pyftpdlib.test import get_server_handler
 from pyftpdlib.test import HOME
 from pyftpdlib.test import HOST
 from pyftpdlib.test import INTERRUPTED_TRANSF_SIZE
+from pyftpdlib.test import mock
 from pyftpdlib.test import OSX
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import POSIX
@@ -58,6 +57,7 @@ from pyftpdlib.test import TESTFN_UNICODE_2
 from pyftpdlib.test import TIMEOUT
 from pyftpdlib.test import touch
 from pyftpdlib.test import TRAVIS
+from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
 from pyftpdlib.test import VERBOSITY
 from pyftpdlib.test import WINDOWS
@@ -71,13 +71,6 @@ try:
     import ssl
 except ImportError:
     ssl = None
-if sys.version_info < (2, 7):
-    import unittest2 as unittest  # pip install unittest2
-else:
-    import unittest
-
-if not hasattr(unittest.TestCase, "assertRaisesRegex"):
-    unittest.TestCase.assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
 
 sendfile = None
 if POSIX:

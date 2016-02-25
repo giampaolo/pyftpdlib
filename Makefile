@@ -68,7 +68,7 @@ test-functional-ssl: install
 # Run a specific test by name; e.g. "make test-by-name retr" will run
 # all test methods containing "retr" in their name.
 # Requires "pip install nose".
-test-by-name:
+test-by-name: install
 	@$(PYTHON) -m nose pyftpdlib/test/test_*.py --nocapture -v -m $(filter-out $@,$(MAKECMDGOALS))
 
 nosetest: install
