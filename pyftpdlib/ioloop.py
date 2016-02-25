@@ -1032,11 +1032,13 @@ class Acceptor(AsyncChat):
         try:
             sock, addr = self.accept()
         except TypeError:
-            # sometimes accept() might return None (see issue 91)
+            # sometimes accept() might return None, see:
+            # https://github.com/giampaolo/pyftpdlib/issues/91
             debug("call: handle_accept(); accept() returned None", self)
             return
         except socket.error as err:
-            # ECONNABORTED might be thrown on *BSD (see issue 105)
+            # ECONNABORTED might be thrown on *BSD, see:
+            # https://github.com/giampaolo/pyftpdlib/issues/105
             if err.errno != errno.ECONNABORTED:
                 raise
             else:

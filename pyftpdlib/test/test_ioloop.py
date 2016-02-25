@@ -421,7 +421,7 @@ class TestAsyncChat(unittest.TestCase):
                     assert send.called
                     assert handle_close.called
 
-    def test_connect_af_unspecified(self):
+    def test_connect_af_unspecified_err(self):
         ac = AsyncChat()
         with mock.patch.object(
                 ac, "connect",
@@ -431,13 +431,34 @@ class TestAsyncChat(unittest.TestCase):
             assert m.called
             self.assertIsNone(ac.socket)
 
-    def test_bind_af_unspecified(self):
+
+class TestAcceptor(unittest.TestCase):
+
+    def test_bind_af_unspecified_err(self):
         ac = Acceptor()
         with mock.patch.object(
                 ac, "bind",
                 side_effect=socket.error(errno.EBADF, "")) as m:
             self.assertRaises(socket.error,
                               ac.bind_af_unspecified, ("localhost", 0))
+            assert m.called
+            self.assertIsNone(ac.socket)
+
+    def test_handle_accept_econnacorted(self):
+        # https://github.com/giampaolo/pyftpdlib/issues/105
+        ac = Acceptor()
+        with mock.patch.object(
+                ac, "accept",
+                side_effect=socket.error(errno.ECONNABORTED, "")) as m:
+            ac.handle_accept()
+            assert m.called
+            self.assertIsNone(ac.socket)
+
+    def test_handle_accept_typeerror(self):
+        # https://github.com/giampaolo/pyftpdlib/issues/91
+        ac = Acceptor()
+        with mock.patch.object(ac, "accept", side_effect=TypeError) as m:
+            ac.handle_accept()
             assert m.called
             self.assertIsNone(ac.socket)
 
