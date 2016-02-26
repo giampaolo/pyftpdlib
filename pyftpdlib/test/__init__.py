@@ -87,6 +87,8 @@ def safe_remove(*files):
         try:
             os.remove(file)
         except OSError as err:
+            if os.name == 'nt':
+                return
             if err.errno != errno.ENOENT:
                 raise
 
@@ -96,6 +98,8 @@ def safe_rmdir(dir):
     try:
         os.rmdir(dir)
     except OSError as err:
+        if os.name == 'nt':
+            return
         if err.errno != errno.ENOENT:
             raise
 
@@ -122,7 +126,7 @@ def remove_test_files():
             if os.path.isdir(name):
                 shutil.rmtree(name)
             else:
-                os.remove(name)
+                safe_remove(name)
 
 
 def warn(msg):

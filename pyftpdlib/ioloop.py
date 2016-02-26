@@ -445,7 +445,7 @@ class Select(_IOLoop):
         try:
             r, w, e = select.select(self._r, self._w, [], timeout)
         except select.error as err:
-            if err.errno == errno.EINTR:
+            if getattr(err, "errno", None) == errno.EINTR:
                 return
             raise
 

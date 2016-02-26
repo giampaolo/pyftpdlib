@@ -1084,6 +1084,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.client.voidcmd('TYPE I')
         with contextlib.closing(
                 self.client.transfercmd('retr ' + TESTFN)) as conn:
+            conn.settimeout(TIMEOUT)
             while 1:
                 chunk = conn.recv(BUFSIZE)
                 if not chunk:

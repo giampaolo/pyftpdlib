@@ -122,7 +122,10 @@ class TestSendFileTLSMixin(TLSTestMixin, TestSendfile):
 
 
 class TestFtpRetrieveDataTLSMixin(TLSTestMixin, TestFtpRetrieveData):
-    pass
+
+    @unittest.skipIf(os.name == 'nt', "may fail on windows")
+    def test_restore_on_retr(self):
+        super(TestFtpRetrieveDataTLSMixin, self).test_restore_on_retr()
 
 
 class TestFtpListingCmdsTLSMixin(TLSTestMixin, TestFtpListingCmds):
@@ -134,7 +137,7 @@ class TestFtpListingCmdsTLSMixin(TLSTestMixin, TestFtpListingCmds):
     # File "/opt/python/2.7.9/lib/python2.7/ssl.py", line 771, in unwrap
     #    s = self._sslobj.shutdown()
     # error: [Errno 0] Error
-    @unittest.skipIf(TRAVIS, "fails on travis")
+    @unittest.skipIf(TRAVIS or os.name == 'nt', "may fail on travis/windows")
     def test_nlst(self):
         super(TestFtpListingCmdsTLSMixin, self).test_nlst()
 
