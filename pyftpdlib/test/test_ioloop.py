@@ -29,7 +29,7 @@ else:
     def socketpair(family=socket.AF_INET, type=socket.SOCK_STREAM, proto=0):
         with contextlib.closing(socket.socket(family, type, proto)) as l:
             l.bind(("localhost", 0))
-            l.listen()
+            l.listen(5)
             c = socket.socket(family, type, proto)
             try:
                 c.connect(l.getsockname())
