@@ -1,5 +1,6 @@
 sudo: false
 language: python
+cache: pip
 matrix:
     include:
         - python: 2.6
@@ -7,15 +8,15 @@ matrix:
         - python: 3.3
         - python: 3.4
         - python: 3.5
-        - language: generic
-          os: osx
-          env: PYVER=py26
+        # - language: generic
+        #   os: osx
+        #   env: PYVER=py26
         - language: generic
           os: osx
           env: PYVER=py27
-        - language: generic
-          os: osx
-          env: PYVER=py33
+        # - language: generic
+        #   os: osx
+        #   env: PYVER=py33
         - language: generic
           os: osx
           env: PYVER=py34
