@@ -90,7 +90,10 @@ If you are not new to Python you probably don't need that, otherwise follow the
 Which Python versions are compatible?
 -------------------------------------
 
-From *2.4* to *3.4*.
+From *2.6* to *3.4*.
+Python 2.4 and 2.5 support has been removed starting from version 0.6.0.
+The latest version supporting Python 2.3 is
+`pyftpdlib 1.4.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.4.0.tar.gz>`__.
 Python 2.3 support has been removed starting from version 0.6.0. The latest
 version supporting Python 2.3 is
 `pyftpdlib 0.5.2 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-0.5.2.tar.gz>`__.
@@ -100,10 +103,9 @@ On which platforms can pyftpdlib be used?
 
 pyftpdlib should work on any platform where **select()**, **poll()**,
 **epoll()** or **kqueue()** system calls are available and on any Python
-implementation which refers to *cPython 2.4* or superior (e.g cPython 2.6 or
-PythonCE 2.5).
+implementation which refers to *cPython 2.6* or superior.
 The development team has mainly tested it under various *Linux*, *Windows*,
-*OS X* and *FreeBSD* systems.
+*OSX* and *FreeBSD* systems.
 For FreeBSD is also available a
 `pre-compiled package <http://www.freshports.org/ftp/py-pyftpdlib/>`__
 maintained by Li-Wen Hsu (lwhsu@freebsd.org).

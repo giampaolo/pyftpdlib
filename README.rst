@@ -1,18 +1,22 @@
-.. image:: https://pypip.in/d/pyftpdlib/badge.png
-    :target: https://crate.io/packages/pyftpdlib/
+.. image:: https://img.shields.io/pypi/dm/pyftpdlib.svg
+    :target: https://pypi.python.org/pypi/pyftpdlib/
     :alt: Download this month
 
-.. image:: https://pypip.in/v/pyftpdlib/badge.png
+.. image:: https://img.shields.io/pypi/v/pyftpdlib.svg
     :target: https://pypi.python.org/pypi/pyftpdlib/
     :alt: Latest version
 
-.. image:: https://pypip.in/license/pyftpdlib/badge.png
+.. image:: https://img.shields.io/pypi/l/pyftpdlib.svg
     :target: https://pypi.python.org/pypi/pyftpdlib/
     :alt: License
 
-.. image:: https://api.travis-ci.org/giampaolo/pyftpdlib.png?branch=master
+.. image:: https://img.shields.io/travis/giampaolo/pyftpdlib/master.svg
     :target: https://travis-ci.org/giampaolo/pyftpdlib
     :alt: Travis
+
+.. image:: https://coveralls.io/repos/giampaolo/pyftpdlib/badge.svg?branch=master&service=github
+    :target: https://coveralls.io/github/giampaolo/pyftpdlib?branch=master
+    :alt: Test coverage (coverall.io)
 
 Quick links
 ===========
@@ -50,8 +54,8 @@ Features
 - ...But can optionally skip to a
   `multiple thread / process <http://pythonhosted.org/pyftpdlib/tutorial.html#changing-the-concurrency-model>`__
   model (as in: you'll be free to block or use slow filesystems).
-- Portable: entirely written in pure Python; works with Python from **2.4** to
-  **3.4** (by using a single code base).
+- Portable: entirely written in pure Python; works with Python from **2.6** to
+  **3.5** by using a single code base.
 - Supports **FTPS** (`RFC-4217 <http://tools.ietf.org/html/rfc4217>`__),
   **IPv6** (`RFC-2428 <ftp://ftp.rfc-editor.org/in-notes/rfc2428.txt>`__),
   **Unicode** file names (`RFC-2640 <http://tools.ietf.org/html/rfc2640>`__),
@@ -62,7 +66,7 @@ Features
   `UNIX <http://pythonhosted.org/pyftpdlib/tutorial.html#unix-ftp-server>`__
   and
   `Windows <http://pythonhosted.org/pyftpdlib/tutorial.html#windows-ftp-server>`__.
-- `Test coverage <https://github.com/giampaolo/pyftpdlib/blob/master/test/test_ftpd.py>`__
+- `Test coverage <https://github.com/giampaolo/pyftpdlib/blob/master/pyftpdlib/test/>`__
   close to 100%.
 
 Performances
@@ -103,7 +107,7 @@ pyftpdlib vs. vsftpd 2.3.5
 --------------------------
 
 +-----------------------------------------+----------------+----------------+-------------+
-| **benchmark type**                      | **pyftpdlib**  | **proftpd**    | **speedup** |
+| **benchmark type**                      | **pyftpdlib**  | **vsftpd**     | **speedup** |
 +-----------------------------------------+----------------+----------------+-------------+
 | STOR (client -> server)                 |  585.90 MB/sec | 611.73 MB/sec  | -0.04x      |
 +-----------------------------------------+----------------+----------------+-------------+
@@ -177,6 +181,7 @@ software to the
 Timeline
 ========
 
+- 2015-12-13: version `1.5.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.5.0.tar.gz>`__ released.
 - 2014-06-03: version `1.4.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.4.0.tar.gz>`__ released.
 - 2014-04-12: version `1.3.1 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.3.1.tar.gz>`__ released.
 - 2013-11-07: version `1.3.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.3.0.tar.gz>`__ released.
@@ -228,7 +233,7 @@ Timeline
 - 2007-03-06: pyftpdlib `ported on FreeBSD <http://www.freshports.org/ftp/py-pyftpdlib/>`__ systems to make users can easily install on it.
 - 2007-03-07: version `0.1.1 <http://pyftpdlib.googlecode.com/files/pyftpdlib*0.1.1.tar.gz>`__ released.
 - 2007-02-26: version `0.1.0 <http://pyftpdlib.googlecode.com/files/pyftpdlib*0.1.tar.gz>`__ released.
-- 2006-09-26: initial clunky thread-based progenitor `link <http://billiejoex.altervista.org/Prj*pftpd.htm>`__.
+- 2006-09-26: initial clunky thread-based progenitor `link <http://billiejoex.altervista.org/Prj_pftpd.htm>`__.
 
 Trademarks
 ==========
@@ -252,4 +257,4 @@ Some famous trademarks which adopted pyftpdlib (`complete list <http://pythonhos
 .. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/openvms.png
   :target: http://www.openvms.org/
 .. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/smartfile.jpg
-  :target: http://www.openvms.org/
+  :target: https://www.smartfile.com/

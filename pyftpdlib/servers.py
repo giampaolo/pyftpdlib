@@ -1,32 +1,6 @@
-#!/usr/bin/env python
-
-#  ======================================================================
-#  Copyright (C) 2007-2014 Giampaolo Rodola' <g.rodola@gmail.com>
-#
-#                         All Rights Reserved
-#
-# Permission is hereby granted, free of charge, to any person
-# obtaining a copy of this software and associated documentation
-# files (the "Software"), to deal in the Software without
-# restriction, including without limitation the rights to use,
-# copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the
-# Software is furnished to do so, subject to the following
-# conditions:
-#
-# The above copyright notice and this permission notice shall be
-# included in all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-# WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-# OTHER DEALINGS IN THE SOFTWARE.
-#
-#  ======================================================================
+# Copyright (C) 2007-2016 Giampaolo Rodola' <g.rodola@gmail.com>.
+# Use of this source code is governed by MIT license that can be
+# found in the LICENSE file.
 
 """
 This module contains the main FTPServer class which listens on a
@@ -59,18 +33,20 @@ This way the handler handling that connections will be free to block
 without hanging the whole FTP server.
 """
 
-import os
-import socket
-import traceback
-import sys
 import errno
+import os
 import select
-import logging
 import signal
+import sys
 import time
+import traceback
 
-from pyftpdlib.log import logger
-from pyftpdlib.ioloop import Acceptor, IOLoop
+from .ioloop import Acceptor
+from .ioloop import IOLoop
+from .log import config_logging
+from .log import debug
+from .log import is_logging_configured
+from .log import logger
 
 
 __all__ = ['FTPServer']
@@ -134,15 +110,8 @@ class FTPServer(Acceptor):
             sock = address_or_socket
             sock.setblocking(0)
             self.set_socket(sock)
-            if hasattr(sock, 'family'):
-                self._af = sock.family
-            else:
-                # python 2.4
-                ip, port = self.socket.getsockname()[:2]
-                self._af = socket.getaddrinfo(ip, port, socket.AF_UNSPEC,
-                                              socket.SOCK_STREAM)[0][0]
         else:
-            self._af = self.bind_af_unspecified(address_or_socket)
+            self.bind_af_unspecified(address_or_socket)
         self.listen(backlog)
 
     @property
@@ -160,15 +129,20 @@ class FTPServer(Acceptor):
             return self._map_len() <= self.max_cons
 
     def _log_start(self):
-        # If the user has not configured any handlers, configure our own
-        if not logging.getLogger('pyftpdlib').handlers and \
-           not logging.root.handlers:
+        def get_fqname(obj):
+            try:
+                return obj.__module__ + "." + obj.__class__.__name__
+            except AttributeError:
+                try:
+                    return obj.__module__ + "." + obj.__name__
+                except AttributeError:
+                    return str(obj)
+
+        if not is_logging_configured():
             # If we get to this point it means the user hasn't
-            # configured logger. We want to log by default so
-            # we configure logging ourselves so that it will
-            # print to stderr.
-            from pyftpdlib.ioloop import _config_logging
-            _config_logging()
+            # configured any logger. We want logging to be on
+            # by default (stderr).
+            config_logging()
 
         if self.handler.passive_ports:
             pasv_ports = "%s->%s" % (self.handler.passive_ports[0],
@@ -176,14 +150,39 @@ class FTPServer(Acceptor):
         else:
             pasv_ports = None
         addr = self.address
-        logger.info(">>> starting FTP server on %s:%s, pid=%i <<<"
-                    % (addr[0], addr[1], os.getpid()))
-        logger.info("poller: %r", self.ioloop.__class__)
+        if hasattr(self.handler, 'ssl_protocol'):
+            proto = "FTP+SSL"
+        else:
+            proto = "FTP"
+        logger.info(">>> starting %s server on %s:%s, pid=%i <<<"
+                    % (proto, addr[0], addr[1], os.getpid()))
+        if ('ThreadedFTPServer' in __all__ and
+                issubclass(self.__class__, ThreadedFTPServer)):
+            logger.info("concurrency model: multi-thread")
+        elif ('MultiprocessFTPServer' in __all__ and
+                issubclass(self.__class__, MultiprocessFTPServer)):
+            logger.info("concurrency model: multi-process")
+        elif issubclass(self.__class__, FTPServer):
+            logger.info("concurrency model: async")
+
         logger.info("masquerade (NAT) address: %s",
                     self.handler.masquerade_address)
         logger.info("passive ports: %s", pasv_ports)
+        logger.debug("poller: %r", get_fqname(self.ioloop))
+        logger.debug("authorizer: %r", get_fqname(self.handler.authorizer))
         if os.name == 'posix':
-            logger.info("use sendfile(2): %s", self.handler.use_sendfile)
+            logger.debug("use sendfile(2): %s", self.handler.use_sendfile)
+        logger.debug("handler: %r", get_fqname(self.handler))
+        logger.debug("max connections: %s", self.max_cons or "unlimited")
+        logger.debug("max connections per ip: %s",
+                     self.max_cons_per_ip or "unlimited")
+        logger.debug("timeout: %s", self.handler.timeout or "unlimited")
+        logger.debug("banner: %r", self.handler.banner)
+        logger.debug("max login attempts: %r", self.handler.max_login_attempts)
+        if getattr(self.handler, 'certfile', None):
+            logger.debug("SSL certfile: %r", self.handler.certfile)
+        if getattr(self.handler, 'keyfile', None):
+            logger.debug("SSL keyfile: %r", self.handler.keyfile)
 
     def serve_forever(self, timeout=None, blocking=True, handle_exit=True):
         """Start serving.
@@ -207,11 +206,12 @@ class FTPServer(Acceptor):
             try:
                 self.ioloop.loop(timeout, blocking)
             except (KeyboardInterrupt, SystemExit):
-                pass
+                logger.info("received interrupt signal")
             if blocking:
                 if log:
                     logger.info(
-                        ">>> shutting down FTP server (%s active fds) <<<",
+                        ">>> shutting down FTP server (%s active socket "
+                        "fds) <<<",
                         self._map_len())
                 self.close_all()
         else:
@@ -247,7 +247,7 @@ class FTPServer(Acceptor):
 
             try:
                 handler.handle()
-            except:
+            except Exception:
                 handler.handle_error()
             else:
                 return handler
@@ -296,8 +296,9 @@ class _SpawnerBase(FTPServer):
     _lock = None
     _exit = None
 
-    def __init__(self, address, handler, ioloop=None):
-        FTPServer.__init__(self, address, handler, ioloop)
+    def __init__(self, address_or_socket, handler, ioloop=None, backlog=100):
+        FTPServer.__init__(self, address_or_socket, handler,
+                           ioloop=ioloop, backlog=backlog)
         self._active_tasks = []
 
     def _start_task(self, *args, **kwargs):
@@ -311,16 +312,16 @@ class _SpawnerBase(FTPServer):
 
     def _loop(self, handler):
         """Serve handler's IO loop in a separate thread or process."""
-        ioloop = IOLoop()
-        try:
+        with IOLoop() as ioloop:
             handler.ioloop = ioloop
             try:
                 handler.add_channel()
-            except EnvironmentError:
-                err = sys.exc_info()[1]
+            except EnvironmentError as err:
                 if err.errno == errno.EBADF:
                     # we might get here in case the other end quickly
                     # disconnected (see test_quick_connect())
+                    debug("call: %s._loop(); add_channel() returned EBADF",
+                          self)
                     return
                 else:
                     raise
@@ -358,11 +359,10 @@ class _SpawnerBase(FTPServer):
                     # note: these two exceptions are raised in all sub
                     # processes
                     self._exit.set()
-                except select.error:
+                except select.error as err:
                     # on Windows we can get WSAENOTSOCK if the client
                     # rapidly connect and disconnects
-                    err = sys.exc_info()[1]
-                    if os.name == 'nt' and err.args[0] == 10038:
+                    if os.name == 'nt' and err[0] == 10038:
                         for fd in list(ioloop.socket_map.keys()):
                             try:
                                 select.select([fd], [], [], 0)
@@ -378,11 +378,9 @@ class _SpawnerBase(FTPServer):
                         raise
                 else:
                     if poll_timeout:
-                        if (soonest_timeout is None
-                                or soonest_timeout > poll_timeout):
+                        if (soonest_timeout is None or
+                                soonest_timeout > poll_timeout):
                             soonest_timeout = poll_timeout
-        finally:
-            ioloop.close()
 
     def handle_accepted(self, sock, addr):
         handler = FTPServer.handle_accepted(self, sock, addr)
@@ -399,20 +397,16 @@ class _SpawnerBase(FTPServer):
             if hasattr(t, 'pid'):
                 handler.close()
 
-            self._lock.acquire()
-            try:
+            with self._lock:
                 # clean finished tasks
                 for task in self._active_tasks[:]:
                     if not task.is_alive():
                         self._active_tasks.remove(task)
                 # add the new task
                 self._active_tasks.append(t)
-            finally:
-                self._lock.release()
 
     def _log_start(self):
         FTPServer._log_start(self)
-        logger.info("dispatcher: %r", self.__class__)
 
     def serve_forever(self, timeout=None, blocking=True, handle_exit=True):
         self._exit.clear()
@@ -449,8 +443,7 @@ class _SpawnerBase(FTPServer):
                         # as the process hangs on kqueue.control() or
                         # select.select(). Use SIGKILL instead.
                         os.kill(t.pid, signal.SIGKILL)
-                except OSError:
-                    err = sys.exc_info()[1]
+                except OSError as err:
                     if err.errno != errno.ESRCH:
                         raise
 
@@ -475,8 +468,7 @@ class _SpawnerBase(FTPServer):
                         warn(msg + "; sending SIGKILL as last resort")
                         try:
                             os.kill(t.pid, signal.SIGKILL)
-                        except OSError:
-                            err = sys.exc_info()[1]
+                        except OSError as err:
                             if err.errno != errno.ESRCH:
                                 raise
                     else:

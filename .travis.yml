@@ -1,20 +1,32 @@
+sudo: false
 language: python
-python:
-    - 2.6
-    - 2.7
-    - 3.2
-    - 3.3
-    - 3.4
-    - pypy
+cache: pip
+matrix:
+    include:
+        - python: 2.6
+        - python: 2.7
+        - python: 3.3
+        - python: 3.4
+        - python: 3.5
+        # - language: generic
+        #   os: osx
+        #   env: PYVER=py26
+        - language: generic
+          os: osx
+          env: PYVER=py27
+        # - language: generic
+        #   os: osx
+        #   env: PYVER=py33
+        - language: generic
+          os: osx
+          env: PYVER=py34
+        # XXX - not supported yet
+        # - language: generic
+        #   os: osx
+        #   env: PYVER=py35
 install:
-    - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install unittest2; fi
+    - ./.ci/travis/install.sh
 script:
-    - pip install flake8
-    - python setup.py install
-    - python test/test_ftpd.py
-    - python test/test_contrib.py
-    - make flake8
-os:
-    - linux
-    - osx
-
+    - ./.ci/travis/run.sh
+after_success:
+    - coveralls  # upload reports to coveralls.io

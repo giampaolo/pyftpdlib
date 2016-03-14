@@ -190,21 +190,26 @@ method.
 .. code-block:: python
 
     import os
-    try:
+    import sys
     from hashlib import md5
-    except ImportError:
-    from md5 import new as md5  # Python < 2.5
 
     from pyftpdlib.handlers import FTPHandler
     from pyftpdlib.servers import FTPServer
-    from pyftpdlib.authorizers import DummyAuthorizer
+    from pyftpdlib.authorizers import DummyAuthorizer, AuthenticationFailed
 
 
     class DummyMD5Authorizer(DummyAuthorizer):
 
         def validate_authentication(self, username, password, handler):
+            if sys.version_info >= (3, 0):
+                password = md5(password.encode('latin1'))
             hash = md5(password).hexdigest()
-            return self.user_table[username]['pwd'] == hash
+            try:
+                if self.user_table[username]['pwd'] != hash:
+                    raise KeyError
+            except KeyError:
+                raise AuthenticationFailed
+
 
     def main():
         # get a hash digest from a clear-text password
@@ -412,8 +417,6 @@ which include both and is available
 `source code <https://github.com/giampaolo/pyftpdlib/blob/master/demo/tls_ftpd.py>`__
 
 .. code-block:: python
-
-    #!/usr/bin/env python
 
     """
     An RFC-4217 asynchronous FTPS server supporting both SSL and TLS.

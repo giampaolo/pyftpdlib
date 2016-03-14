@@ -1,32 +1,6 @@
-#!/usr/bin/env python
-
-#  ======================================================================
-#  Copyright (C) 2007-2014 Giampaolo Rodola' <g.rodola@gmail.com>
-#
-#                         All Rights Reserved
-#
-# Permission is hereby granted, free of charge, to any person
-# obtaining a copy of this software and associated documentation
-# files (the "Software"), to deal in the Software without
-# restriction, including without limitation the rights to use,
-# copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the
-# Software is furnished to do so, subject to the following
-# conditions:
-#
-# The above copyright notice and this permission notice shall be
-# included in all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-# WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-# OTHER DEALINGS IN THE SOFTWARE.
-#
-#  ======================================================================
+# Copyright (C) 2007-2016 Giampaolo Rodola' <g.rodola@gmail.com>.
+# Use of this source code is governed by MIT license that can be
+# found in the LICENSE file.
 
 """
 A specialized IO loop on top of asyncore adding support for epoll()
@@ -86,7 +60,6 @@ import asynchat
 import asyncore
 import errno
 import heapq
-import logging
 import os
 import select
 import socket
@@ -98,13 +71,35 @@ try:
 except ImportError:
     import dummy_threading as threading
 
-from pyftpdlib._compat import MAXSIZE, callable, b
-from pyftpdlib.log import logger, _config_logging
+from ._compat import callable
+from .log import config_logging
+from .log import debug
+from .log import is_logging_configured
+from .log import logger
 
 
 timer = getattr(time, 'monotonic', time.time)
 _read = asyncore.read
 _write = asyncore.write
+
+# These errnos indicate that a connection has been abruptly terminated.
+_ERRNOS_DISCONNECTED = set((
+    errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN, errno.ECONNABORTED,
+    errno.EPIPE, errno.EBADF))
+if hasattr(errno, "WSAECONNRESET"):
+    _ERRNOS_DISCONNECTED.add(errno.WSAECONNRESET)
+if hasattr(errno, "WSAECONNABORTED"):
+    _ERRNOS_DISCONNECTED.add(errno.WSAECONNABORTED)
+
+# These errnos indicate that a non-blocking operation must be retried
+# at a later time.
+_ERRNOS_RETRY = set((errno.EAGAIN, errno.EWOULDBLOCK))
+if hasattr(errno, "WSAEWOULDBLOCK"):
+    _ERRNOS_RETRY.add(errno.WSAEWOULDBLOCK)
+
+
+class RetryError(Exception):
+    pass
 
 
 # ===================================================================
@@ -147,8 +142,9 @@ class _Scheduler(object):
         # remove cancelled tasks and re-heapify the queue if the
         # number of cancelled tasks is more than the half of the
         # entire queue
-        if (self._cancellations > 512
-                and self._cancellations > (len(self._tasks) >> 1)):
+        if (self._cancellations > 512 and
+                self._cancellations > (len(self._tasks) >> 1)):
+            debug("re-heapifying %s cancelled tasks" % self._cancellations)
             self.reheapify()
 
         try:
@@ -181,8 +177,8 @@ class _CallLater(object):
 
     def __init__(self, seconds, target, *args, **kwargs):
         assert callable(target), "%s is not callable" % target
-        assert MAXSIZE >= seconds >= 0, "%s is not greater than or equal " \
-                                        "to 0 seconds" % seconds
+        assert sys.maxsize >= seconds >= 0, \
+            "%s is not greater than or equal to 0 seconds" % seconds
         self._delay = seconds
         self._target = target
         self._args = args
@@ -225,14 +221,13 @@ class _CallLater(object):
         assert not self.cancelled, "already cancelled"
         exc = None
         try:
-            try:
-                self._target(*self._args, **self._kwargs)
-            except Exception:
-                exc = sys.exc_info()[1]
-                if self._errback is not None:
-                    self._errback()
-                else:
-                    raise
+            self._target(*self._args, **self._kwargs)
+        except Exception as _:
+            exc = _
+            if self._errback is not None:
+                self._errback()
+            else:
+                raise
         finally:
             self._post_call(exc)
 
@@ -244,10 +239,10 @@ class _CallLater(object):
 
     def cancel(self):
         """Unschedule this call."""
-        assert not self.cancelled, "already cancelled"
-        self.cancelled = True
-        self._target = self._args = self._kwargs = self._errback = None
-        self._sched.unregister(self)
+        if not self.cancelled:
+            self.cancelled = True
+            self._target = self._args = self._kwargs = self._errback = None
+            self._sched.unregister(self)
 
 
 class _CallEvery(_CallLater):
@@ -275,16 +270,27 @@ class _IOLoop(object):
         self.socket_map = {}
         self.sched = _Scheduler()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
+    def __repr__(self):
+        status = [self.__class__.__module__ + "." + self.__class__.__name__]
+        status.append("(fds=%s, tasks=%s)" % (
+            len(self.socket_map), len(self.sched._tasks)))
+        return '<%s at %#x>' % (' '.join(status), id(self))
+
+    __str__ = __repr__
+
     @classmethod
     def instance(cls):
         """Return a global IOLoop instance."""
         if cls._instance is None:
-            cls._lock.acquire()
-            try:
+            with cls._lock:
                 if cls._instance is None:
                     cls._instance = cls()
-            finally:
-                cls._lock.release()
         return cls._instance
 
     def register(self, fd, instance, events):
@@ -319,12 +325,12 @@ class _IOLoop(object):
         """
         if not _IOLoop._started_once:
             _IOLoop._started_once = True
-            if not logging.getLogger('pyftpdlib').handlers:
+            if not is_logging_configured():
                 # If we get to this point it means the user hasn't
                 # configured logging. We want to log by default so
                 # we configure logging ourselves so that it will
                 # print to stderr.
-                _config_logging()
+                config_logging()
 
         if blocking:
             # localize variable access to minimize overhead
@@ -371,6 +377,7 @@ class _IOLoop(object):
 
     def close(self):
         """Closes the IOLoop, freeing any resources used."""
+        debug("closing IOLoop", self)
         self.__class__._instance = None
 
         # free connections
@@ -378,9 +385,8 @@ class _IOLoop(object):
         for inst in instances:
             try:
                 inst.close()
-            except OSError:
-                err = sys.exc_info()[1]
-                if err.args[0] != errno.EBADF:
+            except OSError as err:
+                if err.errno != errno.EBADF:
                     logger.error(traceback.format_exc())
             except Exception:
                 logger.error(traceback.format_exc())
@@ -420,7 +426,7 @@ class Select(_IOLoop):
         try:
             del self.socket_map[fd]
         except KeyError:
-            pass
+            debug("call: unregister(); fd was no longer in socket_map", self)
         for l in (self._r, self._w):
             try:
                 l.remove(fd)
@@ -432,13 +438,14 @@ class Select(_IOLoop):
         if inst is not None:
             self.unregister(fd)
             self.register(fd, inst, events)
+        else:
+            debug("call: modify(); fd was no longer in socket_map", self)
 
     def poll(self, timeout):
         try:
             r, w, e = select.select(self._r, self._w, [], timeout)
-        except select.error:
-            err = sys.exc_info()[1]
-            if err.args[0] == errno.EINTR:
+        except select.error as err:
+            if getattr(err, "errno", None) == errno.EINTR:
                 return
             raise
 
@@ -471,26 +478,48 @@ class _BasePollEpoll(_IOLoop):
         self._poller = self._poller()
 
     def register(self, fd, instance, events):
-        self._poller.register(fd, events)
+        try:
+            self._poller.register(fd, events)
+        except EnvironmentError as err:
+            if err.errno == errno.EEXIST:
+                debug("call: register(); poller raised EEXIST; ignored", self)
+            else:
+                raise
         self.socket_map[fd] = instance
 
     def unregister(self, fd):
         try:
             del self.socket_map[fd]
         except KeyError:
-            pass
+            debug("call: unregister(); fd was no longer in socket_map", self)
         else:
-            self._poller.unregister(fd)
+            try:
+                self._poller.unregister(fd)
+            except EnvironmentError as err:
+                if err.errno in (errno.ENOENT, errno.EBADF):
+                    debug("call: unregister(); poller returned %r; "
+                          "ignoring it" % err, self)
+                else:
+                    raise
 
     def modify(self, fd, events):
-        self._poller.modify(fd, events)
+        try:
+            self._poller.modify(fd, events)
+        except OSError as err:
+            if err.errno == errno.ENOENT and fd in self.socket_map:
+                # XXX - see:
+                # https://github.com/giampaolo/pyftpdlib/issues/329
+                instance = self.socket_map[fd]
+                self.register(fd, instance, events)
+            else:
+                raise
 
     def poll(self, timeout):
         try:
             events = self._poller.poll(timeout or -1)  # -1 waits indefinitely
-        except (IOError, select.error):  # for epoll() and poll() respectively
-            err = sys.exc_info()[1]
-            if err.args[0] == errno.EINTR:
+        except (IOError, select.error) as err:
+            # for epoll() and poll() respectively
+            if err.errno == errno.EINTR:
                 return
             raise
         # localize variable access to minimize overhead
@@ -524,12 +553,10 @@ if hasattr(select, 'poll'):
         _ERROR = select.POLLERR | select.POLLHUP | select.POLLNVAL
         _poller = select.poll
 
-        # select.poll() on py < 2.6 has no 'modify' method
-        if not hasattr(select.poll(), 'modify'):
-            def modify(self, fd, events):
-                inst = self.socket_map[fd]
-                self.unregister(fd)
-                self.register(fd, inst, events)
+        def modify(self, fd, events):
+            inst = self.socket_map[fd]
+            self.unregister(fd)
+            self.register(fd, inst, events)
 
         def poll(self, timeout):
             # poll() timeout is expressed in milliseconds
@@ -542,7 +569,7 @@ if hasattr(select, 'poll'):
 # --- /dev/poll - Solaris (introduced in python 3.3)
 # ===================================================================
 
-if hasattr(select, 'devpoll'):
+if hasattr(select, 'devpoll'):  # pragma: no cover
 
     class DevPoll(_BasePollEpoll):
         """/dev/poll based poller (introduced in python 3.3)."""
@@ -603,7 +630,7 @@ if hasattr(select, 'epoll'):
 # --- kqueue() - BSD / OSX
 # ===================================================================
 
-if hasattr(select, 'kqueue'):
+if hasattr(select, 'kqueue'):  # pragma: no cover
 
     class Kqueue(_IOLoop):
         """kqueue() based poller."""
@@ -623,7 +650,14 @@ if hasattr(select, 'kqueue'):
 
         def register(self, fd, instance, events):
             self.socket_map[fd] = instance
-            self._control(fd, events, select.KQ_EV_ADD)
+            try:
+                self._control(fd, events, select.KQ_EV_ADD)
+            except EnvironmentError as err:
+                if err.errno == errno.EEXIST:
+                    debug("call: register(); poller raised EEXIST; ignored",
+                          self)
+                else:
+                    raise
             self._active[fd] = events
 
         def unregister(self, fd):
@@ -635,9 +669,11 @@ if hasattr(select, 'kqueue'):
             else:
                 try:
                     self._control(fd, events, select.KQ_EV_DELETE)
-                except OSError:
-                    err = sys.exc_info()[1]
-                    if err.errno != errno.EBADF:
+                except EnvironmentError as err:
+                    if err.errno in (errno.ENOENT, errno.EBADF):
+                        debug("call: unregister(); poller returned %r; "
+                              "ignoring it" % err, self)
+                    else:
                         raise
 
         def modify(self, fd, events):
@@ -671,9 +707,8 @@ if hasattr(select, 'kqueue'):
             try:
                 kevents = self._kqueue.control(None, _len(self.socket_map),
                                                timeout)
-            except OSError:
-                err = sys.exc_info()[1]
-                if err.args[0] == errno.EINTR:
+            except OSError as err:
+                if err.errno == errno.EINTR:
                     return
                 raise
             for kevent in kevents:
@@ -723,103 +758,81 @@ else:                             # select() - POSIX and Windows
 # these are overridden in order to register() and unregister()
 # file descriptors against the new pollers
 
-_DISCONNECTED = frozenset((errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN,
-                           errno.ECONNABORTED, errno.EPIPE, errno.EBADF))
-_RETRY = frozenset((errno.EAGAIN, errno.EWOULDBLOCK))
 
-
-class Acceptor(asyncore.dispatcher):
-    """Same as base asyncore.dispatcher and supposed to be used to
-    accept new connections.
+class AsyncChat(asynchat.async_chat):
+    """Same as asynchat.async_chat, only working with the new IO poller
+    and being more clever in avoid registering for read events when
+    it shouldn't.
     """
 
-    def __init__(self, ioloop=None):
+    def __init__(self, sock=None, ioloop=None):
         self.ioloop = ioloop or IOLoop.instance()
-        self._fileno = None  # py < 2.6
-        asyncore.dispatcher.__init__(self)
+        self._wanted_io_events = self.ioloop.READ
+        self._current_io_events = self.ioloop.READ
+        self._closed = False
+        self._closing = False
+        self._fileno = sock.fileno() if sock else None
+        self._tasks = []
+        asynchat.async_chat.__init__(self, sock)
 
-    def bind_af_unspecified(self, addr):
-        """Same as bind() but guesses address family from addr.
-        Return the address family just determined.
-        """
-        assert self.socket is None
-        host, port = addr
-        if host == "":
-            # When using bind() "" is a symbolic name meaning all
-            # available interfaces. People might not know we're
-            # using getaddrinfo() internally, which uses None
-            # instead of "", so we'll make the conversion for them.
-            host = None
-        err = "getaddrinfo() returned an empty list"
-        info = socket.getaddrinfo(host, port, socket.AF_UNSPEC,
-                                  socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
-        for res in info:
-            self.socket = None
-            self.del_channel()
-            af, socktype, proto, canonname, sa = res
-            try:
-                self.create_socket(af, socktype)
-                self.set_reuse_addr()
-                self.bind(sa)
-            except socket.error:
-                err = sys.exc_info()[1]
-                if self.socket is not None:
-                    self.socket.close()
-                    self.del_channel()
-                    self.socket = None
-                continue
-            break
-        if self.socket is None:
-            self.del_channel()
-            raise socket.error(err)
-        return af
+    # --- IO loop related methods
 
-    def add_channel(self, map=None):
-        self.ioloop.register(self._fileno, self, self.ioloop.READ)
+    def add_channel(self, map=None, events=None):
+        assert self._fileno, repr(self._fileno)
+        events = events if events is not None else self.ioloop.READ
+        self.ioloop.register(self._fileno, self, events)
+        self._wanted_io_events = events
+        self._current_io_events = events
 
     def del_channel(self, map=None):
-        self.ioloop.unregister(self._fileno)
+        if self._fileno is not None:
+            self.ioloop.unregister(self._fileno)
 
-    def listen(self, num):
-        asyncore.dispatcher.listen(self, num)
-        # XXX - this seems to be necessary, otherwise kqueue.control()
-        # won't return listening fd events
-        try:
-            if isinstance(self.ioloop, Kqueue):
-                self.ioloop.modify(self._fileno, self.ioloop.READ)
-        except NameError:
-            pass
-
-    def handle_accept(self):
-        try:
-            sock, addr = self.accept()
-        except TypeError:
-            # sometimes accept() might return None (see issue 91)
-            return
-        except socket.error:
-            err = sys.exc_info()[1]
-            # ECONNABORTED might be thrown on *BSD (see issue 105)
-            if err.args[0] != errno.ECONNABORTED:
-                raise
+    def modify_ioloop_events(self, events, logdebug=False):
+        if not self._closed:
+            assert self._fileno, repr(self._fileno)
+            if self._fileno not in self.ioloop.socket_map:
+                debug(
+                    "call: modify_ioloop_events(), fd was no longer in "
+                    "socket_map, had to register() it again", inst=self)
+                self.add_channel(events=events)
+            else:
+                if events != self._current_io_events:
+                    if logdebug:
+                        if events == self.ioloop.READ:
+                            ev = "R"
+                        elif events == self.ioloop.WRITE:
+                            ev = "W"
+                        elif events == self.ioloop.READ | self.ioloop.WRITE:
+                            ev = "RW"
+                        else:
+                            ev = events
+                        debug("call: IOLoop.modify(); setting %r IO events" % (
+                            ev), self)
+                    self.ioloop.modify(self._fileno, events)
+            self._current_io_events = events
         else:
-            # sometimes addr == None instead of (ip, port) (see issue 104)
-            if addr is not None:
-                self.handle_accepted(sock, addr)
+            debug(
+                "call: modify_ioloop_events(), handler had already been "
+                "close()d, skipping modify()", inst=self)
 
-    def handle_accepted(self, sock, addr):
-        sock.close()
-        self.log_info('unhandled accepted event', 'warning')
+    # --- utils
 
-    # overridden for convenience; avoid to reuse address on Windows
-    if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
-        def set_reuse_addr(self):
-            pass
+    def call_later(self, seconds, target, *args, **kwargs):
+        """Same as self.ioloop.call_later but also cancel()s the
+        scheduled function on close().
+        """
+        if '_errback' not in kwargs and hasattr(self, 'handle_error'):
+            kwargs['_errback'] = self.handle_error
+        callback = self.ioloop.call_later(seconds, target, *args, **kwargs)
+        self._tasks.append(callback)
+        return callback
 
+    # --- overridden asynchat methods
 
-class Connector(Acceptor):
-    """Same as base asyncore.dispatcher and supposed to be used for
-    clients.
-    """
+    def connect(self, addr):
+        self.modify_ioloop_events(self.ioloop.WRITE)
+        asynchat.async_chat.connect(self, addr)
 
     def connect_af_unspecified(self, addr, source_address=None):
         """Same as connect() but guesses address family from addr.
@@ -850,8 +863,8 @@ class Connector(Acceptor):
                                           source_address[1])
                     self.bind(source_address)
                 self.connect((host, port))
-            except socket.error:
-                err = sys.exc_info()[1]
+            except socket.error as _:
+                err = _
                 if self.socket is not None:
                     self.socket.close()
                     self.del_channel()
@@ -863,29 +876,6 @@ class Connector(Acceptor):
             raise socket.error(err)
         return af
 
-    def add_channel(self, map=None):
-        self.ioloop.register(self._fileno, self, self.ioloop.WRITE)
-
-
-class AsyncChat(asynchat.async_chat):
-    """Same as asynchat.async_chat, only working with the new IO poller
-    and being more clever in avoid registering for read events when
-    it shouldn't.
-    """
-
-    def __init__(self, sock, ioloop=None):
-        self.ioloop = ioloop or IOLoop.instance()
-        self._current_io_events = self.ioloop.READ
-        self._closed = False
-        self._closing = False
-        asynchat.async_chat.__init__(self, sock)
-
-    def add_channel(self, map=None, events=None):
-        self.ioloop.register(self._fileno, self, events or self.ioloop.READ)
-
-    def del_channel(self, map=None):
-        self.ioloop.unregister(self._fileno)
-
     # send() and recv() overridden as a fix around various bugs:
     # - http://bugs.python.org/issue1736101
     # - https://github.com/giampaolo/pyftpdlib/issues/104
@@ -894,11 +884,11 @@ class AsyncChat(asynchat.async_chat):
     def send(self, data):
         try:
             return self.socket.send(data)
-        except socket.error:
-            why = sys.exc_info()[1]
-            if why.args[0] in _RETRY:
+        except socket.error as err:
+            debug("call: send(), err: %s" % err, inst=self)
+            if err.errno in _ERRNOS_RETRY:
                 return 0
-            elif why.args[0] in _DISCONNECTED:
+            elif err.errno in _ERRNOS_DISCONNECTED:
                 self.handle_close()
                 return 0
             else:
@@ -907,11 +897,13 @@ class AsyncChat(asynchat.async_chat):
     def recv(self, buffer_size):
         try:
             data = self.socket.recv(buffer_size)
-        except socket.error:
-            why = sys.exc_info()[1]
-            if why.args[0] in _DISCONNECTED:
+        except socket.error as err:
+            debug("call: recv(), err: %s" % err, inst=self)
+            if err.errno in _ERRNOS_DISCONNECTED:
                 self.handle_close()
-                return b('')
+                return b''
+            elif err.errno in _ERRNOS_RETRY:
+                raise RetryError
             else:
                 raise
         else:
@@ -919,9 +911,16 @@ class AsyncChat(asynchat.async_chat):
                 # a closed connection is indicated by signaling
                 # a read condition, and having recv() return 0.
                 self.handle_close()
-                return b('')
+                return b''
             else:
                 return data
+
+    def handle_read(self):
+        try:
+            asynchat.async_chat.handle_read(self)
+        except RetryError:
+            # This can be raised by (the overridden) recv().
+            pass
 
     def initiate_send(self):
         asynchat.async_chat.initiate_send(self)
@@ -931,10 +930,16 @@ class AsyncChat(asynchat.async_chat):
             if not self.producer_fifo:
                 wanted = self.ioloop.READ
             else:
+                # In FTPHandler, we also want to listen for user input
+                # hence the READ. DTPHandler has its own initiate_send()
+                # which will either READ or WRITE.
                 wanted = self.ioloop.READ | self.ioloop.WRITE
-            if self._current_io_events != wanted:
+            if self._wanted_io_events != wanted:
                 self.ioloop.modify(self._fileno, wanted)
-                self._current_io_events = wanted
+                self._wanted_io_events = wanted
+        else:
+            debug("call: initiate_send(); called with no connection",
+                  inst=self)
 
     def close_when_done(self):
         if len(self.producer_fifo) == 0:
@@ -942,3 +947,113 @@ class AsyncChat(asynchat.async_chat):
         else:
             self._closing = True
             asynchat.async_chat.close_when_done(self)
+
+    def close(self):
+        if not self._closed:
+            self._closed = True
+            try:
+                asynchat.async_chat.close(self)
+            finally:
+                for fun in self._tasks:
+                    try:
+                        fun.cancel()
+                    except Exception:
+                        logger.error(traceback.format_exc())
+                self._tasks = []
+                self._closed = True
+                self._closing = False
+                self.connected = False
+
+
+class Connector(AsyncChat):
+    """Same as base AsyncChat and supposed to be used for
+    clients.
+    """
+
+    def add_channel(self, map=None, events=None):
+        AsyncChat.add_channel(self, map=map, events=self.ioloop.WRITE)
+
+
+class Acceptor(AsyncChat):
+    """Same as base AsyncChat and supposed to be used to
+    accept new connections.
+    """
+
+    def add_channel(self, map=None, events=None):
+        AsyncChat.add_channel(self, map=map, events=self.ioloop.READ)
+
+    def bind_af_unspecified(self, addr):
+        """Same as bind() but guesses address family from addr.
+        Return the address family just determined.
+        """
+        assert self.socket is None
+        host, port = addr
+        if host == "":
+            # When using bind() "" is a symbolic name meaning all
+            # available interfaces. People might not know we're
+            # using getaddrinfo() internally, which uses None
+            # instead of "", so we'll make the conversion for them.
+            host = None
+        err = "getaddrinfo() returned an empty list"
+        info = socket.getaddrinfo(host, port, socket.AF_UNSPEC,
+                                  socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+        for res in info:
+            self.socket = None
+            self.del_channel()
+            af, socktype, proto, canonname, sa = res
+            try:
+                self.create_socket(af, socktype)
+                self.set_reuse_addr()
+                self.bind(sa)
+            except socket.error as _:
+                err = _
+                if self.socket is not None:
+                    self.socket.close()
+                    self.del_channel()
+                    self.socket = None
+                continue
+            break
+        if self.socket is None:
+            self.del_channel()
+            raise socket.error(err)
+        return af
+
+    def listen(self, num):
+        AsyncChat.listen(self, num)
+        # XXX - this seems to be necessary, otherwise kqueue.control()
+        # won't return listening fd events
+        try:
+            if isinstance(self.ioloop, Kqueue):
+                self.ioloop.modify(self._fileno, self.ioloop.READ)
+        except NameError:
+            pass
+
+    def handle_accept(self):
+        try:
+            sock, addr = self.accept()
+        except TypeError:
+            # sometimes accept() might return None, see:
+            # https://github.com/giampaolo/pyftpdlib/issues/91
+            debug("call: handle_accept(); accept() returned None", self)
+            return
+        except socket.error as err:
+            # ECONNABORTED might be thrown on *BSD, see:
+            # https://github.com/giampaolo/pyftpdlib/issues/105
+            if err.errno != errno.ECONNABORTED:
+                raise
+            else:
+                debug("call: handle_accept(); accept() returned ECONNABORTED",
+                      self)
+        else:
+            # sometimes addr == None instead of (ip, port) (see issue 104)
+            if addr is not None:
+                self.handle_accepted(sock, addr)
+
+    def handle_accepted(self, sock, addr):
+        sock.close()
+        self.log_info('unhandled accepted event', 'warning')
+
+    # overridden for convenience; avoid to reuse address on Windows
+    if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
+        def set_reuse_addr(self):
+            pass

@@ -1,33 +1,8 @@
 #!/usr/bin/env python
 
-#  pyftpdlib is released under the MIT license, reproduced below:
-#  ======================================================================
-#  Copyright (C) 2007-2014 Giampaolo Rodola' <g.rodola@gmail.com>
-#
-#                         All Rights Reserved
-#
-# Permission is hereby granted, free of charge, to any person
-# obtaining a copy of this software and associated documentation
-# files (the "Software"), to deal in the Software without
-# restriction, including without limitation the rights to use,
-# copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the
-# Software is furnished to do so, subject to the following
-# conditions:
-#
-# The above copyright notice and this permission notice shall be
-# included in all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-# WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-# OTHER DEALINGS IN THE SOFTWARE.
-#
-#  ======================================================================
+# Copyright (C) 2007-2016 Giampaolo Rodola' <g.rodola@gmail.com>.
+# Use of this source code is governed by MIT license that can be
+# found in the LICENSE file.
 
 """A basic unix daemon using the python-daemon library:
 http://pypi.python.org/pypi/python-daemon
@@ -55,20 +30,18 @@ Authors:
  - Giampaolo Rodola' - g.rodola <at> gmail.com
 """
 
-from __future__ import with_statement
-
-import os
+import atexit
 import errno
+import optparse
+import os
+import signal
 import sys
 import time
-import optparse
-import signal
-import atexit
 
-from pyftpdlib.handlers import FTPHandler
-from pyftpdlib.servers import FTPServer
 from pyftpdlib.authorizers import UnixAuthorizer
 from pyftpdlib.filesystems import UnixFilesystem
+from pyftpdlib.handlers import FTPHandler
+from pyftpdlib.servers import FTPServer
 
 
 # overridable options
@@ -80,17 +53,11 @@ WORKDIR = os.getcwd()
 UMASK = 0
 
 
-def print_(s):
-    sys.stdout.write(s + '\n')
-    sys.stdout.flush()
-
-
 def pid_exists(pid):
     """Return True if a process with the given PID is currently running."""
     try:
         os.kill(pid, 0)
-    except OSError:
-        err = sys.exc_info()[1]
+    except OSError as err:
         return err.errno == errno.EPERM
     else:
         return True
@@ -101,8 +68,7 @@ def get_pid():
     try:
         with open(PID_FILE) as f:
             return int(f.read().strip())
-    except IOError:
-        err = sys.exc_info()[1]
+    except IOError as err:
         if err.errno != errno.ENOENT:
             raise
 
@@ -121,10 +87,9 @@ def stop():
         sys.stdout.flush()
         try:
             os.kill(pid, sig)
-        except OSError:
-            e = sys.exc_info()[1]
-            if e.errno == errno.ESRCH:
-                print_("\nstopped (pid %s)" % pid)
+        except OSError as err:
+            if err.errno == errno.ESRCH:
+                print("\nstopped (pid %s)" % pid)
                 return
             else:
                 raise
@@ -140,9 +105,9 @@ def status():
     """Print daemon status and exit."""
     pid = get_pid()
     if not pid or not pid_exists(pid):
-        print_("daemon not running")
+        print("daemon not running")
     else:
-        print_("daemon running with pid %s" % pid)
+        print("daemon running with pid %s" % pid)
     sys.exit(0)
 
 
@@ -186,9 +151,8 @@ def daemonize():
 
         # write pidfile
         pid = str(os.getpid())
-        f = open(PID_FILE, 'w')
-        f.write("%s\n" % pid)
-        f.close()
+        with open(PID_FILE, 'w') as f:
+            f.write("%s\n" % pid)
         atexit.register(lambda: os.remove(PID_FILE))
 
     pid = get_pid()

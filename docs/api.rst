@@ -223,6 +223,13 @@ Control connection
 
     *New in version 0.7.0*
 
+  .. data:: auth_failed_timeout
+
+    The amount of time the server waits before sending a response in case of
+    failed authentication.
+
+    *New in version 1.5.0*
+
   Follows a list of callback methods that can be overridden in a subclass. For
   blocking operations read the FAQ on how to run time consuming tasks.
 
@@ -361,7 +368,7 @@ Server (acceptor)
     Number of maximum connections accepted for the same IP address (default
     ``0`` == no limit).
 
-  .. method:: serve_forever(timeout=None, blocking=False, handle_exit=True)
+  .. method:: serve_forever(timeout=None, blocking=True, handle_exit=True)
 
     Starts the asynchronous IO loop.
 
