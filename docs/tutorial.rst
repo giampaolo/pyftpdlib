@@ -271,7 +271,7 @@ installed.
 
     from pyftpdlib.handlers import FTPHandler
     from pyftpdlib.servers import FTPServer
-    from pyftpdlib.contrib.authorizers import WindowsAuthorizer
+    from pyftpdlib.authorizers import WindowsAuthorizer
 
     def main():
         authorizer = WindowsAuthorizer()
@@ -425,7 +425,7 @@ which include both and is available
 
     from pyftpdlib.servers import FTPServer
     from pyftpdlib.authorizers import DummyAuthorizer
-    from pyftpdlib.contrib.handlers import TLS_FTPHandler
+    from pyftpdlib.handlers import TLS_FTPHandler
 
 
     def main():

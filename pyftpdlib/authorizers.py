@@ -478,7 +478,7 @@ else:
 
         Example usages:
 
-         >>> from pyftpdlib.contrib.authorizers import UnixAuthorizer
+         >>> from pyftpdlib.authorizers import UnixAuthorizer
          >>> # accept all except root
          >>> auth = UnixAuthorizer(rejected_users=["root"])
          >>>
@@ -746,7 +746,7 @@ else:
 
         Example usages:
 
-         >>> from pyftpdlib.contrib.authorizers import WindowsAuthorizer
+         >>> from pyftpdlib.authorizers import WindowsAuthorizer
          >>> # accept all except Administrator
          >>> auth = WindowsAuthorizer(rejected_users=["Administrator"])
          >>>
