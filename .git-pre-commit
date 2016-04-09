@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+
+# This gets executed on 'git commit' and rejects the commit in case the
+# submitted code does not pass validation.
+# Install it with "make install-git-hooks"
+
+import os
+import subprocess
+import sys
+
+
+def main():
+    out = subprocess.check_output("git diff --cached --name-only", shell=True)
+    files = [x for x in out.split('\n') if x.endswith('.py') and
+             os.path.exists(x)]
+
+    for path in files:
+        with open(path) as f:
+            data = f.read()
+
+        # pdb
+        if "pdb.set_trace" in data:
+            for lineno, line in enumerate(data.split('\n'), 1):
+                line = line.rstrip()
+                if "pdb.set_trace" in line:
+                    print("%s: %s" % (lineno, line))
+                    sys.exit(
+                        "commit aborted: you forgot a pdb in your python code")
+
+        # bare except clause
+        if "except:" in data:
+            for lineno, line in enumerate(data.split('\n'), 1):
+                line = line.rstrip()
+                if "except:" in line and not line.endswith("# NOQA"):
+                    print("%s: %s" % (lineno, line))
+                    sys.exit("commit aborted: bare except clause")
+
+    # flake8
+    failed = False
+    for path in files:
+        ret = subprocess.call("python -m flake8 %s" % path, shell=True)
+        if ret != 0:
+            failed = True
+    if failed:
+        sys.exit("commit aborted: python code is not flake8-compliant")
+
+main()

@@ -1,41 +1,16 @@
-#!/usr/bin/env python
-
-#  pyftpdlib is released under the MIT license, reproduced below:
-#  ======================================================================
-#  Copyright (C) 2007-2014 Giampaolo Rodola' <g.rodola@gmail.com>
-#
-#                         All Rights Reserved
-#
-# Permission is hereby granted, free of charge, to any person
-# obtaining a copy of this software and associated documentation
-# files (the "Software"), to deal in the Software without
-# restriction, including without limitation the rights to use,
-# copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the
-# Software is furnished to do so, subject to the following
-# conditions:
-#
-# The above copyright notice and this permission notice shall be
-# included in all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-# WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-# OTHER DEALINGS IN THE SOFTWARE.
-#
-#  ======================================================================
+# Copyright (C) 2007-2016 Giampaolo Rodola' <g.rodola@gmail.com>.
+# Use of this source code is governed by MIT license that can be
+# found in the LICENSE file.
 
 """pyftpdlib installer.
 
 $ python setup.py install
 """
 
+from __future__ import print_function
 import os
 import sys
+import textwrap
 try:
     from setuptools import setup
 except ImportError:
@@ -45,8 +20,7 @@ except ImportError:
 def get_version():
     INIT = os.path.abspath(os.path.join(os.path.dirname(__file__),
                            'pyftpdlib', '__init__.py'))
-    f = open(INIT, 'r')
-    try:
+    with open(INIT, 'r') as f:
         for line in f:
             if line.startswith('__ver__'):
                 ret = eval(line.strip().split(' = ')[1])
@@ -55,8 +29,6 @@ def get_version():
                     assert num.isdigit(), ret
                 return ret
         raise ValueError("couldn't find version string")
-    finally:
-        f.close()
 
 
 def term_supports_colors():
@@ -79,20 +51,19 @@ def hilite(s, ok=True, bold=False):
         attr = []
         if ok is None:  # no color
             pass
-        elif ok:   # green
-            attr.append('32')
-        else:   # red
-            attr.append('31')
+        elif ok:
+            attr.append('32')  # green
+        else:
+            attr.append('31')  # red
         if bold:
             attr.append('1')
         return '\x1b[%sm%s\x1b[0m' % (';'.join(attr), s)
 
 
-if sys.version_info < (2, 4):
-    sys.exit('python version not supported (min 2.4)')
+if sys.version_info < (2, 6):
+    sys.exit('python version not supported (< 2.6)')
 
-require_pysendfile = (os.name == 'posix' and sys.version_info >= (2, 5)
-                      and sys.version_info < (3, 3))
+require_pysendfile = (os.name == 'posix' and sys.version_info < (3, 3))
 
 extras_require = {'ssl': ["PyOpenSSL"]}
 if require_pysendfile:
@@ -112,7 +83,14 @@ def main():
         author="Giampaolo Rodola'",
         author_email='g.rodola@gmail.com',
         url='https://github.com/giampaolo/pyftpdlib/',
-        packages=['pyftpdlib'],
+        packages=['pyftpdlib', 'pyftpdlib.test'],
+        scripts=['scripts/ftpbench'],
+        package_data={
+            "pyftpdlib.test": [
+                "README",
+                'keycert.pem',
+                ],
+            },
         keywords=['ftp', 'ftps', 'server', 'ftpd', 'daemon', 'python', 'ssl',
                   'sendfile', 'asynchronous', 'nonblocking', 'eventdriven',
                   'rfc959', 'rfc1123', 'rfc2228', 'rfc2428', 'rfc2640',
@@ -131,8 +109,6 @@ def main():
             'Topic :: System :: Filesystems',
             'Programming Language :: Python',
             'Programming Language :: Python :: 2',
-            'Programming Language :: Python :: 2.4',
-            'Programming Language :: Python :: 2.5',
             'Programming Language :: Python :: 2.6',
             'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3',
@@ -156,17 +132,21 @@ def main():
                 if hasattr(sendfile, 'has_sf_hdtr'):  # old 1.2.4 version
                     raise ImportError
         except ImportError:
-            msg = "\nyou might want to install 'pysendfile' module to " \
-                  "speedup transfers:\n" \
-                  "https://github.com/giampaolo/pysendfile/\n"
-            sys.stderr.write(hilite(msg, ok=0, bold=1))
+            msg = textwrap.dedent("""
+                'pysendfile' third-party module is not installed. This is not
+                essential but it considerably speeds up file transfers.
+                You can install it with 'pip install pysendfile'.
+                More at: https://github.com/giampaolo/pysendfile""")
+            print(hilite(msg, ok=False), file=sys.stderr)
 
     try:
         from OpenSSL import SSL  # NOQA
     except ImportError:
-        msg = "\nyou might want to install 'PyOpenSSL' module to support " \
-              "FTPS\n"
-        sys.stderr.write(hilite(msg, ok=0, bold=1))
+        msg = textwrap.dedent("""
+            'pyopenssl' third-party module is not installed. This means
+            FTPS support will be disabled. You can install it with:
+            'pip install pyopenssl'.""")
+        print(hilite(msg, ok=False), file=sys.stderr)
 
 
 if __name__ == '__main__':

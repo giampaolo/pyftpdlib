@@ -1,7 +1,7 @@
 About
 =====
 
-This directory contains the reStructuredText (reST) sources to the psutil
+This directory contains the reStructuredText (reST) sources to the pyftpdlib
 documentation.  You don't need to build them yourself, prebuilt versions are
 available at https://pythonhosted.org/pyftpdlib/.
 In case you want, you need to install sphinx first:

@@ -36,8 +36,7 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 def get_version():
     INIT = os.path.abspath(os.path.join(HERE, '..', 'pyftpdlib',
                                         '__init__.py'))
-    f = open(INIT, 'r')
-    try:
+    with open(INIT, 'r') as f:
         for line in f:
             if line.startswith('__ver__'):
                 ret = eval(line.strip().split(' = ')[1])
@@ -46,8 +45,6 @@ def get_version():
                     assert num.isdigit(), ret
                 return ret
         raise ValueError("couldn't find version string")
-    finally:
-        f.close()
 
 VERSION = get_version()
 

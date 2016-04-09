@@ -1,17 +1,47 @@
 Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 
-Version: 1.4.1 - (UNRELEASED)
-=============================
+Version: 1.5.0 - 2015-12-13
+===========================
 
 **Enhancements**
 
 - #304: remove deprecated items from 1.0.0 which were left in place for
   backward compatibility
+- #324: FTPHandler.started attribute, to figure out when client connected.
+- #340: dropped python 2.4 and 2.5 support.
+- #344: bench.py script --ssl option.
+- #346: provide more debugging info.
+- #348: FTPHandler has a new "auth_failed_timeout" class attribute (previously
+  this was called _auth_failed_timeout).
+- #350: tests now live in pyftpdlib module namespace.
+- #351: fallback on using plain send() if sendfile() fails and no data has been
+  transmitted yet.
+- #356: sendfile() is now used in case we're using SSL but data connection is
+  in clear text.
+- #361: benchmark script now allows to benchmark downloads and uploads only
+  (instead of both).
+- #362: 'ftpbench' script is now installed as a system script on 'setup.py
+  install'.
+- #365: TLS FTP server is now 25% faster when dealing with clear-text
+  connections.
 
 **Bug fixes**
 
 - #302: setup.py should not require pysendfile on Python >= 3.3.
 - #313: configuring root logger has no effect on pyftpdlib logging.
+- #329: IOLoop throws OSError on Linux.
+- #337: MultiprocessFTPServer and ThreadedFTPServer do not accept backlog
+  argument.
+- #338: benchmark script uses old psutil API.
+- #343: recv() does not handle EBUSY.
+- #347: SSL WantReadError and WantWriteError errors are not properly taken into
+  account.
+- #357: python -m pyftpdlib --verbose option doesn't work
+
+**Incompatible API changes**
+
+- FTPHandler._auth_failed_timeout has been renamed to
+  FTPHandler.auth_failed_timeout.
 
 
 Version: 1.4.0 - Date: 2014-06-03

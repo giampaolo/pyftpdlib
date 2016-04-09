@@ -1,32 +1,6 @@
-#!/usr/bin/env python
-
-#  ======================================================================
-#  Copyright (C) 2007-2014 Giampaolo Rodola' <g.rodola@gmail.com>
-#
-#                         All Rights Reserved
-#
-# Permission is hereby granted, free of charge, to any person
-# obtaining a copy of this software and associated documentation
-# files (the "Software"), to deal in the Software without
-# restriction, including without limitation the rights to use,
-# copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the
-# Software is furnished to do so, subject to the following
-# conditions:
-#
-# The above copyright notice and this permission notice shall be
-# included in all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-# WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-# OTHER DEALINGS IN THE SOFTWARE.
-#
-#  ======================================================================
+# Copyright (C) 2007-2016 Giampaolo Rodola' <g.rodola@gmail.com>.
+# Use of this source code is governed by MIT license that can be
+# found in the LICENSE file.
 
 """An "authorizer" is a class handling authentications and permissions
 of the FTP server. It is used by pyftpdlib.handlers.FTPHandler
@@ -49,7 +23,9 @@ import os
 import sys
 import warnings
 
-from pyftpdlib._compat import PY3, unicode, getcwdu
+from ._compat import PY3
+from ._compat import unicode
+from ._compat import getcwdu
 
 
 __all__ = ['DummyAuthorizer',
@@ -234,8 +210,8 @@ class DummyAuthorizer(object):
             if self._issubpath(path, dir):
                 if recursive:
                     return perm in operm
-                if (path == dir or os.path.dirname(path) == dir
-                        and not os.path.isdir(path)):
+                if (path == dir or os.path.dirname(path) == dir and not
+                        os.path.isdir(path)):
                     return perm in operm
 
         return perm in self.user_table[username]['perm']
@@ -257,9 +233,9 @@ class DummyAuthorizer(object):
         for p in perm:
             if p not in self.read_perms + self.write_perms:
                 raise ValueError('no such permission %r' % p)
-            if (username == 'anonymous'
-                    and p in self.write_perms
-                    and not warned):
+            if (username == 'anonymous' and
+                    p in self.write_perms and not
+                    warned):
                 warnings.warn("write permissions assigned to anonymous user.",
                               RuntimeWarning)
                 warned = 1
@@ -325,8 +301,8 @@ class _Base(object):
         """Overrides the options specified in the class constructor
         for a specific user.
         """
-        if (not password and not homedir and not perm and not msg_login
-                and not msg_quit):
+        if (not password and not homedir and not perm and not msg_login and not
+                msg_quit):
             raise AuthorizerError(
                 "at least one keyword argument must be specified")
         if self.allowed_users and username not in self.allowed_users:
@@ -388,7 +364,6 @@ class _Base(object):
 # --- UNIX
 # ===================================================================
 
-# Note: requires python >= 2.5
 try:
     import crypt
     import pwd
@@ -503,7 +478,7 @@ else:
 
         Example usages:
 
-         >>> from pyftpdlib.contrib.authorizers import UnixAuthorizer
+         >>> from pyftpdlib.authorizers import UnixAuthorizer
          >>> # accept all except root
          >>> auth = UnixAuthorizer(rejected_users=["root"])
          >>>
@@ -633,16 +608,14 @@ else:
             """Return True if the user has a valid shell binary listed
             in /etc/shells. If /etc/shells can't be found return True.
             """
-            file = None
             try:
-                try:
-                    file = open('/etc/shells', 'r')
-                except IOError:
-                    err = sys.exc_info()[1]
-                    if err.errno == errno.ENOENT:
-                        return True
-                    raise
-                else:
+                file = open('/etc/shells', 'r')
+            except IOError as err:
+                if err.errno == errno.ENOENT:
+                    return True
+                raise
+            else:
+                with file:
                     try:
                         shell = pwd.getpwnam(username).pw_shell
                     except KeyError:  # invalid user
@@ -654,22 +627,12 @@ else:
                         if line == shell:
                             return True
                     return False
-            finally:
-                if file is not None:
-                    file.close()
 
 
 # ===================================================================
 # --- Windows
 # ===================================================================
 
-try:
-    import _winreg as winreg
-except ImportError:
-    try:
-        import winreg  # PY3
-    except ImportError:
-        pass
 # Note: requires pywin32 extension
 try:
     import pywintypes
@@ -680,6 +643,11 @@ try:
 except ImportError:
     pass
 else:
+    if sys.version_info < (3, 0):
+        import _winreg as winreg
+    else:
+        import winreg
+
     __all__.extend(['BaseWindowsAuthorizer', 'WindowsAuthorizer'])
 
     class BaseWindowsAuthorizer(object):
@@ -736,8 +704,7 @@ else:
             try:
                 sid = win32security.ConvertSidToStringSid(
                     win32security.LookupAccountName(None, username)[0])
-            except pywintypes.error:
-                err = sys.exc_info()[1]
+            except pywintypes.error as err:
                 raise AuthorizerError(err)
             path = r"SOFTWARE\Microsoft\Windows NT" \
                    r"\CurrentVersion\ProfileList" + "\\" + sid
@@ -779,12 +746,12 @@ else:
 
         Example usages:
 
-         >>> from pyftpdlib.contrib.authorizers import WindowsAuthorizer
+         >>> from pyftpdlib.authorizers import WindowsAuthorizer
          >>> # accept all except Administrator
-         >>> auth = UnixAuthorizer(rejected_users=["Administrator"])
+         >>> auth = WindowsAuthorizer(rejected_users=["Administrator"])
          >>>
          >>> # accept some users only
-         >>> auth = UnixAuthorizer(allowed_users=["matt", "jay"])
+         >>> auth = WindowsAuthorizer(allowed_users=["matt", "jay"])
          >>>
          >>> # set specific options for a user
          >>> auth.override_user("matt", password="foo", perm="elr")

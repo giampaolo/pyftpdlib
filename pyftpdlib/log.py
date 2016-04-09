@@ -1,31 +1,6 @@
-#!/usr/bin/env python
-
-#  ======================================================================
-#  Copyright (C) 2007-2014 Giampaolo Rodola' <g.rodola@gmail.com>
-#
-#                         All Rights Reserved
-#
-# Permission is hereby granted, free of charge, to any person
-# obtaining a copy of this software and associated documentation
-# files (the "Software"), to deal in the Software without
-# restriction, including without limitation the rights to use,
-# copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the
-# Software is furnished to do so, subject to the following
-# conditions:
-#
-# The above copyright notice and this permission notice shall be
-# included in all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-# WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-# OTHER DEALINGS IN THE SOFTWARE.
-#
+# Copyright (C) 2007-2016 Giampaolo Rodola' <g.rodola@gmail.com>.
+# Use of this source code is governed by MIT license that can be
+# found in the LICENSE file.
 
 """
 Logging support for pyftpdlib, inspired from Tornado's
@@ -43,7 +18,7 @@ try:
 except ImportError:
     curses = None
 
-from pyftpdlib._compat import unicode
+from ._compat import unicode
 
 
 # default logger
@@ -89,8 +64,8 @@ class LogFormatter(logging.Formatter):
             # works with unicode strings.  The explicit calls to
             # unicode() below are harmless in python2 but will do the
             # right conversion in python 3.
-            fg_color = (curses.tigetstr("setaf") or curses.tigetstr("setf")
-                        or "")
+            fg_color = (curses.tigetstr("setaf") or curses.tigetstr("setf") or
+                        "")
             if (3, 0) < sys.version_info < (3, 2, 3):
                 fg_color = unicode(fg_color, "ascii")
             self._colors = {
@@ -108,8 +83,7 @@ class LogFormatter(logging.Formatter):
     def format(self, record):
         try:
             record.message = record.getMessage()
-        except Exception:
-            err = sys.exc_info()[1]
+        except Exception as err:
             record.message = "Bad message (%r): %r" % (err, record.__dict__)
 
         record.asctime = time.strftime(TIME_FORMAT,
@@ -149,16 +123,35 @@ class LogFormatter(logging.Formatter):
         return formatted.replace("\n", "\n    ")
 
 
-def _config_logging():
+def debug(s, inst=None):
+    s = "[debug] " + s
+    if inst is not None:
+        s += " (%r)" % inst
+    logger.debug(s)
+
+
+def is_logging_configured():
+    if logging.getLogger('pyftpdlib').handlers:
+        return True
+    if logging.root.handlers:
+        return True
+    return False
+
+
+# TODO: write tests
+def config_logging(level=LEVEL, prefix=PREFIX, other_loggers=None):
     # Little speed up
-    if "%(process)d" not in PREFIX:
+    if "%(process)d" not in prefix:
         logging.logProcesses = False
-    if "%(processName)s" not in PREFIX:
+    if "%(processName)s" not in prefix:
         logging.logMultiprocessing = False
-    if "%(thread)d" not in PREFIX and "%(threadName)s" not in PREFIX:
+    if "%(thread)d" not in prefix and "%(threadName)s" not in prefix:
         logging.logThreads = False
-    channel = logging.StreamHandler()
-    channel.setFormatter(LogFormatter())
-    logger = logging.getLogger('pyftpdlib')
-    logger.setLevel(LEVEL)
-    logger.addHandler(channel)
+    handler = logging.StreamHandler()
+    handler.setFormatter(LogFormatter())
+    loggers = [logging.getLogger('pyftpdlib')]
+    if other_loggers is not None:
+        loggers.extend(other_loggers)
+    for logger in loggers:
+        logger.setLevel(level)
+        logger.addHandler(handler)
