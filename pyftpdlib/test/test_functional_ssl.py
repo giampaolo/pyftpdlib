@@ -359,6 +359,51 @@ class TestFTPS(unittest.TestCase):
         for proto in protos:
             self.try_protocol_combo(ssl.PROTOCOL_TLSv1, proto)
 
+    def test_ssl_options(self):
+        from OpenSSL import SSL
+        from OpenSSL._util import lib
+        from pyftpdlib.handlers import TLS_FTPHandler
+        try:
+            TLS_FTPHandler.ssl_context = None
+            ctx = TLS_FTPHandler.get_ssl_context()
+            # Verify default opts.
+            with contextlib.closing(socket.socket()) as s:
+                s = SSL.Connection(ctx, s)
+                opts = lib.SSL_CTX_get_options(ctx._context)
+                self.assertTrue(opts & SSL.OP_NO_SSLv2)
+                self.assertTrue(opts & SSL.OP_NO_SSLv3)
+                self.assertTrue(opts & SSL.OP_NO_COMPRESSION)
+                TLS_FTPHandler.ssl_context = None  # reset
+            # Make sure that if ssl_options is None no options are set
+            # (except OP_NO_SSLv2 whch is enabled by default unless
+            # ssl_proto is set to SSL.SSLv23_METHOD).
+            TLS_FTPHandler.ssl_context = None
+            TLS_FTPHandler.ssl_options = None
+            ctx = TLS_FTPHandler.get_ssl_context()
+            with contextlib.closing(socket.socket()) as s:
+                s = SSL.Connection(ctx, s)
+                opts = lib.SSL_CTX_get_options(ctx._context)
+                self.assertTrue(opts & SSL.OP_NO_SSLv2)
+                self.assertFalse(opts & SSL.OP_NO_SSLv3)
+                self.assertFalse(opts & SSL.OP_NO_COMPRESSION)
+        finally:
+            TLS_FTPHandler.ssl_context = None
+
+    def test_ssl_ciphers(self):
+        # Make sure ssl_ciphers option is taken into account.
+        from OpenSSL import SSL
+        from pyftpdlib.handlers import TLS_FTPHandler
+        try:
+            TLS_FTPHandler.ssl_context = None
+            TLS_FTPHandler.ssl_ciphers = 'RC4'
+            ctx = TLS_FTPHandler.get_ssl_context()
+            with contextlib.closing(socket.socket()) as s:
+                s = SSL.Connection(ctx, s)
+                for cipher in s.get_cipher_list():
+                    self.assertIn('RC4', cipher)
+        finally:
+            TLS_FTPHandler.ssl_context = None
+
     if hasattr(ssl, "PROTOCOL_SSLv2"):
         def test_sslv2(self):
             self.client.ssl_version = ssl.PROTOCOL_SSLv2

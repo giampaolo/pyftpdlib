@@ -512,6 +512,39 @@ Extended handlers
     The path of the file containing the private RSA key; can be omittetted if
     certfile already contains the private key (defaults: ``None``).
 
+  .. data:: ssl_protocol
+
+     The desired SSL protocol version to use. This defaults to
+     `SSL.SSLv23_METHOD` which will negotiate the highest protocol that both
+     the server and your installation of OpenSSL support.
+
+  .. data:: ssl_options
+
+     specific OpenSSL options. These default to:
+     `SSL.OP_NO_SSLv2 | SSL.OP_NO_SSLv3 | SSL.OP_NO_COMPRESSION` disabling
+     SSLv2 and SSLv3 versions and SSL compression algorithm which are
+     considered insecure.
+     Can be set to None in order to improve compatibilty with older (insecure)
+     FTP clients.
+
+     .. versionadded:: 1.6.0
+
+  .. data:: ssl_ciphers
+
+     Which cipher suites to allow the server to select. By default the most
+     secure ciphers are used.
+     Can be set to None in order to improve compatibilty with older (insecure)
+     FTP clients.
+
+     .. versionadded:: 1.6.0
+
+  .. data:: ssl_context
+
+      A `SSL.Context <http://pyopenssl.sourceforge.net/pyOpenSSL.html/openssl-context.html>`__
+      instance which was previously configured.
+      If specified all other :data:`ssl_protocol`, :data:`ssl_options` and
+      :data:`ssl_ciphers` parameters will be ignored.
+
   .. data:: tls_control_required
 
     When True requires SSL/TLS to be established on the control channel, before

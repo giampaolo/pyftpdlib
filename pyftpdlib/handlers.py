@@ -2968,6 +2968,26 @@ try:
 except ImportError:
     pass
 else:
+    # A secure default.
+    # Sources for more information on TLS ciphers:
+    #
+    # - https://wiki.mozilla.org/Security/Server_Side_TLS
+    # - https://www.ssllabs.com/projects/best-practices/index.html
+    # - https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers/
+    #
+    # The general intent is:
+    # - Prefer cipher suites that offer perfect forward secrecy (DHE/ECDHE),
+    # - prefer ECDHE over DHE for better performance,
+    # - prefer any AES-GCM over any AES-CBC for better performance and
+    #   security.
+    # - use 3DES as fallback which is secure but slow,
+    # - disable NULL authentication, MD5 MACs and DSS for security reasons.
+    DEFAULT_SSL_CIPHERS = (
+        'ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:'
+        'ECDH+HIGH:DH+HIGH:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+HIGH:'
+        'RSA+3DES:!aNULL:!eNULL:!MD5'
+    )
+
     _ssl_proto_cmds = proto_cmds.copy()
     _ssl_proto_cmds.update({
         'AUTH': dict(
@@ -3345,19 +3365,25 @@ else:
             can be omitted if certfile already contains the private
             key (defaults: None).
 
-         - (int) protocol:
-            specifies which version of the SSL protocol to use when
-            establishing SSL/TLS sessions; clients can then only
-            connect using the configured protocol (defaults to SSLv23,
-            allowing SSLv3 and TLSv1 protocols).
+         - (int) ssl_protocol:
+            the desired SSL protocol version to use. This defaults to
+            PROTOCOL_SSLv23 which will negotiate the highest protocol
+            that both the server and your installation of OpenSSL
+            support.
 
-            Possible values:
-            * SSL.SSLv2_METHOD - allow only SSLv2
-            * SSL.SSLv3_METHOD - allow only SSLv3
-            * SSL.SSLv23_METHOD - allow both SSLv3 and TLSv1
-            * SSL.TLSv1_METHOD - allow only TLSv1
+         - (int) ssl_options:
+            specific OpenSSL options. These default to:
+            SSL.OP_NO_SSLv2 | SSL.OP_NO_SSLv3| SSL.OP_NO_COMPRESSION
+            which are all considered insecure features.
+            Can be set to None in order to improve compatibilty with
+            older (insecure) FTP clients.
 
-          - (instance) context:
+         - (str) ssl_ciphers:
+            which cipher suites to allow the server to select.
+            Can be set to None in order to improve compatibilty with
+            older (insecure) FTP clients.
+
+          - (instance) ssl_context:
             a SSL Context object previously configured; if specified
             all other parameters will be ignored.
             (default None).
@@ -3369,6 +3395,12 @@ else:
         certfile = None
         keyfile = None
         ssl_protocol = SSL.SSLv23_METHOD
+        # - SSLv2 is easily broken and is considered harmful and dangerous
+        # - SSLv3 has several problems and is now dangerous
+        # - Disable compression to prevent CRIME attacks for OpenSSL 1.0+
+        #   (see https://github.com/shazow/urllib3/pull/309)
+        ssl_options = SSL.OP_NO_SSLv2 | SSL.OP_NO_SSLv3 | SSL.OP_NO_COMPRESSION
+        ssl_ciphers = DEFAULT_SSL_CIPHERS
         ssl_context = None
 
         # overridden attributes
@@ -3398,6 +3430,10 @@ else:
                 if not cls.keyfile:
                     cls.keyfile = cls.certfile
                 cls.ssl_context.use_privatekey_file(cls.keyfile)
+                if cls.ssl_options:
+                    cls.ssl_context.set_options(cls.ssl_options)
+                if cls.ssl_ciphers:
+                    cls.ssl_context.set_cipher_list(cls.ssl_ciphers)
             return cls.ssl_context
 
         # --- overridden methods
