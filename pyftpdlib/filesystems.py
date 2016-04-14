@@ -364,29 +364,6 @@ class AbstractedFS(object):
 
     # --- Listing utilities
 
-    def get_list_dir(self, path):
-        """"Return an iterator object that yields a directory listing
-        in a form suitable for LIST command.
-        """
-        assert isinstance(path, unicode), path
-        if self.isdir(path):
-            listing = self.listdir(path)
-            try:
-                listing.sort()
-            except UnicodeDecodeError:
-                # (Python 2 only) might happen on filesystem not
-                # supporting UTF8 meaning os.listdir() returned a list
-                # of mixed bytes and unicode strings:
-                # http://goo.gl/6DLHD
-                # http://bugs.python.org/issue683592
-                pass
-            return self.format_list(path, listing)
-        # if path is a file or a symlink we return information about it
-        else:
-            basedir, filename = os.path.split(path)
-            self.lstat(path)  # raise exc in case of problems
-            return self.format_list(basedir, [filename])
-
     def format_list(self, basedir, listing, ignore_err=True):
         """Return an iterator object that yields the entries of given
         directory emulating the "/bin/ls -lA" UNIX command output.

@@ -2079,7 +2079,25 @@ class FTPHandler(AsyncChat):
         # - Some older FTP clients erroneously issue /bin/ls-like LIST
         #   formats in which case we fall back on cwd as default.
         try:
-            iterator = self.run_as_current_user(self.fs.get_list_dir, path)
+            isdir = self.fs.isdir(path)
+            if isdir:
+                listing = self.run_as_current_user(self.fs.listdir, path)
+                if isinstance(listing, list):
+                    try:
+                        # RFC 959 recommends the listing to be sorted.
+                        listing.sort()
+                    except UnicodeDecodeError:
+                        # (Python 2 only) might happen on filesystem not
+                        # supporting UTF8 meaning os.listdir() returned a list
+                        # of mixed bytes and unicode strings:
+                        # http://goo.gl/6DLHD
+                        # http://bugs.python.org/issue683592
+                        pass
+                iterator = self.fs.format_list(path, listing)
+            else:
+                basedir, filename = os.path.split(path)
+                self.fs.lstat(path)  # raise exc in case of problems
+                iterator = self.fs.format_list(basedir, [filename])
         except (OSError, FilesystemError) as err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
@@ -2788,7 +2806,25 @@ class FTPHandler(AsyncChat):
         else:
             line = self.fs.fs2ftp(path)
             try:
-                iterator = self.run_as_current_user(self.fs.get_list_dir, path)
+                isdir = self.fs.isdir(path)
+                if isdir:
+                    listing = self.run_as_current_user(self.fs.listdir, path)
+                    if isinstance(listing, list):
+                        try:
+                            # RFC 959 recommends the listing to be sorted.
+                            listing.sort()
+                        except UnicodeDecodeError:
+                            # (Python 2 only) might happen on filesystem not
+                            # supporting UTF8 meaning os.listdir() returned a
+                            # list of mixed bytes and unicode strings:
+                            # http://goo.gl/6DLHD
+                            # http://bugs.python.org/issue683592
+                            pass
+                    iterator = self.fs.format_list(path, listing)
+                else:
+                    basedir, filename = os.path.split(path)
+                    self.fs.lstat(path)  # raise exc in case of problems
+                    iterator = self.fs.format_list(basedir, [filename])
             except (OSError, FilesystemError) as err:
                 why = _strerror(err)
                 self.respond('550 %s.' % why)
