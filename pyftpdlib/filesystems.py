@@ -243,8 +243,7 @@ class AbstractedFS(object):
     def listdir(self, path):
         """List the content of a directory."""
         assert isinstance(path, unicode), path
-        for x in os.listdir(path):
-            yield x
+        return os.listdir(path)
 
     def rmdir(self, path):
         """Remove the specified directory."""
