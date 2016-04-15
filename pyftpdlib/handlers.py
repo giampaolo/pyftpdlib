@@ -2113,7 +2113,7 @@ class FTPHandler(AsyncChat):
         """
         try:
             if self.fs.isdir(path):
-                listing = self.run_as_current_user(self.fs.listdir, path)
+                listing = list(self.run_as_current_user(self.fs.listdir, path))
             else:
                 # if path is a file we just list its name
                 self.fs.lstat(path)  # raise exc in case of problems

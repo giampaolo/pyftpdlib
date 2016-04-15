@@ -454,7 +454,6 @@ Filesystem
 
   .. method:: mkdir(path)
   .. method:: chdir(path)
-  .. method:: listdir(path)
   .. method:: rmdir(path)
   .. method:: remove(path)
   .. method:: rename(src, dst)
@@ -481,6 +480,16 @@ Filesystem
 
     Wrapper around
     `tempfile.mkstemp <http://docs.python.org/library/tempfile.html#tempfile.mkstemp>`_.
+
+  .. method:: listdir(path)
+
+    Wrapper around
+    `os.listdir <http://docs.python.org/library/os.html#os.listdir>`_.
+    It is expected to return a list of unicode strings or a generator yielding
+    unicode strings.
+
+    .. versionchanged:: 1.6.0 can also return a generator.
+
 
 Extended classes
 ================

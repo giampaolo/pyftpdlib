@@ -8,6 +8,8 @@ Version: 1.6.0 - XXXX-XX-XX
 - #378: SSL security was massively improved disabling insecure feautures such
   as SSLv2, SSLv3 and SSL_COMPRESSION. New TLS_FTPHandler's ssl_options
   and ssl_ciphers class attributes were added.
+- #380: AbstractedFS.listidir() can now return also a generator (not only
+  a list).
 
 
 Version: 1.5.0 - 2015-12-13

@@ -243,7 +243,8 @@ class AbstractedFS(object):
     def listdir(self, path):
         """List the content of a directory."""
         assert isinstance(path, unicode), path
-        return os.listdir(path)
+        for x in os.listdir(path):
+            yield x
 
     def rmdir(self, path):
         """Remove the specified directory."""
@@ -386,8 +387,6 @@ class AbstractedFS(object):
         -rw-rw-rw-   1 owner   group        380 Sep 02  3:40 module.py
         """
         assert isinstance(basedir, unicode), basedir
-        if listing:
-            assert isinstance(listing[0], unicode)
         if self.cmd_channel.use_gmt_times:
             timefunc = time.gmtime
         else:
@@ -486,8 +485,6 @@ class AbstractedFS(object):
         type=file;size=211;perm=r;modify=20071103093626;unique=192; module.py
         """
         assert isinstance(basedir, unicode), basedir
-        if listing:
-            assert isinstance(listing[0], unicode)
         if self.cmd_channel.use_gmt_times:
             timefunc = time.gmtime
         else:
