@@ -748,7 +748,7 @@ class DTPHandler(AsyncChat):
         (when the producer is consumed, close() was called instead of
         handle_close()).
         """
-        while 1:
+        while True:
             if len(self.producer_fifo):
                 p = self.producer_fifo.first()
                 # a 'None' in the producer fifo is a sentinel,
@@ -1281,8 +1281,8 @@ class FTPHandler(AsyncChat):
 
     def __repr__(self):
         status = [self.__class__.__module__ + "." + self.__class__.__name__]
-        status.append("(addr=%s:%s, user=%r)" % (self.remote_ip,
-                      self.remote_port, self.username or ''))
+        status.append("(addr=%s:%s, user=%r)" % (
+            self.remote_ip, self.remote_port, self.username or ''))
         return '<%s>' % (' '.join(status))
 
     __str__ = __repr__
@@ -2838,7 +2838,7 @@ class FTPHandler(AsyncChat):
         """List all new features supported as defined in RFC-2398."""
         features = set(['UTF8', 'TVFS'])
         features.update([feat for feat in ('EPRT', 'EPSV', 'MDTM', 'SIZE')
-                        if feat in self.proto_cmds])
+                         if feat in self.proto_cmds])
         features.update(self._extra_feats)
         if 'MLST' in self.proto_cmds or 'MLSD' in self.proto_cmds:
             facts = ''
@@ -2908,9 +2908,8 @@ class FTPHandler(AsyncChat):
             # provide a compact list of recognized commands
             def formatted_help():
                 cmds = []
-                keys = [x for x in self.proto_cmds.keys()
-                        if not x.startswith('SITE ')]
-                keys.sort()
+                keys = sorted([x for x in self.proto_cmds.keys()
+                               if not x.startswith('SITE ')])
                 while keys:
                     elems = tuple((keys[0:8]))
                     cmds.append(' %-6s' * len(elems) % elems + '\r\n')

@@ -278,7 +278,7 @@ class TestFTPS(unittest.TestCase):
         self.client.prot_p()
         sock = self.client.transfercmd('list')
         with contextlib.closing(sock):
-            while 1:
+            while True:
                 if not sock.recv(1024):
                     self.client.voidresp()
                     break
@@ -287,7 +287,7 @@ class TestFTPS(unittest.TestCase):
             self.client.prot_c()
         sock = self.client.transfercmd('list')
         with contextlib.closing(sock):
-            while 1:
+            while True:
                 if not sock.recv(1024):
                     self.client.voidresp()
                     break

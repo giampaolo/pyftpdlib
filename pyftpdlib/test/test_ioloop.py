@@ -105,6 +105,7 @@ class BaseIOLoopTestCase(object):
         # Simulate an exception when close()ing a socket handler.
         # Exception should be logged and ignored.
         class Handler(AsyncChat):
+
             def close(self):
                 1 / 0
 
@@ -122,6 +123,7 @@ class BaseIOLoopTestCase(object):
         # Simulate an exception when close()ing a socket handler.
         # Exception should be ignored (and not logged).
         class Handler(AsyncChat):
+
             def close(self):
                 raise OSError(errno.EBADF, "")
 

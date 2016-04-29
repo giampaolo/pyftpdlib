@@ -237,7 +237,7 @@ def retr(ftp):
     ftp.voidcmd('TYPE I')
     with contextlib.closing(ftp.transfercmd("RETR " + TESTFN)) as conn:
         recv_bytes = 0
-        while 1:
+        while True:
             data = conn.recv(BUFFER_LEN)
             if not data:
                 break
@@ -258,7 +258,7 @@ def stor(ftp=None):
     with contextlib.closing(ftp.transfercmd("STOR " + TESTFN)) as conn:
         chunk = b'x' * BUFFER_LEN
         total_sent = 0
-        while 1:
+        while True:
             sent = conn.send(chunk)
             total_sent += sent
             if total_sent >= FILE_SIZE:
@@ -487,7 +487,7 @@ class OptFormatter(optparse.IndentedHelpFormatter):
 
 def main():
     global HOST, PORT, USER, PASSWORD, SERVER_PROC, TIMEOUT, SSL, FILE_SIZE, \
-           DEBUG
+        DEBUG
     USAGE = "%s -u USERNAME -p PASSWORD [-H] [-P] [-b] [-n] [-s] [-k] " \
             "[-t] [-d] [-S]" % (os.path.basename(__file__))
     parser = optparse.OptionParser(usage=USAGE,

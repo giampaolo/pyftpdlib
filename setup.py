@@ -19,7 +19,7 @@ except ImportError:
 
 def get_version():
     INIT = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                           'pyftpdlib', '__init__.py'))
+                                        'pyftpdlib', '__init__.py'))
     with open(INIT, 'r') as f:
         for line in f:
             if line.startswith('__ver__'):
@@ -89,8 +89,8 @@ def main():
             "pyftpdlib.test": [
                 "README",
                 'keycert.pem',
-                ],
-            },
+            ],
+        },
         keywords=['ftp', 'ftps', 'server', 'ftpd', 'daemon', 'python', 'ssl',
                   'sendfile', 'asynchronous', 'nonblocking', 'eventdriven',
                   'rfc959', 'rfc1123', 'rfc2228', 'rfc2428', 'rfc2640',

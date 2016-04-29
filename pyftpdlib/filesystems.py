@@ -212,6 +212,7 @@ class AbstractedFS(object):
         interface.
         """
         class FileWrapper:
+
             def __init__(self, fd, name):
                 self.file = fd
                 self.name = name

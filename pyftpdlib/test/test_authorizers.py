@@ -165,8 +165,7 @@ class TestDummyAuthorizer(unittest.TestCase):
         self.assertEqual(auth.has_perm(USER, 'w', path), False)
         # test case-sensitiveness
         if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
-            self.assertEqual(auth.has_perm(USER, 'w',
-                             self.tempdir.upper()), True)
+            self.assertTrue(auth.has_perm(USER, 'w', self.tempdir.upper()))
 
     def test_override_perm_not_recursive_paths(self):
         auth = DummyAuthorizer()
@@ -216,7 +215,7 @@ class _SharedAuthorizerTests(object):
         # return a user which does not exist on the system
         users = self.get_users()
         letters = string.ascii_lowercase
-        while 1:
+        while True:
             user = ''.join([random.choice(letters) for i in range(10)])
             if user not in users:
                 return user

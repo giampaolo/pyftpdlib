@@ -174,7 +174,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.addCleanup(conn.close)
         rein_sent = False
         bytes_recv = 0
-        while 1:
+        while True:
             chunk = conn.recv(BUFSIZE)
             if not chunk:
                 break
@@ -226,7 +226,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.addCleanup(conn.close)
         rein_sent = 0
         bytes_recv = 0
-        while 1:
+        while True:
             chunk = conn.recv(BUFSIZE)
             if not chunk:
                 break
@@ -691,7 +691,7 @@ class TestFtpStoreData(unittest.TestCase):
             # "type i" before starting the transfer
             self.client.voidcmd('type a')
             with contextlib.closing(self.client.transfercmd(cmd)) as conn:
-                while 1:
+                while True:
                     buf = fp.read(blocksize)
                     if not buf:
                         break
@@ -729,7 +729,7 @@ class TestFtpStoreData(unittest.TestCase):
             # "type i" before starting the transfer
             self.client.voidcmd('type a')
             with contextlib.closing(self.client.transfercmd(cmd)) as conn:
-                while 1:
+                while True:
                     buf = fp.read(blocksize)
                     if not buf:
                         break
@@ -776,7 +776,7 @@ class TestFtpStoreData(unittest.TestCase):
                     conn.settimeout(TIMEOUT)
                     if hasattr(self.client_class, 'ssl_version'):
                         conn = ssl.wrap_socket(conn)
-                    while 1:
+                    while True:
                         buf = self.dummy_sendfile.read(8192)
                         if not buf:
                             break
@@ -869,7 +869,7 @@ class TestFtpStoreData(unittest.TestCase):
         with contextlib.closing(
                 self.client.transfercmd('stor ' + TESTFN)) as conn:
             bytes_sent = 0
-            while 1:
+            while True:
                 chunk = self.dummy_sendfile.read(BUFSIZE)
                 conn.sendall(chunk)
                 bytes_sent += len(chunk)
@@ -1057,7 +1057,7 @@ class TestFtpRetrieveData(unittest.TestCase):
             with contextlib.closing(
                     self.client.transfercmd(cmd, rest)) as conn:
                 conn.settimeout(TIMEOUT)
-                while 1:
+                while True:
                     data = conn.recv(blocksize)
                     if not data:
                         break
@@ -1085,7 +1085,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         with contextlib.closing(
                 self.client.transfercmd('retr ' + TESTFN)) as conn:
             conn.settimeout(TIMEOUT)
-            while 1:
+            while True:
                 chunk = conn.recv(BUFSIZE)
                 if not chunk:
                     break
@@ -1946,7 +1946,7 @@ class TestCallbacks(unittest.TestCase):
         bytes_recv = 0
         with contextlib.closing(
                 self.client.transfercmd("retr " + TESTFN, None)) as conn:
-            while 1:
+            while True:
                 chunk = conn.recv(BUFSIZE)
                 bytes_recv += len(chunk)
                 if bytes_recv >= INTERRUPTED_TRANSF_SIZE or not chunk:
@@ -1973,7 +1973,7 @@ class TestCallbacks(unittest.TestCase):
         with contextlib.closing(
                 self.client.transfercmd('stor ' + TESTFN)) as conn:
             bytes_sent = 0
-            while 1:
+            while True:
                 chunk = self.dummyfile.read(BUFSIZE)
                 conn.sendall(chunk)
                 bytes_sent += len(chunk)
@@ -2134,8 +2134,8 @@ class _TestNetworkProtocols(object):
         if not SUPPORTS_HYBRID_IPV6:
             # test wrong proto
             try:
-                self.client.sendcmd('eprt |%s|%s|%s|' % (self.other_proto,
-                                    self.server.host, self.server.port))
+                self.client.sendcmd('eprt |%s|%s|%s|' % (
+                    self.other_proto, self.server.host, self.server.port))
             except ftplib.error_perm as err:
                 self.assertEqual(str(err)[0:3], "522")
             else:
@@ -2416,6 +2416,7 @@ class TestCornerCases(unittest.TestCase):
         # unique file name when processing STOU command gets hit.
 
         class TestFS(AbstractedFS):
+
             def mkstemp(self, *args, **kwargs):
                 raise IOError(errno.EEXIST,
                               "No usable temporary file name found")
@@ -2701,6 +2702,7 @@ class TestCommandLineParser(unittest.TestCase):
             """An overridden version of FTPServer class which forces
             serve_forever() to return immediately.
             """
+
             def serve_forever(self, *args, **kwargs):
                 return
 

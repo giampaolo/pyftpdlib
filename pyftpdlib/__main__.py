@@ -23,6 +23,7 @@ from .servers import FTPServer
 
 class CustomizedOptionFormatter(optparse.IndentedHelpFormatter):
     """Formats options shown in help in a prettier way."""
+
     def format_option(self, option):
         result = []
         opts = self.option_strings[option]
