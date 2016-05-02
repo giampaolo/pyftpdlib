@@ -12,6 +12,15 @@ Version: 1.6.0 - XXXX-XX-XX
   list).
 
 
+Version: 1.5.1 - 2016-05-02
+===========================
+
+**Bug fixes**
+
+- #381: an extraneous file was accidentally added to the tarball, causing
+  issues with Python 3.
+
+
 Version: 1.5.0 - 2015-12-13
 ===========================
 
