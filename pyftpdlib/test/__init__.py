@@ -228,6 +228,7 @@ class ThreadWorker(threading.Thread):
 
     poll() is supposed to be a non-blocking method so that the
     worker can be stop()ped immediately.
+    All calls to callback methods are supposed to be thread safe.
 
     Example:
 
@@ -335,8 +336,10 @@ class ThreadWorker(threading.Thread):
         if not self._stopped:
             with self._lock:
                 self.before_stop()
-            self._stop = True  # signal the main loop to exit
-            self._stopped = True
+                self._stop = True  # signal the main loop to exit
+                self._stopped = True
+            # It is important to exit the lock context here otherwise
+            # we might hang indefinitively.
             self.join()
             self._event_stop.wait()
             with self._lock:
@@ -378,7 +381,7 @@ class FTPd(ThreadWorker):
         self.start_time = time.time()
 
     def poll(self):
-        self.server.serve_forever(timeout=0.01, blocking=False)
+        self.server.serve_forever(timeout=0.001, blocking=False)
         if (self.shutdown_after and
                 time.time() >= self.start_time + self.shutdown_after):
             now = time.time()
