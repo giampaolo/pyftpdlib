@@ -234,8 +234,8 @@ class FTPd(threading.Thread):
         self._started = False
         self._stop = False
         self._lock = threading.Lock()
-        self._flag_started = threading.Event()
-        self._flag_stopped = threading.Event()
+        self._event_started = threading.Event()
+        self._event_stopped = threading.Event()
         if addr is None:
             addr = (HOST, 0)
 
@@ -274,7 +274,7 @@ class FTPd(threading.Thread):
             FTPd.__init__(self, self.server.socket.getsockname(), self.handler)
         self._timeout = timeout
         threading.Thread.start(self)
-        self._flag_started.wait()
+        self._event_started.wait()
 
     def poll(self, started):
         with self._lock:
@@ -289,14 +289,14 @@ class FTPd(threading.Thread):
 
     def run(self):
         self._started = True
-        self._flag_started.set()
+        self._event_started.set()
         started = time.time()
         try:
             while not self._stop:
                 self.poll(started)
         finally:
             self.server.close_all()
-            self._flag_stopped.set()
+            self._event_stopped.set()
 
     def stop(self):
         """Stop serving (also disconnecting all currently connected
@@ -310,4 +310,4 @@ class FTPd(threading.Thread):
         self.join(timeout=3)
         if threading.active_count() > 1:
             warn("test FTP server thread is still running")
-        self._flag_stopped.wait()
+        self._event_stopped.wait()
