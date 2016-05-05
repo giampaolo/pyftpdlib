@@ -228,7 +228,9 @@ class ThreadWorker(threading.Thread):
 
     poll() is supposed to be a non-blocking method so that the
     worker can be stop()ped immediately.
-    All calls to callback methods are supposed to be thread safe.
+
+    **All method calls are supposed to be thread safe, start(), stop()
+    and the callback methods.**
 
     Example:
 
@@ -238,9 +240,10 @@ class ThreadWorker(threading.Thread):
             do_something()
 
         def setup(self):
-            log("starting")
+            do_setup()
 
-        def before_
+        def before_start(self):
+            log("starting")
 
         def before_stop(self):
             log("stopping")
@@ -305,11 +308,12 @@ class ThreadWorker(threading.Thread):
                     break
 
     def run(self):
-        self._started = True
-        self._event_start.set()
         try:
             while not self._stop:
                 with self._lock:
+                    if not self._started:
+                        self._event_start.set()
+                        self._started = True
                     self.poll()
                 self.sleep()
         finally:
@@ -340,6 +344,8 @@ class ThreadWorker(threading.Thread):
                 self._stopped = True
             # It is important to exit the lock context here otherwise
             # we might hang indefinitively.
+            # TODO: we might want to specify a timeout for join (in the
+            # constructor).
             self.join()
             self._event_stop.wait()
             with self._lock:
