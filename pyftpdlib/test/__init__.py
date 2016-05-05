@@ -214,7 +214,136 @@ def get_server_handler():
 # tempfile.template = 'tmp-pyftpdlib'
 
 
-class FTPd(threading.Thread):
+class ThreadWorker(threading.Thread):
+    """A wrapper on top of threading.Thread.
+    It lets you define a thread worker class which you can easily
+    start() and stop().
+    Subclass MUST provide a poll() method. Optionally it can also
+    provide the following methods:
+
+    - setup
+    - before_start
+    - before_stop
+    - after_stop
+
+    poll() is supposed to be a non-blocking method so that the
+    worker can be stop()ped immediately.
+
+    Example:
+
+    class MyWorker(ThreadWorker):
+
+        def poll(self):
+            do_something()
+
+        def setup(self):
+            log("starting")
+
+        def before_
+
+        def before_stop(self):
+            log("stopping")
+
+        def after_stop(self):
+            do_cleanup()
+
+    worker = MyWorker(poll_interval=5)
+    worker.start()
+    worker.stop()
+    """
+
+    # Makes the thread stop on interpreter exit.
+    daemon = True
+
+    def __init__(self, poll_interval=1.0):
+        super(ThreadWorker, self).__init__()
+        self._poll_interval = poll_interval
+        self._started = False
+        self._stopped = False
+        self._stop = False
+        self._lock = threading.Lock()
+        self._event_start = threading.Event()
+        self._event_stop = threading.Event()
+        self.setup()
+
+    # --- overridable methods
+
+    def poll(self):
+        raise NotImplementedError("must be implemented in subclass")
+
+    def setup(self):
+        """Called on instantiation."""
+        pass
+
+    def before_start(self):
+        """Called right before start()."""
+        pass
+
+    def before_stop(self):
+        """Called right before stop(), before signaling the thread
+        to stop polling.
+        """
+        pass
+
+    def after_stop(self):
+        """Called right after stop(), when the polling thread loop
+        exits.
+        """
+        pass
+
+    # --- internals
+
+    def sleep(self):
+        # Responsive sleep, so that the interpreter will shut down
+        # after max 1 sec.
+        if self._poll_interval:
+            stop_at = time.time() + self._poll_interval
+            while 1:
+                time.sleep(min(self._poll_interval, 1))
+                if time.time() >= stop_at:
+                    break
+
+    def run(self):
+        self._started = True
+        self._event_start.set()
+        try:
+            while not self._stop:
+                with self._lock:
+                    self.poll()
+                self.sleep()
+        finally:
+            self._event_stop.set()
+
+    # --- start / stop
+
+    @property
+    def running(self):
+        return self._started
+
+    def start(self):
+        if self._started:
+            raise RuntimeError("already started")
+        if self._stop:
+            # ensure the thread can be restarted
+            super(ThreadWorker, self).__init__(self, self._poll_interval)
+        with self._lock:
+            self.before_start()
+        threading.Thread.start(self)
+        self._event_start.wait()
+
+    def stop(self):
+        if not self._stopped:
+            with self._lock:
+                self.before_stop()
+            self._stop = True  # signal the main loop to exit
+            self._stopped = True
+            self.join()
+            self._event_stop.wait()
+            with self._lock:
+                self.after_stop()
+
+
+class FTPd(ThreadWorker):
     """A threaded FTP server used for running tests.
 
     This is basically a modified version of the FTPServer class which
@@ -229,16 +358,10 @@ class FTPd(threading.Thread):
     shutdown_after = 10
 
     def __init__(self, addr=None):
-        threading.Thread.__init__(self)
-        self._timeout = None
-        self._started = False
-        self._stop = False
-        self._lock = threading.Lock()
-        self._event_started = threading.Event()
-        self._event_stopped = threading.Event()
-        if addr is None:
-            addr = (HOST, 0)
+        self.addr = (HOST, 0) if addr is None else addr
+        super(FTPd, self).__init__(poll_interval=None)
 
+    def setup(self):
         authorizer = DummyAuthorizer()
         authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwM')  # full perms
         authorizer.add_anonymous(HOME)
@@ -247,67 +370,21 @@ class FTPd(threading.Thread):
         # = less false positives
         self.handler.dtp_handler.ac_in_buffer_size = 4096
         self.handler.dtp_handler.ac_out_buffer_size = 4096
-        self.server = self.server_class(addr, self.handler)
+        self.server = self.server_class(self.addr, self.handler)
         self.host, self.port = self.server.socket.getsockname()[:2]
+        self.start_time = None
 
-    def __repr__(self):
-        status = [self.__class__.__module__ + "." + self.__class__.__name__]
-        if self._started:
-            status.append('active')
-        else:
-            status.append('inactive')
-        status.append('%s:%s' % self.server.socket.getsockname()[:2])
-        return '<%s at %#x>' % (' '.join(status), id(self))
+    def before_start(self):
+        self.start_time = time.time()
 
-    @property
-    def running(self):
-        return self._started
-
-    def start(self, timeout=0.001):
-        """Start serving until an explicit stop() request.
-        Polls for shutdown every 'timeout' seconds.
-        """
-        if self._started:
-            raise RuntimeError("Server already started")
-        if self._stop:
-            # ensure the server can be started again
-            FTPd.__init__(self, self.server.socket.getsockname(), self.handler)
-        self._timeout = timeout
-        threading.Thread.start(self)
-        self._event_started.wait()
-
-    def poll(self, started):
-        with self._lock:
-            self.server.serve_forever(timeout=self._timeout,
-                                      blocking=False)
+    def poll(self):
+        self.server.serve_forever(timeout=0.01, blocking=False)
         if (self.shutdown_after and
-                time.time() >= started + self.shutdown_after):
+                time.time() >= self.start_time + self.shutdown_after):
             now = time.time()
             if now <= now + self.shutdown_after:
                 self.server.close_all()
                 raise Exception("test FTPd shutdown due to timeout")
 
-    def run(self):
-        self._started = True
-        self._event_started.set()
-        started = time.time()
-        try:
-            while not self._stop:
-                self.poll(started)
-        finally:
-            self.server.close_all()
-            self._event_stopped.set()
-
-    def stop(self):
-        """Stop serving (also disconnecting all currently connected
-        clients) by telling the serve_forever() loop to stop and
-        waits until it does.
-        """
-        if not self._started:
-            raise RuntimeError("Server not started yet")
-        self._started = False
-        self._stop = True
-        self.join(timeout=3)
-        if threading.active_count() > 1:
-            warn("test FTP server thread is still running")
-        self._event_stopped.wait()
+    def after_stop(self):
+        self.server.close_all()
