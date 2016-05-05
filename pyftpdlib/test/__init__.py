@@ -261,10 +261,10 @@ class ThreadWorker(threading.Thread):
 
     def __init__(self, poll_interval=1.0):
         super(ThreadWorker, self).__init__()
-        self._poll_interval = poll_interval
-        self._started = False
-        self._stopped = False
-        self._stop = False
+        self.poll_interval = poll_interval
+        self.started = False
+        self.stopped = False
+        self._stop_flag = False
         self._lock = threading.Lock()
         self._event_start = threading.Event()
         self._event_stop = threading.Event()
@@ -300,20 +300,20 @@ class ThreadWorker(threading.Thread):
     def sleep(self):
         # Responsive sleep, so that the interpreter will shut down
         # after max 1 sec.
-        if self._poll_interval:
-            stop_at = time.time() + self._poll_interval
+        if self.poll_interval:
+            stop_at = time.time() + self.poll_interval
             while 1:
-                time.sleep(min(self._poll_interval, 1))
+                time.sleep(min(self.poll_interval, 1))
                 if time.time() >= stop_at:
                     break
 
     def run(self):
         try:
-            while not self._stop:
+            while not self._stop_flag:
                 with self._lock:
-                    if not self._started:
+                    if not self.started:
                         self._event_start.set()
-                        self._started = True
+                        self.started = True
                     self.poll()
                 self.sleep()
         finally:
@@ -323,25 +323,25 @@ class ThreadWorker(threading.Thread):
 
     @property
     def running(self):
-        return self._started
+        return self.started
 
     def start(self):
-        if self._started:
+        if self.started:
             raise RuntimeError("already started")
-        if self._stop:
+        if self._stop_flag:
             # ensure the thread can be restarted
-            super(ThreadWorker, self).__init__(self, self._poll_interval)
+            super(ThreadWorker, self).__init__(self, self.poll_interval)
         with self._lock:
             self.before_start()
         threading.Thread.start(self)
         self._event_start.wait()
 
     def stop(self):
-        if not self._stopped:
+        if not self.stopped:
             with self._lock:
                 self.before_stop()
-                self._stop = True  # signal the main loop to exit
-                self._stopped = True
+                self._stop_flag = True  # signal the main loop to exit
+                self.stopped = True
             # It is important to exit the lock context here otherwise
             # we might hang indefinitively.
             # TODO: we might want to specify a timeout for join (in the
