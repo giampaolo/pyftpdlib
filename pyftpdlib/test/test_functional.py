@@ -2803,7 +2803,7 @@ class TestCommandLineParser(unittest.TestCase):
 
     def test_V_option(self):
         with mock.patch('pyftpdlib.__main__.config_logging') as fun:
-            sys.argv += ["-V"]
+            sys.argv += ["-V", "-p 0"]
             pyftpdlib.__main__.main()
             fun.assert_called_once_with(level=logging.DEBUG)
 

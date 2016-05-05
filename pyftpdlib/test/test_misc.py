@@ -18,9 +18,6 @@ class TestThreadWorker(unittest.TestCase):
                 if 'poll' not in flags:
                     flags.append('poll')
 
-            def setup(self):
-                flags.append('setup')
-
             def before_start(self):
                 flags.append('before_start')
 
@@ -38,8 +35,8 @@ class TestThreadWorker(unittest.TestCase):
             tw = Worker(0.001)
             tw.start()
             tw.stop()
-            self.assertEqual(flags, ['setup', 'before_start', 'poll',
-                                     'before_stop', 'after_stop'])
+            self.assertEqual(
+                flags, ['before_start', 'poll', 'before_stop', 'after_stop'])
 
 
 if __name__ == '__main__':

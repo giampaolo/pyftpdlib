@@ -221,7 +221,6 @@ class ThreadWorker(threading.Thread):
     Subclass MUST provide a poll() method. Optionally it can also
     provide the following methods:
 
-    - setup
     - before_start
     - before_stop
     - after_stop
@@ -238,9 +237,6 @@ class ThreadWorker(threading.Thread):
 
         def poll(self):
             do_something()
-
-        def setup(self):
-            do_setup()
 
         def before_start(self):
             log("starting")
@@ -268,16 +264,11 @@ class ThreadWorker(threading.Thread):
         self._lock = threading.Lock()
         self._event_start = threading.Event()
         self._event_stop = threading.Event()
-        self.setup()
 
     # --- overridable methods
 
     def poll(self):
         raise NotImplementedError("must be implemented in subclass")
-
-    def setup(self):
-        """Called on instantiation."""
-        pass
 
     def before_start(self):
         """Called right before start()."""
@@ -323,7 +314,7 @@ class ThreadWorker(threading.Thread):
 
     @property
     def running(self):
-        return self.started
+        return self.is_alive()
 
     def start(self):
         if self.started:
@@ -367,10 +358,8 @@ class FTPd(ThreadWorker):
     shutdown_after = 10
 
     def __init__(self, addr=None):
-        self.addr = (HOST, 0) if addr is None else addr
         super(FTPd, self).__init__(poll_interval=None)
-
-    def setup(self):
+        self.addr = (HOST, 0) if addr is None else addr
         authorizer = DummyAuthorizer()
         authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwM')  # full perms
         authorizer.add_anonymous(HOME)
