@@ -260,8 +260,8 @@ class ThreadWorker(threading.Thread):
         self.poll_interval = poll_interval
         self.started = False
         self.stopped = False
+        self.lock = threading.Lock()
         self._stop_flag = False
-        self._lock = threading.Lock()
         self._event_start = threading.Event()
         self._event_stop = threading.Event()
 
@@ -281,9 +281,7 @@ class ThreadWorker(threading.Thread):
         pass
 
     def after_stop(self):
-        """Called right after stop(), when the polling thread loop
-        exits.
-        """
+        """Called right after stop(), after the thread stopped polling."""
         pass
 
     # --- internals
@@ -301,7 +299,7 @@ class ThreadWorker(threading.Thread):
     def run(self):
         try:
             while not self._stop_flag:
-                with self._lock:
+                with self.lock:
                     if not self.started:
                         self._event_start.set()
                         self.started = True
@@ -310,7 +308,7 @@ class ThreadWorker(threading.Thread):
         finally:
             self._event_stop.set()
 
-    # --- start / stop
+    # --- external API
 
     @property
     def running(self):
@@ -322,24 +320,23 @@ class ThreadWorker(threading.Thread):
         if self._stop_flag:
             # ensure the thread can be restarted
             super(ThreadWorker, self).__init__(self, self.poll_interval)
-        with self._lock:
+        with self.lock:
             self.before_start()
         threading.Thread.start(self)
         self._event_start.wait()
 
     def stop(self):
+        # TODO: we might want to specify a timeout arg for join.
         if not self.stopped:
-            with self._lock:
+            with self.lock:
                 self.before_stop()
                 self._stop_flag = True  # signal the main loop to exit
                 self.stopped = True
             # It is important to exit the lock context here otherwise
             # we might hang indefinitively.
-            # TODO: we might want to specify a timeout for join (in the
-            # constructor).
             self.join()
             self._event_stop.wait()
-            with self._lock:
+            with self.lock:
                 self.after_stop()
 
 

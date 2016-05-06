@@ -89,7 +89,8 @@ class TestFtpAuthentication(unittest.TestCase):
 
     def setUp(self):
         self.server = self.server_class()
-        self.server.handler.auth_failed_timeout = 0.001
+        with self.server.lock:
+            self.server.handler.auth_failed_timeout = 0.001
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
@@ -97,7 +98,8 @@ class TestFtpAuthentication(unittest.TestCase):
         self.dummyfile = BytesIO()
 
     def tearDown(self):
-        self.server.handler.auth_failed_timeout = 5
+        with self.server.lock:
+            self.server.handler.auth_failed_timeout = 5
         self.client.close()
         self.server.stop()
         if not self.file.closed:
@@ -949,11 +951,13 @@ class TestFtpStoreDataNoSendfile(TestFtpStoreData):
 
     def setUp(self):
         TestFtpStoreData.setUp(self)
-        self.server.handler.use_sendfile = False
+        with self.server.lock:
+            self.server.handler.use_sendfile = False
 
     def tearDown(self):
         TestFtpStoreData.tearDown(self)
-        self.server.handler.use_sendfile = True
+        with self.server.lock:
+            self.server.handler.use_sendfile = True
 
 
 @unittest.skipUnless(POSIX, "POSIX only")
@@ -1126,11 +1130,13 @@ class TestFtpRetrieveDataNoSendfile(TestFtpRetrieveData):
 
     def setUp(self):
         TestFtpRetrieveData.setUp(self)
-        self.server.handler.use_sendfile = False
+        with self.server.lock:
+            self.server.handler.use_sendfile = False
 
     def tearDown(self):
         TestFtpRetrieveData.tearDown(self)
-        self.server.handler.use_sendfile = True
+        with self.server.lock:
+            self.server.handler.use_sendfile = True
 
 
 class TestFtpListingCmds(unittest.TestCase):
@@ -1406,7 +1412,8 @@ class TestThrottleBandwidth(unittest.TestCase):
                     self._throttler = None
 
         self.server = self.server_class()
-        self.server.handler.dtp_handler = CustomDTPHandler
+        with self.server.lock:
+            self.server.handler.dtp_handler = CustomDTPHandler
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
@@ -1415,9 +1422,10 @@ class TestThrottleBandwidth(unittest.TestCase):
 
     def tearDown(self):
         self.client.close()
-        self.server.handler.dtp_handler.read_limit = 0
-        self.server.handler.dtp_handler.write_limit = 0
-        self.server.handler.dtp_handler = DTPHandler
+        with self.server.lock:
+            self.server.handler.dtp_handler.read_limit = 0
+            self.server.handler.dtp_handler.write_limit = 0
+            self.server.handler.dtp_handler = DTPHandler
         self.server.stop()
         if not self.dummyfile.closed:
             self.dummyfile.close()
@@ -1427,7 +1435,8 @@ class TestThrottleBandwidth(unittest.TestCase):
     def test_throttle_send(self):
         # This test doesn't test the actual speed accuracy, just
         # awakes all that code which implements the throttling.
-        self.server.handler.dtp_handler.write_limit = 32768
+        with self.server.lock:
+            self.server.handler.dtp_handler.write_limit = 32768
         data = b'abcde12345' * 100000
         with open(TESTFN, 'wb') as file:
             file.write(data)
@@ -1440,7 +1449,8 @@ class TestThrottleBandwidth(unittest.TestCase):
     def test_throttle_recv(self):
         # This test doesn't test the actual speed accuracy, just
         # awakes all that code which implements the throttling.
-        self.server.handler.dtp_handler.read_limit = 32768
+        with self.server.lock:
+            self.server.handler.dtp_handler.read_limit = 32768
         data = b'abcde12345' * 100000
         self.dummyfile.write(data)
         self.dummyfile.seek(0)
@@ -1466,10 +1476,11 @@ class TestTimeouts(unittest.TestCase):
     def _setUp(self, idle_timeout=300, data_timeout=300, pasv_timeout=30,
                port_timeout=30):
         self.server = self.server_class()
-        self.server.handler.timeout = idle_timeout
-        self.server.handler.dtp_handler.timeout = data_timeout
-        self.server.handler.passive_dtp.timeout = pasv_timeout
-        self.server.handler.active_dtp.timeout = port_timeout
+        with self.server.lock:
+            self.server.handler.timeout = idle_timeout
+            self.server.handler.dtp_handler.timeout = data_timeout
+            self.server.handler.passive_dtp.timeout = pasv_timeout
+            self.server.handler.active_dtp.timeout = port_timeout
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
@@ -1478,10 +1489,11 @@ class TestTimeouts(unittest.TestCase):
     def tearDown(self):
         if self.client is not None and self.server is not None:
             self.client.close()
-            self.server.handler.timeout = 300
-            self.server.handler.dtp_handler.timeout = 300
-            self.server.handler.passive_dtp.timeout = 30
-            self.server.handler.active_dtp.timeout = 30
+            with self.server.lock:
+                self.server.handler.timeout = 300
+                self.server.handler.dtp_handler.timeout = 300
+                self.server.handler.passive_dtp.timeout = 30
+                self.server.handler.active_dtp.timeout = 30
             self.server.stop()
 
     def test_idle_timeout(self):
@@ -1622,25 +1634,27 @@ class TestConfigurableOptions(unittest.TestCase):
     def tearDown(self):
         os.remove(TESTFN)
         # set back options to their original value
-        self.server.server.max_cons = 0
-        self.server.server.max_cons_per_ip = 0
-        self.server.handler.banner = "pyftpdlib ready."
-        self.server.handler.max_login_attempts = 3
-        self.server.handler.auth_failed_timeout = 5
-        self.server.handler.masquerade_address = None
-        self.server.handler.masquerade_address_map = {}
-        self.server.handler.permit_privileged_ports = False
-        self.server.handler.permit_foreign_addresses = False
-        self.server.handler.passive_ports = None
-        self.server.handler.use_gmt_times = True
-        self.server.handler.tcp_no_delay = hasattr(socket, 'TCP_NODELAY')
+        with self.server.lock:
+            self.server.server.max_cons = 0
+            self.server.server.max_cons_per_ip = 0
+            self.server.handler.banner = "pyftpdlib ready."
+            self.server.handler.max_login_attempts = 3
+            self.server.handler.auth_failed_timeout = 5
+            self.server.handler.masquerade_address = None
+            self.server.handler.masquerade_address_map = {}
+            self.server.handler.permit_privileged_ports = False
+            self.server.handler.permit_foreign_addresses = False
+            self.server.handler.passive_ports = None
+            self.server.handler.use_gmt_times = True
+            self.server.handler.tcp_no_delay = hasattr(socket, 'TCP_NODELAY')
         self.server.stop()
         self.client.close()
 
     @disable_log_warning
     def test_max_connections(self):
         # Test FTPServer.max_cons attribute
-        self.server.server.max_cons = 3
+        with self.server.lock:
+            self.server.server.max_cons = 3
         self.client.quit()
         c1 = self.client_class()
         c2 = self.client_class()
@@ -1677,7 +1691,8 @@ class TestConfigurableOptions(unittest.TestCase):
     @disable_log_warning
     def test_max_connections_per_ip(self):
         # Test FTPServer.max_cons_per_ip attribute
-        self.server.server.max_cons_per_ip = 3
+        with self.server.lock:
+            self.server.server.max_cons_per_ip = 3
         self.client.quit()
         c1 = self.client_class()
         c2 = self.client_class()
@@ -1702,7 +1717,8 @@ class TestConfigurableOptions(unittest.TestCase):
 
     def test_banner(self):
         # Test FTPHandler.banner attribute
-        self.server.handler.banner = 'hello there'
+        with self.server.lock:
+            self.server.handler.banner = 'hello there'
         self.client.close()
         self.client = self.client_class(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
@@ -1710,8 +1726,9 @@ class TestConfigurableOptions(unittest.TestCase):
 
     def test_max_login_attempts(self):
         # Test FTPHandler.max_login_attempts attribute.
-        self.server.handler.max_login_attempts = 1
-        self.server.handler.auth_failed_timeout = 0
+        with self.server.lock:
+            self.server.handler.max_login_attempts = 1
+            self.server.handler.auth_failed_timeout = 0
         self.assertRaises(ftplib.error_perm, self.client.login, 'wrong',
                           'wrong')
         # socket.error (Windows) or EOFError (Linux) exceptions are
@@ -1724,7 +1741,8 @@ class TestConfigurableOptions(unittest.TestCase):
         # Test FTPHandler.masquerade_address attribute
         host, port = self.client.makepasv()
         self.assertEqual(host, self.server.host)
-        self.server.handler.masquerade_address = "256.256.256.256"
+        with self.server.lock:
+            self.server.handler.masquerade_address = "256.256.256.256"
         host, port = self.client.makepasv()
         self.assertEqual(host, "256.256.256.256")
 
@@ -1732,15 +1750,17 @@ class TestConfigurableOptions(unittest.TestCase):
         # Test FTPHandler.masquerade_address_map attribute
         host, port = self.client.makepasv()
         self.assertEqual(host, self.server.host)
-        self.server.handler.masquerade_address_map = {self.server.host:
-                                                      "128.128.128.128"}
+        with self.server.lock:
+            self.server.handler.masquerade_address_map = {self.server.host:
+                                                          "128.128.128.128"}
         host, port = self.client.makepasv()
         self.assertEqual(host, "128.128.128.128")
 
     def test_passive_ports(self):
         # Test FTPHandler.passive_ports attribute
         _range = list(range(40000, 60000, 200))
-        self.server.handler.passive_ports = _range
+        with self.server.lock:
+            self.server.handler.passive_ports = _range
         self.assertTrue(self.client.makepasv()[1] in _range)
         self.assertTrue(self.client.makepasv()[1] in _range)
         self.assertTrue(self.client.makepasv()[1] in _range)
@@ -1754,7 +1774,8 @@ class TestConfigurableOptions(unittest.TestCase):
             s.settimeout(TIMEOUT)
             s.bind((HOST, 0))
             port = s.getsockname()[1]
-            self.server.handler.passive_ports = [port]
+            with self.server.lock:
+                self.server.handler.passive_ports = [port]
             resulting_port = self.client.makepasv()[1]
             self.assertTrue(port != resulting_port)
 
@@ -1791,12 +1812,14 @@ class TestConfigurableOptions(unittest.TestCase):
             # no usable privileged port was found
             sock = None
 
-        self.server.handler.permit_privileged_ports = False
+        with self.server.lock:
+            self.server.handler.permit_privileged_ports = False
         self.assertRaises(ftplib.error_perm, self.client.sendport, HOST,
                           port)
         if sock:
             port = sock.getsockname()[1]
-            self.server.handler.permit_privileged_ports = True
+            with self.server.lock:
+                self.server.handler.permit_privileged_ports = True
             sock.listen(5)
             sock.settimeout(TIMEOUT)
             self.client.sendport(HOST, port)
@@ -1805,13 +1828,15 @@ class TestConfigurableOptions(unittest.TestCase):
 
     def test_use_gmt_times(self):
         # use GMT time
-        self.server.handler.use_gmt_times = True
+        with self.server.lock:
+            self.server.handler.use_gmt_times = True
         gmt1 = self.client.sendcmd('mdtm ' + TESTFN)
         gmt2 = self.client.sendcmd('mlst ' + TESTFN)
         gmt3 = self.client.sendcmd('stat ' + TESTFN)
 
         # use local time
-        self.server.handler.use_gmt_times = False
+        with self.server.lock:
+            self.server.handler.use_gmt_times = False
 
         self.client.quit()
         self.client.connect(self.server.host, self.server.port)
@@ -1839,7 +1864,8 @@ class TestConfigurableOptions(unittest.TestCase):
         s = get_server_handler().socket
         self.assertTrue(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
         self.client.quit()
-        self.server.handler.tcp_no_delay = False
+        with self.server.lock:
+            self.server.handler.tcp_no_delay = False
         self.client.connect(self.server.host, self.server.port)
         self.client.sendcmd('noop')
         s = get_server_handler().socket
@@ -2421,14 +2447,16 @@ class TestCornerCases(unittest.TestCase):
                 raise IOError(errno.EEXIST,
                               "No usable temporary file name found")
 
-        self.server.handler.abstracted_fs = TestFS
+        with self.server.lock:
+            self.server.handler.abstracted_fs = TestFS
         try:
             self.client.quit()
             self.client.connect(self.server.host, self.server.port)
             self.client.login(USER, PASSWD)
             self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'stou')
         finally:
-            self.server.handler.abstracted_fs = AbstractedFS
+            with self.server.lock:
+                self.server.handler.abstracted_fs = AbstractedFS
 
     def test_quick_connect(self):
         # Clients that connected and disconnected quickly could cause
@@ -2511,7 +2539,8 @@ class TestCornerCases(unittest.TestCase):
 
     if hasattr(select, 'epoll') or hasattr(select, 'kqueue'):
         def test_ioloop_fileno(self):
-            fd = self.server.server.ioloop.fileno()
+            with self.server.lock:
+                fd = self.server.server.ioloop.fileno()
             self.assertTrue(isinstance(fd, int), fd)
 
 

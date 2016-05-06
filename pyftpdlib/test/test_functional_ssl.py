@@ -225,9 +225,10 @@ class TestFTPS(unittest.TestCase):
 
     def tearDown(self):
         self.client.ssl_version = ssl.PROTOCOL_SSLv23
-        self.server.handler.ssl_version = ssl.PROTOCOL_SSLv23
-        self.server.handler.tls_control_required = False
-        self.server.handler.tls_data_required = False
+        with self.server.lock:
+            self.server.handler.ssl_version = ssl.PROTOCOL_SSLv23
+            self.server.handler.tls_control_required = False
+            self.server.handler.tls_data_required = False
         self.client.close()
         self.server.stop()
 
@@ -317,7 +318,8 @@ class TestFTPS(unittest.TestCase):
             self.assertEqual(chunk, b"")
 
     def test_tls_control_required(self):
-        self.server.handler.tls_control_required = True
+        with self.server.lock:
+            self.server.handler.tls_control_required = True
         msg = "550 SSL/TLS required on the control channel."
         self.assertRaisesWithMsg(ftplib.error_perm, msg,
                                  self.client.sendcmd, "user " + USER)
@@ -326,7 +328,8 @@ class TestFTPS(unittest.TestCase):
         self.client.login(secure=True)
 
     def test_tls_data_required(self):
-        self.server.handler.tls_data_required = True
+        with self.server.lock:
+            self.server.handler.tls_data_required = True
         self.client.login(secure=True)
         msg = "550 SSL/TLS required on the data channel."
         self.assertRaisesWithMsg(ftplib.error_perm, msg,
@@ -335,7 +338,8 @@ class TestFTPS(unittest.TestCase):
         self.client.retrlines('list', lambda x: x)
 
     def try_protocol_combo(self, server_protocol, client_protocol):
-        self.server.handler.ssl_version = server_protocol
+        with self.server.lock:
+            self.server.handler.ssl_version = server_protocol
         self.client.ssl_version = client_protocol
         self.client.close()
         self.client.connect(self.server.host, self.server.port)
@@ -394,7 +398,8 @@ class TestFTPS(unittest.TestCase):
         def test_sslv2(self):
             self.client.ssl_version = ssl.PROTOCOL_SSLv2
             self.client.close()
-            self.client.connect(self.server.host, self.server.port)
+            with self.server.lock:
+                self.client.connect(self.server.host, self.server.port)
             self.assertRaises(socket.error, self.client.login)
             self.client.ssl_version = ssl.PROTOCOL_SSLv2
 
