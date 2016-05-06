@@ -45,7 +45,7 @@ from pyftpdlib.test import OSX
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import POSIX
 from pyftpdlib.test import remove_test_files
-from pyftpdlib.test import retry_before_failing
+from pyftpdlib.test import retry_on_failure
 from pyftpdlib.test import safe_mkdir
 from pyftpdlib.test import safe_remove
 from pyftpdlib.test import safe_rmdir
@@ -163,7 +163,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.client.login(user=USER, passwd=PASSWD)
         self.client.sendcmd('pwd')
 
-    @retry_before_failing()
+    @retry_on_failure()
     def test_rein_during_transfer(self):
         # Test REIN while already authenticated and a transfer is
         # in progress.
@@ -1078,7 +1078,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.assertEqual(len(expected), len(datafile))
         self.assertEqual(hash(expected), hash(datafile))
 
-    @retry_before_failing()
+    @retry_on_failure()
     def test_restore_on_retr(self):
         data = b'abcde12345' * 1000000
         self.file.write(data)
@@ -1955,7 +1955,7 @@ class TestCallbacks(unittest.TestCase):
         self.client.quit()  # prevent race conditions
         call_until(lambda: _file, "ret == [os.path.abspath(TESTFN)]")
 
-    @retry_before_failing()
+    @retry_on_failure()
     def test_on_incomplete_file_sent(self):
         _file = []
 
@@ -1982,7 +1982,7 @@ class TestCallbacks(unittest.TestCase):
         call_until(lambda: _file, "ret == [os.path.abspath(TESTFN)]")
 
     @unittest.skipIf(TRAVIS, "failing on Travis")
-    @retry_before_failing()
+    @retry_on_failure()
     def test_on_incomplete_file_received(self):
         _file = []
 

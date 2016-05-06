@@ -170,10 +170,8 @@ def cleanup():
     map.clear()
 
 
-def retry_before_failing(ntimes=None):
-    """Decorator which runs a test function and retries N times before
-    actually failing.
-    """
+def retry_on_failure(ntimes=None):
+    """Decorator to retry a test in case of failure."""
     def decorator(fun):
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
@@ -291,7 +289,7 @@ class ThreadWorker(threading.Thread):
         # after max 1 sec.
         if self.poll_interval:
             stop_at = time.time() + self.poll_interval
-            while 1:
+            while True:
                 time.sleep(min(self.poll_interval, 1))
                 if time.time() >= stop_at:
                     break
@@ -351,7 +349,6 @@ class FTPd(ThreadWorker):
     """
     handler = FTPHandler
     server_class = FTPServer
-    daemon = True
     shutdown_after = 10
 
     def __init__(self, addr=None):
