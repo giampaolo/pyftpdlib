@@ -3003,26 +3003,6 @@ try:
 except ImportError:
     pass
 else:
-    # A secure default.
-    # Sources for more information on TLS ciphers:
-    #
-    # - https://wiki.mozilla.org/Security/Server_Side_TLS
-    # - https://www.ssllabs.com/projects/best-practices/index.html
-    # - https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers/
-    #
-    # The general intent is:
-    # - Prefer cipher suites that offer perfect forward secrecy (DHE/ECDHE),
-    # - prefer ECDHE over DHE for better performance,
-    # - prefer any AES-GCM over any AES-CBC for better performance and
-    #   security.
-    # - use 3DES as fallback which is secure but slow,
-    # - disable NULL authentication, MD5 MACs and DSS for security reasons.
-    DEFAULT_SSL_CIPHERS = (
-        'ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:'
-        'ECDH+HIGH:DH+HIGH:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+HIGH:'
-        'RSA+3DES:!aNULL:!eNULL:!MD5'
-    )
-
     _ssl_proto_cmds = proto_cmds.copy()
     _ssl_proto_cmds.update({
         'AUTH': dict(
@@ -3413,11 +3393,6 @@ else:
             Can be set to None in order to improve compatibilty with
             older (insecure) FTP clients.
 
-         - (str) ssl_ciphers:
-            which cipher suites to allow the server to select.
-            Can be set to None in order to improve compatibilty with
-            older (insecure) FTP clients.
-
           - (instance) ssl_context:
             a SSL Context object previously configured; if specified
             all other parameters will be ignored.
@@ -3435,7 +3410,6 @@ else:
         # - Disable compression to prevent CRIME attacks for OpenSSL 1.0+
         #   (see https://github.com/shazow/urllib3/pull/309)
         ssl_options = SSL.OP_NO_SSLv2 | SSL.OP_NO_SSLv3 | SSL.OP_NO_COMPRESSION
-        ssl_ciphers = DEFAULT_SSL_CIPHERS
         ssl_context = None
 
         # overridden attributes
@@ -3467,8 +3441,6 @@ else:
                 cls.ssl_context.use_privatekey_file(cls.keyfile)
                 if cls.ssl_options:
                     cls.ssl_context.set_options(cls.ssl_options)
-                if cls.ssl_ciphers:
-                    cls.ssl_context.set_cipher_list(cls.ssl_ciphers)
             return cls.ssl_context
 
         # --- overridden methods

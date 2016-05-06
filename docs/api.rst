@@ -538,21 +538,12 @@ Extended handlers
 
      .. versionadded:: 1.6.0
 
-  .. data:: ssl_ciphers
-
-     Which cipher suites to allow the server to select. By default the most
-     secure ciphers are used.
-     Can be set to None in order to improve compatibilty with older (insecure)
-     FTP clients.
-
-     .. versionadded:: 1.6.0
-
   .. data:: ssl_context
 
       A `SSL.Context <http://pyopenssl.sourceforge.net/pyOpenSSL.html/openssl-context.html>`__
       instance which was previously configured.
-      If specified all other :data:`ssl_protocol`, :data:`ssl_options` and
-      :data:`ssl_ciphers` parameters will be ignored.
+      If specified :data:`ssl_protocol` and :data:`ssl_options` parameters will
+      be ignored.
 
   .. data:: tls_control_required
 

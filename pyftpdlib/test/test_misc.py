@@ -30,7 +30,7 @@ class TestThreadWorker(unittest.TestCase):
         # Stress test it a little to make sure there are no race conditions
         # between locks: the order is always supposed to be the same, no
         # matter what.
-        for x in xrange(100):
+        for x in range(100):
             flags = []
             tw = Worker(0.001)
             tw.start()
