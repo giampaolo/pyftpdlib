@@ -3095,10 +3095,10 @@ else:
                 self.socket.do_handshake()
             except SSL.WantReadError:
                 self._ssl_want_read = True
-                debug("call: _do_ssl_handshake, err: want-read", inst=self)
+                debug("call: _do_ssl_handshake, err: ssl-want-read", inst=self)
             except SSL.WantWriteError:
                 self._ssl_want_write = True
-                debug("call: _do_ssl_handshake, err: want-write", inst=self)
+                debug("call: _do_ssl_handshake, err: ssl-want-write", inst=self)
             except SSL.SysCallError as err:
                 debug("call: _do_ssl_handshake, err: %r" % err, inst=self)
                 retval, desc = err.args
@@ -3171,11 +3171,11 @@ else:
             try:
                 return super(SSLConnection, self).send(data)
             except SSL.WantReadError:
-                debug("call: send(), err: want-read", inst=self)
+                debug("call: send(), err: ssl-want-read", inst=self)
                 self._ssl_want_read = True
                 return 0
             except SSL.WantWriteError:
-                debug("call: send(), err: want-write", inst=self)
+                debug("call: send(), err: ssl-want-write", inst=self)
                 self._ssl_want_write = True
                 return 0
             except SSL.ZeroReturnError as err:
@@ -3199,11 +3199,11 @@ else:
             try:
                 return super(SSLConnection, self).recv(buffer_size)
             except SSL.WantReadError:
-                debug("call: recv(), err: want-read", inst=self)
+                debug("call: recv(), err: ssl-want-read", inst=self)
                 self._ssl_want_read = True
                 raise RetryError
             except SSL.WantWriteError:
-                debug("call: recv(), err: want-write", inst=self)
+                debug("call: recv(), err: ssl-want-write", inst=self)
                 self._ssl_want_write = True
                 raise RetryError
             except SSL.ZeroReturnError as err:
@@ -3269,10 +3269,10 @@ else:
                     self.socket.set_shutdown(SSL.SENT_SHUTDOWN)
             except SSL.WantReadError:
                 self._ssl_want_read = True
-                debug("call: _do_ssl_shutdown, err: want-read", inst=self)
+                debug("call: _do_ssl_shutdown, err: ssl-want-read", inst=self)
             except SSL.WantWriteError:
                 self._ssl_want_write = True
-                debug("call: _do_ssl_shutdown, err: want-write", inst=self)
+                debug("call: _do_ssl_shutdown, err: ssl-want-write", inst=self)
             except SSL.ZeroReturnError as err:
                 debug(
                     "call: _do_ssl_shutdown() -> shutdown(), err: zero-return",
