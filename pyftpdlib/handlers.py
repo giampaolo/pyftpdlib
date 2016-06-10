@@ -596,15 +596,8 @@ class DTPHandler(AsyncChat):
                                                  _errback=self.handle_error)
 
     def __repr__(self):
-        try:
-            addr = "%s:%s" % self.socket.getpeername()[:2]
-        except socket.error:
-            addr = None
-        status = [self.__class__.__module__ + "." + self.__class__.__name__]
-        status.append("(addr=%s, user=%r, receive=%r, file=%r)"
-                      % (addr, self.cmd_channel.username or '',
-                         self.receive, getattr(self.file_obj, 'name', '')))
-        return '<%s>' % (' '.join(status))
+        return '<%s(%s)>' % (self.__class__.__name__,
+                             self.cmd_channel.get_repr_info(as_str=True))
 
     __str__ = __repr__
 
@@ -1279,11 +1272,31 @@ class FTPHandler(AsyncChat):
             self._idler = self.ioloop.call_later(
                 self.timeout, self.handle_timeout, _errback=self.handle_error)
 
+    def get_repr_info(self, as_str=False, extra_info={}):
+        info = dict(
+            id=id(self),
+            cmd_addr="%s:%s" % (self.remote_ip, self.remote_port),
+            user=self.username or '')
+        if self.data_channel is not None:
+            dc = self.data_channel
+            try:
+                info['data-addr'] = "%s:%s" % dc.socket.getsockname()
+            except socket.error:
+                pass
+            if dc.file_obj:
+                if self.data_channel.receive:
+                    info['send-file'] = dc.file_obj
+                else:
+                    info['recv-file'] = dc.file_obj
+                info['bytes-trans'] = dc.get_transmitted_bytes()
+        info.update(extra_info)
+        if as_str:
+            return ', '.join(['%s=%r' % (k.replace('_', '-'), v)
+                             for (k, v) in info.items()])
+        return info
+
     def __repr__(self):
-        status = [self.__class__.__module__ + "." + self.__class__.__name__]
-        status.append("(addr=%s:%s, user=%r)" % (
-            self.remote_ip, self.remote_port, self.username or ''))
-        return '<%s>' % (' '.join(status))
+        return '<%s(%s)>' % (self.__class__.__name__, self.get_repr_info(True))
 
     __str__ = __repr__
 
