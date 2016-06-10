@@ -3444,6 +3444,9 @@ else:
             self._prot = False
             self.ssl_context = self.get_ssl_context()
 
+        def __repr__(self):
+            return FTPHandler.__repr__(self)
+
         @classmethod
         def get_ssl_context(cls):
             if cls.ssl_context is None:
