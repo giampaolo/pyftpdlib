@@ -945,6 +945,9 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
         self.ac_in_buffer_size = int(self.ac_in_buffer_size)
         self.ac_out_buffer_size = int(self.ac_out_buffer_size)
 
+    def __repr__(self):
+        return DTPHandler.__repr__(self)
+
     def _use_sendfile(self, producer):
         return False
 
@@ -1280,7 +1283,7 @@ class FTPHandler(AsyncChat):
         if self.data_channel is not None:
             dc = self.data_channel
             try:
-                info['data-addr'] = "%s:%s" % dc.socket.getsockname()
+                info['data-addr'] = "%s:%s" % dc.socket.getsockname()[:2]
             except socket.error:
                 pass
             if dc.file_obj:
@@ -3345,6 +3348,9 @@ else:
             super(TLS_DTPHandler, self).__init__(sock, cmd_channel)
             if self.cmd_channel._prot:
                 self.secure_connection(self.cmd_channel.ssl_context)
+
+        def __repr__(self):
+            return DTPHandler.__repr__(self)
 
         def _use_sendfile(self, producer):
             if isinstance(self.socket, SSL.Connection):
