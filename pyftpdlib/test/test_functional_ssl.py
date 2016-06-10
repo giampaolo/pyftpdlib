@@ -9,12 +9,12 @@ import ftplib
 import os
 import socket
 import sys
-try:
-    import ssl
-except ImportError:
-    ssl = None
+
+import ssl
+import OpenSSL  # requires "pip install pyopenssl"
 
 from pyftpdlib import handlers
+from pyftpdlib.handlers import TLS_FTPHandler
 from pyftpdlib.test import configure_logging
 from pyftpdlib.test import FTPd
 from pyftpdlib.test import PASSWD
@@ -41,20 +41,16 @@ from pyftpdlib.test.test_functional import TestSendfile
 from pyftpdlib.test.test_functional import TestTimeouts
 
 
-FTPS_SUPPORT = (hasattr(ftplib, 'FTP_TLS') and
-                hasattr(handlers, 'TLS_FTPHandler'))
+FTPS_SUPPORT = hasattr(ftplib, 'FTP_TLS')
 if sys.version_info < (2, 7):
     FTPS_UNSUPPORT_REASON = "requires python 2.7+"
-elif ssl is None:
-    FTPS_UNSUPPORT_REASON = "requires ssl module"
-elif not hasattr(handlers, 'TLS_FTPHandler'):
-    FTPS_UNSUPPORT_REASON = "requires PyOpenSSL module"
 else:
     FTPS_UNSUPPORT_REASON = "FTPS test skipped"
 
 CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                         'keycert.pem'))
 
+del OpenSSL
 
 # =====================================================================
 # --- FTPS mixin tests
@@ -79,7 +75,7 @@ if FTPS_SUPPORT:
 
     class FTPSServer(FTPd):
         """A threaded FTPS server used for functional testing."""
-        handler = handlers.TLS_FTPHandler
+        handler = TLS_FTPHandler
         handler.certfile = CERTFILE
 
     class TLSTestMixin:
