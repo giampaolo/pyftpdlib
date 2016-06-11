@@ -20,6 +20,11 @@ try:
 except ImportError:
     pwd = grp = None
 
+try:
+    from OpenSSL import SSL  # requires "pip install pyopenssl"
+except ImportError:
+    SSL = None
+
 from . import __ver__
 from ._compat import b
 from ._compat import getcwdu
@@ -62,6 +67,10 @@ def _import_sendfile():
                 pass
 
 sendfile = _import_sendfile()
+
+
+def _is_ssl_sock(sock):
+    return SSL is not None and isinstance(sock, SSL.Connection)
 
 
 proto_cmds = {
@@ -1264,16 +1273,17 @@ class FTPHandler(AsyncChat):
                 self.timeout, self.handle_timeout, _errback=self.handle_error)
 
     def get_repr_info(self, as_str=False, extra_info={}):
-        info = dict(
-            id=id(self),
-            cmd_addr="%s:%s" % (self.remote_ip, self.remote_port),
-            user=self.username or '')
+        info = {}
+        info['id'] = id(self),
+        info['addr'] = "%s:%s" % (self.remote_ip, self.remote_port),
+        if _is_ssl_sock(self.socket):
+            info['ssl'] = True
+        if self.username:
+            info['user'] = self.username
         if self.data_channel is not None:
             dc = self.data_channel
-            try:
-                info['data-addr'] = "%s:%s" % dc.socket.getsockname()[:2]
-            except socket.error:
-                pass
+            if _is_ssl_sock(dc.socket):
+                info['ssl-data'] = True
             if dc.file_obj:
                 if self.data_channel.receive:
                     info['send-file'] = dc.file_obj
@@ -1282,8 +1292,7 @@ class FTPHandler(AsyncChat):
                 info['bytes-trans'] = dc.get_transmitted_bytes()
         info.update(extra_info)
         if as_str:
-            return ', '.join(['%s=%r' % (k.replace('_', '-'), v)
-                             for (k, v) in info.items()])
+            return ', '.join(['%s=%r' % (k, v) for (k, v) in info.items()])
         return info
 
     def __repr__(self):
@@ -3001,12 +3010,9 @@ class FTPHandler(AsyncChat):
 # ===================================================================
 # --- FTP over SSL
 # ===================================================================
-# requires PyOpenSSL - http://pypi.python.org/pypi/pyOpenSSL
-try:
-    from OpenSSL import SSL
-except ImportError:
-    pass
-else:
+
+
+if SSL is not None:
     _ssl_proto_cmds = proto_cmds.copy()
     _ssl_proto_cmds.update({
         'AUTH': dict(
