@@ -944,6 +944,9 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
         self.ac_in_buffer_size = int(self.ac_in_buffer_size)
         self.ac_out_buffer_size = int(self.ac_out_buffer_size)
 
+    def __repr__(self):
+        return DTPHandler.__repr__(self)
+
     def use_sendfile(self):
         return False
 
@@ -3333,6 +3336,9 @@ if SSL is not None:
             if self.cmd_channel._prot:
                 self.secure_connection(self.cmd_channel.ssl_context)
 
+        def __repr__(self):
+            return DTPHandler.__repr__(self)
+
         def use_sendfile(self):
             if isinstance(self.socket, SSL.Connection):
                 return False
@@ -3434,6 +3440,9 @@ if SSL is not None:
             self._pbsz = False
             self._prot = False
             self.ssl_context = self.get_ssl_context()
+
+        def __repr__(self):
+            return FTPHandler.__repr__(self)
 
         @classmethod
         def get_ssl_context(cls):
