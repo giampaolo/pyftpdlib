@@ -5,6 +5,7 @@
 import atexit
 import contextlib
 import errno
+import multiprocessing
 import functools
 import logging
 import os
@@ -334,6 +335,54 @@ class ThreadWorker(threading.Thread):
                 self.after_stop()
 
 
+class MprocessTestFTPd(multiprocessing.Process):
+    handler = FTPHandler
+    server_class = FTPServer
+
+    def __init__(self, addr=None):
+        super(MprocessTestFTPd, self).__init__()
+        self.addr = (HOST, 0) if addr is None else addr
+        authorizer = DummyAuthorizer()
+        authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwM')  # full perms
+        authorizer.add_anonymous(HOME)
+        self.config_queues()
+        self.handler.authorizer = authorizer
+        # No delayed response in case of failed auth
+        self.handler.auth_failed_timeout = 0
+        # lower buffer sizes = more "loops" while transferring data
+        # = less false positives
+        self.handler.dtp_handler.ac_in_buffer_size = 4096
+        self.handler.dtp_handler.ac_out_buffer_size = 4096
+        self.server = self.server_class(self.addr, self.handler)
+        self.host, self.port = self.server.socket.getsockname()[:2]
+        self.start_time = None
+        self.lock = multiprocessing.Lock()
+
+    def config_queues(self):
+        self.queue = multiprocessing.Queue()
+        q = self.queue
+        h = self.handler
+        h.on_connect = lambda _: q.put('on_connect')
+        h.on_disconnect = lambda _: q.put('on_disconnect')
+        h.on_login = lambda _, user: q.put(('on_login', user))
+        h.on_login_failed = \
+            lambda _, user, pwd: q.put(('on_login_failed', user, pwd))
+        h.on_logout = lambda _, user: q.put(('on_logout', user))
+        h.on_file_sent = lambda _, file: q.put(('on_file_sent', file))
+        h.on_file_received = lambda _, file: q.put(('on_file_received', file))
+        h.on_incomplete_file_sent = \
+            lambda _, file: q.put(('on_incomplete_file_sent', file))
+        h.on_incomplete_file_received = \
+            lambda _, file: q.put(('on_incomplete_file_received', file))
+
+    def run(self):
+        self.server.serve_forever()
+
+    def stop(self):
+        self.terminate()
+        self.join()
+
+
 class ThreadedTestFTPd(ThreadWorker):
     """A threaded FTP server used for running tests.
 
@@ -354,7 +403,7 @@ class ThreadedTestFTPd(ThreadWorker):
         authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwM')  # full perms
         authorizer.add_anonymous(HOME)
         self.handler.authorizer = authorizer
-        # lower buffer sizes = more "loops" while transfering data
+        # lower buffer sizes = more "loops" while transferring data
         # = less false positives
         self.handler.dtp_handler.ac_in_buffer_size = 4096
         self.handler.dtp_handler.ac_out_buffer_size = 4096
