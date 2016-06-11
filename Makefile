@@ -83,10 +83,6 @@ test-servers: install
 test-by-name: install
 	@$(PYTHON) -m nose pyftpdlib/test/test_*.py --nocapture -v -m $(filter-out $@,$(MAKECMDGOALS))
 
-nosetest: install
-	# $ make nosetest FLAGS=test_name
-	nosetests $(TSCRIPT) -v -m $(FLAGS)
-
 coverage: install
 	# Note: coverage options are controlled by .coveragerc file
 	rm -rf .coverage htmlcov
@@ -97,15 +93,15 @@ coverage: install
 	$(PYTHON) -m webbrowser -t htmlcov/index.html
 
 pep8:
-	pep8 pyftpdlib/ demo/ test/ setup.py --ignore E302
+	@git ls-files | grep \\.py$ | xargs $(PYTHON) -m pep8
 
 pyflakes:
 	# ignore doctests
 	export PYFLAKES_NODOCTEST=1 && \
-		pyflakes pyftpdlib/ demo/ test/ setup.py
+		git ls-files | grep \\.py$ | xargs $(PYTHON) -m pyflakes
 
 flake8:
-	@git ls-files | grep \\.py$ | xargs flake8
+	@git ls-files | grep \\.py$ | xargs $(PYTHON) -m flake8
 
 upload-src: clean
 	$(PYTHON) setup.py sdist upload
