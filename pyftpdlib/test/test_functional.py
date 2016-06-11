@@ -35,7 +35,6 @@ from pyftpdlib.test import BUFSIZE
 from pyftpdlib.test import call_until
 from pyftpdlib.test import configure_logging
 from pyftpdlib.test import disable_log_warning
-from pyftpdlib.test import FTPd
 from pyftpdlib.test import get_server_handler
 from pyftpdlib.test import HOME
 from pyftpdlib.test import HOST
@@ -55,6 +54,7 @@ from pyftpdlib.test import SUPPORTS_SENDFILE
 from pyftpdlib.test import TESTFN
 from pyftpdlib.test import TESTFN_UNICODE
 from pyftpdlib.test import TESTFN_UNICODE_2
+from pyftpdlib.test import ThreadedTestFTPd
 from pyftpdlib.test import TIMEOUT
 from pyftpdlib.test import touch
 from pyftpdlib.test import TRAVIS
@@ -84,7 +84,7 @@ if POSIX:
 class TestFtpAuthentication(unittest.TestCase):
 
     "test: USER, PASS, REIN."
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -261,7 +261,7 @@ class TestFtpAuthentication(unittest.TestCase):
 
 class TestFtpDummyCmds(unittest.TestCase):
     "test: TYPE, STRU, MODE, NOOP, SYST, ALLO, HELP, SITE HELP"
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -380,7 +380,7 @@ class TestFtpDummyCmds(unittest.TestCase):
 
 
 class TestFtpCmdsSemantic(unittest.TestCase):
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
     arg_cmds = ['allo', 'appe', 'dele', 'eprt', 'mdtm', 'mode', 'mkd', 'opts',
                 'port', 'rest', 'retr', 'rmd', 'rnfr', 'rnto', 'site', 'size',
@@ -446,7 +446,7 @@ class TestFtpCmdsSemantic(unittest.TestCase):
 class TestFtpFsOperations(unittest.TestCase):
 
     "test: PWD, CWD, CDUP, SIZE, RNFR, RNTO, DELE, MKD, RMD, MDTM, STAT"
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -640,7 +640,7 @@ class TestFtpFsOperations(unittest.TestCase):
 
 class TestFtpStoreData(unittest.TestCase):
     """Test STOR, STOU, APPE, REST, TYPE."""
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -965,7 +965,7 @@ class TestFtpStoreDataNoSendfile(TestFtpStoreData):
                  "pysendfile not installed")
 class TestSendfile(unittest.TestCase):
     """Sendfile specific tests."""
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -1016,7 +1016,7 @@ class TestSendfile(unittest.TestCase):
 class TestFtpRetrieveData(unittest.TestCase):
 
     "Test RETR, REST, TYPE"
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -1141,7 +1141,7 @@ class TestFtpRetrieveDataNoSendfile(TestFtpRetrieveData):
 
 class TestFtpListingCmds(unittest.TestCase):
     """Test LIST, NLST, argumented STAT."""
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -1303,7 +1303,7 @@ class TestFtpListingCmds(unittest.TestCase):
 class TestFtpAbort(unittest.TestCase):
 
     "test: ABOR"
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -1395,7 +1395,7 @@ class TestFtpAbort(unittest.TestCase):
 
 class TestThrottleBandwidth(unittest.TestCase):
     """Test ThrottledDTPHandler class."""
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -1466,7 +1466,7 @@ class TestTimeouts(unittest.TestCase):
     """Test idle-timeout capabilities of control and data channels.
     Some tests may fail on slow machines.
     """
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -1620,7 +1620,7 @@ class TestTimeouts(unittest.TestCase):
 
 class TestConfigurableOptions(unittest.TestCase):
     """Test those daemon options which are commonly modified by user."""
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -1889,7 +1889,7 @@ class TestConfigurableOptions(unittest.TestCase):
 
 class TestCallbacks(unittest.TestCase):
     """Test FTPHandler class callback methods."""
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -1900,7 +1900,7 @@ class TestCallbacks(unittest.TestCase):
 
     def _setUp(self, handler, connect=True, login=True):
         self.tearDown()
-        FTPd.handler = handler
+        ThreadedTestFTPd.handler = handler
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
@@ -2127,7 +2127,7 @@ class _TestNetworkProtocols(object):
     Do not use this class directly, let TestIPv4Environment and
     TestIPv6Environment classes use it instead.
     """
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
     HOST = HOST
 
@@ -2247,7 +2247,7 @@ class TestIPv4Environment(_TestNetworkProtocols, unittest.TestCase):
     Runs tests contained in _TestNetworkProtocols class by using IPv4
     plus some additional specific tests.
     """
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
     HOST = '127.0.0.1'
 
@@ -2295,7 +2295,7 @@ class TestIPv6Environment(_TestNetworkProtocols, unittest.TestCase):
     Runs tests contained in _TestNetworkProtocols class by using IPv6
     plus some additional specific tests.
     """
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
     HOST = '::1'
 
@@ -2325,7 +2325,7 @@ class TestIPv6MixedEnvironment(unittest.TestCase):
     What we are going to do here is starting the server in this
     manner and try to connect by using an IPv4 client.
     """
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
     HOST = "::"
 
@@ -2401,7 +2401,7 @@ class TestCornerCases(unittest.TestCase):
     """Tests for any kind of strange situation for the server to be in,
     mainly referring to bugs signaled on the bug tracker.
     """
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -2552,7 +2552,7 @@ class TestUnicodePathNames(unittest.TestCase):
     """Test FTP commands and responses by using path names with non
     ASCII characters.
     """
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):

@@ -338,7 +338,7 @@ class ThreadWorker(threading.Thread):
                 self.after_stop()
 
 
-class FTPd(ThreadWorker):
+class ThreadedTestFTPd(ThreadWorker):
     """A threaded FTP server used for running tests.
 
     This is basically a modified version of the FTPServer class which
@@ -352,7 +352,7 @@ class FTPd(ThreadWorker):
     shutdown_after = 10
 
     def __init__(self, addr=None):
-        super(FTPd, self).__init__(poll_interval=None)
+        super(ThreadedTestFTPd, self).__init__(poll_interval=None)
         self.addr = (HOST, 0) if addr is None else addr
         authorizer = DummyAuthorizer()
         authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwM')  # full perms

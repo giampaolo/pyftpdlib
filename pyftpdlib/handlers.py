@@ -3097,7 +3097,8 @@ if SSL is not None:
                 debug("call: _do_ssl_handshake, err: ssl-want-read", inst=self)
             except SSL.WantWriteError:
                 self._ssl_want_write = True
-                debug("call: _do_ssl_handshake, err: ssl-want-write", inst=self)
+                debug("call: _do_ssl_handshake, err: ssl-want-write",
+                      inst=self)
             except SSL.SysCallError as err:
                 debug("call: _do_ssl_handshake, err: %r" % err, inst=self)
                 retval, desc = err.args

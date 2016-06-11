@@ -9,16 +9,15 @@ import ftplib
 import os
 import socket
 import sys
-
 import ssl
+
 import OpenSSL  # requires "pip install pyopenssl"
 
-from pyftpdlib import handlers
 from pyftpdlib.handlers import TLS_FTPHandler
 from pyftpdlib.test import configure_logging
-from pyftpdlib.test import FTPd
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import remove_test_files
+from pyftpdlib.test import ThreadedTestFTPd
 from pyftpdlib.test import TIMEOUT
 from pyftpdlib.test import TRAVIS
 from pyftpdlib.test import unittest
@@ -73,7 +72,7 @@ if FTPS_SUPPORT:
             ftplib.FTP_TLS.login(self, *args, **kwargs)
             self.prot_p()
 
-    class FTPSServer(FTPd):
+    class FTPSServer(ThreadedTestFTPd):
         """A threaded FTPS server used for functional testing."""
         handler = TLS_FTPHandler
         handler.certfile = CERTFILE

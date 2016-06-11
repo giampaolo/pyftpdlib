@@ -10,10 +10,10 @@ import socket
 
 from pyftpdlib import servers
 from pyftpdlib.test import configure_logging
-from pyftpdlib.test import FTPd
 from pyftpdlib.test import HOST
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import remove_test_files
+from pyftpdlib.test import ThreadedTestFTPd
 from pyftpdlib.test import TIMEOUT
 from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
@@ -37,7 +37,7 @@ MPROCESS_SUPPORT = hasattr(servers, 'MultiprocessFTPServer')
 
 class TestFTPServer(unittest.TestCase):
     """Tests for *FTPServer classes."""
-    server_class = FTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -75,12 +75,12 @@ class TestFTPServer(unittest.TestCase):
 # supposed to work no matter what the concurrency model is.
 
 
-class TFTPd(FTPd):
+class _TFTPd(ThreadedTestFTPd):
     server_class = servers.ThreadedFTPServer
 
 
 class ThreadFTPTestMixin:
-    server_class = TFTPd
+    server_class = _TFTPd
 
 
 class TestFtpAuthenticationThreadMixin(ThreadFTPTestMixin,
@@ -147,7 +147,7 @@ class TestCornerCasesThreadMixin(ThreadFTPTestMixin, TestCornerCases):
 # =====================================================================
 
 if MPROCESS_SUPPORT:
-    class MultiProcFTPd(FTPd):
+    class MultiProcFTPd(ThreadedTestFTPd):
         server_class = servers.MultiprocessFTPServer
 
     class MProcFTPTestMixin:
