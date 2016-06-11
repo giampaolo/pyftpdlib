@@ -68,11 +68,6 @@ def _import_sendfile():
 
 sendfile = _import_sendfile()
 
-
-def _is_ssl_sock(sock):
-    return SSL is not None and isinstance(sock, SSL.Connection)
-
-
 proto_cmds = {
     'ABOR': dict(
         perm=None, auth=True, arg=False,
@@ -229,6 +224,10 @@ def _strerror(err):
             raise
     else:
         return str(err)
+
+
+def _is_ssl_sock(sock):
+    return SSL is not None and isinstance(sock, SSL.Connection)
 
 
 def _support_hybrid_ipv6():
@@ -610,14 +609,14 @@ class DTPHandler(AsyncChat):
 
     __str__ = __repr__
 
-    def use_sendfile(self, producer):
+    def use_sendfile(self):
         if not self.cmd_channel.use_sendfile:
             # as per server config
             return False
         if self.file_obj is None or not hasattr(self.file_obj, "fileno"):
             # direcotry listing or unusual file obj
             return False
-        if producer is not None and producer.type != 'i':
+        if self.cmd_channel._current_type != 'i':
             # text file transfer (need to transform file content on the fly)
             return False
         return True
@@ -632,7 +631,7 @@ class DTPHandler(AsyncChat):
         self._initialized = True
         self.modify_ioloop_events(self.ioloop.WRITE)
         self._wanted_io_events = self.ioloop.WRITE
-        if self.use_sendfile(producer):
+        if self.use_sendfile():
             self._offset = producer.file.tell()
             self._filefd = self.file_obj.fileno()
             try:
@@ -945,7 +944,7 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
         self.ac_in_buffer_size = int(self.ac_in_buffer_size)
         self.ac_out_buffer_size = int(self.ac_out_buffer_size)
 
-    def use_sendfile(self, producer):
+    def use_sendfile(self):
         return False
 
     def recv(self, buffer_size):
@@ -1286,9 +1285,11 @@ class FTPHandler(AsyncChat):
                 info['ssl-data'] = True
             if dc.file_obj:
                 if self.data_channel.receive:
-                    info['send-file'] = dc.file_obj
+                    info['sending-file'] = dc.file_obj
+                    if dc.use_sendfile():
+                        info['use-sendfile(2)'] = True
                 else:
-                    info['recv-file'] = dc.file_obj
+                    info['receiving-file'] = dc.file_obj
                 info['bytes-trans'] = dc.get_transmitted_bytes()
         info.update(extra_info)
         if as_str:
@@ -3331,11 +3332,11 @@ if SSL is not None:
             if self.cmd_channel._prot:
                 self.secure_connection(self.cmd_channel.ssl_context)
 
-        def use_sendfile(self, producer):
+        def use_sendfile(self):
             if isinstance(self.socket, SSL.Connection):
                 return False
             else:
-                return super(TLS_DTPHandler, self).use_sendfile(producer)
+                return super(TLS_DTPHandler, self).use_sendfile()
 
         def handle_failed_ssl_handshake(self):
             # TLS/SSL handshake failure, probably client's fault which
