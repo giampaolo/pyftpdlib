@@ -3013,18 +3013,6 @@ class FTPHandler(AsyncChat):
 
 
 if SSL is not None:
-    _ssl_proto_cmds = proto_cmds.copy()
-    _ssl_proto_cmds.update({
-        'AUTH': dict(
-            perm=None, auth=False, arg=True,
-            help='Syntax: AUTH <SP> TLS|SSL (set up secure control channel).'),
-        'PBSZ': dict(
-            perm=None, auth=False, arg=True,
-            help='Syntax: PBSZ <SP> 0 (negotiate TLS buffer).'),
-        'PROT': dict(
-            perm=None, auth=False, arg=True,
-            help='Syntax: PROT <SP> [C|P] (set up un/secure data channel).'),
-    })
 
     class SSLConnection(_AsyncChatNewStyle):
         """An AsyncChat subclass supporting TLS/SSL."""
@@ -3420,8 +3408,21 @@ if SSL is not None:
         ssl_context = None
 
         # overridden attributes
-        proto_cmds = _ssl_proto_cmds
         dtp_handler = TLS_DTPHandler
+        proto_cmds = FTPHandler.proto_cmds.copy()
+        proto_cmds.update({
+            'AUTH': dict(
+                perm=None, auth=False, arg=True,
+                help='Syntax: AUTH <SP> TLS|SSL (set up secure control '
+                     'channel).'),
+            'PBSZ': dict(
+                perm=None, auth=False, arg=True,
+                help='Syntax: PBSZ <SP> 0 (negotiate TLS buffer).'),
+            'PROT': dict(
+                perm=None, auth=False, arg=True,
+                help='Syntax: PROT <SP> [C|P] (set up un/secure data '
+                     'channel).'),
+        })
 
         def __init__(self, conn, server, ioloop=None):
             super(TLS_FTPHandler, self).__init__(conn, server, ioloop)
