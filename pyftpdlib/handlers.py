@@ -25,6 +25,11 @@ try:
 except ImportError:
     SSL = None
 
+try:
+    from collections import OrderedDict  # python >= 2.7
+except ImportError:
+    OrderedDict = dict
+
 from . import __ver__
 from ._compat import b
 from ._compat import getcwdu
@@ -1275,9 +1280,9 @@ class FTPHandler(AsyncChat):
                 self.timeout, self.handle_timeout, _errback=self.handle_error)
 
     def get_repr_info(self, as_str=False, extra_info={}):
-        info = {}
-        info['id'] = id(self),
-        info['addr'] = "%s:%s" % (self.remote_ip, self.remote_port),
+        info = OrderedDict()
+        info['id'] = id(self)
+        info['addr'] = "%s:%s" % (self.remote_ip, self.remote_port)
         if _is_ssl_sock(self.socket):
             info['ssl'] = True
         if self.username:
