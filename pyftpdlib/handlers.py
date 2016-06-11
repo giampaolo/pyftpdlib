@@ -601,25 +601,16 @@ class DTPHandler(AsyncChat):
 
     __str__ = __repr__
 
-    def _use_sendfile(self, producer):
+    def use_sendfile(self, producer):
         if not self.cmd_channel.use_sendfile:
-            debug("starting transfer not using sendfile(2) as per server "
-                  "config", self)
+            # as per server config
             return False
-        if not isinstance(producer, FileProducer):
-            debug("starting transfer not using sendfile(2) (directory "
-                  "listing)", self)
+        if self.file_obj is None or not hasattr(self.file_obj, "fileno"):
+            # direcotry listing or unusual file obj
             return False
-        else:
-            if not hasattr(self.file_obj, "fileno"):
-                debug("starting transfer not using sendfile(2) %r has no "
-                      "fileno() method" % self.file_obj, self)
-                return False
-        if not producer.type == 'i':
-            debug("starting transfer not using sendfile(2) (text file "
-                  "transfer)", self)
+        if producer is not None and producer.type != 'i':
+            # text file transfer (need to transform file content on the fly)
             return False
-        debug("starting transfer using sendfile()", self)
         return True
 
     def push(self, data):
@@ -632,7 +623,7 @@ class DTPHandler(AsyncChat):
         self._initialized = True
         self.modify_ioloop_events(self.ioloop.WRITE)
         self._wanted_io_events = self.ioloop.WRITE
-        if self._use_sendfile(producer):
+        if self.use_sendfile(producer):
             self._offset = producer.file.tell()
             self._filefd = self.file_obj.fileno()
             try:
@@ -945,7 +936,7 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
         self.ac_in_buffer_size = int(self.ac_in_buffer_size)
         self.ac_out_buffer_size = int(self.ac_out_buffer_size)
 
-    def _use_sendfile(self, producer):
+    def use_sendfile(self, producer):
         return False
 
     def recv(self, buffer_size):
@@ -1280,7 +1271,7 @@ class FTPHandler(AsyncChat):
         if self.data_channel is not None:
             dc = self.data_channel
             try:
-                info['data-addr'] = "%s:%s" % dc.socket.getsockname()
+                info['data-addr'] = "%s:%s" % dc.socket.getsockname()[:2]
             except socket.error:
                 pass
             if dc.file_obj:
@@ -3346,14 +3337,11 @@ else:
             if self.cmd_channel._prot:
                 self.secure_connection(self.cmd_channel.ssl_context)
 
-        def _use_sendfile(self, producer):
+        def use_sendfile(self, producer):
             if isinstance(self.socket, SSL.Connection):
-                debug(
-                    "starting transfer not using sendfile(2) (SSL connection)",
-                    self)
                 return False
             else:
-                return super(TLS_DTPHandler, self)._use_sendfile(producer)
+                return super(TLS_DTPHandler, self).use_sendfile(producer)
 
         def handle_failed_ssl_handshake(self):
             # TLS/SSL handshake failure, probably client's fault which
