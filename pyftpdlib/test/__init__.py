@@ -308,10 +308,6 @@ class ThreadWorker(threading.Thread):
 
     # --- external API
 
-    @property
-    def running(self):
-        return self.is_alive()
-
     def start(self):
         if self.started:
             raise RuntimeError("already started")

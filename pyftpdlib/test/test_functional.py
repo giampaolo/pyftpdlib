@@ -2413,7 +2413,7 @@ class TestCornerCases(unittest.TestCase):
 
     def tearDown(self):
         self.client.close()
-        if self.server.running:
+        if self.server.is_alive():
             self.server.stop()
 
     def test_port_race_condition(self):
