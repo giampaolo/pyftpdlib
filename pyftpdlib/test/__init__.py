@@ -16,6 +16,10 @@ import threading
 import time
 import warnings
 try:
+    from queue import Queue  # py3
+except ImportError:
+    from Queue import Queue
+try:
     from unittest import mock  # py3
 except ImportError:
     import mock  # NOQA - requires "pip install mock"
@@ -398,7 +402,7 @@ class ThreadedTestFTPd(ThreadWorker):
             setattr(self.handler, k, v)
 
     def _config_callback_queues(self):
-        self.queue = threading.Queue()
+        self.queue = Queue()
         q = self.queue
         h = self.handler
         h.on_connect = lambda _: q.put('on_connect')
@@ -429,3 +433,7 @@ class ThreadedTestFTPd(ThreadWorker):
     def after_stop(self):
         self.server.close_all()
         self._reset_handler_config()
+        if self.queue is not None:
+            if not self.queue.empty():
+                remaining = self.queue.get()
+                assert remaining == 'on_disconnect' and self.queue.empty()
