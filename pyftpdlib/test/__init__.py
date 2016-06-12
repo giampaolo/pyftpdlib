@@ -339,26 +339,37 @@ class MprocessTestFTPd(multiprocessing.Process):
     handler = FTPHandler
     server_class = FTPServer
 
-    def __init__(self, addr=None):
+    def __init__(self, addr=None, callback_queues=False, **kwargs):
         super(MprocessTestFTPd, self).__init__()
         self.addr = (HOST, 0) if addr is None else addr
+        # Set authorizer.
         authorizer = DummyAuthorizer()
         authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwM')  # full perms
         authorizer.add_anonymous(HOME)
-        self.config_queues()
         self.handler.authorizer = authorizer
-        # No delayed response in case of failed auth
+        # No delayed response in case of failed auth.
         self.handler.auth_failed_timeout = 0
         # lower buffer sizes = more "loops" while transferring data
         # = less false positives
         self.handler.dtp_handler.ac_in_buffer_size = 4096
         self.handler.dtp_handler.ac_out_buffer_size = 4096
+        # Configure handler.
+        for k, v in kwargs.items():
+            setattr(self.handler, k, v)
+        # Configure server.
         self.server = self.server_class(self.addr, self.handler)
+        if 'max_cons' in kwargs:
+            self.server.max_cons = kwargs.pop('max_cons')
+        if 'max_cons_per_ip' in kwargs:
+            self.server.max_cons_per_ip = kwargs.pop('max_cons_per_ip')
+        #
         self.host, self.port = self.server.socket.getsockname()[:2]
-        self.start_time = None
         self.lock = multiprocessing.Lock()
+        self.queue = None
+        if callback_queues:
+            self.config_callback_queues()
 
-    def config_queues(self):
+    def config_callback_queues(self):
         self.queue = multiprocessing.Queue()
         q = self.queue
         h = self.handler
@@ -379,6 +390,7 @@ class MprocessTestFTPd(multiprocessing.Process):
         self.server.serve_forever()
 
     def stop(self):
+        self.server.close_all()
         self.terminate()
         self.join()
 
