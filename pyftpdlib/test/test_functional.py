@@ -53,6 +53,7 @@ from pyftpdlib.test import SUPPORTS_SENDFILE
 from pyftpdlib.test import TESTFN
 from pyftpdlib.test import TESTFN_UNICODE
 from pyftpdlib.test import TESTFN_UNICODE_2
+from pyftpdlib.test import ThreadedTestFTPd
 from pyftpdlib.test import TIMEOUT
 from pyftpdlib.test import touch
 from pyftpdlib.test import unittest
@@ -86,8 +87,6 @@ class TestFtpAuthentication(unittest.TestCase):
 
     def setUp(self):
         self.server = self.server_class()
-        with self.server.lock:
-            self.server.handler.auth_failed_timeout = 0.001
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
@@ -95,8 +94,6 @@ class TestFtpAuthentication(unittest.TestCase):
         self.dummyfile = BytesIO()
 
     def tearDown(self):
-        with self.server.lock:
-            self.server.handler.auth_failed_timeout = 5
         self.client.close()
         self.server.stop()
         if not self.file.closed:
@@ -639,9 +636,10 @@ class TestFtpStoreData(unittest.TestCase):
     """Test STOR, STOU, APPE, REST, TYPE."""
     server_class = MprocessTestFTPd
     client_class = ftplib.FTP
+    use_sendfile = True
 
     def setUp(self):
-        self.server = self.server_class()
+        self.server = self.server_class(use_sendfile=self.use_sendfile)
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
@@ -945,16 +943,7 @@ class TestFtpStoreData(unittest.TestCase):
                  "pysendfile not installed")
 class TestFtpStoreDataNoSendfile(TestFtpStoreData):
     """Test STOR, STOU, APPE, REST, TYPE not using sendfile()."""
-
-    def setUp(self):
-        TestFtpStoreData.setUp(self)
-        with self.server.lock:
-            self.server.handler.use_sendfile = False
-
-    def tearDown(self):
-        TestFtpStoreData.tearDown(self)
-        with self.server.lock:
-            self.server.handler.use_sendfile = True
+    use_sendfile = False
 
 
 @unittest.skipUnless(POSIX, "POSIX only")
@@ -1015,9 +1004,10 @@ class TestFtpRetrieveData(unittest.TestCase):
     "Test RETR, REST, TYPE"
     server_class = MprocessTestFTPd
     client_class = ftplib.FTP
+    use_sendfile = True
 
     def setUp(self):
-        self.server = self.server_class()
+        self.server = self.server_class(use_sendfile=self.use_sendfile)
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
@@ -1124,16 +1114,7 @@ class TestFtpRetrieveData(unittest.TestCase):
                  "pysendfile not installed")
 class TestFtpRetrieveDataNoSendfile(TestFtpRetrieveData):
     """Test RETR, REST, TYPE by not using sendfile()."""
-
-    def setUp(self):
-        TestFtpRetrieveData.setUp(self)
-        with self.server.lock:
-            self.server.handler.use_sendfile = False
-
-    def tearDown(self):
-        TestFtpRetrieveData.tearDown(self)
-        with self.server.lock:
-            self.server.handler.use_sendfile = True
+    use_sendfile = False
 
 
 class TestFtpListingCmds(unittest.TestCase):
@@ -1392,7 +1373,7 @@ class TestFtpAbort(unittest.TestCase):
 
 class TestThrottleBandwidth(unittest.TestCase):
     """Test ThrottledDTPHandler class."""
-    server_class = MprocessTestFTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -1463,7 +1444,7 @@ class TestTimeouts(unittest.TestCase):
     """Test idle-timeout capabilities of control and data channels.
     Some tests may fail on slow machines.
     """
-    server_class = MprocessTestFTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
