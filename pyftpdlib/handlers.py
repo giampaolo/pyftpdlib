@@ -1287,8 +1287,9 @@ class FTPHandler(AsyncChat):
             info['ssl'] = True
         if self.username:
             info['user'] = self.username
-        if self.data_channel is not None:
-            dc = self.data_channel
+        # If threads are involved sometimes "self" may be None (?!?).
+        dc = getattr(self, 'data_channel', None)
+        if dc is not None:
             if _is_ssl_sock(dc.socket):
                 info['ssl-data'] = True
             if dc.file_obj:
