@@ -437,4 +437,5 @@ class ThreadedTestFTPd(ThreadWorker):
         if self.queue is not None:
             if not self.queue.empty():
                 remaining = self.queue.get()
-                assert remaining == 'on_disconnect' and self.queue.empty()
+                assert remaining == 'on_disconnect' and self.queue.empty(), \
+                    remaining
