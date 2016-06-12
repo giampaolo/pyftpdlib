@@ -393,7 +393,8 @@ class ThreadedTestFTPd(ThreadWorker):
 
         self.original_config = {}
         for k, v in config.items():
-            assert not callable(getattr(self.handler, k))
+            if k not in ('dtp_handler', 'abstracted_fs'):
+                assert not callable(getattr(self.handler, k))
             self.original_config[k] = getattr(self.handler, k)
             setattr(self.handler, k, v)
 

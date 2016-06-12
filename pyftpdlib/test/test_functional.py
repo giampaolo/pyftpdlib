@@ -87,8 +87,6 @@ class TestFtpAuthentication(unittest.TestCase):
 
     def setUp(self):
         self.server = self.server_class()
-        with self.server.lock:
-            self.server.handler.auth_failed_timeout = 0.001
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
@@ -96,8 +94,6 @@ class TestFtpAuthentication(unittest.TestCase):
         self.dummyfile = BytesIO()
 
     def tearDown(self):
-        with self.server.lock:
-            self.server.handler.auth_failed_timeout = 5
         self.client.close()
         self.server.stop()
         if not self.file.closed:
@@ -1393,9 +1389,7 @@ class TestThrottleBandwidth(unittest.TestCase):
                     self._throttler.call()
                     self._throttler = None
 
-        self.server = self.server_class()
-        with self.server.lock:
-            self.server.handler.dtp_handler = CustomDTPHandler
+        self.server = self.server_class(dtp_handler=CustomDTPHandler)
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
@@ -1404,10 +1398,6 @@ class TestThrottleBandwidth(unittest.TestCase):
 
     def tearDown(self):
         self.client.close()
-        with self.server.lock:
-            self.server.handler.dtp_handler.read_limit = 0
-            self.server.handler.dtp_handler.write_limit = 0
-            self.server.handler.dtp_handler = DTPHandler
         self.server.stop()
         if not self.dummyfile.closed:
             self.dummyfile.close()
@@ -1417,8 +1407,6 @@ class TestThrottleBandwidth(unittest.TestCase):
     def test_throttle_send(self):
         # This test doesn't test the actual speed accuracy, just
         # awakes all that code which implements the throttling.
-        with self.server.lock:
-            self.server.handler.dtp_handler.write_limit = 32768
         data = b'abcde12345' * 100000
         with open(TESTFN, 'wb') as file:
             file.write(data)
@@ -1431,8 +1419,6 @@ class TestThrottleBandwidth(unittest.TestCase):
     def test_throttle_recv(self):
         # This test doesn't test the actual speed accuracy, just
         # awakes all that code which implements the throttling.
-        with self.server.lock:
-            self.server.handler.dtp_handler.read_limit = 32768
         data = b'abcde12345' * 100000
         self.dummyfile.write(data)
         self.dummyfile.seek(0)
@@ -1781,8 +1767,6 @@ class TestConfigurableOptions(unittest.TestCase):
             self.tearDown()
             self.setup(permit_privileged_ports=True)
             port = sock.getsockname()[1]
-            with self.server.lock:
-                self.server.handler.permit_privileged_ports = True
             sock.listen(5)
             sock.settimeout(TIMEOUT)
             self.client.sendport(HOST, port)
@@ -2256,8 +2240,8 @@ class TestCornerCases(unittest.TestCase):
     server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
-    def setUp(self):
-        self.server = self.server_class()
+    def setUp(self, **kwargs):
+        self.server = self.server_class(**kwargs)
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
@@ -2292,23 +2276,14 @@ class TestCornerCases(unittest.TestCase):
     def test_stou_max_tries(self):
         # Emulates case where the max number of tries to find out a
         # unique file name when processing STOU command gets hit.
-
         class TestFS(AbstractedFS):
-
             def mkstemp(self, *args, **kwargs):
                 raise IOError(errno.EEXIST,
                               "No usable temporary file name found")
 
-        with self.server.lock:
-            self.server.handler.abstracted_fs = TestFS
-        try:
-            self.client.quit()
-            self.client.connect(self.server.host, self.server.port)
-            self.client.login(USER, PASSWD)
-            self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'stou')
-        finally:
-            with self.server.lock:
-                self.server.handler.abstracted_fs = AbstractedFS
+        self.tearDown()
+        self.setUp(abstracted_fs=TestFS)
+        self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'stou')
 
     def test_quick_connect(self):
         # Clients that connected and disconnected quickly could cause
