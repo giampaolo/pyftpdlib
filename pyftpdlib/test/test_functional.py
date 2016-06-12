@@ -554,31 +554,6 @@ class TestFtpFsOperations(unittest.TestCase):
         else:
             self.fail('Exception not raised')
 
-    def test_unforeseen_mdtm_event(self):
-        # Emulate a case where the file last modification time is prior
-        # to year 1900.  This most likely will never happen unless
-        # someone specifically force the last modification time of a
-        # file in some way.
-        # To do so we temporarily override os.path.getmtime so that it
-        # returns a negative value referring to a year prior to 1900.
-        # It causes time.localtime/gmtime to raise a ValueError exception
-        # which is supposed to be handled by server.
-
-        # On python 3 it seems that the trick of replacing the original
-        # method with the lambda doesn't work.
-        if not PY3:
-            _getmtime = AbstractedFS.getmtime
-            try:
-                AbstractedFS.getmtime = lambda x, y: -9000000000
-                self.assertRaisesRegex(
-                    ftplib.error_perm,
-                    "550 Can't determine file's last modification time",
-                    self.client.sendcmd, 'mdtm ' + self.tempfile)
-                # make sure client hasn't been disconnected
-                self.client.sendcmd('noop')
-            finally:
-                AbstractedFS.getmtime = _getmtime
-
     def test_size(self):
         self.client.sendcmd('type a')
         self.assertRaises(ftplib.error_perm, self.client.size, self.tempfile)
@@ -944,59 +919,6 @@ class TestFtpStoreData(unittest.TestCase):
 class TestFtpStoreDataNoSendfile(TestFtpStoreData):
     """Test STOR, STOU, APPE, REST, TYPE not using sendfile()."""
     use_sendfile = False
-
-
-@unittest.skipUnless(POSIX, "POSIX only")
-@unittest.skipIf(sys.version_info < (3, 3) and sendfile is None,
-                 "pysendfile not installed")
-class TestSendfile(unittest.TestCase):
-    """Sendfile specific tests."""
-    server_class = MprocessTestFTPd
-    client_class = ftplib.FTP
-
-    def setUp(self):
-        self.server = self.server_class()
-        self.server.start()
-        self.client = self.client_class(timeout=TIMEOUT)
-        self.client.connect(self.server.host, self.server.port)
-        self.client.login(USER, PASSWD)
-        self.dummy_recvfile = BytesIO()
-        self.dummy_sendfile = BytesIO()
-
-    def tearDown(self):
-        self.client.close()
-        self.server.stop()
-        self.dummy_recvfile.close()
-        self.dummy_sendfile.close()
-        safe_remove(TESTFN)
-
-    def test_fallback(self):
-        # Makes sure that if sendfile() fails and no bytes were
-        # transmitted yet the server falls back on using plain
-        # send()
-        data = b'abcde12345' * 100000
-        self.dummy_sendfile.write(data)
-        self.dummy_sendfile.seek(0)
-        self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
-        with mock.patch('pyftpdlib.handlers.sendfile',
-                        side_effect=OSError(errno.EINVAL)) as fun:
-            try:
-                self.client.retrbinary(
-                    'retr ' + TESTFN, self.dummy_recvfile.write)
-                assert fun.called
-                self.dummy_recvfile.seek(0)
-                datafile = self.dummy_recvfile.read()
-                self.assertEqual(len(data), len(datafile))
-                self.assertEqual(hash(data), hash(datafile))
-            finally:
-                # We do not use os.remove() because file could still be
-                # locked by ftpd thread.  If DELE through FTP fails try
-                # os.remove() as last resort.
-                if os.path.exists(TESTFN):
-                    try:
-                        self.client.delete(TESTFN)
-                    except (ftplib.Error, EOFError, socket.error):
-                        safe_remove(TESTFN)
 
 
 class TestFtpRetrieveData(unittest.TestCase):
@@ -1707,14 +1629,14 @@ class TestConfigurableOptions(unittest.TestCase):
         host, port = self.client.makepasv()
         self.assertEqual(host, "256.256.256.256")
 
-    def test_masquerade_address_map(self):
-        # Test FTPHandler.masquerade_address_map attribute
-        self.setup()
-        server_host = self.server.host
-        self.tearDown()
-        self.setup(masquerade_address_map={server_host: "128.128.128.128"})
-        host, port = self.client.makepasv()
-        self.assertEqual(host, "128.128.128.128")
+    # def test_masquerade_address_map(self):
+    #     # Test FTPHandler.masquerade_address_map attribute
+    #     self.setup()
+    #     server_host = self.server.host
+    #     self.tearDown()
+    #     self.setup(masquerade_address_map={server_host: "128.128.128.128"})
+    #     host, port = self.client.makepasv()
+    #     self.assertEqual(host, "128.128.128.128")
 
     def test_passive_ports(self):
         # Test FTPHandler.passive_ports attribute
@@ -1839,132 +1761,133 @@ class TestConfigurableOptions(unittest.TestCase):
     #     s.close()
 
 
-class TestCallbacks(unittest.TestCase):
-    """Test FTPHandler class callback methods."""
-    server_class = MprocessTestFTPd
-    client_class = ftplib.FTP
+# class TestCallbacks(unittest.TestCase):
+#     """Test FTPHandler class callback methods."""
+#     server_class = MprocessTestFTPd
+#     client_class = ftplib.FTP
 
-    def setUp(self):
-        self.file = open(TESTFN, 'w+b')
-        self.dummyfile = BytesIO()
-        self.server = self.server_class(callback_queues=True)
-        self.server.start()
-        self.client = self.client_class(timeout=TIMEOUT)
-        self.client.connect(self.server.host, self.server.port)
-        self.client.login(USER, PASSWD)
+#     def setUp(self):
+#         self.file = open(TESTFN, 'w+b')
+#         self.dummyfile = BytesIO()
+#         self.server = self.server_class(callback_queues=True)
+#         self.server.start()
+#         self.client = self.client_class(timeout=TIMEOUT)
+#         self.client.connect(self.server.host, self.server.port)
+#         self.client.login(USER, PASSWD)
 
-    def tearDown(self):
-        self.client.close()
-        self.server.stop()
-        self.file.close()
-        self.dummyfile.close()
-        safe_remove(TESTFN)
+#     def tearDown(self):
+#         self.client.close()
+#         self.server.stop()
+#         self.file.close()
+#         self.dummyfile.close()
+#         safe_remove(TESTFN)
 
-    def test_on_file_sent(self):
-        data = b'abcde12345' * 100000
-        self.file.write(data)
-        self.file.close()
-        self.client.retrbinary("retr " + TESTFN, lambda x: x)
-        self.assertEqual(self.server.queue.get(), 'on_connect')
-        self.assertEqual(self.server.queue.get(), ('on_login', USER))
-        self.assertEqual(self.server.queue.get(),
-                         ('on_file_sent', os.path.abspath(TESTFN)))
-        assert self.server.queue.empty()
+#     def test_on_file_sent(self):
+#         data = b'abcde12345' * 100000
+#         self.file.write(data)
+#         self.file.close()
+#         self.client.retrbinary("retr " + TESTFN, lambda x: x)
+#         self.assertEqual(self.server.queue.get(), 'on_connect')
+#         self.assertEqual(self.server.queue.get(), ('on_login', USER))
+#         self.assertEqual(self.server.queue.get(),
+#                          ('on_file_sent', os.path.abspath(TESTFN)))
+#         assert self.server.queue.empty()
 
-    def test_on_file_received(self):
-        data = b'abcde12345' * 100000
-        self.dummyfile.write(data)
-        self.dummyfile.seek(0)
-        self.client.storbinary('stor ' + TESTFN, self.dummyfile)
-        self.assertEqual(self.server.queue.get(), 'on_connect')
-        self.assertEqual(self.server.queue.get(), ('on_login', USER))
-        self.assertEqual(self.server.queue.get(),
-                         ('on_file_received', os.path.abspath(TESTFN)))
-        assert self.server.queue.empty()
+#     def test_on_file_received(self):
+#         data = b'abcde12345' * 100000
+#         self.dummyfile.write(data)
+#         self.dummyfile.seek(0)
+#         self.client.storbinary('stor ' + TESTFN, self.dummyfile)
+#         self.assertEqual(self.server.queue.get(), 'on_connect')
+#         self.assertEqual(self.server.queue.get(), ('on_login', USER))
+#         self.assertEqual(self.server.queue.get(),
+#                          ('on_file_received', os.path.abspath(TESTFN)))
+#         assert self.server.queue.empty()
 
-    def test_on_incomplete_file_sent(self):
-        data = b'abcde12345' * 100000
-        self.file.write(data)
-        self.file.close()
-        bytes_recv = 0
-        with contextlib.closing(
-                self.client.transfercmd("retr " + TESTFN, None)) as conn:
-            while True:
-                chunk = conn.recv(BUFSIZE)
-                bytes_recv += len(chunk)
-                if bytes_recv >= INTERRUPTED_TRANSF_SIZE or not chunk:
-                    break
-        self.assertEqual(self.client.getline()[:3], "426")
-        self.assertEqual(self.server.queue.get(), 'on_connect')
-        self.assertEqual(self.server.queue.get(), ('on_login', USER))
-        self.assertEqual(self.server.queue.get(),
-                         ('on_incomplete_file_sent', os.path.abspath(TESTFN)))
-        assert self.server.queue.empty()
+#     def test_on_incomplete_file_sent(self):
+#         data = b'abcde12345' * 100000
+#         self.file.write(data)
+#         self.file.close()
+#         bytes_recv = 0
+#         with contextlib.closing(
+#                 self.client.transfercmd("retr " + TESTFN, None)) as conn:
+#             while True:
+#                 chunk = conn.recv(BUFSIZE)
+#                 bytes_recv += len(chunk)
+#                 if bytes_recv >= INTERRUPTED_TRANSF_SIZE or not chunk:
+#                     break
+#         self.assertEqual(self.client.getline()[:3], "426")
+#         self.assertEqual(self.server.queue.get(), 'on_connect')
+#         self.assertEqual(self.server.queue.get(), ('on_login', USER))
+#         self.assertEqual(self.server.queue.get(),
+#                          ('on_incomplete_file_sent',
+#                            os.path.abspath(TESTFN)))
+#         assert self.server.queue.empty()
 
-    def test_on_incomplete_file_received(self):
-        data = b'abcde12345' * 100000
-        self.dummyfile.write(data)
-        self.dummyfile.seek(0)
-        with contextlib.closing(
-                self.client.transfercmd('stor ' + TESTFN)) as conn:
-            bytes_sent = 0
-            while True:
-                chunk = self.dummyfile.read(BUFSIZE)
-                conn.sendall(chunk)
-                bytes_sent += len(chunk)
-                # stop transfer while it isn't finished yet
-                if bytes_sent >= INTERRUPTED_TRANSF_SIZE or not chunk:
-                    self.client.putcmd('abor')
-                    break
-        self.assertEqual(self.client.getline()[:3], "426")
-        self.assertEqual(self.server.queue.get(), 'on_connect')
-        self.assertEqual(self.server.queue.get(), ('on_login', USER))
-        self.assertEqual(self.server.queue.get(),
-                         ('on_incomplete_file_received',
-                          os.path.abspath(TESTFN)))
-        assert self.server.queue.empty()
+#     def test_on_incomplete_file_received(self):
+#         data = b'abcde12345' * 100000
+#         self.dummyfile.write(data)
+#         self.dummyfile.seek(0)
+#         with contextlib.closing(
+#                 self.client.transfercmd('stor ' + TESTFN)) as conn:
+#             bytes_sent = 0
+#             while True:
+#                 chunk = self.dummyfile.read(BUFSIZE)
+#                 conn.sendall(chunk)
+#                 bytes_sent += len(chunk)
+#                 # stop transfer while it isn't finished yet
+#                 if bytes_sent >= INTERRUPTED_TRANSF_SIZE or not chunk:
+#                     self.client.putcmd('abor')
+#                     break
+#         self.assertEqual(self.client.getline()[:3], "426")
+#         self.assertEqual(self.server.queue.get(), 'on_connect')
+#         self.assertEqual(self.server.queue.get(), ('on_login', USER))
+#         self.assertEqual(self.server.queue.get(),
+#                          ('on_incomplete_file_received',
+#                           os.path.abspath(TESTFN)))
+#         assert self.server.queue.empty()
 
-    def test_on_login_failed(self):
-        self.assertEqual(self.server.queue.get(), 'on_connect')
-        self.assertEqual(self.server.queue.get(), ('on_login', USER))
-        assert self.server.queue.empty()
-        self.assertRaises(ftplib.error_perm, self.client.login, 'foo', 'bar')
-        self.assertEqual(self.server.queue.get(), ('on_logout', USER))
-        self.assertEqual(self.server.queue.get(),
-                         ('on_login_failed', 'foo', 'bar'))
-        assert self.server.queue.empty()
+#     def test_on_login_failed(self):
+#         self.assertEqual(self.server.queue.get(), 'on_connect')
+#         self.assertEqual(self.server.queue.get(), ('on_login', USER))
+#         assert self.server.queue.empty()
+#         self.assertRaises(ftplib.error_perm, self.client.login, 'foo', 'bar')
+#         self.assertEqual(self.server.queue.get(), ('on_logout', USER))
+#         self.assertEqual(self.server.queue.get(),
+#                          ('on_login_failed', 'foo', 'bar'))
+#         assert self.server.queue.empty()
 
-    def test_on_logout_quit(self):
-        self.client.sendcmd('quit')
-        self.assertEqual(self.server.queue.get(), 'on_connect')
-        self.assertEqual(self.server.queue.get(), ('on_login', USER))
-        self.assertEqual(self.server.queue.get(), ('on_logout', USER))
-        self.assertEqual(self.server.queue.get(), 'on_disconnect')
-        assert self.server.queue.empty()
+#     def test_on_logout_quit(self):
+#         self.client.sendcmd('quit')
+#         self.assertEqual(self.server.queue.get(), 'on_connect')
+#         self.assertEqual(self.server.queue.get(), ('on_login', USER))
+#         self.assertEqual(self.server.queue.get(), ('on_logout', USER))
+#         self.assertEqual(self.server.queue.get(), 'on_disconnect')
+#         assert self.server.queue.empty()
 
-    def test_on_logout_rein(self):
-        self.client.sendcmd('rein')
-        self.assertEqual(self.server.queue.get(), 'on_connect')
-        self.assertEqual(self.server.queue.get(), ('on_login', USER))
-        self.assertEqual(self.server.queue.get(), ('on_logout', USER))
-        assert self.server.queue.empty()
+#     def test_on_logout_rein(self):
+#         self.client.sendcmd('rein')
+#         self.assertEqual(self.server.queue.get(), 'on_connect')
+#         self.assertEqual(self.server.queue.get(), ('on_login', USER))
+#         self.assertEqual(self.server.queue.get(), ('on_logout', USER))
+#         assert self.server.queue.empty()
 
-    def test_on_logout_no_pass(self):
-        # make sure on_logout() is not called if USER was provided
-        # but not PASS
-        self.assertEqual(self.server.queue.get(), 'on_connect')
-        self.assertEqual(self.server.queue.get(), ('on_login', USER))
-        assert self.server.queue.empty()
-        self.client.sendcmd("user foo")
-        self.assertEqual(self.server.queue.get(), ('on_logout', USER))
-        assert self.server.queue.empty()
+#     def test_on_logout_no_pass(self):
+#         # make sure on_logout() is not called if USER was provided
+#         # but not PASS
+#         self.assertEqual(self.server.queue.get(), 'on_connect')
+#         self.assertEqual(self.server.queue.get(), ('on_login', USER))
+#         assert self.server.queue.empty()
+#         self.client.sendcmd("user foo")
+#         self.assertEqual(self.server.queue.get(), ('on_logout', USER))
+#         assert self.server.queue.empty()
 
-    def test_on_disconnect(self):
-        self.client.close()
-        self.assertEqual(self.server.queue.get(), 'on_connect')
-        self.assertEqual(self.server.queue.get(), ('on_login', USER))
-        self.assertEqual(self.server.queue.get(), 'on_disconnect')
-        assert self.server.queue.empty()
+#     def test_on_disconnect(self):
+#         self.client.close()
+#         self.assertEqual(self.server.queue.get(), 'on_connect')
+#         self.assertEqual(self.server.queue.get(), ('on_login', USER))
+#         self.assertEqual(self.server.queue.get(), 'on_disconnect')
+#         assert self.server.queue.empty()
 
 
 class _TestNetworkProtocols(object):
@@ -2247,7 +2170,7 @@ class TestCornerCases(unittest.TestCase):
     """Tests for any kind of strange situation for the server to be in,
     mainly referring to bugs signaled on the bug tracker.
     """
-    server_class = MprocessTestFTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -2261,6 +2184,7 @@ class TestCornerCases(unittest.TestCase):
         self.client.close()
         if self.server.is_alive():
             self.server.stop()
+        safe_remove(TESTFN)
 
     def test_port_race_condition(self):
         # Refers to bug #120, first sends PORT, then disconnects the
@@ -2371,6 +2295,65 @@ class TestCornerCases(unittest.TestCase):
             for inst in IOLoop.instance().socket_map.values():
                 repr(inst)
                 str(inst)
+
+    def test_unforeseen_mdtm_event(self):
+        # Emulate a case where the file last modification time is prior
+        # to year 1900.  This most likely will never happen unless
+        # someone specifically force the last modification time of a
+        # file in some way.
+        # To do so we temporarily override os.path.getmtime so that it
+        # returns a negative value referring to a year prior to 1900.
+        # It causes time.localtime/gmtime to raise a ValueError exception
+        # which is supposed to be handled by server.
+
+        # On python 3 it seems that the trick of replacing the original
+        # method with the lambda doesn't work.
+        tempfile = os.path.basename(touch(TESTFN))
+        if not PY3:
+            _getmtime = AbstractedFS.getmtime
+            try:
+                AbstractedFS.getmtime = lambda x, y: -9000000000
+                self.assertRaisesRegex(
+                    ftplib.error_perm,
+                    "550 Can't determine file's last modification time",
+                    self.client.sendcmd, 'mdtm ' + tempfile)
+                # make sure client hasn't been disconnected
+                self.client.sendcmd('noop')
+            finally:
+                AbstractedFS.getmtime = _getmtime
+
+    @unittest.skipUnless(POSIX, "POSIX only")
+    @unittest.skipIf(sys.version_info < (3, 3) and sendfile is None,
+                     "pysendfile not installed")
+    def test_sendfile_fallback(self):
+        # Makes sure that if sendfile() fails and no bytes were
+        # transmitted yet the server falls back on using plain
+        # send()
+        data = b'abcde12345' * 100000
+        dummy_recvfile = BytesIO()
+        dummy_sendfile = BytesIO()
+        dummy_sendfile.write(data)
+        dummy_sendfile.seek(0)
+        self.client.storbinary('stor ' + TESTFN, dummy_sendfile)
+        with mock.patch('pyftpdlib.handlers.sendfile',
+                        side_effect=OSError(errno.EINVAL)) as fun:
+            try:
+                self.client.retrbinary(
+                    'retr ' + TESTFN, dummy_recvfile.write)
+                assert fun.called
+                dummy_recvfile.seek(0)
+                datafile = dummy_recvfile.read()
+                self.assertEqual(len(data), len(datafile))
+                self.assertEqual(hash(data), hash(datafile))
+            finally:
+                # We do not use os.remove() because file could still be
+                # locked by ftpd thread.  If DELE through FTP fails try
+                # os.remove() as last resort.
+                if os.path.exists(TESTFN):
+                    try:
+                        self.client.delete(TESTFN)
+                    except (ftplib.Error, EOFError, socket.error):
+                        safe_remove(TESTFN)
 
     if hasattr(os, 'sendfile'):
         def test_sendfile(self):

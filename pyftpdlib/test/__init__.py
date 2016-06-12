@@ -64,6 +64,7 @@ POSIX = os.name == 'posix'
 WINDOWS = os.name == 'nt'
 TRAVIS = bool(os.environ.get('TRAVIS'))
 VERBOSITY = 1 if os.getenv('SILENT') else 2
+DEFAULT = object()
 
 
 def try_address(host, port=0, family=socket.AF_INET):
@@ -342,34 +343,53 @@ class MprocessTestFTPd(multiprocessing.Process):
     def __init__(self, addr=None, callback_queues=False, **kwargs):
         super(MprocessTestFTPd, self).__init__()
         self.addr = (HOST, 0) if addr is None else addr
+
         # Set authorizer.
-        authorizer = DummyAuthorizer()
-        authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwM')  # full perms
-        authorizer.add_anonymous(HOME)
-        self.handler.authorizer = authorizer
+        self.authorizer = DummyAuthorizer()
+        # full perms
+        self.authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwM')
+        self.authorizer.add_anonymous(HOME)
+        self.handler.authorizer = self.authorizer
+
+        # Configure handler.
+        max_cons = kwargs.pop('max_cons', DEFAULT)
+        max_cons_per_ip = kwargs.pop('max_cons_per_ip', DEFAULT)
+        self._config_handler(kwargs)
+
+        # Configure server.
+        self.server = self.server_class(self.addr, self.handler)
+        if max_cons is not DEFAULT:
+            self.server.max_cons = max_cons
+        if max_cons_per_ip is not DEFAULT:
+            self.server.max_cons_per_ip = max_cons_per_ip
+
+        # Expose host and port.
+        self.host, self.port = self.server.socket.getsockname()[:2]
+        self.lock = multiprocessing.Lock()
+        self.queue = None
+        if callback_queues:
+            self._config_callback_queues()
+
+    def _config_handler(self, config):
         # No delayed response in case of failed auth.
-        self.handler.auth_failed_timeout = 0
+        self.handler.auth_failed_timeout = 0.001
         # lower buffer sizes = more "loops" while transferring data
         # = less false positives
         self.handler.dtp_handler.ac_in_buffer_size = 4096
         self.handler.dtp_handler.ac_out_buffer_size = 4096
         # Configure handler.
-        for k, v in kwargs.items():
-            setattr(self.handler, k, v)
-        # Configure server.
-        self.server = self.server_class(self.addr, self.handler)
-        if 'max_cons' in kwargs:
-            self.server.max_cons = kwargs.pop('max_cons')
-        if 'max_cons_per_ip' in kwargs:
-            self.server.max_cons_per_ip = kwargs.pop('max_cons_per_ip')
-        #
-        self.host, self.port = self.server.socket.getsockname()[:2]
-        self.lock = multiprocessing.Lock()
-        self.queue = None
-        if callback_queues:
-            self.config_callback_queues()
 
-    def config_callback_queues(self):
+        self.original_config = {}
+        for k, v in config.items():
+            assert not callable(getattr(self.handler, k))
+            self.original_config[k] = getattr(self.handler, k)
+            setattr(self.handler, k, v)
+
+    def _reset_handler_config(self):
+        for k, v in self.original_config.items():
+            setattr(self.handler, k, v)
+
+    def _config_callback_queues(self):
         self.queue = multiprocessing.Queue()
         q = self.queue
         h = self.handler
@@ -391,6 +411,7 @@ class MprocessTestFTPd(multiprocessing.Process):
 
     def stop(self):
         self.server.close_all()
+        self._reset_handler_config()
         self.terminate()
         self.join()
 
