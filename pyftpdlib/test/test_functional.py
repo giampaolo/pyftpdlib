@@ -1624,37 +1624,27 @@ class TestConfigurableOptions(unittest.TestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        self.was_setup = False
+
+    def setup(self, **kwargs):
         touch(TESTFN)
-        self.server = self.server_class()
+        self.server = self.server_class(**kwargs)
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
         self.client.login(USER, PASSWD)
+        self.was_setup = True
 
     def tearDown(self):
-        os.remove(TESTFN)
-        # set back options to their original value
-        with self.server.lock:
-            self.server.server.max_cons = 0
-            self.server.server.max_cons_per_ip = 0
-            self.server.handler.banner = "pyftpdlib ready."
-            self.server.handler.max_login_attempts = 3
-            self.server.handler.auth_failed_timeout = 5
-            self.server.handler.masquerade_address = None
-            self.server.handler.masquerade_address_map = {}
-            self.server.handler.permit_privileged_ports = False
-            self.server.handler.permit_foreign_addresses = False
-            self.server.handler.passive_ports = None
-            self.server.handler.use_gmt_times = True
-            self.server.handler.tcp_no_delay = hasattr(socket, 'TCP_NODELAY')
-        self.server.stop()
-        self.client.close()
+        if self.was_setup:
+            safe_remove(TESTFN)
+            self.server.stop()
+            self.client.close()
 
     @disable_log_warning
     def test_max_connections(self):
         # Test FTPServer.max_cons attribute
-        with self.server.lock:
-            self.server.server.max_cons = 3
+        self.setup(max_cons=3)
         self.client.quit()
         c1 = self.client_class()
         c2 = self.client_class()
@@ -1691,8 +1681,7 @@ class TestConfigurableOptions(unittest.TestCase):
     @disable_log_warning
     def test_max_connections_per_ip(self):
         # Test FTPServer.max_cons_per_ip attribute
-        with self.server.lock:
-            self.server.server.max_cons_per_ip = 3
+        self.setup(max_cons_per_ip=3)
         self.client.quit()
         c1 = self.client_class()
         c2 = self.client_class()
@@ -1717,8 +1706,7 @@ class TestConfigurableOptions(unittest.TestCase):
 
     def test_banner(self):
         # Test FTPHandler.banner attribute
-        with self.server.lock:
-            self.server.handler.banner = 'hello there'
+        self.setup(banner='hello there')
         self.client.close()
         self.client = self.client_class(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
@@ -1726,9 +1714,7 @@ class TestConfigurableOptions(unittest.TestCase):
 
     def test_max_login_attempts(self):
         # Test FTPHandler.max_login_attempts attribute.
-        with self.server.lock:
-            self.server.handler.max_login_attempts = 1
-            self.server.handler.auth_failed_timeout = 0
+        self.setup(max_login_attempts=1)
         self.assertRaises(ftplib.error_perm, self.client.login, 'wrong',
                           'wrong')
         # socket.error (Windows) or EOFError (Linux) exceptions are
@@ -1739,32 +1725,24 @@ class TestConfigurableOptions(unittest.TestCase):
 
     def test_masquerade_address(self):
         # Test FTPHandler.masquerade_address attribute
-        host, port = self.client.makepasv()
-        self.assertEqual(host, self.server.host)
-        with self.server.lock:
-            self.server.handler.masquerade_address = "256.256.256.256"
+        self.setup(masquerade_address="256.256.256.256")
         host, port = self.client.makepasv()
         self.assertEqual(host, "256.256.256.256")
 
     def test_masquerade_address_map(self):
         # Test FTPHandler.masquerade_address_map attribute
-        host, port = self.client.makepasv()
-        self.assertEqual(host, self.server.host)
-        with self.server.lock:
-            self.server.handler.masquerade_address_map = {self.server.host:
-                                                          "128.128.128.128"}
+        self.setup(masquerade_address_map={HOST: "128.128.128.128"})
         host, port = self.client.makepasv()
         self.assertEqual(host, "128.128.128.128")
 
     def test_passive_ports(self):
         # Test FTPHandler.passive_ports attribute
-        _range = list(range(40000, 60000, 200))
-        with self.server.lock:
-            self.server.handler.passive_ports = _range
-        self.assertTrue(self.client.makepasv()[1] in _range)
-        self.assertTrue(self.client.makepasv()[1] in _range)
-        self.assertTrue(self.client.makepasv()[1] in _range)
-        self.assertTrue(self.client.makepasv()[1] in _range)
+        port_range = list(range(40000, 60000, 200))
+        self.setup(passive_ports=port_range)
+        self.assertIn(self.client.makepasv()[1], port_range)
+        self.assertIn(self.client.makepasv()[1], port_range)
+        self.assertIn(self.client.makepasv()[1], port_range)
+        self.assertIn(self.client.makepasv()[1], port_range)
 
     @disable_log_warning
     def test_passive_ports_busy(self):
@@ -1774,14 +1752,14 @@ class TestConfigurableOptions(unittest.TestCase):
             s.settimeout(TIMEOUT)
             s.bind((HOST, 0))
             port = s.getsockname()[1]
-            with self.server.lock:
-                self.server.handler.passive_ports = [port]
+            self.setup(passive_ports=[port])
             resulting_port = self.client.makepasv()[1]
             self.assertTrue(port != resulting_port)
 
     @disable_log_warning
     def test_permit_privileged_ports(self):
-        # Test FTPHandler.permit_privileged_ports_active attribute
+        # Test FTPHandler.permit_privileged_ports_active attribute.
+        self.setup(permit_privileged_ports=False)
 
         # try to bind a socket on a privileged port
         sock = None
@@ -1812,11 +1790,14 @@ class TestConfigurableOptions(unittest.TestCase):
             # no usable privileged port was found
             sock = None
 
-        with self.server.lock:
-            self.server.handler.permit_privileged_ports = False
-        self.assertRaises(ftplib.error_perm, self.client.sendport, HOST,
-                          port)
+        with self.assertRaises(ftplib.error_perm) as exc:
+            self.client.sendport(HOST, port)
+        self.assertIn('privileged port', str(exc.exception))
+
         if sock:
+            # In order to get here we need root privileges.
+            self.tearDown()
+            self.setup(permit_privileged_ports=True)
             port = sock.getsockname()[1]
             with self.server.lock:
                 self.server.handler.permit_privileged_ports = True
@@ -1828,20 +1809,13 @@ class TestConfigurableOptions(unittest.TestCase):
 
     def test_use_gmt_times(self):
         # use GMT time
-        with self.server.lock:
-            self.server.handler.use_gmt_times = True
+        self.setup(use_gmt_times=True)
         gmt1 = self.client.sendcmd('mdtm ' + TESTFN)
         gmt2 = self.client.sendcmd('mlst ' + TESTFN)
         gmt3 = self.client.sendcmd('stat ' + TESTFN)
 
-        # use local time
-        with self.server.lock:
-            self.server.handler.use_gmt_times = False
-
-        self.client.quit()
-        self.client.connect(self.server.host, self.server.port)
-        self.client.login(USER, PASSWD)
-
+        self.tearDown()
+        self.setup(use_gmt_times=False)
         loc1 = self.client.sendcmd('mdtm ' + TESTFN)
         loc2 = self.client.sendcmd('mlst ' + TESTFN)
         loc3 = self.client.sendcmd('stat ' + TESTFN)
@@ -1860,26 +1834,28 @@ class TestConfigurableOptions(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(socket, 'TCP_NODELAY'),
                          'TCP_NODELAY not available')
-    def test_tcp_no_delay(self):
+    def test_tcp_no_delay_true(self):
+        self.setup(tcp_no_delay=True)
         s = get_server_handler().socket
-        self.assertTrue(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
-        self.client.quit()
-        with self.server.lock:
-            self.server.handler.tcp_no_delay = False
-        self.client.connect(self.server.host, self.server.port)
-        self.client.sendcmd('noop')
+        assert s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY)
+
+    @unittest.skipUnless(hasattr(socket, 'TCP_NODELAY'),
+                         'TCP_NODELAY not available')
+    def test_tcp_no_delay_false(self):
+        self.setup(tcp_no_delay=False)
         s = get_server_handler().socket
-        self.assertFalse(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
+        assert not s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY)
 
     def test_permit_foreign_address_false(self):
+        self.setup(permit_foreign_addresses=False)
         handler = get_server_handler()
-        handler.permit_foreign_addresses = False
         handler.remote_ip = '9.9.9.9'
         with self.assertRaises(ftplib.error_perm) as cm:
             self.client.makeport()
         self.assertIn('foreign address', str(cm.exception))
 
     def test_permit_foreign_address_true(self):
+        self.setup(permit_foreign_addresses=True)
         handler = get_server_handler()
         handler.permit_foreign_addresses = True
         handler.remote_ip = '9.9.9.9'
