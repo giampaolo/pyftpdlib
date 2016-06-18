@@ -55,15 +55,15 @@ def main():
     parser.add_option('-r', '--range', default=None, metavar="FROM-TO",
                       help="the range of TCP ports to use for passive "
                            "connections (e.g. -r 8000-9000)")
+    parser.add_option('-D', '--debug', action='store_true',
+                      help="enable DEBUG logging evel")
     parser.add_option('-v', '--version', action='store_true',
                       help="print pyftpdlib version and exit")
-    parser.add_option('-V', '--verbose', action='store_true',
-                      help="activate a more verbose logging")
 
     options, args = parser.parse_args()
     if options.version:
         sys.exit("pyftpdlib %s" % __ver__)
-    if options.verbose:
+    if options.debug:
         config_logging(level=logging.DEBUG)
 
     passive_ports = None
