@@ -2830,9 +2830,9 @@ class TestCommandLineParser(unittest.TestCase):
         sys.stderr = self.devnull
         self.assertRaises(SystemExit, pyftpdlib.__main__.main)
 
-    def test_V_option(self):
+    def test_D_option(self):
         with mock.patch('pyftpdlib.__main__.config_logging') as fun:
-            sys.argv += ["-V", "-p 0"]
+            sys.argv += ["-D", "-p 0"]
             pyftpdlib.__main__.main()
             fun.assert_called_once_with(level=logging.DEBUG)
 
