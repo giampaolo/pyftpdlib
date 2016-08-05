@@ -240,21 +240,21 @@ Trademarks
 
 Some famous trademarks which adopted pyftpdlib (`complete list <http://pythonhosted.org/pyftpdlib/adoptions.html>`__).
 
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/chrome.jpg
+.. image:: docs/images/chrome.jpg
   :target: http://www.google.com/chrome
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/debian.png
+.. image:: docs/images/debian.png
   :target: http://www.debian.org
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/fedora.png
+.. image:: docs/images/fedora.png
   :target: http://fedoraproject.org/
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/freebsd.gif
+.. image:: docs/images/freebsd.gif
   :target: http://www.freebsd.org
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/openerp.jpg
+.. image:: docs/images/openerp.jpg
   :target: http://openerp.com
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/bazaar.jpg
+.. image:: docs/images/bazaar.jpg
   :target: http://bazaar-vcs.org
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/bitsontherun.png
+.. image:: docs/images/bitsontherun.png
   :target: http://www.bitsontherun.com
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/openvms.png
+.. image:: docs/images/openvms.png
   :target: http://www.openvms.org/
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/smartfile.jpg
+.. image:: docs/images/smartfile.jpg
   :target: https://www.smartfile.com/
