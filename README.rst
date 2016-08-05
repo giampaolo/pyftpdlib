@@ -256,5 +256,5 @@ Some famous trademarks which adopted pyftpdlib (`complete list <http://pythonhos
   :target: http://www.bitsontherun.com
 .. image:: docs/images/openvms.png
   :target: http://www.openvms.org/
-.. image:: docs/images/smartfile.jpg
+.. image:: docs/images/smartfile.png
   :target: https://www.smartfile.com/
