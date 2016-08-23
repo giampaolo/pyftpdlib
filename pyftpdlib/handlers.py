@@ -3415,7 +3415,7 @@ if SSL is not None:
         certfile = None
         keyfile = None
         ssl_protocol = SSL.SSLv23_METHOD
-		# client certificate configurable attributes
+        # client certificate configurable attributes
         tls_mutual_authentication = False
         tls_mutual_auth_certfile = None
         # - SSLv2 is easily broken and is considered harmful and dangerous
@@ -3453,13 +3453,14 @@ if SSL is not None:
 
         def __repr__(self):
             return FTPHandler.__repr__(self)
-			
+            
+        #commented out prints - for different Python version support
         @staticmethod
         def verify_certs_callback(connection, x509, errnum, errdepth, ok):
-            if not ok:
-                self.log("Bad client certificate detected.")
-            else:
-                self.log("Client certificate ok.")
+            #if not ok:
+                #print "Bad client certificate detected."
+            #else:
+                #print "Client certificate ok."
             return ok
 
         @classmethod
