@@ -22,7 +22,7 @@ except ImportError:
 
 try:
     from OpenSSL import SSL  # requires "pip install pyopenssl"
-	from OpenSSL.SSL import  VERIFY_PEER, VERIFY_FAIL_IF_NO_PEER_CERT, VERIFY_CLIENT_ONCE, SESS_CACHE_OFF, OP_NO_TICKET
+    from OpenSSL.SSL import  VERIFY_PEER, VERIFY_FAIL_IF_NO_PEER_CERT, VERIFY_CLIENT_ONCE, SESS_CACHE_OFF, OP_NO_TICKET
 except ImportError:
     SSL = None
 
@@ -3454,7 +3454,7 @@ if SSL is not None:
         def __repr__(self):
             return FTPHandler.__repr__(self)
 			
-		@staticmethod
+        @staticmethod
         def verify_certs_callback(connection, x509, errnum, errdepth, ok):
             if not ok:
                 print "Bad client certificate detected"
@@ -3476,7 +3476,7 @@ if SSL is not None:
                 if not cls.keyfile:
                     cls.keyfile = cls.certfile
                 cls.ssl_context.use_privatekey_file(cls.keyfile)
-				if cls.tls_mutual_authentication:
+                if cls.tls_mutual_authentication:
                     cls.ssl_context.set_verify(VERIFY_PEER | VERIFY_FAIL_IF_NO_PEER_CERT | VERIFY_CLIENT_ONCE, cls.verify_certs_callback)
                     cls.ssl_context.load_verify_locations(cls.tls_mutual_auth_certfile)
                     cls.ssl_context.set_session_cache_mode(SESS_CACHE_OFF)
