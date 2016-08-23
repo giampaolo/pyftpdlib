@@ -3,6 +3,10 @@ Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 Version: 1.5.3 - XXXX-XX-XX
 ===========================
 
+**Enhancements**
+
+- #336: Support client certificate authentication.
+
 **Bug fixes**
 
 - #414: Respond successfully to STOR only after closing file handle.
