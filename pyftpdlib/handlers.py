@@ -3457,9 +3457,9 @@ if SSL is not None:
         @staticmethod
         def verify_certs_callback(connection, x509, errnum, errdepth, ok):
             if not ok:
-                print "Bad client certificate detected"
+                self.log("Bad client certificate detected.")
             else:
-                print "Client certificate ok"
+                self.log("Client certificate ok.")
             return ok
 
         @classmethod
