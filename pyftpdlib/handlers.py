@@ -1265,7 +1265,7 @@ class FTPHandler(AsyncChat):
         if self.tcp_no_delay:
             try:
                 self.socket.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
-            except socket.error:
+            except socket.error as err:
                 debug(
                     "call: FTPHandler.__init__, err on TCP_NODELAY %r" % err,
                     self)
