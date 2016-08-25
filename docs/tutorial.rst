@@ -455,7 +455,7 @@ A small example which shows how to use callback methods via
 
     from pyftpdlib.handlers import FTPHandler
     from pyftpdlib.servers import FTPServer
-    from pyftpdlib.servers import DummyAuthorizer
+    from pyftpdlib.authorizers import DummyAuthorizer
 
 
     class MyHandler(FTPHandler):
