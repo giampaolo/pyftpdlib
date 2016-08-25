@@ -557,12 +557,7 @@ Extended handlers
     means the user will have to issue PROT before PASV or PORT (default
     ``False``).
 	
-  .. data:: tls_mutual_authentication
-
-    When True requires the client to send a valid certificate to connect to the server
-	(default ``False``).
-
-  .. data:: tls_mutual_auth_certfile
+  .. data:: client_certfile
 
     The path of the certificate to check the client certificate against. Must be provided
 	when tls_mutual_authentication is set to ``True`` (default ``None``).

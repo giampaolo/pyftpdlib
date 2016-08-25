@@ -22,7 +22,11 @@ except ImportError:
 
 try:
     from OpenSSL import SSL  # requires "pip install pyopenssl"
-    from OpenSSL.SSL import  VERIFY_PEER, VERIFY_FAIL_IF_NO_PEER_CERT, VERIFY_CLIENT_ONCE, SESS_CACHE_OFF, OP_NO_TICKET
+    from OpenSSL.SSL import OP_NO_TICKET
+    from OpenSSL.SSL import SESS_CACHE_OFF
+    from OpenSSL.SSL import VERIFY_CLIENT_ONCE
+    from OpenSSL.SSL import VERIFY_FAIL_IF_NO_PEER_CERT
+    from OpenSSL.SSL import VERIFY_PEER
 except ImportError:
     SSL = None
 
@@ -3416,8 +3420,7 @@ if SSL is not None:
         keyfile = None
         ssl_protocol = SSL.SSLv23_METHOD
         # client certificate configurable attributes
-        tls_mutual_authentication = False
-        tls_mutual_auth_certfile = None
+        client_certfile = None
         # - SSLv2 is easily broken and is considered harmful and dangerous
         # - SSLv3 has several problems and is now dangerous
         # - Disable compression to prevent CRIME attacks for OpenSSL 1.0+
@@ -3450,17 +3453,21 @@ if SSL is not None:
             self._pbsz = False
             self._prot = False
             self.ssl_context = self.get_ssl_context()
+            if self.client_certfile is not None:
+                self.ssl_context.set_verify(VERIFY_PEER | 
+                                            VERIFY_FAIL_IF_NO_PEER_CERT | 
+                                            VERIFY_CLIENT_ONCE, 
+                                            self.verify_certs_callback)
 
         def __repr__(self):
             return FTPHandler.__repr__(self)
-            
-        #commented out prints - for different Python version support
-        @staticmethod
-        def verify_certs_callback(connection, x509, errnum, errdepth, ok):
-            #if not ok:
-                #print "Bad client certificate detected."
-            #else:
-                #print "Client certificate ok."
+
+        # Cannot be @classmethod, need instance to log
+        def verify_certs_callback(self, connection, x509, errnum, errdepth, ok):
+            if not ok:
+                self.log("Bad client certificate detected.")
+            else:
+                self.log("Client certificate is valid.")
             return ok
 
         @classmethod
@@ -3477,9 +3484,12 @@ if SSL is not None:
                 if not cls.keyfile:
                     cls.keyfile = cls.certfile
                 cls.ssl_context.use_privatekey_file(cls.keyfile)
-                if cls.tls_mutual_authentication:
-                    cls.ssl_context.set_verify(VERIFY_PEER | VERIFY_FAIL_IF_NO_PEER_CERT | VERIFY_CLIENT_ONCE, cls.verify_certs_callback)
-                    cls.ssl_context.load_verify_locations(cls.tls_mutual_auth_certfile)
+                if cls.client_certfile is not None:
+                    cls.ssl_context.set_verify(VERIFY_PEER | 
+                                               VERIFY_FAIL_IF_NO_PEER_CERT | 
+                                               VERIFY_CLIENT_ONCE, 
+                                               cls.verify_certs_callback)
+                    cls.ssl_context.load_verify_locations(cls.client_certfile)
                     cls.ssl_context.set_session_cache_mode(SESS_CACHE_OFF)
                     cls.ssl_options = cls.ssl_options | OP_NO_TICKET
                 if cls.ssl_options:
