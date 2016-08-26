@@ -3,47 +3,26 @@
 # Copyright (C) 2007-2016 Giampaolo Rodola' <g.rodola@gmail.com>.
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
-# 
-# 
+#
+#
 # Does not follow naming convention of other tests because this
 # CANNOT be run in the same test suite with test_functional_ssl.
 # The test parallelism causes SSL errors when there should be none
 # Please run these tests separately
 
-import contextlib
 import ftplib
 import os
-import socket
 import sys
-import ssl
 
 import OpenSSL  # requires "pip install pyopenssl"
 
 from pyftpdlib.handlers import TLS_FTPHandler
 from pyftpdlib.test import configure_logging
-from pyftpdlib.test import PASSWD
 from pyftpdlib.test import remove_test_files
 from pyftpdlib.test import ThreadedTestFTPd
 from pyftpdlib.test import TIMEOUT
-from pyftpdlib.test import TRAVIS
 from pyftpdlib.test import unittest
-from pyftpdlib.test import USER
 from pyftpdlib.test import VERBOSITY
-from pyftpdlib.test.test_functional import TestCallbacks
-from pyftpdlib.test.test_functional import TestConfigurableOptions
-from pyftpdlib.test.test_functional import TestCornerCases
-from pyftpdlib.test.test_functional import TestFtpAbort
-from pyftpdlib.test.test_functional import TestFtpAuthentication
-from pyftpdlib.test.test_functional import TestFtpCmdsSemantic
-from pyftpdlib.test.test_functional import TestFtpDummyCmds
-from pyftpdlib.test.test_functional import TestFtpFsOperations
-from pyftpdlib.test.test_functional import TestFtpListingCmds
-from pyftpdlib.test.test_functional import TestFtpRetrieveData
-from pyftpdlib.test.test_functional import TestFtpStoreData
-from pyftpdlib.test.test_functional import TestIPv4Environment
-from pyftpdlib.test.test_functional import TestIPv6Environment
-from pyftpdlib.test.test_functional import TestSendfile
-from pyftpdlib.test.test_functional import TestTimeouts
 from _ssl import SSLError
 
 
@@ -56,7 +35,7 @@ else:
 CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                         'keycert.pem'))
 CLIENT_CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                        'clientcert.pem'))
+                                               'clientcert.pem'))
 
 del OpenSSL
 
@@ -117,7 +96,7 @@ class TestFTPS(unittest.TestCase):
         # secured
         try:
             self.client.login()
-        except Exception as e:
+        except Exception:
             self.fail("login with certificate should work")
 
     def test_auth_client_nocert(self):
@@ -130,7 +109,8 @@ class TestFTPS(unittest.TestCase):
             if "SSLV3_ALERT_HANDSHAKE_FAILURE" in e.reason:
                 pass
             else:
-                self.fail("Incorrect SSL error with missing client certificate")
+                self.fail("Incorrect SSL error with" +
+                          " missing client certificate")
         else:
             self.fail("Client able to log in with no certificate")
 

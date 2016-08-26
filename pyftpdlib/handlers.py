@@ -3454,16 +3454,17 @@ if SSL is not None:
             self._prot = False
             self.ssl_context = self.get_ssl_context()
             if self.client_certfile is not None:
-                self.ssl_context.set_verify(VERIFY_PEER | 
-                                            VERIFY_FAIL_IF_NO_PEER_CERT | 
-                                            VERIFY_CLIENT_ONCE, 
+                self.ssl_context.set_verify(VERIFY_PEER |
+                                            VERIFY_FAIL_IF_NO_PEER_CERT |
+                                            VERIFY_CLIENT_ONCE,
                                             self.verify_certs_callback)
 
         def __repr__(self):
             return FTPHandler.__repr__(self)
 
         # Cannot be @classmethod, need instance to log
-        def verify_certs_callback(self, connection, x509, errnum, errdepth, ok):
+        def verify_certs_callback(self, connection, x509, 
+                                  errnum, errdepth, ok):
             if not ok:
                 self.log("Bad client certificate detected.")
             else:
@@ -3485,9 +3486,9 @@ if SSL is not None:
                     cls.keyfile = cls.certfile
                 cls.ssl_context.use_privatekey_file(cls.keyfile)
                 if cls.client_certfile is not None:
-                    cls.ssl_context.set_verify(VERIFY_PEER | 
-                                               VERIFY_FAIL_IF_NO_PEER_CERT | 
-                                               VERIFY_CLIENT_ONCE, 
+                    cls.ssl_context.set_verify(VERIFY_PEER |
+                                               VERIFY_FAIL_IF_NO_PEER_CERT |
+                                               VERIFY_CLIENT_ONCE,
                                                cls.verify_certs_callback)
                     cls.ssl_context.load_verify_locations(cls.client_certfile)
                     cls.ssl_context.set_session_cache_mode(SESS_CACHE_OFF)
