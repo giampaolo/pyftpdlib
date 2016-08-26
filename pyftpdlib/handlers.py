@@ -3463,7 +3463,7 @@ if SSL is not None:
             return FTPHandler.__repr__(self)
 
         # Cannot be @classmethod, need instance to log
-        def verify_certs_callback(self, connection, x509, 
+        def verify_certs_callback(self, connection, x509,
                                   errnum, errdepth, ok):
             if not ok:
                 self.log("Bad client certificate detected.")
