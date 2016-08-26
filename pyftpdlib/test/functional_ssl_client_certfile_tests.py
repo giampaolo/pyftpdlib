@@ -3,6 +3,12 @@
 # Copyright (C) 2007-2016 Giampaolo Rodola' <g.rodola@gmail.com>.
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
+# 
+# 
+# Does not follow naming convention of other tests because this
+# CANNOT be run in the same test suite with test_functional_ssl.
+# The test parallelism causes SSL errors when there should be none
+# Please run these tests separately
 
 import contextlib
 import ftplib

@@ -559,8 +559,7 @@ Extended handlers
 	
   .. data:: client_certfile
 
-    The path of the certificate to check the client certificate against. Must be provided
-	when tls_mutual_authentication is set to ``True`` (default ``None``).
+    The path of the certificate to check the client certificate against. (default ``None``).
 	
 Extended authorizers
 --------------------
