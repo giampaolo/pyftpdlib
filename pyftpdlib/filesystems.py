@@ -15,6 +15,13 @@ try:
     import grp
 except ImportError:
     pwd = grp = None
+try:
+    from os import scandir  # py 3.5
+except ImportError:
+    try:
+        from scandir import scandir  # requires "pip install scandir"
+    except ImportError:
+        scandir = None
 
 from ._compat import PY3
 from ._compat import u
@@ -242,6 +249,11 @@ class AbstractedFS(object):
         os.mkdir(path)
 
     def listdir(self, path):
+        """List the content of a directory."""
+        assert isinstance(path, unicode), path
+        return os.listdir(path)
+
+    def listdirinfo(self, path):
         """List the content of a directory."""
         assert isinstance(path, unicode), path
         return os.listdir(path)

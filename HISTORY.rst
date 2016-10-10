@@ -10,6 +10,11 @@ Version: 1.6.0 - XXXX-XX-XX
 - #380: AbstractedFS.listdir() can now return also a generator (not only a
   list).
 
+**Bug fixes**
+
+- #400: QUIT can raise KeyError in case the user hasn't logged in yet and sends
+  QUIT command.
+
 
 Version: 1.5.1 - 2016-05-02
 ===========================

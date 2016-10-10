@@ -226,7 +226,10 @@ class DummyAuthorizer(object):
 
     def get_msg_quit(self, username):
         """Return the user's quitting message."""
-        return self.user_table[username]['msg_quit']
+        try:
+            return self.user_table[username]['msg_quit']
+        except KeyError:
+            return "Goodbye."
 
     def _check_permissions(self, username, perm):
         warned = 0
