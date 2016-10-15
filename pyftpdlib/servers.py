@@ -188,7 +188,7 @@ class FTPServer(Acceptor):
         """Start serving.
 
          - (float) timeout: the timeout passed to the underlying IO
-           loop expressed in seconds (default 1.0).
+           loop expressed in seconds.
 
          - (bool) blocking: if False loop once and then return the
            timeout of the next scheduled call next to expire soonest
@@ -408,7 +408,7 @@ class _SpawnerBase(FTPServer):
     def _log_start(self):
         FTPServer._log_start(self)
 
-    def serve_forever(self, timeout=None, blocking=True, handle_exit=True):
+    def serve_forever(self, timeout=1.0, blocking=True, handle_exit=True):
         self._exit.clear()
         if handle_exit:
             log = handle_exit and blocking

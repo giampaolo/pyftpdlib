@@ -14,6 +14,7 @@ Version: 1.6.0 - XXXX-XX-XX
 
 - #400: QUIT can raise KeyError in case the user hasn't logged in yet and sends
   QUIT command.
+- #367: ThreadedFTPServer no longer hangs if close_all() is called.
 
 
 Version: 1.5.1 - 2016-05-02
