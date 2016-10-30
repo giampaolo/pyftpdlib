@@ -404,7 +404,7 @@ class PassiveDTP(Acceptor):
     def handle_timeout(self):
         if self.cmd_channel.connected:
             self.cmd_channel.respond("421 Passive data channel timed out.",
-                                     logfun=logging.info)
+                                     logfun=logger.info)
         self.close()
 
     def handle_error(self):
@@ -2437,7 +2437,7 @@ class FTPHandler(AsyncChat):
                     self.data_channel.close()
                     self.data_channel = None
                     self.respond("426 Transfer aborted via ABOR.",
-                                 logfun=logging.info)
+                                 logfun=logger.info)
                     resp = "226 ABOR command successful."
                 else:
                     self.data_channel.close()
@@ -2464,7 +2464,7 @@ class FTPHandler(AsyncChat):
             # login sequence again.
             self.flush_account()
             msg = 'Previous account information was flushed'
-            self.respond('331 %s, send password.' % msg, logfun=logging.info)
+            self.respond('331 %s, send password.' % msg, logfun=logger.info)
         self.username = line
 
     def handle_auth_failed(self, msg, password):
