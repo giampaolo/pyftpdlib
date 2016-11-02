@@ -9,19 +9,27 @@ FLAGS=
 all: test
 
 clean:
-	rm -f `find . -type f -name \*.py[co]`
-	rm -f `find . -type f -name .\*~`
-	rm -f `find . -type f -name \*.orig`
-	rm -f `find . -type f -name \*.bak`
-	rm -f `find . -type f -name \*.rej`
-	rm -rf `find . -type d -name __pycache__`
-	rm -rf *.egg-info
-	rm -rf .tox
-	rm -rf build
-	rm -rf dist
-	rm -rf docs/_build
-	rm -rf htmlcov
-	rm -rf .coverage
+	rm -rf `find . -type d -name __pycache__ \
+		-o -type f -name \*.bak \
+		-o -type f -name \*.orig \
+		-o -type f -name \*.pyc \
+		-o -type f -name \*.pyd \
+		-o -type f -name \*.pyo \
+		-o -type f -name \*.rej \
+		-o -type f -name \*.so \
+		-o -type f -name \*.~ \
+		-o -type f -name \*\$testfn`
+	rm -rf \
+		*.core \
+		*.egg-info \
+		*\$testfile* \
+		.coverage \
+		.tox \
+		build/ \
+		dist/ \
+		docs/_build/ \
+		htmlcov/ \
+		tmp/
 
 build: clean
 	$(PYTHON) setup.py build

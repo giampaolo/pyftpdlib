@@ -85,7 +85,7 @@ _write = asyncore.write
 # These errnos indicate that a connection has been abruptly terminated.
 _ERRNOS_DISCONNECTED = set((
     errno.ECONNRESET, errno.ENOTCONN, errno.ESHUTDOWN, errno.ECONNABORTED,
-    errno.EPIPE, errno.EBADF))
+    errno.EPIPE, errno.EBADF, errno.ETIMEDOUT))
 if hasattr(errno, "WSAECONNRESET"):
     _ERRNOS_DISCONNECTED.add(errno.WSAECONNRESET)
 if hasattr(errno, "WSAECONNABORTED"):
