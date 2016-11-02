@@ -65,6 +65,19 @@ TRAVIS = bool(os.environ.get('TRAVIS'))
 VERBOSITY = 1 if os.getenv('SILENT') else 2
 
 
+class TestCase(unittest.TestCase):
+
+    def __str__(self):
+        return "%s.%s.%s" % (
+            self.__class__.__module__, self.__class__.__name__,
+            self._testMethodName)
+
+
+# Hack that overrides default unittest.TestCase in order to print
+# a full path representation of the single unit tests being run.
+unittest.TestCase = TestCase
+
+
 def try_address(host, port=0, family=socket.AF_INET):
     """Try to bind a socket on the given host:port and return True
     if that has been possible."""
@@ -75,6 +88,7 @@ def try_address(host, port=0, family=socket.AF_INET):
         return False
     else:
         return True
+
 
 SUPPORTS_IPV4 = try_address('127.0.0.1')
 SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
