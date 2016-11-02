@@ -3418,7 +3418,9 @@ if SSL is not None:
         # - SSLv3 has several problems and is now dangerous
         # - Disable compression to prevent CRIME attacks for OpenSSL 1.0+
         #   (see https://github.com/shazow/urllib3/pull/309)
-        ssl_options = SSL.OP_NO_SSLv2 | SSL.OP_NO_SSLv3 | SSL.OP_NO_COMPRESSION
+        ssl_options = SSL.OP_NO_SSLv2 | SSL.OP_NO_SSLv3
+        if hasattr(SSL, "OP_NO_COMPRESSION"):
+            ssl_options |= SSL.OP_NO_COMPRESSION
         ssl_context = None
 
         # overridden attributes
