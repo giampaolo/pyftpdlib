@@ -13,4 +13,7 @@ fi
 pip install flake8 pyopenssl mock
 python setup.py install
 python pyftpdlib/test/runner.py
+if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]] || [[ $PYVER == 'py26' ]]; then
+    exit 0;
+fi
 flake8
