@@ -360,7 +360,7 @@ class ThreadedTestFTPd(ThreadWorker):
     handler = FTPHandler
     server_class = FTPServer
     shutdown_after = 10
-    poll_interval = 0.0001
+    poll_interval = 0.001 if TRAVIS else 0.000001
 
     def __init__(self, addr=None):
         super(ThreadedTestFTPd, self).__init__(poll_interval=None)
