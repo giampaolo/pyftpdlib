@@ -1,16 +1,21 @@
 # Tells "python setup.py sdist" what files to include in the tarball.
 
+include *.bat
+include *.rst
 include .coveragerc
-include .git-pre-commit
-include CREDITS
-include HISTORY.rst
-include LICENSE
-include make.bat
+include CREDITS*
+include HISTORY*
+include LICENSE*
 include Makefile
 include MANIFEST.in
 include README.rst
-recursive-include demo *.py *.pem *README*
-recursive-include pyftpdlib *.py *.pem *README*
-recursive-include scripts *
+include tox.ini
+
+recursive-exclude .ci *
+recursive-exclude build *
 recursive-exclude docs/_build *
-recursive-include docs *.rst *.js *.html *.py *.bat *Makefile* *README*
+recursive-include demo *.py *.pem README*
+recursive-include docs *.rst *.conf *.css *.js *.html *.py *.bat *Makefile* *README
+recursive-include pyftpdlib *.py *.pem *.rst README*
+recursive-include README*
+recursive-include scripts *

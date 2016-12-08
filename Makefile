@@ -4,7 +4,7 @@
 
 PYTHON=python
 TSCRIPT=pyftpdlib/test/runner.py
-FLAGS=
+ARGS=
 
 all: test
 
@@ -110,6 +110,9 @@ pyflakes:
 
 flake8:
 	@git ls-files | grep \\.py$ | xargs $(PYTHON) -m flake8
+
+check-manifest:
+	$(PYTHON) -m check_manifest -v $(ARGS)
 
 upload-src: clean
 	$(PYTHON) setup.py sdist upload
