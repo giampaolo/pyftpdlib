@@ -6,6 +6,24 @@ PYTHON=python
 TSCRIPT=pyftpdlib/test/runner.py
 ARGS=
 
+DEPS=coverage \
+	check-manifest \
+	flake8 \
+	ipdb \
+	mock==1.0.1 \
+	nose \
+	pep8 \
+	pyflakes \
+	pyopenssl \
+	pysendfile \
+	setuptools \
+	sphinx \
+	sphinx-pypi-upload \
+	unittest2
+
+# In not in a virtualenv, add --user options for install commands.
+INSTALL_OPTS = `$(PYTHON) -c "import sys; print('' if hasattr(sys, 'real_prefix') else '--user')"`
+
 all: test
 
 clean:
@@ -35,34 +53,37 @@ build: clean
 	$(PYTHON) setup.py build
 
 install: build
-	$(PYTHON) setup.py develop --user
+	# make sure setuptools is installed (needed for 'develop' / edit mode)
+	$(PYTHON) -c "import setuptools"
+	$(PYTHON) setup.py develop $(INSTALL_OPTS)
 
 uninstall:
 	cd ..; $(PYTHON) -m pip uninstall -y -v pyftpdlib
 
+# Install PIP (only if necessary).
+install-pip:
+	$(PYTHON) -c \
+		"import sys, ssl, os, pkgutil, tempfile, atexit; \
+		sys.exit(0) if pkgutil.find_loader('pip') else None; \
+		pyexc = 'from urllib.request import urlopen' if sys.version_info[0] == 3 else 'from urllib2 import urlopen'; \
+		exec(pyexc); \
+		ctx = ssl._create_unverified_context() if hasattr(ssl, '_create_unverified_context') else None; \
+		kw = dict(context=ctx) if ctx else {}; \
+		req = urlopen('https://bootstrap.pypa.io/get-pip.py', **kw); \
+		data = req.read(); \
+		f = tempfile.NamedTemporaryFile(suffix='.py'); \
+		atexit.register(f.close); \
+		f.write(data); \
+		f.flush(); \
+		print('downloaded %s' % f.name); \
+		code = os.system('%s %s --user' % (sys.executable, f.name)); \
+		f.close(); \
+		sys.exit(code);"
+
 # useful deps which are nice to have while developing / testing
-setup-dev-env: install-git-hooks
-	python -c  "import urllib2, ssl; \
-				context = ssl._create_unverified_context() if hasattr(ssl, '_create_unverified_context') else None; \
-				kw = dict(context=context) if context else {}; \
-				r = urllib2.urlopen('https://bootstrap.pypa.io/get-pip.py', **kw); \
-				open('/tmp/get-pip.py', 'w').write(r.read());"
-	$(PYTHON) /tmp/get-pip.py --user
-	rm /tmp/get-pip.py
-	$(PYTHON) -m pip install --user --upgrade pip
-	$(PYTHON) -m pip install --user --upgrade \
-		coverage \
-		flake8 \
-		ipdb \
-		mock==1.0.1 \
-		nose \
-		pep8 \
-		pyflakes \
-		pyopenssl \
-		pysendfile \
-		sphinx \
-		sphinx-pypi-upload \
-		unittest2 \
+setup-dev-env: install-git-hooks install-pip
+	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade pip
+	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(DEPS)
 
 test: install
 	$(PYTHON) $(TSCRIPT)
@@ -132,3 +153,6 @@ git-tag-release:
 install-git-hooks:
 	ln -sf ../../.git-pre-commit .git/hooks/pre-commit
 	chmod +x .git/hooks/pre-commit
+
+grep-todos:
+	git grep -EIn "TODO|FIXME|XXX"
