@@ -156,39 +156,7 @@ class TestConfigurableOptionsTLSMixin(TLSTestMixin, TestConfigurableOptions):
 
 
 class TestCallbacksTLSMixin(TLSTestMixin, TestCallbacks):
-
-    def test_on_file_received(self):
-        pass
-
-    def test_on_file_sent(self):
-        pass
-
-    def test_on_incomplete_file_received(self):
-        pass
-
-    def test_on_incomplete_file_sent(self):
-        pass
-
-    def test_on_connect(self):
-        pass
-
-    def test_on_disconnect(self):
-        pass
-
-    def test_on_login(self):
-        pass
-
-    def test_on_login_failed(self):
-        pass
-
-    def test_on_logout_quit(self):
-        pass
-
-    def test_on_logout_rein(self):
-        pass
-
-    def test_on_logout_user_issued_twice(self):
-        pass
+    pass
 
 
 class TestIPv4EnvironmentTLSMixin(TLSTestMixin, TestIPv4Environment):

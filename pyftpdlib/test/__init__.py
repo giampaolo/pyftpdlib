@@ -16,6 +16,10 @@ import threading
 import time
 import warnings
 try:
+    from queue import Queue  # py3
+except ImportError:
+    from Queue import Queue
+try:
     from unittest import mock  # py3
 except ImportError:
     import mock  # NOQA - requires "pip install mock"
@@ -63,6 +67,7 @@ POSIX = os.name == 'posix'
 WINDOWS = os.name == 'nt'
 TRAVIS = bool(os.environ.get('TRAVIS'))
 VERBOSITY = 1 if os.getenv('SILENT') else 2
+DEFAULT = object()
 
 
 class TestCase(unittest.TestCase):
@@ -362,20 +367,72 @@ class ThreadedTestFTPd(ThreadWorker):
     shutdown_after = 10
     poll_interval = 0.001 if TRAVIS else 0.000001
 
-    def __init__(self, addr=None):
-        super(ThreadedTestFTPd, self).__init__(poll_interval=None)
+    def __init__(self, addr=None, callback_queues=False, **kwargs):
+        ThreadWorker.__init__(self, poll_interval=None)
         self.addr = (HOST, 0) if addr is None else addr
-        authorizer = DummyAuthorizer()
-        authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwM')  # full perms
-        authorizer.add_anonymous(HOME)
-        self.handler.authorizer = authorizer
-        # lower buffer sizes = more "loops" while transfering data
+
+        # Set authorizer.
+        self.authorizer = DummyAuthorizer()
+        # full perms
+        self.authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwM')
+        self.authorizer.add_anonymous(HOME)
+        self.handler.authorizer = self.authorizer
+
+        # Configure handler.
+        max_cons = kwargs.pop('max_cons', DEFAULT)
+        max_cons_per_ip = kwargs.pop('max_cons_per_ip', DEFAULT)
+        self._config_handler(kwargs)
+
+        # Configure server.
+        self.server = self.server_class(self.addr, self.handler)
+        if max_cons is not DEFAULT:
+            self.server.max_cons = max_cons
+        if max_cons_per_ip is not DEFAULT:
+            self.server.max_cons_per_ip = max_cons_per_ip
+
+        # Expose host and port.
+        self.host, self.port = self.server.socket.getsockname()[:2]
+        self.lock = threading.Lock()
+        self.queue = None
+        if callback_queues:
+            self._config_callback_queues()
+
+    def _config_handler(self, config):
+        # No delayed response in case of failed auth.
+        self.handler.auth_failed_timeout = 0.001
+        # lower buffer sizes = more "loops" while transferring data
         # = less false positives
         self.handler.dtp_handler.ac_in_buffer_size = 4096
         self.handler.dtp_handler.ac_out_buffer_size = 4096
-        self.server = self.server_class(self.addr, self.handler)
-        self.host, self.port = self.server.socket.getsockname()[:2]
-        self.start_time = None
+        # Configure handler.
+
+        self.original_config = {}
+        for k, v in config.items():
+            if k not in ('dtp_handler', 'abstracted_fs'):
+                assert not callable(getattr(self.handler, k))
+            self.original_config[k] = getattr(self.handler, k)
+            setattr(self.handler, k, v)
+
+    def _reset_handler_config(self):
+        for k, v in self.original_config.items():
+            setattr(self.handler, k, v)
+
+    def _config_callback_queues(self):
+        self.queue = Queue()
+        q = self.queue
+        h = self.handler
+        h.on_connect = lambda _: q.put('on_connect')
+        h.on_disconnect = lambda _: q.put('on_disconnect')
+        h.on_login = lambda _, user: q.put(('on_login', user))
+        h.on_login_failed = \
+            lambda _, user, pwd: q.put(('on_login_failed', user, pwd))
+        h.on_logout = lambda _, user: q.put(('on_logout', user))
+        h.on_file_sent = lambda _, file: q.put(('on_file_sent', file))
+        h.on_file_received = lambda _, file: q.put(('on_file_received', file))
+        h.on_incomplete_file_sent = \
+            lambda _, file: q.put(('on_incomplete_file_sent', file))
+        h.on_incomplete_file_received = \
+            lambda _, file: q.put(('on_incomplete_file_received', file))
 
     def before_start(self):
         self.start_time = time.time()
@@ -391,3 +448,9 @@ class ThreadedTestFTPd(ThreadWorker):
 
     def after_stop(self):
         self.server.close_all()
+        self._reset_handler_config()
+        if self.queue is not None:
+            if not self.queue.empty():
+                remaining = self.queue.get()
+                assert remaining == 'on_disconnect' and self.queue.empty(), \
+                    remaining
