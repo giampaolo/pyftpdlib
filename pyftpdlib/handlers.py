@@ -71,6 +71,7 @@ def _import_sendfile():
             except ImportError:
                 pass
 
+
 sendfile = _import_sendfile()
 
 proto_cmds = {
@@ -248,6 +249,7 @@ def _support_hybrid_ipv6():
             return not sock.getsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY)
     except (socket.error, AttributeError):
         return False
+
 
 SUPPORTS_HYBRID_IPV6 = _support_hybrid_ipv6()
 

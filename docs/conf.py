@@ -46,6 +46,7 @@ def get_version():
                 return ret
         raise ValueError("couldn't find version string")
 
+
 VERSION = get_version()
 
 # If your documentation needs a minimal Sphinx version, state it here.

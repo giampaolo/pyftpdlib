@@ -36,6 +36,7 @@ def _stderr_supports_color():
             pass
     return color
 
+
 # configurable options
 LEVEL = logging.INFO
 PREFIX = '[%(levelname)1.1s %(asctime)s]'
