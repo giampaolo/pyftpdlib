@@ -10,7 +10,7 @@ if [[ "$(uname -s)" == 'Darwin' ]]; then
     pyenv activate pyftpdlib
 fi
 
-pip install flake8 pyopenssl mock setuptools
+pip install -U flake8 pyopenssl mock setuptools six
 python setup.py install
 python pyftpdlib/test/runner.py
 if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]] || [[ $PYVER == 'py26' ]]; then
