@@ -357,15 +357,15 @@ class ThreadedTestFTPd(ThreadWorker):
     The instance returned can be used to start(), stop() and
     eventually re-start() the server.
     """
-    handler = FTPHandler
     server_class = FTPServer
     shutdown_after = 10
     poll_interval = 0.001 if TRAVIS else 0.000001
 
-    def __init__(self, addr=None):
+    def __init__(self, addr=None, handler=FTPHandler):
         super(ThreadedTestFTPd, self).__init__(
             poll_interval=self.poll_interval)
         self.addr = (HOST, 0) if addr is None else addr
+        self.handler = handler
         authorizer = DummyAuthorizer()
         authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwM')  # full perms
         authorizer.add_anonymous(HOME)

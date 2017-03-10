@@ -106,6 +106,9 @@ test-ioloop: install
 test-servers: install
 	$(PYTHON) pyftpdlib/test/test_servers.py
 
+test-demos: install
+	$(PYTHON) pyftpdlib/test/test_demo_scripts.py
+
 # Run a specific test by name; e.g. "make test-by-name retr" will run
 # all test methods containing "retr" in their name.
 # Requires "pip install nose".
