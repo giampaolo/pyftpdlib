@@ -674,6 +674,8 @@ class DTPHandler(AsyncChat):
                     raise _GiveUpOnSendfile
                 else:
                     raise
+        except TypeError as err:
+            raise _GiveUpOnSendfile
         else:
             if sent == 0:
                 # this signals the channel that the transfer is completed
