@@ -178,3 +178,9 @@ release:
 # Print announce of new release.
 print-announce:
 	@$(PYTHON) scripts/print_announce.py
+
+# generate a doc.zip file and manually upload it to PYPI.
+doc:
+	cd docs && make html && cd _build/html/ && zip doc.zip -r .
+	mv docs/_build/html/doc.zip .
+	@echo "done; now manually upload doc.zip from here: https://pypi.python.org/pypi?:action=pkg_edit&name=pyftpdlib"

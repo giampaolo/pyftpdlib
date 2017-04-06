@@ -32,17 +32,8 @@ I'm glad to announce the release of {prj_name} {prj_version}:
 About
 =====
 
-pyftpdlib (process and system utilities) is a cross-platform library for \
-retrieving information on running processes and system utilization (CPU, \
-memory, disks, network) in Python. It is useful mainly for system \
-monitoring, profiling and limiting process resources and management of \
-running processes. It implements many functionalities offered by command \
-line tools such as: ps, top, lsof, netstat, ifconfig, who, df, kill, free, \
-nice, ionice, iostat, iotop, uptime, pidof, tty, taskset, pmap. It \
-currently supports Linux, Windows, OSX, Sun Solaris, FreeBSD, OpenBSD and \
-NetBSD, both 32-bit and 64-bit architectures, with Python versions from 2.6 \
-to 3.5 (users of Python 2.4 and 2.5 may use 2.1.3 version). PyPy is also \
-known to work.
+Python FTP server library provides a high-level portable interface to easily \
+write very efficient, scalable and asynchronous FTP servers with Python.
 
 What's new
 ==========
