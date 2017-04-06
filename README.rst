@@ -1,22 +1,26 @@
-.. image:: https://img.shields.io/pypi/dm/pyftpdlib.svg
-    :target: https://pypi.python.org/pypi/pyftpdlib/
-    :alt: Download this month
+.. image:: https://img.shields.io/travis/giampaolo/pyftpdlib/master.svg?maxAge=3600&label=Linux%20/%20OSX
+    :target: https://travis-ci.org/giampaolo/pyftpdlib
+    :alt: Linux tests (Travis)
 
-.. image:: https://img.shields.io/pypi/v/pyftpdlib.svg
+.. image:: https://img.shields.io/appveyor/ci/giampaolo/pyftpdlib/master.svg?maxAge=3600&label=Windows
+    :target: https://ci.appveyor.com/project/giampaolo/pyftpdlib
+    :alt: Windows tests (Appveyor)
+
+.. image:: https://coveralls.io/repos/github/giampaolo/pyftpdlib/badge.svg?branch=master
+    :target: https://coveralls.io/github/giampaolo/pyftpdlib?branch=master
+    :alt: Test coverage (coverall.io)
+
+.. image:: https://img.shields.io/pypi/v/pyftpdlib.svg?label=pypi
     :target: https://pypi.python.org/pypi/pyftpdlib/
     :alt: Latest version
+
+.. image:: https://img.shields.io/github/stars/giampaolo/pyftpdlib.svg
+    :target: https://github.com/giampaolo/pyftpdlib/
+    :alt: Github stars
 
 .. image:: https://img.shields.io/pypi/l/pyftpdlib.svg
     :target: https://pypi.python.org/pypi/pyftpdlib/
     :alt: License
-
-.. image:: https://img.shields.io/travis/giampaolo/pyftpdlib/master.svg
-    :target: https://travis-ci.org/giampaolo/pyftpdlib
-    :alt: Travis
-
-.. image:: https://coveralls.io/repos/giampaolo/pyftpdlib/badge.svg?branch=master&service=github
-    :target: https://coveralls.io/github/giampaolo/pyftpdlib?branch=master
-    :alt: Test coverage (coverall.io)
 
 Quick links
 ===========
