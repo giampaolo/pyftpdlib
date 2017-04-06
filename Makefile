@@ -156,3 +156,21 @@ install-git-hooks:
 
 grep-todos:
 	git grep -EIn "TODO|FIXME|XXX"
+
+# All the necessary steps before making a release.
+pre-release:
+	${MAKE} clean
+	$(PYTHON) -c \
+		"from pyftpdlib import __ver__ as ver; \
+		doc = open('docs/index.rst').read(); \
+		history = open('HISTORY.rst').read(); \
+		assert ver in history, '%r not in HISTORY.rst' % ver; \
+		assert 'XXXX' not in history; \
+		"
+	$(PYTHON) setup.py sdist
+
+# Create a release: creates tar.gz, uploads it, git tag release.
+release:
+	${MAKE} pre-release
+	$(PYTHON) -m twine upload dist/*  # upload tar on PYPI
+	${MAKE} git-tag-release

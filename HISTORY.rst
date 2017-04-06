@@ -1,6 +1,6 @@
 Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 
-Version: 1.6.0 - XXXX-XX-XX
+Version: 1.5.2 - 2016-04-06
 ===========================
 
 **Enhancements**
