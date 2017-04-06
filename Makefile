@@ -174,3 +174,7 @@ release:
 	${MAKE} pre-release
 	$(PYTHON) -m twine upload dist/*  # upload tar on PYPI
 	${MAKE} git-tag-release
+
+# Print announce of new release.
+print-announce:
+	@$(PYTHON) scripts/print_announce.py
