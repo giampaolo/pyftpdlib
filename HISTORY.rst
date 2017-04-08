@@ -5,7 +5,7 @@ Version: 1.5.3 - XXXX-XX-XX
 
 XXX
 
-Version: 1.5.2 - 2016-04-06
+Version: 1.5.2 - 2017-04-06
 ===========================
 
 **Enhancements**
