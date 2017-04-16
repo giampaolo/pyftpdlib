@@ -17,7 +17,9 @@ if PY3:
     def b(s):
         return s.encode("latin-1")
 
-    getcwdu = os.getcwd
+    def getcwdu():
+        return os.getcwd()
+
     unicode = str
     xrange = range
 else:
@@ -27,7 +29,9 @@ else:
     def b(s):
         return s
 
-    getcwdu = os.getcwdu
+    def getcwdu():
+        return os.getcwdu()
+
     unicode = unicode
     xrange = xrange
 
