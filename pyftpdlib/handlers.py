@@ -22,6 +22,7 @@ except ImportError:
 
 try:
     from OpenSSL import SSL  # requires "pip install pyopenssl"
+	from OpenSSL.SSL import  VERIFY_PEER, VERIFY_FAIL_IF_NO_PEER_CERT, VERIFY_CLIENT_ONCE, SESS_CACHE_OFF, OP_NO_TICKET
 except ImportError:
     SSL = None
 
@@ -3416,6 +3417,9 @@ if SSL is not None:
         certfile = None
         keyfile = None
         ssl_protocol = SSL.SSLv23_METHOD
+		# client certificate configurable attributes
+        tls_mutual_authentication = False
+        tls_mutual_auth_certfile = None
         # - SSLv2 is easily broken and is considered harmful and dangerous
         # - SSLv3 has several problems and is now dangerous
         # - Disable compression to prevent CRIME attacks for OpenSSL 1.0+
@@ -3453,6 +3457,14 @@ if SSL is not None:
 
         def __repr__(self):
             return FTPHandler.__repr__(self)
+			
+		@staticmethod
+        def verify_certs_callback(connection, x509, errnum, errdepth, ok):
+            if not ok:
+                print "Bad client certificate detected"
+            else:
+                print "Client certificate ok"
+            return ok
 
         @classmethod
         def get_ssl_context(cls):
@@ -3468,6 +3480,11 @@ if SSL is not None:
                 if not cls.keyfile:
                     cls.keyfile = cls.certfile
                 cls.ssl_context.use_privatekey_file(cls.keyfile)
+				if cls.tls_mutual_authentication:
+                    cls.ssl_context.set_verify(VERIFY_PEER | VERIFY_FAIL_IF_NO_PEER_CERT | VERIFY_CLIENT_ONCE, cls.verify_certs_callback)
+                    cls.ssl_context.load_verify_locations(cls.tls_mutual_auth_certfile)
+                    cls.ssl_context.set_session_cache_mode(SESS_CACHE_OFF)
+                    cls.ssl_options = cls.ssl_options | OP_NO_TICKET
                 if cls.ssl_options:
                     cls.ssl_context.set_options(cls.ssl_options)
             return cls.ssl_context
