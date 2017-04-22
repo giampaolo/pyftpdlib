@@ -9,28 +9,17 @@ matrix:
         - python: 3.4
         - python: 3.5
         - python: 3.6
-        # - language: generic
-        #   os: osx
-        #   env: PYVER=py26
         - language: generic
           os: osx
           env: PYVER=py27
-        # - language: generic
-        #   os: osx
-        #   env: PYVER=py33
         - language: generic
           os: osx
           env: PYVER=py34
-        # XXX - not supported yet
-        # - language: generic
-        #   os: osx
-        #   env: PYVER=py35
 install:
     - ./.ci/travis/install.sh
 script:
     - ./.ci/travis/run.sh
 after_success:
-    # upload reports to coveralls.io
     - |
         if [ "$(uname -s)" != 'Darwin' ]; then
             coveralls

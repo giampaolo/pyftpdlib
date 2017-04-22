@@ -13,7 +13,6 @@ fi
 python setup.py install
 python pyftpdlib/test/runner.py
 
-
 # run linter only on Linux and on latest python versions
 if [ "$PYVER" == "2.7" ] || [ "$PYVER" == "3.6" ]; then
     if [[ "$(uname -s)" != 'Darwin' ]]; then

@@ -15,6 +15,7 @@ import OpenSSL  # requires "pip install pyopenssl"
 
 from pyftpdlib.handlers import TLS_FTPHandler
 from pyftpdlib.test import configure_logging
+from pyftpdlib.test import OSX
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import remove_test_files
 from pyftpdlib.test import ThreadedTestFTPd
@@ -359,6 +360,8 @@ class TestFTPS(unittest.TestCase):
     #     for proto in protos:
     #         self.try_protocol_combo(ssl.PROTOCOL_TLSv1, proto)
 
+    # On OSX TLS_FTPHandler.get_ssl_context()._context does not exist.
+    @unittest.skipIf(OSX, "can't get options on OSX")
     def test_ssl_options(self):
         from OpenSSL import SSL
         from OpenSSL._util import lib
@@ -393,9 +396,15 @@ class TestFTPS(unittest.TestCase):
         def test_sslv2(self):
             self.client.ssl_version = ssl.PROTOCOL_SSLv2
             self.client.close()
-            with self.server.lock:
-                self.client.connect(self.server.host, self.server.port)
-            self.assertRaises(socket.error, self.client.login)
+            if not OSX:
+                with self.server.lock:
+                    self.client.connect(self.server.host, self.server.port)
+                self.assertRaises(socket.error, self.client.login)
+            else:
+                with self.server.lock:
+                    with self.assertRaises(socket.error):
+                        self.client.connect(self.server.host, self.server.port,
+                                            timeout=0.1)
             self.client.ssl_version = ssl.PROTOCOL_SSLv2
 
 

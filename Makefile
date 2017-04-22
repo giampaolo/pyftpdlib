@@ -9,7 +9,6 @@ ARGS=
 DEPS=coverage \
 	check-manifest \
 	flake8 \
-	ipdb \
 	mock==1.0.1 \
 	nose \
 	pep8 \
@@ -18,7 +17,6 @@ DEPS=coverage \
 	pysendfile \
 	setuptools \
 	sphinx \
-	sphinx-pypi-upload \
 	unittest2
 
 # In not in a virtualenv, add --user options for install commands.
