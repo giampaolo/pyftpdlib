@@ -3,7 +3,9 @@ Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 Version: 1.5.3 - XXXX-XX-XX
 ===========================
 
-XXX
+**Bug fixes**
+
+- #414: Respond successfully to STOR only after closing file handle.
 
 Version: 1.5.2 - 2017-04-06
 ===========================
