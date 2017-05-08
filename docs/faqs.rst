@@ -142,15 +142,12 @@ avoid race conditions, dead locks etc.
     class MyHandler(FTPHandler):
 
         def on_file_received(self, file):
-        """Called every time a file has been received"""
-
-        def blocking_task():
-            time.sleep(5)
-            self.add_channel()
+            def blocking_task():
+                time.sleep(5)
+                self.add_channel()
 
             self.del_channel()
             threading.Thread(target=blocking_task).start()
-
 
 Another possibility is to
 `change the default concurrency model <tutorial.html#changing-the-concurrency-model>`__.
