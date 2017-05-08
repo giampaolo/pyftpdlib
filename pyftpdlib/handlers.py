@@ -872,11 +872,14 @@ class DTPHandler(AsyncChat):
         if not self._closed:
             # RFC-959 says we must close the connection before replying
             AsyncChat.close(self)
+
+            # Close file object before responding successfully to client
+            if self.file_obj is not None and not self.file_obj.closed:
+                self.file_obj.close()
+                
             if self._resp:
                 self.cmd_channel.respond(self._resp[0], logfun=self._resp[1])
 
-            if self.file_obj is not None and not self.file_obj.closed:
-                self.file_obj.close()
             if self._idler is not None and not self._idler.cancelled:
                 self._idler.cancel()
             if self.file_obj is not None:
