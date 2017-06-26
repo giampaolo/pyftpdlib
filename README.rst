@@ -81,7 +81,7 @@ superior to most common UNIX FTP servers. It also scales better since whereas
 vsftpd and proftpd use multiple processes to achieve concurrency, pyftpdlib
 will only use one process and handle concurrency asynchronously (see
 `the C10K problem <http://www.kegel.com/c10k.html>`__). Here are some
-`benchmarks <https://github.com/giampaolo/pyftpdlib/blob/master/test/bench.py>`__
+`benchmarks <https://github.com/giampaolo/pyftpdlib/blob/master/scripts/ftpbench>`__
 made against my Linux 3.0.0 box, Intel core-duo 3.1 Ghz:
 
 pyftpdlib vs. proftpd 1.3.4
