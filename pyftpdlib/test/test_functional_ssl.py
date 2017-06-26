@@ -211,7 +211,7 @@ class TestCornerCasesTLSMixin(TLSTestMixin, TestCornerCases):
 
 @unittest.skipUnless(FTPS_SUPPORT, FTPS_UNSUPPORT_REASON)
 class TestFTPS(unittest.TestCase):
-    """Specific tests fot TSL_FTPHandler class."""
+    """Specific tests for TLS_FTPHandler class."""
 
     def setUp(self):
         self.server = FTPSServer()

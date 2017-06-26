@@ -556,7 +556,11 @@ Extended handlers
     When True requires SSL/TLS to be established on the data channel. This
     means the user will have to issue PROT before PASV or PORT (default
     ``False``).
+	
+  .. data:: client_certfile
 
+    The path of the certificate to check the client certificate against. (default ``None``).
+	
 Extended authorizers
 --------------------
 
