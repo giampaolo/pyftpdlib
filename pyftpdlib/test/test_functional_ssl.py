@@ -450,18 +450,9 @@ class TestClientFTPS(unittest.TestCase):
                 excName = str(excClass)
             raise self.failureException("%s not raised" % excName)
 
-    @classmethod
-    def get_ssl_context(cls, certfile):
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
-        if certfile:
-            ssl_context.load_cert_chain(certfile)
-        return ssl_context
-
     def test_auth_client_cert(self):
-        ctx = self.get_ssl_context(CLIENT_CERTFILE)
-        self.client = ftplib.FTP_TLS(timeout=TIMEOUT, context=ctx)
+        self.client = ftplib.FTP_TLS(timeout=TIMEOUT,
+                                     certfile=CLIENT_CERTFILE)
         self.client.connect(self.server.host, self.server.port)
         # secured
         try:
@@ -485,8 +476,7 @@ class TestClientFTPS(unittest.TestCase):
             self.fail("Client able to log in with no certificate")
 
     def test_auth_client_badcert(self):
-        ctx = self.get_ssl_context(CERTFILE)
-        self.client = ftplib.FTP_TLS(timeout=TIMEOUT, context=ctx)
+        self.client = ftplib.FTP_TLS(timeout=TIMEOUT, certfile=CERTFILE)
         self.client.connect(self.server.host, self.server.port)
         try:
             self.client.login()
