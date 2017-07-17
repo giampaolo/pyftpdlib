@@ -24,6 +24,7 @@ from pyftpdlib.test import TIMEOUT
 from pyftpdlib.test import unittest
 from pyftpdlib.test import VERBOSITY
 from _ssl import SSLError
+import ssl
 
 
 FTPS_SUPPORT = hasattr(ftplib, 'FTP_TLS')
@@ -73,6 +74,11 @@ class TestFTPS(unittest.TestCase):
         self.server.start()
 
     def tearDown(self):
+        self.client.ssl_version = ssl.PROTOCOL_SSLv23
+        with self.server.lock:
+            self.server.handler.ssl_version = ssl.PROTOCOL_SSLv23
+            self.server.handler.tls_control_required = False
+            self.server.handler.tls_data_required = False
         self.client.close()
         self.server.stop()
 
@@ -90,8 +96,18 @@ class TestFTPS(unittest.TestCase):
                 excName = str(excClass)
             raise self.failureException("%s not raised" % excName)
 
+    @classmethod
+    def get_ssl_context(cls, certfile):
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        if certfile:
+            ssl_context.load_cert_chain(certfile)
+        return ssl_context
+
     def test_auth_client_cert(self):
-        self.client = ftplib.FTP_TLS(timeout=TIMEOUT, certfile=CLIENT_CERTFILE)
+        ctx = self.get_ssl_context(CLIENT_CERTFILE)
+        self.client = ftplib.FTP_TLS(timeout=TIMEOUT, context=ctx)
         self.client.connect(self.server.host, self.server.port)
         # secured
         try:
@@ -115,7 +131,8 @@ class TestFTPS(unittest.TestCase):
             self.fail("Client able to log in with no certificate")
 
     def test_auth_client_badcert(self):
-        self.client = ftplib.FTP_TLS(timeout=TIMEOUT, certfile=CERTFILE)
+        ctx = self.get_ssl_context(CERTFILE)
+        self.client = ftplib.FTP_TLS(timeout=TIMEOUT, context=ctx)
         self.client.connect(self.server.host, self.server.port)
         try:
             self.client.login()
