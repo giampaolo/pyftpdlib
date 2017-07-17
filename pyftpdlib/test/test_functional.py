@@ -2132,7 +2132,7 @@ class _TestNetworkProtocols(object):
     HOST = HOST
 
     def setUp(self):
-        self.server = self.server_class((self.HOST, 0))
+        self.server = self.server_class(addr=(self.HOST, 0))
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)

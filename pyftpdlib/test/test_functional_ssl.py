@@ -10,6 +10,7 @@ import os
 import socket
 import sys
 import ssl
+from ssl import SSLError
 
 import OpenSSL  # requires "pip install pyopenssl"
 
@@ -49,6 +50,8 @@ else:
 
 CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                         'keycert.pem'))
+CLIENT_CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                               'clientcert.pem'))
 
 del OpenSSL
 
@@ -77,6 +80,13 @@ if FTPS_SUPPORT:
         """A threaded FTPS server used for functional testing."""
         handler = TLS_FTPHandler
         handler.certfile = CERTFILE
+
+        def __init__(self, use_client_cert=False, *args, **kwargs):
+            if use_client_cert:
+                self.handler.client_certfile = CLIENT_CERTFILE
+            else:
+                self.handler.client_certfile = None
+            super(FTPSServer, self).__init__(*args, **kwargs)
 
     class TLSTestMixin:
         server_class = FTPSServer
@@ -406,6 +416,88 @@ class TestFTPS(unittest.TestCase):
                         self.client.connect(self.server.host, self.server.port,
                                             timeout=0.1)
             self.client.ssl_version = ssl.PROTOCOL_SSLv2
+
+
+@unittest.skipUnless(FTPS_SUPPORT, FTPS_UNSUPPORT_REASON)
+class TestClientFTPS(unittest.TestCase):
+    """Specific tests for TLS_FTPHandler class."""
+
+    def setUp(self):
+        self.server = FTPSServer(use_client_cert=True)
+        self.server.start()
+
+    def tearDown(self):
+        self.client.ssl_version = ssl.PROTOCOL_SSLv23
+        with self.server.lock:
+            self.server.handler.ssl_version = ssl.PROTOCOL_SSLv23
+            self.server.handler.tls_control_required = False
+            self.server.handler.tls_data_required = False
+            self.server.handler.client_certfile = None
+        self.client.close()
+        self.server.stop()
+
+    def assertRaisesWithMsg(self, excClass, msg, callableObj, *args, **kwargs):
+        try:
+            callableObj(*args, **kwargs)
+        except excClass as err:
+            if str(err) == msg:
+                return
+            raise self.failureException("%s != %s" % (str(err), msg))
+        else:
+            if hasattr(excClass, '__name__'):
+                excName = excClass.__name__
+            else:
+                excName = str(excClass)
+            raise self.failureException("%s not raised" % excName)
+
+    @classmethod
+    def get_ssl_context(cls, certfile):
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        if certfile:
+            ssl_context.load_cert_chain(certfile)
+        return ssl_context
+
+    def test_auth_client_cert(self):
+        ctx = self.get_ssl_context(CLIENT_CERTFILE)
+        self.client = ftplib.FTP_TLS(timeout=TIMEOUT, context=ctx)
+        self.client.connect(self.server.host, self.server.port)
+        # secured
+        try:
+            self.client.login()
+        except Exception:
+            self.fail("login with certificate should work")
+
+    def test_auth_client_nocert(self):
+        self.client = ftplib.FTP_TLS(timeout=TIMEOUT)
+        self.client.connect(self.server.host, self.server.port)
+        try:
+            self.client.login()
+        except SSLError as e:
+            # client should not be able to log in
+            if "SSLV3_ALERT_HANDSHAKE_FAILURE" in e.reason:
+                pass
+            else:
+                self.fail("Incorrect SSL error with" +
+                          " missing client certificate")
+        else:
+            self.fail("Client able to log in with no certificate")
+
+    def test_auth_client_badcert(self):
+        ctx = self.get_ssl_context(CERTFILE)
+        self.client = ftplib.FTP_TLS(timeout=TIMEOUT, context=ctx)
+        self.client.connect(self.server.host, self.server.port)
+        try:
+            self.client.login()
+        except Exception as e:
+            # client should not be able to log in
+            if "TLSV1_ALERT_UNKNOWN_CA" in e.reason:
+                pass
+            else:
+                self.fail("Incorrect SSL error with bad client certificate")
+        else:
+            self.fail("Client able to log in with bad certificate")
 
 
 configure_logging()

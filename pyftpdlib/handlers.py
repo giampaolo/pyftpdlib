@@ -3455,19 +3455,10 @@ if SSL is not None:
             self._pbsz = False
             self._prot = False
             self.ssl_context = self.get_ssl_context()
-            if self.client_certfile is not None:
-                from OpenSSL.SSL import VERIFY_CLIENT_ONCE
-                from OpenSSL.SSL import VERIFY_FAIL_IF_NO_PEER_CERT
-                from OpenSSL.SSL import VERIFY_PEER
-                self.ssl_context.set_verify(VERIFY_PEER |
-                                            VERIFY_FAIL_IF_NO_PEER_CERT |
-                                            VERIFY_CLIENT_ONCE,
-                                            self.verify_certs_callback)
 
         def __repr__(self):
             return FTPHandler.__repr__(self)
 
-        # Cannot be @classmethod, need instance to log
         def verify_certs_callback(self, connection, x509,
                                   errnum, errdepth, ok):
             if not ok:
@@ -3476,29 +3467,36 @@ if SSL is not None:
                 self.log("Client certificate is valid.")
             return ok
 
-        @classmethod
-        def get_ssl_context(cls):
-            if cls.ssl_context is None:
-                if cls.certfile is None:
+        def get_ssl_context(self):
+            if self.ssl_context is None:
+                if self.certfile is None:
                     raise ValueError("at least certfile must be specified")
-                cls.ssl_context = SSL.Context(cls.ssl_protocol)
-                if cls.ssl_protocol != SSL.SSLv2_METHOD:
-                    cls.ssl_context.set_options(SSL.OP_NO_SSLv2)
+                self.ssl_context = SSL.Context(self.ssl_protocol)
+                if self.ssl_protocol != SSL.SSLv2_METHOD:
+                    self.ssl_context.set_options(SSL.OP_NO_SSLv2)
                 else:
                     warnings.warn("SSLv2 protocol is insecure", RuntimeWarning)
-                cls.ssl_context.use_certificate_chain_file(cls.certfile)
-                if not cls.keyfile:
-                    cls.keyfile = cls.certfile
-                cls.ssl_context.use_privatekey_file(cls.keyfile)
-                if cls.client_certfile is not None:
+                self.ssl_context.use_certificate_chain_file(self.certfile)
+                if not self.keyfile:
+                    self.keyfile = self.certfile
+                self.ssl_context.use_privatekey_file(self.keyfile)
+                if self.client_certfile is not None:
+                    from OpenSSL.SSL import VERIFY_CLIENT_ONCE
+                    from OpenSSL.SSL import VERIFY_FAIL_IF_NO_PEER_CERT
+                    from OpenSSL.SSL import VERIFY_PEER
+                    self.ssl_context.set_verify(VERIFY_PEER |
+                                                VERIFY_FAIL_IF_NO_PEER_CERT |
+                                                VERIFY_CLIENT_ONCE,
+                                                self.verify_certs_callback)
                     from OpenSSL.SSL import OP_NO_TICKET
                     from OpenSSL.SSL import SESS_CACHE_OFF
-                    cls.ssl_context.load_verify_locations(cls.client_certfile)
-                    cls.ssl_context.set_session_cache_mode(SESS_CACHE_OFF)
-                    cls.ssl_options = cls.ssl_options | OP_NO_TICKET
-                if cls.ssl_options:
-                    cls.ssl_context.set_options(cls.ssl_options)
-            return cls.ssl_context
+                    self.ssl_context.load_verify_locations(
+                        self.client_certfile)
+                    self.ssl_context.set_session_cache_mode(SESS_CACHE_OFF)
+                    self.ssl_options = self.ssl_options | OP_NO_TICKET
+                if self.ssl_options:
+                    self.ssl_context.set_options(self.ssl_options)
+            return self.ssl_context
 
         # --- overridden methods
 
