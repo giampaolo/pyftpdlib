@@ -3469,17 +3469,7 @@ if SSL is not None:
 
         def get_ssl_context(self):
             if self.ssl_context is None:
-                if self.certfile is None:
-                    raise ValueError("at least certfile must be specified")
-                self.ssl_context = SSL.Context(self.ssl_protocol)
-                if self.ssl_protocol != SSL.SSLv2_METHOD:
-                    self.ssl_context.set_options(SSL.OP_NO_SSLv2)
-                else:
-                    warnings.warn("SSLv2 protocol is insecure", RuntimeWarning)
-                self.ssl_context.use_certificate_chain_file(self.certfile)
-                if not self.keyfile:
-                    self.keyfile = self.certfile
-                self.ssl_context.use_privatekey_file(self.keyfile)
+                self.ssl_context = self.validate_ssl_options()
                 if self.client_certfile is not None:
                     from OpenSSL.SSL import VERIFY_CLIENT_ONCE
                     from OpenSSL.SSL import VERIFY_FAIL_IF_NO_PEER_CERT
@@ -3488,15 +3478,31 @@ if SSL is not None:
                                                 VERIFY_FAIL_IF_NO_PEER_CERT |
                                                 VERIFY_CLIENT_ONCE,
                                                 self.verify_certs_callback)
-                    from OpenSSL.SSL import OP_NO_TICKET
-                    from OpenSSL.SSL import SESS_CACHE_OFF
-                    self.ssl_context.load_verify_locations(
-                        self.client_certfile)
-                    self.ssl_context.set_session_cache_mode(SESS_CACHE_OFF)
-                    self.ssl_options = self.ssl_options | OP_NO_TICKET
-                if self.ssl_options:
-                    self.ssl_context.set_options(self.ssl_options)
             return self.ssl_context
+
+        @classmethod
+        def validate_ssl_options(cls):
+            if cls.certfile is None:
+                raise ValueError("at least certfile must be specified")
+            ssl_context = SSL.Context(cls.ssl_protocol)
+            if cls.ssl_protocol != SSL.SSLv2_METHOD:
+                ssl_context.set_options(SSL.OP_NO_SSLv2)
+            else:
+                warnings.warn("SSLv2 protocol is insecure", RuntimeWarning)
+            ssl_context.use_certificate_chain_file(cls.certfile)
+            if not cls.keyfile:
+                cls.keyfile = cls.certfile
+            ssl_context.use_privatekey_file(cls.keyfile)
+            if cls.client_certfile is not None:
+                from OpenSSL.SSL import OP_NO_TICKET
+                from OpenSSL.SSL import SESS_CACHE_OFF
+                ssl_context.load_verify_locations(
+                    cls.client_certfile)
+                ssl_context.set_session_cache_mode(SESS_CACHE_OFF)
+                cls.ssl_options = cls.ssl_options | OP_NO_TICKET
+            if cls.ssl_options:
+                ssl_context.set_options(cls.ssl_options)
+            return ssl_context
 
         # --- overridden methods
 

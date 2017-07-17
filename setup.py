@@ -89,6 +89,7 @@ def main():
             "pyftpdlib.test": [
                 "README",
                 'keycert.pem',
+                'clientcert.pem',
             ],
         },
         keywords=['ftp', 'ftps', 'server', 'ftpd', 'daemon', 'python', 'ssl',
