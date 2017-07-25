@@ -3419,7 +3419,6 @@ if SSL is not None:
         certfile = None
         keyfile = None
         ssl_protocol = SSL.SSLv23_METHOD
-        # client certificate configurable attributes
         client_certfile = None
         # - SSLv2 is easily broken and is considered harmful and dangerous
         # - SSLv3 has several problems and is now dangerous
@@ -3454,7 +3453,7 @@ if SSL is not None:
             self._extra_feats = ['AUTH TLS', 'AUTH SSL', 'PBSZ', 'PROT']
             self._pbsz = False
             self._prot = False
-            self.ssl_context = self.get_ssl_context()
+            self.init_ssl_context()
 
         def __repr__(self):
             return FTPHandler.__repr__(self)
@@ -3467,9 +3466,9 @@ if SSL is not None:
                 self.log("Client certificate is valid.")
             return ok
 
-        def get_ssl_context(self):
+        def init_ssl_context(self):
             if self.ssl_context is None:
-                self.ssl_context = self.validate_ssl_options()
+                self.ssl_context = self.get_ssl_context()
                 if self.client_certfile is not None:
                     from OpenSSL.SSL import VERIFY_CLIENT_ONCE
                     from OpenSSL.SSL import VERIFY_FAIL_IF_NO_PEER_CERT
@@ -3481,7 +3480,7 @@ if SSL is not None:
             return self.ssl_context
 
         @classmethod
-        def validate_ssl_options(cls):
+        def get_ssl_context(cls):
             if cls.certfile is None:
                 raise ValueError("at least certfile must be specified")
             ssl_context = SSL.Context(cls.ssl_protocol)

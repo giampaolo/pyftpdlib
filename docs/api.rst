@@ -559,9 +559,9 @@ Extended handlers
 	
   .. data:: client_certfile
 
-    The path of the certificate to check the client certificate against. 
-    When provided, only allowing clients with a valid certificate to connect 
-    to the server (default ``None``).
+    The path to a file which contains a certificate to be used to identify
+    the client. If specified, only clients with a valid certificate are able
+    to connect to the server (default ``None``).
 
      .. versionadded:: 1.5.3    
 	

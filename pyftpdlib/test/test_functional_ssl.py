@@ -370,7 +370,7 @@ class TestFTPS(unittest.TestCase):
     #     for proto in protos:
     #         self.try_protocol_combo(ssl.PROTOCOL_TLSv1, proto)
 
-    # On OSX TLS_FTPHandler.validate_ssl_options()._context does not exist.
+    # On OSX TLS_FTPHandler.get_ssl_context()._context does not exist.
     @unittest.skipIf(OSX, "can't get options on OSX")
     def test_ssl_options(self):
         from OpenSSL import SSL
@@ -378,7 +378,7 @@ class TestFTPS(unittest.TestCase):
         from pyftpdlib.handlers import TLS_FTPHandler
         try:
             TLS_FTPHandler.ssl_context = None
-            ctx = TLS_FTPHandler.validate_ssl_options()
+            ctx = TLS_FTPHandler.get_ssl_context()
             # Verify default opts.
             with contextlib.closing(socket.socket()) as s:
                 s = SSL.Connection(ctx, s)
@@ -392,7 +392,7 @@ class TestFTPS(unittest.TestCase):
             # ssl_proto is set to SSL.SSLv23_METHOD).
             TLS_FTPHandler.ssl_context = None
             TLS_FTPHandler.ssl_options = None
-            ctx = TLS_FTPHandler.validate_ssl_options()
+            ctx = TLS_FTPHandler.get_ssl_context()
             with contextlib.closing(socket.socket()) as s:
                 s = SSL.Connection(ctx, s)
                 opts = lib.SSL_CTX_get_options(ctx._context)

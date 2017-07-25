@@ -104,8 +104,8 @@ class FTPServer(Acceptor):
         self.ip_map = []
         # in case of FTPS class not properly configured we want errors
         # to be raised here rather than later, when client connects
-        if hasattr(handler, 'validate_ssl_options'):
-            handler.validate_ssl_options()
+        if hasattr(handler, 'get_ssl_context'):
+            handler.get_ssl_context()
         if callable(getattr(address_or_socket, 'listen', None)):
             sock = address_or_socket
             sock.setblocking(0)
