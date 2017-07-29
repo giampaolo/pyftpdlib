@@ -5,6 +5,7 @@ Version: 1.5.3 - XXXX-XX-XX
 
 **Bug fixes**
 
+- #403: fix duplicated output log. (path by PonyPC)
 - #414: Respond successfully to STOR only after closing file handle.
 
 Version: 1.5.2 - 2017-04-06
