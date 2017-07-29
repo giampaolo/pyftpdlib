@@ -410,7 +410,7 @@ module, which is required in order to run the code below.
 `TLS_FTPHandler <api.html#pyftpdlib.handlers.TLS_FTPHandler>`__
 class requires at least a ``certfile`` to be specified and optionally a
 ``keyfile``.
-`Apache FAQs <http://www.modssl.org/docs/2.7/ssl*faq.html#ToC24>`__ provide
+`Apache FAQs <https://httpd.apache.org/docs/2.4/ssl/ssl_faq.html#selfcert>`__ provide
 instructions on how to generate them. If you don't care about having your
 personal self-signed certificates you can use the one in the demo directory
 which include both and is available
