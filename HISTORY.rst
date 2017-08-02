@@ -3,6 +3,10 @@ Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 Version: 1.5.3 - XXXX-XX-XX
 ===========================
 
+**Enhancements**
+
+- #327: add username and password command line options
+
 **Bug fixes**
 
 - #403: fix duplicated output log. (path by PonyPC)
