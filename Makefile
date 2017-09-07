@@ -9,7 +9,6 @@ ARGS=
 DEPS=coverage \
 	check-manifest \
 	flake8 \
-	ipdb \
 	mock==1.0.1 \
 	nose \
 	pep8 \
@@ -18,7 +17,6 @@ DEPS=coverage \
 	pysendfile \
 	setuptools \
 	sphinx \
-	sphinx-pypi-upload \
 	unittest2
 
 # In not in a virtualenv, add --user options for install commands.
@@ -156,3 +154,31 @@ install-git-hooks:
 
 grep-todos:
 	git grep -EIn "TODO|FIXME|XXX"
+
+# All the necessary steps before making a release.
+pre-release:
+	${MAKE} clean
+	$(PYTHON) -c \
+		"from pyftpdlib import __ver__ as ver; \
+		doc = open('docs/index.rst').read(); \
+		history = open('HISTORY.rst').read(); \
+		assert ver in history, '%r not in HISTORY.rst' % ver; \
+		assert 'XXXX' not in history; \
+		"
+	$(PYTHON) setup.py sdist
+
+# Create a release: creates tar.gz, uploads it, git tag release.
+release:
+	${MAKE} pre-release
+	$(PYTHON) -m twine upload dist/*  # upload tar on PYPI
+	${MAKE} git-tag-release
+
+# Print announce of new release.
+print-announce:
+	@$(PYTHON) scripts/print_announce.py
+
+# generate a doc.zip file and manually upload it to PYPI.
+doc:
+	cd docs && make html && cd _build/html/ && zip doc.zip -r .
+	mv docs/_build/html/doc.zip .
+	@echo "done; now manually upload doc.zip from here: https://pypi.python.org/pypi?:action=pkg_edit&name=pyftpdlib"

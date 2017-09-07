@@ -89,8 +89,6 @@ if "%1" == "setup-dev-env" (
     @echo ------------------------------------------------
     rem mandatory / for unittests
     %PYTHON% -m pip install unittest2 ipaddress mock wmi pypiwin32 pyopenssl --upgrade
-    rem nice to have
-    rem %PYTHON% -m pip install ipdb nose --upgrade
     goto :eof
 )
 

@@ -12,7 +12,11 @@ fi
 
 python setup.py install
 python pyftpdlib/test/runner.py
-if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]] || [[ $PYVER == 'py26' ]]; then
-    exit 0;
+
+# run linter only on Linux and on latest python versions
+if [ "$PYVER" == "2.7" ] || [ "$PYVER" == "3.6" ]; then
+    if [[ "$(uname -s)" != 'Darwin' ]]; then
+        rm -rf build
+        python -m flake8
+    fi
 fi
-flake8

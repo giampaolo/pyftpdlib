@@ -406,7 +406,7 @@ class PassiveDTP(Acceptor):
     def handle_timeout(self):
         if self.cmd_channel.connected:
             self.cmd_channel.respond("421 Passive data channel timed out.",
-                                     logfun=logging.info)
+                                     logfun=logger.info)
         self.close()
 
     def handle_error(self):
@@ -872,11 +872,14 @@ class DTPHandler(AsyncChat):
         if not self._closed:
             # RFC-959 says we must close the connection before replying
             AsyncChat.close(self)
+
+            # Close file object before responding successfully to client
+            if self.file_obj is not None and not self.file_obj.closed:
+                self.file_obj.close()
+                
             if self._resp:
                 self.cmd_channel.respond(self._resp[0], logfun=self._resp[1])
 
-            if self.file_obj is not None and not self.file_obj.closed:
-                self.file_obj.close()
             if self._idler is not None and not self._idler.cancelled:
                 self._idler.cancel()
             if self.file_obj is not None:
@@ -2439,7 +2442,7 @@ class FTPHandler(AsyncChat):
                     self.data_channel.close()
                     self.data_channel = None
                     self.respond("426 Transfer aborted via ABOR.",
-                                 logfun=logging.info)
+                                 logfun=logger.info)
                     resp = "226 ABOR command successful."
                 else:
                     self.data_channel.close()
@@ -2466,7 +2469,7 @@ class FTPHandler(AsyncChat):
             # login sequence again.
             self.flush_account()
             msg = 'Previous account information was flushed'
-            self.respond('331 %s, send password.' % msg, logfun=logging.info)
+            self.respond('331 %s, send password.' % msg, logfun=logger.info)
         self.username = line
 
     def handle_auth_failed(self, msg, password):

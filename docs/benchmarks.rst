@@ -259,16 +259,16 @@ The following patch was applied first:
     $ sudo python demo/unix_daemon.py
 
 
-The `benchmark script <https://github.com/giampaolo/pyftpdlib/blob/master/test/bench.py>`__
+The `benchmark script <https://github.com/giampaolo/pyftpdlib/blob/master/scripts/ftpbench>`__
 was run as:
 
 ::
 
-    python test/bench.py -u USERNAME -p PASSWORD -b all -n 300
+    python scripts/ftpbench -u USERNAME -p PASSWORD -b all -n 300
 
 
 ...and for the memory test:
 
 ::
 
-    python test/bench.py -u USERNAME -p PASSWORD -b all -n 300 -k FTP_SERVER_PID
+    python scripts/ftpbench -u USERNAME -p PASSWORD -b all -n 300 -k FTP_SERVER_PID
