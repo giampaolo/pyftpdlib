@@ -138,7 +138,7 @@ check-manifest:
 upload-src: clean
 	$(PYTHON) setup.py sdist upload
 
-# Build and upload doc on https://pythonhosted.org/pyftpdlib/.
+# Build and upload doc on http://pyftpdlib.readthedocs.io.
 # Requires "pip install sphinx-pypi-upload".
 upload-docs:
 	cd docs; make html

@@ -27,7 +27,7 @@ Additional dependencies
 =======================
 
 `PyOpenSSL <https://pypi.python.org/pypi/pyOpenSSL>`__, to support
-`FTPS <http://pythonhosted.org/pyftpdlib/tutorial.html#ftps-ftp-over-tls-ssl-server>`__:
+`FTPS <http://pyftpdlib.readthedocs.io/tutorial.html#ftps-ftp-over-tls-ssl-server>`__:
 
 .. code-block:: sh
 
@@ -35,7 +35,7 @@ Additional dependencies
 
 `pysendfile <https://github.com/giampaolo/pysendfile>`__, if you're on UNIX,
 in order to
-`speedup uploads <http://pythonhosted.org/pyftpdlib/faqs.html#sendfile>`__
+`speedup uploads <http://pyftpdlib.readthedocs.io/faqs.html#sendfile>`__
 (from server to client):
 
 .. code-block:: sh
