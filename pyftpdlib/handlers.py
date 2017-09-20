@@ -2694,7 +2694,7 @@ class FTPHandler(AsyncChat):
                 why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
-            self.respond("213 %s" % lmt)
+            self.respond("213 Modify=%s; %s" % (lmt, path))
             return path
 
     def ftp_MKD(self, path):
@@ -2900,7 +2900,7 @@ class FTPHandler(AsyncChat):
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
         features = set(['UTF8', 'TVFS'])
-        features.update([feat for feat in ('EPRT', 'EPSV', 'MDTM', 'SIZE')
+        features.update([feat for feat in ('EPRT', 'EPSV', 'MDTM', 'MFMT','SIZE')
                          if feat in self.proto_cmds])
         features.update(self._extra_feats)
         if 'MLST' in self.proto_cmds or 'MLSD' in self.proto_cmds:
