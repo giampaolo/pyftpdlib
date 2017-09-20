@@ -111,6 +111,10 @@ proto_cmds = {
     'MDTM': dict(
         perm='l', auth=True, arg=True,
         help='Syntax: MDTM [<SP> path] (file last modification time).'),
+    # Todo: need to revisit this: (source: https://tools.ietf.org/html/draft-somers-ftp-mfxx-04#section-3.1)
+    'MFMT': dict(
+        perm='T', auth=True, arg=True,
+        help='Syntax: MFMT <SP> timeval <SP> path (file update last modification time).'),
     'MLSD': dict(
         perm='l', auth=True, arg=None,
         help='Syntax: MLSD [<SP> path] (list directory).'),
@@ -2648,6 +2652,37 @@ class FTPHandler(AsyncChat):
         else:
             timefunc = time.localtime
         try:
+            secs = self.run_as_current_user(self.fs.getmtime, path)
+            lmt = time.strftime("%Y%m%d%H%M%S", timefunc(secs))
+        except (ValueError, OSError, FilesystemError) as err:
+            if isinstance(err, ValueError):
+                # It could happen if file's last modification time
+                # happens to be too old (prior to year 1900)
+                why = "Can't determine file's last modification time"
+            else:
+                why = _strerror(err)
+            self.respond('550 %s.' % why)
+        else:
+            self.respond("213 %s" % lmt)
+            return path
+
+    def ftp_MFMT(self, path, timeval):
+        """Sets the last modification time of file to timeval
+        3307 style timestamp (YYYYMMDDHHMMSS) as defined in RFC-3659.
+        On success return the file path, else None.
+        """
+        line = self.fs.fs2ftp(path)
+        if not self.fs.isfile(self.fs.realpath(path)):
+            self.respond("550 %s is not retrievable" % line)
+            return
+        if self.use_gmt_times:
+            timefunc = time.gmtime
+        else:
+            timefunc = time.localtime
+        try:
+            # Modify Time
+            self.run_as_current_user(self.fs.utime(path, timeval))
+            # Fetch Time
             secs = self.run_as_current_user(self.fs.getmtime, path)
             lmt = time.strftime("%Y%m%d%H%M%S", timefunc(secs))
         except (ValueError, OSError, FilesystemError) as err:

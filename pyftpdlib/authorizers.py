@@ -67,7 +67,7 @@ class DummyAuthorizer(object):
     """
 
     read_perms = "elr"
-    write_perms = "adfmwM"
+    write_perms = "adfmwMT"
 
     def __init__(self):
         self.user_table = {}
@@ -94,6 +94,7 @@ class DummyAuthorizer(object):
          - "m" = create directory (MKD command)
          - "w" = store a file to the server (STOR, STOU commands)
          - "M" = change file mode (SITE CHMOD command)
+         - "T" = update file last modified time (MFMT command)
 
         Optional msg_login and msg_quit arguments can be specified to
         provide customized response strings when user log-in and quit.
