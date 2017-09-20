@@ -1821,7 +1821,7 @@ class FTPHandler(AsyncChat):
     # is >= logging.INFO
     log_cmds_list = ["DELE", "RNFR", "RNTO", "MKD", "RMD", "CWD",
                      "XMKD", "XRMD", "XCWD",
-                     "REIN", "SITE CHMOD"]
+                     "REIN", "SITE CHMOD", "MFMT"]
 
     def log_cmd(self, cmd, arg, respcode, respstr):
         """Log commands and responses in a standardized format.
