@@ -382,7 +382,7 @@ class TestFtpDummyCmds(unittest.TestCase):
 class TestFtpCmdsSemantic(unittest.TestCase):
     server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
-    arg_cmds = ['allo', 'appe', 'dele', 'eprt', 'mdtm', 'mode', 'mkd', 'opts',
+    arg_cmds = ['allo', 'appe', 'dele', 'eprt', 'mdtm', 'mfmt', 'mode', 'mkd', 'opts',
                 'port', 'rest', 'retr', 'rmd', 'rnfr', 'rnto', 'site', 'size',
                 'stor', 'stru', 'type', 'user', 'xmkd', 'xrmd', 'site chmod']
 
