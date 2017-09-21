@@ -2680,7 +2680,16 @@ class FTPHandler(AsyncChat):
             self.respond('550 %s.' % why)
             return
         path = arg_list[1]
-        timeval = arg_list[0][arg_list[0].rfind('/') + 1:]  # windows?
+        # unix
+        if '/' in arg_list[0]:
+            timeval = arg_list[0][arg_list[0].rfind('/') + 1:]
+        # windows
+        elif '\\' in arg_list[0]:
+            timeval = arg_list[0][arg_list[0].rfind('\\') + 1:]
+        # probably should never happen?
+        else:
+            timeval = arg_list[0]
+
         # -----------------------------
         line = self.fs.fs2ftp(path)
 
