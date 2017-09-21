@@ -113,10 +113,10 @@ proto_cmds = {
     'MDTM': dict(
         perm='l', auth=True, arg=True,
         help='Syntax: MDTM [<SP> path] (file last modification time).'),
-    # Todo: need to revisit this: (source: https://tools.ietf.org/html/draft-somers-ftp-mfxx-04#section-3.1)
+    # Todo: need to revisit this.
     'MFMT': dict(
         perm='T', auth=True, arg=True,
-        help='Syntax: MFMT [<SP> path] (file update last modification time).'),
+        help='Syntax: MFMT <SP> timeval <SP> path (file update last modification time).'),
     'MLSD': dict(
         perm='l', auth=True, arg=None,
         help='Syntax: MLSD [<SP> path] (list directory).'),
@@ -2668,19 +2668,19 @@ class FTPHandler(AsyncChat):
             self.respond("213 %s" % lmt)
             return path
 
-    def ftp_MFMT(self, path):
+    def ftp_MFMT(self, args):
         """Sets the last modification time of file to timeval
         3307 style timestamp (YYYYMMDDHHMMSS) as defined in RFC-3659.
         On success return the file path, else None.
         """
         # Todo: This is disgusting! ---
-        path_list = path.split()
-        if len(path_list) < 2:
+        arg_list = args.split()
+        if len(arg_list) < 2:
             why = 'Missing arguments'
             self.respond('550 %s.' % why)
             return
-        path = path_list[1]
-        timeval = path_list[0][path_list[0].rfind('/') + 1:]  # windows?
+        path = arg_list[1]
+        timeval = arg_list[0][arg_list[0].rfind('/') + 1:]  # windows?
         # -----------------------------
         line = self.fs.fs2ftp(path)
 
