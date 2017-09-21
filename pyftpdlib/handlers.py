@@ -14,6 +14,8 @@ import sys
 import time
 import traceback
 import warnings
+from datetime import datetime
+
 try:
     import pwd
     import grp
@@ -114,7 +116,7 @@ proto_cmds = {
     # Todo: need to revisit this: (source: https://tools.ietf.org/html/draft-somers-ftp-mfxx-04#section-3.1)
     'MFMT': dict(
         perm='T', auth=True, arg=True,
-        help='Syntax: MFMT <SP> timeval <SP> path (file update last modification time).'),
+        help='Syntax: MFMT [<SP> path] (file update last modification time).'),
     'MLSD': dict(
         perm='l', auth=True, arg=None,
         help='Syntax: MLSD [<SP> path] (list directory).'),
@@ -625,7 +627,7 @@ class DTPHandler(AsyncChat):
             # as per server config
             return False
         if self.file_obj is None or not hasattr(self.file_obj, "fileno"):
-            # direcotry listing or unusual file obj
+            # directory listing or unusual file obj
             return False
         if self.cmd_channel._current_type != 'i':
             # text file transfer (need to transform file content on the fly)
@@ -2666,12 +2668,22 @@ class FTPHandler(AsyncChat):
             self.respond("213 %s" % lmt)
             return path
 
-    def ftp_MFMT(self, path, timeval):
+    def ftp_MFMT(self, path):
         """Sets the last modification time of file to timeval
         3307 style timestamp (YYYYMMDDHHMMSS) as defined in RFC-3659.
         On success return the file path, else None.
         """
+        # Todo: This is disgusting! ---
+        path_list = path.split()
+        if len(path_list) < 2:
+            why = 'Missing arguments'
+            self.respond('550 %s.' % why)
+            return
+        path = path_list[1]
+        timeval = path_list[0][path_list[0].rfind('/') + 1:]  # windows?
+        # -----------------------------
         line = self.fs.fs2ftp(path)
+
         if not self.fs.isfile(self.fs.realpath(path)):
             self.respond("550 %s is not retrievable" % line)
             return
@@ -2680,8 +2692,13 @@ class FTPHandler(AsyncChat):
         else:
             timefunc = time.localtime
         try:
+            # convert timeval string to epoch seconds
+            epoch = datetime.utcfromtimestamp(0)
+            timeval_datetime_obj = datetime.strptime(timeval, '%Y%m%d%H%M%S')
+            timeval_secs = (timeval_datetime_obj - epoch).total_seconds()
+            # Todo: Need some validation here
             # Modify Time
-            self.run_as_current_user(self.fs.utime(path, timeval))
+            self.run_as_current_user(self.fs.utime, path, timeval_secs)
             # Fetch Time
             secs = self.run_as_current_user(self.fs.getmtime, path)
             lmt = time.strftime("%Y%m%d%H%M%S", timefunc(secs))
@@ -2694,8 +2711,8 @@ class FTPHandler(AsyncChat):
                 why = _strerror(err)
             self.respond('550 %s.' % why)
         else:
-            self.respond("213 Modify=%s; %s" % (lmt, path))
-            return path
+            self.respond("213 Modify=%s; %s." % (lmt, line))
+            return (lmt, path)
 
     def ftp_MKD(self, path):
         """Create the specified directory.
