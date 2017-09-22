@@ -113,7 +113,6 @@ proto_cmds = {
     'MDTM': dict(
         perm='l', auth=True, arg=True,
         help='Syntax: MDTM [<SP> path] (file last modification time).'),
-    # Todo: need to revisit this.
     'MFMT': dict(
         perm='T', auth=True, arg=True,
         help='Syntax: MFMT <SP> timeval <SP> path (file update last modification time).'),
@@ -2680,10 +2679,15 @@ class FTPHandler(AsyncChat):
             return path
 
     def ftp_MFMT(self, path, timeval):
-        """Sets the last modification time of file to timeval
+        """ Sets the last modification time of file to timeval
         3307 style timestamp (YYYYMMDDHHMMSS) as defined in RFC-3659.
-        On success return the file path, else None.
+        On success return the modified time and file path, else None.
         """
+        # Note: the MFMT command is not a formal RFC command
+        # but stated in the following MEMO:
+        # https://tools.ietf.org/html/draft-somers-ftp-mfxx-04
+        # this is implemented to assist with file synchronization
+
         line = self.fs.fs2ftp(path)
 
         if not self.fs.isfile(self.fs.realpath(path)):
@@ -2698,7 +2702,7 @@ class FTPHandler(AsyncChat):
             epoch = datetime.utcfromtimestamp(0)
             timeval_datetime_obj = datetime.strptime(timeval, '%Y%m%d%H%M%S')
             timeval_secs = (timeval_datetime_obj - epoch).total_seconds()
-            # Todo: Need some validation here
+            # Todo: Need some validation here?
             # Modify Time
             self.run_as_current_user(self.fs.utime, path, timeval_secs)
             # Fetch Time

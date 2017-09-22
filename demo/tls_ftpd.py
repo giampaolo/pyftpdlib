@@ -22,7 +22,7 @@ CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__),
 
 def main():
     authorizer = DummyAuthorizer()
-    authorizer.add_user('user', '12345', '.', perm='elradfmw')
+    authorizer.add_user('user', '12345', '.', perm='elradfmwMT')
     authorizer.add_anonymous('.')
     handler = TLS_FTPHandler
     handler.certfile = CERTFILE

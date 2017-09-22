@@ -58,7 +58,7 @@ Users
 
   >>> from pyftpdlib.authorizers import DummyAuthorizer
   >>> authorizer = DummyAuthorizer()
-  >>> authorizer.add_user('user', 'password', '/home/user', perm='elradfmw')
+  >>> authorizer.add_user('user', 'password', '/home/user', perm='elradfmwMT')
   >>> authorizer.add_anonymous('/home/nobody')
 
   .. method:: add_user(username, password, homedir, perm="elr", msg_login="Login successful.", msg_quit="Goodbye.")
@@ -560,7 +560,7 @@ Extended handlers
 Extended authorizers
 --------------------
 
-.. class:: pyftpdlib.authorizers.UnixAuthorizer(global_perm="elradfmw", allowed_users=None, rejected_users=None, require_valid_shell=True, anonymous_user=None, ,msg_login="Login successful.", msg_quit="Goodbye.")
+.. class:: pyftpdlib.authorizers.UnixAuthorizer(global_perm="elradfmwMT", allowed_users=None, rejected_users=None, require_valid_shell=True, anonymous_user=None, ,msg_login="Login successful.", msg_quit="Goodbye.")
 
   Authorizer which nteracts with UNIX password database. Users are no longer
   supposed to be explicitly added as when using
@@ -575,7 +575,7 @@ Extended authorizers
   permissions are granted by default in the class constructors.
 
   *global_perm* is a series of letters referencing the users permissions;
-  defaults to "elradfmw" which means full read and write access for everybody
+  defaults to "elradfmwMT" which means full read and write access for everybody
   (except anonymous). *allowed_users* and *rejected_users* options expect a
   list of users which are accepted or rejected for authenticating against the
   FTP server; defaults both to ``[]`` (no restrictions). *require_valid_shell*
@@ -602,7 +602,7 @@ Extended authorizers
     >>> auth = UnixAuthorizer(require_valid_shell=False)
     >>> auth.override_user("matt", password="foo", perm="elr")
 
-.. class:: pyftpdlib.authorizers.WindowsAuthorizer(global_perm="elradfmw", allowed_users=None, rejected_users=None, anonymous_user=None, anonymous_password="", msg_login="Login successful.", msg_quit="Goodbye.")
+.. class:: pyftpdlib.authorizers.WindowsAuthorizer(global_perm="elradfmwMT", allowed_users=None, rejected_users=None, anonymous_user=None, anonymous_password="", msg_login="Login successful.", msg_quit="Goodbye.")
 
   Same as :class:`pyftpdlib.authorizers.UnixAuthorizer` except for
   *anonymous_password* argument which must be specified when defining the
