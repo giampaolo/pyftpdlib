@@ -1495,6 +1495,17 @@ class FTPHandler(AsyncChat):
                         mode, arg = arg.split(' ', 1)
                         arg = self.fs.ftp2fs(arg)
                         kwargs = dict(mode=mode)
+                elif cmd == 'MFMT':
+                    if ' ' not in arg:
+                        msg = "Syntax error: command needs two arguments."
+                        self.respond("501 " + msg)
+                        self.log_cmd(cmd, "", 501, msg)
+                        return
+                    else:
+                        timeval, arg = arg.split(' ', 1)
+                        arg = self.fs.ftp2fs(arg)
+                        kwargs = dict(timeval=timeval)
+
                 else:  # LIST, NLST, MLSD, MLST
                     arg = self.fs.ftp2fs(arg or self.fs.cwd)
 
@@ -2668,29 +2679,11 @@ class FTPHandler(AsyncChat):
             self.respond("213 %s" % lmt)
             return path
 
-    def ftp_MFMT(self, args):
+    def ftp_MFMT(self, path, timeval):
         """Sets the last modification time of file to timeval
         3307 style timestamp (YYYYMMDDHHMMSS) as defined in RFC-3659.
         On success return the file path, else None.
         """
-        # Todo: This is disgusting! ---
-        arg_list = args.split()
-        if len(arg_list) < 2:
-            why = 'Missing arguments'
-            self.respond('550 %s.' % why)
-            return
-        path = arg_list[1]
-        # unix
-        if '/' in arg_list[0]:
-            timeval = arg_list[0][arg_list[0].rfind('/') + 1:]
-        # windows
-        elif '\\' in arg_list[0]:
-            timeval = arg_list[0][arg_list[0].rfind('\\') + 1:]
-        # probably should never happen?
-        else:
-            timeval = arg_list[0]
-
-        # -----------------------------
         line = self.fs.fs2ftp(path)
 
         if not self.fs.isfile(self.fs.realpath(path)):
