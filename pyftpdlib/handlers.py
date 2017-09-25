@@ -2690,6 +2690,10 @@ class FTPHandler(AsyncChat):
 
         line = self.fs.fs2ftp(path)
 
+        if len(timeval) != len("YYYYMMDDHHMMSS"):
+            why = "Invalid time value provided"
+            self.respond('550 %s.' % why)
+            return
         if not self.fs.isfile(self.fs.realpath(path)):
             self.respond("550 %s is not retrievable" % line)
             return
@@ -2705,6 +2709,7 @@ class FTPHandler(AsyncChat):
         except ValueError:
             why = "Invalid time value provided"
             self.respond('550 %s.' % why)
+            return
         try:
             # Modify Time
             self.run_as_current_user(self.fs.utime, path, timeval_secs)
