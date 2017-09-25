@@ -2702,7 +2702,10 @@ class FTPHandler(AsyncChat):
             epoch = datetime.utcfromtimestamp(0)
             timeval_datetime_obj = datetime.strptime(timeval, '%Y%m%d%H%M%S')
             timeval_secs = (timeval_datetime_obj - epoch).total_seconds()
-            # Todo: Need some validation here?
+        except ValueError:
+            why = "Invalid time value provided"
+            self.respond('550 %s.' % why)
+        try:
             # Modify Time
             self.run_as_current_user(self.fs.utime, path, timeval_secs)
             # Fetch Time
