@@ -445,7 +445,7 @@ class TestFtpCmdsSemantic(unittest.TestCase):
 
 class TestFtpFsOperations(unittest.TestCase):
 
-    "test: PWD, CWD, CDUP, SIZE, RNFR, RNTO, DELE, MKD, RMD, MDTM, STAT"
+    "test: PWD, CWD, CDUP, SIZE, RNFR, RNTO, DELE, MKD, RMD, MDTM, STAT, MFMT"
     server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
@@ -557,6 +557,30 @@ class TestFtpFsOperations(unittest.TestCase):
             self.client.sendcmd('mdtm ' + self.tempdir)
         except ftplib.error_perm as err:
             self.assertTrue("not retrievable" in str(err))
+        else:
+            self.fail('Exception not raised')
+
+    def test_mfmt(self):
+        test_timestamp = "20170921013410"
+        self.client.sendcmd('mfmt ' + test_timestamp + ' ' + self.tempfile)
+        resp = self.client.sendcmd('mdtm ' + self.tempfile)
+        self.assertTrue('213' in resp and test_timestamp in resp)
+
+    def test_invalid_mfmt_timeval(self):
+        test_timestamp_with_chars = "B017092101341A"
+        test_timestamp_invalid_length = "201709210134100"
+
+        try:
+            self.client.sendcmd('mfmt ' + test_timestamp_with_chars + ' ' + self.tempfile)
+        except ftplib.error_perm as err:
+            self.assertTrue('Invalid time format' in str(err))
+        else:
+            self.fail('Exception not raised')
+
+        try:
+            self.client.sendcmd('mfmt ' + test_timestamp_invalid_length + ' ' + self.tempfile)
+        except ftplib.error_perm as err:
+            self.assertTrue('Invalid time format' in str(err))
         else:
             self.fail('Exception not raised')
 

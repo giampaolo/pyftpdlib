@@ -2707,7 +2707,7 @@ class FTPHandler(AsyncChat):
             timeval_datetime_obj = datetime.strptime(timeval, '%Y%m%d%H%M%S')
             timeval_secs = (timeval_datetime_obj - epoch).total_seconds()
         except ValueError:
-            why = "Invalid time value provided"
+            why = "Invalid time format; expected: YYYYMMDDHHMMSS"
             self.respond('550 %s.' % why)
             return
         try:
