@@ -561,12 +561,14 @@ class TestFtpFsOperations(unittest.TestCase):
             self.fail('Exception not raised')
 
     def test_mfmt(self):
+        # making sure MFMT is able to modify the timestamp for the file
         test_timestamp = "20170921013410"
         self.client.sendcmd('mfmt ' + test_timestamp + ' ' + self.tempfile)
         resp = self.client.sendcmd('mdtm ' + self.tempfile)
         self.assertTrue('213' in resp and test_timestamp in resp)
 
     def test_invalid_mfmt_timeval(self):
+        # testing MFMT with invalid timeval argument
         test_timestamp_with_chars = "B017092101341A"
         test_timestamp_invalid_length = "20170921"
 
@@ -585,6 +587,7 @@ class TestFtpFsOperations(unittest.TestCase):
             self.fail('Exception not raised')
 
     def test_missing_mfmt_timeval_arg(self):
+        # testing missing timeval argument
         try:
             self.client.sendcmd('mfmt ' + self.tempfile)
         except ftplib.error_perm as err:
