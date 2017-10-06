@@ -2691,7 +2691,7 @@ class FTPHandler(AsyncChat):
         line = self.fs.fs2ftp(path)
 
         if len(timeval) != len("YYYYMMDDHHMMSS"):
-            why = "Invalid time value provided"
+            why = "Invalid time format; expected: YYYYMMDDHHMMSS"
             self.respond('550 %s.' % why)
             return
         if not self.fs.isfile(self.fs.realpath(path)):
