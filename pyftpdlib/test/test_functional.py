@@ -568,7 +568,7 @@ class TestFtpFsOperations(unittest.TestCase):
 
     def test_invalid_mfmt_timeval(self):
         test_timestamp_with_chars = "B017092101341A"
-        test_timestamp_invalid_length = "201709210134100"
+        test_timestamp_invalid_length = "20170921"
 
         try:
             self.client.sendcmd('mfmt ' + test_timestamp_with_chars + ' ' + self.tempfile)
@@ -581,6 +581,14 @@ class TestFtpFsOperations(unittest.TestCase):
             self.client.sendcmd('mfmt ' + test_timestamp_invalid_length + ' ' + self.tempfile)
         except ftplib.error_perm as err:
             self.assertTrue('Invalid time format' in str(err))
+        else:
+            self.fail('Exception not raised')
+
+    def test_missing_mfmt_timeval_arg(self):
+        try:
+            self.client.sendcmd('mfmt ' + self.tempfile)
+        except ftplib.error_perm as err:
+            self.assertTrue('Syntax error' in str(err))
         else:
             self.fail('Exception not raised')
 
