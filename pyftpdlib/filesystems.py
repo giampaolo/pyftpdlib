@@ -287,6 +287,12 @@ class AbstractedFS(object):
         # assert isinstance(path, unicode), path
         return os.stat(path)
 
+    def utime(self, path, timeval):
+        """Perform a utime() call on the given path"""
+        # utime expects a int/float (atime, mtime) in seconds
+        # thus, setting both access and modify time to timeval
+        return os.utime(path, (timeval, timeval))
+
     if hasattr(os, 'lstat'):
         def lstat(self, path):
             """Like stat but does not follow symbolic links."""

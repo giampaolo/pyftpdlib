@@ -382,7 +382,7 @@ class TestFtpDummyCmds(unittest.TestCase):
 class TestFtpCmdsSemantic(unittest.TestCase):
     server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
-    arg_cmds = ['allo', 'appe', 'dele', 'eprt', 'mdtm', 'mode', 'mkd', 'opts',
+    arg_cmds = ['allo', 'appe', 'dele', 'eprt', 'mdtm', 'mfmt', 'mode', 'mkd', 'opts',
                 'port', 'rest', 'retr', 'rmd', 'rnfr', 'rnto', 'site', 'size',
                 'stor', 'stru', 'type', 'user', 'xmkd', 'xrmd', 'site chmod']
 
@@ -445,7 +445,7 @@ class TestFtpCmdsSemantic(unittest.TestCase):
 
 class TestFtpFsOperations(unittest.TestCase):
 
-    "test: PWD, CWD, CDUP, SIZE, RNFR, RNTO, DELE, MKD, RMD, MDTM, STAT"
+    "test: PWD, CWD, CDUP, SIZE, RNFR, RNTO, DELE, MKD, RMD, MDTM, STAT, MFMT"
     server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
@@ -557,6 +557,42 @@ class TestFtpFsOperations(unittest.TestCase):
             self.client.sendcmd('mdtm ' + self.tempdir)
         except ftplib.error_perm as err:
             self.assertTrue("not retrievable" in str(err))
+        else:
+            self.fail('Exception not raised')
+
+    def test_mfmt(self):
+        # making sure MFMT is able to modify the timestamp for the file
+        test_timestamp = "20170921013410"
+        self.client.sendcmd('mfmt ' + test_timestamp + ' ' + self.tempfile)
+        resp_time = os.path.getmtime(self.tempfile)
+        resp_time_str = time.strftime('%Y%m%d%H%M%S', time.gmtime(resp_time))
+        self.assertIn(test_timestamp, resp_time_str)
+
+    def test_invalid_mfmt_timeval(self):
+        # testing MFMT with invalid timeval argument
+        test_timestamp_with_chars = "B017092101341A"
+        test_timestamp_invalid_length = "20170921"
+
+        try:
+            self.client.sendcmd('mfmt ' + test_timestamp_with_chars + ' ' + self.tempfile)
+        except ftplib.error_perm as err:
+            self.assertIn('Invalid time format', str(err))
+        else:
+            self.fail('Exception not raised')
+
+        try:
+            self.client.sendcmd('mfmt ' + test_timestamp_invalid_length + ' ' + self.tempfile)
+        except ftplib.error_perm as err:
+            self.assertIn('Invalid time format', str(err))
+        else:
+            self.fail('Exception not raised')
+
+    def test_missing_mfmt_timeval_arg(self):
+        # testing missing timeval argument
+        try:
+            self.client.sendcmd('mfmt ' + self.tempfile)
+        except ftplib.error_perm as err:
+            self.assertIn('Syntax error', str(err))
         else:
             self.fail('Exception not raised')
 

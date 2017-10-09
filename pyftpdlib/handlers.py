@@ -14,6 +14,8 @@ import sys
 import time
 import traceback
 import warnings
+from datetime import datetime
+
 try:
     import pwd
     import grp
@@ -111,6 +113,9 @@ proto_cmds = {
     'MDTM': dict(
         perm='l', auth=True, arg=True,
         help='Syntax: MDTM [<SP> path] (file last modification time).'),
+    'MFMT': dict(
+        perm='T', auth=True, arg=True,
+        help='Syntax: MFMT <SP> timeval <SP> path (file update last modification time).'),
     'MLSD': dict(
         perm='l', auth=True, arg=None,
         help='Syntax: MLSD [<SP> path] (list directory).'),
@@ -621,7 +626,7 @@ class DTPHandler(AsyncChat):
             # as per server config
             return False
         if self.file_obj is None or not hasattr(self.file_obj, "fileno"):
-            # direcotry listing or unusual file obj
+            # directory listing or unusual file obj
             return False
         if self.cmd_channel._current_type != 'i':
             # text file transfer (need to transform file content on the fly)
@@ -1489,6 +1494,17 @@ class FTPHandler(AsyncChat):
                         mode, arg = arg.split(' ', 1)
                         arg = self.fs.ftp2fs(arg)
                         kwargs = dict(mode=mode)
+                elif cmd == 'MFMT':
+                    if ' ' not in arg:
+                        msg = "Syntax error: command needs two arguments."
+                        self.respond("501 " + msg)
+                        self.log_cmd(cmd, "", 501, msg)
+                        return
+                    else:
+                        timeval, arg = arg.split(' ', 1)
+                        arg = self.fs.ftp2fs(arg)
+                        kwargs = dict(timeval=timeval)
+
                 else:  # LIST, NLST, MLSD, MLST
                     arg = self.fs.ftp2fs(arg or self.fs.cwd)
 
@@ -1817,7 +1833,7 @@ class FTPHandler(AsyncChat):
     # is >= logging.INFO
     log_cmds_list = ["DELE", "RNFR", "RNTO", "MKD", "RMD", "CWD",
                      "XMKD", "XRMD", "XCWD",
-                     "REIN", "SITE CHMOD"]
+                     "REIN", "SITE CHMOD", "MFMT"]
 
     def log_cmd(self, cmd, arg, respcode, respstr):
         """Log commands and responses in a standardized format.
@@ -2662,6 +2678,56 @@ class FTPHandler(AsyncChat):
             self.respond("213 %s" % lmt)
             return path
 
+    def ftp_MFMT(self, path, timeval):
+        """ Sets the last modification time of file to timeval
+        3307 style timestamp (YYYYMMDDHHMMSS) as defined in RFC-3659.
+        On success return the modified time and file path, else None.
+        """
+        # Note: the MFMT command is not a formal RFC command
+        # but stated in the following MEMO:
+        # https://tools.ietf.org/html/draft-somers-ftp-mfxx-04
+        # this is implemented to assist with file synchronization
+
+        line = self.fs.fs2ftp(path)
+
+        if len(timeval) != len("YYYYMMDDHHMMSS"):
+            why = "Invalid time format; expected: YYYYMMDDHHMMSS"
+            self.respond('550 %s.' % why)
+            return
+        if not self.fs.isfile(self.fs.realpath(path)):
+            self.respond("550 %s is not retrievable" % line)
+            return
+        if self.use_gmt_times:
+            timefunc = time.gmtime
+        else:
+            timefunc = time.localtime
+        try:
+            # convert timeval string to epoch seconds
+            epoch = datetime.utcfromtimestamp(0)
+            timeval_datetime_obj = datetime.strptime(timeval, '%Y%m%d%H%M%S')
+            timeval_secs = (timeval_datetime_obj - epoch).total_seconds()
+        except ValueError:
+            why = "Invalid time format; expected: YYYYMMDDHHMMSS"
+            self.respond('550 %s.' % why)
+            return
+        try:
+            # Modify Time
+            self.run_as_current_user(self.fs.utime, path, timeval_secs)
+            # Fetch Time
+            secs = self.run_as_current_user(self.fs.getmtime, path)
+            lmt = time.strftime("%Y%m%d%H%M%S", timefunc(secs))
+        except (ValueError, OSError, FilesystemError) as err:
+            if isinstance(err, ValueError):
+                # It could happen if file's last modification time
+                # happens to be too old (prior to year 1900)
+                why = "Can't determine file's last modification time"
+            else:
+                why = _strerror(err)
+            self.respond('550 %s.' % why)
+        else:
+            self.respond("213 Modify=%s; %s." % (lmt, line))
+            return (lmt, path)
+
     def ftp_MKD(self, path):
         """Create the specified directory.
         On success return the directory path, else None.
@@ -2865,7 +2931,7 @@ class FTPHandler(AsyncChat):
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
         features = set(['UTF8', 'TVFS'])
-        features.update([feat for feat in ('EPRT', 'EPSV', 'MDTM', 'SIZE')
+        features.update([feat for feat in ('EPRT', 'EPSV', 'MDTM', 'MFMT','SIZE')
                          if feat in self.proto_cmds])
         features.update(self._extra_feats)
         if 'MLST' in self.proto_cmds or 'MLSD' in self.proto_cmds:

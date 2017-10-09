@@ -19,7 +19,7 @@ from pyftpdlib.servers import FTPServer
 
 def main():
     authorizer = DummyAuthorizer()
-    authorizer.add_user('user', '12345', os.getcwd(), perm='elradfmw')
+    authorizer.add_user('user', '12345', os.getcwd(), perm='elradfmwMT')
     authorizer.add_anonymous(os.getcwd())
 
     dtp_handler = ThrottledDTPHandler

@@ -41,7 +41,7 @@ since they are a good workaround for avoiding DoS attacks.
 
         # Define a new user having full r/w permissions and a read-only
         # anonymous user
-        authorizer.add_user('user', '12345', '.', perm='elradfmwM')
+        authorizer.add_user('user', '12345', '.', perm='elradfmwMT')
         authorizer.add_anonymous(os.getcwd())
 
         # Instantiate FTP handler class
@@ -93,7 +93,7 @@ Logging to a file
     from pyftpdlib.authorizers import DummyAuthorizer
 
     authorizer = DummyAuthorizer()
-    authorizer.add_user('user', '12345', '.', perm='elradfmwM')
+    authorizer.add_user('user', '12345', '.', perm='elradfmwMT')
     handler = FTPHandler
     handler.authorizer = authorizer
 
@@ -217,7 +217,7 @@ method.
         # get a hash digest from a clear-text password
         hash = md5('12345').hexdigest()
         authorizer = DummyMD5Authorizer()
-        authorizer.add_user('user', hash, os.getcwd(), perm='elradfmw')
+        authorizer.add_user('user', hash, os.getcwd(), perm='elradfmwMT')
         authorizer.add_anonymous(os.getcwd())
         handler = FTPHandler
         handler.authorizer = authorizer
@@ -380,7 +380,7 @@ seconds.
 
     def main():
         authorizer = DummyAuthorizer()
-        authorizer.add_user('user', '12345', os.getcwd(), perm='elradfmw')
+        authorizer.add_user('user', '12345', os.getcwd(), perm='elradfmwMT')
         authorizer.add_anonymous(os.getcwd())
 
         dtp_handler = ThrottledDTPHandler
@@ -432,7 +432,7 @@ which include both and is available
 
     def main():
         authorizer = DummyAuthorizer()
-        authorizer.add_user('user', '12345', '.', perm='elradfmw')
+        authorizer.add_user('user', '12345', '.', perm='elradfmwMT')
         authorizer.add_anonymous('.')
         handler = TLS_FTPHandler
         handler.certfile = 'keycert.pem'
@@ -497,7 +497,7 @@ A small example which shows how to use callback methods via
 
     def main():
         authorizer = DummyAuthorizer()
-        authorizer.add_user('user', '12345', homedir='.', perm='elradfmw')
+        authorizer.add_user('user', '12345', homedir='.', perm='elradfmwMT')
         authorizer.add_anonymous(homedir='.')
 
         handler = MyHandler

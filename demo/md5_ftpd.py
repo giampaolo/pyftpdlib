@@ -35,7 +35,7 @@ def main():
     # get a hash digest from a clear-text password
     hash = md5(b'12345').hexdigest()
     authorizer = DummyMD5Authorizer()
-    authorizer.add_user('user', hash, os.getcwd(), perm='elradfmw')
+    authorizer.add_user('user', hash, os.getcwd(), perm='elradfmwMT')
     authorizer.add_anonymous(os.getcwd())
     handler = FTPHandler
     handler.authorizer = authorizer

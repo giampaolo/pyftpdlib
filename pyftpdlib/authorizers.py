@@ -67,7 +67,7 @@ class DummyAuthorizer(object):
     """
 
     read_perms = "elr"
-    write_perms = "adfmwM"
+    write_perms = "adfmwMT"
 
     def __init__(self):
         self.user_table = {}
@@ -94,6 +94,7 @@ class DummyAuthorizer(object):
          - "m" = create directory (MKD command)
          - "w" = store a file to the server (STOR, STOU commands)
          - "M" = change file mode (SITE CHMOD command)
+         - "T" = update file last modified time (MFMT command)
 
         Optional msg_login and msg_quit arguments can be specified to
         provide customized response strings when user log-in and quit.
@@ -199,7 +200,7 @@ class DummyAuthorizer(object):
         pathname of a file or a directory).
 
         Expected perm argument is one of the following letters:
-        "elradfmwM".
+        "elradfmwMT".
         """
         if path is None:
             return perm in self.user_table[username]['perm']
@@ -469,7 +470,7 @@ else:
             return "Goodbye."
 
         def get_perms(self, username):
-            return "elradfmw"
+            return "elradfmwMT"
 
         def has_perm(self, username, perm, path=None):
             return perm in self.get_perms(username)
@@ -497,7 +498,7 @@ else:
 
         # --- public API
 
-        def __init__(self, global_perm="elradfmw",
+        def __init__(self, global_perm="elradfmwMT",
                      allowed_users=None,
                      rejected_users=None,
                      require_valid_shell=True,
@@ -508,7 +509,7 @@ else:
 
              - (string) global_perm:
                 a series of letters referencing the users permissions;
-                defaults to "elradfmw" which means full read and write
+                defaults to "elradfmwMT" which means full read and write
                 access for everybody (except anonymous).
 
              - (list) allowed_users:
@@ -737,7 +738,7 @@ else:
             return "Goodbye."
 
         def get_perms(self, username):
-            return "elradfmw"
+            return "elradfmwMT"
 
         def has_perm(self, username, perm, path=None):
             return perm in self.get_perms(username)
@@ -763,7 +764,7 @@ else:
         # --- public API
 
         def __init__(self,
-                     global_perm="elradfmw",
+                     global_perm="elradfmwMT",
                      allowed_users=None,
                      rejected_users=None,
                      anonymous_user=None,
@@ -774,7 +775,7 @@ else:
 
              - (string) global_perm:
                 a series of letters referencing the users permissions;
-                defaults to "elradfmw" which means full read and write
+                defaults to "elradfmwMT" which means full read and write
                 access for everybody (except anonymous).
 
              - (list) allowed_users:

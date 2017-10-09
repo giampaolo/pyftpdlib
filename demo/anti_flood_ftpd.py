@@ -72,7 +72,7 @@ class AntiFloodHandler(FTPHandler):
 
 def main():
     authorizer = DummyAuthorizer()
-    authorizer.add_user('user', '12345', '.', perm='elradfmw')
+    authorizer.add_user('user', '12345', '.', perm='elradfmwMT')
     authorizer.add_anonymous('.')
     handler = AntiFloodHandler
     handler.authorizer = authorizer

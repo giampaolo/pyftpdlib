@@ -344,7 +344,7 @@ class _SharedAuthorizerTests(object):
         # make sure other settings keep using default values
         self.assertEqual(auth.get_home_dir(user),
                          self.get_current_user_homedir())
-        self.assertEqual(auth.get_perms(user), "elradfmw")
+        self.assertEqual(auth.get_perms(user), "elradfmwMT")
         self.assertEqual(auth.get_msg_login(user), "Login successful.")
         self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
 
@@ -357,7 +357,7 @@ class _SharedAuthorizerTests(object):
         # make sure other settings keep using default values
         # self.assertEqual(auth.get_home_dir(user),
         #                  self.get_current_user_homedir())
-        self.assertEqual(auth.get_perms(user), "elradfmw")
+        self.assertEqual(auth.get_perms(user), "elradfmwMT")
         self.assertEqual(auth.get_msg_login(user), "Login successful.")
         self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
 
@@ -369,7 +369,7 @@ class _SharedAuthorizerTests(object):
         # make sure other settings keep using default values
         self.assertEqual(auth.get_home_dir(user),
                          self.get_current_user_homedir())
-        # self.assertEqual(auth.get_perms(user), "elradfmw")
+        # self.assertEqual(auth.get_perms(user), "elradfmwMT")
         self.assertEqual(auth.get_msg_login(user), "Login successful.")
         self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
 
@@ -382,7 +382,7 @@ class _SharedAuthorizerTests(object):
         # make sure other settings keep using default values
         self.assertEqual(auth.get_home_dir(user),
                          self.get_current_user_homedir())
-        self.assertEqual(auth.get_perms(user), "elradfmw")
+        self.assertEqual(auth.get_perms(user), "elradfmwMT")
         # self.assertEqual(auth.get_msg_login(user), "Login successful.")
         # self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
 
