@@ -5,6 +5,8 @@ Version: 1.5.3 - XXXX-XX-XX
 
 **Enhancements**
 
+- #201: implemented SITE MFMT command which changes file modification time.
+  (patch by Tahir Ijaz)
 - #327: add username and password command line options
 
 **Bug fixes**

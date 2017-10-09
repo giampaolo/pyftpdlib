@@ -83,7 +83,8 @@ Users
     - ``"f"`` = rename file or directory (RNFR, RNTO commands)
     - ``"m"`` = create directory (MKD command)
     - ``"w"`` = store a file to the server (STOR, STOU commands)
-    - ``"M"`` = change mode/permission (SITE CHMOD command) *New in 0.7.0*
+    - ``"M"`` = change file mode / permission (SITE CHMOD command) *New in 0.7.0*
+    - ``"T"`` = change file modification time (SITE MFMT command) *New in 1.5.3*
 
     Optional *msg_login* and *msg_quit* arguments can be specified to provide
     customized response strings when user log-in and quit. The *perm* argument
