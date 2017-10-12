@@ -101,6 +101,9 @@ test-filesystems: install
 test-ioloop: install
 	$(PYTHON) pyftpdlib/test/test_ioloop.py
 
+test-misc: install
+	$(PYTHON) pyftpdlib/test/test_misc.py
+
 test-servers: install
 	$(PYTHON) pyftpdlib/test/test_servers.py
 
