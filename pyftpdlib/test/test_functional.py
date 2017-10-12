@@ -382,9 +382,10 @@ class TestFtpDummyCmds(unittest.TestCase):
 class TestFtpCmdsSemantic(unittest.TestCase):
     server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
-    arg_cmds = ['allo', 'appe', 'dele', 'eprt', 'mdtm', 'mfmt', 'mode', 'mkd', 'opts',
-                'port', 'rest', 'retr', 'rmd', 'rnfr', 'rnto', 'site', 'size',
-                'stor', 'stru', 'type', 'user', 'xmkd', 'xrmd', 'site chmod']
+    arg_cmds = \
+        ['allo', 'appe', 'dele', 'eprt', 'mdtm', 'mfmt', 'mode', 'mkd', 'opts',
+         'port', 'rest', 'retr', 'rmd', 'rnfr', 'rnto', 'site', 'size', 'stor',
+         'stru', 'type', 'user', 'xmkd', 'xrmd', 'site chmod']
 
     def setUp(self):
         self.server = self.server_class()
@@ -574,14 +575,16 @@ class TestFtpFsOperations(unittest.TestCase):
         test_timestamp_invalid_length = "20170921"
 
         try:
-            self.client.sendcmd('mfmt ' + test_timestamp_with_chars + ' ' + self.tempfile)
+            self.client.sendcmd(
+                'mfmt ' + test_timestamp_with_chars + ' ' + self.tempfile)
         except ftplib.error_perm as err:
             self.assertIn('Invalid time format', str(err))
         else:
             self.fail('Exception not raised')
 
         try:
-            self.client.sendcmd('mfmt ' + test_timestamp_invalid_length + ' ' + self.tempfile)
+            self.client.sendcmd(
+                'mfmt ' + test_timestamp_invalid_length + ' ' + self.tempfile)
         except ftplib.error_perm as err:
             self.assertIn('Invalid time format', str(err))
         else:

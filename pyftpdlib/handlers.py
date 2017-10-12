@@ -115,7 +115,8 @@ proto_cmds = {
         help='Syntax: MDTM [<SP> path] (file last modification time).'),
     'MFMT': dict(
         perm='T', auth=True, arg=True,
-        help='Syntax: MFMT <SP> timeval <SP> path (file update last modification time).'),
+        help='Syntax: MFMT <SP> timeval <SP> path (file update last '
+             'modification time).'),
     'MLSD': dict(
         perm='l', auth=True, arg=None,
         help='Syntax: MLSD [<SP> path] (list directory).'),
@@ -881,7 +882,7 @@ class DTPHandler(AsyncChat):
             # Close file object before responding successfully to client
             if self.file_obj is not None and not self.file_obj.closed:
                 self.file_obj.close()
-                
+
             if self._resp:
                 self.cmd_channel.respond(self._resp[0], logfun=self._resp[1])
 
@@ -2931,7 +2932,8 @@ class FTPHandler(AsyncChat):
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
         features = set(['UTF8', 'TVFS'])
-        features.update([feat for feat in ('EPRT', 'EPSV', 'MDTM', 'MFMT','SIZE')
+        features.update([feat for feat in
+                         ('EPRT', 'EPSV', 'MDTM', 'MFMT', 'SIZE')
                          if feat in self.proto_cmds])
         features.update(self._extra_feats)
         if 'MLST' in self.proto_cmds or 'MLSD' in self.proto_cmds:

@@ -367,7 +367,8 @@ class ThreadedTestFTPd(ThreadWorker):
             poll_interval=self.poll_interval)
         self.addr = (HOST, 0) if addr is None else addr
         authorizer = DummyAuthorizer()
-        authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwMT')  # full perms
+        # full perms
+        authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwMT')
         authorizer.add_anonymous(HOME)
         self.handler.authorizer = authorizer
         # lower buffer sizes = more "loops" while transfering data
