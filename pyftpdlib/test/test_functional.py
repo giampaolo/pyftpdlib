@@ -2124,280 +2124,277 @@ class TestTimeouts(unittest.TestCase):
 #         call_until(lambda: users, "ret == []")
 
 
-# class _TestNetworkProtocols(object):
-#     """Test PASV, EPSV, PORT and EPRT commands.
+class _TestNetworkProtocols(object):
+    """Test PASV, EPSV, PORT and EPRT commands.
 
-#     Do not use this class directly, let TestIPv4Environment and
-#     TestIPv6Environment classes use it instead.
-#     """
-#     server_class = ThreadedTestFTPd
-#     client_class = ftplib.FTP
-#     HOST = HOST
+    Do not use this class directly, let TestIPv4Environment and
+    TestIPv6Environment classes use it instead.
+    """
 
-#     def setUp(self):
-#         self.server = self.server_class((self.HOST, 0))
-#         self.server.start()
-#         self.client = self.client_class(timeout=TIMEOUT)
-#         self.client.connect(self.server.host, self.server.port)
-#         self.client.login(USER, PASSWD)
-#         if self.client.af == socket.AF_INET:
-#             self.proto = "1"
-#             self.other_proto = "2"
-#         else:
-#             self.proto = "2"
-#             self.other_proto = "1"
+    def setUp(self):
+        self.server = self.server_class((self.HOST, 0))
+        self.server.start()
+        self.client = self.client_class(timeout=TIMEOUT)
+        self.client.connect(self.server.host, self.server.port)
+        self.client.login(USER, PASSWD)
+        if self.client.af == socket.AF_INET:
+            self.proto = "1"
+            self.other_proto = "2"
+        else:
+            self.proto = "2"
+            self.other_proto = "1"
 
-#     def tearDown(self):
-#         self.client.close()
-#         self.server.stop()
+    def tearDown(self):
+        self.client.close()
+        self.server.stop()
 
-#     def cmdresp(self, cmd):
-#         """Send a command and return response, also if the command failed."""
-#         try:
-#             return self.client.sendcmd(cmd)
-#         except ftplib.Error as err:
-#             return str(err)
+    def cmdresp(self, cmd):
+        """Send a command and return response, also if the command failed."""
+        try:
+            return self.client.sendcmd(cmd)
+        except ftplib.Error as err:
+            return str(err)
 
-#     @disable_log_warning
-#     def test_eprt(self):
-#         if not SUPPORTS_HYBRID_IPV6:
-#             # test wrong proto
-#             try:
-#                 self.client.sendcmd('eprt |%s|%s|%s|' % (
-#                     self.other_proto, self.server.host, self.server.port))
-#             except ftplib.error_perm as err:
-#                 self.assertEqual(str(err)[0:3], "522")
-#             else:
-#                 self.fail("Exception not raised")
+    @disable_log_warning
+    def test_eprt(self):
+        if not SUPPORTS_HYBRID_IPV6:
+            # test wrong proto
+            try:
+                self.client.sendcmd('eprt |%s|%s|%s|' % (
+                    self.other_proto, self.server.host, self.server.port))
+            except ftplib.error_perm as err:
+                self.assertEqual(str(err)[0:3], "522")
+            else:
+                self.fail("Exception not raised")
 
-#         # test bad args
-#         msg = "501 Invalid EPRT format."
-#         # len('|') > 3
-#         self.assertEqual(self.cmdresp('eprt ||||'), msg)
-#         # len('|') < 3
-#         self.assertEqual(self.cmdresp('eprt ||'), msg)
-#         # port > 65535
-#         self.assertEqual(self.cmdresp('eprt |%s|%s|65536|' % (self.proto,
-#                                                               self.HOST)), msg)
-#         # port < 0
-#         self.assertEqual(self.cmdresp('eprt |%s|%s|-1|' % (self.proto,
-#                                                            self.HOST)), msg)
-#         # port < 1024
-#         resp = self.cmdresp('eprt |%s|%s|222|' % (self.proto, self.HOST))
-#         self.assertEqual(resp[:3], '501')
-#         self.assertIn('privileged port', resp)
-#         # proto > 2
-#         _cmd = 'eprt |3|%s|%s|' % (self.server.host, self.server.port)
-#         self.assertRaises(ftplib.error_perm, self.client.sendcmd, _cmd)
+        # test bad args
+        msg = "501 Invalid EPRT format."
+        # len('|') > 3
+        self.assertEqual(self.cmdresp('eprt ||||'), msg)
+        # len('|') < 3
+        self.assertEqual(self.cmdresp('eprt ||'), msg)
+        # port > 65535
+        self.assertEqual(self.cmdresp('eprt |%s|%s|65536|' % (self.proto,
+                                                              self.HOST)), msg)
+        # port < 0
+        self.assertEqual(self.cmdresp('eprt |%s|%s|-1|' % (self.proto,
+                                                           self.HOST)), msg)
+        # port < 1024
+        resp = self.cmdresp('eprt |%s|%s|222|' % (self.proto, self.HOST))
+        self.assertEqual(resp[:3], '501')
+        self.assertIn('privileged port', resp)
+        # proto > 2
+        _cmd = 'eprt |3|%s|%s|' % (self.server.host, self.server.port)
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, _cmd)
 
-#         if self.proto == '1':
-#             # len(ip.octs) > 4
-#             self.assertEqual(self.cmdresp('eprt |1|1.2.3.4.5|2048|'), msg)
-#             # ip.oct > 255
-#             self.assertEqual(self.cmdresp('eprt |1|1.2.3.256|2048|'), msg)
-#             # bad proto
-#             resp = self.cmdresp('eprt |2|1.2.3.256|2048|')
-#             self.assertTrue("Network protocol not supported" in resp)
+        if self.proto == '1':
+            # len(ip.octs) > 4
+            self.assertEqual(self.cmdresp('eprt |1|1.2.3.4.5|2048|'), msg)
+            # ip.oct > 255
+            self.assertEqual(self.cmdresp('eprt |1|1.2.3.256|2048|'), msg)
+            # bad proto
+            resp = self.cmdresp('eprt |2|1.2.3.256|2048|')
+            self.assertTrue("Network protocol not supported" in resp)
 
-#         # test connection
-#         with contextlib.closing(socket.socket(self.client.af)) as sock:
-#             sock.bind((self.client.sock.getsockname()[0], 0))
-#             sock.listen(5)
-#             sock.settimeout(TIMEOUT)
-#             ip, port = sock.getsockname()[:2]
-#             self.client.sendcmd('eprt |%s|%s|%s|' % (self.proto, ip, port))
-#             try:
-#                 s = sock.accept()
-#                 s[0].close()
-#             except socket.timeout:
-#                 self.fail("Server didn't connect to passive socket")
+        # test connection
+        with contextlib.closing(socket.socket(self.client.af)) as sock:
+            sock.bind((self.client.sock.getsockname()[0], 0))
+            sock.listen(5)
+            sock.settimeout(TIMEOUT)
+            ip, port = sock.getsockname()[:2]
+            self.client.sendcmd('eprt |%s|%s|%s|' % (self.proto, ip, port))
+            try:
+                s = sock.accept()
+                s[0].close()
+            except socket.timeout:
+                self.fail("Server didn't connect to passive socket")
 
-#     def test_epsv(self):
-#         # test wrong proto
-#         try:
-#             self.client.sendcmd('epsv ' + self.other_proto)
-#         except ftplib.error_perm as err:
-#             self.assertEqual(str(err)[0:3], "522")
-#         else:
-#             self.fail("Exception not raised")
+    def test_epsv(self):
+        # test wrong proto
+        try:
+            self.client.sendcmd('epsv ' + self.other_proto)
+        except ftplib.error_perm as err:
+            self.assertEqual(str(err)[0:3], "522")
+        else:
+            self.fail("Exception not raised")
 
-#         # proto > 2
-#         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'epsv 3')
+        # proto > 2
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'epsv 3')
 
-#         # test connection
-#         for cmd in ('EPSV', 'EPSV ' + self.proto):
-#             host, port = ftplib.parse229(self.client.sendcmd(cmd),
-#                                          self.client.sock.getpeername())
-#             with contextlib.closing(
-#                     socket.socket(self.client.af, socket.SOCK_STREAM)) as s:
-#                 s.settimeout(TIMEOUT)
-#                 s.connect((host, port))
-#                 self.client.sendcmd('abor')
+        # test connection
+        for cmd in ('EPSV', 'EPSV ' + self.proto):
+            host, port = ftplib.parse229(self.client.sendcmd(cmd),
+                                         self.client.sock.getpeername())
+            with contextlib.closing(
+                    socket.socket(self.client.af, socket.SOCK_STREAM)) as s:
+                s.settimeout(TIMEOUT)
+                s.connect((host, port))
+                self.client.sendcmd('abor')
 
-#     def test_epsv_all(self):
-#         self.client.sendcmd('epsv all')
-#         self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'pasv')
-#         self.assertRaises(ftplib.error_perm, self.client.sendport, self.HOST,
-#                           2000)
-#         self.assertRaises(ftplib.error_perm, self.client.sendcmd,
-#                           'eprt |%s|%s|%s|' % (self.proto, self.HOST, 2000))
+    def test_epsv_all(self):
+        self.client.sendcmd('epsv all')
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'pasv')
+        self.assertRaises(ftplib.error_perm, self.client.sendport, self.HOST,
+                          2000)
+        self.assertRaises(ftplib.error_perm, self.client.sendcmd,
+                          'eprt |%s|%s|%s|' % (self.proto, self.HOST, 2000))
 
 
-# @unittest.skipUnless(SUPPORTS_IPV4, "IPv4 not supported")
-# class TestIPv4Environment(_TestNetworkProtocols, unittest.TestCase):
-#     """Test PASV, EPSV, PORT and EPRT commands.
+@unittest.skipUnless(SUPPORTS_IPV4, "IPv4 not supported")
+class TestIPv4Environment(_TestNetworkProtocols, unittest.TestCase):
+    """Test PASV, EPSV, PORT and EPRT commands.
 
-#     Runs tests contained in _TestNetworkProtocols class by using IPv4
-#     plus some additional specific tests.
-#     """
-#     server_class = ThreadedTestFTPd
-#     client_class = ftplib.FTP
-#     HOST = '127.0.0.1'
+    Runs tests contained in _TestNetworkProtocols class by using IPv4
+    plus some additional specific tests.
+    """
+    server_class = MProcessTestFTPd
+    client_class = ftplib.FTP
+    HOST = '127.0.0.1'
 
-#     @disable_log_warning
-#     def test_port_v4(self):
-#         # test connection
-#         with contextlib.closing(self.client.makeport()):
-#             self.client.sendcmd('abor')
-#         # test bad arguments
-#         ae = self.assertEqual
-#         msg = "501 Invalid PORT format."
-#         ae(self.cmdresp('port 127,0,0,1,1.1'), msg)    # sep != ','
-#         ae(self.cmdresp('port X,0,0,1,1,1'), msg)      # value != int
-#         ae(self.cmdresp('port 127,0,0,1,1,1,1'), msg)  # len(args) > 6
-#         ae(self.cmdresp('port 127,0,0,1'), msg)        # len(args) < 6
-#         ae(self.cmdresp('port 256,0,0,1,1,1'), msg)    # oct > 255
-#         ae(self.cmdresp('port 127,0,0,1,256,1'), msg)  # port > 65535
-#         ae(self.cmdresp('port 127,0,0,1,-1,0'), msg)   # port < 0
-#         # port < 1024
-#         resp = self.cmdresp('port %s,1,1' % self.HOST.replace('.', ','))
-#         self.assertEqual(resp[:3], '501')
-#         self.assertIn('privileged port', resp)
-#         if "1.2.3.4" != self.HOST:
-#             resp = self.cmdresp('port 1,2,3,4,4,4')
-#             assert 'foreign address' in resp, resp
+    @disable_log_warning
+    def test_port_v4(self):
+        # test connection
+        with contextlib.closing(self.client.makeport()):
+            self.client.sendcmd('abor')
+        # test bad arguments
+        ae = self.assertEqual
+        msg = "501 Invalid PORT format."
+        ae(self.cmdresp('port 127,0,0,1,1.1'), msg)    # sep != ','
+        ae(self.cmdresp('port X,0,0,1,1,1'), msg)      # value != int
+        ae(self.cmdresp('port 127,0,0,1,1,1,1'), msg)  # len(args) > 6
+        ae(self.cmdresp('port 127,0,0,1'), msg)        # len(args) < 6
+        ae(self.cmdresp('port 256,0,0,1,1,1'), msg)    # oct > 255
+        ae(self.cmdresp('port 127,0,0,1,256,1'), msg)  # port > 65535
+        ae(self.cmdresp('port 127,0,0,1,-1,0'), msg)   # port < 0
+        # port < 1024
+        resp = self.cmdresp('port %s,1,1' % self.HOST.replace('.', ','))
+        self.assertEqual(resp[:3], '501')
+        self.assertIn('privileged port', resp)
+        if "1.2.3.4" != self.HOST:
+            resp = self.cmdresp('port 1,2,3,4,4,4')
+            assert 'foreign address' in resp, resp
 
-#     @disable_log_warning
-#     def test_eprt_v4(self):
-#         resp = self.cmdresp('eprt |1|0.10.10.10|2222|')
-#         self.assertEqual(resp[:3], '501')
-#         self.assertIn('foreign address', resp)
+    @disable_log_warning
+    def test_eprt_v4(self):
+        resp = self.cmdresp('eprt |1|0.10.10.10|2222|')
+        self.assertEqual(resp[:3], '501')
+        self.assertIn('foreign address', resp)
 
-#     def test_pasv_v4(self):
-#         host, port = ftplib.parse227(self.client.sendcmd('pasv'))
-#         with contextlib.closing(
-#                 socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-#             s.settimeout(TIMEOUT)
-#             s.connect((host, port))
-
-
-# @unittest.skipUnless(SUPPORTS_IPV6, "IPv6 not supported")
-# class TestIPv6Environment(_TestNetworkProtocols, unittest.TestCase):
-#     """Test PASV, EPSV, PORT and EPRT commands.
-
-#     Runs tests contained in _TestNetworkProtocols class by using IPv6
-#     plus some additional specific tests.
-#     """
-#     server_class = ThreadedTestFTPd
-#     client_class = ftplib.FTP
-#     HOST = '::1'
-
-#     def test_port_v6(self):
-#         # PORT is not supposed to work
-#         self.assertRaises(ftplib.error_perm, self.client.sendport,
-#                           self.server.host, self.server.port)
-
-#     def test_pasv_v6(self):
-#         # PASV is still supposed to work to support clients using
-#         # IPv4 connecting to a server supporting both IPv4 and IPv6
-#         self.client.makepasv()
-
-#     @disable_log_warning
-#     def test_eprt_v6(self):
-#         resp = self.cmdresp('eprt |2|::foo|2222|')
-#         self.assertEqual(resp[:3], '501')
-#         self.assertIn('foreign address', resp)
+    def test_pasv_v4(self):
+        host, port = ftplib.parse227(self.client.sendcmd('pasv'))
+        with contextlib.closing(
+                socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+            s.settimeout(TIMEOUT)
+            s.connect((host, port))
 
 
-# @unittest.skipUnless(SUPPORTS_HYBRID_IPV6, "IPv4/6 dual stack not supported")
-# class TestIPv6MixedEnvironment(unittest.TestCase):
-#     """By running the server by specifying "::" as IP address the
-#     server is supposed to listen on all interfaces, supporting both
-#     IPv4 and IPv6 by using a single socket.
+@unittest.skipUnless(SUPPORTS_IPV6, "IPv6 not supported")
+class TestIPv6Environment(_TestNetworkProtocols, unittest.TestCase):
+    """Test PASV, EPSV, PORT and EPRT commands.
 
-#     What we are going to do here is starting the server in this
-#     manner and try to connect by using an IPv4 client.
-#     """
-#     server_class = ThreadedTestFTPd
-#     client_class = ftplib.FTP
-#     HOST = "::"
+    Runs tests contained in _TestNetworkProtocols class by using IPv6
+    plus some additional specific tests.
+    """
+    server_class = MProcessTestFTPd
+    client_class = ftplib.FTP
+    HOST = '::1'
 
-#     def setUp(self):
-#         self.server = self.server_class((self.HOST, 0))
-#         self.server.start()
-#         self.client = None
+    def test_port_v6(self):
+        # PORT is not supposed to work
+        self.assertRaises(ftplib.error_perm, self.client.sendport,
+                          self.server.host, self.server.port)
 
-#     def tearDown(self):
-#         if self.client is not None:
-#             self.client.close()
-#         self.server.stop()
+    def test_pasv_v6(self):
+        # PASV is still supposed to work to support clients using
+        # IPv4 connecting to a server supporting both IPv4 and IPv6
+        self.client.makepasv()
 
-#     def test_port_v4(self):
-#         def noop(x):
-#             return x
+    @disable_log_warning
+    def test_eprt_v6(self):
+        resp = self.cmdresp('eprt |2|::foo|2222|')
+        self.assertEqual(resp[:3], '501')
+        self.assertIn('foreign address', resp)
 
-#         self.client = self.client_class(timeout=TIMEOUT)
-#         self.client.connect('127.0.0.1', self.server.port)
-#         self.client.set_pasv(False)
-#         self.client.login(USER, PASSWD)
-#         self.client.retrlines('list', noop)
 
-#     def test_pasv_v4(self):
-#         def noop(x):
-#             return x
+@unittest.skipUnless(SUPPORTS_HYBRID_IPV6, "IPv4/6 dual stack not supported")
+class TestIPv6MixedEnvironment(unittest.TestCase):
+    """By running the server by specifying "::" as IP address the
+    server is supposed to listen on all interfaces, supporting both
+    IPv4 and IPv6 by using a single socket.
 
-#         self.client = self.client_class(timeout=TIMEOUT)
-#         self.client.connect('127.0.0.1', self.server.port)
-#         self.client.set_pasv(True)
-#         self.client.login(USER, PASSWD)
-#         self.client.retrlines('list', noop)
-#         # make sure pasv response doesn't return an IPv4-mapped address
-#         ip = self.client.makepasv()[0]
-#         self.assertFalse(ip.startswith("::ffff:"))
+    What we are going to do here is starting the server in this
+    manner and try to connect by using an IPv4 client.
+    """
+    server_class = MProcessTestFTPd
+    client_class = ftplib.FTP
+    HOST = "::"
 
-#     def test_eprt_v4(self):
-#         self.client = self.client_class(timeout=TIMEOUT)
-#         self.client.connect('127.0.0.1', self.server.port)
-#         self.client.login(USER, PASSWD)
-#         # test connection
-#         with contextlib.closing(
-#                 socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
-#             sock.bind((self.client.sock.getsockname()[0], 0))
-#             sock.listen(5)
-#             sock.settimeout(2)
-#             ip, port = sock.getsockname()[:2]
-#             self.client.sendcmd('eprt |1|%s|%s|' % (ip, port))
-#             try:
-#                 sock2, addr = sock.accept()
-#                 sock2.close()
-#             except socket.timeout:
-#                 self.fail("Server didn't connect to passive socket")
+    def setUp(self):
+        self.server = self.server_class((self.HOST, 0))
+        self.server.start()
+        self.client = None
 
-#     def test_epsv_v4(self):
-#         def mlstline(cmd):
-#             return self.client.voidcmd(cmd).split('\n')[1]
+    def tearDown(self):
+        if self.client is not None:
+            self.client.close()
+        self.server.stop()
 
-#         self.client = self.client_class(timeout=TIMEOUT)
-#         self.client.connect('127.0.0.1', self.server.port)
-#         self.client.login(USER, PASSWD)
-#         host, port = ftplib.parse229(self.client.sendcmd('EPSV'),
-#                                      self.client.sock.getpeername())
-#         self.assertEqual('127.0.0.1', host)
-#         with contextlib.closing(
-#                 socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-#             s.settimeout(TIMEOUT)
-#             s.connect((host, port))
-#             self.assertTrue(mlstline('mlst /').endswith('/'))
+    def test_port_v4(self):
+        def noop(x):
+            return x
+
+        self.client = self.client_class(timeout=TIMEOUT)
+        self.client.connect('127.0.0.1', self.server.port)
+        self.client.set_pasv(False)
+        self.client.login(USER, PASSWD)
+        self.client.retrlines('list', noop)
+
+    def test_pasv_v4(self):
+        def noop(x):
+            return x
+
+        self.client = self.client_class(timeout=TIMEOUT)
+        self.client.connect('127.0.0.1', self.server.port)
+        self.client.set_pasv(True)
+        self.client.login(USER, PASSWD)
+        self.client.retrlines('list', noop)
+        # make sure pasv response doesn't return an IPv4-mapped address
+        ip = self.client.makepasv()[0]
+        self.assertFalse(ip.startswith("::ffff:"))
+
+    def test_eprt_v4(self):
+        self.client = self.client_class(timeout=TIMEOUT)
+        self.client.connect('127.0.0.1', self.server.port)
+        self.client.login(USER, PASSWD)
+        # test connection
+        with contextlib.closing(
+                socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+            sock.bind((self.client.sock.getsockname()[0], 0))
+            sock.listen(5)
+            sock.settimeout(2)
+            ip, port = sock.getsockname()[:2]
+            self.client.sendcmd('eprt |1|%s|%s|' % (ip, port))
+            try:
+                sock2, addr = sock.accept()
+                sock2.close()
+            except socket.timeout:
+                self.fail("Server didn't connect to passive socket")
+
+    def test_epsv_v4(self):
+        def mlstline(cmd):
+            return self.client.voidcmd(cmd).split('\n')[1]
+
+        self.client = self.client_class(timeout=TIMEOUT)
+        self.client.connect('127.0.0.1', self.server.port)
+        self.client.login(USER, PASSWD)
+        host, port = ftplib.parse229(self.client.sendcmd('EPSV'),
+                                     self.client.sock.getpeername())
+        self.assertEqual('127.0.0.1', host)
+        with contextlib.closing(
+                socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+            s.settimeout(TIMEOUT)
+            s.connect((host, port))
+            self.assertTrue(mlstline('mlst /').endswith('/'))
 
 
 # class TestCornerCases(unittest.TestCase):

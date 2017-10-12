@@ -401,8 +401,9 @@ class MProcessTestFTPd(multiprocessing.Process):
     handler = FTPHandler
     server_class = FTPServer
 
-    def __init__(self):
+    def __init__(self, addr=None):
         super(MProcessTestFTPd, self).__init__()
+        addr = (HOST, 0) if addr is None else addr
         authorizer = DummyAuthorizer()
         authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwMT')  # full perms
         authorizer.add_anonymous(HOME)
@@ -412,7 +413,7 @@ class MProcessTestFTPd(multiprocessing.Process):
         # = less false positives
         self.handler.dtp_handler.ac_in_buffer_size = 4096
         self.handler.dtp_handler.ac_out_buffer_size = 4096
-        self.server = self.server_class((HOST, 0), self.handler)
+        self.server = self.server_class(addr, self.handler)
         self.host, self.port = self.server.socket.getsockname()[:2]
 
     def run(self):
