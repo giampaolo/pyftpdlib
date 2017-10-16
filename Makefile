@@ -84,39 +84,39 @@ setup-dev-env: install-git-hooks install-pip
 	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(DEPS)
 
 test: install
-	$(PYTHON) $(TSCRIPT)
+	PYTHONWARNINGS=all $(PYTHON) $(TSCRIPT)
 
 test-functional: install
-	$(PYTHON) pyftpdlib/test/test_functional.py
+	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_functional.py
 
 test-functional-ssl: install
-	$(PYTHON) pyftpdlib/test/test_functional_ssl.py
-
-test-authorizers: install
-	$(PYTHON) pyftpdlib/test/test_authorizers.py
-
-test-filesystems: install
-	$(PYTHON) pyftpdlib/test/test_filesystems.py
-
-test-ioloop: install
-	$(PYTHON) pyftpdlib/test/test_ioloop.py
-
-test-misc: install
-	$(PYTHON) pyftpdlib/test/test_misc.py
+	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_functional_ssl.py
 
 test-servers: install
-	$(PYTHON) pyftpdlib/test/test_servers.py
+	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_servers.py
+
+test-authorizers: install
+	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_authorizers.py
+
+test-filesystems: install
+	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_filesystems.py
+
+test-ioloop: install
+	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_ioloop.py
+
+test-misc: install
+	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_misc.py
 
 # Run a specific test by name; e.g. "make test-by-name retr" will run
 # all test methods containing "retr" in their name.
 # Requires "pip install nose".
 test-by-name: install
-	@$(PYTHON) -m nose pyftpdlib/test/test_*.py --nocapture -v -m $(filter-out $@,$(MAKECMDGOALS))
+	@PYTHONWARNINGS=all $(PYTHON) -m nose pyftpdlib/test/test_*.py --nocapture -v -m $(filter-out $@,$(MAKECMDGOALS))
 
 coverage: install
 	# Note: coverage options are controlled by .coveragerc file
 	rm -rf .coverage htmlcov
-	$(PYTHON) -m coverage run $(TSCRIPT)
+	PYTHONWARNINGS=all $(PYTHON) -m coverage run $(TSCRIPT)
 	$(PYTHON) -m coverage report
 	@echo "writing results to htmlcov/index.html"
 	$(PYTHON) -m coverage html
