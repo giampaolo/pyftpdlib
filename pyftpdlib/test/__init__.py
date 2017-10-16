@@ -317,7 +317,8 @@ class ThreadWorker(threading.Thread):
                         self._event_start.set()
                         self.started = True
                     self.poll()
-                self.sleep()
+                if not self._stop_flag:
+                    self.sleep()
         finally:
             self._event_stop.set()
 
