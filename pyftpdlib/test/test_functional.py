@@ -1794,53 +1794,6 @@ class TestConfigurableOptions(unittest.TestCase):
             resulting_port = self.client.makepasv()[1]
             self.assertTrue(port != resulting_port)
 
-    # @disable_log_warning
-    # def test_permit_privileged_ports(self):
-    #     # Test FTPHandler.permit_privileged_ports_active attribute
-
-    #     # try to bind a socket on a privileged port
-    #     sock = None
-    #     for port in reversed(range(1, 1024)):
-    #         try:
-    #             socket.getservbyport(port)
-    #         except socket.error:
-    #             # not registered port; go on
-    #             try:
-    #                 sock = socket.socket(self.client.af, socket.SOCK_STREAM)
-    #                 self.addCleanup(sock.close)
-    #                 sock.settimeout(TIMEOUT)
-    #                 sock.bind((HOST, port))
-    #                 break
-    #             except socket.error as err:
-    #                 if err.errno == errno.EACCES:
-    #                     # root privileges needed
-    #                     if sock is not None:
-    #                         sock.close()
-    #                     sock = None
-    #                     break
-    #                 sock.close()
-    #                 continue
-    #         else:
-    #             # registered port found; skip to the next one
-    #             continue
-    #     else:
-    #         # no usable privileged port was found
-    #         sock = None
-
-    #     with self.server.lock:
-    #         self.server.handler.permit_privileged_ports = False
-    #     self.assertRaises(ftplib.error_perm, self.client.sendport, HOST,
-    #                       port)
-    #     if sock:
-    #         port = sock.getsockname()[1]
-    #         with self.server.lock:
-    #             self.server.handler.permit_privileged_ports = True
-    #         sock.listen(5)
-    #         sock.settimeout(TIMEOUT)
-    #         self.client.sendport(HOST, port)
-    #         s, addr = sock.accept()
-    #         s.close()
-
     def test_use_gmt_times(self):
         # use GMT time
         self.server = self.server_class()
@@ -2804,6 +2757,53 @@ class ThreadedFTPTests(unittest.TestCase):
             handler.remote_ip = '9.9.9.9'
         s = self.client.makeport()
         s.close()
+
+    @disable_log_warning
+    def test_permit_privileged_ports(self):
+        # Test FTPHandler.permit_privileged_ports_active attribute
+
+        # try to bind a socket on a privileged port
+        sock = None
+        for port in reversed(range(1, 1024)):
+            try:
+                socket.getservbyport(port)
+            except socket.error:
+                # not registered port; go on
+                try:
+                    sock = socket.socket(self.client.af, socket.SOCK_STREAM)
+                    self.addCleanup(sock.close)
+                    sock.settimeout(TIMEOUT)
+                    sock.bind((HOST, port))
+                    break
+                except socket.error as err:
+                    if err.errno == errno.EACCES:
+                        # root privileges needed
+                        if sock is not None:
+                            sock.close()
+                        sock = None
+                        break
+                    sock.close()
+                    continue
+            else:
+                # registered port found; skip to the next one
+                continue
+        else:
+            # no usable privileged port was found
+            sock = None
+
+        with self.server.lock:
+            self.server.handler.permit_privileged_ports = False
+        self.assertRaises(ftplib.error_perm, self.client.sendport, HOST,
+                          port)
+        if sock:
+            port = sock.getsockname()[1]
+            with self.server.lock:
+                self.server.handler.permit_privileged_ports = True
+            sock.listen(5)
+            sock.settimeout(TIMEOUT)
+            self.client.sendport(HOST, port)
+            s, addr = sock.accept()
+            s.close()
 
 
 configure_logging()
