@@ -1841,50 +1841,38 @@ class TestConfigurableOptions(unittest.TestCase):
     #         s, addr = sock.accept()
     #         s.close()
 
-    # def test_use_gmt_times(self):
-    #     # use GMT time
-    #     with self.server.lock:
-    #         self.server.handler.use_gmt_times = True
-    #     gmt1 = self.client.sendcmd('mdtm ' + TESTFN)
-    #     gmt2 = self.client.sendcmd('mlst ' + TESTFN)
-    #     gmt3 = self.client.sendcmd('stat ' + TESTFN)
+    def test_use_gmt_times(self):
+        # use GMT time
+        self.server = self.server_class()
+        self.server.handler.use_gmt_times = True
+        self.server.start()
+        self.connect()
+        gmt1 = self.client.sendcmd('mdtm ' + TESTFN)
+        gmt2 = self.client.sendcmd('mlst ' + TESTFN)
+        gmt3 = self.client.sendcmd('stat ' + TESTFN)
 
-    #     # use local time
-    #     with self.server.lock:
-    #         self.server.handler.use_gmt_times = False
+        # use local time
+        self.tearDown()
+        self.setUp()
+        self.server = self.server_class()
+        self.server.handler.use_gmt_times = False
+        self.server.start()
+        self.connect()
+        loc1 = self.client.sendcmd('mdtm ' + TESTFN)
+        loc2 = self.client.sendcmd('mlst ' + TESTFN)
+        loc3 = self.client.sendcmd('stat ' + TESTFN)
 
-    #     self.client.quit()
-    #     self.client.connect(self.server.host, self.server.port)
-    #     self.client.login(USER, PASSWD)
-
-    #     loc1 = self.client.sendcmd('mdtm ' + TESTFN)
-    #     loc2 = self.client.sendcmd('mlst ' + TESTFN)
-    #     loc3 = self.client.sendcmd('stat ' + TESTFN)
-
-    #     # if we're not in a GMT time zone times are supposed to be
-    #     # different
-    #     if time.timezone != 0:
-    #         self.assertNotEqual(gmt1, loc1)
-    #         self.assertNotEqual(gmt2, loc2)
-    #         self.assertNotEqual(gmt3, loc3)
-    #     # ...otherwise they should be the same
-    #     else:
-    #         self.assertEqual(gmt1, loc1)
-    #         self.assertEqual(gmt2, loc2)
-    #         self.assertEqual(gmt3, loc3)
-
-    # @unittest.skipUnless(hasattr(socket, 'TCP_NODELAY'),
-    #                      'TCP_NODELAY not available')
-    # def test_tcp_no_delay(self):
-    #     s = get_server_handler().socket
-    #     self.assertTrue(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
-    #     self.client.quit()
-    #     with self.server.lock:
-    #         self.server.handler.tcp_no_delay = False
-    #     self.client.connect(self.server.host, self.server.port)
-    #     self.client.sendcmd('noop')
-    #     s = get_server_handler().socket
-    #     self.assertFalse(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
+        # if we're not in a GMT time zone times are supposed to be
+        # different
+        if time.timezone != 0:
+            self.assertNotEqual(gmt1, loc1)
+            self.assertNotEqual(gmt2, loc2)
+            self.assertNotEqual(gmt3, loc3)
+        # ...otherwise they should be the same
+        else:
+            self.assertEqual(gmt1, loc1)
+            self.assertEqual(gmt2, loc2)
+            self.assertEqual(gmt3, loc3)
 
     # def test_permit_foreign_address_false(self):
     #     handler = get_server_handler()
@@ -2801,6 +2789,19 @@ class ThreadedFTPTests(unittest.TestCase):
         finally:
             with self.server.lock:
                 self.server.handler.timeout = 0.1
+
+    @unittest.skipUnless(hasattr(socket, 'TCP_NODELAY'),
+                         'TCP_NODELAY not available')
+    def test_tcp_no_delay(self):
+        s = get_server_handler().socket
+        self.assertTrue(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
+        self.client.quit()
+        with self.server.lock:
+            self.server.handler.tcp_no_delay = False
+        self.client.connect(self.server.host, self.server.port)
+        self.client.sendcmd('noop')
+        s = get_server_handler().socket
+        self.assertFalse(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
 
 
 configure_logging()
