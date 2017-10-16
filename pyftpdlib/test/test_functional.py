@@ -674,7 +674,7 @@ class TestFtpStoreData(unittest.TestCase):
         safe_remove(TESTFN)
         if self.use_sendfile is not None:
             from pyftpdlib.handlers import _import_sendfile
-            self.server.handler.use_sendfile = _import_sendfile()
+            self.server.handler.use_sendfile = _import_sendfile() is not None
 
     def test_stor(self):
         try:
@@ -1049,7 +1049,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         safe_remove(TESTFN)
         if self.use_sendfile is not None:
             from pyftpdlib.handlers import _import_sendfile
-            self.server.handler.use_sendfile = _import_sendfile()
+            self.server.handler.use_sendfile = _import_sendfile() is not None
 
     def test_retr(self):
         data = b'abcde12345' * 100000
@@ -2351,8 +2351,7 @@ class TestCornerCases(unittest.TestCase):
 
     def tearDown(self):
         self.client.close()
-        if self.server.is_alive():
-            self.server.stop()
+        self.server.stop()
 
     def test_port_race_condition(self):
         # Refers to bug #120, first sends PORT, then disconnects the
