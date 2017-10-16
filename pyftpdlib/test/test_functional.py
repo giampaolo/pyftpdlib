@@ -1497,7 +1497,7 @@ class TestTimeouts(unittest.TestCase):
             self.server.handler.active_dtp.timeout = 30
             self.server.stop()
 
-    # XXX
+    # Note: moved later.
 
     # def test_idle_timeout(self):
     #     # Test control channel timeout.  The client which does not send
@@ -2767,6 +2767,28 @@ class ThreadedFTPTests(unittest.TestCase):
         finally:
             with self.server.lock:
                 self.server.handler.abstracted_fs = AbstractedFS
+
+    def test_idle_timeout(self):
+        # Test control channel timeout.  The client which does not send
+        # any command within the time specified in FTPHandler.timeout is
+        # supposed to be kicked off.
+        with self.server.lock:
+            self.server.handler.timeout = 0.1
+
+        try:
+            self.client.quit()
+            self.client.connect()
+            self.client.login(USER, PASSWD)
+            # fail if no msg is received within 1 second
+            self.client.sock.settimeout(1)
+            data = self.client.sock.recv(BUFSIZE)
+            self.assertEqual(data, b"421 Control connection timed out.\r\n")
+            # ensure client has been kicked off
+            self.assertRaises((socket.error, EOFError), self.client.sendcmd,
+                              'noop')
+        finally:
+            with self.server.lock:
+                self.server.handler.timeout = 0.1
 
 
 configure_logging()
