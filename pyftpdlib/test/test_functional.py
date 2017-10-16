@@ -1874,21 +1874,6 @@ class TestConfigurableOptions(unittest.TestCase):
             self.assertEqual(gmt2, loc2)
             self.assertEqual(gmt3, loc3)
 
-    # def test_permit_foreign_address_false(self):
-    #     handler = get_server_handler()
-    #     handler.permit_foreign_addresses = False
-    #     handler.remote_ip = '9.9.9.9'
-    #     with self.assertRaises(ftplib.error_perm) as cm:
-    #         self.client.makeport()
-    #     self.assertIn('foreign address', str(cm.exception))
-
-    # def test_permit_foreign_address_true(self):
-    #     handler = get_server_handler()
-    #     handler.permit_foreign_addresses = True
-    #     handler.remote_ip = '9.9.9.9'
-    #     s = self.client.makeport()
-    #     s.close()
-
 
 # class TestCallbacks(unittest.TestCase):
 #     """Test FTPHandler class callback methods."""
@@ -2802,6 +2787,23 @@ class ThreadedFTPTests(unittest.TestCase):
         self.client.sendcmd('noop')
         s = get_server_handler().socket
         self.assertFalse(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
+
+    def test_permit_foreign_address_false(self):
+        handler = get_server_handler()
+        with self.server.lock:
+            handler.permit_foreign_addresses = False
+            handler.remote_ip = '9.9.9.9'
+        with self.assertRaises(ftplib.error_perm) as cm:
+            self.client.makeport()
+        self.assertIn('foreign address', str(cm.exception))
+
+    def test_permit_foreign_address_true(self):
+        handler = get_server_handler()
+        with self.server.lock:
+            handler.permit_foreign_addresses = True
+            handler.remote_ip = '9.9.9.9'
+        s = self.client.makeport()
+        s.close()
 
 
 configure_logging()
