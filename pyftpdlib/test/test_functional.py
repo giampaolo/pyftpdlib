@@ -2397,151 +2397,129 @@ class TestIPv6MixedEnvironment(unittest.TestCase):
             self.assertTrue(mlstline('mlst /').endswith('/'))
 
 
-# class TestCornerCases(unittest.TestCase):
-#     """Tests for any kind of strange situation for the server to be in,
-#     mainly referring to bugs signaled on the bug tracker.
-#     """
-#     server_class = ThreadedTestFTPd
-#     client_class = ftplib.FTP
+class TestCornerCases(unittest.TestCase):
+    """Tests for any kind of strange situation for the server to be in,
+    mainly referring to bugs signaled on the bug tracker.
+    """
+    server_class = MProcessTestFTPd
+    client_class = ftplib.FTP
 
-#     def setUp(self):
-#         self.server = self.server_class()
-#         self.server.start()
-#         self.client = self.client_class(timeout=TIMEOUT)
-#         self.client.connect(self.server.host, self.server.port)
-#         self.client.login(USER, PASSWD)
+    def setUp(self):
+        self.server = self.server_class()
+        self.server.start()
+        self.client = self.client_class(timeout=TIMEOUT)
+        self.client.connect(self.server.host, self.server.port)
+        self.client.login(USER, PASSWD)
 
-#     def tearDown(self):
-#         self.client.close()
-#         if self.server.is_alive():
-#             self.server.stop()
+    def tearDown(self):
+        self.client.close()
+        if self.server.is_alive():
+            self.server.stop()
 
-#     def test_port_race_condition(self):
-#         # Refers to bug #120, first sends PORT, then disconnects the
-#         # control channel before accept()ing the incoming data connection.
-#         # The original server behavior was to reply with "200 Active
-#         # data connection established" *after* the client had already
-#         # disconnected the control connection.
-#         with contextlib.closing(socket.socket(self.client.af)) as sock:
-#             sock.bind((self.client.sock.getsockname()[0], 0))
-#             sock.listen(5)
-#             sock.settimeout(TIMEOUT)
-#             host, port = sock.getsockname()[:2]
+    def test_port_race_condition(self):
+        # Refers to bug #120, first sends PORT, then disconnects the
+        # control channel before accept()ing the incoming data connection.
+        # The original server behavior was to reply with "200 Active
+        # data connection established" *after* the client had already
+        # disconnected the control connection.
+        with contextlib.closing(socket.socket(self.client.af)) as sock:
+            sock.bind((self.client.sock.getsockname()[0], 0))
+            sock.listen(5)
+            sock.settimeout(TIMEOUT)
+            host, port = sock.getsockname()[:2]
 
-#             hbytes = host.split('.')
-#             pbytes = [repr(port // 256), repr(port % 256)]
-#             bytes = hbytes + pbytes
-#             cmd = 'PORT ' + ','.join(bytes) + '\r\n'
-#             self.client.sock.sendall(b(cmd))
-#             self.client.getresp()
-#             s, addr = sock.accept()
-#             s.close()
+            hbytes = host.split('.')
+            pbytes = [repr(port // 256), repr(port % 256)]
+            bytes = hbytes + pbytes
+            cmd = 'PORT ' + ','.join(bytes) + '\r\n'
+            self.client.sock.sendall(b(cmd))
+            self.client.getresp()
+            s, addr = sock.accept()
+            s.close()
 
-#     def test_stou_max_tries(self):
-#         # Emulates case where the max number of tries to find out a
-#         # unique file name when processing STOU command gets hit.
+    def test_quick_connect(self):
+        # Clients that connected and disconnected quickly could cause
+        # the server to crash, due to a failure to catch errors in the
+        # initial part of the connection process.
+        # Tracked in issues #91, #104 and #105.
+        # See also https://bugs.launchpad.net/zodb/+bug/135108
+        import struct
 
-#         class TestFS(AbstractedFS):
+        def connect(addr):
+            with contextlib.closing(socket.socket()) as s:
+                # Set SO_LINGER to 1,0 causes a connection reset (RST) to
+                # be sent when close() is called, instead of the standard
+                # FIN shutdown sequence.
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
+                             struct.pack('ii', 1, 0))
+                s.settimeout(TIMEOUT)
+                try:
+                    s.connect(addr)
+                except socket.error:
+                    pass
 
-#             def mkstemp(self, *args, **kwargs):
-#                 raise IOError(errno.EEXIST,
-#                               "No usable temporary file name found")
+        for x in range(10):
+            connect((self.server.host, self.server.port))
+        for x in range(10):
+            addr = self.client.makepasv()
+            connect(addr)
 
-#         with self.server.lock:
-#             self.server.handler.abstracted_fs = TestFS
-#         try:
-#             self.client.quit()
-#             self.client.connect(self.server.host, self.server.port)
-#             self.client.login(USER, PASSWD)
-#             self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'stou')
-#         finally:
-#             with self.server.lock:
-#                 self.server.handler.abstracted_fs = AbstractedFS
+    def test_error_on_callback(self):
+        # test that the server do not crash in case an error occurs
+        # while firing a scheduled function
+        self.tearDown()
+        server = FTPServer((HOST, 0), FTPHandler)
+        self.addCleanup(server.close)
+        logger = logging.getLogger('pyftpdlib')
+        logger.disabled = True
+        try:
+            len1 = len(IOLoop.instance().socket_map)
+            IOLoop.instance().call_later(0, lambda: 1 // 0)
+            server.serve_forever(timeout=0.001, blocking=False)
+            len2 = len(IOLoop.instance().socket_map)
+            self.assertEqual(len1, len2)
+        finally:
+            logger.disabled = False
 
-#     def test_quick_connect(self):
-#         # Clients that connected and disconnected quickly could cause
-#         # the server to crash, due to a failure to catch errors in the
-#         # initial part of the connection process.
-#         # Tracked in issues #91, #104 and #105.
-#         # See also https://bugs.launchpad.net/zodb/+bug/135108
-#         import struct
+    def test_active_conn_error(self):
+        # we open a socket() but avoid to invoke accept() to
+        # reproduce this error condition:
+        # http://code.google.com/p/pyftpdlib/source/detail?r=905
+        with contextlib.closing(socket.socket()) as sock:
+            sock.bind((HOST, 0))
+            port = sock.getsockname()[1]
+            self.client.sock.settimeout(.1)
+            try:
+                resp = self.client.sendport(HOST, port)
+            except ftplib.error_temp as err:
+                self.assertEqual(str(err)[:3], '425')
+            except (socket.timeout, getattr(ssl, "SSLError", object())):
+                pass
+            else:
+                self.assertNotEqual(str(resp)[:3], '200')
 
-#         def connect(addr):
-#             with contextlib.closing(socket.socket()) as s:
-#                 # Set SO_LINGER to 1,0 causes a connection reset (RST) to
-#                 # be sent when close() is called, instead of the standard
-#                 # FIN shutdown sequence.
-#                 s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
-#                              struct.pack('ii', 1, 0))
-#                 s.settimeout(TIMEOUT)
-#                 try:
-#                     s.connect(addr)
-#                 except socket.error:
-#                     pass
+    def test_repr(self):
+        # make sure the FTP/DTP handler classes have a sane repr()
+        with contextlib.closing(self.client.makeport()):
+            for inst in IOLoop.instance().socket_map.values():
+                repr(inst)
+                str(inst)
 
-#         for x in range(10):
-#             connect((self.server.host, self.server.port))
-#         for x in range(10):
-#             addr = self.client.makepasv()
-#             connect(addr)
+    if hasattr(os, 'sendfile'):
+        def test_sendfile(self):
+            # make sure that on python >= 3.3 we're using os.sendfile
+            # rather than third party pysendfile module
+            from pyftpdlib.handlers import sendfile
+            self.assertIs(sendfile, os.sendfile)
 
-#     def test_error_on_callback(self):
-#         # test that the server do not crash in case an error occurs
-#         # while firing a scheduled function
-#         self.tearDown()
-#         server = FTPServer((HOST, 0), FTPHandler)
-#         self.addCleanup(server.close)
-#         logger = logging.getLogger('pyftpdlib')
-#         logger.disabled = True
-#         try:
-#             len1 = len(IOLoop.instance().socket_map)
-#             IOLoop.instance().call_later(0, lambda: 1 // 0)
-#             server.serve_forever(timeout=0.001, blocking=False)
-#             len2 = len(IOLoop.instance().socket_map)
-#             self.assertEqual(len1, len2)
-#         finally:
-#             logger.disabled = False
+    if SUPPORTS_SENDFILE:
+        def test_sendfile_enabled(self):
+            self.assertEqual(FTPHandler.use_sendfile, True)
 
-#     def test_active_conn_error(self):
-#         # we open a socket() but avoid to invoke accept() to
-#         # reproduce this error condition:
-#         # http://code.google.com/p/pyftpdlib/source/detail?r=905
-#         with contextlib.closing(socket.socket()) as sock:
-#             sock.bind((HOST, 0))
-#             port = sock.getsockname()[1]
-#             self.client.sock.settimeout(.1)
-#             try:
-#                 resp = self.client.sendport(HOST, port)
-#             except ftplib.error_temp as err:
-#                 self.assertEqual(str(err)[:3], '425')
-#             except (socket.timeout, getattr(ssl, "SSLError", object())):
-#                 pass
-#             else:
-#                 self.assertNotEqual(str(resp)[:3], '200')
-
-#     def test_repr(self):
-#         # make sure the FTP/DTP handler classes have a sane repr()
-#         with contextlib.closing(self.client.makeport()):
-#             for inst in IOLoop.instance().socket_map.values():
-#                 repr(inst)
-#                 str(inst)
-
-#     if hasattr(os, 'sendfile'):
-#         def test_sendfile(self):
-#             # make sure that on python >= 3.3 we're using os.sendfile
-#             # rather than third party pysendfile module
-#             from pyftpdlib.handlers import sendfile
-#             self.assertIs(sendfile, os.sendfile)
-
-#     if SUPPORTS_SENDFILE:
-#         def test_sendfile_enabled(self):
-#             self.assertEqual(FTPHandler.use_sendfile, True)
-
-#     if hasattr(select, 'epoll') or hasattr(select, 'kqueue'):
-#         def test_ioloop_fileno(self):
-#             with self.server.lock:
-#                 fd = self.server.server.ioloop.fileno()
-#             self.assertTrue(isinstance(fd, int), fd)
+    if hasattr(select, 'epoll') or hasattr(select, 'kqueue'):
+        def test_ioloop_fileno(self):
+            fd = self.server.server.ioloop.fileno()
+            self.assertTrue(isinstance(fd, int), fd)
 
 
 # # TODO: disabled as on certain platforms (OSX and Windows)
@@ -2721,7 +2699,6 @@ class TestIPv6MixedEnvironment(unittest.TestCase):
 #                               'retr ' + TESTFN_UNICODE_2, dummy.write)
 
 
-
 class ThreadedFTPTests(unittest.TestCase):
 
     server_class = ThreadedTestFTPd
@@ -2769,6 +2746,27 @@ class ThreadedFTPTests(unittest.TestCase):
                 self.client.sendcmd('noop')
             finally:
                 AbstractedFS.getmtime = _getmtime
+
+    def test_stou_max_tries(self):
+        # Emulates case where the max number of tries to find out a
+        # unique file name when processing STOU command gets hit.
+
+        class TestFS(AbstractedFS):
+
+            def mkstemp(self, *args, **kwargs):
+                raise IOError(errno.EEXIST,
+                              "No usable temporary file name found")
+
+        with self.server.lock:
+            self.server.handler.abstracted_fs = TestFS
+        try:
+            self.client.quit()
+            self.client.connect(self.server.host, self.server.port)
+            self.client.login(USER, PASSWD)
+            self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'stou')
+        finally:
+            with self.server.lock:
+                self.server.handler.abstracted_fs = AbstractedFS
 
 
 configure_logging()
