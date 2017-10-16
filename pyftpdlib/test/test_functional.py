@@ -1621,273 +1621,285 @@ class TestTimeouts(unittest.TestCase):
                 pass
 
 
-# class TestConfigurableOptions(unittest.TestCase):
-#     """Test those daemon options which are commonly modified by user."""
-#     server_class = ThreadedTestFTPd
-#     client_class = ftplib.FTP
+class TestConfigurableOptions(unittest.TestCase):
+    """Test those daemon options which are commonly modified by user."""
+    server_class = MProcessTestFTPd
+    client_class = ftplib.FTP
 
-#     def setUp(self):
-#         touch(TESTFN)
-#         self.server = self.server_class()
-#         self.server.start()
-#         self.client = self.client_class(timeout=TIMEOUT)
-#         self.client.connect(self.server.host, self.server.port)
-#         self.client.login(USER, PASSWD)
+    def setUp(self):
+        touch(TESTFN)
+        self.server = None
+        self.client = None
 
-#     def tearDown(self):
-#         os.remove(TESTFN)
-#         # set back options to their original value
-#         with self.server.lock:
-#             self.server.server.max_cons = 0
-#             self.server.server.max_cons_per_ip = 0
-#             self.server.handler.banner = "pyftpdlib ready."
-#             self.server.handler.max_login_attempts = 3
-#             self.server.handler.auth_failed_timeout = 5
-#             self.server.handler.masquerade_address = None
-#             self.server.handler.masquerade_address_map = {}
-#             self.server.handler.permit_privileged_ports = False
-#             self.server.handler.permit_foreign_addresses = False
-#             self.server.handler.passive_ports = None
-#             self.server.handler.use_gmt_times = True
-#             self.server.handler.tcp_no_delay = hasattr(socket, 'TCP_NODELAY')
-#         self.server.stop()
-#         self.client.close()
+    def connect(self):
+        self.client = self.client_class(timeout=TIMEOUT)
+        self.client.connect(self.server.host, self.server.port)
+        self.client.login(USER, PASSWD)
 
-#     @disable_log_warning
-#     def test_max_connections(self):
-#         # Test FTPServer.max_cons attribute
-#         with self.server.lock:
-#             self.server.server.max_cons = 3
-#         self.client.quit()
-#         c1 = self.client_class()
-#         c2 = self.client_class()
-#         c3 = self.client_class()
-#         try:
-#             c1.connect(self.server.host, self.server.port)
-#             c2.connect(self.server.host, self.server.port)
-#             self.assertRaises(ftplib.error_temp, c3.connect, self.server.host,
-#                               self.server.port)
-#             # with passive data channel established
-#             c2.quit()
-#             c1.login(USER, PASSWD)
-#             c1.makepasv()
-#             self.assertRaises(ftplib.error_temp, c2.connect, self.server.host,
-#                               self.server.port)
-#             # with passive data socket waiting for connection
-#             c1.login(USER, PASSWD)
-#             c1.sendcmd('pasv')
-#             self.assertRaises(ftplib.error_temp, c2.connect, self.server.host,
-#                               self.server.port)
-#             # with active data channel established
-#             c1.login(USER, PASSWD)
-#             with contextlib.closing(c1.makeport()):
-#                 self.assertRaises(
-#                     ftplib.error_temp, c2.connect, self.server.host,
-#                     self.server.port)
-#         finally:
-#             for c in (c1, c2, c3):
-#                 try:
-#                     c.quit()
-#                 except (socket.error, EOFError):  # already disconnected
-#                     c.close()
+    def tearDown(self):
+        if self.client is not None:
+            self.client.close()
+        # set back options to their original value
+        if self.server is not None:
+            self.server.server.max_cons = 0
+            self.server.server.max_cons_per_ip = 0
+            self.server.handler.banner = "pyftpdlib ready."
+            self.server.handler.max_login_attempts = 3
+            self.server.handler.auth_failed_timeout = 5
+            self.server.handler.masquerade_address = None
+            self.server.handler.masquerade_address_map = {}
+            self.server.handler.permit_privileged_ports = False
+            self.server.handler.permit_foreign_addresses = False
+            self.server.handler.passive_ports = None
+            self.server.handler.use_gmt_times = True
+            self.server.handler.tcp_no_delay = hasattr(socket, 'TCP_NODELAY')
+            self.server.stop()
+        os.remove(TESTFN)
 
-#     @disable_log_warning
-#     def test_max_connections_per_ip(self):
-#         # Test FTPServer.max_cons_per_ip attribute
-#         with self.server.lock:
-#             self.server.server.max_cons_per_ip = 3
-#         self.client.quit()
-#         c1 = self.client_class()
-#         c2 = self.client_class()
-#         c3 = self.client_class()
-#         c4 = self.client_class()
-#         try:
-#             c1.connect(self.server.host, self.server.port)
-#             c2.connect(self.server.host, self.server.port)
-#             c3.connect(self.server.host, self.server.port)
-#             self.assertRaises(ftplib.error_temp, c4.connect, self.server.host,
-#                               self.server.port)
-#             # Make sure client has been disconnected.
-#             # socket.error (Windows) or EOFError (Linux) exception is
-#             # supposed to be raised in such a case.
-#             self.assertRaises((socket.error, EOFError), c4.sendcmd, 'noop')
-#         finally:
-#             for c in (c1, c2, c3, c4):
-#                 try:
-#                     c.quit()
-#                 except (socket.error, EOFError):  # already disconnected
-#                     c.close()
+    @disable_log_warning
+    def test_max_connections(self):
+        # Test FTPServer.max_cons attribute
+        self.server = self.server_class()
+        self.server.server.max_cons = 3
+        self.server.start()
 
-#     def test_banner(self):
-#         # Test FTPHandler.banner attribute
-#         with self.server.lock:
-#             self.server.handler.banner = 'hello there'
-#         self.client.close()
-#         self.client = self.client_class(timeout=TIMEOUT)
-#         self.client.connect(self.server.host, self.server.port)
-#         self.assertEqual(self.client.getwelcome()[4:], 'hello there')
+        c1 = self.client_class()
+        c2 = self.client_class()
+        c3 = self.client_class()
+        try:
+            c1.connect(self.server.host, self.server.port)
+            c2.connect(self.server.host, self.server.port)
+            self.assertRaises(ftplib.error_temp, c3.connect, self.server.host,
+                              self.server.port)
+            # with passive data channel established
+            c2.quit()
+            c1.login(USER, PASSWD)
+            c1.makepasv()
+            self.assertRaises(ftplib.error_temp, c2.connect, self.server.host,
+                              self.server.port)
+            # with passive data socket waiting for connection
+            c1.login(USER, PASSWD)
+            c1.sendcmd('pasv')
+            self.assertRaises(ftplib.error_temp, c2.connect, self.server.host,
+                              self.server.port)
+            # with active data channel established
+            c1.login(USER, PASSWD)
+            with contextlib.closing(c1.makeport()):
+                self.assertRaises(
+                    ftplib.error_temp, c2.connect, self.server.host,
+                    self.server.port)
+        finally:
+            for c in (c1, c2, c3):
+                try:
+                    c.quit()
+                except (socket.error, EOFError):  # already disconnected
+                    c.close()
 
-#     def test_max_login_attempts(self):
-#         # Test FTPHandler.max_login_attempts attribute.
-#         with self.server.lock:
-#             self.server.handler.max_login_attempts = 1
-#             self.server.handler.auth_failed_timeout = 0
-#         self.assertRaises(ftplib.error_perm, self.client.login, 'wrong',
-#                           'wrong')
-#         # socket.error (Windows) or EOFError (Linux) exceptions are
-#         # supposed to be raised when attempting to send/recv some data
-#         # using a disconnected socket
-#         self.assertRaises((socket.error, EOFError), self.client.sendcmd,
-#                           'noop')
+    @disable_log_warning
+    def test_max_connections_per_ip(self):
+        # Test FTPServer.max_cons_per_ip attribute
+        self.server = self.server_class()
+        self.server.server.max_cons_per_ip = 3
+        self.server.start()
 
-#     def test_masquerade_address(self):
-#         # Test FTPHandler.masquerade_address attribute
-#         host, port = self.client.makepasv()
-#         self.assertEqual(host, self.server.host)
-#         with self.server.lock:
-#             self.server.handler.masquerade_address = "256.256.256.256"
-#         host, port = self.client.makepasv()
-#         self.assertEqual(host, "256.256.256.256")
+        c1 = self.client_class()
+        c2 = self.client_class()
+        c3 = self.client_class()
+        c4 = self.client_class()
+        try:
+            c1.connect(self.server.host, self.server.port)
+            c2.connect(self.server.host, self.server.port)
+            c3.connect(self.server.host, self.server.port)
+            self.assertRaises(ftplib.error_temp, c4.connect, self.server.host,
+                              self.server.port)
+            # Make sure client has been disconnected.
+            # socket.error (Windows) or EOFError (Linux) exception is
+            # supposed to be raised in such a case.
+            self.assertRaises((socket.error, EOFError), c4.sendcmd, 'noop')
+        finally:
+            for c in (c1, c2, c3, c4):
+                try:
+                    c.quit()
+                except (socket.error, EOFError):  # already disconnected
+                    c.close()
 
-#     def test_masquerade_address_map(self):
-#         # Test FTPHandler.masquerade_address_map attribute
-#         host, port = self.client.makepasv()
-#         self.assertEqual(host, self.server.host)
-#         with self.server.lock:
-#             self.server.handler.masquerade_address_map = {self.server.host:
-#                                                           "128.128.128.128"}
-#         host, port = self.client.makepasv()
-#         self.assertEqual(host, "128.128.128.128")
+    def test_banner(self):
+        # Test FTPHandler.banner attribute
+        self.server = self.server_class()
+        self.server.handler.banner = 'hello there'
+        self.server.start()
+        self.client = self.client_class(timeout=TIMEOUT)
+        self.client.connect(self.server.host, self.server.port)
+        self.assertEqual(self.client.getwelcome()[4:], 'hello there')
 
-#     def test_passive_ports(self):
-#         # Test FTPHandler.passive_ports attribute
-#         _range = list(range(40000, 60000, 200))
-#         with self.server.lock:
-#             self.server.handler.passive_ports = _range
-#         self.assertTrue(self.client.makepasv()[1] in _range)
-#         self.assertTrue(self.client.makepasv()[1] in _range)
-#         self.assertTrue(self.client.makepasv()[1] in _range)
-#         self.assertTrue(self.client.makepasv()[1] in _range)
+    def test_max_login_attempts(self):
+        # Test FTPHandler.max_login_attempts attribute.
+        self.server = self.server_class()
+        self.server.handler.max_login_attempts = 1
+        self.server.handler.auth_failed_timeout = 0
+        self.server.start()
+        self.connect()
+        self.assertRaises(ftplib.error_perm, self.client.login, 'wrong',
+                          'wrong')
+        # socket.error (Windows) or EOFError (Linux) exceptions are
+        # supposed to be raised when attempting to send/recv some data
+        # using a disconnected socket
+        self.assertRaises((socket.error, EOFError), self.client.sendcmd,
+                          'noop')
 
-#     @disable_log_warning
-#     def test_passive_ports_busy(self):
-#         # If the ports in the configured range are busy it is expected
-#         # that a kernel-assigned port gets chosen
-#         with contextlib.closing(socket.socket()) as s:
-#             s.settimeout(TIMEOUT)
-#             s.bind((HOST, 0))
-#             port = s.getsockname()[1]
-#             with self.server.lock:
-#                 self.server.handler.passive_ports = [port]
-#             resulting_port = self.client.makepasv()[1]
-#             self.assertTrue(port != resulting_port)
+    def test_masquerade_address(self):
+        # Test FTPHandler.masquerade_address attribute
+        self.server = self.server_class()
+        self.server.handler.masquerade_address = "256.256.256.256"
+        self.server.start()
+        self.connect()
+        host, port = self.client.makepasv()
+        self.assertEqual(host, "256.256.256.256")
 
-#     @disable_log_warning
-#     def test_permit_privileged_ports(self):
-#         # Test FTPHandler.permit_privileged_ports_active attribute
+    def test_masquerade_address_map(self):
+        # Test FTPHandler.masquerade_address_map attribute
+        self.server = self.server_class()
+        self.server.handler.masquerade_address_map = {self.server.host:
+                                                      "128.128.128.128"}
+        self.server.start()
+        self.connect()
+        host, port = self.client.makepasv()
+        self.assertEqual(host, "128.128.128.128")
 
-#         # try to bind a socket on a privileged port
-#         sock = None
-#         for port in reversed(range(1, 1024)):
-#             try:
-#                 socket.getservbyport(port)
-#             except socket.error:
-#                 # not registered port; go on
-#                 try:
-#                     sock = socket.socket(self.client.af, socket.SOCK_STREAM)
-#                     self.addCleanup(sock.close)
-#                     sock.settimeout(TIMEOUT)
-#                     sock.bind((HOST, port))
-#                     break
-#                 except socket.error as err:
-#                     if err.errno == errno.EACCES:
-#                         # root privileges needed
-#                         if sock is not None:
-#                             sock.close()
-#                         sock = None
-#                         break
-#                     sock.close()
-#                     continue
-#             else:
-#                 # registered port found; skip to the next one
-#                 continue
-#         else:
-#             # no usable privileged port was found
-#             sock = None
+    def test_passive_ports(self):
+        # Test FTPHandler.passive_ports attribute
+        self.server = self.server_class()
+        _range = list(range(40000, 60000, 200))
+        self.server.handler.passive_ports = _range
+        self.server.start()
+        self.connect()
+        self.assertTrue(self.client.makepasv()[1] in _range)
+        self.assertTrue(self.client.makepasv()[1] in _range)
+        self.assertTrue(self.client.makepasv()[1] in _range)
+        self.assertTrue(self.client.makepasv()[1] in _range)
 
-#         with self.server.lock:
-#             self.server.handler.permit_privileged_ports = False
-#         self.assertRaises(ftplib.error_perm, self.client.sendport, HOST,
-#                           port)
-#         if sock:
-#             port = sock.getsockname()[1]
-#             with self.server.lock:
-#                 self.server.handler.permit_privileged_ports = True
-#             sock.listen(5)
-#             sock.settimeout(TIMEOUT)
-#             self.client.sendport(HOST, port)
-#             s, addr = sock.accept()
-#             s.close()
+    @disable_log_warning
+    def test_passive_ports_busy(self):
+        # If the ports in the configured range are busy it is expected
+        # that a kernel-assigned port gets chosen
 
-#     def test_use_gmt_times(self):
-#         # use GMT time
-#         with self.server.lock:
-#             self.server.handler.use_gmt_times = True
-#         gmt1 = self.client.sendcmd('mdtm ' + TESTFN)
-#         gmt2 = self.client.sendcmd('mlst ' + TESTFN)
-#         gmt3 = self.client.sendcmd('stat ' + TESTFN)
+        with contextlib.closing(socket.socket()) as s:
+            s.settimeout(TIMEOUT)
+            s.bind((HOST, 0))
+            port = s.getsockname()[1]
+            self.server = self.server_class()
+            self.server.handler.passive_ports = [port]
+            self.server.start()
+            self.connect()
+            resulting_port = self.client.makepasv()[1]
+            self.assertTrue(port != resulting_port)
 
-#         # use local time
-#         with self.server.lock:
-#             self.server.handler.use_gmt_times = False
+    # @disable_log_warning
+    # def test_permit_privileged_ports(self):
+    #     # Test FTPHandler.permit_privileged_ports_active attribute
 
-#         self.client.quit()
-#         self.client.connect(self.server.host, self.server.port)
-#         self.client.login(USER, PASSWD)
+    #     # try to bind a socket on a privileged port
+    #     sock = None
+    #     for port in reversed(range(1, 1024)):
+    #         try:
+    #             socket.getservbyport(port)
+    #         except socket.error:
+    #             # not registered port; go on
+    #             try:
+    #                 sock = socket.socket(self.client.af, socket.SOCK_STREAM)
+    #                 self.addCleanup(sock.close)
+    #                 sock.settimeout(TIMEOUT)
+    #                 sock.bind((HOST, port))
+    #                 break
+    #             except socket.error as err:
+    #                 if err.errno == errno.EACCES:
+    #                     # root privileges needed
+    #                     if sock is not None:
+    #                         sock.close()
+    #                     sock = None
+    #                     break
+    #                 sock.close()
+    #                 continue
+    #         else:
+    #             # registered port found; skip to the next one
+    #             continue
+    #     else:
+    #         # no usable privileged port was found
+    #         sock = None
 
-#         loc1 = self.client.sendcmd('mdtm ' + TESTFN)
-#         loc2 = self.client.sendcmd('mlst ' + TESTFN)
-#         loc3 = self.client.sendcmd('stat ' + TESTFN)
+    #     with self.server.lock:
+    #         self.server.handler.permit_privileged_ports = False
+    #     self.assertRaises(ftplib.error_perm, self.client.sendport, HOST,
+    #                       port)
+    #     if sock:
+    #         port = sock.getsockname()[1]
+    #         with self.server.lock:
+    #             self.server.handler.permit_privileged_ports = True
+    #         sock.listen(5)
+    #         sock.settimeout(TIMEOUT)
+    #         self.client.sendport(HOST, port)
+    #         s, addr = sock.accept()
+    #         s.close()
 
-#         # if we're not in a GMT time zone times are supposed to be
-#         # different
-#         if time.timezone != 0:
-#             self.assertNotEqual(gmt1, loc1)
-#             self.assertNotEqual(gmt2, loc2)
-#             self.assertNotEqual(gmt3, loc3)
-#         # ...otherwise they should be the same
-#         else:
-#             self.assertEqual(gmt1, loc1)
-#             self.assertEqual(gmt2, loc2)
-#             self.assertEqual(gmt3, loc3)
+    # def test_use_gmt_times(self):
+    #     # use GMT time
+    #     with self.server.lock:
+    #         self.server.handler.use_gmt_times = True
+    #     gmt1 = self.client.sendcmd('mdtm ' + TESTFN)
+    #     gmt2 = self.client.sendcmd('mlst ' + TESTFN)
+    #     gmt3 = self.client.sendcmd('stat ' + TESTFN)
 
-#     @unittest.skipUnless(hasattr(socket, 'TCP_NODELAY'),
-#                          'TCP_NODELAY not available')
-#     def test_tcp_no_delay(self):
-#         s = get_server_handler().socket
-#         self.assertTrue(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
-#         self.client.quit()
-#         with self.server.lock:
-#             self.server.handler.tcp_no_delay = False
-#         self.client.connect(self.server.host, self.server.port)
-#         self.client.sendcmd('noop')
-#         s = get_server_handler().socket
-#         self.assertFalse(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
+    #     # use local time
+    #     with self.server.lock:
+    #         self.server.handler.use_gmt_times = False
 
-#     def test_permit_foreign_address_false(self):
-#         handler = get_server_handler()
-#         handler.permit_foreign_addresses = False
-#         handler.remote_ip = '9.9.9.9'
-#         with self.assertRaises(ftplib.error_perm) as cm:
-#             self.client.makeport()
-#         self.assertIn('foreign address', str(cm.exception))
+    #     self.client.quit()
+    #     self.client.connect(self.server.host, self.server.port)
+    #     self.client.login(USER, PASSWD)
 
-#     def test_permit_foreign_address_true(self):
-#         handler = get_server_handler()
-#         handler.permit_foreign_addresses = True
-#         handler.remote_ip = '9.9.9.9'
-#         s = self.client.makeport()
-#         s.close()
+    #     loc1 = self.client.sendcmd('mdtm ' + TESTFN)
+    #     loc2 = self.client.sendcmd('mlst ' + TESTFN)
+    #     loc3 = self.client.sendcmd('stat ' + TESTFN)
+
+    #     # if we're not in a GMT time zone times are supposed to be
+    #     # different
+    #     if time.timezone != 0:
+    #         self.assertNotEqual(gmt1, loc1)
+    #         self.assertNotEqual(gmt2, loc2)
+    #         self.assertNotEqual(gmt3, loc3)
+    #     # ...otherwise they should be the same
+    #     else:
+    #         self.assertEqual(gmt1, loc1)
+    #         self.assertEqual(gmt2, loc2)
+    #         self.assertEqual(gmt3, loc3)
+
+    # @unittest.skipUnless(hasattr(socket, 'TCP_NODELAY'),
+    #                      'TCP_NODELAY not available')
+    # def test_tcp_no_delay(self):
+    #     s = get_server_handler().socket
+    #     self.assertTrue(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
+    #     self.client.quit()
+    #     with self.server.lock:
+    #         self.server.handler.tcp_no_delay = False
+    #     self.client.connect(self.server.host, self.server.port)
+    #     self.client.sendcmd('noop')
+    #     s = get_server_handler().socket
+    #     self.assertFalse(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
+
+    # def test_permit_foreign_address_false(self):
+    #     handler = get_server_handler()
+    #     handler.permit_foreign_addresses = False
+    #     handler.remote_ip = '9.9.9.9'
+    #     with self.assertRaises(ftplib.error_perm) as cm:
+    #         self.client.makeport()
+    #     self.assertIn('foreign address', str(cm.exception))
+
+    # def test_permit_foreign_address_true(self):
+    #     handler = get_server_handler()
+    #     handler.permit_foreign_addresses = True
+    #     handler.remote_ip = '9.9.9.9'
+    #     s = self.client.makeport()
+    #     s.close()
 
 
 # class TestCallbacks(unittest.TestCase):
