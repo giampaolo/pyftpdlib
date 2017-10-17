@@ -1828,6 +1828,102 @@ class TestConfigurableOptions(unittest.TestCase):
             self.assertEqual(gmt3, loc3)
 
 
+class TestCallbacks(unittest.TestCase):
+
+    server_class = MProcessTestFTPd
+    client_class = ftplib.FTP
+    TESTFN_2 = TESTFN + "-2"
+
+    def setUp(self):
+
+        class Handler(FTPHandler):
+
+            def write(self, text):
+                with open(TESTFN, "at") as f:
+                    f.write(text)
+
+            def on_connect(self):
+                self.write("on_connect,")
+
+            def on_disconnect(self):
+                self.write("on_disconnect,")
+
+            def on_login(self, username):
+                self.write("on_login:%s," % username)
+
+            def on_login_failed(self, username, password):
+                self.write("on_login_failed:%s+%s," % (username, password))
+
+            def on_logout(self, username):
+                self.write("on_logout:%s," % username)
+
+            def on_file_sent(self, file):
+                self.write("on_file_sent:%s," % os.path.basename(file))
+
+            def on_file_received(self, file):
+                self.write("on_file_received:%s," % os.path.basename(file))
+
+            def on_incomplete_file_sent(self, file):
+                self.write(
+                    "on_incomplete_file_sent:%s," % os.path.basename(file))
+
+            def on_incomplete_file_received(self, file):
+                self.write(
+                    "on_incomplete_file_received:%s," % os.path.basename(file))
+
+        safe_remove(TESTFN)
+        safe_remove(self.TESTFN_2)
+        self.server = self.server_class()
+        self.server.server.handler = Handler
+        self.server.start()
+        self.client = self.client_class(timeout=TIMEOUT)
+        self.client.connect(self.server.host, self.server.port)
+
+    def tearDown(self):
+        self.client.close()
+        self.server.stop()
+        safe_remove(TESTFN)
+        safe_remove(self.TESTFN_2)
+
+    def read_file(self, text):
+        stop_at = time.time() + 1
+        while time.time() <= stop_at:
+            with open(TESTFN, "rt") as f:
+                data = f.read()
+                if data == text:
+                    return
+            time.sleep(0.01)
+        self.fail("data: %r; expected: %r" % (data, text))
+
+    def test_on_disconnect(self):
+        self.client.login(USER, PASSWD)
+        self.client.close()
+        self.read_file('on_connect,on_login:%s,on_disconnect,' % USER)
+
+    def test_on_logout(self):
+        self.client.login(USER, PASSWD)
+        self.client.sendcmd('quit')
+        self.read_file(
+            'on_connect,on_login:%s,on_logout:%s,on_disconnect,' % (
+                USER, USER))
+
+    def test_on_rein(self):
+        self.client.login(USER, PASSWD)
+        self.client.sendcmd('rein')
+        self.read_file(
+            'on_connect,on_login:%s,on_logout:%s,' % (USER, USER))
+
+    def test_on_login_failed(self):
+        self.assertRaises(
+            ftplib.error_perm, self.client.login, 'foo', 'bar?!?')
+        self.read_file('on_connect,on_login_failed:foo+bar?!?,')
+
+    def test_on_login_failed(self):
+        self.assertRaises(
+            ftplib.error_perm, self.client.login, 'foo', 'bar?!?')
+        self.read_file('on_connect,on_login_failed:foo+bar?!?,')
+
+
 # class TestCallbacks(unittest.TestCase):
 #     """Test FTPHandler class callback methods."""
 #     server_class = ThreadedTestFTPd
