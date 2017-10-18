@@ -242,6 +242,19 @@ def setup_server(handler, server_class, addr=None):
     return server
 
 
+def check_resources():
+    ts = threading.enumerate()
+    assert len(ts) == 1, ts
+    try:
+        import psutil
+    except ImportError as err:
+        warnings.warn(str(err), RuntimeWarning)
+    else:
+        p = psutil.Process()
+        children = p.children()
+        assert not children, children
+
+
 def reset_server_opts():
     # Since all pyftpdlib configurable "options" are class attributes
     # we reset them at module.class level.
@@ -269,7 +282,6 @@ def reset_server_opts():
         klass.use_sendfile = _import_sendfile() is not None
         klass.ac_in_buffer_size = 4096
         klass.ac_out_buffer_size = 4096
-
         if klass.__name__ == 'TLS_FTPHandler':
             klass.tls_control_required = False
             klass.tls_data_required = False
@@ -329,6 +341,7 @@ class ThreadedTestFTPd(threading.Thread):
         self.server.close_all()
         self.join()
         reset_server_opts()
+        check_resources()
 
 
 class MProcessTestFTPd(multiprocessing.Process):
@@ -352,3 +365,4 @@ class MProcessTestFTPd(multiprocessing.Process):
         self.terminate()
         self.join()
         reset_server_opts()
+        check_resources()
