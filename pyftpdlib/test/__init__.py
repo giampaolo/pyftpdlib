@@ -403,7 +403,7 @@ class MProcessTestFTPd(multiprocessing.Process):
     server_class = FTPServer
 
     def __init__(self, addr=None):
-        super(MProcessTestFTPd, self).__init__()
+        super(MProcessTestFTPd, self).__init__(name='ftpd')
         addr = (HOST, 0) if addr is None else addr
         authorizer = DummyAuthorizer()
         authorizer.add_user(

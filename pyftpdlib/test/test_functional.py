@@ -75,6 +75,15 @@ if POSIX:
         pass
 
 
+def check_resources():
+    import psutil
+    p = psutil.Process()
+    ts = p.threads()
+    assert len(ts) == 1, ts
+    children = p.children()
+    assert not children, children
+
+
 class TestFtpAuthentication(unittest.TestCase):
 
     "test: USER, PASS, REIN."
@@ -82,6 +91,7 @@ class TestFtpAuthentication(unittest.TestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        check_resources()
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
@@ -97,6 +107,7 @@ class TestFtpAuthentication(unittest.TestCase):
         if not self.dummyfile.closed:
             self.dummyfile.close()
         os.remove(TESTFN)
+        check_resources()
 
     def assert_auth_failed(self, user, passwd):
         self.assertRaisesRegex(ftplib.error_perm, '530 Authentication failed',
@@ -255,6 +266,7 @@ class TestFtpDummyCmds(unittest.TestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        check_resources()
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
@@ -264,6 +276,7 @@ class TestFtpDummyCmds(unittest.TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
+        check_resources()
 
     def test_type(self):
         self.client.sendcmd('type a')
@@ -378,6 +391,7 @@ class TestFtpCmdsSemantic(unittest.TestCase):
          'stru', 'type', 'user', 'xmkd', 'xrmd', 'site chmod']
 
     def setUp(self):
+        check_resources()
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
@@ -387,6 +401,7 @@ class TestFtpCmdsSemantic(unittest.TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
+        check_resources()
 
     def test_arg_cmds(self):
         # Test commands requiring an argument.
@@ -441,6 +456,7 @@ class TestFtpFsOperations(unittest.TestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        check_resources()
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
@@ -455,6 +471,7 @@ class TestFtpFsOperations(unittest.TestCase):
         safe_remove(self.tempfile)
         if os.path.exists(self.tempdir):
             shutil.rmtree(self.tempdir)
+        check_resources()
 
     def test_cwd(self):
         self.client.cwd(self.tempdir)
@@ -649,6 +666,7 @@ class TestFtpStoreData(unittest.TestCase):
     use_sendfile = None
 
     def setUp(self):
+        check_resources()
         self.server = self.server_class()
         if self.use_sendfile is not None:
             self.server.handler.use_sendfile = self.use_sendfile
@@ -668,6 +686,7 @@ class TestFtpStoreData(unittest.TestCase):
         if self.use_sendfile is not None:
             from pyftpdlib.handlers import _import_sendfile
             self.server.handler.use_sendfile = _import_sendfile() is not None
+        check_resources()
 
     def test_stor(self):
         try:
@@ -969,6 +988,7 @@ class TestFtpRetrieveData(unittest.TestCase):
     use_sendfile = None
 
     def setUp(self):
+        check_resources()
         self.server = self.server_class()
         if self.use_sendfile is not None:
             self.server.handler.use_sendfile = self.use_sendfile
@@ -990,6 +1010,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         if self.use_sendfile is not None:
             from pyftpdlib.handlers import _import_sendfile
             self.server.handler.use_sendfile = _import_sendfile() is not None
+        check_resources()
 
     def test_retr(self):
         data = b'abcde12345' * 100000
@@ -1090,6 +1111,7 @@ class TestFtpListingCmds(unittest.TestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        check_resources()
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
@@ -1101,6 +1123,7 @@ class TestFtpListingCmds(unittest.TestCase):
         self.client.close()
         self.server.stop()
         os.remove(TESTFN)
+        check_resources()
 
     def _test_listing_cmds(self, cmd):
         """Tests common to LIST NLST and MLSD commands."""
@@ -1252,6 +1275,7 @@ class TestFtpAbort(unittest.TestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        check_resources()
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
@@ -1261,6 +1285,7 @@ class TestFtpAbort(unittest.TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
+        check_resources()
 
     def test_abor_no_data(self):
         # Case 1: ABOR while no data channel is opened: respond with 225.
@@ -1344,6 +1369,8 @@ class TestThrottleBandwidth(unittest.TestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        check_resources()
+
         class CustomDTPHandler(ThrottledDTPHandler):
             # overridden so that the "awake" callback is executed
             # immediately; this way we won't introduce any slowdown
@@ -1374,6 +1401,7 @@ class TestThrottleBandwidth(unittest.TestCase):
             self.dummyfile.close()
         if os.path.exists(TESTFN):
             os.remove(TESTFN)
+        check_resources()
 
     def test_throttle_send(self):
         # This test doesn't test the actual speed accuracy, just
@@ -1436,6 +1464,7 @@ class TestTimeouts(unittest.TestCase):
             self.server.handler.passive_dtp.timeout = 30
             self.server.handler.active_dtp.timeout = 30
             self.server.stop()
+        check_resources()
 
     # Note: moved later.
 
@@ -1597,6 +1626,7 @@ class TestConfigurableOptions(unittest.TestCase):
             self.server.handler.tcp_no_delay = hasattr(socket, 'TCP_NODELAY')
             self.server.stop()
         os.remove(TESTFN)
+        check_resources()
 
     @disable_log_warning
     def test_max_connections(self):
@@ -1777,6 +1807,7 @@ class TestCallbacks(unittest.TestCase):
     TESTFN_2 = TESTFN + "-2"
 
     def setUp(self):
+        check_resources()
 
         class Handler(FTPHandler):
 
@@ -1826,6 +1857,7 @@ class TestCallbacks(unittest.TestCase):
         self.server.stop()
         safe_remove(TESTFN)
         safe_remove(self.TESTFN_2)
+        check_resources()
 
     def read_file(self, text):
         stop_at = time.time() + 1
@@ -2142,6 +2174,7 @@ class TestIPv6MixedEnvironment(unittest.TestCase):
     HOST = "::"
 
     def setUp(self):
+        check_resources()
         self.server = self.server_class((self.HOST, 0))
         self.server.start()
         self.client = None
@@ -2150,6 +2183,7 @@ class TestIPv6MixedEnvironment(unittest.TestCase):
         if self.client is not None:
             self.client.close()
         self.server.stop()
+        check_resources()
 
     def test_port_v4(self):
         def noop(x):
@@ -2217,6 +2251,7 @@ class TestCornerCases(unittest.TestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        check_resources()
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
@@ -2226,6 +2261,7 @@ class TestCornerCases(unittest.TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
+        check_resources()
 
     def test_port_race_condition(self):
         # Refers to bug #120, first sends PORT, then disconnects the
@@ -2517,6 +2553,7 @@ class ThreadedFTPTests(unittest.TestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        check_resources()
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
@@ -2533,6 +2570,7 @@ class ThreadedFTPTests(unittest.TestCase):
         self.dummy_recvfile.close()
         self.dummy_sendfile.close()
         safe_remove(TESTFN)
+        check_resources()
 
     def test_unforeseen_mdtm_event(self):
         # Emulate a case where the file last modification time is prior
