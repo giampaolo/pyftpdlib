@@ -72,6 +72,7 @@ def _import_sendfile():
                 return sf.sendfile
             except ImportError:
                 pass
+    return None
 
 
 sendfile = _import_sendfile()

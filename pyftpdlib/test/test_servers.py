@@ -18,7 +18,6 @@ from pyftpdlib.test import TIMEOUT
 from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
 from pyftpdlib.test import VERBOSITY
-from pyftpdlib.test.test_functional import TestCallbacks
 from pyftpdlib.test.test_functional import TestCornerCases
 from pyftpdlib.test.test_functional import TestFtpAbort
 from pyftpdlib.test.test_functional import TestFtpAuthentication
@@ -122,8 +121,8 @@ class TestFtpAbortThreadMixin(ThreadFTPTestMixin, TestFtpAbort):
 #     pass
 
 
-class TestCallbacksThreadMixin(ThreadFTPTestMixin, TestCallbacks):
-    pass
+# class TestCallbacksThreadMixin(ThreadFTPTestMixin, TestCallbacks):
+#     pass
 
 
 class TestIPv4EnvironmentThreadMixin(ThreadFTPTestMixin, TestIPv4Environment):

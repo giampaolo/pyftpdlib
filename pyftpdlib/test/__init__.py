@@ -7,6 +7,7 @@ import contextlib
 import errno
 import functools
 import logging
+import multiprocessing
 import os
 import shutil
 import socket
@@ -316,7 +317,8 @@ class ThreadWorker(threading.Thread):
                         self._event_start.set()
                         self.started = True
                     self.poll()
-                self.sleep()
+                if not self._stop_flag:
+                    self.sleep()
         finally:
             self._event_stop.set()
 
@@ -393,3 +395,33 @@ class ThreadedTestFTPd(ThreadWorker):
 
     def after_stop(self):
         self.server.close_all()
+
+
+class MProcessTestFTPd(multiprocessing.Process):
+
+    handler = FTPHandler
+    server_class = FTPServer
+
+    def __init__(self, addr=None):
+        super(MProcessTestFTPd, self).__init__()
+        addr = (HOST, 0) if addr is None else addr
+        authorizer = DummyAuthorizer()
+        authorizer.add_user(
+            USER, PASSWD, HOME, perm='elradfmwMT')  # full perms
+        authorizer.add_anonymous(HOME)
+        self.handler.authorizer = authorizer
+        self.handler.auth_failed_timeout = 0.001
+        # lower buffer sizes = more "loops" while transfering data
+        # = less false positives
+        self.handler.dtp_handler.ac_in_buffer_size = 4096
+        self.handler.dtp_handler.ac_out_buffer_size = 4096
+        self.server = self.server_class(addr, self.handler)
+        self.host, self.port = self.server.socket.getsockname()[:2]
+
+    def run(self):
+        self.server.serve_forever()
+
+    def stop(self):
+        self.server.close_all()
+        self.terminate()
+        self.join()
