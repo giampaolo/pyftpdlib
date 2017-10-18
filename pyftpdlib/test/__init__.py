@@ -406,7 +406,8 @@ class MProcessTestFTPd(multiprocessing.Process):
         super(MProcessTestFTPd, self).__init__()
         addr = (HOST, 0) if addr is None else addr
         authorizer = DummyAuthorizer()
-        authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwMT')  # full perms
+        authorizer.add_user(
+            USER, PASSWD, HOME, perm='elradfmwMT')  # full perms
         authorizer.add_anonymous(HOME)
         self.handler.authorizer = authorizer
         self.handler.auth_failed_timeout = 0.001

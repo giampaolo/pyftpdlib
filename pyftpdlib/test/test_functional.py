@@ -18,12 +18,10 @@ import stat
 import sys
 import tempfile
 import time
-import warnings
 
 from pyftpdlib._compat import b
 from pyftpdlib._compat import PY3
 from pyftpdlib._compat import u
-from pyftpdlib._compat import unicode
 from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.handlers import DTPHandler
 from pyftpdlib.handlers import FTPHandler
@@ -32,7 +30,6 @@ from pyftpdlib.handlers import ThrottledDTPHandler
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.test import BUFSIZE
-from pyftpdlib.test import call_until
 from pyftpdlib.test import configure_logging
 from pyftpdlib.test import disable_log_warning
 from pyftpdlib.test import get_server_handler
@@ -46,24 +43,19 @@ from pyftpdlib.test import PASSWD
 from pyftpdlib.test import POSIX
 from pyftpdlib.test import remove_test_files
 from pyftpdlib.test import retry_on_failure
-from pyftpdlib.test import safe_mkdir
 from pyftpdlib.test import safe_remove
 from pyftpdlib.test import safe_rmdir
 from pyftpdlib.test import SUPPORTS_IPV4
 from pyftpdlib.test import SUPPORTS_IPV6
 from pyftpdlib.test import SUPPORTS_SENDFILE
 from pyftpdlib.test import TESTFN
-from pyftpdlib.test import TESTFN_UNICODE
-from pyftpdlib.test import TESTFN_UNICODE_2
 from pyftpdlib.test import ThreadedTestFTPd
 from pyftpdlib.test import TIMEOUT
 from pyftpdlib.test import touch
-from pyftpdlib.test import TRAVIS
 from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
 from pyftpdlib.test import VERBOSITY
 from pyftpdlib.test import WINDOWS
-import pyftpdlib.__main__
 
 try:
     from StringIO import StringIO as BytesIO
@@ -966,59 +958,6 @@ class TestFtpStoreData(unittest.TestCase):
 class TestFtpStoreDataNoSendfile(TestFtpStoreData):
     """Test STOR, STOU, APPE, REST, TYPE not using sendfile()."""
     use_sendfile = False
-
-
-@unittest.skipUnless(POSIX, "POSIX only")
-@unittest.skipIf(sys.version_info < (3, 3) and sendfile is None,
-                 "pysendfile not installed")
-class TestSendfile(unittest.TestCase):
-    """Sendfile specific tests."""
-    server_class = ThreadedTestFTPd
-    client_class = ftplib.FTP
-
-    def setUp(self):
-        self.server = self.server_class()
-        self.server.start()
-        self.client = self.client_class(timeout=TIMEOUT)
-        self.client.connect(self.server.host, self.server.port)
-        self.client.login(USER, PASSWD)
-        self.dummy_recvfile = BytesIO()
-        self.dummy_sendfile = BytesIO()
-
-    def tearDown(self):
-        self.client.close()
-        self.server.stop()
-        self.dummy_recvfile.close()
-        self.dummy_sendfile.close()
-        safe_remove(TESTFN)
-
-    def test_fallback(self):
-        # Makes sure that if sendfile() fails and no bytes were
-        # transmitted yet the server falls back on using plain
-        # send()
-        data = b'abcde12345' * 100000
-        self.dummy_sendfile.write(data)
-        self.dummy_sendfile.seek(0)
-        self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
-        with mock.patch('pyftpdlib.handlers.sendfile',
-                        side_effect=OSError(errno.EINVAL)) as fun:
-            try:
-                self.client.retrbinary(
-                    'retr ' + TESTFN, self.dummy_recvfile.write)
-                assert fun.called
-                self.dummy_recvfile.seek(0)
-                datafile = self.dummy_recvfile.read()
-                self.assertEqual(len(data), len(datafile))
-                self.assertEqual(hash(data), hash(datafile))
-            finally:
-                # We do not use os.remove() because file could still be
-                # locked by ftpd thread.  If DELE through FTP fails try
-                # os.remove() as last resort.
-                if os.path.exists(TESTFN):
-                    try:
-                        self.client.delete(TESTFN)
-                    except (ftplib.Error, EOFError, socket.error):
-                        safe_remove(TESTFN)
 
 
 class TestFtpRetrieveData(unittest.TestCase):
@@ -2399,7 +2338,7 @@ class TestCornerCases(unittest.TestCase):
 #     """Test FTP commands and responses by using path names with non
 #     ASCII characters.
 #     """
-#     server_class = ThreadedTestFTPd
+#     server_class = MProcessTestFTPd
 #     client_class = ftplib.FTP
 
 #     def setUp(self):
@@ -2417,7 +2356,8 @@ class TestCornerCases(unittest.TestCase):
 #             warnings.filterwarnings("ignore")
 #             safe_mkdir(TESTFN_UNICODE)
 #             touch(TESTFN_UNICODE_2)
-#             self.utf8fs = unicode(TESTFN_UNICODE, 'utf8') in os.listdir(u('.'))
+#             self.utf8fs = \
+#                 unicode(TESTFN_UNICODE, 'utf8') in os.listdir(u('.'))
 #             warnings.resetwarnings()
 
 #     def tearDown(self):
@@ -2735,6 +2675,37 @@ class ThreadedFTPTests(unittest.TestCase):
             self.client.sendport(HOST, port)
             s, addr = sock.accept()
             s.close()
+
+    @unittest.skipUnless(POSIX, "POSIX only")
+    @unittest.skipIf(sys.version_info < (3, 3) and sendfile is None,
+                     "pysendfile not installed")
+    def test_sendfile_fails(self):
+        # Makes sure that if sendfile() fails and no bytes were
+        # transmitted yet the server falls back on using plain
+        # send()
+        data = b'abcde12345' * 100000
+        self.dummy_sendfile.write(data)
+        self.dummy_sendfile.seek(0)
+        self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
+        with mock.patch('pyftpdlib.handlers.sendfile',
+                        side_effect=OSError(errno.EINVAL)) as fun:
+            try:
+                self.client.retrbinary(
+                    'retr ' + TESTFN, self.dummy_recvfile.write)
+                assert fun.called
+                self.dummy_recvfile.seek(0)
+                datafile = self.dummy_recvfile.read()
+                self.assertEqual(len(data), len(datafile))
+                self.assertEqual(hash(data), hash(datafile))
+            finally:
+                # We do not use os.remove() because file could still be
+                # locked by ftpd thread.  If DELE through FTP fails try
+                # os.remove() as last resort.
+                if os.path.exists(TESTFN):
+                    try:
+                        self.client.delete(TESTFN)
+                    except (ftplib.Error, EOFError, socket.error):
+                        safe_remove(TESTFN)
 
 
 configure_logging()
