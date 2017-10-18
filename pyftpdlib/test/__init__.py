@@ -249,6 +249,7 @@ def reset_server_opts():
     import pyftpdlib.servers
     from pyftpdlib.handlers import _import_sendfile
 
+    # Control handlers.
     tls_handler = getattr(pyftpdlib.handlers, "TLS_FTPHandler",
                           pyftpdlib.handlers.FTPHandler)
     for klass in (pyftpdlib.handlers.FTPHandler, tls_handler):
@@ -266,22 +267,25 @@ def reset_server_opts():
         klass.unicode_errors = "replace"
         klass.use_gmt_times = True
         klass.use_sendfile = _import_sendfile() is not None
+        klass.ac_in_buffer_size = 4096
+        klass.ac_out_buffer_size = 4096
+
         if klass.__name__ == 'TLS_FTPHandler':
             klass.tls_control_required = False
             klass.tls_data_required = False
-        #     # klass.certfile = None
-        #     klass.keyfile = None
-        #     klass.ssl_protocol = SSL.SSLv23_METHOD
 
+    # Data handlers.
     tls_handler = getattr(pyftpdlib.handlers, "TLS_DTPHandler",
                           pyftpdlib.handlers.DTPHandler)
     for klass in (pyftpdlib.handlers.DTPHandler, tls_handler):
         klass.timeout = 300
-
+        klass.ac_in_buffer_size = 4096
+        klass.ac_out_buffer_size = 4096
     pyftpdlib.handlers.ThrottledDTPHandler.read_limit = 0
     pyftpdlib.handlers.ThrottledDTPHandler.write_limit = 0
     pyftpdlib.handlers.ThrottledDTPHandler.auto_sized_buffers = True
 
+    # Acceptors.
     for klass in (pyftpdlib.servers.FTPServer,
                   pyftpdlib.servers.ThreadedFTPServer,
                   pyftpdlib.servers.MultiprocessFTPServer):
