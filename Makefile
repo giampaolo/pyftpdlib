@@ -107,11 +107,10 @@ test-ioloop: install
 test-misc: install
 	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_misc.py
 
-# Run a specific test by name; e.g. "make test-by-name retr" will run
-# all test methods containing "retr" in their name.
-# Requires "pip install nose".
+# Run a specific test by name, e.g.
+# make test-by-name ARGS=pyftpdlib.test.test_functional.TestFtpStoreData.test_stor
 test-by-name: install
-	@PYTHONWARNINGS=all $(PYTHON) -m nose pyftpdlib/test/test_*.py --nocapture -v -m $(filter-out $@,$(MAKECMDGOALS))
+	PYTHONWARNINGS=all $(PYTHON) -m unittest -v $(ARGS)
 
 coverage: install
 	# Note: coverage options are controlled by .coveragerc file
