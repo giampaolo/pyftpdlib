@@ -2,7 +2,6 @@
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
 
-import atexit
 import contextlib
 import errno
 import functools
@@ -144,12 +143,6 @@ def remove_test_files():
                 safe_remove(name)
 
 
-def warn(msg):
-    """Add warning message to be executed on exit."""
-    atexit.register(warnings.warn, str(msg) + " - tests have been skipped",
-                    RuntimeWarning)
-
-
 def configure_logging():
     """Set pyftpdlib logger to "WARNING" level."""
     channel = logging.StreamHandler()
@@ -242,7 +235,7 @@ def setup_server(handler, server_class, addr=None):
     return server
 
 
-def check_resources():
+def assert_free_resources():
     ts = threading.enumerate()
     assert len(ts) == 1, ts
     try:
@@ -341,7 +334,7 @@ class ThreadedTestFTPd(threading.Thread):
         self.server.close_all()
         self.join()
         reset_server_opts()
-        check_resources()
+        assert_free_resources()
 
 
 class MProcessTestFTPd(multiprocessing.Process):
@@ -365,4 +358,4 @@ class MProcessTestFTPd(multiprocessing.Process):
         self.terminate()
         self.join()
         reset_server_opts()
-        check_resources()
+        assert_free_resources()
