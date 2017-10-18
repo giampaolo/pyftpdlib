@@ -77,8 +77,9 @@ if POSIX:
 
 def check_resources():
     import psutil
+    import threading
     p = psutil.Process()
-    ts = p.threads()
+    ts = threading.enumerate()
     assert len(ts) == 1, ts
     children = p.children()
     assert not children, children

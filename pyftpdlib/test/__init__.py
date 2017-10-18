@@ -255,7 +255,7 @@ class ThreadedTestFTPd(threading.Thread):
     daemon = True
 
     def __init__(self, addr=None):
-        super(ThreadedTestFTPd, self).__init__()
+        super(ThreadedTestFTPd, self).__init__(name='test-ftpd')
         self.server = setup_server(self.handler, self.server_class, addr=addr)
         self.host, self.port = self.server.socket.getsockname()[:2]
 
@@ -285,7 +285,7 @@ class MProcessTestFTPd(multiprocessing.Process):
     server_class = FTPServer
 
     def __init__(self, addr=None):
-        super(MProcessTestFTPd, self).__init__(name='ftpd')
+        super(MProcessTestFTPd, self).__init__(name='test-ftpd')
         self.server = setup_server(self.handler, self.server_class, addr=addr)
         self.host, self.port = self.server.socket.getsockname()[:2]
         self._started = False
