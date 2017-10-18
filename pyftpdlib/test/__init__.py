@@ -242,6 +242,53 @@ def setup_server(handler, server_class, addr=None):
     return server
 
 
+def reset_server_opts():
+    # Since all pyftpdlib configurable "options" are class attributes
+    # we reset them at module.class level.
+    import pyftpdlib.handlers
+    import pyftpdlib.servers
+    from pyftpdlib.handlers import _import_sendfile
+
+    tls_handler = getattr(pyftpdlib.handlers, "TLS_FTPHandler",
+                          pyftpdlib.handlers.FTPHandler)
+    for klass in (pyftpdlib.handlers.FTPHandler, tls_handler):
+        klass.auth_failed_timeout = 0.001
+        klass.authorizer = DummyAuthorizer()
+        klass.banner = "pyftpdlib ready."
+        klass.masquerade_address = None
+        klass.masquerade_address_map = {}
+        klass.max_login_attempts = 3
+        klass.passive_ports = None
+        klass.permit_foreign_addresses = False
+        klass.permit_privileged_ports = False
+        klass.tcp_no_delay = hasattr(socket, 'TCP_NODELAY')
+        klass.timeout = 300
+        klass.unicode_errors = "replace"
+        klass.use_gmt_times = True
+        klass.use_sendfile = _import_sendfile() is not None
+        if klass.__name__ == 'TLS_FTPHandler':
+            klass.tls_control_required = False
+            klass.tls_data_required = False
+        #     # klass.certfile = None
+        #     klass.keyfile = None
+        #     klass.ssl_protocol = SSL.SSLv23_METHOD
+
+    tls_handler = getattr(pyftpdlib.handlers, "TLS_DTPHandler",
+                          pyftpdlib.handlers.DTPHandler)
+    for klass in (pyftpdlib.handlers.DTPHandler, tls_handler):
+        klass.timeout = 300
+
+    pyftpdlib.handlers.ThrottledDTPHandler.read_limit = 0
+    pyftpdlib.handlers.ThrottledDTPHandler.write_limit = 0
+    pyftpdlib.handlers.ThrottledDTPHandler.auto_sized_buffers = True
+
+    for klass in (pyftpdlib.servers.FTPServer,
+                  pyftpdlib.servers.ThreadedFTPServer,
+                  pyftpdlib.servers.MultiprocessFTPServer):
+        klass.max_cons = 0
+        klass.max_cons_per_ip = 0
+
+
 class ThreadedTestFTPd(threading.Thread):
     """A threaded FTP server used for running tests.
     This is basically a modified version of the FTPServer class which
@@ -277,6 +324,7 @@ class ThreadedTestFTPd(threading.Thread):
         self._event_stop.wait()
         self.server.close_all()
         self.join()
+        reset_server_opts()
 
 
 class MProcessTestFTPd(multiprocessing.Process):
@@ -299,3 +347,4 @@ class MProcessTestFTPd(multiprocessing.Process):
         self.server.close_all()
         self.terminate()
         self.join()
+        reset_server_opts()
