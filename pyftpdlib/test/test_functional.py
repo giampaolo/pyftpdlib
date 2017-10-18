@@ -1926,7 +1926,8 @@ class TestCallbacks(unittest.TestCase):
         self.client.login(USER, PASSWD)
         self.client.storbinary('stor ' + self.TESTFN_2, dummyfile)
         self.read_file(
-            'on_connect,on_login:user,on_file_received:%s,' % self.TESTFN_2)
+            'on_connect,on_login:%s,on_file_received:%s,' % (
+                USER, self.TESTFN_2))
 
     def test_on_file_sent(self):
         self.client.login(USER, PASSWD)
@@ -1935,7 +1936,30 @@ class TestCallbacks(unittest.TestCase):
             f.write(data)
         self.client.retrbinary("retr " + self.TESTFN_2, lambda x: x)
         self.read_file(
-            'on_connect,on_login:user,on_file_sent:%s,' % self.TESTFN_2)
+            'on_connect,on_login:%s,on_file_sent:%s,' % (USER, self.TESTFN_2))
+
+    def test_on_incomplete_file_received(self):
+        self.client.login(USER, PASSWD)
+        data = b'abcde12345' * 100000
+        dummyfile = BytesIO()
+        dummyfile.write(data)
+        dummyfile.seek(0)
+        with contextlib.closing(
+                self.client.transfercmd('stor ' + self.TESTFN_2)) as conn:
+            bytes_sent = 0
+            while True:
+                chunk = dummyfile.read(BUFSIZE)
+                conn.sendall(chunk)
+                bytes_sent += len(chunk)
+                # stop transfer while it isn't finished yet
+                if bytes_sent >= INTERRUPTED_TRANSF_SIZE or not chunk:
+                    self.client.putcmd('abor')
+                    break
+        self.assertRaises(ftplib.error_temp, self.client.getresp)  # 426
+        self.read_file(
+            'on_connect,on_login:%s,on_incomplete_file_received:%s,' %
+            (USER, self.TESTFN_2))
+
 
 # class TestCallbacks(unittest.TestCase):
 #     """Test FTPHandler class callback methods."""
