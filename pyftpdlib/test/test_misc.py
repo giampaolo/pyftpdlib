@@ -18,41 +18,10 @@ from pyftpdlib.test import mock
 from pyftpdlib.test import safe_mkdir
 from pyftpdlib.test import safe_rmdir
 from pyftpdlib.test import TESTFN
-from pyftpdlib.test import ThreadWorker
 from pyftpdlib.test import unittest
 from pyftpdlib.test import VERBOSITY
 import pyftpdlib
 import pyftpdlib.__main__
-
-
-class TestThreadWorker(unittest.TestCase):
-
-    def test_callback_methods(self):
-        class Worker(ThreadWorker):
-
-            def poll(self):
-                if 'poll' not in flags:
-                    flags.append('poll')
-
-            def before_start(self):
-                flags.append('before_start')
-
-            def before_stop(self):
-                flags.append('before_stop')
-
-            def after_stop(self):
-                flags.append('after_stop')
-
-        # Stress test it a little to make sure there are no race conditions
-        # between locks: the order is always supposed to be the same, no
-        # matter what.
-        for x in range(100):
-            flags = []
-            tw = Worker(0.001)
-            tw.start()
-            tw.stop()
-            self.assertEqual(
-                flags, ['before_start', 'poll', 'before_stop', 'after_stop'])
 
 
 class TestCommandLineParser(unittest.TestCase):

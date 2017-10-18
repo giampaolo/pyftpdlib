@@ -226,199 +226,73 @@ def get_server_handler():
 # commented out as per bug http://bugs.python.org/issue10354
 # tempfile.template = 'tmp-pyftpdlib'
 
+def setup_server(handler, server_class, addr=None):
+    addr = (HOST, 0) if addr is None else addr
+    authorizer = DummyAuthorizer()
+    # full perms
+    authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwMT')
+    authorizer.add_anonymous(HOME)
+    handler.authorizer = authorizer
+    handler.auth_failed_timeout = 0.001
+    # lower buffer sizes = more "loops" while transfering data
+    # = less false positives
+    handler.dtp_handler.ac_in_buffer_size = 4096
+    handler.dtp_handler.ac_out_buffer_size = 4096
+    server = server_class(addr, handler)
+    return server
 
-class ThreadWorker(threading.Thread):
-    """A wrapper on top of threading.Thread.
-    It lets you define a thread worker class which you can easily
-    start() and stop().
-    Subclass MUST provide a poll() method. Optionally it can also
-    provide the following methods:
 
-    - before_start
-    - before_stop
-    - after_stop
-
-    poll() is supposed to be a non-blocking method so that the
-    worker can be stop()ped immediately.
-
-    **All method calls are supposed to be thread safe, start(), stop()
-    and the callback methods.**
-
-    Example:
-
-    class MyWorker(ThreadWorker):
-
-        def poll(self):
-            do_something()
-
-        def before_start(self):
-            log("starting")
-
-        def before_stop(self):
-            log("stopping")
-
-        def after_stop(self):
-            do_cleanup()
-
-    worker = MyWorker(poll_interval=5)
-    worker.start()
-    worker.stop()
+class ThreadedTestFTPd(threading.Thread):
+    """A threaded FTP server used for running tests.
+    This is basically a modified version of the FTPServer class which
+    wraps the polling loop into a thread.
+    The instance returned can be start()ed and stop()ped.
     """
-
+    handler = FTPHandler
+    server_class = FTPServer
+    poll_interval = 0.001 if TRAVIS else 0.000001
     # Makes the thread stop on interpreter exit.
     daemon = True
 
-    def __init__(self, poll_interval=1.0):
-        super(ThreadWorker, self).__init__()
-        self.poll_interval = poll_interval
-        self.started = False
-        self.stopped = False
+    def __init__(self, addr=None):
+        super(ThreadedTestFTPd, self).__init__()
+        self.server = setup_server(self.handler, self.server_class, addr=addr)
+        self.host, self.port = self.server.socket.getsockname()[:2]
+
         self.lock = threading.Lock()
         self._stop_flag = False
-        self._event_start = threading.Event()
         self._event_stop = threading.Event()
-
-    # --- overridable methods
-
-    def poll(self):
-        raise NotImplementedError("must be implemented in subclass")
-
-    def before_start(self):
-        """Called right before start()."""
-        pass
-
-    def before_stop(self):
-        """Called right before stop(), before signaling the thread
-        to stop polling.
-        """
-        pass
-
-    def after_stop(self):
-        """Called right after stop(), after the thread stopped polling."""
-        pass
-
-    # --- internals
-
-    def sleep(self):
-        # Responsive sleep, so that the interpreter will shut down
-        # after max 1 sec.
-        if self.poll_interval:
-            stop_at = time.time() + self.poll_interval
-            while True:
-                time.sleep(min(self.poll_interval, 1))
-                if time.time() >= stop_at:
-                    break
 
     def run(self):
         try:
             while not self._stop_flag:
                 with self.lock:
-                    if not self.started:
-                        self._event_start.set()
-                        self.started = True
-                    self.poll()
-                if not self._stop_flag:
-                    self.sleep()
+                    self.server.serve_forever(timeout=self.poll_interval,
+                                              blocking=False)
         finally:
             self._event_stop.set()
 
-    # --- external API
-
-    def start(self):
-        if self.started:
-            raise RuntimeError("already started")
-        if self._stop_flag:
-            # ensure the thread can be restarted
-            super(ThreadWorker, self).__init__(self, self.poll_interval)
-        with self.lock:
-            self.before_start()
-        threading.Thread.start(self)
-        self._event_start.wait()
-
     def stop(self):
-        # TODO: we might want to specify a timeout arg for join.
-        if not self.stopped:
-            with self.lock:
-                self.before_stop()
-                self._stop_flag = True  # signal the main loop to exit
-                self.stopped = True
-            # It is important to exit the lock context here otherwise
-            # we might hang indefinitively.
-            self.join()
-            self._event_stop.wait()
-            with self.lock:
-                self.after_stop()
-
-
-class ThreadedTestFTPd(ThreadWorker):
-    """A threaded FTP server used for running tests.
-
-    This is basically a modified version of the FTPServer class which
-    wraps the polling loop into a thread.
-
-    The instance returned can be used to start(), stop() and
-    eventually re-start() the server.
-    """
-    handler = FTPHandler
-    server_class = FTPServer
-    shutdown_after = 10
-    poll_interval = 0.001 if TRAVIS else 0.000001
-
-    def __init__(self, addr=None):
-        super(ThreadedTestFTPd, self).__init__(
-            poll_interval=self.poll_interval)
-        self.addr = (HOST, 0) if addr is None else addr
-        authorizer = DummyAuthorizer()
-        # full perms
-        authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwMT')
-        authorizer.add_anonymous(HOME)
-        self.handler.authorizer = authorizer
-        # lower buffer sizes = more "loops" while transfering data
-        # = less false positives
-        self.handler.dtp_handler.ac_in_buffer_size = 4096
-        self.handler.dtp_handler.ac_out_buffer_size = 4096
-        self.server = self.server_class(self.addr, self.handler)
-        self.host, self.port = self.server.socket.getsockname()[:2]
-        self.start_time = None
-
-    def before_start(self):
-        self.start_time = time.time()
-
-    def poll(self):
-        self.server.serve_forever(timeout=self.poll_interval, blocking=False)
-        if (self.shutdown_after and
-                time.time() >= self.start_time + self.shutdown_after):
-            now = time.time()
-            if now <= now + self.shutdown_after:
-                self.server.close_all()
-                raise Exception("test FTPd shutdown due to timeout")
-
-    def after_stop(self):
+        self._stop_flag = True  # signal the main loop to exit
+        self._event_stop.wait()
         self.server.close_all()
+        self.join()
 
 
 class MProcessTestFTPd(multiprocessing.Process):
-
+    """Same as above but using a sub process instead."""
     handler = FTPHandler
     server_class = FTPServer
 
     def __init__(self, addr=None):
         super(MProcessTestFTPd, self).__init__(name='ftpd')
-        addr = (HOST, 0) if addr is None else addr
-        authorizer = DummyAuthorizer()
-        authorizer.add_user(
-            USER, PASSWD, HOME, perm='elradfmwMT')  # full perms
-        authorizer.add_anonymous(HOME)
-        self.handler.authorizer = authorizer
-        self.handler.auth_failed_timeout = 0.001
-        # lower buffer sizes = more "loops" while transfering data
-        # = less false positives
-        self.handler.dtp_handler.ac_in_buffer_size = 4096
-        self.handler.dtp_handler.ac_out_buffer_size = 4096
-        self.server = self.server_class(addr, self.handler)
+        self.server = setup_server(self.handler, self.server_class, addr=addr)
         self.host, self.port = self.server.socket.getsockname()[:2]
+        self._started = False
 
     def run(self):
+        assert not self._started
+        self._started = True
         self.server.serve_forever()
 
     def stop(self):
