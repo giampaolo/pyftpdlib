@@ -1918,11 +1918,24 @@ class TestCallbacks(unittest.TestCase):
             ftplib.error_perm, self.client.login, 'foo', 'bar?!?')
         self.read_file('on_connect,on_login_failed:foo+bar?!?,')
 
-    def test_on_login_failed(self):
-        self.assertRaises(
-            ftplib.error_perm, self.client.login, 'foo', 'bar?!?')
-        self.read_file('on_connect,on_login_failed:foo+bar?!?,')
+    def test_on_file_received(self):
+        data = b'abcde12345' * 100000
+        dummyfile = BytesIO()
+        dummyfile.write(data)
+        dummyfile.seek(0)
+        self.client.login(USER, PASSWD)
+        self.client.storbinary('stor ' + self.TESTFN_2, dummyfile)
+        self.read_file(
+            'on_connect,on_login:user,on_file_received:%s,' % self.TESTFN_2)
 
+    def test_on_file_sent(self):
+        self.client.login(USER, PASSWD)
+        data = b'abcde12345' * 100000
+        with open(self.TESTFN_2, 'wb') as f:
+            f.write(data)
+        self.client.retrbinary("retr " + self.TESTFN_2, lambda x: x)
+        self.read_file(
+            'on_connect,on_login:user,on_file_sent:%s,' % self.TESTFN_2)
 
 # class TestCallbacks(unittest.TestCase):
 #     """Test FTPHandler class callback methods."""
