@@ -1960,6 +1960,24 @@ class TestCallbacks(unittest.TestCase):
             'on_connect,on_login:%s,on_incomplete_file_received:%s,' %
             (USER, self.TESTFN_2))
 
+    def test_on_incomplete_file_sent(self):
+        self.client.login(USER, PASSWD)
+        data = b'abcde12345' * 100000
+        with open(self.TESTFN_2, 'wb') as f:
+            f.write(data)
+        bytes_recv = 0
+        with contextlib.closing(self.client.transfercmd(
+                                "retr " + self.TESTFN_2, None)) as conn:
+            while True:
+                chunk = conn.recv(BUFSIZE)
+                bytes_recv += len(chunk)
+                if bytes_recv >= INTERRUPTED_TRANSF_SIZE or not chunk:
+                    break
+        self.assertEqual(self.client.getline()[:3], "426")
+        self.read_file(
+            'on_connect,on_login:%s,on_incomplete_file_sent:%s,' %
+            (USER, self.TESTFN_2))
+
 
 # class TestCallbacks(unittest.TestCase):
 #     """Test FTPHandler class callback methods."""
