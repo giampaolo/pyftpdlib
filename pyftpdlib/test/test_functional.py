@@ -1434,6 +1434,7 @@ class TestThrottleBandwidth(unittest.TestCase):
         self.assertEqual(hash(data), hash(file_data))
 
 
+@unittest.skipIf(TRAVIS, "unreliable on TRAVIS")
 class TestTimeouts(unittest.TestCase):
     """Test idle-timeout capabilities of control and data channels.
     Some tests may fail on slow machines.
@@ -1930,7 +1931,7 @@ class TestCallbacks(unittest.TestCase):
 
     def test_on_incomplete_file_received(self):
         self.client.login(USER, PASSWD)
-        data = b'abcde12345' * 100000
+        data = b'abcde12345' * 1000000
         dummyfile = BytesIO()
         dummyfile.write(data)
         dummyfile.seek(0)
@@ -1952,7 +1953,7 @@ class TestCallbacks(unittest.TestCase):
 
     def test_on_incomplete_file_sent(self):
         self.client.login(USER, PASSWD)
-        data = b'abcde12345' * 100000
+        data = b'abcde12345' * 1000000
         with open(self.TESTFN_2, 'wb') as f:
             f.write(data)
         bytes_recv = 0
