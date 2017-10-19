@@ -8,6 +8,7 @@ Version: 1.5.3 - XXXX-XX-XX
 - #201: implemented SITE MFMT command which changes file modification time.
   (patch by Tahir Ijaz)
 - #327: add username and password command line options
+- #433: documentation moved to readthedocs: http://pyftpdlib.readthedocs.io
 
 **Bug fixes**
 

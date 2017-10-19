@@ -19,7 +19,7 @@ HISTORY = os.path.abspath(os.path.join(HERE, '../HISTORY.rst'))
 
 PRJ_NAME = 'pyftpdlib'
 PRJ_URL_HOME = 'https://github.com/giampaolo/pyftpdlib'
-PRJ_URL_DOC = 'http://pythonhosted.org/pyftpdlib'
+PRJ_URL_DOC = 'http://pyftpdlib.readthedocs.io'
 PRJ_URL_DOWNLOAD = 'https://pypi.python.org/pypi/pyftpdlib'
 PRJ_URL_WHATSNEW = \
     'https://github.com/giampaolo/pyftpdlib/blob/master/HISTORY.rst'
