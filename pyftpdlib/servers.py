@@ -516,6 +516,8 @@ else:
 if os.name == 'posix':
     try:
         import multiprocessing
+        multiprocessing.Lock()
+        multiprocessing.Event()
     except ImportError:
         pass
     else:
