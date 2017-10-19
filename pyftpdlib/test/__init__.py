@@ -291,9 +291,11 @@ def reset_server_opts():
     pyftpdlib.handlers.ThrottledDTPHandler.auto_sized_buffers = True
 
     # Acceptors.
-    for klass in (pyftpdlib.servers.FTPServer,
-                  pyftpdlib.servers.ThreadedFTPServer,
-                  pyftpdlib.servers.MultiprocessFTPServer):
+    ls = [pyftpdlib.servers.FTPServer,
+          pyftpdlib.servers.ThreadedFTPServer]
+    if os.name == 'posix':
+        ls.append(pyftpdlib.servers.MultiprocessFTPServer)
+    for klass in ls:
         klass.max_cons = 0
         klass.max_cons_per_ip = 0
 

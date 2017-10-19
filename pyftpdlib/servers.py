@@ -38,6 +38,7 @@ import os
 import select
 import signal
 import sys
+import threading
 import time
 import traceback
 
@@ -48,8 +49,7 @@ from .log import debug
 from .log import is_logging_configured
 from .log import logger
 
-
-__all__ = ['FTPServer']
+__all__ = ['FTPServer', 'ThreadedFTPServer']
 _BSD = 'bsd' in sys.platform
 
 
@@ -478,61 +478,47 @@ class _SpawnerBase(FTPServer):
                     warn("thread %r didn't terminate; ignoring it", t)
 
 
-try:
-    import threading
-except ImportError:
-    pass
-else:
-    __all__ += ['ThreadedFTPServer']
+class ThreadedFTPServer(_SpawnerBase):
+    """A modified version of base FTPServer class which spawns a
+    thread every time a new connection is established.
+    """
+    # The timeout passed to thread's IOLoop.poll() call on every
+    # loop. Necessary since threads ignore KeyboardInterrupt.
+    poll_timeout = 1.0
+    _lock = threading.Lock()
+    _exit = threading.Event()
 
     # compatibility with python <= 2.6
-    if not hasattr(threading.Thread, 'is_alive'):
-        threading.Thread.is_alive = threading.Thread.isAlive
+    if not hasattr(_exit, 'is_set'):
+        _exit.is_set = _exit.isSet
 
-    class ThreadedFTPServer(_SpawnerBase):
-        """A modified version of base FTPServer class which spawns a
-        thread every time a new connection is established.
-        """
-        # The timeout passed to thread's IOLoop.poll() call on every
-        # loop. Necessary since threads ignore KeyboardInterrupt.
-        poll_timeout = 1.0
-        _lock = threading.Lock()
-        _exit = threading.Event()
+    def _start_task(self, *args, **kwargs):
+        return threading.Thread(*args, **kwargs)
 
-        # compatibility with python <= 2.6
-        if not hasattr(_exit, 'is_set'):
-            _exit.is_set = _exit.isSet
+    def _current_task(self):
+        return threading.currentThread()
 
-        def _start_task(self, *args, **kwargs):
-            return threading.Thread(*args, **kwargs)
-
-        def _current_task(self):
-            return threading.currentThread()
-
-        def _map_len(self):
-            return threading.activeCount()
+    def _map_len(self):
+        return threading.activeCount()
 
 
 if os.name == 'posix':
-    try:
-        import multiprocessing
-    except ImportError:
-        pass
-    else:
-        __all__ += ['MultiprocessFTPServer']
+    import multiprocessing
 
-        class MultiprocessFTPServer(_SpawnerBase):
-            """A modified version of base FTPServer class which spawns a
-            process every time a new connection is established.
-            """
-            _lock = multiprocessing.Lock()
-            _exit = multiprocessing.Event()
+    __all__ += ['MultiprocessFTPServer']
 
-            def _start_task(self, *args, **kwargs):
-                return multiprocessing.Process(*args, **kwargs)
+    class MultiprocessFTPServer(_SpawnerBase):
+        """A modified version of base FTPServer class which spawns a
+        process every time a new connection is established.
+        """
+        _lock = multiprocessing.Lock()
+        _exit = multiprocessing.Event()
 
-            def _current_task(self):
-                return multiprocessing.current_process()
+        def _start_task(self, *args, **kwargs):
+            return multiprocessing.Process(*args, **kwargs)
 
-            def _map_len(self):
-                return len(multiprocessing.active_children())
+        def _current_task(self):
+            return multiprocessing.current_process()
+
+        def _map_len(self):
+            return len(multiprocessing.active_children())
