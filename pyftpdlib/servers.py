@@ -389,7 +389,8 @@ class _SpawnerBase(FTPServer):
             # main thread to accept connections
             self.ioloop.unregister(handler._fileno)
 
-            t = self._start_task(target=self._loop, args=(handler,))
+            t = self._start_task(target=self._loop, args=(handler, ),
+                                 name='ftpd')
             t.name = repr(addr)
             t.start()
 

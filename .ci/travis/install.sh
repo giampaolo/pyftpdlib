@@ -44,7 +44,7 @@ fi
 # It appears it's necessary to first upgrade setuptools separately:
 # https://github.com/pyexcel/pyexcel/issues/49
 pip install -U setuptools
-pip install -U pip six pyopenssl pysendfile flake8 mock coveralls
+pip install -U pip six pyopenssl pysendfile flake8 mock coveralls psutil
 if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]] || [[ $PYVER == 'py26' ]]; then
     pip install -U unittest2
 fi
