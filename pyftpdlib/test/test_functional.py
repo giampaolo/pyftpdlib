@@ -1738,6 +1738,7 @@ class TestConfigurableOptions(unittest.TestCase):
             resulting_port = self.client.makepasv()[1]
             self.assertTrue(port != resulting_port)
 
+    @retry_on_failure()
     def test_use_gmt_times(self):
         # use GMT time
         self.server = self.server_class()
