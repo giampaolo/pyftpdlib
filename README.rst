@@ -55,12 +55,12 @@ Features
 
 - Extremely **lightweight**, **fast** and **scalable** (see
   `why <https://github.com/giampaolo/pyftpdlib/issues/203>`__ and
-  `benchmarks <http://pyftpdlib.readthedocs.io/benchmarks.html>`__).
+  `benchmarks <http://pyftpdlib.readthedocs.io/en/latest/benchmarks.html>`__).
 - Uses **sendfile(2)** (see `pysendfile <https://github.com/giampaolo/pysendfile>`__)
   system call for uploads.
 - Uses epoll() / kqueue() / select() to handle concurrency asynchronously.
 - ...But can optionally skip to a
-  `multiple thread / process <http://pyftpdlib.readthedocs.io/tutorial.html#changing-the-concurrency-model>`__
+  `multiple thread / process <http://pyftpdlib.readthedocs.io/en/latest/tutorial.html#changing-the-concurrency-model>`__
   model (as in: you'll be free to block or use slow filesystems).
 - Portable: entirely written in pure Python; works with Python from **2.6** to
   **3.5** by using a single code base.
@@ -71,9 +71,9 @@ Features
 - Support for virtual users and virtual filesystem.
 - Extremely flexible system of "authorizers" able to manage both "virtual" and
   "real" users on on both
-  `UNIX <http://pyftpdlib.readthedocs.io/tutorial.html#unix-ftp-server>`__
+  `UNIX <http://pyftpdlib.readthedocs.io/en/latest/tutorial.html#unix-ftp-server>`__
   and
-  `Windows <http://pyftpdlib.readthedocs.io/tutorial.html#windows-ftp-server>`__.
+  `Windows <http://pyftpdlib.readthedocs.io/en/latest/tutorial.html#windows-ftp-server>`__.
 - `Test coverage <https://github.com/giampaolo/pyftpdlib/blob/master/pyftpdlib/test/>`__
   close to 100%.
 
@@ -134,7 +134,7 @@ pyftpdlib vs. vsftpd 2.3.5
 | 300 concurrent clients (QUIT)           |    0.03 secs   | 0.01 secs      | +0.14x      |
 +-----------------------------------------+----------------+----------------+-------------+
 
-For more benchmarks see `here <http://pyftpdlib.readthedocs.io/benchmarks.html>`__.
+For more benchmarks see `here <http://pyftpdlib.readthedocs.io/en/latest/benchmarks.html>`__.
 
 Quick start
 ===========
@@ -164,7 +164,7 @@ Quick start
     [I 13-02-19 10:56:27] 127.0.0.1:34179-[user] RETR /home/giampaolo/.vimrc completed=1 bytes=1700 seconds=0.001
     [I 13-02-19 10:56:39] 127.0.0.1:34179-[user] FTP session closed (disconnect).
 
-`other code samples <http://pyftpdlib.readthedocs.io/tutorial.html>`__
+`other code samples <http://pyftpdlib.readthedocs.io/en/latest/tutorial.html>`__
 
 Donate
 ======
@@ -184,7 +184,7 @@ Don't want to donate money? Then maybe you could
 In case you're using pyftpdlib into a software of yours
 `mail me <http://grodola.blogspot.com/p/about.html>`_ and I'll add your
 software to the
-`adoptions list <http://pyftpdlib.readthedocs.io/adoptions.html>`__.
+`adoptions list <http://pyftpdlib.readthedocs.io/en/latest/adoptions.html>`__.
 
 Timeline
 ========
@@ -248,7 +248,7 @@ Timeline
 Trademarks
 ==========
 
-Some famous trademarks which adopted pyftpdlib (`complete list <http://pyftpdlib.readthedocs.io/adoptions.html>`__).
+Some famous trademarks which adopted pyftpdlib (`complete list <http://pyftpdlib.readthedocs.io/en/latest/adoptions.html>`__).
 
 .. image:: docs/images/chrome.jpg
   :target: http://www.google.com/chrome
