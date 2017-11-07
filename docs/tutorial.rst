@@ -103,50 +103,59 @@ Logging to a file
     server.serve_forever()
 
 
-Differences between logging.INFO and logging.DEBUG
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+DEBUG logging
+^^^^^^^^^^^^^
 
-Starting from  1.0.0 logs are a lot less verbose than before. By default they
-look like this:
-
-::
-
-    [I 13-02-01 19:04:56] 127.0.0.1:49243-[] FTP session opened (connect)
-    [I 13-02-01 19:04:56] 127.0.0.1:49243-[user] USER 'user' logged in.
-    [I 13-02-01 19:04:56] 127.0.0.1:49243-[user] RETR /home/giampaolo/svn/pyftpdlib/tmp-pyftpdlib completed=1 bytes=9803392 seconds=0.025
-    [I 13-02-01 19:04:56] 127.0.0.1:49243-[user] FTP session closed (disconnect).
-
-
-To get the old behavior and log all commands and responses exchanged by client
-and server use:
+You may want to enable DEBUG logging to observe commands and responses
+exchanged by client and server. DEBUG logging will also log internal errors
+which may occur on socket related calls such as ``send()`` and ``recv()``.
+To enable DEBUG logging from code use:
 
 .. code-block:: python
 
     logging.basicConfig(level=logging.DEBUG)
 
+To enable DEBUG logging from command line use:
 
-Now they will look like this:
+.. code-block:: bash
+
+    python -m pyftpdlib -D
+
+DEBUG logs look like this:
 
 ::
 
-    [I 13-02-01 19:05:42] 127.0.0.1:37303-[] FTP session opened (connect)
-    [D 13-02-01 19:05:42] 127.0.0.1:37303-[] -> 220 pyftpdlib 1.0.0 ready.
-    [D 13-02-01 19:05:42] 127.0.0.1:37303-[] <- USER user
-    [D 13-02-01 19:05:42] 127.0.0.1:37303-[] -> 331 Username ok, send password.
-    [D 13-02-01 19:05:42] 127.0.0.1:37303-[user] <- PASS ******
-    [D 13-02-01 19:05:42] 127.0.0.1:37303-[user] -> 230 Login successful.
-    [I 13-02-01 19:05:42] 127.0.0.1:37303-[user] USER 'user' logged in.
-    [D 13-02-01 19:05:42] 127.0.0.1:37303-[user] <- TYPE I
-    [D 13-02-01 19:05:42] 127.0.0.1:37303-[user] -> 200 Type set to: Binary.
-    [D 13-02-01 19:05:42] 127.0.0.1:37303-[user] <- PASV
-    [D 13-02-01 19:05:42] 127.0.0.1:37303-[user] -> 227 Entering passive mode (127,0,0,1,233,208).
-    [D 13-02-01 19:05:42] 127.0.0.1:37303-[user] <- retr tmp-pyftpdlib
-    [D 13-02-01 19:05:42] 127.0.0.1:37303-[user] -> 125 Data connection already open. Transfer starting.
-    [D 13-02-01 19:05:42] 127.0.0.1:37303-[user] -> 226 Transfer complete.
-    [I 13-02-01 19:05:42] 127.0.0.1:37303-[user] RETR /home/giampaolo/svn/pyftpdlib/tmp-pyftpdlib completed=1 bytes=1000000 seconds=0.003
-    [D 13-02-01 19:05:42] 127.0.0.1:54516-[user] <- QUIT
-    [D 13-02-01 19:05:42] 127.0.0.1:54516-[user] -> 221 Goodbye.
-    [I 13-02-01 19:05:42] 127.0.0.1:54516-[user] FTP session closed (disconnect).
+    [I 2017-11-07 12:03:44] >>> starting FTP server on 0.0.0.0:2121, pid=22991 <<<
+    [I 2017-11-07 12:03:44] concurrency model: async
+    [I 2017-11-07 12:03:44] masquerade (NAT) address: None
+    [I 2017-11-07 12:03:44] passive ports: None
+    [D 2017-11-07 12:03:44] poller: 'pyftpdlib.ioloop.Epoll'
+    [D 2017-11-07 12:03:44] authorizer: 'pyftpdlib.authorizers.DummyAuthorizer'
+    [D 2017-11-07 12:03:44] use sendfile(2): True
+    [D 2017-11-07 12:03:44] handler: 'pyftpdlib.handlers.FTPHandler'
+    [D 2017-11-07 12:03:44] max connections: 512
+    [D 2017-11-07 12:03:44] max connections per ip: unlimited
+    [D 2017-11-07 12:03:44] timeout: 300
+    [D 2017-11-07 12:03:44] banner: 'pyftpdlib 1.5.4 ready.'
+    [D 2017-11-07 12:03:44] max login attempts: 3
+    [I 2017-11-07 12:03:44] 127.0.0.1:37303-[] FTP session opened (connect)
+    [D 2017-11-07 12:03:44] 127.0.0.1:37303-[] -> 220 pyftpdlib 1.0.0 ready.
+    [D 2017-11-07 12:03:44] 127.0.0.1:37303-[] <- USER user
+    [D 2017-11-07 12:03:44] 127.0.0.1:37303-[] -> 331 Username ok, send password.
+    [D 2017-11-07 12:03:44] 127.0.0.1:37303-[user] <- PASS ******
+    [D 2017-11-07 12:03:44] 127.0.0.1:37303-[user] -> 230 Login successful.
+    [I 2017-11-07 12:03:44] 127.0.0.1:37303-[user] USER 'user' logged in.
+    [D 2017-11-07 12:03:44] 127.0.0.1:37303-[user] <- TYPE I
+    [D 2017-11-07 12:03:44] 127.0.0.1:37303-[user] -> 200 Type set to: Binary.
+    [D 2017-11-07 12:03:44] 127.0.0.1:37303-[user] <- PASV
+    [D 2017-11-07 12:03:44] 127.0.0.1:37303-[user] -> 227 Entering passive mode (127,0,0,1,233,208).
+    [D 2017-11-07 12:03:44] 127.0.0.1:37303-[user] <- RETR tmp-pyftpdlib
+    [D 2017-11-07 12:03:44] 127.0.0.1:37303-[user] -> 125 Data connection already open. Transfer starting.
+    [D 2017-11-07 12:03:44] 127.0.0.1:37303-[user] -> 226 Transfer complete.
+    [I 2017-11-07 12:03:44] 127.0.0.1:37303-[user] RETR /home/giampaolo/IMG29312.JPG completed=1 bytes=1205012 seconds=0.003
+    [D 2017-11-07 12:03:44] 127.0.0.1:54516-[user] <- QUIT
+    [D 2017-11-07 12:03:44] 127.0.0.1:54516-[user] -> 221 Goodbye.
+    [I 2017-11-07 12:03:44] 127.0.0.1:54516-[user] FTP session closed (disconnect).
 
 
 Changing log line prefix
@@ -160,7 +169,7 @@ Changing log line prefix
     ...
 
 
-...log will now look like this:
+Logs will now look like this:
 
 ::
 
