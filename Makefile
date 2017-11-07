@@ -24,7 +24,7 @@ INSTALL_OPTS = `$(PYTHON) -c "import sys; print('' if hasattr(sys, 'real_prefix'
 
 all: test
 
-clean:
+clean:  ## Remove all build files.
 	rm -rf `find . -type d -name __pycache__ \
 		-o -type f -name \*.bak \
 		-o -type f -name \*.orig \
@@ -47,19 +47,16 @@ clean:
 		htmlcov/ \
 		tmp/
 
-build: clean
-	$(PYTHON) setup.py build
-
-install: build
+install:  ## Install this package.
 	# make sure setuptools is installed (needed for 'develop' / edit mode)
 	$(PYTHON) -c "import setuptools"
+	$(PYTHON) setup.py build
 	$(PYTHON) setup.py develop $(INSTALL_OPTS)
 
-uninstall:
+uninstall:  ## Uninstall this package.
 	cd ..; $(PYTHON) -m pip uninstall -y -v pyftpdlib
 
-# Install PIP (only if necessary).
-install-pip:
+install-pip:  ## (only if necessary)
 	$(PYTHON) -c \
 		"import sys, ssl, os, pkgutil, tempfile, atexit; \
 		sys.exit(0) if pkgutil.find_loader('pip') else None; \
@@ -78,42 +75,50 @@ install-pip:
 		f.close(); \
 		sys.exit(code);"
 
-# useful deps which are nice to have while developing / testing
-setup-dev-env: install-git-hooks install-pip
+setup-dev-env:  ## Install GIT hooks, pip, test deps (also upgrades them).
+	${MAKE} install-git-hooks
+	${MAKE} install-pip
 	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade pip
 	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(DEPS)
 
-test: install
+test:  ## Run all tests.
+	${MAKE} install
 	PYTHONWARNINGS=all $(PYTHON) $(TSCRIPT)
 
-test-functional: install
+test-functional:  ## Run functional FTP tests.
+	${MAKE} install
 	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_functional.py
 
-test-functional-ssl: install
+test-functional-ssl:  ## Run functional FTPS tests.
+	${MAKE} install
 	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_functional_ssl.py
 
-test-servers: install
+test-servers:  ## Run tests for FTPServer and its subclasses.
+	${MAKE} install
 	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_servers.py
 
-test-authorizers: install
+test-authorizers:  ## Run tests for authorizers.
+	${MAKE} install
 	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_authorizers.py
 
-test-filesystems: install
+test-filesystems:  ## Run filesystem tests.
+	${MAKE} install
 	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_filesystems.py
 
-test-ioloop: install
+test-ioloop:  ## Run IOLoop tests.
+	${MAKE} install
 	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_ioloop.py
 
-test-misc: install
+test-misc:  ## Run miscellaneous tests.
+	${MAKE} install
 	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_misc.py
 
-# Run a specific test by name, e.g.
-# make test-by-name ARGS=pyftpdlib.test.test_functional.TestFtpStoreData.test_stor
-test-by-name: install
+test-by-name:  ## e.g.: make test-by-name ARGS=pyftpdlib.test.test_functional.TestFtpStoreData
+	${MAKE} install
 	PYTHONWARNINGS=all $(PYTHON) -m unittest -v $(ARGS)
 
-coverage: install
-	# Note: coverage options are controlled by .coveragerc file
+test-coverage:  ## Run test coverage.
+	${MAKE} install
 	rm -rf .coverage htmlcov
 	PYTHONWARNINGS=all $(PYTHON) -m coverage run $(TSCRIPT)
 	$(PYTHON) -m coverage report
@@ -121,44 +126,35 @@ coverage: install
 	$(PYTHON) -m coverage html
 	$(PYTHON) -m webbrowser -t htmlcov/index.html
 
-pep8:
+pep8:  ## PEP8 linter.
 	@git ls-files | grep \\.py$ | xargs $(PYTHON) -m pep8
 
-pyflakes:
-	# ignore doctests
-	export PYFLAKES_NODOCTEST=1 && \
+pyflakes:  ## Pyflakes linter.
+	@export PYFLAKES_NODOCTEST=1 && \
 		git ls-files | grep \\.py$ | xargs $(PYTHON) -m pyflakes
 
-flake8:
+flake8:  ## flake8 linter.
 	@git ls-files | grep \\.py$ | xargs $(PYTHON) -m flake8
 
-check-manifest:
+check-manifest:  ## Inspect MANIFEST.in file.
 	$(PYTHON) -m check_manifest -v $(ARGS)
 
-upload-src: clean
+upload-src:  ## Upload source on PYPI.
+	${MAKE} clean
 	$(PYTHON) setup.py sdist upload
 
-# Build and upload doc on http://pyftpdlib.readthedocs.io.
-# Requires "pip install sphinx-pypi-upload".
-upload-docs:
-	cd docs; make html
-	$(PYTHON) setup.py upload_sphinx --upload-dir=docs/_build/html
-
-# git-tag a new release
-git-tag-release:
+git-tag-release:  ## Git-tag a new release.
 	git tag -a release-`python -c "import setup; print(setup.VERSION)"` -m `git rev-list HEAD --count`:`git rev-parse --short HEAD`
 	git push --follow-tags
 
-# install GIT pre-commit hook
-install-git-hooks:
+install-git-hooks:  ## Install GIT pre-commit hook
 	ln -sf ../../.git-pre-commit .git/hooks/pre-commit
 	chmod +x .git/hooks/pre-commit
 
-grep-todos:
+grep-todos:  ## Look for TODOs in source files.
 	git grep -EIn "TODO|FIXME|XXX"
 
-# All the necessary steps before making a release.
-pre-release:
+pre-release:  ## All the necessary steps before making a release.
 	${MAKE} clean
 	$(PYTHON) -c \
 		"from pyftpdlib import __ver__ as ver; \
@@ -169,18 +165,13 @@ pre-release:
 		"
 	$(PYTHON) setup.py sdist
 
-# Create a release: creates tar.gz, uploads it, git tag release.
-release:
+release:  ## Creates a release (tar.gz + upload + git tag release).
 	${MAKE} pre-release
 	$(PYTHON) -m twine upload dist/*  # upload tar on PYPI
 	${MAKE} git-tag-release
 
-# Print announce of new release.
-print-announce:
+print-announce:  ## Print announce of new release.
 	@$(PYTHON) scripts/print_announce.py
 
-# generate a doc.zip file and manually upload it to PYPI.
-doc:
-	cd docs && make html && cd _build/html/ && zip doc.zip -r .
-	mv docs/_build/html/doc.zip .
-	@echo "done; now manually upload doc.zip from here: https://pypi.python.org/pypi?:action=pkg_edit&name=pyftpdlib"
+help: ## Display callable targets.
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
