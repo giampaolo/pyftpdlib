@@ -390,7 +390,7 @@ Server (acceptor)
 Filesystem
 ==========
 
-.. class:: pyftpdlib.filesystems.FilesystemError()
+.. class:: pyftpdlib.filesystems.FilesystemError
 
   Exception class which can be raised from within
   :class:`pyftpdlib.filesystems.AbstractedFS`in order to send custom error

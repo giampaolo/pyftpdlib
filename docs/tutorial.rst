@@ -9,21 +9,15 @@ that can be done with pyftpdlib.  Some of them are included in
 `demo <https://github.com/giampaolo/pyftpdlib/blob/master/demo/>`__
 directory of pyftpdlib source distribution.
 
-Building a Base FTP server
-==========================
+A Base FTP server
+=================
 
-The script below is a basic configuration, and it's probably the best starting
-point for understanding how things work. It uses the base
+The script below uses a basic configuration and it's probably the best
+starting point to understand how things work. It uses the base
 `DummyAuthorizer <api.html#pyftpdlib.authorizers.DummyAuthorizer>`__
-for adding a bunch of "virtual" users. It also sets a limit for connections by
-overriding
-`FTPServer.max_cons <api.html#pyftpdlib.servers.FTPServer.max_cons>`__
-and
-`FTPServer.max_cons_per_ip <api.html#pyftpdlib.servers.FTPServer.max_cons_per_ip>`__,
-attributes which are intended to set limits for maximum connections to handle
-simultaneously and maximum connections from the same IP address. Overriding
-these variables is always a good idea (they default to ``0``, or "no limit")
-since they are a good workaround for avoiding DoS attacks.
+for adding a bunch of "virtual" users, sets a limit for
+`incoming connections <api.html#pyftpdlib.servers.FTPServer.max_cons>`__
+and a range of `passive ports <api.html#pyftpdlib.handlers.FTPHandler.passive_ports>`__.
 
 `source code <https://github.com/giampaolo/pyftpdlib/blob/master/demo/basic_ftpd.py>`__
 
@@ -74,15 +68,12 @@ since they are a good workaround for avoiding DoS attacks.
 Logging management
 ==================
 
-Starting from version 1.0.0 pyftpdlib uses
+pyftpdlib uses the
 `logging <http://docs.python.org/library/logging.html logging>`__
 module to handle logging. If you don't configure logging pyftpdlib will write
-it to stderr by default (coloured if you're on POSIX). You can override the
-default behavior and, say, log to a file. What you have to bear in mind is that
-you should do that *before* calling serve_forever(). Examples.
-
-Logging to a file
-^^^^^^^^^^^^^^^^^
+logs to stderr.
+In order to configure logging you should do it *before* calling serve_forever().
+Example logging to a file:
 
 .. code-block:: python
 
@@ -101,7 +92,6 @@ Logging to a file
 
     server = FTPServer(('', 2121), handler)
     server.serve_forever()
-
 
 DEBUG logging
 ^^^^^^^^^^^^^
@@ -153,9 +143,9 @@ DEBUG logs look like this:
     [D 2017-11-07 12:03:44] 127.0.0.1:37303-[user] -> 125 Data connection already open. Transfer starting.
     [D 2017-11-07 12:03:44] 127.0.0.1:37303-[user] -> 226 Transfer complete.
     [I 2017-11-07 12:03:44] 127.0.0.1:37303-[user] RETR /home/giampaolo/IMG29312.JPG completed=1 bytes=1205012 seconds=0.003
-    [D 2017-11-07 12:03:44] 127.0.0.1:54516-[user] <- QUIT
-    [D 2017-11-07 12:03:44] 127.0.0.1:54516-[user] -> 221 Goodbye.
-    [I 2017-11-07 12:03:44] 127.0.0.1:54516-[user] FTP session closed (disconnect).
+    [D 2017-11-07 12:03:44] 127.0.0.1:37303-[user] <- QUIT
+    [D 2017-11-07 12:03:44] 127.0.0.1:37303-[user] -> 221 Goodbye.
+    [I 2017-11-07 12:03:44] 127.0.0.1:37303-[user] FTP session closed (disconnect).
 
 
 Changing log line prefix
@@ -163,11 +153,10 @@ Changing log line prefix
 
 .. code-block:: python
 
-    ...
     handler = FTPHandler
     handler.log_prefix = 'XXX [%(username)s]@%(remote_ip)s'
-    ...
-
+    server = FTPServer(('localhost', 2121), handler)
+    server.serve_forever()
 
 Logs will now look like this:
 
@@ -188,13 +177,7 @@ authenticating users and their passwords but storing clear-text passwords is of
 course undesirable. The most common way to do things in such case would be
 first creating new users and then storing their usernames + passwords as hash
 digests into a file or wherever you find it convenient. The example below shows
-how to easily create an encrypted account storage system by storing passwords
-as one-way hashes by using md5 algorithm. This could be easily done by using
-the *hashlib* module included with Python stdlib and by sub-classing the
-original `DummyAuthorizer <api.html#pyftpdlib.authorizers.DummyAuthorizer>`__
-class overriding its
-`validate_authentication() <api.html#pyftpdlib.authorizers.DummyAuthorizer.validate_authentication>`__
-method.
+how to storage passwords as one-way hashes by using md5 algorithm.
 
 `source code <https://github.com/giampaolo/pyftpdlib/blob/master/demo/md5_ftpd.py>`__
 
