@@ -563,8 +563,8 @@ Extended authorizers
 
 .. class:: pyftpdlib.authorizers.UnixAuthorizer(global_perm="elradfmwMT", allowed_users=None, rejected_users=None, require_valid_shell=True, anonymous_user=None, ,msg_login="Login successful.", msg_quit="Goodbye.")
 
-  Authorizer which nteracts with UNIX password database. Users are no longer
-  supposed to be explicitly added as when using
+  Authorizer which interacts with the UNIX password database. Users are no
+  longer supposed to be explicitly added as when using
   :class:`pyftpdlib.authorizers.DummyAuthorizer`. All FTP users are the same
   defined on the UNIX system so if you access on your system by using
   ``"john"`` as username and ``"12345"`` as password those same credentials can
