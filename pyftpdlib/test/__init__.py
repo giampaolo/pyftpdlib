@@ -14,7 +14,6 @@ import sys
 import tempfile
 import threading
 import time
-import warnings
 try:
     from unittest import mock  # py3
 except ImportError:
@@ -27,6 +26,8 @@ from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
 
+import psutil
+
 if sys.version_info < (2, 7):
     import unittest2 as unittest  # pip install unittest2
 else:
@@ -35,12 +36,10 @@ else:
 if not hasattr(unittest.TestCase, "assertRaisesRegex"):
     unittest.TestCase.assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
 
-sendfile = None
 if os.name == 'posix':
-    try:
-        import sendfile
-    except ImportError:
-        pass
+    import sendfile
+else:
+    sendfile = None
 
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
@@ -238,14 +237,9 @@ def setup_server(handler, server_class, addr=None):
 def assert_free_resources():
     ts = threading.enumerate()
     assert len(ts) == 1, ts
-    try:
-        import psutil
-    except ImportError as err:
-        warnings.warn(str(err), RuntimeWarning)
-    else:
-        p = psutil.Process()
-        children = p.children()
-        assert not children, children
+    p = psutil.Process()
+    children = p.children()
+    assert not children, children
 
 
 def reset_server_opts():

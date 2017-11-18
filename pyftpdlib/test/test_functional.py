@@ -62,17 +62,13 @@ try:
     from StringIO import StringIO as BytesIO
 except ImportError:
     from io import BytesIO
-try:
-    import ssl
-except ImportError:
-    ssl = None
 
-sendfile = None
+import ssl
+
 if POSIX:
-    try:
-        import sendfile
-    except ImportError:
-        pass
+    import sendfile
+else:
+    sendfile = None
 
 
 class TestFtpAuthentication(unittest.TestCase):
