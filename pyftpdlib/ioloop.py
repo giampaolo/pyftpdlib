@@ -750,6 +750,7 @@ elif hasattr(select, 'poll'):     # poll() - POSIX
 else:                             # select() - POSIX and Windows
     IOLoop = Select
 
+IOLoop = Select
 
 # ===================================================================
 # --- asyncore dispatchers

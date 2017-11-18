@@ -170,6 +170,9 @@ release:  ## Creates a release (tar.gz + upload + git tag release).
 	$(PYTHON) -m twine upload dist/*  # upload tar on PYPI
 	${MAKE} git-tag-release
 
+generate-manifest:  ## Generates MANIFEST.in file.
+	$(PYTHON) scripts/generate_manifest.py > MANIFEST.in
+
 print-announce:  ## Print announce of new release.
 	@$(PYTHON) scripts/print_announce.py
 
