@@ -2,21 +2,23 @@
 # To use a specific Python version run:
 # $ make install PYTHON=python3.3
 
-PYTHON=python
-TSCRIPT=pyftpdlib/test/runner.py
-ARGS=
-
-DEPS=coverage \
+PYTHON = python
+TSCRIPT = pyftpdlib/test/runner.py
+ARGS =
+DEV_DEPS = \
 	check-manifest \
+	coverage \
 	flake8 \
 	mock==1.0.1 \
-	nose \
 	pep8 \
 	pyflakes \
+	setuptools \
+	sphinx
+TEST_DEPS = \
+	nose \
+	psutil \
 	pyopenssl \
 	pysendfile \
-	setuptools \
-	sphinx \
 	unittest2
 
 # In not in a virtualenv, add --user options for install commands.
@@ -79,7 +81,8 @@ setup-dev-env:  ## Install GIT hooks, pip, test deps (also upgrades them).
 	${MAKE} install-git-hooks
 	${MAKE} install-pip
 	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade pip
-	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(DEPS)
+	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(TEST_DEPS)
+	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(DEV_DEPS)
 
 test:  ## Run all tests.
 	${MAKE} install
