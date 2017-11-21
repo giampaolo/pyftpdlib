@@ -416,6 +416,11 @@ class _SpawnerBase(FTPServer):
             if log:
                 self._log_start()
             try:
+                # Open a separate thread to wait for the disconnected connection, avoid zombie processes
+                task_wait_thread = threading.Thread(self.wait_task_gracefully)
+                task_wait_thread.daemon = True
+                task_wait_thread.start()
+                # Start the main thread loop
                 self.ioloop.loop(timeout, blocking)
             except (KeyboardInterrupt, SystemExit):
                 pass
@@ -427,6 +432,12 @@ class _SpawnerBase(FTPServer):
                 self.close_all()
         else:
             self.ioloop.loop(timeout, blocking)
+
+    def wait_task_gracefully(self):
+        while not self._exit.is_set():
+            tasks = self._active_tasks[:]
+            self._wait_for_tasks(tasks=tasks)
+            time.sleep(5)                           # Poll every five seconds
 
     def close_all(self):
         tasks = self._active_tasks[:]
