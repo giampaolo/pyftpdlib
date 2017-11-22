@@ -417,7 +417,7 @@ class _SpawnerBase(FTPServer):
                 self._log_start()
             try:
                 # Open a separate thread to wait for the disconnected connection, avoid zombie processes
-                task_wait_thread = threading.Thread(self.wait_task_gracefully)
+                task_wait_thread = threading.Thread(target=self.wait_task_gracefully)
                 task_wait_thread.daemon = True
                 task_wait_thread.start()
                 # Start the main thread loop
