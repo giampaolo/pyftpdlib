@@ -492,9 +492,6 @@ class ThreadedFTPServer(_SpawnerBase):
     def _start_task(self, *args, **kwargs):
         return threading.Thread(*args, **kwargs)
 
-    def _current_task(self):
-        return threading.currentThread()
-
     def _map_len(self):
         return threading.activeCount()
 
