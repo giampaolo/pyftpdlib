@@ -1,5 +1,13 @@
 Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 
+Version: 1.5.4 - XXXX-XX-XX
+===========================
+
+**Bug fixes**
+
+- #436: ThreadedFTPServer.max_cons is evaluated threading.activeCount(). If
+  the user uses threads of its own it will consume the number of max_cons.
+
 Version: 1.5.3 - 2017-11-04
 ===========================
 

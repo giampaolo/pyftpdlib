@@ -305,7 +305,7 @@ class _SpawnerBase(FTPServer):
         raise NotImplementedError('must be implemented in subclass')
 
     def _map_len(self):
-        raise NotImplementedError('must be implemented in subclass')
+        return len(self._active_tasks)
 
     def _loop(self, handler):
         """Serve handler's IO loop in a separate thread or process."""
@@ -492,9 +492,6 @@ class ThreadedFTPServer(_SpawnerBase):
     def _start_task(self, *args, **kwargs):
         return threading.Thread(*args, **kwargs)
 
-    def _map_len(self):
-        return threading.activeCount()
-
 
 if os.name == 'posix':
     import multiprocessing
@@ -510,6 +507,3 @@ if os.name == 'posix':
 
         def _start_task(self, *args, **kwargs):
             return multiprocessing.Process(*args, **kwargs)
-
-        def _map_len(self):
-            return len(multiprocessing.active_children())
