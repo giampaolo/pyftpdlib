@@ -304,9 +304,6 @@ class _SpawnerBase(FTPServer):
     def _start_task(self, *args, **kwargs):
         raise NotImplementedError('must be implemented in subclass')
 
-    def _current_task(self):
-        raise NotImplementedError('must be implemented in subclass')
-
     def _map_len(self):
         raise NotImplementedError('must be implemented in subclass')
 
@@ -516,9 +513,6 @@ if os.name == 'posix':
 
         def _start_task(self, *args, **kwargs):
             return multiprocessing.Process(*args, **kwargs)
-
-        def _current_task(self):
-            return multiprocessing.current_process()
 
         def _map_len(self):
             return len(multiprocessing.active_children())
