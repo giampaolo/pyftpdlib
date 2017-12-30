@@ -321,13 +321,13 @@ class _SpawnerBase(FTPServer):
     def _refresh_tasks(self):
         """Clean up finished tasks."""
         if self._active_tasks:
-            before = len(self._active_tasks)
             with self._lock:
+                before = len(self._active_tasks)
                 for task in self._active_tasks[:]:
                     if not task.is_alive():
                         self._active_tasks.remove(task)
-            logger.debug("refreshed %s tasks (%s were cleaned up)" % (
-                         before, before - len(self._active_tasks)))
+                logger.debug("refreshed %s tasks (%s were cleaned up)" % (
+                             before, before - len(self._active_tasks)))
 
     def _loop(self, handler):
         """Serve handler's IO loop in a separate thread or process."""
