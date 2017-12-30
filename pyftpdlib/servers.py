@@ -290,9 +290,11 @@ class _SpawnerBase(FTPServer):
     Not supposed to be used.
     """
 
-    # how many seconds to wait when join()ing parent's threads
-    # or processes
+    # How many seconds to wait when join()ing parent's threads
+    # or processes.
     join_timeout = 5
+    # How often thread/process finished tasks should be cleaned up.
+    refresh_tasks_timeout = 10
     _lock = None
     _exit = None
 
@@ -300,12 +302,32 @@ class _SpawnerBase(FTPServer):
         FTPServer.__init__(self, address_or_socket, handler,
                            ioloop=ioloop, backlog=backlog)
         self._active_tasks = []
+        self._tasks_idler = self.ioloop.call_every(
+            self.refresh_tasks_timeout,
+            self._refresh_tasks, _errback=self.handle_error)
 
     def _start_task(self, *args, **kwargs):
         raise NotImplementedError('must be implemented in subclass')
 
     def _map_len(self):
+        if len(self._active_tasks) >= self.max_cons:
+            # Since refresh()ing is a potentially expensive operation
+            # (O(N)) do it only if we're exceeding max connections
+            # limit. Other than in here, tasks are refreshed every 10
+            # seconds anyway.
+            self._refresh_tasks()
         return len(self._active_tasks)
+
+    def _refresh_tasks(self):
+        """Clean up finished tasks."""
+        if self._active_tasks:
+            before = len(self._active_tasks)
+            with self._lock:
+                for task in self._active_tasks[:]:
+                    if not task.is_alive():
+                        self._active_tasks.remove(task)
+            logger.debug("refreshed %s tasks (%s were cleaned up)" % (
+                         before, before - len(self._active_tasks)))
 
     def _loop(self, handler):
         """Serve handler's IO loop in a separate thread or process."""
@@ -396,10 +418,6 @@ class _SpawnerBase(FTPServer):
                 handler.close()
 
             with self._lock:
-                # clean finished tasks
-                for task in self._active_tasks[:]:
-                    if not task.is_alive():
-                        self._active_tasks.remove(task)
                 # add the new task
                 self._active_tasks.append(t)
 
@@ -426,6 +444,7 @@ class _SpawnerBase(FTPServer):
             self.ioloop.loop(timeout, blocking)
 
     def close_all(self):
+        self._tasks_idler.cancel()
         tasks = self._active_tasks[:]
         # this must be set after getting active tasks as it causes
         # thread objects to get out of the list too soon

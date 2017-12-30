@@ -52,7 +52,6 @@ clean:  ## Remove all build files.
 install:  ## Install this package.
 	# make sure setuptools is installed (needed for 'develop' / edit mode)
 	$(PYTHON) -c "import setuptools"
-	$(PYTHON) setup.py build
 	$(PYTHON) setup.py develop $(INSTALL_OPTS)
 
 uninstall:  ## Uninstall this package.
