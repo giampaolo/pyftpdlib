@@ -323,9 +323,8 @@ class _SpawnerBase(FTPServer):
         if self._active_tasks:
             with self._lock:
                 before = len(self._active_tasks)
-                for task in self._active_tasks[:]:
-                    if not task.is_alive():
-                        self._active_tasks.remove(task)
+                self._active_tasks = \
+                    [t for t in self._active_tasks if t.is_alive()]
                 logger.debug("refreshed %s tasks (%s were cleaned up)" % (
                              before, before - len(self._active_tasks)))
 
