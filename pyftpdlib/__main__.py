@@ -103,13 +103,17 @@ def main():
                             perm=perm)
     else:
         authorizer.add_anonymous(options.directory, perm=perm)
+
     handler = FTPHandler
     handler.authorizer = authorizer
     handler.masquerade_address = options.nat_address
     handler.passive_ports = passive_ports
+
     ftpd = FTPServer((options.interface, options.port), FTPHandler)
+    # On Windows specify a timeout for the underlying select() so
+    # that the server can be interrupted with CTRL + C.
     try:
-        ftpd.serve_forever()
+        ftpd.serve_forever(timeout=2 if os.name == 'nt' else None)
     finally:
         ftpd.close_all()
 

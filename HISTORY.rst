@@ -5,6 +5,7 @@ Version: 1.5.4 - XXXX-XX-XX
 
 **Bug fixes**
 
+- #431: Ctrl-C doesn't exit `python -m pyftpdlib` on Windows.
 - #436: ThreadedFTPServer.max_cons is evaluated threading.activeCount(). If
   the user uses threads of its own it will consume the number of max_cons.
 - #447: ThreadedFTPServer and MultiprocessFTPServer do not join() tasks which
