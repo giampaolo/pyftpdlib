@@ -7,6 +7,8 @@ Version: 1.5.4 - XXXX-XX-XX
 
 - #436: ThreadedFTPServer.max_cons is evaluated threading.activeCount(). If
   the user uses threads of its own it will consume the number of max_cons.
+- #447: ThreadedFTPServer and MultiprocessFTPServer do not join() tasks which
+  are no longer consuming resources.
 
 Version: 1.5.3 - 2017-11-04
 ===========================
