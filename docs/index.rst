@@ -13,10 +13,10 @@ If you're in a hurry just skip to the `Tutorial <tutorial.html>`__.
     :maxdepth: 2
 
     install
-    api
     tutorial
-    benchmarks
+    api
     faqs
+    benchmarks
     rfc-compliance
     adoptions
 

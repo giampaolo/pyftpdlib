@@ -24,7 +24,7 @@ You might want to run tests to make sure pyftpdlib works:
 
 
 Additional dependencies
-=======================
+-----------------------
 
 `PyOpenSSL <https://pypi.python.org/pypi/pyOpenSSL>`__, to support
 `FTPS <http://pyftpdlib.readthedocs.io/tutorial.html#ftps-ftp-over-tls-ssl-server>`__:
