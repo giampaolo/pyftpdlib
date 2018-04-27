@@ -10,6 +10,7 @@ import inspect
 import socket
 import sys
 
+from pyftpdlib import handlers
 from pyftpdlib import servers
 from pyftpdlib.test import configure_logging
 from pyftpdlib.test import HOST
@@ -63,6 +64,10 @@ class TestFTPServer(unittest.TestCase):
             self.client = self.client_class(timeout=TIMEOUT)
             self.client.connect(ip, port)
             self.client.login(USER, PASSWD)
+
+    def test_ctx_mgr(self):
+        with servers.FTPServer((HOST, 0), handlers.FTPHandler) as server:
+            self.assertIsNotNone(server)
 
 
 # =====================================================================

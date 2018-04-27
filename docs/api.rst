@@ -355,10 +355,20 @@ Server (acceptor)
 
   *Changed in version 1.2.0: Added backlog argument.*
 
+  *Changed in version 1.5.4: Support for the context manager protocol was
+  added. Exiting the context manager is equivalent to calling
+  :meth:`close_all`.*
+
   >>> from pyftpdlib.servers import FTPServer
   >>> address = ('127.0.0.1', 21)
   >>> server = FTPServer(address, handler)
   >>> server.serve_forever()
+
+  It can also be used as a context manager. Exiting the context manager is
+  equivalent to calling :meth:`close_all`.
+
+  >>> with FTPServer(address, handler) as server:
+  ...     server.serve_forever()
 
   .. data:: max_cons
 
@@ -379,11 +389,13 @@ Server (acceptor)
 
   .. method:: close()
 
-    Stop serving without disconnecting currently connected clients.
+    Stop accepting connections without disconnecting currently connected
+    clients.
 
   .. method:: close_all()
 
-    Stop serving disconnecting also the currently connected clients.
+    Tell :meth:`server_forever` loop to stop and wait until it does.
+    Also all connected clients will be closed.
 
     *Changed in version 1.0.0: 'map' and 'ignore_all' parameters were removed.*
 
@@ -393,7 +405,7 @@ Filesystem
 .. class:: pyftpdlib.filesystems.FilesystemError
 
   Exception class which can be raised from within
-  :class:`pyftpdlib.filesystems.AbstractedFS`in order to send custom error
+  :class:`pyftpdlib.filesystems.AbstractedFS` in order to send custom error
   messages to client. *New in version 1.0.0*
 
 .. class:: pyftpdlib.filesystems.AbstractedFS(root, cmd_channel)

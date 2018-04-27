@@ -3,6 +3,10 @@ Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 Version: 1.5.4 - XXXX-XX-XX
 ===========================
 
+**Enhancements**
+
+- #463: FTPServer class can now be used as a context manager.
+
 **Bug fixes**
 
 - #431: Ctrl-C doesn't exit `python -m pyftpdlib` on Windows.

@@ -114,6 +114,12 @@ class FTPServer(Acceptor):
             self.bind_af_unspecified(address_or_socket)
         self.listen(backlog)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close_all()
+
     @property
     def address(self):
         return self.socket.getsockname()[:2]
