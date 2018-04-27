@@ -294,7 +294,7 @@ class _SpawnerBase(FTPServer):
     # or processes.
     join_timeout = 5
     # How often thread/process finished tasks should be cleaned up.
-    join_interval = 10
+    join_interval = 5
     _lock = None
     _exit = None
 
@@ -326,6 +326,7 @@ class _SpawnerBase(FTPServer):
                 new = []
                 for t in self._active_tasks:
                     if not t.is_alive():
+                        self.logger.debug("join()ing task %r" % t)
                         t.join(self.join_timeout)
                     else:
                         new.append(t)

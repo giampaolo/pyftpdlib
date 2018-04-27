@@ -55,7 +55,8 @@ install:  ## Install this package.
 	$(PYTHON) setup.py develop $(INSTALL_OPTS)
 
 uninstall:  ## Uninstall this package.
-	cd ..; $(PYTHON) -m pip uninstall -y -v pyftpdlib
+	cd ..; $(PYTHON) -m pip uninstall -y -v pyftpdlib || true
+	$(PYTHON) scripts/purge_installation.py
 
 install-pip:  ## (only if necessary)
 	$(PYTHON) -c \

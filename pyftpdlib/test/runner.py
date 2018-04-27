@@ -12,7 +12,6 @@ from pyftpdlib.test import remove_test_files
 from pyftpdlib.test import unittest
 from pyftpdlib.test import VERBOSITY
 
-
 HERE = os.path.abspath(os.path.dirname(__file__))
 
 
