@@ -2279,7 +2279,6 @@ class TestCornerCases(unittest.TestCase):
         # while firing a scheduled function
         self.tearDown()
         server = FTPServer((HOST, 0), FTPHandler)
-        self.addCleanup(server.close)
         logger = logging.getLogger('pyftpdlib')
         logger.disabled = True
         try:
@@ -2290,6 +2289,7 @@ class TestCornerCases(unittest.TestCase):
             self.assertEqual(len1, len2)
         finally:
             logger.disabled = False
+            server.close()
 
     def test_active_conn_error(self):
         # we open a socket() but avoid to invoke accept() to
