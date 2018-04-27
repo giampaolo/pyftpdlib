@@ -6,7 +6,9 @@
 
 import contextlib
 import ftplib
+import inspect
 import socket
+import sys
 
 from pyftpdlib import servers
 from pyftpdlib.test import configure_logging
@@ -219,5 +221,23 @@ configure_logging()
 remove_test_files()
 
 
+def main():
+    test_classes = set()
+    for name, obj in inspect.getmembers(sys.modules[__name__]):
+        if inspect.isclass(obj):
+            if obj.__module__ == '__main__' and name.startswith('Test'):
+                test_classes.add(obj)
+
+    loader = unittest.TestLoader()
+    suite = []
+    for test_class in test_classes:
+        suite.append(loader.loadTestsFromTestCase(test_class))
+
+    runner = unittest.TextTestRunner(verbosity=VERBOSITY)
+    result = runner.run(unittest.TestSuite(unittest.TestSuite(suite)))
+    success = result.wasSuccessful()
+    sys.exit(0 if success else 1)
+
+
 if __name__ == '__main__':
-    unittest.main(verbosity=VERBOSITY)
+    main()
