@@ -240,6 +240,8 @@ def assert_free_resources():
     p = psutil.Process()
     children = p.children()
     assert not children, children
+    cons = p.connections('tcp')
+    assert not cons, cons
 
 
 def reset_server_opts():

@@ -159,22 +159,23 @@ class TestFtpAuthentication(unittest.TestCase):
         self.file.close()
 
         conn = self.client.transfercmd('retr ' + TESTFN)
-        self.addCleanup(conn.close)
-        rein_sent = False
-        bytes_recv = 0
-        while True:
-            chunk = conn.recv(BUFSIZE)
-            if not chunk:
-                break
-            bytes_recv += len(chunk)
-            self.dummyfile.write(chunk)
-            if bytes_recv > INTERRUPTED_TRANSF_SIZE and not rein_sent:
-                rein_sent = True
-                # flush account, error response expected
-                self.client.sendcmd('rein')
-                self.assertRaisesRegex(ftplib.error_perm,
-                                       '530 Log in with USER and PASS first',
-                                       self.client.dir)
+        with contextlib.closing(conn):
+            rein_sent = False
+            bytes_recv = 0
+            while True:
+                chunk = conn.recv(BUFSIZE)
+                if not chunk:
+                    break
+                bytes_recv += len(chunk)
+                self.dummyfile.write(chunk)
+                if bytes_recv > INTERRUPTED_TRANSF_SIZE and not rein_sent:
+                    rein_sent = True
+                    # flush account, error response expected
+                    self.client.sendcmd('rein')
+                    self.assertRaisesRegex(
+                        ftplib.error_perm,
+                        '530 Log in with USER and PASS first',
+                        self.client.dir)
 
         # a 226 response is expected once tranfer finishes
         self.assertEqual(self.client.voidresp()[:3], '226')
@@ -211,38 +212,39 @@ class TestFtpAuthentication(unittest.TestCase):
         self.file.close()
 
         conn = self.client.transfercmd('retr ' + TESTFN)
-        self.addCleanup(conn.close)
-        rein_sent = 0
-        bytes_recv = 0
-        while True:
-            chunk = conn.recv(BUFSIZE)
-            if not chunk:
-                break
-            bytes_recv += len(chunk)
-            self.dummyfile.write(chunk)
-            # stop transfer while it isn't finished yet
-            if bytes_recv > INTERRUPTED_TRANSF_SIZE and not rein_sent:
-                rein_sent = True
-                # flush account, expect an error response
-                self.client.sendcmd('user ' + USER)
-                self.assertRaisesRegex(ftplib.error_perm,
-                                       '530 Log in with USER and PASS first',
-                                       self.client.dir)
+        with contextlib.closing(conn):
+            rein_sent = 0
+            bytes_recv = 0
+            while True:
+                chunk = conn.recv(BUFSIZE)
+                if not chunk:
+                    break
+                bytes_recv += len(chunk)
+                self.dummyfile.write(chunk)
+                # stop transfer while it isn't finished yet
+                if bytes_recv > INTERRUPTED_TRANSF_SIZE and not rein_sent:
+                    rein_sent = True
+                    # flush account, expect an error response
+                    self.client.sendcmd('user ' + USER)
+                    self.assertRaisesRegex(
+                        ftplib.error_perm,
+                        '530 Log in with USER and PASS first',
+                        self.client.dir)
 
-        # a 226 response is expected once transfer finishes
-        self.assertEqual(self.client.voidresp()[:3], '226')
-        # account is still flushed, error response is still expected
-        self.assertRaisesRegex(ftplib.error_perm,
-                               '530 Log in with USER and PASS first',
-                               self.client.sendcmd, 'pwd')
-        # by logging-in again we should be able to execute a
-        # filesystem command
-        self.client.sendcmd('pass ' + PASSWD)
-        self.client.sendcmd('pwd')
-        self.dummyfile.seek(0)
-        datafile = self.dummyfile.read()
-        self.assertEqual(len(data), len(datafile))
-        self.assertEqual(hash(data), hash(datafile))
+            # a 226 response is expected once transfer finishes
+            self.assertEqual(self.client.voidresp()[:3], '226')
+            # account is still flushed, error response is still expected
+            self.assertRaisesRegex(ftplib.error_perm,
+                                   '530 Log in with USER and PASS first',
+                                   self.client.sendcmd, 'pwd')
+            # by logging-in again we should be able to execute a
+            # filesystem command
+            self.client.sendcmd('pass ' + PASSWD)
+            self.client.sendcmd('pwd')
+            self.dummyfile.seek(0)
+            datafile = self.dummyfile.read()
+            self.assertEqual(len(data), len(datafile))
+            self.assertEqual(hash(data), hash(datafile))
 
 
 class TestFtpDummyCmds(unittest.TestCase):
