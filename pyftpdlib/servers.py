@@ -294,7 +294,7 @@ class _SpawnerBase(FTPServer):
     # or processes.
     join_timeout = 5
     # How often thread/process finished tasks should be cleaned up.
-    join_interval = 5
+    refresh_interval = 5
     _lock = None
     _exit = None
 
@@ -303,8 +303,8 @@ class _SpawnerBase(FTPServer):
                            ioloop=ioloop, backlog=backlog)
         self._tasks = []
         self._tasks_idler = self.ioloop.call_every(
-            self.join_interval,
-            self._join_terminated_tasks,
+            self.refresh_interval,
+            self._refresh_tasks,
             _errback=self.handle_error)
 
     def _start_task(self, *args, **kwargs):
@@ -316,20 +316,21 @@ class _SpawnerBase(FTPServer):
             # (O(N)) do it only if we're exceeding max connections
             # limit. Other than in here, tasks are refreshed every 10
             # seconds anyway.
-            self._join_terminated_tasks()
+            self._refresh_tasks()
         return len(self._tasks)
 
-    def _join_terminated_tasks(self):
-        """join() terminated tasks."""
+    def _refresh_tasks(self):
+        """join() terminated tasks and update internal _tasks list.
+        This gets called every X secs.
+        """
         if self._tasks:
-            logger.debug("joining/cleaning tasks (%s potentials)" %
+            logger.debug("refreshing tasks (%s join() potentials)" %
                          len(self._tasks))
             with self._lock:
                 new = []
                 for t in self._tasks:
                     if not t.is_alive():
-                        logger.debug("join()ing task %r" % t)
-                        t.join(self.join_timeout)
+                        self._join_task(t)
                     else:
                         new.append(t)
 
@@ -449,55 +450,42 @@ class _SpawnerBase(FTPServer):
         else:
             self.ioloop.loop(timeout, blocking)
 
+    def _terminate_task(self, t):
+        if hasattr(t, 'terminate'):
+            logger.debug("terminate()ing task %r" % t)
+            try:
+                if not _BSD:
+                    t.terminate()
+                else:
+                    # XXX - On FreeBSD using SIGTERM doesn't work
+                    # as the process hangs on kqueue.control() or
+                    # select.select(). Use SIGKILL instead.
+                    os.kill(t.pid, signal.SIGKILL)
+            except OSError as err:
+                if err.errno != errno.ESRCH:
+                    raise
+
+    def _join_task(self, t):
+        logger.debug("join()ing task %r" % t)
+        t.join(self.join_timeout)
+        if t.is_alive():
+            logger.warning("task %r remained alive after %r secs", t,
+                           self.join_timeout)
+
     def close_all(self):
         self._tasks_idler.cancel()
-        tasks = self._tasks[:]
         # this must be set after getting active tasks as it causes
         # thread objects to get out of the list too soon
         self._exit.set()
-        if tasks and hasattr(tasks[0], 'terminate'):
-            # we're dealing with subprocesses
-            for t in tasks:
-                try:
-                    if not _BSD:
-                        t.terminate()
-                    else:
-                        # XXX - On FreeBSD using SIGTERM doesn't work
-                        # as the process hangs on kqueue.control() or
-                        # select.select(). Use SIGKILL instead.
-                        os.kill(t.pid, signal.SIGKILL)
-                except OSError as err:
-                    if err.errno != errno.ESRCH:
-                        raise
 
-        self._wait_for_tasks(tasks)
-        del self._tasks[:]
+        with self._lock:
+            for t in self._tasks:
+                self._terminate_task(t)
+            for t in self._tasks:
+                self._join_task(t)
+            del self._tasks[:]
+
         FTPServer.close_all(self)
-
-    def _wait_for_tasks(self, tasks):
-        """Wait for threads or subprocesses to terminate."""
-        warn = logger.warning
-        for t in tasks:
-            t.join(self.join_timeout)
-            if t.is_alive():
-                # Thread or process is still alive. If it's a process
-                # attempt to send SIGKILL as last resort.
-                # Set timeout to None so that we will exit immediately
-                # in case also other threads/processes are hanging.
-                self.join_timeout = None
-                if hasattr(t, 'terminate'):
-                    msg = "could not terminate process %r" % t
-                    if not _BSD:
-                        warn(msg + "; sending SIGKILL as last resort")
-                        try:
-                            os.kill(t.pid, signal.SIGKILL)
-                        except OSError as err:
-                            if err.errno != errno.ESRCH:
-                                raise
-                    else:
-                        warn(msg)
-                else:
-                    warn("thread %r didn't terminate; ignoring it", t)
 
 
 class ThreadedFTPServer(_SpawnerBase):
