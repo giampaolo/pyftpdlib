@@ -82,9 +82,13 @@ def close_client(session):
     try:
         if session.sock is not None:
             try:
-                session.quit()
+                resp = session.quit()
             except Exception:
                 pass
+            else:
+                # ...just to make sure the server isn't replying to some
+                # pending command.
+                assert resp.startswith('221'), resp
     finally:
         session.close()
 
