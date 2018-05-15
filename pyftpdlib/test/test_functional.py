@@ -1914,7 +1914,10 @@ class TestCallbacks(unittest.TestCase):
                 if bytes_sent >= INTERRUPTED_TRANSF_SIZE or not chunk:
                     self.client.putcmd('abor')
                     break
+        # If a data transfer is in progress server is supposed to send
+        # a 426 reply followed by a 226 reply.
         self.assertRaises(ftplib.error_temp, self.client.getresp)  # 426
+        self.assertEqual(self.client.getresp()[:3], "226")
         self.read_file(
             'on_connect,on_login:%s,on_incomplete_file_received:%s,' %
             (USER, self.TESTFN_2))
