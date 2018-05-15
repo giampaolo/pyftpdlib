@@ -122,6 +122,7 @@ class FTPServer(Acceptor):
 
     @property
     def address(self):
+        """The address this server is listening on as a (ip, port) tuple."""
         return self.socket.getsockname()[:2]
 
     def _map_len(self):
