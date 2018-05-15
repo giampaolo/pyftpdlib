@@ -390,12 +390,13 @@ Server (acceptor)
   .. method:: close()
 
     Stop accepting connections without disconnecting currently connected
-    clients.
+    clients. :meth:`server_forever` loop will automatically stop when there are
+    no more connected clients.
 
   .. method:: close_all()
 
-    Tell :meth:`server_forever` loop to stop and wait until it does.
-    Also all connected clients will be closed.
+    Disconnect all clients, tell :meth:`server_forever` loop to stop and wait
+    until it does.
 
     *Changed in version 1.0.0: 'map' and 'ignore_all' parameters were removed.*
 
