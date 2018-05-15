@@ -48,6 +48,8 @@ from .log import config_logging
 from .log import debug
 from .log import is_logging_configured
 from .log import logger
+from .processes import fork_processes
+
 
 __all__ = ['FTPServer', 'ThreadedFTPServer']
 _BSD = 'bsd' in sys.platform
@@ -155,13 +157,6 @@ class FTPServer(Acceptor):
                                      self.handler.passive_ports[-1])
         else:
             pasv_ports = None
-        addr = self.address
-        if hasattr(self.handler, 'ssl_protocol'):
-            proto = "FTP+SSL"
-        else:
-            proto = "FTP"
-        logger.info(">>> starting %s server on %s:%s, pid=%i <<<"
-                    % (proto, addr[0], addr[1], os.getpid()))
         if ('ThreadedFTPServer' in __all__ and
                 issubclass(self.__class__, ThreadedFTPServer)):
             logger.info("concurrency model: multi-thread")
@@ -190,7 +185,8 @@ class FTPServer(Acceptor):
         if getattr(self.handler, 'keyfile', None):
             logger.debug("SSL keyfile: %r", self.handler.keyfile)
 
-    def serve_forever(self, timeout=None, blocking=True, handle_exit=True):
+    def serve_forever(self, timeout=None, blocking=True, handle_exit=True,
+                      num_processes=1):
         """Start serving.
 
          - (float) timeout: the timeout passed to the underlying IO
@@ -204,11 +200,34 @@ class FTPServer(Acceptor):
            SystemExit exceptions (generally caused by SIGTERM / SIGINT
            signals) and gracefully exits after cleaning up resources.
            Also, logs server start and stop.
+
+         - (int) num_processes: pre-fork a certain number of child
+           processes.
+           Each child process will keep using an async concurrency model.
+           If the number is None or <= 0 the number of usable cores
+           available on this machine is detected and used.
         """
-        if handle_exit:
-            log = handle_exit and blocking
+        log = handle_exit and blocking
+
+        #
+        if num_processes != 1:
+            if not blocking:
+                raise ValueError(
+                    "'num_processes' and 'blocking' are mutually exclusive")
             if log:
                 self._log_start()
+            fork_processes(num_processes)
+        else:
+            if log:
+                self._log_start()
+
+        #
+        proto = "FTP+SSL" if hasattr(self.handler, 'ssl_protocol') else "FTP"
+        logger.info(">>> starting %s server on %s:%s, pid=%i <<<"
+                    % (proto, self.address[0], self.address[1], os.getpid()))
+
+        #
+        if handle_exit:
             try:
                 self.ioloop.loop(timeout, blocking)
             except (KeyboardInterrupt, SystemExit):
