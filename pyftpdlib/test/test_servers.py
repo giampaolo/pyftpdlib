@@ -12,6 +12,7 @@ import sys
 
 from pyftpdlib import handlers
 from pyftpdlib import servers
+from pyftpdlib.test import close_client
 from pyftpdlib.test import configure_logging
 from pyftpdlib.test import HOST
 from pyftpdlib.test import PASSWD
@@ -48,7 +49,7 @@ class TestFTPServer(unittest.TestCase):
 
     def tearDown(self):
         if self.client is not None:
-            self.client.close()
+            close_client(self.client)
         if self.server is not None:
             self.server.stop()
 

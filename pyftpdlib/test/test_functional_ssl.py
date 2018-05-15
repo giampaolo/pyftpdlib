@@ -14,6 +14,7 @@ import ssl
 import OpenSSL  # requires "pip install pyopenssl"
 
 from pyftpdlib.handlers import TLS_FTPHandler
+from pyftpdlib.test import close_client
 from pyftpdlib.test import configure_logging
 from pyftpdlib.test import MProcessTestFTPd
 from pyftpdlib.test import OSX
@@ -195,7 +196,7 @@ class TestFTPS(unittest.TestCase):
     def tearDown(self):
         if self.client is not None:
             self.client.ssl_version = ssl.PROTOCOL_SSLv23
-            self.client.close()
+            close_client(self.client)
         if self.server is not None:
             self.server.handler.ssl_protocol = ssl.PROTOCOL_SSLv23
             self.server.handler.tls_control_required = False
@@ -313,7 +314,7 @@ class TestFTPS(unittest.TestCase):
     def try_protocol_combo(self, server_protocol, client_protocol):
         self._setup(ssl_protocol=server_protocol)
         self.client.ssl_version = client_protocol
-        self.client.close()
+        close_client(self.client)
         self.client.connect(self.server.host, self.server.port)
         try:
             self.client.login()
@@ -339,7 +340,7 @@ class TestFTPS(unittest.TestCase):
     if hasattr(ssl, "PROTOCOL_SSLv2"):
         def test_sslv2(self):
             self.client.ssl_version = ssl.PROTOCOL_SSLv2
-            self.client.close()
+            close_client(self.client)
             if not OSX:
                 with self.server.lock:
                     self.client.connect(self.server.host, self.server.port)

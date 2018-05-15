@@ -77,6 +77,18 @@ class TestCase(unittest.TestCase):
 unittest.TestCase = TestCase
 
 
+def close_client(session):
+    """Closes a ftplib.FTP client session."""
+    try:
+        if session.sock is not None:
+            try:
+                session.quit()
+            except Exception:
+                pass
+    finally:
+        session.close()
+
+
 def try_address(host, port=0, family=socket.AF_INET):
     """Try to bind a socket on the given host:port and return True
     if that has been possible."""
@@ -240,7 +252,8 @@ def assert_free_resources():
     p = psutil.Process()
     children = p.children()
     assert not children, children
-    cons = p.connections('tcp')
+    cons = [x for x in p.connections('tcp')
+            if x.status != psutil.CONN_CLOSE_WAIT]
     assert not cons, cons
 
 

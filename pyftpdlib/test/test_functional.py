@@ -30,6 +30,7 @@ from pyftpdlib.handlers import ThrottledDTPHandler
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.test import BUFSIZE
+from pyftpdlib.test import close_client
 from pyftpdlib.test import configure_logging
 from pyftpdlib.test import disable_log_warning
 from pyftpdlib.test import get_server_handler
@@ -86,7 +87,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.dummyfile = BytesIO()
 
     def tearDown(self):
-        self.client.close()
+        close_client(self.client)
         self.server.stop()
         if not self.file.closed:
             self.file.close()
@@ -260,7 +261,7 @@ class TestFtpDummyCmds(unittest.TestCase):
         self.client.login(USER, PASSWD)
 
     def tearDown(self):
-        self.client.close()
+        close_client(self.client)
         self.server.stop()
 
     def test_type(self):
@@ -383,7 +384,7 @@ class TestFtpCmdsSemantic(unittest.TestCase):
         self.client.login(USER, PASSWD)
 
     def tearDown(self):
-        self.client.close()
+        close_client(self.client)
         self.server.stop()
 
     def test_arg_cmds(self):
@@ -448,7 +449,7 @@ class TestFtpFsOperations(unittest.TestCase):
         self.tempdir = os.path.basename(tempfile.mkdtemp(dir=HOME))
 
     def tearDown(self):
-        self.client.close()
+        close_client(self.client)
         self.server.stop()
         safe_remove(self.tempfile)
         if os.path.exists(self.tempdir):
@@ -658,7 +659,7 @@ class TestFtpStoreData(unittest.TestCase):
         self.dummy_sendfile = BytesIO()
 
     def tearDown(self):
-        self.client.close()
+        close_client(self.client)
         self.server.stop()
         self.dummy_recvfile.close()
         self.dummy_sendfile.close()
@@ -978,7 +979,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.dummyfile = BytesIO()
 
     def tearDown(self):
-        self.client.close()
+        close_client(self.client)
         self.server.stop()
         if not self.file.closed:
             self.file.close()
@@ -1096,7 +1097,7 @@ class TestFtpListingCmds(unittest.TestCase):
         touch(TESTFN)
 
     def tearDown(self):
-        self.client.close()
+        close_client(self.client)
         self.server.stop()
         os.remove(TESTFN)
 
@@ -1257,7 +1258,7 @@ class TestFtpAbort(unittest.TestCase):
         self.client.login(USER, PASSWD)
 
     def tearDown(self):
-        self.client.close()
+        close_client(self.client)
         self.server.stop()
 
     def test_abor_no_data(self):
@@ -1364,7 +1365,7 @@ class TestThrottleBandwidth(unittest.TestCase):
         self.dummyfile = BytesIO()
 
     def tearDown(self):
-        self.client.close()
+        close_client(self.client)
         self.server.handler.dtp_handler.read_limit = 0
         self.server.handler.dtp_handler.write_limit = 0
         self.server.handler.dtp_handler = DTPHandler
@@ -1430,7 +1431,7 @@ class TestTimeouts(unittest.TestCase):
 
     def tearDown(self):
         if self.client is not None and self.server is not None:
-            self.client.close()
+            close_client(self.client)
             self.server.handler.timeout = 300
             self.server.handler.dtp_handler.timeout = 300
             self.server.handler.passive_dtp.timeout = 30
@@ -1580,7 +1581,7 @@ class TestConfigurableOptions(unittest.TestCase):
 
     def tearDown(self):
         if self.client is not None:
-            self.client.close()
+            close_client(self.client)
         # set back options to their original value
         if self.server is not None:
             self.server.server.max_cons = 0
@@ -1823,7 +1824,7 @@ class TestCallbacks(unittest.TestCase):
         self.client.connect(self.server.host, self.server.port)
 
     def tearDown(self):
-        self.client.close()
+        close_client(self.client)
         self.server.stop()
         safe_remove(TESTFN)
         safe_remove(self.TESTFN_2)
@@ -1958,7 +1959,7 @@ class _TestNetworkProtocols(object):
             self.other_proto = "1"
 
     def tearDown(self):
-        self.client.close()
+        close_client(self.client)
         self.server.stop()
 
     def cmdresp(self, cmd):
@@ -2149,7 +2150,7 @@ class TestIPv6MixedEnvironment(unittest.TestCase):
 
     def tearDown(self):
         if self.client is not None:
-            self.client.close()
+            close_client(self.client)
         self.server.stop()
 
     def test_port_v4(self):
@@ -2225,7 +2226,7 @@ class TestCornerCases(unittest.TestCase):
         self.client.login(USER, PASSWD)
 
     def tearDown(self):
-        self.client.close()
+        close_client(self.client)
         self.server.stop()
 
     def test_port_race_condition(self):
@@ -2365,7 +2366,7 @@ class TestCornerCases(unittest.TestCase):
 #             warnings.resetwarnings()
 
 #     def tearDown(self):
-#         self.client.close()
+#         close_client(self.client)
 #         self.server.stop()
 #         remove_test_files()
 
@@ -2529,7 +2530,7 @@ class ThreadedFTPTests(unittest.TestCase):
         self.dummy_sendfile = BytesIO()
 
     def tearDown(self):
-        self.client.close()
+        close_client(self.client)
         self.server.stop()
         self.dummy_recvfile.close()
         self.dummy_sendfile.close()
