@@ -1,3 +1,7 @@
+.. image:: http://pepy.tech/badge/pyftpdlib
+    :target: http://pepy.tech/project/pyftpdlib
+    :alt: Downloads
+
 .. image:: https://img.shields.io/travis/giampaolo/pyftpdlib/master.svg?maxAge=3600&label=Linux%20/%20OSX
     :target: https://travis-ci.org/giampaolo/pyftpdlib
     :alt: Linux tests (Travis)
