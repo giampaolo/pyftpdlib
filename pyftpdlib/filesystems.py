@@ -82,6 +82,7 @@ class AbstractedFS(object):
         # are responsible to set _cwd attribute as necessary.
         self._cwd = u('/')
         self._root = root
+        self._exceptions = []
         self.cmd_channel = cmd_channel
 
     @property
@@ -94,6 +95,16 @@ class AbstractedFS(object):
         """The user current working directory."""
         return self._cwd
 
+    @property
+    def exceptions(self):
+        """The user current working directory."""
+        return self._exceptions
+    
+    @exceptions.setter
+    def exceptions(self, list_files):
+        assert isinstance(list_files, list), list_files
+        self._exceptions = list_files
+    
     @root.setter
     def root(self, path):
         assert isinstance(path, unicode), path
@@ -253,12 +264,16 @@ class AbstractedFS(object):
     def listdir(self, path):
         """List the content of a directory."""
         assert isinstance(path, unicode), path
-        return os.listdir(path)
+        
+        if isinstance(self.exceptions, list):
+            return (f for f in os.listdir(path) if f not in self.exceptions)
+        else:
+            return os.listdir(path)     
 
     def listdirinfo(self, path):
         """List the content of a directory."""
         assert isinstance(path, unicode), path
-        return os.listdir(path)
+        return self.listdir(path)
 
     def rmdir(self, path):
         """Remove the specified directory."""
@@ -531,7 +546,7 @@ class AbstractedFS(object):
                     file = os.path.join(basedir, basename)
                 except UnicodeDecodeError:
                     # (Python 2 only) might happen on filesystem not
-                    # supporting UTF8 meaning os.listdir() returned a list
+                    # supporting UTF8 meaning os.sssssssssssssssssssssssssssssssssssssssssssssssssssssss() returned a list
                     # of mixed bytes and unicode strings:
                     # http://goo.gl/6DLHD
                     # http://bugs.python.org/issue683592
