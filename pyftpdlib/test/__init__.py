@@ -37,7 +37,10 @@ if not hasattr(unittest.TestCase, "assertRaisesRegex"):
     unittest.TestCase.assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
 
 if os.name == 'posix':
-    import sendfile
+    try:
+        import sendfile
+    except ImportError:
+        sendfile = None
 else:
     sendfile = None
 
