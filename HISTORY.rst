@@ -1,5 +1,12 @@
 Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 
+Version: 1.5.5 - 2019-03-27
+===========================
+
+**Bug fixes**
+
+- #492: CRLF line endings are replaced with CRCRLF in ASCII mode downloads.
+
 Version: 1.5.4 - 2018-05-04
 ===========================
 
