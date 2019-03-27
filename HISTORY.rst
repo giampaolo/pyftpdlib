@@ -1,11 +1,12 @@
 Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 
-Version: 1.5.5 - 2019-03-27
+Version: 1.5.5 - XXXX-XX-XX
 ===========================
 
 **Enhancements**
 
 - #494: Implemented CR to CRLF line ending conversion for ASCII downloads.
+- #495: colored test output.
 
 **Bug fixes**
 
