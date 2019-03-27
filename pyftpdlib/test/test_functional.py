@@ -67,10 +67,7 @@ except ImportError:
 import ssl
 
 if POSIX:
-    try:
-        import sendfile
-    except ImportError:
-        sendfile = None
+    import sendfile
 else:
     sendfile = None
 
