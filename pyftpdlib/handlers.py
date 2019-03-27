@@ -54,6 +54,8 @@ from .ioloop import timer
 from .log import debug
 from .log import logger
 
+CR_BYTE = ord('\r')
+
 
 def _import_sendfile():
     # By default attempt to use os.sendfile introduced in Python 3.3:
@@ -1028,10 +1030,31 @@ class FileProducer(object):
         """
         self.file = file
         self.type = type
+        self._prev_chunk_endswith_cr = False
         if type == 'a' and os.linesep != '\r\n':
-            self._data_wrapper = lambda x: x.replace(b(os.linesep), b'\r\n')
+            self._data_wrapper = self._posix_ascii_data_wrapper
         else:
             self._data_wrapper = None
+
+    def _posix_ascii_data_wrapper(self, chunk):
+        """The data wrapper used for sending data in ASCII mode on
+        systems using a single line terminator, handling those cases
+        where CRLF ('\r\n') gets delivered in two chunks.
+        """
+        chunk = bytearray(chunk)
+        pos = 0
+        if self._prev_chunk_endswith_cr and chunk.startswith(b'\n'):
+            pos += 1
+        while True:
+            pos = chunk.find(b'\n', pos)
+            if pos == -1:
+                break
+            if chunk[pos - 1] != CR_BYTE:
+                chunk.insert(pos, CR_BYTE)
+                pos += 1
+            pos += 1
+        self._prev_chunk_endswith_cr = chunk.endswith(b'\r')
+        return chunk
 
     def more(self):
         """Attempt a chunk of data of size self.buffer_size."""
