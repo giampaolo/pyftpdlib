@@ -1018,19 +1018,44 @@ class TestFtpRetrieveData(unittest.TestCase):
                           "retr " + bogus, lambda x: x)
 
     def test_retr_ascii(self):
-        """Test RETR in ASCII mode."""
+        """Test ASCII mode RETR for data without line endings."""
 
-        data = (b'abcde12345' + b(os.linesep)) * 100000
+        data = b'abcde12345' * 100000
         self.file.write(data)
         self.file.close()
         self.retrieve_ascii("retr " + TESTFN, self.dummyfile.write)
-        expected = data.replace(b(os.linesep), b'\r\n')
+        self.dummyfile.seek(0)
+        datafile = self.dummyfile.read()
+        self.assertEqual(len(data), len(datafile))
+        self.assertEqual(hash(data), hash(datafile))
+
+    def test_retr_ascii_cr(self):
+        """Test ASCII mode RETR for data with CR line endings."""
+
+        data = b'abcde12345\r' * 100000
+        self.file.write(data)
+        self.file.close()
+        self.retrieve_ascii("retr " + TESTFN, self.dummyfile.write)
+        expected = data.replace(b'\r', b'\r\n')
         self.dummyfile.seek(0)
         datafile = self.dummyfile.read()
         self.assertEqual(len(expected), len(datafile))
         self.assertEqual(hash(expected), hash(datafile))
 
-    def test_retr_ascii_already_crlf(self):
+    def test_retr_ascii_lf(self):
+        """Test ASCII mode RETR for data with LF line endings."""
+
+        data = b'abcde12345\n' * 100000
+        self.file.write(data)
+        self.file.close()
+        self.retrieve_ascii("retr " + TESTFN, self.dummyfile.write)
+        expected = data.replace(b'\n', b'\r\n')
+        self.dummyfile.seek(0)
+        datafile = self.dummyfile.read()
+        self.assertEqual(len(expected), len(datafile))
+        self.assertEqual(hash(expected), hash(datafile))
+
+    def test_retr_ascii_crlf(self):
         """Test ASCII mode RETR for data with CRLF line endings."""
 
         data = b'abcde12345\r\n' * 100000
@@ -1039,8 +1064,22 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.retrieve_ascii("retr " + TESTFN, self.dummyfile.write)
         self.dummyfile.seek(0)
         datafile = self.dummyfile.read()
+
         self.assertEqual(len(data), len(datafile))
         self.assertEqual(hash(data), hash(datafile))
+
+    def test_retr_ascii_mixed_eol(self):
+        """Test ASCII mode RETR for data with mixed line endings."""
+
+        data = b'abcde12345\r\nabcde12345\nabcde12345\r' * 100000
+        self.file.write(data)
+        self.file.close()
+        self.retrieve_ascii("retr " + TESTFN, self.dummyfile.write)
+        expected = b'abcde12345\r\nabcde12345\r\nabcde12345\r\n' * 100000
+        self.dummyfile.seek(0)
+        datafile = self.dummyfile.read()
+        self.assertEqual(len(expected), len(datafile))
+        self.assertEqual(hash(expected), hash(datafile))
 
     @retry_on_failure()
     def test_restore_on_retr(self):

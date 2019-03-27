@@ -55,6 +55,7 @@ from .log import debug
 from .log import logger
 
 CR_BYTE = ord('\r')
+LF_BYTE = ord('\n')
 
 
 def _import_sendfile():
@@ -1031,7 +1032,7 @@ class FileProducer(object):
         self.file = file
         self.type = type
         self._prev_chunk_endswith_cr = False
-        if type == 'a' and os.linesep != '\r\n':
+        if type == 'a':
             self._data_wrapper = self._posix_ascii_data_wrapper
         else:
             self._data_wrapper = None
@@ -1043,17 +1044,29 @@ class FileProducer(object):
         """
         chunk = bytearray(chunk)
         pos = 0
-        if self._prev_chunk_endswith_cr and chunk.startswith(b'\n'):
+        if self._prev_chunk_endswith_cr:
+            if len(chunk) == 0 or chunk[pos] != LF_BYTE:
+                chunk.insert(pos, LF_BYTE)
             pos += 1
+        self._prev_chunk_endswith_cr = False
         while True:
-            pos = chunk.find(b'\n', pos)
-            if pos == -1:
-                break
-            if chunk[pos - 1] != CR_BYTE:
-                chunk.insert(pos, CR_BYTE)
+            cr_pos = chunk.find(b'\r', pos)
+            lf_pos = chunk.find(b'\n', pos)
+            if cr_pos != -1 and (lf_pos == -1 or cr_pos < lf_pos):
+                if cr_pos == len(chunk) - 1:
+                    self._prev_chunk_endswith_cr = True
+                    break
+                if chunk[cr_pos + 1] != LF_BYTE:
+                    chunk.insert(cr_pos + 1, LF_BYTE)
+                    pos = cr_pos + 1
                 pos += 1
-            pos += 1
-        self._prev_chunk_endswith_cr = chunk.endswith(b'\r')
+            elif lf_pos != -1 and (cr_pos == -1 or lf_pos < cr_pos):
+                if chunk[lf_pos - 1] != CR_BYTE:
+                    chunk.insert(lf_pos, CR_BYTE)
+                    pos = lf_pos + 1
+                pos += 1
+            else:
+                break
         return chunk
 
     def more(self):
