@@ -1064,7 +1064,6 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.retrieve_ascii("retr " + TESTFN, self.dummyfile.write)
         self.dummyfile.seek(0)
         datafile = self.dummyfile.read()
-
         self.assertEqual(len(data), len(datafile))
         self.assertEqual(hash(data), hash(datafile))
 
