@@ -3,6 +3,10 @@ Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 Version: 1.5.5 - XXXX-XX-XX
 ===========================
 
+**Enhancements**
+
+- #495: colored test output.
+
 **Bug fixes**
 
 - #492: CRLF line endings are replaced with CRCRLF in ASCII mode downloads.
