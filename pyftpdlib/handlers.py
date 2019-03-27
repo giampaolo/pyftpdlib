@@ -54,6 +54,8 @@ from .ioloop import timer
 from .log import debug
 from .log import logger
 
+CR_BYTE = ord('\r')
+
 
 def _import_sendfile():
     # By default attempt to use os.sendfile introduced in Python 3.3:
@@ -1047,8 +1049,8 @@ class FileProducer(object):
             pos = chunk.find(b'\n', pos)
             if pos == -1:
                 break
-            if chunk[pos - 1] != 13:
-                chunk.insert(pos, 13)
+            if chunk[pos - 1] != CR_BYTE:
+                chunk.insert(pos, CR_BYTE)
                 pos += 1
             pos += 1
         self._prev_chunk_endswith_cr = chunk.endswith(b'\r')
