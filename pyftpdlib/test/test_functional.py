@@ -1084,7 +1084,7 @@ class TestFtpRetrieveData(unittest.TestCase):
         """Test ASCII mode RETR for data that consists of mixed
         line endings only."""
 
-        data = b'\r\n\n\r' * 100000
+        data = b'\n\r\r\n' * 100000
         self.file.write(data)
         self.file.close()
         self.retrieve_ascii("retr " + TESTFN, self.dummyfile.write)
