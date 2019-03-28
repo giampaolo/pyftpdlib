@@ -1041,7 +1041,7 @@ class FileProducer(object):
         """The data wrapper used for sending data in ASCII mode on
         systems using a single line terminator, handling those cases
         where CRLF ('\r\n') gets delivered in two chunks as well as
-        cased where a file has mixed line endings.
+        cases where a file has mixed line endings.
         """
         chunk = bytearray(chunk)
         pos = 0
