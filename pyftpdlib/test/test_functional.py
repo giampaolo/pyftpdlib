@@ -1080,6 +1080,20 @@ class TestFtpRetrieveData(unittest.TestCase):
         self.assertEqual(len(expected), len(datafile))
         self.assertEqual(hash(expected), hash(datafile))
 
+    def test_retr_ascii_mixed_eol_only(self):
+        """Test ASCII mode RETR for data that consists of mixed
+        line endings only."""
+
+        data = b'\r\n\n\r' * 100000
+        self.file.write(data)
+        self.file.close()
+        self.retrieve_ascii("retr " + TESTFN, self.dummyfile.write)
+        expected = b'\r\n\r\n\r\n' * 100000
+        self.dummyfile.seek(0)
+        datafile = self.dummyfile.read()
+        self.assertEqual(len(expected), len(datafile))
+        self.assertEqual(hash(expected), hash(datafile))
+
     @retry_on_failure()
     def test_restore_on_retr(self):
         data = b'abcde12345' * 1000000
