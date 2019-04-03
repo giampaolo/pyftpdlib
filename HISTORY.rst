@@ -10,6 +10,7 @@ Version: 1.5.5 - XXXX-XX-XX
 **Bug fixes**
 
 - #492: CRLF line endings are replaced with CRCRLF in ASCII mode downloads.
+- #496: import error due to multiprocessing.Lock() bug.
 
 Version: 1.5.4 - 2018-05-04
 ===========================

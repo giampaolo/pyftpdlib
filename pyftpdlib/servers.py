@@ -514,16 +514,21 @@ class ThreadedFTPServer(_SpawnerBase):
 
 
 if os.name == 'posix':
-    import multiprocessing
+    try:
+        import multiprocessing
+        multiprocessing.Lock()
+    except Exception:
+        # see https://github.com/giampaolo/pyftpdlib/issues/496
+        pass
+    else:
+        __all__ += ['MultiprocessFTPServer']
 
-    __all__ += ['MultiprocessFTPServer']
+        class MultiprocessFTPServer(_SpawnerBase):
+            """A modified version of base FTPServer class which spawns a
+            process every time a new connection is established.
+            """
+            _lock = multiprocessing.Lock()
+            _exit = multiprocessing.Event()
 
-    class MultiprocessFTPServer(_SpawnerBase):
-        """A modified version of base FTPServer class which spawns a
-        process every time a new connection is established.
-        """
-        _lock = multiprocessing.Lock()
-        _exit = multiprocessing.Event()
-
-        def _start_task(self, *args, **kwargs):
-            return multiprocessing.Process(*args, **kwargs)
+            def _start_task(self, *args, **kwargs):
+                return multiprocessing.Process(*args, **kwargs)
