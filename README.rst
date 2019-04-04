@@ -190,67 +190,6 @@ In case you're using pyftpdlib into a software of yours
 software to the
 `adoptions list <http://pyftpdlib.readthedocs.io/en/latest/adoptions.html>`__.
 
-Timeline
-========
-
-- 2018-05-04: version `1.5.4 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.5.4.tar.gz>`__ released.
-- 2017-11-04: version `1.5.3 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.5.3.tar.gz>`__ released.
-- 2017-04-06: version `1.5.2 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.5.2.tar.gz>`__ released.
-- 2016-05-02: version `1.5.1 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.5.1.tar.gz>`__ released.
-- 2015-12-13: version `1.5.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.5.0.tar.gz>`__ released.
-- 2014-06-03: version `1.4.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.4.0.tar.gz>`__ released.
-- 2014-04-12: version `1.3.1 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.3.1.tar.gz>`__ released.
-- 2013-11-07: version `1.3.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.3.0.tar.gz>`__ released.
-- 2013-04-22: version `1.2.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.2.0.tar.gz>`__ released.
-- 2013-04-09: version `1.1.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.1.0.tar.gz>`__ released.
-- 2013-02-22: version `1.0.1 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.0.1.tar.gz>`__ released.
-- 2013-02-19: version `1.0.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.0.0.tar.gz>`__ released.
-- 2012-05-14: pyftpdlib included in `ftp-cloudfs <https://github.com/chmouel/ftp-cloudfs/>`__ project.
-- 2012-01-25: version `0.7.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-0.7.0.tar.gz>`__ released.
-- 2011-12-01: pyftpdlib included in `feitp-server <http://code.google.com/p/feitp-server/>`__ project.
-- 2011-09-26: pyftpdlib included in `ftpmaster <https://github.com/MarkLIC/ftpmaster>`__ project.
-- 2011-07-09: pyftpdlib included in `bftpd <http://bftpd.sourceforge.net/>`__ project.
-- 2011-07-09: pyftpdlib included in `fastersync <http://code.google.com/p/fastersync/>`__ project.
-- 2011-01-31: pyftpdlib included in `put.io FTP connector project <http://code.google.com/p/pyftpdlib/wiki/Adoptions?ts=1296442469&updated=Adoptions#put.io*FTP*connector>`__.
-- 2011-01-24: version `0.6.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-0.6.0.tar.gz>`__ released.
-- 2010-12-14: added `donations <http://code.google.com/p/pyftpdlib/wiki/Donate>`__.
-- 2010-08-24: pyftpdlib included in `peerscape <http://www.peerscape.org/>`__ project.
-- 2010-07-15: pyftpdlib included in `Faetus <http://tomatohater.com/faetus/>`__ project.
-- 2010-07-11: pyftpdlib included in `Pyfilesystem <http://code.google.com/p/pyfilesystem>`__ project.
-- 2010-06-28: pyftpdlib has been `packaged for Debian <http://packages.debian.org/sid/python-pyftpdlib>`__
-- 2010-04-28: pyftpdlib included in `sierramodulepos <http://forge.openbravo.com/plugins/mwiki/index.php/MobilePOS>`__ project.
-- 2010-03-20: `http://www.smartfile.com <http://www.smartfile.com>`__ uses pyftpdlib.
-- 2010-01-13: pyftpdlib included in `zenftp <http://code.irondojo.com/>`__ project.
-- 2009-12-26: pyftpdlib included in `Symbian Python FTP server <http://code.google.com/p/sypftp>`__ project.
-- 2009-11-04: `www.netplay.it <http://www.netplay.it>`__ uses pyftpdlib.
-- 2009-11-04: `www.adcast.tv <http://www.adcast.tv>`__ uses pyftpdlib.
-- 2009-11-04: `www.bitsontherun.com <http://www.bitsontherun.com>`__ uses pyftpdlib.
-- 2009-11-02: pyftpdlib included in `ftp-cloudfs <http://github.com/chmouel/ftp-cloudfs>`__ project.
-- 2009-09-14: version `0.5.2 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-0.5.2.tar.gz>`__ released.
-- 2009-08-10: pyftpdlib included in `Imgserve <http://github.com/wuzhe/imgserve/tree/master>`__ project.
-- 2009-07-22: pyftpdlib included in  `Plumi <http://plumi.org/wiki>`__ project.
-- 2009-04-02: pyftpdlib RPM-packaged and ported on `Fedora <https://admin.fedoraproject.org/pkgdb/packages/name/pyftpdlib>`__ to make users can easily install on it via *yum install pyftpdlib*.
-- 2009-03-28: pyftpdlib included in  `Bazaar <http://bazaar-vcs.org/>`__ project.
-- 2009-02-23: pyftpdlib included in `ShareFTP <http://git.logfish.net/shareftp.git/>`__ project.
-- 2009-01-21: version `0.5.1 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-0.5.1.tar.gz>`__ released.
-- 2008-12-27: pyftpdlib included in `Google Chromium <http://code.google.com/intl/it-IT/chromium/>`__, the open source project behind `Google Chrome <http://www.google.com/chrome>`__.
-- 2008-12-27: pyftpdlib ported on `GNU Darwin <http://www.gnu-darwin.org/>`__ systems to make users can easily install on it.
-- 2008-11-26: pyftpdlib included in `OpenERP <http://openerp.com>`__.
-- 2008-10-26: pyftpdlib included in `Python for OpenVMS <http://www.vmspython.org/>`__ as standard package.
-- 2008-10-09: pyftpdlib included in `Shareme <http://bbs.archlinux.org/viewtopic.php?pid=431474>`__ project.
-- 2008-09-20: version `0.5.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-0.5.0.tar.gz>`__ released.
-- 2008-08-10: pyftpdlib included in `Manent <http://trac.manent-backup.com/>`__ project.
-- 2008-05-16: version `0.4.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-0.4.0.tar.gz>`__ released.
-- 2008-04-09: pyftpdlib used as backend for `gpftpd <http://arkadiusz-wahlig.blogspot.com/2008/04/hosting-files-on-google.html>`__, an FTP server for managing files hosted on `Google Pages <http://-ages.google.com>`__.
-- 2008-01-17: version `0.3.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-0.3.0.tar.gz>`__ released.
-- 2007-10-14: pyftpdlib included in `Aksy <http://walco.n--tree.net/projects/aksy/wiki>`__ project.
-- 2007-09-17: version `0.2.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-0.2.0.tar.gz>`__ released.
-- 2007-09-08: pyftpdlib included as `FarManager <http://farmanager.com/>`__ `plug-in <http://www.farmanager.com/enforum/viewtopic.php?t=640&highlight=&sid=12d4d90f27f421243bcf7a0e3c516efb>`__.
-- 2007-03-06: pyftpdlib `ported on FreeBSD <http://www.freshports.org/ftp/py-pyftpdlib/>`__ systems to make users can easily install on it.
-- 2007-03-07: version `0.1.1 <http://pyftpdlib.googlecode.com/files/pyftpdlib*0.1.1.tar.gz>`__ released.
-- 2007-02-26: version `0.1.0 <http://pyftpdlib.googlecode.com/files/pyftpdlib*0.1.tar.gz>`__ released.
-- 2006-09-26: initial clunky thread-based progenitor `link <http://billiejoex.altervista.org/Prj_pftpd.htm>`__.
-
 Trademarks
 ==========
 
