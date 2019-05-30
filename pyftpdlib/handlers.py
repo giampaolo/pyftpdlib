@@ -32,6 +32,15 @@ try:
 except ImportError:
     OrderedDict = dict
 
+try:
+    import zerocopy
+    splice = zerocopy.cext.splice
+    SPLICE_F_MORE = zerocopy.cext.SPLICE_F_MORE
+    SPLICE_F_MOVE = zerocopy.cext.SPLICE_F_MOVE
+    SPLICE_F_NONBLOCK = zerocopy.cext.SPLICE_F_NONBLOCK
+except (ImportError, AttributeError):
+    splice = None
+
 from . import __ver__
 from ._compat import b
 from ._compat import getcwdu
@@ -595,6 +604,9 @@ class DTPHandler(AsyncChat):
         self._filefd = None
         self._idler = None
         self._initialized = False
+        self._use_splice = False
+        self._rpipe = None
+        self._wpipe = None
         try:
             AsyncChat.__init__(self, sock, ioloop=cmd_channel.ioloop)
         except socket.error as err:
@@ -627,6 +639,18 @@ class DTPHandler(AsyncChat):
 
     def use_sendfile(self):
         if not self.cmd_channel.use_sendfile:
+            # as per server config
+            return False
+        if self.file_obj is None or not hasattr(self.file_obj, "fileno"):
+            # directory listing or unusual file obj
+            return False
+        if self.cmd_channel._current_type != 'i':
+            # text file transfer (need to transform file content on the fly)
+            return False
+        return True
+
+    def use_splice(self):
+        if not self.cmd_channel.use_splice:
             # as per server config
             return False
         if self.file_obj is None or not hasattr(self.file_obj, "fileno"):
@@ -730,6 +754,13 @@ class DTPHandler(AsyncChat):
             self._data_wrapper = None
         else:
             raise TypeError("unsupported type")
+
+        if cmd != 'APPE' and self.use_splice():
+            self._rpipe, self._wpipe = os.pipe()
+            self._offset = 0
+            self._filefd = self.file_obj.fileno()
+            self._use_splice = True
+
         self.receive = True
 
     def get_transmitted_bytes(self):
@@ -780,8 +811,40 @@ class DTPHandler(AsyncChat):
             else:
                 return
 
-    def handle_read(self):
-        """Called when there is data waiting to be read."""
+    def do_splice(self):
+        fdin = self._fileno
+        fdout = self._filefd
+        flags = SPLICE_F_NONBLOCK | SPLICE_F_MORE | SPLICE_F_MOVE
+        r, w = self._rpipe, self._wpipe
+        count = 65536
+
+        # socket part
+        try:
+            nread = splice(fdin, w, count, flags=flags)
+        except OSError as err:
+            if err.errno == errno.EAGAIN:
+                return
+            elif err.errno in _ERRNOS_DISCONNECTED:
+                nread = 0
+            else:
+                raise
+
+        if not nread:
+            self.transfer_finished = True
+            self.handle_close()
+            return
+
+        # file part
+        try:
+            nwritten = splice(r, fdout, nread, flags=flags)
+        except OSError as err:
+            raise _FileReadWriteError(err)
+
+        assert nread == nwritten, (nread, nwritten)
+        self._offset += nwritten
+        self.tot_bytes_sent += nwritten
+
+    def do_recv(self):
         try:
             chunk = self.recv(self.ac_in_buffer_size)
         except RetryError:
@@ -800,6 +863,13 @@ class DTPHandler(AsyncChat):
                 self.file_obj.write(chunk)
             except OSError as err:
                 raise _FileReadWriteError(err)
+
+    def handle_read(self):
+        """Called when there is data waiting to be read."""
+        if self._use_splice:
+            self.do_splice()
+        else:
+            self.do_recv()
 
     handle_read_event = handle_read  # small speedup
 
@@ -886,6 +956,11 @@ class DTPHandler(AsyncChat):
             if self.file_obj is not None and not self.file_obj.closed:
                 self.file_obj.close()
 
+            if self._rpipe is not None:
+                os.close(self._rpipe)
+            if self._wpipe is not None:
+                os.close(self._wpipe)
+
             if self._resp:
                 self.cmd_channel.respond(self._resp[0], logfun=self._resp[1])
 
@@ -967,6 +1042,9 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
         return DTPHandler.__repr__(self)
 
     def use_sendfile(self):
+        return False
+
+    def use_splice(self):
         return False
 
     def recv(self, buffer_size):
@@ -1203,6 +1281,7 @@ class FTPHandler(AsyncChat):
     passive_ports = None
     use_gmt_times = True
     use_sendfile = sendfile is not None
+    use_splice = splice is not None
     tcp_no_delay = hasattr(socket, "TCP_NODELAY")
     unicode_errors = 'replace'
     log_prefix = '%(remote_ip)s:%(remote_port)s-[%(username)s]'
@@ -3447,6 +3526,12 @@ if SSL is not None:
                 return False
             else:
                 return super(TLS_DTPHandler, self).use_sendfile()
+
+        def use_splice(self):
+            if isinstance(self.socket, SSL.Connection):
+                return False
+            else:
+                return super(TLS_DTPHandler, self).use_splice()
 
         def handle_failed_ssl_handshake(self):
             # TLS/SSL handshake failure, probably client's fault which
