@@ -312,6 +312,7 @@ class PassiveDTP(Acceptor):
             # dual stack IPv4/IPv6 support
             af = self.bind_af_unspecified((local_ip, 0))
             self.socket.close()
+            self.del_channel()
         else:
             af = self.cmd_channel.socket.family
 
