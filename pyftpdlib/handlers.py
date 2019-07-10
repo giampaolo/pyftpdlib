@@ -2719,8 +2719,8 @@ class FTPHandler(AsyncChat):
             why = "Invalid time format; expected: YYYYMMDDHHMMSS"
             self.respond('550 %s.' % why)
             return
-        if not self.fs.isfile(self.fs.realpath(path)):
-            self.respond("550 %s is not retrievable" % line)
+        if not self.fs.lexists(self.fs.realpath(path)):
+            self.respond("550 No such file or directory.")
             return
         if self.use_gmt_times:
             timefunc = time.gmtime
