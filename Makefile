@@ -2,7 +2,7 @@
 # To use a specific Python version run:
 # $ make install PYTHON=python3.3
 
-PYTHON = python
+PYTHON = python3
 TSCRIPT = pyftpdlib/test/runner.py
 ARGS =
 DEV_DEPS = \

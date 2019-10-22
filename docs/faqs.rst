@@ -90,13 +90,7 @@ If you are not new to Python you probably don't need that, otherwise follow the
 Which Python versions are compatible?
 -------------------------------------
 
-From *2.6* to *3.4*.
-Python 2.4 and 2.5 support has been removed starting from version 0.6.0.
-The latest version supporting Python 2.3 is
-`pyftpdlib 1.4.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.4.0.tar.gz>`__.
-Python 2.3 support has been removed starting from version 0.6.0. The latest
-version supporting Python 2.3 is
-`pyftpdlib 0.5.2 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-0.5.2.tar.gz>`__.
+From *2.6* to *3.X*.
 
 On which platforms can pyftpdlib be used?
 -----------------------------------------

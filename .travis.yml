@@ -3,26 +3,25 @@ language: python
 cache: pip
 matrix:
     include:
-        # XXX
-        # - python: 2.6
+        # Linux
         - python: 2.7
-        # - python: 3.3
-        # - python: 3.4
-        # - python: 3.5
-        - python: 3.6
-        # XXX
-        # - language: generic
-        #   os: osx
-        #   env: PYVER=py27
-        # - language: generic
-        #   os: osx
-        #   env: PYVER=py34
+        - python: 3.7
+          dist: xenial
+          sudo: true
+        # macOS
+        - language: generic
+          os: osx
+          env: PYVER=py27
+        - language: generic
+          os: osx
+          env: PYVER=py36
 install:
     - ./.ci/travis/install.sh
 script:
     - ./.ci/travis/run.sh
 after_success:
     - |
-        if [ "$(uname -s)" != 'Darwin' ]; then
+        if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]] && [[ "$(uname -s)" != 'Darwin' ]]; then
+            echo "sending test coverage results to coveralls.io"
             coveralls
         fi

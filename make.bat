@@ -2,99 +2,36 @@
 
 rem ==========================================================================
 rem Shortcuts for various tasks, emulating UNIX "make" on Windows.
-rem It is primarly intended as a shortcut for installing pyftpdlib and running
-rem tests (just run "make.bat test").
+rem It is primarly intended as a shortcut for compiling / installing
+rem psutil ("make.bat build", "make.bat install") and running tests
+rem ("make.bat test").
+rem
+rem This script is modeled after my Windows installation which uses:
+rem - Visual studio 2008 for Python 2.6, 2.7
+rem - Visual studio 2010 for Python 3.4+
+rem ...therefore it might not work on your Windows installation.
+rem
 rem By default C:\Python27\python.exe is used.
-rem To use another Python version run:
-rem     set PYTHON=C:\Python24\python.exe & make.bat test
+rem To compile for a specific Python version run:
+rem     set PYTHON=C:\Python34\python.exe & make.bat build
+rem
+rem To use a different test script:
+rem      set PYTHON=C:\Python34\python.exe & set TSCRIPT=foo.py & make.bat test
 rem ==========================================================================
 
-
 if "%PYTHON%" == "" (
-    set PYTHON=C:\Python27\python.exe
-)
-if "%TSCRIPT%" == "" (
-    set TSCRIPT=pyftpdlib\test\runner.py
-)
-
-
-if "%1" == "help" (
-    :help
-    echo Run `make ^<target^>` where ^<target^> is one of:
-    echo   clean         clean build files
-    echo   install       compile and install
-    echo   uninstall     uninstall
-    echo   test          run tests
-    echo   setup-dev-env install all deps
-    goto :eof
-)
-
-if "%1" == "clean" (
-    :clean
-    for /r %%R in (__pycache__) do if exist %%R (rmdir /S /Q %%R)
-    for /r %%R in (*.pyc) do if exist %%R (del /s %%R)
-    for /r %%R in (*.pyd) do if exist %%R (del /s %%R)
-    for /r %%R in (*.orig) do if exist %%R (del /s %%R)
-    for /r %%R in (*.bak) do if exist %%R (del /s %%R)
-    for /r %%R in (*.rej) do if exist %%R (del /s %%R)
-    if exist pyftpdlib.egg-info (rmdir /S /Q pyftpdlib.egg-info)
-    if exist build (rmdir /S /Q build)
-    if exist dist (rmdir /S /Q dist)
-    goto :eof
-)
-
-if "%1" == "install" (
-    :install
-    if %PYTHON%==C:\Python24\python.exe (
-        %PYTHON% setup.py build -c mingw32 install
-    ) else if %PYTHON%==C:\Python25\python.exe (
-        %PYTHON% setup.py build -c mingw32 install
+    if exist "C:\Python37\python.exe" (
+        set PYTHON=C:\Python37\python.exe
     ) else (
-        %PYTHON% setup.py build install
+        set PYTHON=C:\Python27\python.exe
     )
-    goto :eof
 )
 
-if "%1" == "uninstall" (
-    :uninstall
-    rmdir /S /Q %PYTHON%\Lib\site-packages\pyftpdlib*
-    goto :eof
+if "%TSCRIPT%" == "" (
+    set TSCRIPT=psutil\tests\__main__.py
 )
 
-if "%1" == "test" (
-    :test
-    call :install
-    %PYTHON% %TSCRIPT%
-    goto :eof
-)
+rem Needed to locate the .pypirc file and upload exes on PyPI.
+set HOME=%USERPROFILE%
 
-if "%1" == "setup-dev-env" (
-    :setup-env
-    if not exist get-pip.py (
-        @echo ------------------------------------------------
-        @echo downloading pip installer
-        @echo ------------------------------------------------
-        C:\python27\python.exe -c "import urllib2; r = urllib2.urlopen('https://bootstrap.pypa.io/get-pip.py'); open('get-pip.py', 'wb').write(r.read())"
-    )
-    @echo ------------------------------------------------
-    @echo installing pip for %PYTHON%
-    @echo ------------------------------------------------
-    %PYTHON% get-pip.py
-    @echo ------------------------------------------------
-    @echo upgrade pip for %PYTHON%
-    @echo ------------------------------------------------
-    %PYTHON% -m pip install pip --upgrade
-    @echo ------------------------------------------------
-    @echo installing deps
-    @echo ------------------------------------------------
-    rem mandatory / for unittests
-    %PYTHON% -m pip install unittest2 ipaddress mock wmi pypiwin32 pyopenssl --upgrade
-    goto :eof
-)
-
-
-goto :help
-
-:error
-    echo last command returned an error; exiting
-    exit /b %errorlevel%
+%PYTHON% scripts\winmake.py %1 %2 %3 %4 %5 %6

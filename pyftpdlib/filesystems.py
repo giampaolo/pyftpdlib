@@ -237,11 +237,13 @@ class AbstractedFS(object):
     # --- Wrapper methods around os.* calls
 
     def chdir(self, path):
-        """Change the current directory."""
+        """Change the current directory. If this method is overridden
+        it is vital that `cwd` attribute gets set.
+        """
         # note: process cwd will be reset by the caller
         assert isinstance(path, unicode), path
         os.chdir(path)
-        self._cwd = self.fs2ftp(path)
+        self.cwd = self.fs2ftp(path)
 
     def mkdir(self, path):
         """Create the specified directory."""

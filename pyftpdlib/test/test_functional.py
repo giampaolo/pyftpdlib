@@ -961,11 +961,23 @@ class TestFtpStoreDataNoSendfile(TestFtpStoreData):
 
 
 class TestFtpRetrieveData(unittest.TestCase):
-
-    "Test RETR, REST, TYPE"
+    """Test RETR, REST, TYPE"""
     server_class = MProcessTestFTPd
     client_class = ftplib.FTP
     use_sendfile = None
+
+    def retrieve_ascii(self, cmd, callback, blocksize=8192, rest=None):
+        """Like retrbinary but uses TYPE A instead."""
+        self.client.voidcmd('type a')
+        with contextlib.closing(
+                self.client.transfercmd(cmd, rest)) as conn:
+            conn.settimeout(TIMEOUT)
+            while True:
+                data = conn.recv(blocksize)
+                if not data:
+                    break
+                callback(data)
+        return self.client.voidresp()
 
     def setUp(self):
         self.server = self.server_class()
@@ -1006,30 +1018,29 @@ class TestFtpRetrieveData(unittest.TestCase):
                           "retr " + bogus, lambda x: x)
 
     def test_retr_ascii(self):
-        # Test RETR in ASCII mode.
-
-        def retrieve(cmd, callback, blocksize=8192, rest=None):
-            # like retrbinary but uses TYPE A instead
-            self.client.voidcmd('type a')
-            with contextlib.closing(
-                    self.client.transfercmd(cmd, rest)) as conn:
-                conn.settimeout(TIMEOUT)
-                while True:
-                    data = conn.recv(blocksize)
-                    if not data:
-                        break
-                    callback(data)
-            return self.client.voidresp()
+        """Test RETR in ASCII mode."""
 
         data = (b'abcde12345' + b(os.linesep)) * 100000
         self.file.write(data)
         self.file.close()
-        retrieve("retr " + TESTFN, self.dummyfile.write)
+        self.retrieve_ascii("retr " + TESTFN, self.dummyfile.write)
         expected = data.replace(b(os.linesep), b'\r\n')
         self.dummyfile.seek(0)
         datafile = self.dummyfile.read()
         self.assertEqual(len(expected), len(datafile))
         self.assertEqual(hash(expected), hash(datafile))
+
+    def test_retr_ascii_already_crlf(self):
+        """Test ASCII mode RETR for data with CRLF line endings."""
+
+        data = b'abcde12345\r\n' * 100000
+        self.file.write(data)
+        self.file.close()
+        self.retrieve_ascii("retr " + TESTFN, self.dummyfile.write)
+        self.dummyfile.seek(0)
+        datafile = self.dummyfile.read()
+        self.assertEqual(len(data), len(datafile))
+        self.assertEqual(hash(data), hash(datafile))
 
     @retry_on_failure()
     def test_restore_on_retr(self):

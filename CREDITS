@@ -48,6 +48,12 @@ E: techtonik@gmail.com
 D: Inclusion of pyftpdlib in Far Manager, a file and archive manager for Windows
    http://www.farmanager.com/enforum/viewtopic.php?t=640&highlight=&sid=12d4d90f27f421243bcf7a0e3c516efb.
 
+N: Andrew Shulgin
+C: Ukraine
+E: andrewshulginua@gmail.com
+D: Fixing CR duplication in ASCII mode downloads.
+   https://github.com/giampaolo/pyftpdlib/pull/492
+
 N: Arkadiusz Wahlig
 C: Germany
 W: http://arkadiusz-wahlig.blogspot.com
