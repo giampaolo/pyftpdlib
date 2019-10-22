@@ -48,6 +48,8 @@ from .log import config_logging
 from .log import debug
 from .log import is_logging_configured
 from .log import logger
+from .log import PREFIX
+from .log import PREFIX_MPROC
 from .prefork import fork_processes
 
 
@@ -137,7 +139,7 @@ class FTPServer(Acceptor):
         else:
             return self._map_len() <= self.max_cons
 
-    def _log_start(self):
+    def _log_start(self, prefork=False):
         def get_fqname(obj):
             try:
                 return obj.__module__ + "." + obj.__class__.__name__
@@ -151,22 +153,25 @@ class FTPServer(Acceptor):
             # If we get to this point it means the user hasn't
             # configured any logger. We want logging to be on
             # by default (stderr).
-            config_logging()
+            config_logging(prefix=PREFIX_MPROC if prefork else PREFIX)
 
         if self.handler.passive_ports:
             pasv_ports = "%s->%s" % (self.handler.passive_ports[0],
                                      self.handler.passive_ports[-1])
         else:
             pasv_ports = None
+        model = 'prefork + ' if prefork else ''
         if ('ThreadedFTPServer' in __all__ and
                 issubclass(self.__class__, ThreadedFTPServer)):
-            logger.info("concurrency model: multi-thread")
+            model += 'multi-thread'
         elif ('MultiprocessFTPServer' in __all__ and
                 issubclass(self.__class__, MultiprocessFTPServer)):
-            logger.info("concurrency model: multi-process")
+            model += 'multi-process'
         elif issubclass(self.__class__, FTPServer):
-            logger.info("concurrency model: async")
-
+            model += 'async'
+        else:
+            model += 'unknown (custom class)'
+        logger.info("concurrency model: " + model)
         logger.info("masquerade (NAT) address: %s",
                     self.handler.masquerade_address)
         logger.info("passive ports: %s", pasv_ports)
@@ -223,7 +228,7 @@ class FTPServer(Acceptor):
                 raise ValueError(
                     "'num_processes' and 'blocking' are mutually exclusive")
             if log:
-                self._log_start()
+                self._log_start(prefork=True)
             fork_processes(num_processes)
         else:
             if log:
