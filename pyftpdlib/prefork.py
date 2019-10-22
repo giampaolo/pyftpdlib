@@ -63,12 +63,6 @@ def fork_processes(num_processes, max_restarts=100):
     Since we use processes and not threads, there is no shared memory
     between any server code.
 
-    Note that multiple processes are not compatible with the autoreload
-    module (or the ``autoreload=True`` option to `tornado.web.Application`
-    which defaults to True when ``debug=True``).
-    When using multiple processes, no IOLoops can be created or
-    referenced until after the call to ``fork_processes``.
-
     In each child process, ``fork_processes`` returns its *task id*, a
     number between 0 and ``num_processes``.  Processes that exit
     abnormally (due to a signal or non-zero exit status) are restarted

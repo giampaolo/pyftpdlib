@@ -48,7 +48,7 @@ from .log import config_logging
 from .log import debug
 from .log import is_logging_configured
 from .log import logger
-from .processes import fork_processes
+from .prefork import fork_processes
 
 
 __all__ = ['FTPServer', 'ThreadedFTPServer']
@@ -203,10 +203,17 @@ class FTPServer(Acceptor):
            Also, logs server start and stop.
 
          - (int) num_processes: pre-fork a certain number of child
-           processes.
-           Each child process will keep using an async concurrency model.
+           processes before starting.
+           Each child process will keep using a 1-thread, async
+           concurrency model and handle multiple concurrent connections.
            If the number is None or <= 0 the number of usable cores
            available on this machine is detected and used.
+           It is a good idea to use this option in case the app risks
+           blocking for too long on a single function call (e.g.
+           hard-disk is slow, long DB query on auth etc.).
+           By splitting the work load over multiple processes the delay
+           introduced by a blocking function call is amortized (divided
+           by the number of processes).
         """
         log = handle_exit and blocking
 
@@ -236,9 +243,8 @@ class FTPServer(Acceptor):
             if blocking:
                 if log:
                     logger.info(
-                        ">>> shutting down FTP server (%s active socket "
-                        "fds) <<<",
-                        self._map_len())
+                        ">>> shutting down FTP server, %s socket(s), pid=%i "
+                        "<<<", self._map_len(), os.getpid())
                 self.close_all()
         else:
             self.ioloop.loop(timeout, blocking)
