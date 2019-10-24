@@ -223,7 +223,7 @@ class FTPServer(Acceptor):
         log = handle_exit and blocking
 
         #
-        if num_processes != 1:
+        if num_processes != 1 and os.name == 'posix':
             if not blocking:
                 raise ValueError(
                     "'num_processes' and 'blocking' are mutually exclusive")

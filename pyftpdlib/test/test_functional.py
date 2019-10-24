@@ -23,6 +23,7 @@ from pyftpdlib._compat import b
 from pyftpdlib._compat import PY3
 from pyftpdlib._compat import u
 from pyftpdlib.filesystems import AbstractedFS
+from pyftpdlib.handlers import _import_sendfile
 from pyftpdlib.handlers import DTPHandler
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.handlers import SUPPORTS_HYBRID_IPV6
@@ -66,10 +67,8 @@ except ImportError:
 
 import ssl
 
-if POSIX:
-    import sendfile
-else:
-    sendfile = None
+
+sendfile = _import_sendfile()
 
 
 class TestFtpAuthentication(unittest.TestCase):
