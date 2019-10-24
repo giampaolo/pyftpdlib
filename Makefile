@@ -6,6 +6,7 @@ PYTHON = python3
 TSCRIPT = pyftpdlib/test/runner.py
 ARGS =
 DEV_DEPS = \
+	cffi \
 	check-manifest \
 	coverage \
 	flake8 \
