@@ -40,6 +40,7 @@ def _stderr_supports_color():
 # configurable options
 LEVEL = logging.INFO
 PREFIX = '[%(levelname)1.1s %(asctime)s]'
+PREFIX_MPROC = '[%(levelname)1.1s %(asctime)s %(process)s]'
 COLOURED = _stderr_supports_color()
 TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -53,6 +54,7 @@ class LogFormatter(logging.Formatter):
     * Timestamps on every log line.
     * Robust against str/bytes encoding problems.
     """
+    PREFIX = PREFIX
 
     def __init__(self, *args, **kwargs):
         logging.Formatter.__init__(self, *args, **kwargs)
@@ -90,7 +92,7 @@ class LogFormatter(logging.Formatter):
 
         record.asctime = time.strftime(TIME_FORMAT,
                                        self.converter(record.created))
-        prefix = PREFIX % record.__dict__
+        prefix = self.PREFIX % record.__dict__
         if self._coloured:
             prefix = (self._colors.get(record.levelno, self._normal) +
                       prefix + self._normal)
@@ -143,14 +145,16 @@ def is_logging_configured():
 # TODO: write tests
 def config_logging(level=LEVEL, prefix=PREFIX, other_loggers=None):
     # Little speed up
-    if "%(process)d" not in prefix:
+    if "(process)" not in prefix:
         logging.logProcesses = False
     if "%(processName)s" not in prefix:
         logging.logMultiprocessing = False
     if "%(thread)d" not in prefix and "%(threadName)s" not in prefix:
         logging.logThreads = False
     handler = logging.StreamHandler()
-    handler.setFormatter(LogFormatter())
+    formatter = LogFormatter()
+    formatter.PREFIX = prefix
+    handler.setFormatter(formatter)
     loggers = [logging.getLogger('pyftpdlib')]
     if other_loggers is not None:
         loggers.extend(other_loggers)

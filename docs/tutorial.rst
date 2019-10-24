@@ -281,11 +281,12 @@ installed.
     if __name__ == "__main__":
         main()
 
+.. _changing-the-concurrency-model:
 
 Changing the concurrency model
 ==============================
 
-By nature pyftpdlib is asynchronous. This means it uses a single process/thread
+By nature pyftpdlib is asynchronous. That means it uses a single process/thread
 to handle multiple client connections and file transfers. This is why it is so
 fast, lightweight and scalable (see `benchmarks <benchmarks.html>`__). The
 async model has one big drawback though: the code cannot contain instructions
@@ -297,22 +298,22 @@ appropriate, and that is when you're dealing with a particularly slow
 filesystem (say a network filesystem such as samba). If the filesystem is slow
 (say, a ``open(file, 'r').read(8192)`` takes 2 secs to complete) then you are
 stuck.
-Starting from version 1.0.0 pyftpdlib supports 2 new classes which changes the
-default concurrency model by introducing multiple threads or processes. In
-technical terms this means that every time a client connects a separate
-thread/process is spawned and internally it will run its own IO loop. In
-practical terms this means that you can block as long as you want.
+Starting from version 1.0.0 pyftpdlib can change the concurrency model by using
+multiple processes or threads instead.
+In technical (internal) terms that means that every time a client connects a
+separate thread/process is spawned and internally it will run its own IO loop.
+In practical terms this means that you can block as long as you want.
 Changing the concurrency module is easy: you just need to import a substitute
 for `FTPServer <api.html#pyftpdlib.servers.FTPServer>`__. class:
 
-Thread-based example:
+Multiple threads
+^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
     from pyftpdlib.handlers import FTPHandler
     from pyftpdlib.servers import ThreadedFTPServer  # <-
     from pyftpdlib.authorizers import DummyAuthorizer
-
 
     def main():
         authorizer = DummyAuthorizer()
@@ -326,14 +327,14 @@ Thread-based example:
         main()
 
 
-Multiple process example:
+Multiple processes
+^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
     from pyftpdlib.handlers import FTPHandler
     from pyftpdlib.servers import MultiprocessFTPServer  # <-
     from pyftpdlib.authorizers import DummyAuthorizer
-
 
     def main():
         authorizer = DummyAuthorizer()
@@ -346,7 +347,44 @@ Multiple process example:
     if __name__ == "__main__":
         main()
 
+.. _pre-fork:
 
+Pre-fork
+^^^^^^^^
+
+It also exists a third option (UNIX only): the pre-fork model.
+Pre-fork means that a certain number of worker processes are ``spawn()``ed
+before starting the server.
+Each worker process will keep using a 1-thread, async concurrency model,
+handling multiple concurrent connections, but the work load is split.
+This way the delay introduced by a blocking function call is amortized and
+divided by the number of workers, and thus also qthe disk I/O latency is
+minimized.
+Every time a new connection comes in, the parent process will automatically
+delegate the connection to one of the subprocesses, so from the app standpoint
+this is completely transparent.
+As a general rule, it is always a good idea to use this model in production.
+The optimal value depends on many factors including (but not limited to) the
+number of CPU cores, the number of hard disk drives that store data, and load
+pattern. When one is in doubt, setting it to the number of available CPU cores
+would be a good start.
+
+.. code-block:: python
+
+    from pyftpdlib.handlers import FTPHandler
+    from pyftpdlib.servers import FTPServer
+    from pyftpdlib.authorizers import DummyAuthorizer
+
+    def main():
+        authorizer = DummyAuthorizer()
+        authorizer.add_user('user', '12345', '.')
+        handler = FTPHandler
+        handler.authorizer = authorizer
+        server = FTPServer(('', 2121), handler)
+        server.serve_forever(worker_processes=4)  # <-
+
+    if __name__ == "__main__":
+        main()
 
 Throttle bandwidth
 ==================
@@ -368,7 +406,6 @@ seconds.
     from pyftpdlib.handlers import FTPHandler, ThrottledDTPHandler
     from pyftpdlib.servers import FTPServer
     from pyftpdlib.authorizers import DummyAuthorizer
-
 
     def main():
         authorizer = DummyAuthorizer()
@@ -420,7 +457,6 @@ which include both and is available
     from pyftpdlib.servers import FTPServer
     from pyftpdlib.authorizers import DummyAuthorizer
     from pyftpdlib.handlers import TLS_FTPHandler
-
 
     def main():
         authorizer = DummyAuthorizer()

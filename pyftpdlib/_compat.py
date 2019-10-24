@@ -20,6 +20,7 @@ if PY3:
     getcwdu = os.getcwd
     unicode = str
     xrange = range
+    long = int
 else:
     def u(s):
         return unicode(s)
@@ -30,6 +31,7 @@ else:
     getcwdu = os.getcwdu
     unicode = unicode
     xrange = xrange
+    long = long
 
 
 # removed in 3.0, reintroduced in 3.2

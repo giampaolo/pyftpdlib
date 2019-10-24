@@ -22,6 +22,7 @@ except ImportError:
 from pyftpdlib._compat import getcwdu
 from pyftpdlib._compat import u
 from pyftpdlib.authorizers import DummyAuthorizer
+from pyftpdlib.handlers import _import_sendfile
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
@@ -36,10 +37,7 @@ else:
 if not hasattr(unittest.TestCase, "assertRaisesRegex"):
     unittest.TestCase.assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
 
-if os.name == 'posix':
-    import sendfile
-else:
-    sendfile = None
+sendfile = _import_sendfile()
 
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
