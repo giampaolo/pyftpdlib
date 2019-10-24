@@ -2,6 +2,7 @@
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
 
+from __future__ import print_function
 import contextlib
 import errno
 import functools
@@ -253,7 +254,11 @@ def assert_free_resources():
     assert len(ts) == 1, ts
     p = psutil.Process()
     children = p.children()
-    assert not children, children
+    if children:
+        for p in children:
+            p.kill()
+            p.wait(1)
+        assert not children, children
     cons = [x for x in p.connections('tcp')
             if x.status != psutil.CONN_CLOSE_WAIT]
     assert not cons, cons

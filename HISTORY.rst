@@ -1,5 +1,13 @@
 Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 
+Version: 1.5.6 - XXXX-XX-XX
+===========================
+
+**Enhancements**
+
+- #467: added pre-fork concurrency model, spawn()ing worker processes to split
+  load.
+
 Version: 1.5.5 - 2019-04-04
 ===========================
 
