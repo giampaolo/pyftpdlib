@@ -210,15 +210,15 @@ class FTPServer(Acceptor):
          - (int) num_processes: pre-fork a certain number of child
            processes before starting.
            Each child process will keep using a 1-thread, async
-           concurrency model and handle multiple concurrent connections.
+           concurrency model, handling multiple concurrent connections.
            If the number is None or <= 0 the number of usable cores
            available on this machine is detected and used.
            It is a good idea to use this option in case the app risks
            blocking for too long on a single function call (e.g.
            hard-disk is slow, long DB query on auth etc.).
            By splitting the work load over multiple processes the delay
-           introduced by a blocking function call is amortized (divided
-           by the number of processes).
+           introduced by a blocking function call is amortized and divided
+           by the number of worker processes.
         """
         log = handle_exit and blocking
 
