@@ -352,13 +352,13 @@ Multiple processes
 Pre-fork
 ^^^^^^^^
 
-It also exists a third option (UNIX only): the pre-fork model.
+There also exists a third option (UNIX only): the pre-fork model.
 Pre-fork means that a certain number of worker processes are ``spawn()``ed
 before starting the server.
 Each worker process will keep using a 1-thread, async concurrency model,
-handling multiple concurrent connections, but the work load is split.
+handling multiple concurrent connections, but the workload is split.
 This way the delay introduced by a blocking function call is amortized and
-divided by the number of workers, and thus also qthe disk I/O latency is
+divided by the number of workers, and thus also the disk I/O latency is
 minimized.
 Every time a new connection comes in, the parent process will automatically
 delegate the connection to one of the subprocesses, so from the app standpoint
