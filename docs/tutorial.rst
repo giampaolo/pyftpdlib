@@ -356,15 +356,18 @@ It also exists a third option (UNIX only): the pre-fork model.
 Pre-fork means that a certain number of worker processes are ``spawn()``ed
 before starting the server.
 Each worker process will keep using a 1-thread, async concurrency model,
-handling multiple concurrent connections, but the work load is split across
-multiple processes.
+handling multiple concurrent connections, but the work load is split.
 This way the delay introduced by a blocking function call is amortized and
-divided by their number.
-Every time a new connection comes in the parent process will automatically
+divided by the number of workers, and thus also qthe disk I/O latency is
+minimized.
+Every time a new connection comes in, the parent process will automatically
 delegate the connection to one of the subprocesses, so from the app standpoint
 this is completely transparent.
-In a way this can be seen as a mixed async / multi-process model.
 As a general rule, it is always a good idea to use this model in production.
+The optimal value depends on many factors including (but not limited to) the
+number of CPU cores, the number of hard disk drives that store data, and load
+pattern. When one is in doubt, setting it to the number of available CPU cores
+would be a good start.
 
 .. code-block:: python
 
@@ -378,7 +381,7 @@ As a general rule, it is always a good idea to use this model in production.
         handler = FTPHandler
         handler.authorizer = authorizer
         server = FTPServer(('', 2121), handler)
-        server.serve_forever(num_processes=4)  # <-
+        server.serve_forever(worker_processes=4)  # <-
 
     if __name__ == "__main__":
         main()

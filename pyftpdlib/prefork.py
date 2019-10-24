@@ -14,13 +14,11 @@ try:
 except ImportError:
     multiprocessing = None
 
-from ._compat import PY3
+from ._compat import long
 from .log import logger
 
 
 _task_id = None
-if PY3:
-    long = int
 
 
 def cpu_count():
@@ -52,30 +50,29 @@ def _reseed_random():
     random.seed(seed)
 
 
-def fork_processes(num_processes, max_restarts=100):
+def fork_processes(number, max_restarts=100):
     """Starts multiple worker processes.
 
-    If ``num_processes`` is None or <= 0, we detect the number of cores
-    available on this machine and fork that number of child
-    processes. If ``num_processes`` is given and > 0, we fork that
-    specific number of sub-processes.
+    If *number* is None or <= 0, we detect the number of cores available
+    on this machine and fork that number of child processes.
+    If *number* is given and > 0, we fork that specific number of
+    sub-processes.
 
     Since we use processes and not threads, there is no shared memory
     between any server code.
 
-    In each child process, ``fork_processes`` returns its *task id*, a
-    number between 0 and ``num_processes``.  Processes that exit
-    abnormally (due to a signal or non-zero exit status) are restarted
-    with the same id (up to ``max_restarts`` times).  In the parent
-    process, ``fork_processes`` returns None if all child processes
-    have exited normally, but will otherwise only exit by throwing an
-    exception.
+    In each child process, *fork_processes* returns its *task id*, a
+    number between 0 and *number*.  Processes that exit abnormally
+    (due to a signal or non-zero exit status) are restarted with the
+    same id (up to *max_restarts* times). In the parent process,
+    *fork_processes* returns None if all child processes have exited
+    normally, but will otherwise only exit by throwing an exception.
     """
     global _task_id
     assert _task_id is None
-    if num_processes is None or num_processes <= 0:
-        num_processes = cpu_count()
-    logger.info("starting %d pre-fork processes", num_processes)
+    if number is None or number <= 0:
+        number = cpu_count()
+    logger.info("starting %d pre-fork processes", number)
     children = {}
 
     def start_child(i):
@@ -90,7 +87,7 @@ def fork_processes(num_processes, max_restarts=100):
             children[pid] = i
             return None
 
-    for i in range(num_processes):
+    for i in range(number):
         id = start_child(i)
         if id is not None:
             return id

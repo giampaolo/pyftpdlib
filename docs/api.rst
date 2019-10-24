@@ -379,7 +379,7 @@ Server (acceptor)
     Number of maximum connections accepted for the same IP address (default
     ``0`` == no limit).
 
-  .. method:: serve_forever(timeout=None, blocking=True, handle_exit=True, num_processes=1)
+  .. method:: serve_forever(timeout=None, blocking=True, handle_exit=True, worker_processes=1)
 
     Starts the asynchronous IO loop.
 
@@ -395,7 +395,7 @@ Server (acceptor)
       gracefully exits after cleaning up resources. Also, logs server start and
       stop.
 
-    - (int) num_processes: pre-fork a certain number of child
+    - (int) worker_processes: pre-fork a certain number of child
       processes before starting. See: :ref:`pre-fork-model`.
       Each child process will keep using a 1-thread, async
       concurrency model, handling multiple concurrent connections.

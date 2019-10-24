@@ -54,6 +54,7 @@ from .ioloop import timer
 from .log import debug
 from .log import logger
 
+
 CR_BYTE = ord('\r')
 
 

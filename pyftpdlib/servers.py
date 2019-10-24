@@ -192,7 +192,7 @@ class FTPServer(Acceptor):
             logger.debug("SSL keyfile: %r", self.handler.keyfile)
 
     def serve_forever(self, timeout=None, blocking=True, handle_exit=True,
-                      num_processes=1):
+                      worker_processes=1):
         """Start serving.
 
          - (float) timeout: the timeout passed to the underlying IO
@@ -207,7 +207,7 @@ class FTPServer(Acceptor):
            signals) and gracefully exits after cleaning up resources.
            Also, logs server start and stop.
 
-         - (int) num_processes: pre-fork a certain number of child
+         - (int) worker_processes: pre-fork a certain number of child
            processes before starting.
            Each child process will keep using a 1-thread, async
            concurrency model, handling multiple concurrent connections.
@@ -223,13 +223,13 @@ class FTPServer(Acceptor):
         log = handle_exit and blocking
 
         #
-        if num_processes != 1 and os.name == 'posix':
+        if worker_processes != 1 and os.name == 'posix':
             if not blocking:
                 raise ValueError(
-                    "'num_processes' and 'blocking' are mutually exclusive")
+                    "'worker_processes' and 'blocking' are mutually exclusive")
             if log:
                 self._log_start(prefork=True)
-            fork_processes(num_processes)
+            fork_processes(worker_processes)
         else:
             if log:
                 self._log_start()
