@@ -35,6 +35,22 @@ _months_map = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
                7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
 
 
+def _memoize(fun):
+    """A simple memoize decorator for functions supporting (hashable)
+    positional arguments.
+    """
+    def wrapper(*args, **kwargs):
+        key = (args, frozenset(sorted(kwargs.items())))
+        try:
+            return cache[key]
+        except KeyError:
+            ret = cache[key] = fun(*args, **kwargs)
+            return ret
+
+    cache = {}
+    return wrapper
+
+
 # ===================================================================
 # --- custom exceptions
 # ===================================================================
@@ -406,6 +422,14 @@ class AbstractedFS(object):
         drwxrwxrwx   1 owner   group          0 Aug 31 18:50 e-books
         -rw-rw-rw-   1 owner   group        380 Sep 02  3:40 module.py
         """
+        @_memoize
+        def get_user_by_uid(uid):
+            return self.get_user_by_uid(uid)
+
+        @_memoize
+        def get_group_by_gid(gid):
+            return self.get_group_by_gid(gid)
+
         assert isinstance(basedir, unicode), basedir
         if self.cmd_channel.use_gmt_times:
             timefunc = time.gmtime
@@ -441,8 +465,8 @@ class AbstractedFS(object):
             if not nlinks:  # non-posix system, let's use a bogus value
                 nlinks = 1
             size = st.st_size  # file size
-            uname = self.get_user_by_uid(st.st_uid)
-            gname = self.get_group_by_gid(st.st_gid)
+            uname = get_user_by_uid(st.st_uid)
+            gname = get_group_by_gid(st.st_gid)
             mtime = timefunc(st.st_mtime)
             # if modification time > 6 months shows "month year"
             # else "month hh:mm";  this matches proftpd format, see:
