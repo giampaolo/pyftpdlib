@@ -15,7 +15,7 @@ jobs:
         - os: osx
           osx_image: xcode11.3
           language: generic
-          env: PYTHON=python3.8
+          env: PYTHON=python3.7
 install:
     - $PYTHON -m pip install --upgrade pip setuptools
     - $PYTHON -m pip install --upgrade coveralls flake8 mock psutil pyopenssl pysendfile pytest six
@@ -25,7 +25,7 @@ script:
     - pytest . || true
     - |
         if [[ "$TRAVIS_OS_NAME" == 'linux' ]]; then
-            flake8
+            flake8 --ignore=E741
         fi
 after_success:
     - |
