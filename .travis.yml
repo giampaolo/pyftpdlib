@@ -21,8 +21,8 @@ install:
     - $PYTHON -m pip install --upgrade coveralls flake8 mock psutil pyopenssl pysendfile pytest six
 script:
     - $PYTHON setup.py install
-    - $PYTHON pyftpdlib/test/runner.py
-    # - pytest . || true
+    - pytest .
+    - $PYTHON pyftpdlib/test/runner.py || true
     - |
         if [[ "$TRAVIS_OS_NAME" == 'linux' ]]; then
             flake8 --ignore=E741,F841,W504
