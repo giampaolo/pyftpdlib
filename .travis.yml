@@ -16,12 +16,18 @@ jobs:
          env: PYTHON=python3.8
 install:
     - $PYTHON -m pip install --upgrade pip setuptools
-    - $PYTHON -m pip install --upgrade coveralls flake8 mock psutil pyopenssl pysendfile six
+    - $PYTHON -m pip install --upgrade coveralls flake8 mock psutil pyopenssl pysendfile pytest six
 script:
-    - ./.ci/travis/run.sh
+    - $PYTHON setup.py install
+    - $PYTHON pyftpdlib/test/runner.py
+    - pytest . || true
+    - |
+        if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+            flake8
+        fi
 after_success:
     - |
-        if [[ $TRAVIS_PYTHON_VERSION == '3.8' ]] && [[ "$(uname -s)" != 'Darwin' ]]; then
+        if [[ $TRAVIS_PYTHON_VERSION == '3.8' ]]; then
             echo "sending test coverage results to coveralls.io"
             coveralls
         fi
