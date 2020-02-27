@@ -1,20 +1,18 @@
-sudo: false
+os: linux
 language: python
 cache: pip
 matrix:
     include:
         # Linux
         - python: 2.7
-        - python: 3.7
-          dist: xenial
-          sudo: true
+        - python: 3.8
         # macOS
-        - language: generic
-          os: osx
+        - os: osx
+          language: generic
           env: PYVER=py27
-        - language: generic
-          os: osx
-          env: PYVER=py36
+        - os: osx
+          language: generic
+          env: PYVER=py38
 install:
     - ./.ci/travis/install.sh
 script:
