@@ -9,9 +9,11 @@ jobs:
         - python: 3.8
         # macOS
         - os: osx
+          osx_image: xcode11.3
           language: generic
           env: PYTHON=python2.7
         - os: osx
+          osx_image: xcode11.3
           language: generic
           env: PYTHON=python3.8
 install:
