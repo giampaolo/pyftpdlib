@@ -22,10 +22,10 @@ install:
 script:
     - $PYTHON setup.py install
     - $PYTHON pyftpdlib/test/runner.py
-    - pytest . || true
+    # - pytest . || true
     - |
         if [[ "$TRAVIS_OS_NAME" == 'linux' ]]; then
-            flake8 --ignore=E741
+            flake8 --ignore=E741,W504
         fi
 after_success:
     - |
