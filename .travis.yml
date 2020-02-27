@@ -1,7 +1,8 @@
 os: linux
 language: python
 cache: pip
-matrix:
+env: PYTHON=python
+jobs:
     include:
         # Linux
         - python: 2.7
@@ -9,17 +10,18 @@ matrix:
         # macOS
         - os: osx
           language: generic
-          env: PYVER=py27
+          env: PYTHON=python2.7
         - os: osx
           language: generic
-          env: PYVER=py38
+         env: PYTHON=python3.8
 install:
-    - ./.ci/travis/install.sh
+    - $PYTHON -m pip install --upgrade pip setuptools
+    - $PYTHON -m pip install --upgrade coveralls flake8 mock psutil pyopenssl pysendfile six
 script:
     - ./.ci/travis/run.sh
 after_success:
     - |
-        if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]] && [[ "$(uname -s)" != 'Darwin' ]]; then
+        if [[ $TRAVIS_PYTHON_VERSION == '3.8' ]] && [[ "$(uname -s)" != 'Darwin' ]]; then
             echo "sending test coverage results to coveralls.io"
             coveralls
         fi
