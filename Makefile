@@ -10,6 +10,7 @@ DEV_DEPS = \
 	check-manifest \
 	coverage \
 	flake8 \
+	flake8-print \
 	mock==1.0.1 \
 	pep8 \
 	pyflakes \
@@ -57,7 +58,7 @@ install:  ## Install this package.
 
 uninstall:  ## Uninstall this package.
 	cd ..; $(PYTHON) -m pip uninstall -y -v pyftpdlib || true
-	$(PYTHON) scripts/purge_installation.py
+	$(PYTHON) scripts/internal/purge_installation.py
 
 install-pip:  ## (only if necessary)
 	$(PYTHON) -c \
@@ -175,10 +176,10 @@ release:  ## Creates a release (tar.gz + upload + git tag release).
 	${MAKE} git-tag-release
 
 generate-manifest:  ## Generates MANIFEST.in file.
-	$(PYTHON) scripts/generate_manifest.py > MANIFEST.in
+	$(PYTHON) scripts/internal/generate_manifest.py > MANIFEST.in
 
 print-announce:  ## Print announce of new release.
-	@$(PYTHON) scripts/print_announce.py
+	@$(PYTHON) scripts/internal/print_announce.py
 
 help: ## Display callable targets.
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

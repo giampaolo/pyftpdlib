@@ -142,8 +142,8 @@ class _Scheduler(object):
         # remove cancelled tasks and re-heapify the queue if the
         # number of cancelled tasks is more than the half of the
         # entire queue
-        if (self._cancellations > 512 and
-                self._cancellations > (len(self._tasks) >> 1)):
+        if self._cancellations > 512 and \
+                self._cancellations > (len(self._tasks) >> 1):
             debug("re-heapifying %s cancelled tasks" % self._cancellations)
             self.reheapify()
 

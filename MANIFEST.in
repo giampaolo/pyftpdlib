@@ -40,6 +40,7 @@ include pyftpdlib/filesystems.py
 include pyftpdlib/handlers.py
 include pyftpdlib/ioloop.py
 include pyftpdlib/log.py
+include pyftpdlib/prefork.py
 include pyftpdlib/servers.py
 include pyftpdlib/test/README
 include pyftpdlib/test/__init__.py
@@ -53,7 +54,9 @@ include pyftpdlib/test/test_ioloop.py
 include pyftpdlib/test/test_misc.py
 include pyftpdlib/test/test_servers.py
 include scripts/ftpbench
-include scripts/generate_manifest.py
-include scripts/print_announce.py
+include scripts/internal/generate_manifest.py
+include scripts/internal/print_announce.py
+include scripts/internal/purge_installation.py
+include scripts/internal/winmake.py
 include setup.py
 include tox.ini

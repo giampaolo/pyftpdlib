@@ -161,11 +161,11 @@ class FTPServer(Acceptor):
         else:
             pasv_ports = None
         model = 'prefork + ' if prefork else ''
-        if ('ThreadedFTPServer' in __all__ and
-                issubclass(self.__class__, ThreadedFTPServer)):
+        if 'ThreadedFTPServer' in __all__ and \
+                issubclass(self.__class__, ThreadedFTPServer):
             model += 'multi-thread'
-        elif ('MultiprocessFTPServer' in __all__ and
-                issubclass(self.__class__, MultiprocessFTPServer)):
+        elif 'MultiprocessFTPServer' in __all__ and \
+                issubclass(self.__class__, MultiprocessFTPServer):
             model += 'multi-process'
         elif issubclass(self.__class__, FTPServer):
             model += 'async'
@@ -441,8 +441,8 @@ class _SpawnerBase(FTPServer):
                         raise
                 else:
                     if poll_timeout:
-                        if (soonest_timeout is None or
-                                soonest_timeout > poll_timeout):
+                        if soonest_timeout is None or \
+                                soonest_timeout > poll_timeout:
                             soonest_timeout = poll_timeout
 
     def handle_accepted(self, sock, addr):

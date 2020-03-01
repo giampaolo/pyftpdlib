@@ -68,8 +68,8 @@ class LogFormatter(logging.Formatter):
             # works with unicode strings.  The explicit calls to
             # unicode() below are harmless in python2 but will do the
             # right conversion in python 3.
-            fg_color = (curses.tigetstr("setaf") or curses.tigetstr("setf") or
-                        "")
+            fg_color = \
+                curses.tigetstr("setaf") or curses.tigetstr("setf") or ""
             if (3, 0) < sys.version_info < (3, 2, 3):
                 fg_color = unicode(fg_color, "ascii")
             self._colors = {
@@ -94,8 +94,8 @@ class LogFormatter(logging.Formatter):
                                        self.converter(record.created))
         prefix = self.PREFIX % record.__dict__
         if self._coloured:
-            prefix = (self._colors.get(record.levelno, self._normal) +
-                      prefix + self._normal)
+            prefix = self._colors.get(record.levelno, self._normal) + \
+                prefix + self._normal
 
         # Encoding notes:  The logging module prefers to work with character
         # strings, but only enforces that log messages are instances of

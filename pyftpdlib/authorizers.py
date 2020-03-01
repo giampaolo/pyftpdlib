@@ -237,9 +237,9 @@ class DummyAuthorizer(object):
         for p in perm:
             if p not in self.read_perms + self.write_perms:
                 raise ValueError('no such permission %r' % p)
-            if (username == 'anonymous' and
-                    p in self.write_perms and not
-                    warned):
+            if username == 'anonymous' and \
+                    p in self.write_perms and not \
+                    warned:
                 warnings.warn("write permissions assigned to anonymous user.",
                               RuntimeWarning)
                 warned = 1

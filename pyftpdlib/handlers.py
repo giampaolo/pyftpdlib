@@ -2460,15 +2460,15 @@ class FTPHandler(AsyncChat):
     def ftp_ABOR(self, line):
         """Abort the current data transfer."""
         # ABOR received while no data channel exists
-        if (self._dtp_acceptor is None and
-                self._dtp_connector is None and
-                self.data_channel is None):
+        if self._dtp_acceptor is None and \
+                self._dtp_connector is None and \
+                self.data_channel is None:
             self.respond("225 No transfer to abort.")
             return
         else:
             # a PASV or PORT was received but connection wasn't made yet
-            if (self._dtp_acceptor is not None or
-                    self._dtp_connector is not None):
+            if self._dtp_acceptor is not None or \
+                    self._dtp_connector is not None:
                 self._shutdown_connecting_dtp()
                 resp = "225 ABOR command successful; data channel closed."
 
@@ -3285,7 +3285,7 @@ if SSL is not None:
                 debug("call: send(), err: ssl-want-write", inst=self)
                 self._ssl_want_write = True
                 return 0
-            except SSL.ZeroReturnError as err:
+            except SSL.ZeroReturnError:
                 debug(
                     "call: send() -> shutdown(), err: zero-return", inst=self)
                 super(SSLConnection, self).handle_close()
@@ -3295,8 +3295,8 @@ if SSL is not None:
                 errnum, errstr = err.args
                 if errnum == errno.EWOULDBLOCK:
                     return 0
-                elif (errnum in _ERRNOS_DISCONNECTED or
-                        errstr == 'Unexpected EOF'):
+                elif errnum in _ERRNOS_DISCONNECTED or \
+                        errstr == 'Unexpected EOF':
                     super(SSLConnection, self).handle_close()
                     return 0
                 else:
@@ -3313,7 +3313,7 @@ if SSL is not None:
                 debug("call: recv(), err: ssl-want-write", inst=self)
                 self._ssl_want_write = True
                 raise RetryError
-            except SSL.ZeroReturnError as err:
+            except SSL.ZeroReturnError:
                 debug("call: recv() -> shutdown(), err: zero-return",
                       inst=self)
                 super(SSLConnection, self).handle_close()
@@ -3321,8 +3321,8 @@ if SSL is not None:
             except SSL.SysCallError as err:
                 debug("call: recv(), err: %r" % err, inst=self)
                 errnum, errstr = err.args
-                if (errnum in _ERRNOS_DISCONNECTED or
-                        errstr == 'Unexpected EOF'):
+                if errnum in _ERRNOS_DISCONNECTED or \
+                        errstr == 'Unexpected EOF':
                     super(SSLConnection, self).handle_close()
                     return b''
                 else:
@@ -3380,7 +3380,7 @@ if SSL is not None:
             except SSL.WantWriteError:
                 self._ssl_want_write = True
                 debug("call: _do_ssl_shutdown, err: ssl-want-write", inst=self)
-            except SSL.ZeroReturnError as err:
+            except SSL.ZeroReturnError:
                 debug(
                     "call: _do_ssl_shutdown() -> shutdown(), err: zero-return",
                     inst=self)
@@ -3389,8 +3389,8 @@ if SSL is not None:
                 debug("call: _do_ssl_shutdown() -> shutdown(), err: %r" % err,
                       inst=self)
                 errnum, errstr = err.args
-                if (errnum in _ERRNOS_DISCONNECTED or
-                        errstr == 'Unexpected EOF'):
+                if errnum in _ERRNOS_DISCONNECTED or \
+                        errstr == 'Unexpected EOF':
                     super(SSLConnection, self).close()
                 else:
                     raise
