@@ -3600,6 +3600,10 @@ if SSL is not None:
             self.log("SSL handshake failed.")
             self.close()
 
+        def clear_incoming_buffer(self):
+            self.ac_in_buffer = b''
+            self.incoming = []
+
         def ftp_AUTH(self, line):
             """Set up secure control channel."""
             arg = line.upper()
@@ -3609,6 +3613,7 @@ if SSL is not None:
                 # From RFC-4217: "As the SSL/TLS protocols self-negotiate
                 # their levels, there is no need to distinguish between SSL
                 # and TLS in the application layer".
+                self.clear_incoming_buffer()
                 self.respond('234 AUTH %s successful.' % arg)
                 self.secure_connection(self.ssl_context)
             else:
