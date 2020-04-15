@@ -659,7 +659,13 @@ class DTPHandler(AsyncChat):
                 self.initiate_send = self.initiate_sendfile
                 return
         debug("starting transfer using send()", self)
-        AsyncChat.push_with_producer(self, producer)
+        if self.file_obj:
+            if os.path.getsize(self.file_obj.name) > 0:
+                # send if file size > 0
+                debug("%s" % os.path.getsize(self.file_obj.name))
+                AsyncChat.push_with_producer(self, producer)
+        else:
+            AsyncChat.push_with_producer(self, producer)
 
     def close_when_done(self):
         asynchat.async_chat.close_when_done(self)
