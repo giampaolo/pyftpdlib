@@ -175,20 +175,7 @@ Donate
 
 A lot of time and effort went into making pyftpdlib as it is right now.
 If you feel pyftpdlib is useful to you or your business and want to support its
-future development please consider donating me
-(`Giampaolo Rodola' <http://grodola.blogspot.com/p/about.html>`_) some money.
-I only ask for a small donation, but of course I appreciate any amount.
-
-.. image:: https://www.paypal.com/en_US/i/btn/btn_donateCC_LG.gif
-  :target: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=ZSSF7G42VA2XE
-  :alt: Donate via PayPal
-
-Don't want to donate money? Then maybe you could
-`write me a recommendation on Linkedin <http://www.linkedin.com/in/grodola>`_.
-In case you're using pyftpdlib into a software of yours
-`mail me <http://grodola.blogspot.com/p/about.html>`_ and I'll add your
-software to the
-`adoptions list <http://pyftpdlib.readthedocs.io/en/latest/adoptions.html>`__.
+future development please consider `donating <https://gmpy.dev/donate>`__ me some money.
 
 Trademarks
 ==========
