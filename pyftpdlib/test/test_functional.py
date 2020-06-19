@@ -1526,7 +1526,6 @@ class TestConfigurableOptions(TestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
-        touch(TESTFN)
         self.server = None
         self.client = None
 
@@ -1553,7 +1552,6 @@ class TestConfigurableOptions(TestCase):
             self.server.handler.use_gmt_times = True
             self.server.handler.tcp_no_delay = hasattr(socket, 'TCP_NODELAY')
             self.server.stop()
-        os.remove(TESTFN)
 
     @disable_log_warning
     def test_max_connections(self):
@@ -1695,14 +1693,16 @@ class TestConfigurableOptions(TestCase):
 
     @retry_on_failure()
     def test_use_gmt_times(self):
+        testfn = self.get_testfn()
+        touch(testfn)
         # use GMT time
         self.server = self.server_class()
         self.server.handler.use_gmt_times = True
         self.server.start()
         self.connect()
-        gmt1 = self.client.sendcmd('mdtm ' + TESTFN)
-        gmt2 = self.client.sendcmd('mlst ' + TESTFN)
-        gmt3 = self.client.sendcmd('stat ' + TESTFN)
+        gmt1 = self.client.sendcmd('mdtm ' + testfn)
+        gmt2 = self.client.sendcmd('mlst ' + testfn)
+        gmt3 = self.client.sendcmd('stat ' + testfn)
 
         # use local time
         self.tearDown()
@@ -1711,9 +1711,9 @@ class TestConfigurableOptions(TestCase):
         self.server.handler.use_gmt_times = False
         self.server.start()
         self.connect()
-        loc1 = self.client.sendcmd('mdtm ' + TESTFN)
-        loc2 = self.client.sendcmd('mlst ' + TESTFN)
-        loc3 = self.client.sendcmd('stat ' + TESTFN)
+        loc1 = self.client.sendcmd('mdtm ' + testfn)
+        loc2 = self.client.sendcmd('mlst ' + testfn)
+        loc3 = self.client.sendcmd('stat ' + testfn)
 
         # if we're not in a GMT time zone times are supposed to be
         # different
