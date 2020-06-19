@@ -661,7 +661,6 @@ class TestFtpStoreData(TestCase):
         self.server.stop()
         self.dummy_recvfile.close()
         self.dummy_sendfile.close()
-        safe_rmpath(TESTFN)
         if self.use_sendfile is not None:
             from pyftpdlib.handlers import _import_sendfile
             self.server.handler.use_sendfile = _import_sendfile() is not None
@@ -802,7 +801,7 @@ class TestFtpStoreData(TestCase):
         self.client.login('anonymous', '@nopasswd')
         before = os.listdir(HOME)
         self.assertRaises(ftplib.error_perm, self.client.sendcmd,
-                          'stou ' + TESTFN)
+                          'stou ' + self.testfn)
         after = os.listdir(HOME)
         if before != after:
             for file in after:
@@ -1260,34 +1259,26 @@ class TestFtpAbort(TestCase):
         # progress: close data channel, respond with 426, respond
         # with 226.
         data = b'abcde12345' * 1000000
-        with open(TESTFN, 'w+b') as f:
+        testfn = self.get_testfn()
+        with open(testfn, 'w+b') as f:
             f.write(data)
-        try:
-            self.client.voidcmd('TYPE I')
-            with contextlib.closing(
-                    self.client.transfercmd('retr ' + TESTFN)) as conn:
-                bytes_recv = 0
-                while bytes_recv < 65536:
-                    chunk = conn.recv(BUFSIZE)
-                    bytes_recv += len(chunk)
+        self.client.voidcmd('TYPE I')
+        with contextlib.closing(
+                self.client.transfercmd('retr ' + testfn)) as conn:
+            bytes_recv = 0
+            while bytes_recv < 65536:
+                chunk = conn.recv(BUFSIZE)
+                bytes_recv += len(chunk)
 
-                # stop transfer while it isn't finished yet
-                self.client.putcmd('ABOR')
+            # stop transfer while it isn't finished yet
+            self.client.putcmd('ABOR')
 
-                # transfer isn't finished yet so ftpd should respond with 426
-                self.assertEqual(self.client.getline()[:3], "426")
+            # transfer isn't finished yet so ftpd should respond with 426
+            self.assertEqual(self.client.getline()[:3], "426")
 
-                # transfer successfully aborted, so should now respond
-                # with a 226
-                self.assertEqual('226', self.client.voidresp()[:3])
-        finally:
-            # We do not use os.remove() because file could still be
-            # locked by ftpd thread.  If DELE through FTP fails try
-            # os.remove() as last resort.
-            try:
-                self.client.delete(TESTFN)
-            except (ftplib.Error, EOFError, socket.error):
-                safe_rmpath(TESTFN)
+            # transfer successfully aborted, so should now respond
+            # with a 226
+            self.assertEqual('226', self.client.voidresp()[:3])
 
     @unittest.skipUnless(hasattr(socket, 'MSG_OOB'), "MSG_OOB not available")
     @unittest.skipIf(sys.version_info < (2, 6),
