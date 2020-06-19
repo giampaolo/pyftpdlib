@@ -51,10 +51,6 @@ except Exception:
 
 if PY3:
     FileNotFoundError = FileNotFoundError  # NOQA
-    PermissionError = PermissionError  # NOQA
-    ProcessLookupError = ProcessLookupError  # NOQA
-    InterruptedError = InterruptedError  # NOQA
-    ChildProcessError = ChildProcessError  # NOQA
     FileExistsError = FileExistsError  # NOQA
 else:
     # https://github.com/PythonCharmers/python-future/blob/exceptions/
@@ -93,23 +89,6 @@ else:
     @_instance_checking_exception(EnvironmentError)
     def FileNotFoundError(inst):
         return getattr(inst, 'errno', _SENTINEL) == errno.ENOENT
-
-    @_instance_checking_exception(EnvironmentError)
-    def ProcessLookupError(inst):
-        return getattr(inst, 'errno', _SENTINEL) == errno.ESRCH
-
-    @_instance_checking_exception(EnvironmentError)
-    def PermissionError(inst):
-        return getattr(inst, 'errno', _SENTINEL) in (
-            errno.EACCES, errno.EPERM)
-
-    @_instance_checking_exception(EnvironmentError)
-    def InterruptedError(inst):
-        return getattr(inst, 'errno', _SENTINEL) == errno.EINTR
-
-    @_instance_checking_exception(EnvironmentError)
-    def ChildProcessError(inst):
-        return getattr(inst, 'errno', _SENTINEL) == errno.ECHILD
 
     @_instance_checking_exception(EnvironmentError)
     def FileExistsError(inst):
