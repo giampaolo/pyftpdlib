@@ -4,7 +4,6 @@
 
 from __future__ import print_function
 import contextlib
-import errno
 import functools
 import logging
 import multiprocessing
@@ -23,8 +22,9 @@ except ImportError:
     import mock  # NOQA - requires "pip install mock"
 
 from pyftpdlib._compat import getcwdu
-from pyftpdlib._compat import u
+from pyftpdlib._compat import FileExistsError
 from pyftpdlib._compat import FileNotFoundError
+from pyftpdlib._compat import u
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import _import_sendfile
 from pyftpdlib.handlers import FTPHandler
@@ -150,9 +150,8 @@ def safe_mkdir(dir):
     "Convenience function for creating a directory"
     try:
         os.mkdir(dir)
-    except OSError as err:
-        if err.errno != errno.EEXIST:
-            raise
+    except FileExistsError:
+        pass
 
 
 def touch(name):
