@@ -8,7 +8,6 @@ import os
 import random
 import string
 import sys
-import tempfile
 import warnings
 
 from pyftpdlib._compat import getcwdu
@@ -20,7 +19,6 @@ from pyftpdlib.test import HOME
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import POSIX
 from pyftpdlib.test import TestCase
-from pyftpdlib.test import TESTFN
 from pyftpdlib.test import touch
 from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
@@ -48,11 +46,14 @@ class TestDummyAuthorizer(TestCase):
 
     # temporarily change warnings to exceptions for the purposes of testing
     def setUp(self):
-        self.tempdir = tempfile.mkdtemp(dir=HOME)
-        self.subtempdir = tempfile.mkdtemp(
-            dir=os.path.join(HOME, self.tempdir))
-        self.tempfile = touch(os.path.join(self.tempdir, TESTFN))
-        self.subtempfile = touch(os.path.join(self.subtempdir, TESTFN))
+        self.tempdir = os.path.abspath(self.get_testfn())
+        self.subtempdir = os.path.join(self.tempdir, self.get_testfn())
+        self.tempfile = os.path.join(self.tempdir, self.get_testfn())
+        self.subtempfile = os.path.join(self.subtempdir, self.get_testfn())
+        os.mkdir(self.tempdir)
+        os.mkdir(self.subtempdir)
+        touch(self.tempfile)
+        touch(self.subtempfile)
         warnings.filterwarnings("error")
 
     def tearDown(self):
