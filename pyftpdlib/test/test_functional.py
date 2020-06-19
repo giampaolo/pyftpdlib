@@ -483,7 +483,7 @@ class TestFtpFsOperations(TestCase):
         self.assertEqual(self.client.pwd(), u('/'))
 
     def test_mkd(self):
-        tempdir = os.path.basename(tempfile.mktemp(dir=HOME))
+        tempdir = self.get_testfn()
         dirname = self.client.mkd(tempdir)
         # the 257 response is supposed to include the absolute dirname
         self.assertEqual(dirname, '/' + tempdir)
@@ -512,15 +512,15 @@ class TestFtpFsOperations(TestCase):
 
     def test_rnfr_rnto(self):
         # rename file
-        tempname = os.path.basename(tempfile.mktemp(dir=HOME))
+        tempname = self.get_testfn()
         self.client.rename(self.tempfile, tempname)
         self.client.rename(tempname, self.tempfile)
         # rename dir
-        tempname = os.path.basename(tempfile.mktemp(dir=HOME))
+        tempname = self.get_testfn()
         self.client.rename(self.tempdir, tempname)
         self.client.rename(tempname, self.tempdir)
         # rnfr/rnto over non-existing paths
-        bogus = os.path.basename(tempfile.mktemp(dir=HOME))
+        bogus = self.get_testfn()
         self.assertRaises(ftplib.error_perm, self.client.rename, bogus, '/x')
         self.assertRaises(
             ftplib.error_perm, self.client.rename, self.tempfile, u('/'))
@@ -535,7 +535,7 @@ class TestFtpFsOperations(TestCase):
 
     def test_mdtm(self):
         self.client.sendcmd('mdtm ' + self.tempfile)
-        bogus = os.path.basename(tempfile.mktemp(dir=HOME))
+        bogus = self.get_testfn()
         self.assertRaises(ftplib.error_perm, self.client.sendcmd,
                           'mdtm ' + bogus)
         # make sure we can't use mdtm against directories
@@ -968,7 +968,7 @@ class TestFtpRetrieveData(TestCase):
         self.assertEqual(hash(data), hash(datafile))
 
         # attempt to retrieve a file which doesn't exist
-        bogus = os.path.basename(tempfile.mktemp(dir=HOME))
+        bogus = self.get_testfn()
         self.assertRaises(ftplib.error_perm, self.client.retrbinary,
                           "retr " + bogus, lambda x: x)
 
