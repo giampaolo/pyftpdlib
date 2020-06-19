@@ -948,26 +948,22 @@ class TestFtpRetrieveData(TestCase):
         self.client = self.client_class(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
         self.client.login(USER, PASSWD)
-        self.file = open(TESTFN, 'w+b')
+        self.testfn = self.get_testfn()
         self.dummyfile = BytesIO()
 
     def tearDown(self):
         close_client(self.client)
         self.server.stop()
-        if not self.file.closed:
-            self.file.close()
-        if not self.dummyfile.closed:
-            self.dummyfile.close()
-        safe_rmpath(TESTFN)
+        self.dummyfile.close()
         if self.use_sendfile is not None:
             from pyftpdlib.handlers import _import_sendfile
             self.server.handler.use_sendfile = _import_sendfile() is not None
 
     def test_retr(self):
         data = b'abcde12345' * 100000
-        self.file.write(data)
-        self.file.close()
-        self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
+        with open(self.testfn, 'wb') as f:
+            f.write(data)
+        self.client.retrbinary("retr " + self.testfn, self.dummyfile.write)
         self.dummyfile.seek(0)
         datafile = self.dummyfile.read()
         self.assertEqual(len(data), len(datafile))
@@ -979,12 +975,11 @@ class TestFtpRetrieveData(TestCase):
                           "retr " + bogus, lambda x: x)
 
     def test_retr_ascii(self):
-        """Test RETR in ASCII mode."""
-
+        # Test RETR in ASCII mode.
         data = (b'abcde12345' + b(os.linesep)) * 100000
-        self.file.write(data)
-        self.file.close()
-        self.retrieve_ascii("retr " + TESTFN, self.dummyfile.write)
+        with open(self.testfn, 'wb') as f:
+            f.write(data)
+        self.retrieve_ascii("retr " + self.testfn, self.dummyfile.write)
         expected = data.replace(b(os.linesep), b'\r\n')
         self.dummyfile.seek(0)
         datafile = self.dummyfile.read()
@@ -992,12 +987,11 @@ class TestFtpRetrieveData(TestCase):
         self.assertEqual(hash(expected), hash(datafile))
 
     def test_retr_ascii_already_crlf(self):
-        """Test ASCII mode RETR for data with CRLF line endings."""
-
+        # Test ASCII mode RETR for data with CRLF line endings.
         data = b'abcde12345\r\n' * 100000
-        self.file.write(data)
-        self.file.close()
-        self.retrieve_ascii("retr " + TESTFN, self.dummyfile.write)
+        with open(self.testfn, 'wb') as f:
+            f.write(data)
+        self.retrieve_ascii("retr " + self.testfn, self.dummyfile.write)
         self.dummyfile.seek(0)
         datafile = self.dummyfile.read()
         self.assertEqual(len(data), len(datafile))
@@ -1006,13 +1000,13 @@ class TestFtpRetrieveData(TestCase):
     @retry_on_failure()
     def test_restore_on_retr(self):
         data = b'abcde12345' * 1000000
-        self.file.write(data)
-        self.file.close()
+        with open(self.testfn, 'wb') as f:
+            f.write(data)
 
         received_bytes = 0
         self.client.voidcmd('TYPE I')
         with contextlib.closing(
-                self.client.transfercmd('retr ' + TESTFN)) as conn:
+                self.client.transfercmd('retr ' + self.testfn)) as conn:
             conn.settimeout(TIMEOUT)
             while True:
                 chunk = conn.recv(BUFSIZE)
@@ -1029,20 +1023,21 @@ class TestFtpRetrieveData(TestCase):
         # resuming transfer by using a marker value greater than the
         # file size stored on the server should result in an error
         # on retr (RFC-1123)
-        file_size = self.client.size(TESTFN)
+        file_size = self.client.size(self.testfn)
         self.client.sendcmd('rest %s' % ((file_size + 1)))
         self.assertRaises(ftplib.error_perm, self.client.sendcmd,
-                          'retr ' + TESTFN)
+                          'retr ' + self.testfn)
         # test resume
         self.client.sendcmd('rest %s' % received_bytes)
-        self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
+        self.client.retrbinary("retr " + self.testfn, self.dummyfile.write)
         self.dummyfile.seek(0)
         datafile = self.dummyfile.read()
         self.assertEqual(len(data), len(datafile))
         self.assertEqual(hash(data), hash(datafile))
 
     def test_retr_empty_file(self):
-        self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
+        touch(self.testfn)
+        self.client.retrbinary("retr " + self.testfn, self.dummyfile.write)
         self.dummyfile.seek(0)
         self.assertEqual(self.dummyfile.read(), b"")
 
