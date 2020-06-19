@@ -49,6 +49,7 @@ from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import SUPPORTS_IPV4
 from pyftpdlib.test import SUPPORTS_IPV6
 from pyftpdlib.test import SUPPORTS_SENDFILE
+from pyftpdlib.test import TestCase
 from pyftpdlib.test import TESTFN
 from pyftpdlib.test import ThreadedTestFTPd
 from pyftpdlib.test import TIMEOUT
@@ -70,7 +71,7 @@ import ssl
 sendfile = _import_sendfile()
 
 
-class TestFtpAuthentication(unittest.TestCase):
+class TestFtpAuthentication(TestCase):
 
     "test: USER, PASS, REIN."
     server_class = MProcessTestFTPd
@@ -81,7 +82,8 @@ class TestFtpAuthentication(unittest.TestCase):
         self.server.start()
         self.client = self.client_class(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
-        self.file = open(TESTFN, 'w+b')
+        self.testfn = self.get_testfn()
+        self.file = open(self.testfn, 'w+b')
         self.dummyfile = BytesIO()
 
     def tearDown(self):
@@ -91,7 +93,6 @@ class TestFtpAuthentication(unittest.TestCase):
             self.file.close()
         if not self.dummyfile.closed:
             self.dummyfile.close()
-        os.remove(TESTFN)
 
     def assert_auth_failed(self, user, passwd):
         self.assertRaisesRegex(ftplib.error_perm, '530 Authentication failed',
@@ -157,7 +158,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.file.write(data)
         self.file.close()
 
-        conn = self.client.transfercmd('retr ' + TESTFN)
+        conn = self.client.transfercmd('retr ' + self.testfn)
         with contextlib.closing(conn):
             rein_sent = False
             bytes_recv = 0
@@ -181,7 +182,7 @@ class TestFtpAuthentication(unittest.TestCase):
         # account is still flushed, error response is still expected
         self.assertRaisesRegex(ftplib.error_perm,
                                '530 Log in with USER and PASS first',
-                               self.client.sendcmd, 'size ' + TESTFN)
+                               self.client.sendcmd, 'size ' + self.testfn)
         # by logging-in again we should be able to execute a
         # filesystem command
         self.client.login(user=USER, passwd=PASSWD)
@@ -210,7 +211,7 @@ class TestFtpAuthentication(unittest.TestCase):
         self.file.write(data)
         self.file.close()
 
-        conn = self.client.transfercmd('retr ' + TESTFN)
+        conn = self.client.transfercmd('retr ' + self.testfn)
         with contextlib.closing(conn):
             rein_sent = 0
             bytes_recv = 0
