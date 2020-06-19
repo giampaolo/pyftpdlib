@@ -654,6 +654,7 @@ class TestFtpStoreData(TestCase):
         self.client.login(USER, PASSWD)
         self.dummy_recvfile = BytesIO()
         self.dummy_sendfile = BytesIO()
+        self.testfn = self.get_testfn()
 
     def tearDown(self):
         close_client(self.client)
@@ -666,25 +667,16 @@ class TestFtpStoreData(TestCase):
             self.server.handler.use_sendfile = _import_sendfile() is not None
 
     def test_stor(self):
-        try:
-            data = b'abcde12345' * 100000
-            self.dummy_sendfile.write(data)
-            self.dummy_sendfile.seek(0)
-            self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
-            self.client.retrbinary('retr ' + TESTFN, self.dummy_recvfile.write)
-            self.dummy_recvfile.seek(0)
-            datafile = self.dummy_recvfile.read()
-            self.assertEqual(len(data), len(datafile))
-            self.assertEqual(hash(data), hash(datafile))
-        finally:
-            # We do not use os.remove() because file could still be
-            # locked by ftpd thread.  If DELE through FTP fails try
-            # os.remove() as last resort.
-            if os.path.exists(TESTFN):
-                try:
-                    self.client.delete(TESTFN)
-                except (ftplib.Error, EOFError, socket.error):
-                    safe_rmpath(TESTFN)
+        data = b'abcde12345' * 100000
+        self.dummy_sendfile.write(data)
+        self.dummy_sendfile.seek(0)
+        self.client.storbinary('stor ' + self.testfn, self.dummy_sendfile)
+        self.client.retrbinary('retr ' + self.testfn,
+                               self.dummy_recvfile.write)
+        self.dummy_recvfile.seek(0)
+        datafile = self.dummy_recvfile.read()
+        self.assertEqual(len(data), len(datafile))
+        self.assertEqual(hash(data), hash(datafile))
 
     def test_stor_active(self):
         # Like test_stor but using PORT
@@ -706,26 +698,17 @@ class TestFtpStoreData(TestCase):
                     conn.sendall(buf)
             return self.client.voidresp()
 
-        try:
-            data = b'abcde12345\r\n' * 100000
-            self.dummy_sendfile.write(data)
-            self.dummy_sendfile.seek(0)
-            store('stor ' + TESTFN, self.dummy_sendfile)
-            self.client.retrbinary('retr ' + TESTFN, self.dummy_recvfile.write)
-            expected = data.replace(b'\r\n', b(os.linesep))
-            self.dummy_recvfile.seek(0)
-            datafile = self.dummy_recvfile.read()
-            self.assertEqual(len(expected), len(datafile))
-            self.assertEqual(hash(expected), hash(datafile))
-        finally:
-            # We do not use os.remove() because file could still be
-            # locked by ftpd thread.  If DELE through FTP fails try
-            # os.remove() as last resort.
-            if os.path.exists(TESTFN):
-                try:
-                    self.client.delete(TESTFN)
-                except (ftplib.Error, EOFError, socket.error):
-                    safe_rmpath(TESTFN)
+        data = b'abcde12345\r\n' * 100000
+        self.dummy_sendfile.write(data)
+        self.dummy_sendfile.seek(0)
+        store('stor ' + self.testfn, self.dummy_sendfile)
+        self.client.retrbinary('retr ' + self.testfn,
+                               self.dummy_recvfile.write)
+        expected = data.replace(b'\r\n', b(os.linesep))
+        self.dummy_recvfile.seek(0)
+        datafile = self.dummy_recvfile.read()
+        self.assertEqual(len(expected), len(datafile))
+        self.assertEqual(hash(expected), hash(datafile))
 
     def test_stor_ascii_2(self):
         # Test that no extra extra carriage returns are added to the
@@ -752,22 +735,15 @@ class TestFtpStoreData(TestCase):
             data = b'\r\n foo \r\n bar'
             self.dummy_sendfile.write(data)
             self.dummy_sendfile.seek(0)
-            store('stor ' + TESTFN, self.dummy_sendfile)
+            store('stor ' + self.testfn, self.dummy_sendfile)
 
             expected = data.replace(b'\r\n', b(os.linesep))
-            self.client.retrbinary('retr ' + TESTFN, self.dummy_recvfile.write)
+            self.client.retrbinary('retr ' + self.testfn,
+                                   self.dummy_recvfile.write)
             self.dummy_recvfile.seek(0)
             self.assertEqual(expected, self.dummy_recvfile.read())
         finally:
             DTPHandler.ac_in_buffer_size = old_buffer
-            # We do not use os.remove() because file could still be
-            # locked by ftpd thread.  If DELE through FTP fails try
-            # os.remove() as last resort.
-            if os.path.exists(TESTFN):
-                try:
-                    self.client.delete(TESTFN)
-                except (ftplib.Error, EOFError, socket.error):
-                    safe_rmpath(TESTFN)
 
     def test_stou(self):
         data = b'abcde12345' * 100000
@@ -822,7 +798,6 @@ class TestFtpStoreData(TestCase):
         # directory before and after STOU has been issued.
         # Assuming that TESTFN is supposed to be a "reserved" file
         # name we shouldn't get false positives.
-        safe_rmpath(TESTFN)
         # login as a limited user in order to make STOU fail
         self.client.login('anonymous', '@nopasswd')
         before = os.listdir(HOME)
@@ -831,34 +806,25 @@ class TestFtpStoreData(TestCase):
         after = os.listdir(HOME)
         if before != after:
             for file in after:
-                self.assertFalse(file.startswith(TESTFN))
+                self.assertFalse(file.startswith(self.testfn))
 
     def test_appe(self):
-        try:
-            data1 = b'abcde12345' * 100000
-            self.dummy_sendfile.write(data1)
-            self.dummy_sendfile.seek(0)
-            self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
+        data1 = b'abcde12345' * 100000
+        self.dummy_sendfile.write(data1)
+        self.dummy_sendfile.seek(0)
+        self.client.storbinary('stor ' + self.testfn, self.dummy_sendfile)
 
-            data2 = b'fghil67890' * 100000
-            self.dummy_sendfile.write(data2)
-            self.dummy_sendfile.seek(len(data1))
-            self.client.storbinary('appe ' + TESTFN, self.dummy_sendfile)
+        data2 = b'fghil67890' * 100000
+        self.dummy_sendfile.write(data2)
+        self.dummy_sendfile.seek(len(data1))
+        self.client.storbinary('appe ' + self.testfn, self.dummy_sendfile)
 
-            self.client.retrbinary("retr " + TESTFN, self.dummy_recvfile.write)
-            self.dummy_recvfile.seek(0)
-            datafile = self.dummy_recvfile.read()
-            self.assertEqual(len(data1 + data2), len(datafile))
-            self.assertEqual(hash(data1 + data2), hash(datafile))
-        finally:
-            # We do not use os.remove() because file could still be
-            # locked by ftpd thread.  If DELE through FTP fails try
-            # os.remove() as last resort.
-            if os.path.exists(TESTFN):
-                try:
-                    self.client.delete(TESTFN)
-                except (ftplib.Error, EOFError, socket.error):
-                    safe_rmpath(TESTFN)
+        self.client.retrbinary(
+            "retr " + self.testfn, self.dummy_recvfile.write)
+        self.dummy_recvfile.seek(0)
+        datafile = self.dummy_recvfile.read()
+        self.assertEqual(len(data1 + data2), len(datafile))
+        self.assertEqual(hash(data1 + data2), hash(datafile))
 
     def test_appe_rest(self):
         # Watch for APPE preceded by REST, which makes no sense.
@@ -875,7 +841,7 @@ class TestFtpStoreData(TestCase):
 
         self.client.voidcmd('TYPE I')
         with contextlib.closing(
-                self.client.transfercmd('stor ' + TESTFN)) as conn:
+                self.client.transfercmd('stor ' + self.testfn)) as conn:
             bytes_sent = 0
             while True:
                 chunk = self.dummy_sendfile.read(BUFSIZE)
@@ -892,15 +858,16 @@ class TestFtpStoreData(TestCase):
         # resuming transfer by using a marker value greater than the
         # file size stored on the server should result in an error
         # on stor
-        file_size = self.client.size(TESTFN)
+        file_size = self.client.size(self.testfn)
         self.assertEqual(file_size, bytes_sent)
         self.client.sendcmd('rest %s' % ((file_size + 1)))
         self.assertRaises(ftplib.error_perm, self.client.sendcmd,
-                          'stor ' + TESTFN)
+                          'stor ' + self.testfn)
         self.client.sendcmd('rest %s' % bytes_sent)
-        self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
+        self.client.storbinary('stor ' + self.testfn, self.dummy_sendfile)
 
-        self.client.retrbinary('retr ' + TESTFN, self.dummy_recvfile.write)
+        self.client.retrbinary('retr ' + self.testfn,
+                               self.dummy_recvfile.write)
         self.dummy_sendfile.seek(0)
         self.dummy_recvfile.seek(0)
 
@@ -908,28 +875,25 @@ class TestFtpStoreData(TestCase):
         data_recvfile = self.dummy_recvfile.read()
         self.assertEqual(len(data_sendfile), len(data_recvfile))
         self.assertEqual(len(data_sendfile), len(data_recvfile))
-        self.client.delete(TESTFN)
 
     def test_failing_rest_on_stor(self):
         # Test REST -> STOR against a non existing file.
-        if os.path.exists(TESTFN):
-            self.client.delete(TESTFN)
         self.client.sendcmd('type i')
         self.client.sendcmd('rest 10')
         self.assertRaises(ftplib.error_perm, self.client.storbinary,
-                          'stor ' + TESTFN, lambda x: x)
+                          'stor ' + self.testfn, lambda x: x)
         # if the first STOR failed because of REST, the REST marker
         # is supposed to be resetted to 0
         self.dummy_sendfile.write(b'x' * 4096)
         self.dummy_sendfile.seek(0)
-        self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
+        self.client.storbinary('stor ' + self.testfn, self.dummy_sendfile)
 
     def test_quit_during_transfer(self):
         # RFC-959 states that if QUIT is sent while a transfer is in
         # progress, the connection must remain open for result response
         # and the server will then close it.
         with contextlib.closing(
-                self.client.transfercmd('stor ' + TESTFN)) as conn:
+                self.client.transfercmd('stor ' + self.testfn)) as conn:
             conn.sendall(b'abcde12345' * 50000)
             self.client.sendcmd('quit')
             conn.sendall(b'abcde12345' * 50000)
@@ -943,9 +907,9 @@ class TestFtpStoreData(TestCase):
                           self.client.sendcmd, 'noop')
 
     def test_stor_empty_file(self):
-        self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
+        self.client.storbinary('stor ' + self.testfn, self.dummy_sendfile)
         self.client.quit()
-        with open(TESTFN) as f:
+        with open(self.testfn) as f:
             self.assertEqual(f.read(), "")
 
 
