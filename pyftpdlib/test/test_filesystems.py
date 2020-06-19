@@ -12,7 +12,7 @@ from pyftpdlib._compat import u
 from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.test import HOME
 from pyftpdlib.test import POSIX
-from pyftpdlib.test import safe_remove
+from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import TESTFN
 from pyftpdlib.test import touch
 from pyftpdlib.test import unittest
@@ -26,7 +26,7 @@ class TestAbstractedFS(unittest.TestCase):
     """Test for conversion utility methods of AbstractedFS class."""
 
     def setUp(self):
-        safe_remove(TESTFN)
+        safe_rmpath(TESTFN)
 
     tearDown = setUp
 
@@ -182,7 +182,8 @@ class TestAbstractedFS(unittest.TestCase):
                 os.symlink(TESTFN, TESTFN2)
                 self.assertTrue(fs.validpath(u(TESTFN)))
             finally:
-                safe_remove(TESTFN, TESTFN2)
+                safe_rmpath(TESTFN)
+                safe_rmpath(TESTFN2)
 
         def test_validpath_external_symlink(self):
             # Test validpath by issuing a symlink pointing to a path
@@ -199,7 +200,7 @@ class TestAbstractedFS(unittest.TestCase):
                     os.symlink(file.name, TESTFN)
                     self.assertFalse(fs.validpath(u(TESTFN)))
                 finally:
-                    safe_remove(TESTFN)
+                    safe_rmpath(TESTFN)
 
 
 @unittest.skipUnless(POSIX, "UNIX only")

@@ -45,8 +45,7 @@ from pyftpdlib.test import PASSWD
 from pyftpdlib.test import POSIX
 from pyftpdlib.test import remove_test_files
 from pyftpdlib.test import retry_on_failure
-from pyftpdlib.test import safe_remove
-from pyftpdlib.test import safe_rmdir
+from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import SUPPORTS_IPV4
 from pyftpdlib.test import SUPPORTS_IPV6
 from pyftpdlib.test import SUPPORTS_SENDFILE
@@ -450,7 +449,7 @@ class TestFtpFsOperations(unittest.TestCase):
     def tearDown(self):
         close_client(self.client)
         self.server.stop()
-        safe_remove(self.tempfile)
+        safe_rmpath(self.tempfile)
         if os.path.exists(self.tempdir):
             shutil.rmtree(self.tempdir)
 
@@ -662,7 +661,7 @@ class TestFtpStoreData(unittest.TestCase):
         self.server.stop()
         self.dummy_recvfile.close()
         self.dummy_sendfile.close()
-        safe_remove(TESTFN)
+        safe_rmpath(TESTFN)
         if self.use_sendfile is not None:
             from pyftpdlib.handlers import _import_sendfile
             self.server.handler.use_sendfile = _import_sendfile() is not None
@@ -686,7 +685,7 @@ class TestFtpStoreData(unittest.TestCase):
                 try:
                     self.client.delete(TESTFN)
                 except (ftplib.Error, EOFError, socket.error):
-                    safe_remove(TESTFN)
+                    safe_rmpath(TESTFN)
 
     def test_stor_active(self):
         # Like test_stor but using PORT
@@ -727,7 +726,7 @@ class TestFtpStoreData(unittest.TestCase):
                 try:
                     self.client.delete(TESTFN)
                 except (ftplib.Error, EOFError, socket.error):
-                    safe_remove(TESTFN)
+                    safe_rmpath(TESTFN)
 
     def test_stor_ascii_2(self):
         # Test that no extra extra carriage returns are added to the
@@ -769,7 +768,7 @@ class TestFtpStoreData(unittest.TestCase):
                 try:
                     self.client.delete(TESTFN)
                 except (ftplib.Error, EOFError, socket.error):
-                    safe_remove(TESTFN)
+                    safe_rmpath(TESTFN)
 
     def test_stou(self):
         data = b'abcde12345' * 100000
@@ -807,7 +806,7 @@ class TestFtpStoreData(unittest.TestCase):
                 try:
                     self.client.delete(filename)
                 except (ftplib.Error, EOFError, socket.error):
-                    safe_remove(filename)
+                    safe_rmpath(filename)
 
     def test_stou_rest(self):
         # Watch for STOU preceded by REST, which makes no sense.
@@ -824,7 +823,7 @@ class TestFtpStoreData(unittest.TestCase):
         # directory before and after STOU has been issued.
         # Assuming that TESTFN is supposed to be a "reserved" file
         # name we shouldn't get false positives.
-        safe_remove(TESTFN)
+        safe_rmpath(TESTFN)
         # login as a limited user in order to make STOU fail
         self.client.login('anonymous', '@nopasswd')
         before = os.listdir(HOME)
@@ -860,7 +859,7 @@ class TestFtpStoreData(unittest.TestCase):
                 try:
                     self.client.delete(TESTFN)
                 except (ftplib.Error, EOFError, socket.error):
-                    safe_remove(TESTFN)
+                    safe_rmpath(TESTFN)
 
     def test_appe_rest(self):
         # Watch for APPE preceded by REST, which makes no sense.
@@ -996,7 +995,7 @@ class TestFtpRetrieveData(unittest.TestCase):
             self.file.close()
         if not self.dummyfile.closed:
             self.dummyfile.close()
-        safe_remove(TESTFN)
+        safe_rmpath(TESTFN)
         if self.use_sendfile is not None:
             from pyftpdlib.handlers import _import_sendfile
             self.server.handler.use_sendfile = _import_sendfile() is not None
@@ -1136,7 +1135,7 @@ class TestFtpListingCmds(unittest.TestCase):
             self.client.retrlines('%s %s' % (cmd, tempdir), x.append)
             self.assertEqual(x, [])
         finally:
-            safe_rmdir(tempdir)
+            safe_rmpath(tempdir)
 
     def test_nlst(self):
         # common tests
@@ -1188,7 +1187,7 @@ class TestFtpListingCmds(unittest.TestCase):
         # common tests
         self._test_listing_cmds('mlsd')
         dir = os.path.basename(tempfile.mkdtemp(dir=HOME))
-        self.addCleanup(safe_rmdir, dir)
+        self.addCleanup(safe_rmpath, dir)
         try:
             self.client.retrlines('mlsd ' + TESTFN, lambda x: x)
         except ftplib.error_perm as err:
@@ -1328,7 +1327,7 @@ class TestFtpAbort(unittest.TestCase):
             try:
                 self.client.delete(TESTFN)
             except (ftplib.Error, EOFError, socket.error):
-                safe_remove(TESTFN)
+                safe_rmpath(TESTFN)
 
     @unittest.skipUnless(hasattr(socket, 'MSG_OOB'), "MSG_OOB not available")
     @unittest.skipIf(sys.version_info < (2, 6),
@@ -1825,8 +1824,8 @@ class TestCallbacks(unittest.TestCase):
                 self.write(
                     "on_incomplete_file_received:%s," % os.path.basename(file))
 
-        safe_remove(TESTFN)
-        safe_remove(self.TESTFN_2)
+        safe_rmpath(TESTFN)
+        safe_rmpath(self.TESTFN_2)
         self.server = self.server_class()
         self.server.server.handler = Handler
         self.server.start()
@@ -1836,8 +1835,8 @@ class TestCallbacks(unittest.TestCase):
     def tearDown(self):
         close_client(self.client)
         self.server.stop()
-        safe_remove(TESTFN)
-        safe_remove(self.TESTFN_2)
+        safe_rmpath(TESTFN)
+        safe_rmpath(self.TESTFN_2)
 
     def read_file(self, text):
         stop_at = time.time() + 1
@@ -2547,7 +2546,7 @@ class ThreadedFTPTests(unittest.TestCase):
         self.server.stop()
         self.dummy_recvfile.close()
         self.dummy_sendfile.close()
-        safe_remove(TESTFN)
+        safe_rmpath(TESTFN)
 
     def test_unforeseen_mdtm_event(self):
         # Emulate a case where the file last modification time is prior
@@ -2723,7 +2722,7 @@ class ThreadedFTPTests(unittest.TestCase):
                     try:
                         self.client.delete(TESTFN)
                     except (ftplib.Error, EOFError, socket.error):
-                        safe_remove(TESTFN)
+                        safe_rmpath(TESTFN)
 
 
 configure_logging()

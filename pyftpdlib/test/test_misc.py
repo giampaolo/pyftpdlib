@@ -16,7 +16,7 @@ from pyftpdlib._compat import PY3
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.test import mock
 from pyftpdlib.test import safe_mkdir
-from pyftpdlib.test import safe_rmdir
+from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import TESTFN
 from pyftpdlib.test import unittest
 from pyftpdlib.test import VERBOSITY
@@ -53,7 +53,7 @@ class TestCommandLineParser(unittest.TestCase):
         sys.argv = self.SYSARGV[:]
         sys.stderr = self.STDERR
         pyftpdlib.servers.FTPServer = self.original_ftpserver_class
-        safe_rmdir(TESTFN)
+        safe_rmpath(TESTFN)
 
     def test_a_option(self):
         sys.argv += ["-i", "localhost", "-p", "0"]
@@ -105,7 +105,7 @@ class TestCommandLineParser(unittest.TestCase):
         # no such directory
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-d %s" % TESTFN]
-        safe_rmdir(TESTFN)
+        safe_rmpath(TESTFN)
         self.assertRaises(ValueError, pyftpdlib.__main__.main)
 
     def test_r_option(self):

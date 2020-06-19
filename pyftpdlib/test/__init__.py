@@ -132,6 +132,13 @@ def safe_rmdir(dir):
             raise
 
 
+def safe_rmpath(path):
+    if os.path.isdir(path):
+        safe_rmdir(path)
+    else:
+        safe_remove(path)
+
+
 def safe_mkdir(dir):
     "Convenience function for creating a directory"
     try:
@@ -154,7 +161,7 @@ def remove_test_files():
             if os.path.isdir(name):
                 shutil.rmtree(name)
             else:
-                safe_remove(name)
+                safe_rmpath(name)
 
 
 def configure_logging():
