@@ -693,6 +693,8 @@ class TestFtpStoreData(TestCase):
                     if not buf:
                         break
                     conn.sendall(buf)
+                if isinstance(conn, ssl.SSLSocket):
+                    conn.unwrap()
             return self.client.voidresp()
 
         data = b'abcde12345\r\n' * 100000
@@ -847,11 +849,12 @@ class TestFtpStoreData(TestCase):
                 # stop transfer while it isn't finished yet
                 if bytes_sent >= INTERRUPTED_TRANSF_SIZE or not chunk:
                     break
+            if isinstance(conn, ssl.SSLSocket):
+                conn.unwrap()
 
         # transfer wasn't finished yet but server can't know this,
         # hence expect a 226 response
         self.assertEqual('226', self.client.voidresp()[:3])
-
         # resuming transfer by using a marker value greater than the
         # file size stored on the server should result in an error
         # on stor
