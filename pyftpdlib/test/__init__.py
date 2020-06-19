@@ -113,29 +113,6 @@ SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
 SUPPORTS_SENDFILE = hasattr(os, 'sendfile') or sendfile is not None
 
 
-def safe_remove(*files):
-    "Convenience function for removing temporary test files"
-    for file in files:
-        try:
-            os.remove(file)
-        except OSError as err:
-            if os.name == 'nt':
-                return
-            if err.errno != errno.ENOENT:
-                raise
-
-
-def safe_rmdir(dir):
-    "Convenience function for removing temporary test directories"
-    try:
-        os.rmdir(dir)
-    except OSError as err:
-        if os.name == 'nt':
-            return
-        if err.errno != errno.ENOENT:
-            raise
-
-
 def safe_rmpath(path):
     "Convenience function for removing temporary test files or dirs"
     def retry_fun(fun):
@@ -188,10 +165,7 @@ def remove_test_files():
     """Remove files and directores created during tests."""
     for name in os.listdir(u('.')):
         if name.startswith(tempfile.template):
-            if os.path.isdir(name):
-                shutil.rmtree(name)
-            else:
-                safe_rmpath(name)
+            safe_rmpath(name)
 
 
 def configure_logging():
