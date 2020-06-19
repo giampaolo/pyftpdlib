@@ -795,7 +795,7 @@ class TestFtpStoreData(TestCase):
         # Since we can't know the name of the file the best way that
         # we have to test this case is comparing the content of the
         # directory before and after STOU has been issued.
-        # Assuming that TESTFN is supposed to be a "reserved" file
+        # Assuming that testfn is supposed to be a "reserved" file
         # name we shouldn't get false positives.
         # login as a limited user in order to make STOU fail
         self.client.login('anonymous', '@nopasswd')
@@ -1729,17 +1729,15 @@ class TestConfigurableOptions(TestCase):
 
 
 class TestCallbacks(TestCase):
-
     server_class = MProcessTestFTPd
     client_class = ftplib.FTP
-    TESTFN_2 = TESTFN + "-2"
 
     def setUp(self):
 
         class Handler(FTPHandler):
 
             def write(self, text):
-                with open(TESTFN, "at") as f:
+                with open(testfn, "at") as f:
                     f.write(text)
 
             def on_connect(self):
@@ -1771,8 +1769,8 @@ class TestCallbacks(TestCase):
                 self.write(
                     "on_incomplete_file_received:%s," % os.path.basename(file))
 
-        safe_rmpath(TESTFN)
-        safe_rmpath(self.TESTFN_2)
+        self.testfn = testfn = self.get_testfn()
+        self.testfn2 = self.get_testfn()
         self.server = self.server_class()
         self.server.server.handler = Handler
         self.server.start()
@@ -1782,13 +1780,11 @@ class TestCallbacks(TestCase):
     def tearDown(self):
         close_client(self.client)
         self.server.stop()
-        safe_rmpath(TESTFN)
-        safe_rmpath(self.TESTFN_2)
 
     def read_file(self, text):
         stop_at = time.time() + 1
         while time.time() <= stop_at:
-            with open(TESTFN, "rt") as f:
+            with open(self.testfn, "rt") as f:
                 data = f.read()
                 if data == text:
                     return
@@ -1839,19 +1835,19 @@ class TestCallbacks(TestCase):
         dummyfile.write(data)
         dummyfile.seek(0)
         self.client.login(USER, PASSWD)
-        self.client.storbinary('stor ' + self.TESTFN_2, dummyfile)
+        self.client.storbinary('stor ' + self.testfn2, dummyfile)
         self.read_file(
             'on_connect,on_login:%s,on_file_received:%s,' % (
-                USER, self.TESTFN_2))
+                USER, self.testfn2))
 
     def test_on_file_sent(self):
         self.client.login(USER, PASSWD)
         data = b'abcde12345' * 100000
-        with open(self.TESTFN_2, 'wb') as f:
+        with open(self.testfn2, 'wb') as f:
             f.write(data)
-        self.client.retrbinary("retr " + self.TESTFN_2, lambda x: x)
+        self.client.retrbinary("retr " + self.testfn2, lambda x: x)
         self.read_file(
-            'on_connect,on_login:%s,on_file_sent:%s,' % (USER, self.TESTFN_2))
+            'on_connect,on_login:%s,on_file_sent:%s,' % (USER, self.testfn2))
 
     def test_on_incomplete_file_received(self):
         self.client.login(USER, PASSWD)
@@ -1860,7 +1856,7 @@ class TestCallbacks(TestCase):
         dummyfile.write(data)
         dummyfile.seek(0)
         with contextlib.closing(
-                self.client.transfercmd('stor ' + self.TESTFN_2)) as conn:
+                self.client.transfercmd('stor ' + self.testfn2)) as conn:
             bytes_sent = 0
             while True:
                 chunk = dummyfile.read(BUFSIZE)
@@ -1876,16 +1872,16 @@ class TestCallbacks(TestCase):
         self.assertEqual(self.client.getresp()[:3], "226")
         self.read_file(
             'on_connect,on_login:%s,on_incomplete_file_received:%s,' %
-            (USER, self.TESTFN_2))
+            (USER, self.testfn2))
 
     def test_on_incomplete_file_sent(self):
         self.client.login(USER, PASSWD)
         data = b'abcde12345' * 1000000
-        with open(self.TESTFN_2, 'wb') as f:
+        with open(self.testfn2, 'wb') as f:
             f.write(data)
         bytes_recv = 0
         with contextlib.closing(self.client.transfercmd(
-                                "retr " + self.TESTFN_2, None)) as conn:
+                                "retr " + self.testfn2, None)) as conn:
             while True:
                 chunk = conn.recv(BUFSIZE)
                 bytes_recv += len(chunk)
@@ -1894,7 +1890,7 @@ class TestCallbacks(TestCase):
         self.assertEqual(self.client.getline()[:3], "426")
         self.read_file(
             'on_connect,on_login:%s,on_incomplete_file_sent:%s,' %
-            (USER, self.TESTFN_2))
+            (USER, self.testfn2))
 
 
 class _TestNetworkProtocols(object):
