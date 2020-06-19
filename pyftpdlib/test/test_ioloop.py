@@ -18,6 +18,7 @@ from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.ioloop import RetryError
 from pyftpdlib.test import mock
 from pyftpdlib.test import POSIX
+from pyftpdlib.test import TestCase
 from pyftpdlib.test import unittest
 from pyftpdlib.test import VERBOSITY
 import pyftpdlib.ioloop
@@ -151,7 +152,7 @@ class BaseIOLoopTestCase(object):
                 self.assertIn('ZeroDivisionError', logerr.call_args[0][0])
 
 
-class DefaultIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
+class DefaultIOLoopTestCase(TestCase, BaseIOLoopTestCase):
     ioloop_class = pyftpdlib.ioloop.IOLoop
 
 
@@ -159,7 +160,7 @@ class DefaultIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
 # select()
 # ===================================================================
 
-class SelectIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
+class SelectIOLoopTestCase(TestCase, BaseIOLoopTestCase):
     ioloop_class = pyftpdlib.ioloop.Select
 
     def test_select_eintr(self):
@@ -183,7 +184,7 @@ class SelectIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
 
 @unittest.skipUnless(hasattr(pyftpdlib.ioloop, 'Poll'),
                      "poll() not available on this platform")
-class PollIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
+class PollIOLoopTestCase(TestCase, BaseIOLoopTestCase):
     ioloop_class = getattr(pyftpdlib.ioloop, "Poll", None)
     poller_mock = "pyftpdlib.ioloop.Poll._poller"
 
@@ -263,7 +264,7 @@ class EpollIOLoopTestCase(PollIOLoopTestCase):
 
 @unittest.skipUnless(hasattr(pyftpdlib.ioloop, 'DevPoll'),
                      "/dev/poll not available on this platform (Solaris only)")
-class DevPollIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
+class DevPollIOLoopTestCase(TestCase, BaseIOLoopTestCase):
     ioloop_class = getattr(pyftpdlib.ioloop, "DevPoll", None)
 
 
@@ -273,11 +274,11 @@ class DevPollIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
 
 @unittest.skipUnless(hasattr(pyftpdlib.ioloop, 'Kqueue'),
                      "/dev/poll not available on this platform (BSD only)")
-class KqueueIOLoopTestCase(unittest.TestCase, BaseIOLoopTestCase):
+class KqueueIOLoopTestCase(TestCase, BaseIOLoopTestCase):
     ioloop_class = getattr(pyftpdlib.ioloop, "Kqueue", None)
 
 
-class TestCallLater(unittest.TestCase):
+class TestCallLater(TestCase):
     """Tests for CallLater class."""
 
     def setUp(self):
@@ -368,7 +369,7 @@ class TestCallLater(unittest.TestCase):
         self.assertTrue(a <= b)
 
 
-class TestCallEvery(unittest.TestCase):
+class TestCallEvery(TestCase):
     """Tests for CallEvery class."""
 
     def setUp(self):
@@ -460,7 +461,7 @@ class TestCallEvery(unittest.TestCase):
         self.assertTrue(l)
 
 
-class TestAsyncChat(unittest.TestCase):
+class TestAsyncChat(TestCase):
 
     def get_connected_handler(self):
         s = socket.socket()
@@ -516,7 +517,7 @@ class TestAsyncChat(unittest.TestCase):
             self.assertIsNone(ac.socket)
 
 
-class TestAcceptor(unittest.TestCase):
+class TestAcceptor(TestCase):
 
     def test_bind_af_unspecified_err(self):
         ac = Acceptor()

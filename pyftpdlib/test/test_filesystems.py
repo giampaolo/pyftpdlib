@@ -197,7 +197,7 @@ class TestAbstractedFS(TestCase):
 
 
 @unittest.skipUnless(POSIX, "UNIX only")
-class TestUnixFilesystem(unittest.TestCase):
+class TestUnixFilesystem(TestCase):
 
     def test_case(self):
         root = getcwdu()
