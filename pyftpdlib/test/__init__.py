@@ -52,6 +52,12 @@ except socket.error:
 USER = 'user'
 PASSWD = '12345'
 HOME = getcwdu()
+# Disambiguate TESTFN for parallel testing.
+if os.name == 'java':
+    # Jython disallows @ in module names
+    TESTFN_PREFIX = '$pyftpd-%s-' % os.getpid()
+else:
+    TESTFN_PREFIX = '@pyftpd-%s-' % os.getpid()
 TESTFN = 'tmp-pyftpdlib'
 TESTFN_UNICODE = TESTFN + '-unicode-' + '\xe2\x98\x83'
 TESTFN_UNICODE_2 = TESTFN_UNICODE + '-2'
@@ -73,6 +79,11 @@ class TestCase(unittest.TestCase):
         return "%s.%s.%s" % (
             self.__class__.__module__, self.__class__.__name__,
             self._testMethodName)
+
+    def get_testfn(self, suffix="", dir=None):
+        fname = get_testfn(suffix=suffix, dir=dir)
+        self.addCleanup(safe_rmpath, fname)
+        return fname
 
 
 # Hack that overrides default unittest.TestCase in order to print
@@ -111,6 +122,20 @@ def try_address(host, port=0, family=socket.AF_INET):
 SUPPORTS_IPV4 = try_address('127.0.0.1')
 SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
 SUPPORTS_SENDFILE = hasattr(os, 'sendfile') or sendfile is not None
+
+
+def get_testfn(suffix="", dir=None):
+    """Return an absolute pathname of a file or dir that did not
+    exist at the time this call is made. Also schedule it for safe
+    deletion at interpreter exit. It's technically racy but probably
+    not really due to the time variant.
+    """
+    if dir is None:
+        dir = os.getcwd()
+    while True:
+        name = tempfile.mktemp(prefix=TESTFN_PREFIX, suffix=suffix, dir=dir)
+        if not os.path.exists(name):  # also include dirs
+            return os.path.basename(name)
 
 
 def safe_rmpath(path):

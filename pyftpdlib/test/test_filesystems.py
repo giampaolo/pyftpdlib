@@ -13,7 +13,7 @@ from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.test import HOME
 from pyftpdlib.test import POSIX
 from pyftpdlib.test import safe_rmpath
-from pyftpdlib.test import TESTFN
+from pyftpdlib.test import TestCase
 from pyftpdlib.test import touch
 from pyftpdlib.test import unittest
 from pyftpdlib.test import VERBOSITY
@@ -22,13 +22,8 @@ if POSIX:
     from pyftpdlib.filesystems import UnixFilesystem
 
 
-class TestAbstractedFS(unittest.TestCase):
+class TestAbstractedFS(TestCase):
     """Test for conversion utility methods of AbstractedFS class."""
-
-    def setUp(self):
-        safe_rmpath(TESTFN)
-
-    tearDown = setUp
 
     def test_ftpnorm(self):
         # Tests for ftpnorm method.
@@ -174,16 +169,13 @@ class TestAbstractedFS(unittest.TestCase):
         def test_validpath_validlink(self):
             # Test validpath by issuing a symlink pointing to a path
             # inside the root directory.
+            testfn = self.get_testfn()
+            testfn2 = self.get_testfn()
             fs = AbstractedFS(u('/'), None)
             fs._root = HOME
-            TESTFN2 = TESTFN + '1'
-            try:
-                touch(TESTFN)
-                os.symlink(TESTFN, TESTFN2)
-                self.assertTrue(fs.validpath(u(TESTFN)))
-            finally:
-                safe_rmpath(TESTFN)
-                safe_rmpath(TESTFN2)
+            touch(testfn)
+            os.symlink(testfn, testfn2)
+            self.assertTrue(fs.validpath(u(testfn)))
 
         def test_validpath_external_symlink(self):
             # Test validpath by issuing a symlink pointing to a path
@@ -193,14 +185,15 @@ class TestAbstractedFS(unittest.TestCase):
             # tempfile should create our file in /tmp directory
             # which should be outside the user root.  If it is
             # not we just skip the test.
+            testfn = self.get_testfn()
             with tempfile.NamedTemporaryFile() as file:
                 try:
                     if HOME == os.path.dirname(file.name):
                         return
-                    os.symlink(file.name, TESTFN)
-                    self.assertFalse(fs.validpath(u(TESTFN)))
+                    os.symlink(file.name, testfn)
+                    self.assertFalse(fs.validpath(u(testfn)))
                 finally:
-                    safe_rmpath(TESTFN)
+                    safe_rmpath(testfn)
 
 
 @unittest.skipUnless(POSIX, "UNIX only")
