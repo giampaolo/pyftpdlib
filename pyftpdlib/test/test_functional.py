@@ -1102,12 +1102,12 @@ class TestFtpListingCmds(TestCase):
         self.client = self.client_class(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
         self.client.login(USER, PASSWD)
-        touch(TESTFN)
+        self.testfn = self.get_testfn()
+        touch(self.testfn)
 
     def tearDown(self):
         close_client(self.client)
         self.server.stop()
-        os.remove(TESTFN)
 
     def _test_listing_cmds(self, cmd):
         """Tests common to LIST NLST and MLSD commands."""
@@ -1119,17 +1119,18 @@ class TestFtpListingCmds(TestCase):
         if cmd.lower() != 'mlsd':
             # if pathname is a file one line is expected
             x = []
-            self.client.retrlines('%s ' % cmd + TESTFN, x.append)
+            self.client.retrlines('%s ' % cmd + self.testfn, x.append)
             self.assertEqual(len(x), 1)
-            self.assertTrue(''.join(x).endswith(TESTFN))
+            self.assertTrue(''.join(x).endswith(self.testfn))
         # non-existent path, 550 response is expected
-        bogus = os.path.basename(tempfile.mktemp(dir=HOME))
+        bogus = self.get_testfn()
         self.assertRaises(ftplib.error_perm, self.client.retrlines,
                           '%s ' % cmd + bogus, lambda x: x)
         # for an empty directory we excpect that the data channel is
         # opened anyway and that no data is received
         x = []
-        tempdir = os.path.basename(tempfile.mkdtemp(dir=HOME))
+        tempdir = self.get_testfn()
+        os.mkdir(tempdir)
         try:
             self.client.retrlines('%s %s' % (cmd, tempdir), x.append)
             self.assertEqual(x, [])
@@ -1163,17 +1164,18 @@ class TestFtpListingCmds(TestCase):
         # the fact set must be preceded by a space
         self.assertTrue(mlstline('mlst').startswith(' '))
         # where TVFS is supported, a fully qualified pathname is expected
-        self.assertTrue(mlstline('mlst ' + TESTFN).endswith('/' + TESTFN))
+        self.assertTrue(
+            mlstline('mlst ' + self.testfn).endswith('/' + self.testfn))
         self.assertTrue(mlstline('mlst').endswith('/'))
         # assume that no argument has the same meaning of "/"
         self.assertEqual(mlstline('mlst'), mlstline('mlst /'))
         # non-existent path
-        bogus = os.path.basename(tempfile.mktemp(dir=HOME))
+        bogus = self.get_testfn()
         self.assertRaises(ftplib.error_perm, self.client.sendcmd,
                           'mlst ' + bogus)
         # test file/dir notations
         self.assertTrue('type=dir' in mlstline('mlst'))
-        self.assertTrue('type=file' in mlstline('mlst ' + TESTFN))
+        self.assertTrue('type=file' in mlstline('mlst ' + self.testfn))
         # let's add some tests for OPTS command
         self.client.sendcmd('opts mlst type;')
         self.assertEqual(mlstline('mlst'), ' type=dir; /')
@@ -1185,10 +1187,10 @@ class TestFtpListingCmds(TestCase):
     def test_mlsd(self):
         # common tests
         self._test_listing_cmds('mlsd')
-        dir = os.path.basename(tempfile.mkdtemp(dir=HOME))
-        self.addCleanup(safe_rmpath, dir)
+        dir = self.get_testfn()
+        os.mkdir(dir)
         try:
-            self.client.retrlines('mlsd ' + TESTFN, lambda x: x)
+            self.client.retrlines('mlsd ' + self.testfn, lambda x: x)
         except ftplib.error_perm as err:
             resp = str(err)
             # if path is a file a 501 response code is expected
@@ -1224,11 +1226,11 @@ class TestFtpListingCmds(TestCase):
     def test_stat(self):
         # Test STAT provided with argument which is equal to LIST
         self.client.sendcmd('stat /')
-        self.client.sendcmd('stat ' + TESTFN)
+        self.client.sendcmd('stat ' + self.testfn)
         self.client.putcmd('stat *')
         resp = self.client.getmultiline()
         self.assertEqual(resp, '550 Globbing not supported.')
-        bogus = os.path.basename(tempfile.mktemp(dir=HOME))
+        bogus = self.get_testfn()
         self.assertRaises(ftplib.error_perm, self.client.sendcmd,
                           'stat ' + bogus)
 
