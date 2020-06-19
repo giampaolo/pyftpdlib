@@ -49,7 +49,6 @@ from pyftpdlib.test import SUPPORTS_IPV4
 from pyftpdlib.test import SUPPORTS_IPV6
 from pyftpdlib.test import SUPPORTS_SENDFILE
 from pyftpdlib.test import TestCase
-from pyftpdlib.test import TESTFN
 from pyftpdlib.test import ThreadedTestFTPd
 from pyftpdlib.test import TIMEOUT
 from pyftpdlib.test import touch
@@ -2479,8 +2478,10 @@ class ThreadedFTPTests(TestCase):
         self.client = self.client_class(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
         self.client.login(USER, PASSWD)
-        self.tempfile = os.path.basename(touch(TESTFN))
-        self.tempdir = os.path.basename(tempfile.mkdtemp(dir=HOME))
+        self.tempfile = self.get_testfn()
+        self.tempdir = self.get_testfn()
+        touch(self.tempfile)
+        touch(self.tempdir)
         self.dummy_recvfile = BytesIO()
         self.dummy_sendfile = BytesIO()
 
@@ -2489,7 +2490,6 @@ class ThreadedFTPTests(TestCase):
         self.server.stop()
         self.dummy_recvfile.close()
         self.dummy_sendfile.close()
-        safe_rmpath(TESTFN)
 
     def test_unforeseen_mdtm_event(self):
         # Emulate a case where the file last modification time is prior
@@ -2646,26 +2646,16 @@ class ThreadedFTPTests(TestCase):
         data = b'abcde12345' * 100000
         self.dummy_sendfile.write(data)
         self.dummy_sendfile.seek(0)
-        self.client.storbinary('stor ' + TESTFN, self.dummy_sendfile)
+        self.client.storbinary('stor ' + self.tempfile, self.dummy_sendfile)
         with mock.patch('pyftpdlib.handlers.sendfile',
                         side_effect=OSError(errno.EINVAL)) as fun:
-            try:
-                self.client.retrbinary(
-                    'retr ' + TESTFN, self.dummy_recvfile.write)
-                assert fun.called
-                self.dummy_recvfile.seek(0)
-                datafile = self.dummy_recvfile.read()
-                self.assertEqual(len(data), len(datafile))
-                self.assertEqual(hash(data), hash(datafile))
-            finally:
-                # We do not use os.remove() because file could still be
-                # locked by ftpd thread.  If DELE through FTP fails try
-                # os.remove() as last resort.
-                if os.path.exists(TESTFN):
-                    try:
-                        self.client.delete(TESTFN)
-                    except (ftplib.Error, EOFError, socket.error):
-                        safe_rmpath(TESTFN)
+            self.client.retrbinary(
+                'retr ' + self.tempfile, self.dummy_recvfile.write)
+            assert fun.called
+            self.dummy_recvfile.seek(0)
+            datafile = self.dummy_recvfile.read()
+            self.assertEqual(len(data), len(datafile))
+            self.assertEqual(hash(data), hash(datafile))
 
 
 configure_logging()
