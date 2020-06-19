@@ -5,6 +5,7 @@
 # found in the LICENSE file.
 
 import logging
+import os
 import sys
 import warnings
 try:
@@ -15,16 +16,15 @@ except ImportError:
 from pyftpdlib._compat import PY3
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.test import mock
-from pyftpdlib.test import safe_mkdir
-from pyftpdlib.test import safe_rmdir
-from pyftpdlib.test import TESTFN
+from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import unittest
+from pyftpdlib.test import TestCase
 from pyftpdlib.test import VERBOSITY
 import pyftpdlib
 import pyftpdlib.__main__
 
 
-class TestCommandLineParser(unittest.TestCase):
+class TestCommandLineParser(TestCase):
     """Test command line parser."""
     SYSARGV = sys.argv
     STDERR = sys.stderr
@@ -53,7 +53,6 @@ class TestCommandLineParser(unittest.TestCase):
         sys.argv = self.SYSARGV[:]
         sys.stderr = self.STDERR
         pyftpdlib.servers.FTPServer = self.original_ftpserver_class
-        safe_rmdir(TESTFN)
 
     def test_a_option(self):
         sys.argv += ["-i", "localhost", "-p", "0"]
@@ -92,8 +91,9 @@ class TestCommandLineParser(unittest.TestCase):
         self.assertRaises(SystemExit, pyftpdlib.__main__.main)
 
     def test_d_option(self):
-        sys.argv += ["-d", TESTFN, "-p", "0"]
-        safe_mkdir(TESTFN)
+        dirname = self.get_testfn()
+        os.mkdir(dirname)
+        sys.argv += ["-d", dirname, "-p", "0"]
         pyftpdlib.__main__.main()
 
         # without argument
@@ -104,8 +104,8 @@ class TestCommandLineParser(unittest.TestCase):
 
         # no such directory
         sys.argv = self.SYSARGV[:]
-        sys.argv += ["-d %s" % TESTFN]
-        safe_rmdir(TESTFN)
+        sys.argv += ["-d %s" % dirname]
+        safe_rmpath(dirname)
         self.assertRaises(ValueError, pyftpdlib.__main__.main)
 
     def test_r_option(self):

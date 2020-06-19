@@ -105,7 +105,7 @@ def cmd(fun):
 
 def rm(pattern, directory=False):
     """Recursively remove a file or dir by pattern."""
-    def safe_remove(path):
+    def safe_rmpath(path):
         try:
             os.remove(path)
         except OSError as err:
@@ -129,7 +129,7 @@ def rm(pattern, directory=False):
         if directory:
             safe_rmtree(pattern)
         else:
-            safe_remove(pattern)
+            safe_rmpath(pattern)
         return
 
     for root, subdirs, subfiles in os.walk('.'):
@@ -144,10 +144,10 @@ def rm(pattern, directory=False):
                 safe_rmtree(path)
             else:
                 safe_print("rm %s" % path)
-                safe_remove(path)
+                safe_rmpath(path)
 
 
-def safe_remove(path):
+def safe_rmpath(path):
     try:
         os.remove(path)
     except OSError as err:
@@ -178,7 +178,7 @@ def recursive_rm(*patterns):
         for file in subfiles:
             for pattern in patterns:
                 if fnmatch.fnmatch(file, pattern):
-                    safe_remove(os.path.join(root, file))
+                    safe_rmpath(os.path.join(root, file))
         for dir in subdirs:
             for pattern in patterns:
                 if fnmatch.fnmatch(dir, pattern):

@@ -19,7 +19,7 @@ from pyftpdlib.test import configure_logging
 from pyftpdlib.test import MProcessTestFTPd
 from pyftpdlib.test import OSX
 from pyftpdlib.test import PASSWD
-from pyftpdlib.test import remove_test_files
+from pyftpdlib.test import TestCase
 from pyftpdlib.test import TIMEOUT
 from pyftpdlib.test import TRAVIS
 from pyftpdlib.test import unittest
@@ -173,7 +173,7 @@ class TestCornerCasesTLSMixin(TLSTestMixin, TestCornerCases):
 
 
 @unittest.skipUnless(FTPS_SUPPORT, FTPS_UNSUPPORT_REASON)
-class TestFTPS(unittest.TestCase):
+class TestFTPS(TestCase):
     """Specific tests fot TSL_FTPHandler class."""
 
     def _setup(self,
@@ -354,7 +354,6 @@ class TestFTPS(unittest.TestCase):
 
 
 configure_logging()
-remove_test_files()
 
 
 if __name__ == '__main__':

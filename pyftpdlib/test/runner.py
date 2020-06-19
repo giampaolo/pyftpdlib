@@ -18,7 +18,6 @@ except ImportError:
     ctypes = None
 
 from pyftpdlib.test import configure_logging
-from pyftpdlib.test import remove_test_files
 from pyftpdlib.test import unittest
 from pyftpdlib.test import VERBOSITY
 
@@ -141,7 +140,6 @@ def get_suite(name=None):
 
 def main(name=None):
     configure_logging()
-    remove_test_files()
     runner = ColouredRunner(verbosity=VERBOSITY)
     try:
         result = runner.run(get_suite(name))

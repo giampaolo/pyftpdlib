@@ -4,24 +4,25 @@
 
 from __future__ import print_function
 import contextlib
-import errno
 import functools
 import logging
 import multiprocessing
 import os
 import shutil
 import socket
+import stat
 import sys
 import tempfile
 import threading
 import time
+import warnings
 try:
     from unittest import mock  # py3
 except ImportError:
     import mock  # NOQA - requires "pip install mock"
 
 from pyftpdlib._compat import getcwdu
-from pyftpdlib._compat import u
+from pyftpdlib._compat import FileNotFoundError
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import _import_sendfile
 from pyftpdlib.handlers import FTPHandler
@@ -35,9 +36,6 @@ if sys.version_info < (2, 7):
 else:
     import unittest
 
-if not hasattr(unittest.TestCase, "assertRaisesRegex"):
-    unittest.TestCase.assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
-
 sendfile = _import_sendfile()
 
 
@@ -49,9 +47,12 @@ except socket.error:
 USER = 'user'
 PASSWD = '12345'
 HOME = getcwdu()
-TESTFN = 'tmp-pyftpdlib'
-TESTFN_UNICODE = TESTFN + '-unicode-' + '\xe2\x98\x83'
-TESTFN_UNICODE_2 = TESTFN_UNICODE + '-2'
+# Disambiguate TESTFN for parallel testing.
+if os.name == 'java':
+    # Jython disallows @ in module names
+    TESTFN_PREFIX = '$pyftpd-%s-' % os.getpid()
+else:
+    TESTFN_PREFIX = '@pyftpd-%s-' % os.getpid()
 TIMEOUT = 2
 BUFSIZE = 1024
 INTERRUPTED_TRANSF_SIZE = 32768
@@ -65,10 +66,24 @@ VERBOSITY = 1 if os.getenv('SILENT') else 2
 
 class TestCase(unittest.TestCase):
 
+    # Print a full path representation of the single unit tests
+    # being run.
     def __str__(self):
+        fqmod = self.__class__.__module__
+        if not fqmod.startswith('pyftpdlib.'):
+            fqmod = 'pyftpdlib.test.' + fqmod
         return "%s.%s.%s" % (
-            self.__class__.__module__, self.__class__.__name__,
-            self._testMethodName)
+            fqmod, self.__class__.__name__, self._testMethodName)
+
+    # assertRaisesRegexp renamed to assertRaisesRegex in 3.3;
+    # add support for the new name.
+    if not hasattr(unittest.TestCase, 'assertRaisesRegex'):
+        assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
+
+    def get_testfn(self, suffix="", dir=None):
+        fname = get_testfn(suffix=suffix, dir=dir)
+        self.addCleanup(safe_rmpath, fname)
+        return fname
 
 
 # Hack that overrides default unittest.TestCase in order to print
@@ -109,52 +124,57 @@ SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
 SUPPORTS_SENDFILE = hasattr(os, 'sendfile') or sendfile is not None
 
 
-def safe_remove(*files):
-    "Convenience function for removing temporary test files"
-    for file in files:
-        try:
-            os.remove(file)
-        except OSError as err:
-            if os.name == 'nt':
-                return
-            if err.errno != errno.ENOENT:
-                raise
+def get_testfn(suffix="", dir=None):
+    """Return an absolute pathname of a file or dir that did not
+    exist at the time this call is made. Also schedule it for safe
+    deletion at interpreter exit. It's technically racy but probably
+    not really due to the time variant.
+    """
+    if dir is None:
+        dir = os.getcwd()
+    while True:
+        name = tempfile.mktemp(prefix=TESTFN_PREFIX, suffix=suffix, dir=dir)
+        if not os.path.exists(name):  # also include dirs
+            return os.path.basename(name)
 
 
-def safe_rmdir(dir):
-    "Convenience function for removing temporary test directories"
+def safe_rmpath(path):
+    "Convenience function for removing temporary test files or dirs"
+    def retry_fun(fun):
+        # On Windows it could happen that the file or directory has
+        # open handles or references preventing the delete operation
+        # to succeed immediately, so we retry for a while. See:
+        # https://bugs.python.org/issue33240
+        stop_at = time.time() + TIMEOUT
+        while time.time() < stop_at:
+            try:
+                return fun()
+            except FileNotFoundError:
+                pass
+            except WindowsError as _:
+                err = _
+                warnings.warn("ignoring %s" % str(err), UserWarning)
+            time.sleep(0.01)
+        raise err
+
     try:
-        os.rmdir(dir)
-    except OSError as err:
-        if os.name == 'nt':
-            return
-        if err.errno != errno.ENOENT:
-            raise
-
-
-def safe_mkdir(dir):
-    "Convenience function for creating a directory"
-    try:
-        os.mkdir(dir)
-    except OSError as err:
-        if err.errno != errno.EEXIST:
-            raise
+        st = os.stat(path)
+        if stat.S_ISDIR(st.st_mode):
+            fun = functools.partial(shutil.rmtree, path)
+        else:
+            fun = functools.partial(os.remove, path)
+        if POSIX:
+            fun()
+        else:
+            retry_fun(fun)
+    except FileNotFoundError:
+        pass
 
 
 def touch(name):
     """Create a file and return its name."""
     with open(name, 'w') as f:
         return f.name
-
-
-def remove_test_files():
-    """Remove files and directores created during tests."""
-    for name in os.listdir(u('.')):
-        if name.startswith(tempfile.template):
-            if os.path.isdir(name):
-                shutil.rmtree(name)
-            else:
-                safe_remove(name)
 
 
 def configure_logging():
@@ -181,7 +201,6 @@ def disable_log_warning(fun):
 
 def cleanup():
     """Cleanup function executed on interpreter exit."""
-    remove_test_files()
     map = IOLoop.instance().socket_map
     for x in list(map.values()):
         try:

@@ -2290,12 +2290,14 @@ class FTPHandler(AsyncChat):
                 # the REST.
                 ok = 0
                 try:
-                    if rest_pos > self.fs.getsize(file):
+                    fsize = self.fs.getsize(file)
+                    if rest_pos > fsize:
                         raise ValueError
                     fd.seek(rest_pos)
                     ok = 1
                 except ValueError:
-                    why = "Invalid REST parameter"
+                    why = "REST position (%s) > file size (%s)" % (
+                        rest_pos, fsize)
                 except (EnvironmentError, FilesystemError) as err:
                     why = _strerror(err)
                 if not ok:
@@ -2342,12 +2344,14 @@ class FTPHandler(AsyncChat):
                 # specified in the REST.
                 ok = 0
                 try:
-                    if rest_pos > self.fs.getsize(file):
+                    fsize = self.fs.getsize(file)
+                    if rest_pos > fsize:
                         raise ValueError
                     fd.seek(rest_pos)
                     ok = 1
                 except ValueError:
-                    why = "Invalid REST parameter"
+                    why = "REST position (%s) > file size (%s)" % (
+                        rest_pos, fsize)
                 except (EnvironmentError, FilesystemError) as err:
                     why = _strerror(err)
                 if not ok:
