@@ -15,7 +15,6 @@ import select
 import socket
 import stat
 import sys
-import tempfile
 import time
 
 from pyftpdlib._compat import b
@@ -466,7 +465,8 @@ class TestFtpFsOperations(TestCase):
         self.assertEqual(self.client.pwd(), '/' + self.tempdir)
 
     def test_cdup(self):
-        subfolder = os.path.basename(tempfile.mkdtemp(dir=self.tempdir))
+        subfolder = self.get_testfn(dir=self.tempdir)
+        os.mkdir(os.path.join(self.tempdir, subfolder))
         self.assertEqual(self.client.pwd(), u('/'))
         self.client.cwd(self.tempdir)
         self.assertEqual(self.client.pwd(), '/%s' % self.tempdir)
