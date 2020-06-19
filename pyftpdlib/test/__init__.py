@@ -11,10 +11,12 @@ import multiprocessing
 import os
 import shutil
 import socket
+import stat
 import sys
 import tempfile
 import threading
 import time
+import warnings
 try:
     from unittest import mock  # py3
 except ImportError:
@@ -22,6 +24,7 @@ except ImportError:
 
 from pyftpdlib._compat import getcwdu
 from pyftpdlib._compat import u
+from pyftpdlib._compat import FileNotFoundError
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import _import_sendfile
 from pyftpdlib.handlers import FTPHandler
@@ -61,6 +64,7 @@ POSIX = os.name == 'posix'
 WINDOWS = os.name == 'nt'
 TRAVIS = bool(os.environ.get('TRAVIS'))
 VERBOSITY = 1 if os.getenv('SILENT') else 2
+GLOBAL_TIMEOUT = 5
 
 
 class TestCase(unittest.TestCase):
@@ -133,10 +137,36 @@ def safe_rmdir(dir):
 
 
 def safe_rmpath(path):
-    if os.path.isdir(path):
-        safe_rmdir(path)
-    else:
-        safe_remove(path)
+    "Convenience function for removing temporary test files or dirs"
+    def retry_fun(fun):
+        # On Windows it could happen that the file or directory has
+        # open handles or references preventing the delete operation
+        # to succeed immediately, so we retry for a while. See:
+        # https://bugs.python.org/issue33240
+        stop_at = time.time() + GLOBAL_TIMEOUT
+        while time.time() < stop_at:
+            try:
+                return fun()
+            except FileNotFoundError:
+                pass
+            except WindowsError as _:
+                err = _
+                warnings.warn("ignoring %s" % str(err), UserWarning)
+            time.sleep(0.01)
+        raise err
+
+    try:
+        st = os.stat(path)
+        if stat.S_ISDIR(st.st_mode):
+            fun = functools.partial(shutil.rmtree, path)
+        else:
+            fun = functools.partial(os.remove, path)
+        if POSIX:
+            fun()
+        else:
+            retry_fun(fun)
+    except FileNotFoundError:
+        pass
 
 
 def safe_mkdir(dir):
