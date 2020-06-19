@@ -53,9 +53,6 @@ if os.name == 'java':
     TESTFN_PREFIX = '$pyftpd-%s-' % os.getpid()
 else:
     TESTFN_PREFIX = '@pyftpd-%s-' % os.getpid()
-TESTFN = 'tmp-pyftpdlib'
-TESTFN_UNICODE = TESTFN + '-unicode-' + '\xe2\x98\x83'
-TESTFN_UNICODE_2 = TESTFN_UNICODE + '-2'
 TIMEOUT = 2
 BUFSIZE = 1024
 INTERRUPTED_TRANSF_SIZE = 32768
