@@ -1375,6 +1375,7 @@ class TestTimeouts(TestCase):
     def setUp(self):
         self.server = None
         self.client = None
+        self.testfn = self.get_testfn()
 
     def _setUp(self, idle_timeout=300, data_timeout=300, pasv_timeout=30,
                port_timeout=30):
@@ -1435,18 +1436,14 @@ class TestTimeouts(TestCase):
         # whether the transfer stalled for with no progress is executed.
         self._setUp(data_timeout=0.5 if TRAVIS else 0.1)
         with contextlib.closing(
-                self.client.transfercmd('stor ' + TESTFN)) as sock:
+                self.client.transfercmd('stor ' + self.testfn)) as sock:
             if hasattr(self.client_class, 'ssl_version'):
                 sock = ssl.wrap_socket(sock)
-            try:
-                stop_at = time.time() + 0.2
-                while time.time() < stop_at:
-                    sock.send(b'x' * 1024)
-                sock.close()
-                self.client.voidresp()
-            finally:
-                if os.path.exists(TESTFN):
-                    self.client.delete(TESTFN)
+            stop_at = time.time() + 0.2
+            while time.time() < stop_at:
+                sock.send(b'x' * 1024)
+            sock.close()
+            self.client.voidresp()
 
     def test_idle_data_timeout1(self):
         # Tests that the control connection timeout is suspended while
