@@ -16,7 +16,6 @@ from pyftpdlib.test import close_client
 from pyftpdlib.test import configure_logging
 from pyftpdlib.test import HOST
 from pyftpdlib.test import PASSWD
-from pyftpdlib.test import remove_test_files
 from pyftpdlib.test import TestCase
 from pyftpdlib.test import ThreadedTestFTPd
 from pyftpdlib.test import TIMEOUT
@@ -225,7 +224,6 @@ class TestCornerCasesMProcMixin(MProcFTPTestMixin, TestCornerCases):
 
 
 configure_logging()
-remove_test_files()
 
 
 def main():

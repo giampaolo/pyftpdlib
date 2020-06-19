@@ -19,7 +19,6 @@ from pyftpdlib.test import configure_logging
 from pyftpdlib.test import MProcessTestFTPd
 from pyftpdlib.test import OSX
 from pyftpdlib.test import PASSWD
-from pyftpdlib.test import remove_test_files
 from pyftpdlib.test import TestCase
 from pyftpdlib.test import TIMEOUT
 from pyftpdlib.test import TRAVIS
@@ -355,7 +354,6 @@ class TestFTPS(TestCase):
 
 
 configure_logging()
-remove_test_files()
 
 
 if __name__ == '__main__':

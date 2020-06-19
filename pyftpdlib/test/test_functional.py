@@ -41,7 +41,6 @@ from pyftpdlib.test import MProcessTestFTPd
 from pyftpdlib.test import OSX
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import POSIX
-from pyftpdlib.test import remove_test_files
 from pyftpdlib.test import retry_on_failure
 from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import SUPPORTS_IPV4
@@ -2322,7 +2321,6 @@ class TestCornerCases(TestCase):
 #     def tearDown(self):
 #         close_client(self.client)
 #         self.server.stop()
-#         remove_test_files()
 
 #     # --- fs operations
 
@@ -2659,7 +2657,6 @@ class ThreadedFTPTests(TestCase):
 
 
 configure_logging()
-remove_test_files()
 
 
 if __name__ == '__main__':

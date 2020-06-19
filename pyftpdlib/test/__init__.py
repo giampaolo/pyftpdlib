@@ -22,9 +22,7 @@ except ImportError:
     import mock  # NOQA - requires "pip install mock"
 
 from pyftpdlib._compat import getcwdu
-from pyftpdlib._compat import FileExistsError
 from pyftpdlib._compat import FileNotFoundError
-from pyftpdlib._compat import u
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import _import_sendfile
 from pyftpdlib.handlers import FTPHandler
@@ -170,25 +168,10 @@ def safe_rmpath(path):
         pass
 
 
-def safe_mkdir(dir):
-    "Convenience function for creating a directory"
-    try:
-        os.mkdir(dir)
-    except FileExistsError:
-        pass
-
-
 def touch(name):
     """Create a file and return its name."""
     with open(name, 'w') as f:
         return f.name
-
-
-def remove_test_files():
-    """Remove files and directores created during tests."""
-    for name in os.listdir(u('.')):
-        if name.startswith(tempfile.template):
-            safe_rmpath(name)
 
 
 def configure_logging():
@@ -215,7 +198,6 @@ def disable_log_warning(fun):
 
 def cleanup():
     """Cleanup function executed on interpreter exit."""
-    remove_test_files()
     map = IOLoop.instance().socket_map
     for x in list(map.values()):
         try:
