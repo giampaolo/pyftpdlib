@@ -1323,6 +1323,7 @@ class TestThrottleBandwidth(TestCase):
         self.client.connect(self.server.host, self.server.port)
         self.client.login(USER, PASSWD)
         self.dummyfile = BytesIO()
+        self.testfn = self.get_testfn()
 
     def tearDown(self):
         close_client(self.client)
@@ -1332,8 +1333,6 @@ class TestThrottleBandwidth(TestCase):
         self.server.stop()
         if not self.dummyfile.closed:
             self.dummyfile.close()
-        if os.path.exists(TESTFN):
-            os.remove(TESTFN)
 
     def test_throttle_send(self):
         # This test doesn't test the actual speed accuracy, just
@@ -1341,9 +1340,9 @@ class TestThrottleBandwidth(TestCase):
         # with self.server.lock:
         self.server.handler.dtp_handler.write_limit = 32768
         data = b'abcde12345' * 100000
-        with open(TESTFN, 'wb') as file:
+        with open(self.testfn, 'wb') as file:
             file.write(data)
-        self.client.retrbinary("retr " + TESTFN, self.dummyfile.write)
+        self.client.retrbinary("retr " + self.testfn, self.dummyfile.write)
         self.dummyfile.seek(0)
         datafile = self.dummyfile.read()
         self.assertEqual(len(data), len(datafile))
@@ -1357,9 +1356,9 @@ class TestThrottleBandwidth(TestCase):
         data = b'abcde12345' * 100000
         self.dummyfile.write(data)
         self.dummyfile.seek(0)
-        self.client.storbinary("stor " + TESTFN, self.dummyfile)
+        self.client.storbinary("stor " + self.testfn, self.dummyfile)
         self.client.quit()  # needed to fix occasional failures
-        with open(TESTFN, 'rb') as file:
+        with open(self.testfn, 'rb') as file:
             file_data = file.read()
         self.assertEqual(len(data), len(file_data))
         self.assertEqual(hash(data), hash(file_data))
