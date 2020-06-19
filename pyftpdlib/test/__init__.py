@@ -36,9 +36,6 @@ if sys.version_info < (2, 7):
 else:
     import unittest
 
-if not hasattr(unittest.TestCase, "assertRaisesRegex"):
-    unittest.TestCase.assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
-
 sendfile = _import_sendfile()
 
 
@@ -72,10 +69,19 @@ VERBOSITY = 1 if os.getenv('SILENT') else 2
 
 class TestCase(unittest.TestCase):
 
+    # Print a full path representation of the single unit tests
+    # being run.
     def __str__(self):
+        fqmod = self.__class__.__module__
+        if not fqmod.startswith('pyftpdlib.'):
+            fqmod = 'pyftpdlib.test.' + fqmod
         return "%s.%s.%s" % (
-            self.__class__.__module__, self.__class__.__name__,
-            self._testMethodName)
+            fqmod, self.__class__.__name__, self._testMethodName)
+
+    # assertRaisesRegexp renamed to assertRaisesRegex in 3.3;
+    # add support for the new name.
+    if not hasattr(unittest.TestCase, 'assertRaisesRegex'):
+        assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
 
     def get_testfn(self, suffix="", dir=None):
         fname = get_testfn(suffix=suffix, dir=dir)
