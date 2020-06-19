@@ -70,7 +70,6 @@ POSIX = os.name == 'posix'
 WINDOWS = os.name == 'nt'
 TRAVIS = bool(os.environ.get('TRAVIS'))
 VERBOSITY = 1 if os.getenv('SILENT') else 2
-GLOBAL_TIMEOUT = 5
 
 
 class TestCase(unittest.TestCase):
@@ -145,7 +144,7 @@ def safe_rmpath(path):
         # open handles or references preventing the delete operation
         # to succeed immediately, so we retry for a while. See:
         # https://bugs.python.org/issue33240
-        stop_at = time.time() + GLOBAL_TIMEOUT
+        stop_at = time.time() + TIMEOUT
         while time.time() < stop_at:
             try:
                 return fun()
