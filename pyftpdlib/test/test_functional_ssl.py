@@ -13,6 +13,7 @@ import ssl
 
 import OpenSSL  # requires "pip install pyopenssl"
 
+from pyftpdlib._compat import super
 from pyftpdlib.handlers import TLS_FTPHandler
 from pyftpdlib.test import close_client
 from pyftpdlib.test import configure_logging
@@ -113,14 +114,14 @@ class TestFtpStoreDataTLSMixin(TLSTestMixin, TestFtpStoreData):
 
 #     def test_fallback(self):
 #         self.client.prot_c()
-#         super(TestSendFileTLSMixin, self).test_fallback()
+#         super().test_fallback()
 
 
 class TestFtpRetrieveDataTLSMixin(TLSTestMixin, TestFtpRetrieveData):
 
     @unittest.skipIf(os.name == 'nt', "may fail on windows")
     def test_restore_on_retr(self):
-        super(TestFtpRetrieveDataTLSMixin, self).test_restore_on_retr()
+        super().test_restore_on_retr()
 
 
 class TestFtpListingCmdsTLSMixin(TLSTestMixin, TestFtpListingCmds):
@@ -134,7 +135,7 @@ class TestFtpListingCmdsTLSMixin(TLSTestMixin, TestFtpListingCmds):
     # error: [Errno 0] Error
     @unittest.skipIf(TRAVIS or os.name == 'nt', "may fail on travis/windows")
     def test_nlst(self):
-        super(TestFtpListingCmdsTLSMixin, self).test_nlst()
+        super().test_nlst()
 
 
 class TestFtpAbortTLSMixin(TLSTestMixin, TestFtpAbort):

@@ -23,6 +23,7 @@ except ImportError:
 
 from pyftpdlib._compat import getcwdu
 from pyftpdlib._compat import FileNotFoundError
+from pyftpdlib._compat import super
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import _import_sendfile
 from pyftpdlib.handlers import FTPHandler
@@ -348,7 +349,7 @@ class ThreadedTestFTPd(threading.Thread):
     daemon = True
 
     def __init__(self, addr=None):
-        super(ThreadedTestFTPd, self).__init__(name='test-ftpd')
+        super().__init__(name='test-ftpd')
         self.server = setup_server(self.handler, self.server_class, addr=addr)
         self.host, self.port = self.server.socket.getsockname()[:2]
 
@@ -380,7 +381,7 @@ class MProcessTestFTPd(multiprocessing.Process):
     server_class = FTPServer
 
     def __init__(self, addr=None):
-        super(MProcessTestFTPd, self).__init__(name='test-ftpd')
+        super().__init__(name='test-ftpd')
         self.server = setup_server(self.handler, self.server_class, addr=addr)
         self.host, self.port = self.server.socket.getsockname()[:2]
         self._started = False

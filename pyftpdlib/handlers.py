@@ -36,6 +36,7 @@ from . import __ver__
 from ._compat import b
 from ._compat import getcwdu
 from ._compat import PY3
+from ._compat import super
 from ._compat import u
 from ._compat import unicode
 from ._compat import xrange
@@ -949,7 +950,7 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
     auto_sized_buffers = True
 
     def __init__(self, sock, cmd_channel):
-        super(ThrottledDTPHandler, self).__init__(sock, cmd_channel)
+        super().__init__(sock, cmd_channel)
         self._timenext = 0
         self._datacount = 0
         self.sleeping = False
@@ -971,13 +972,13 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
         return False
 
     def recv(self, buffer_size):
-        chunk = super(ThrottledDTPHandler, self).recv(buffer_size)
+        chunk = super().recv(buffer_size)
         if self.read_limit:
             self._throttle_bandwidth(len(chunk), self.read_limit)
         return chunk
 
     def send(self, data):
-        num_sent = super(ThrottledDTPHandler, self).send(data)
+        num_sent = super().send(data)
         if self.write_limit:
             self._throttle_bandwidth(num_sent, self.write_limit)
         return num_sent
@@ -1012,7 +1013,7 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
 
     def close(self):
         self._cancel_throttler()
-        super(ThrottledDTPHandler, self).close()
+        super().close()
 
 
 # --- producers
@@ -3135,18 +3136,16 @@ if SSL is not None:
         _ssl_requested = False
 
         def __init__(self, *args, **kwargs):
-            super(SSLConnection, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
             self._error = False
             self._ssl_want_read = False
             self._ssl_want_write = False
 
         def readable(self):
-            return self._ssl_want_read or \
-                super(SSLConnection, self).readable()
+            return self._ssl_want_read or super().readable()
 
         def writable(self):
-            return self._ssl_want_write or \
-                super(SSLConnection, self).writable()
+            return self._ssl_want_write or super().writable()
 
         def secure_connection(self, ssl_context):
             """Secure the connection switching from plain-text to
@@ -3231,14 +3230,14 @@ if SSL is not None:
 
         def handle_ssl_shutdown(self):
             """Called when SSL shutdown() has completed."""
-            super(SSLConnection, self).close()
+            super().close()
 
         def handle_failed_ssl_handshake(self):
             raise NotImplementedError("must be implemented in subclass")
 
         def handle_read_event(self):
             if not self._ssl_requested:
-                super(SSLConnection, self).handle_read_event()
+                super().handle_read_event()
             else:
                 with self._handle_ssl_want_rw():
                     self._ssl_want_read = False
@@ -3247,11 +3246,11 @@ if SSL is not None:
                     elif self._ssl_closing:
                         self._do_ssl_shutdown()
                     else:
-                        super(SSLConnection, self).handle_read_event()
+                        super().handle_read_event()
 
         def handle_write_event(self):
             if not self._ssl_requested:
-                super(SSLConnection, self).handle_write_event()
+                super().handle_write_event()
             else:
                 with self._handle_ssl_want_rw():
                     self._ssl_want_write = False
@@ -3260,7 +3259,7 @@ if SSL is not None:
                     elif self._ssl_closing:
                         self._do_ssl_shutdown()
                     else:
-                        super(SSLConnection, self).handle_write_event()
+                        super().handle_write_event()
 
         def handle_error(self):
             self._error = True
@@ -3272,7 +3271,7 @@ if SSL is not None:
             # to rely on base class (FTPHandler or DTPHandler)
             # close() method as it does not imply SSL shutdown logic
             try:
-                super(SSLConnection, self).close()
+                super().close()
             except Exception:
                 logger.critical(traceback.format_exc())
 
@@ -3280,7 +3279,7 @@ if SSL is not None:
             if not isinstance(data, bytes):
                 data = bytes(data)
             try:
-                return super(SSLConnection, self).send(data)
+                return super().send(data)
             except SSL.WantReadError:
                 debug("call: send(), err: ssl-want-read", inst=self)
                 self._ssl_want_read = True
@@ -3292,7 +3291,7 @@ if SSL is not None:
             except SSL.ZeroReturnError:
                 debug(
                     "call: send() -> shutdown(), err: zero-return", inst=self)
-                super(SSLConnection, self).handle_close()
+                super().handle_close()
                 return 0
             except SSL.SysCallError as err:
                 debug("call: send(), err: %r" % err, inst=self)
@@ -3301,14 +3300,14 @@ if SSL is not None:
                     return 0
                 elif errnum in _ERRNOS_DISCONNECTED or \
                         errstr == 'Unexpected EOF':
-                    super(SSLConnection, self).handle_close()
+                    super().handle_close()
                     return 0
                 else:
                     raise
 
         def recv(self, buffer_size):
             try:
-                return super(SSLConnection, self).recv(buffer_size)
+                return super().recv(buffer_size)
             except SSL.WantReadError:
                 debug("call: recv(), err: ssl-want-read", inst=self)
                 self._ssl_want_read = True
@@ -3320,14 +3319,14 @@ if SSL is not None:
             except SSL.ZeroReturnError:
                 debug("call: recv() -> shutdown(), err: zero-return",
                       inst=self)
-                super(SSLConnection, self).handle_close()
+                super().handle_close()
                 return b''
             except SSL.SysCallError as err:
                 debug("call: recv(), err: %r" % err, inst=self)
                 errnum, errstr = err.args
                 if errnum in _ERRNOS_DISCONNECTED or \
                         errstr == 'Unexpected EOF':
-                    super(SSLConnection, self).handle_close()
+                    super().handle_close()
                     return b''
                 else:
                     raise
@@ -3352,7 +3351,7 @@ if SSL is not None:
                                      errno.ENOBUFS):
                         return
                     elif err.errno in _ERRNOS_DISCONNECTED:
-                        return super(SSLConnection, self).close()
+                        return super().close()
                     else:
                         raise
             # Ok, this a mess, but the underlying OpenSSL API simply
@@ -3388,14 +3387,14 @@ if SSL is not None:
                 debug(
                     "call: _do_ssl_shutdown() -> shutdown(), err: zero-return",
                     inst=self)
-                super(SSLConnection, self).close()
+                super().close()
             except SSL.SysCallError as err:
                 debug("call: _do_ssl_shutdown() -> shutdown(), err: %r" % err,
                       inst=self)
                 errnum, errstr = err.args
                 if errnum in _ERRNOS_DISCONNECTED or \
                         errstr == 'Unexpected EOF':
-                    super(SSLConnection, self).close()
+                    super().close()
                 else:
                     raise
             except SSL.Error as err:
@@ -3412,7 +3411,7 @@ if SSL is not None:
                 debug("call: _do_ssl_shutdown() -> shutdown(), err: %r" % err,
                       inst=self)
                 if err.errno in _ERRNOS_DISCONNECTED:
-                    super(SSLConnection, self).close()
+                    super().close()
                 else:
                     raise
             else:
@@ -3434,13 +3433,13 @@ if SSL is not None:
                 self._ssl_accepting = False
                 self._ssl_established = False
                 self._ssl_closing = False
-                super(SSLConnection, self).close()
+                super().close()
 
     class TLS_DTPHandler(SSLConnection, DTPHandler):
         """A DTPHandler subclass supporting TLS/SSL."""
 
         def __init__(self, sock, cmd_channel):
-            super(TLS_DTPHandler, self).__init__(sock, cmd_channel)
+            super().__init__(sock, cmd_channel)
             if self.cmd_channel._prot:
                 self.secure_connection(self.cmd_channel.ssl_context)
 
@@ -3451,7 +3450,7 @@ if SSL is not None:
             if isinstance(self.socket, SSL.Connection):
                 return False
             else:
-                return super(TLS_DTPHandler, self).use_sendfile()
+                return super().use_sendfile()
 
         def handle_failed_ssl_handshake(self):
             # TLS/SSL handshake failure, probably client's fault which
@@ -3543,7 +3542,7 @@ if SSL is not None:
         })
 
         def __init__(self, conn, server, ioloop=None):
-            super(TLS_FTPHandler, self).__init__(conn, server, ioloop)
+            super().__init__(conn, server, ioloop)
             if not self.connected:
                 return
             self._extra_feats = ['AUTH TLS', 'AUTH SSL', 'PBSZ', 'PROT']
