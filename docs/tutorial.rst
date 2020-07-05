@@ -177,7 +177,7 @@ authenticating users and their passwords but storing clear-text passwords is of
 course undesirable. The most common way to do things in such case would be
 first creating new users and then storing their usernames + passwords as hash
 digests into a file or wherever you find it convenient. The example below shows
-how to storage passwords as one-way hashes by using md5 algorithm.
+how to store passwords as one-way hashes by using md5 algorithm.
 
 `source code <https://github.com/giampaolo/pyftpdlib/blob/master/demo/md5_ftpd.py>`__
 
@@ -196,7 +196,7 @@ how to storage passwords as one-way hashes by using md5 algorithm.
 
         def validate_authentication(self, username, password, handler):
             if sys.version_info >= (3, 0):
-                password = md5(password.encode('latin1'))
+                password = password.encode('latin1')
             hash = md5(password).hexdigest()
             try:
                 if self.user_table[username]['pwd'] != hash:
@@ -207,7 +207,10 @@ how to storage passwords as one-way hashes by using md5 algorithm.
 
     def main():
         # get a hash digest from a clear-text password
-        hash = md5('12345').hexdigest()
+        password = '12345'
+        if sys.version_info >= (3, 0):
+            password = password.encode('latin1')
+        hash = md5(password).hexdigest()
         authorizer = DummyMD5Authorizer()
         authorizer.add_user('user', hash, os.getcwd(), perm='elradfmwMT')
         authorizer.add_anonymous(os.getcwd())
