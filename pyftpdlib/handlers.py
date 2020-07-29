@@ -367,7 +367,7 @@ class PassiveDTP(Acceptor):
                 ip = ip[7:]
             # The format of 227 response in not standardized.
             # This is the most expected:
-            resp = '227 Entering passive mode (%s,%d,%d).' % (
+            resp = '227 Entering Passive Mode (%s,%d,%d).' % (
                 ip.replace('.', ','), port // 256, port % 256)
             self.cmd_channel.respond(resp)
         else:
