@@ -173,7 +173,7 @@ class TestFtpAuthentication(TestCase):
                         '530 Log in with USER and PASS first',
                         self.client.dir)
 
-        # a 226 response is expected once tranfer finishes
+        # a 226 response is expected once transfer finishes
         self.assertEqual(self.client.voidresp()[:3], '226')
         # account is still flushed, error response is still expected
         self.assertRaisesRegex(ftplib.error_perm,

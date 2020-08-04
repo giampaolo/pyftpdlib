@@ -459,7 +459,7 @@ else:
         @staticmethod
         def _get_system_users():
             """Return all users defined on the UNIX system."""
-            # there should be no need to convert usernames to unicode
+            # there should be no need to convert usernames to Unicode
             # as UNIX does not allow chars outside of ASCII set
             return [entry.pw_name for entry in pwd.getpwall()]
 
@@ -727,7 +727,7 @@ else:
         def _get_system_users(cls):
             """Return all users defined on the Windows system."""
             # XXX - Does Windows allow usernames with chars outside of
-            # ASCII set? In that case we need to convert this to unicode.
+            # ASCII set? In that case we need to convert this to Unicode.
             return [entry['name'] for entry in
                     win32net.NetUserEnum(None, 0)[0]]
 

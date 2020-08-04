@@ -926,7 +926,7 @@ class AsyncChat(asynchat.async_chat):
         asynchat.async_chat.initiate_send(self)
         if not self._closed:
             # if there's still data to send we want to be ready
-            # for writing, else we're only intereseted in reading
+            # for writing, else we're only interested in reading
             if not self.producer_fifo:
                 wanted = self.ioloop.READ
             else:

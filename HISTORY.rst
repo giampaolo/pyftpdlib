@@ -131,7 +131,7 @@ Version: 1.4.0 - Date: 2014-06-03
 - #293: project was migrated from Google Code to Github. Code was migrated from
   SVN to GIT.
 - #294: use tox to automate testing on multiple python versions.
-- #295: use travis-ci for continuos test integration.
+- #295: use travis-ci for continuous test integration.
 - #298: pysendfile and PyOpenSSL are now listed as extra deps in setup.py.
 
 **Bug fixes**
@@ -156,7 +156,7 @@ Version: 1.3.1 - Date: 2014-04-12
 **Bug fixes**
 
 - #261: (FTPS) SSL shutdown does not properly work on Windows.
-- #280: (Python 2) unable to complete directory listing with invalid UTF8
+- #280: (Python 2) unable to complete directory listing with invalid UTF-8
   characters. (patch by dn@devicenull.org)
 - #283: always use a single 'pyftpdlib' logger.
 
@@ -239,7 +239,7 @@ Version: 1.0.0 - Date: 2013-02-19
 **Enhancements**
 
 - #76: python 3.x porting.
-- #198: full unicode support (RFC-2640).
+- #198: full Unicode support (RFC-2640).
 - #203: asyncore IO loop has been rewritten from scratch and now supports
   epoll() on Linux and kqueue() on OSX/BSD.
   Also select() (Windows) and poll() pollers have been rewritten
@@ -422,7 +422,7 @@ Version: 0.7.0 - Date: 2012-01-25
   often). Some benchmarks:
   schedule:   +0.5x,
   reschedule: +1.7x,
-  cancel:     +477x (with 1 milion scheduled functions),
+  cancel:     +477x (with 1 million scheduled functions),
   run: +8x
   Also, a single scheduled function now consumes 1/3 of the memory thanks
   to ``__slots__`` usage.
@@ -802,7 +802,7 @@ Version: 0.2.0 - Date: 2007-09-17
 
 **Major enhancements**
 
-- #5: it is now possible to set a maximum number of connecions and a maximum
+- #5: it is now possible to set a maximum number of connections and a maximum
   number of connections from the same IP address.
 - #36: added support for FXP site-to-site transfer.
 - #39: added NAT/Firewall support with PASV (passive) mode connections.

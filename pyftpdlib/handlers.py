@@ -294,7 +294,7 @@ class PassiveDTP(Acceptor):
         """Initialize the passive data server.
 
          - (instance) cmd_channel: the command channel class instance.
-         - (bool) extmode: wheter use extended passive mode response type.
+         - (bool) extmode: whether use extended passive mode response type.
         """
         self.cmd_channel = cmd_channel
         self.log = cmd_channel.log
@@ -445,7 +445,7 @@ class ActiveDTP(Connector):
     timeout = 30
 
     def __init__(self, ip, port, cmd_channel):
-        """Initialize the active data channel attemping to connect
+        """Initialize the active data channel attempting to connect
         to remote data socket.
 
          - (str) ip: the remote IP address.
@@ -822,7 +822,7 @@ class DTPHandler(AsyncChat):
         return not self.receive and asynchat.async_chat.writable(self)
 
     def handle_timeout(self):
-        """Called cyclically to check if data trasfer is stalling with
+        """Called cyclically to check if data transfer is stalling with
         no progress in which case the client is kicked off.
         """
         if self.get_transmitted_bytes() > self._lastdata:
@@ -1660,12 +1660,12 @@ class FTPHandler(AsyncChat):
         """
 
     def on_file_sent(self, file):
-        """Called every time a file has been succesfully sent.
+        """Called every time a file has been successfully sent.
         "file" is the absolute name of the file just being sent.
         """
 
     def on_file_received(self, file):
-        """Called every time a file has been succesfully received.
+        """Called every time a file has been successfully received.
         "file" is the absolute name of the file just being received.
         """
 
@@ -1773,7 +1773,7 @@ class FTPHandler(AsyncChat):
         """
         if self.data_channel is not None:
             self.respond(
-                "125 Data connection already open. Transfer starting.")
+                "150 Data connection already open. Transfer starting.")
             if file:
                 self.data_channel.file_obj = file
             try:
@@ -1837,7 +1837,7 @@ class FTPHandler(AsyncChat):
         logfun("%s %s" % (prefix, msg))
 
     def logline(self, msg, logfun=logger.debug):
-        """Log a line including additional indentifying session data.
+        """Log a line including additional identifying session data.
         By default this is disabled unless logging level == DEBUG.
         """
         if self._log_debug:
@@ -1845,7 +1845,7 @@ class FTPHandler(AsyncChat):
             logfun("%s %s" % (prefix, msg))
 
     def logerror(self, msg):
-        """Log an error including additional indentifying session data."""
+        """Log an error including additional identifying session data."""
         prefix = self.log_prefix % self.__dict__
         logger.error("%s %s" % (prefix, msg))
 
@@ -1853,7 +1853,7 @@ class FTPHandler(AsyncChat):
         """Log an unhandled exception. 'instance' is the instance
         where the exception was generated.
         """
-        logger.exception("unhandled exception in instance %r", instance)
+        logger.excepftptftpion("unhandled exception in instance %r", instance)
 
     # the list of commands which gets logged when logging level
     # is >= logging.INFO
@@ -1899,7 +1899,7 @@ class FTPHandler(AsyncChat):
         """Log all file transfers in a standardized format.
 
          - (str) cmd:
-            the original command who caused the tranfer.
+            the original command who caused the transfer.
 
          - (str) filename:
             the absolutized name of the file on disk.
@@ -2085,7 +2085,7 @@ class FTPHandler(AsyncChat):
         # and choose to use IPv6 for the data channel.
         # But how could we use IPv6 on the data channel without knowing
         # which IPv6 address to use for binding the socket?
-        # Unfortunately RFC-2428 does not provide satisfing information
+        # Unfortunately RFC-2428 does not provide satisfying information
         # on how to do that.  The assumption is that we don't have any way
         # to know wich address to use, hence we just use the same address
         # family used on the control connection.
@@ -2159,7 +2159,7 @@ class FTPHandler(AsyncChat):
                     except UnicodeDecodeError:
                         # (Python 2 only) might happen on filesystem not
                         # supporting UTF8 meaning os.listdir() returned a list
-                        # of mixed bytes and unicode strings:
+                        # of mixed bytes and Unicode strings:
                         # http://goo.gl/6DLHD
                         # http://bugs.python.org/issue683592
                         pass
@@ -2197,8 +2197,8 @@ class FTPHandler(AsyncChat):
                     listing.sort()
                 except UnicodeDecodeError:
                     # (Python 2 only) might happen on filesystem not
-                    # supporting UTF8 meaning os.listdir() returned a list
-                    # of mixed bytes and unicode strings:
+                    # supporting UTF-8 meaning os.listdir() returned a list
+                    # of mixed bytes and Unicode strings:
                     # http://goo.gl/6DLHD
                     # http://bugs.python.org/issue683592
                     ls = []
@@ -2552,7 +2552,7 @@ class FTPHandler(AsyncChat):
                 raise TypeError('type(home) != text')
             else:
                 warnings.warn(
-                    '%s.get_home_dir returned a non-unicode string; now '
+                    '%s.get_home_dir returned a non-Unicode string; now '
                     'casting to unicode' % (
                         self.authorizer.__class__.__name__),
                     RuntimeWarning)
@@ -2939,8 +2939,8 @@ class FTPHandler(AsyncChat):
                             listing.sort()
                         except UnicodeDecodeError:
                             # (Python 2 only) might happen on filesystem not
-                            # supporting UTF8 meaning os.listdir() returned a
-                            # list of mixed bytes and unicode strings:
+                            # supporting UTF-8 meaning os.listdir() returned a
+                            # list of mixed bytes and Unicode strings:
                             # http://goo.gl/6DLHD
                             # http://bugs.python.org/issue683592
                             pass
@@ -3005,7 +3005,7 @@ class FTPHandler(AsyncChat):
 
     def ftp_NOOP(self, line):
         """Do nothing."""
-        self.respond("200 I successfully done nothin'.")
+        self.respond("200 I successfully did nothing'.")
 
     def ftp_SYST(self, line):
         """Return system type (always returns UNIX type: L8)."""
@@ -3501,7 +3501,7 @@ if SSL is not None:
             specific OpenSSL options. These default to:
             SSL.OP_NO_SSLv2 | SSL.OP_NO_SSLv3| SSL.OP_NO_COMPRESSION
             which are all considered insecure features.
-            Can be set to None in order to improve compatibilty with
+            Can be set to None in order to improve compatibility with
             older (insecure) FTP clients.
 
           - (instance) ssl_context:
