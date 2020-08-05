@@ -156,7 +156,7 @@ Version: 1.3.1 - Date: 2014-04-12
 **Bug fixes**
 
 - #261: (FTPS) SSL shutdown does not properly work on Windows.
-- #280: (Python 2) unable to complete directory listing with invalid UTF-8
+- #280: (Python 2) unable to complete directory listing with invalid UTF8
   characters. (patch by dn@devicenull.org)
 - #283: always use a single 'pyftpdlib' logger.
 
@@ -239,7 +239,7 @@ Version: 1.0.0 - Date: 2013-02-19
 **Enhancements**
 
 - #76: python 3.x porting.
-- #198: full Unicode support (RFC-2640).
+- #198: full unicode support (RFC-2640).
 - #203: asyncore IO loop has been rewritten from scratch and now supports
   epoll() on Linux and kqueue() on OSX/BSD.
   Also select() (Windows) and poll() pollers have been rewritten

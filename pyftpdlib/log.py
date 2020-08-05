@@ -65,7 +65,7 @@ class LogFormatter(logging.Formatter):
             # python3. Until version 3.2.3, most methods return
             # bytes, but only accept strings. In addition, we want to
             # output these strings with the logging module, which
-            # works with Unicode strings. The explicit calls to
+            # works with unicode strings. The explicit calls to
             # unicode() below are harmless in python2 but will do the
             # right conversion in python 3.
             fg_color = \
@@ -81,7 +81,8 @@ class LogFormatter(logging.Formatter):
                 logging.WARNING: unicode(curses.tparm(fg_color, 3), "ascii"),
                 # red
                 logging.ERROR: unicode(curses.tparm(fg_color, 1), "ascii")
-            } self._normal = unicode(curses.tigetstr("sgr0"), "ascii")
+            } 
+            self._normal = unicode(curses.tigetstr("sgr0"), "ascii")
 
     def format(self, record):
         try:
@@ -104,13 +105,13 @@ class LogFormatter(logging.Formatter):
         # when we attach the prefix, but there are other opportunities for
         # exceptions further along in the framework).
         #
-        # If a byte string makes it this far, convert it to Unicode to
+        # If a byte string makes it this far, convert it to unicode to
         # ensure it will make it out to the logs.  Use repr() as a fallback
         # to ensure that all byte strings can be converted successfully,
         # but don't do it by default so we don't add extra quotes to ASCII
         # bytestrings.  This is a bit of a hacky place to do this, but
         # it's worth it since the encoding errors that would otherwise
-        # result are so useless (and tornado is fond of using UTF-8-encoded
+        # result are so useless (and tornado is fond of using utf8-encoded
         # byte strings wherever possible).
         try:
             message = unicode(record.message)

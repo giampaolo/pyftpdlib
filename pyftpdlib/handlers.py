@@ -1773,7 +1773,7 @@ class FTPHandler(AsyncChat):
         """
         if self.data_channel is not None:
             self.respond(
-                "150 Data connection already open. Transfer starting.")
+                "125 Data connection already open. Transfer starting.")
             if file:
                 self.data_channel.file_obj = file
             try:
@@ -1853,7 +1853,7 @@ class FTPHandler(AsyncChat):
         """Log an unhandled exception. 'instance' is the instance
         where the exception was generated.
         """
-        logger.excepftptftpion("unhandled exception in instance %r", instance)
+        logger.exception("unhandled exception in instance %r", instance)
 
     # the list of commands which gets logged when logging level
     # is >= logging.INFO
@@ -2159,7 +2159,7 @@ class FTPHandler(AsyncChat):
                     except UnicodeDecodeError:
                         # (Python 2 only) might happen on filesystem not
                         # supporting UTF8 meaning os.listdir() returned a list
-                        # of mixed bytes and Unicode strings:
+                        # of mixed bytes and unicode strings:
                         # http://goo.gl/6DLHD
                         # http://bugs.python.org/issue683592
                         pass
@@ -2197,8 +2197,8 @@ class FTPHandler(AsyncChat):
                     listing.sort()
                 except UnicodeDecodeError:
                     # (Python 2 only) might happen on filesystem not
-                    # supporting UTF-8 meaning os.listdir() returned a list
-                    # of mixed bytes and Unicode strings:
+                    # supporting UTF8 meaning os.listdir() returned a list
+                    # of mixed bytes and unicode strings:
                     # http://goo.gl/6DLHD
                     # http://bugs.python.org/issue683592
                     ls = []
@@ -2552,7 +2552,7 @@ class FTPHandler(AsyncChat):
                 raise TypeError('type(home) != text')
             else:
                 warnings.warn(
-                    '%s.get_home_dir returned a non-Unicode string; now '
+                    '%s.get_home_dir returned a non-unicode string; now '
                     'casting to unicode' % (
                         self.authorizer.__class__.__name__),
                     RuntimeWarning)
@@ -2939,8 +2939,8 @@ class FTPHandler(AsyncChat):
                             listing.sort()
                         except UnicodeDecodeError:
                             # (Python 2 only) might happen on filesystem not
-                            # supporting UTF-8 meaning os.listdir() returned a
-                            # list of mixed bytes and Unicode strings:
+                            # supporting UTF8 meaning os.listdir() returned a
+                            # list of mixed bytes and unicode strings:
                             # http://goo.gl/6DLHD
                             # http://bugs.python.org/issue683592
                             pass
