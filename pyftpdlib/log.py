@@ -81,7 +81,7 @@ class LogFormatter(logging.Formatter):
                 logging.WARNING: unicode(curses.tparm(fg_color, 3), "ascii"),
                 # red
                 logging.ERROR: unicode(curses.tparm(fg_color, 1), "ascii")
-            } 
+            }
             self._normal = unicode(curses.tigetstr("sgr0"), "ascii")
 
     def format(self, record):
