@@ -633,6 +633,11 @@ class DTPHandler(AsyncChat):
         if self.file_obj is None or not hasattr(self.file_obj, "fileno"):
             # directory listing or unusual file obj
             return False
+        try:
+            # io.IOBase default implementation raises io.UnsupportedOperation
+            self.file_obj.fileno()
+        except OSError:
+            return False
         if self.cmd_channel._current_type != 'i':
             # text file transfer (need to transform file content on the fly)
             return False
