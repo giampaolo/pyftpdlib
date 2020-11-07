@@ -62,10 +62,10 @@ class LogFormatter(logging.Formatter):
         if self._coloured:
             curses.setupterm()
             # The curses module has some str/bytes confusion in
-            # python3.  Until version 3.2.3, most methods return
-            # bytes, but only accept strings.  In addition, we want to
+            # python3. Until version 3.2.3, most methods return
+            # bytes, but only accept strings. In addition, we want to
             # output these strings with the logging module, which
-            # works with unicode strings.  The explicit calls to
+            # works with unicode strings. The explicit calls to
             # unicode() below are harmless in python2 but will do the
             # right conversion in python 3.
             fg_color = \
@@ -99,7 +99,7 @@ class LogFormatter(logging.Formatter):
 
         # Encoding notes:  The logging module prefers to work with character
         # strings, but only enforces that log messages are instances of
-        # basestring.  In python 2, non-ascii bytestrings will make
+        # basestring.  In python 2, non-ASCII bytestrings will make
         # their way through the logging framework until they blow up with
         # an unhelpful decoding error (with this formatter it happens
         # when we attach the prefix, but there are other opportunities for
@@ -108,7 +108,7 @@ class LogFormatter(logging.Formatter):
         # If a byte string makes it this far, convert it to unicode to
         # ensure it will make it out to the logs.  Use repr() as a fallback
         # to ensure that all byte strings can be converted successfully,
-        # but don't do it by default so we don't add extra quotes to ascii
+        # but don't do it by default so we don't add extra quotes to ASCII
         # bytestrings.  This is a bit of a hacky place to do this, but
         # it's worth it since the encoding errors that would otherwise
         # result are so useless (and tornado is fond of using utf8-encoded

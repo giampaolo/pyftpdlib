@@ -402,7 +402,7 @@ class _SpawnerBase(FTPServer):
                         poll(timeout=soonest_timeout)
                     if ioloop.sched._tasks:
                         soonest_timeout = sched_poll()
-                        # Handle the case where socket_map is emty but some
+                        # Handle the case where socket_map is empty but some
                         # cancelled scheduled calls are still around causing
                         # this while loop to hog CPU resources.
                         # In theory this should never happen as all the sched

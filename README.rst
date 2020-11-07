@@ -84,7 +84,7 @@ Features
 Performances
 ============
 
-Despite being written in an intepreted language, pyftpdlib has transfer rates
+Despite being written in an interpreted language, pyftpdlib has transfer rates
 superior to most common UNIX FTP servers. It also scales better since whereas
 vsftpd and proftpd use multiple processes to achieve concurrency, pyftpdlib
 will only use one process and handle concurrency asynchronously (see

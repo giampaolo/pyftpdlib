@@ -387,7 +387,7 @@ class AbstractedFS(object):
 
     if grp is not None:
         def get_group_by_gid(self, gid):
-            """Return the groupname associated with group id.
+            """Return the group name associated with group id.
             If this can't be determined return raw gid instead.
             On Windows just return "group".
             """

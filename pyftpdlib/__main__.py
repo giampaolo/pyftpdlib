@@ -56,7 +56,7 @@ def main():
                       help="the range of TCP ports to use for passive "
                            "connections (e.g. -r 8000-9000)")
     parser.add_option('-D', '--debug', action='store_true',
-                      help="enable DEBUG logging evel")
+                      help="enable DEBUG logging level")
     parser.add_option('-v', '--version', action='store_true',
                       help="print pyftpdlib version and exit")
     parser.add_option('-V', '--verbose', action='store_true',
