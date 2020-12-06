@@ -7,6 +7,7 @@
 import contextlib
 import ftplib
 import inspect
+import os
 import socket
 import sys
 
@@ -53,6 +54,7 @@ class TestFTPServer(TestCase):
         if self.server is not None:
             self.server.stop()
 
+    @unittest.skipIf(os.name == 'nt', "POSIX only")
     def test_sock_instead_of_addr(self):
         # pass a socket object instead of an address tuple to FTPServer
         # constructor

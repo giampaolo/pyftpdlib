@@ -334,9 +334,10 @@ def assert_free_resources():
             p.kill()
             p.wait(1)
         assert not children, children
-    cons = [x for x in p.connections('tcp')
-            if x.status != psutil.CONN_CLOSE_WAIT]
-    assert not cons, cons
+    if os.name == 'posix':
+        cons = [x for x in p.connections('tcp')
+                if x.status != psutil.CONN_CLOSE_WAIT]
+        assert not cons, cons
 
 
 def reset_server_opts():
@@ -430,25 +431,30 @@ class ThreadedTestFTPd(threading.Thread):
         assert_free_resources()
 
 
-class MProcessTestFTPd(multiprocessing.Process):
-    """Same as above but using a sub process instead."""
-    handler = FTPHandler
-    server_class = FTPServer
+if os.name == 'posix':
+    class MProcessTestFTPd(multiprocessing.Process):
+        """Same as above but using a sub process instead."""
+        handler = FTPHandler
+        server_class = FTPServer
 
-    def __init__(self, addr=None):
-        super().__init__(name='test-ftpd')
-        self.server = setup_server(self.handler, self.server_class, addr=addr)
-        self.host, self.port = self.server.socket.getsockname()[:2]
-        self._started = False
+        def __init__(self, addr=None):
+            super().__init__(name='test-ftpd')
+            self.server = setup_server(
+                self.handler, self.server_class, addr=addr)
+            self.host, self.port = self.server.socket.getsockname()[:2]
+            self._started = False
 
-    def run(self):
-        assert not self._started
-        self._started = True
-        self.server.serve_forever()
+        def run(self):
+            assert not self._started
+            self._started = True
+            self.server.serve_forever()
 
-    def stop(self):
-        self.server.close_all()
-        self.terminate()
-        self.join()
-        reset_server_opts()
-        assert_free_resources()
+        def stop(self):
+            self.server.close_all()
+            self.terminate()
+            self.join()
+            reset_server_opts()
+            assert_free_resources()
+else:
+    # Windows
+    MProcessTestFTPd = ThreadedTestFTPd
