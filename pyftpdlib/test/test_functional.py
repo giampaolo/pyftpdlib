@@ -7,6 +7,7 @@
 import contextlib
 import errno
 import ftplib
+import io
 import logging
 import os
 import random
@@ -173,7 +174,7 @@ class TestFtpAuthentication(TestCase):
                         '530 Log in with USER and PASS first',
                         self.client.dir)
 
-        # a 226 response is expected once tranfer finishes
+        # a 226 response is expected once transfer finishes
         self.assertEqual(self.client.voidresp()[:3], '226')
         # account is still flushed, error response is still expected
         self.assertRaisesRegex(ftplib.error_perm,
@@ -636,11 +637,28 @@ class TestFtpFsOperations(TestCase):
                 self.assertEqual(getmode(), '0555')
 
 
+class CustomIO(io.RawIOBase):
+
+    def __init__(self):
+        super(CustomIO, self).__init__()
+        self._bytesio = io.BytesIO()
+
+    def seek(self, offset, whence=io.SEEK_SET):
+        return self._bytesio.seek(offset, whence)
+
+    def readinto(self, b):
+        return self._bytesio.readinto(b)
+
+    def write(self, b):
+        return self._bytesio.write(b)
+
+
 class TestFtpStoreData(TestCase):
     """Test STOR, STOU, APPE, REST, TYPE."""
     server_class = MProcessTestFTPd
     client_class = ftplib.FTP
     use_sendfile = None
+    use_custom_io = False
 
     def setUp(self):
         self.server = self.server_class()
@@ -650,8 +668,12 @@ class TestFtpStoreData(TestCase):
         self.client = self.client_class(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
         self.client.login(USER, PASSWD)
-        self.dummy_recvfile = BytesIO()
-        self.dummy_sendfile = BytesIO()
+        if self.use_custom_io:
+            self.dummy_recvfile = CustomIO()
+            self.dummy_sendfile = CustomIO()
+        else:
+            self.dummy_recvfile = BytesIO()
+            self.dummy_sendfile = BytesIO()
         self.testfn = self.get_testfn()
 
     def tearDown(self):
@@ -921,11 +943,17 @@ class TestFtpStoreDataNoSendfile(TestFtpStoreData):
     use_sendfile = False
 
 
+class TestFtpStoreDataWithCustomIO(TestFtpStoreData):
+    """Test STOR, STOU, APPE, REST, TYPE with custom IO objects()."""
+    use_custom_io = True
+
+
 class TestFtpRetrieveData(TestCase):
     """Test RETR, REST, TYPE"""
     server_class = MProcessTestFTPd
     client_class = ftplib.FTP
     use_sendfile = None
+    use_custom_io = False
 
     def retrieve_ascii(self, cmd, callback, blocksize=8192, rest=None):
         """Like retrbinary but uses TYPE A instead."""
@@ -949,7 +977,10 @@ class TestFtpRetrieveData(TestCase):
         self.client.connect(self.server.host, self.server.port)
         self.client.login(USER, PASSWD)
         self.testfn = self.get_testfn()
-        self.dummyfile = BytesIO()
+        if self.use_custom_io:
+            self.dummyfile = CustomIO()
+        else:
+            self.dummyfile = BytesIO()
 
     def tearDown(self):
         close_client(self.client)
@@ -1048,6 +1079,11 @@ class TestFtpRetrieveData(TestCase):
 class TestFtpRetrieveDataNoSendfile(TestFtpRetrieveData):
     """Test RETR, REST, TYPE by not using sendfile()."""
     use_sendfile = False
+
+
+class TestFtpRetrieveDataCustomIO(TestFtpRetrieveData):
+    """Test RETR, REST, TYPE using custom IO objects."""
+    use_custom_io = True
 
 
 class TestFtpListingCmds(TestCase):

@@ -261,7 +261,7 @@ def setup_server(handler, server_class, addr=None):
     authorizer.add_anonymous(HOME)
     handler.authorizer = authorizer
     handler.auth_failed_timeout = 0.001
-    # lower buffer sizes = more "loops" while transfering data
+    # lower buffer sizes = more "loops" while transferring data
     # = less false positives
     handler.dtp_handler.ac_in_buffer_size = 4096
     handler.dtp_handler.ac_out_buffer_size = 4096
