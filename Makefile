@@ -17,7 +17,6 @@ DEV_DEPS = \
 	setuptools \
 	sphinx
 TEST_DEPS = \
-	nose \
 	psutil \
 	pyopenssl \
 	pysendfile \
