@@ -2,7 +2,6 @@
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
 name: pyftpdlib tests
-
 on: [push]
 jobs:
   build:
@@ -21,4 +20,4 @@ jobs:
       run: |
         python -m pip install --upgrade pip setuptools
         python -m pip install --upgrade mock==1.0.1 unittest2 pysendfile pyopenssl psutil
-        make test
+        make test PYTHON=python
