@@ -2528,6 +2528,7 @@ class ThreadedFTPTests(TestCase):
         self.dummy_recvfile.close()
         self.dummy_sendfile.close()
 
+    @retry_on_failure()
     def test_unforeseen_mdtm_event(self):
         # Emulate a case where the file last modification time is prior
         # to year 1900.  This most likely will never happen unless
@@ -2553,6 +2554,7 @@ class ThreadedFTPTests(TestCase):
             finally:
                 AbstractedFS.getmtime = _getmtime
 
+    @retry_on_failure()
     def test_stou_max_tries(self):
         # Emulates case where the max number of tries to find out a
         # unique file name when processing STOU command gets hit.
@@ -2574,6 +2576,7 @@ class ThreadedFTPTests(TestCase):
             with self.server.lock:
                 self.server.handler.abstracted_fs = AbstractedFS
 
+    @retry_on_failure()
     def test_idle_timeout(self):
         # Test control channel timeout.  The client which does not send
         # any command within the time specified in FTPHandler.timeout is
@@ -2598,6 +2601,7 @@ class ThreadedFTPTests(TestCase):
 
     @unittest.skipUnless(hasattr(socket, 'TCP_NODELAY'),
                          'TCP_NODELAY not available')
+    @retry_on_failure()
     def test_tcp_no_delay(self):
         s = get_server_handler().socket
         self.assertTrue(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
@@ -2609,6 +2613,7 @@ class ThreadedFTPTests(TestCase):
         s = get_server_handler().socket
         self.assertFalse(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
 
+    @retry_on_failure()
     def test_permit_foreign_address_false(self):
         handler = get_server_handler()
         with self.server.lock:
@@ -2618,6 +2623,7 @@ class ThreadedFTPTests(TestCase):
             self.client.makeport()
         self.assertIn('foreign address', str(cm.exception))
 
+    @retry_on_failure()
     def test_permit_foreign_address_true(self):
         handler = get_server_handler()
         with self.server.lock:
@@ -2627,6 +2633,7 @@ class ThreadedFTPTests(TestCase):
         s.close()
 
     @disable_log_warning
+    @retry_on_failure()
     def test_permit_privileged_ports(self):
         # Test FTPHandler.permit_privileged_ports_active attribute
 
@@ -2676,6 +2683,7 @@ class ThreadedFTPTests(TestCase):
     @unittest.skipUnless(POSIX, "POSIX only")
     @unittest.skipIf(sys.version_info < (3, 3) and sendfile is None,
                      "pysendfile not installed")
+    @retry_on_failure()
     def test_sendfile_fails(self):
         # Makes sure that if sendfile() fails and no bytes were
         # transmitted yet the server falls back on using plain

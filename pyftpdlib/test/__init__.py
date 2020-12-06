@@ -21,8 +21,9 @@ try:
 except ImportError:
     import mock  # NOQA - requires "pip install mock"
 
-from pyftpdlib._compat import getcwdu
 from pyftpdlib._compat import FileNotFoundError
+from pyftpdlib._compat import getcwdu
+from pyftpdlib._compat import PY3
 from pyftpdlib._compat import super
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import _import_sendfile
@@ -212,19 +213,73 @@ def cleanup():
     map.clear()
 
 
-def retry_on_failure(ntimes=None):
-    """Decorator to retry a test in case of failure."""
-    def decorator(fun):
+class retry(object):
+    """A retry decorator."""
+
+    def __init__(self,
+                 exception=Exception,
+                 timeout=None,
+                 retries=None,
+                 interval=0.001,
+                 logfun=None,
+                 ):
+        if timeout and retries:
+            raise ValueError("timeout and retries args are mutually exclusive")
+        self.exception = exception
+        self.timeout = timeout
+        self.retries = retries
+        self.interval = interval
+        self.logfun = logfun
+
+    def __iter__(self):
+        if self.timeout:
+            stop_at = time.time() + self.timeout
+            while time.time() < stop_at:
+                yield
+        elif self.retries:
+            for _ in range(self.retries):
+                yield
+        else:
+            while True:
+                yield
+
+    def sleep(self):
+        if self.interval is not None:
+            time.sleep(self.interval)
+
+    def __call__(self, fun):
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
-            for x in range(ntimes or NO_RETRIES):
+            exc = None
+            for _ in self:
                 try:
                     return fun(*args, **kwargs)
-                except AssertionError as _:
-                    err = _
-            raise err
+                except self.exception as _:  # NOQA
+                    exc = _
+                    if self.logfun is not None:
+                        self.logfun(exc)
+                    self.sleep()
+                    continue
+            if PY3:
+                raise exc
+            else:
+                raise
+
+        # This way the user of the decorated function can change config
+        # parameters.
+        wrapper.decorator = self
         return wrapper
-    return decorator
+
+
+def retry_on_failure(retries=NO_RETRIES):
+    """Decorator which runs a test function and retries N times before
+    actually failing.
+    """
+    def logfun(exc):
+        print("%r, retrying" % exc, file=sys.stderr)  # NOQA
+
+    return retry(exception=AssertionError, timeout=None, retries=retries,
+                 logfun=logfun)
 
 
 def call_until(fun, expr, timeout=TIMEOUT):
