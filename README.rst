@@ -2,11 +2,11 @@
     :target: http://pepy.tech/project/pyftpdlib
     :alt: Downloads
 
-.. image:: https://img.shields.io/travis/giampaolo/pyftpdlib/master.svg?maxAge=3600&label=Linux%20/%20OSX
-    :target: https://travis-ci.org/giampaolo/pyftpdlib
-    :alt: Linux tests (Travis)
+.. image:: https://github.com/giampaolo/pyftpdlib/workflows/pyftpdlib%20tests/badge.svg
+    :target: https://github.com/giampaolo/pyftpdlib/actions?query=workflow%3A%22pyftpdlib+tests%22
+    :alt: Linux tests
 
-.. image:: https://img.shields.io/appveyor/ci/giampaolo/pyftpdlib/master.svg?maxAge=3600&label=Windows
+.. image:: https://ci.appveyor.com/api/projects/status/mi5vhqt26vwvxg2b?svg=true
     :target: https://ci.appveyor.com/project/giampaolo/pyftpdlib
     :alt: Windows tests (Appveyor)
 

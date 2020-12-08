@@ -422,10 +422,10 @@ class _SpawnerBase(FTPServer):
                     # note: these two exceptions are raised in all sub
                     # processes
                     self._exit.set()
-                except select.error as err:
+                except OSError as err:
                     # on Windows we can get WSAENOTSOCK if the client
                     # rapidly connect and disconnects
-                    if os.name == 'nt' and err[0] == 10038:
+                    if os.name == 'nt' and err.winerror == 10038:
                         for fd in list(ioloop.socket_map.keys()):
                             try:
                                 select.select([fd], [], [], 0)

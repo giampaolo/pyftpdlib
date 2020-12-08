@@ -341,8 +341,8 @@ class _SharedAuthorizerTests(object):
         user = self.get_current_user()
         auth.override_user(user, password='foo')
         auth.validate_authentication(user, 'foo', None)
-        self.assertRaises(AuthenticationFailed(auth.validate_authentication,
-                                               user, 'bar', None))
+        self.assertRaises(AuthenticationFailed, auth.validate_authentication,
+                          user, 'bar', None)
         # make sure other settings keep using default values
         self.assertEqual(auth.get_home_dir(user),
                          self.get_current_user_homedir())

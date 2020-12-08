@@ -21,8 +21,9 @@ try:
 except ImportError:
     import mock  # NOQA - requires "pip install mock"
 
-from pyftpdlib._compat import getcwdu
 from pyftpdlib._compat import FileNotFoundError
+from pyftpdlib._compat import getcwdu
+from pyftpdlib._compat import PY3
 from pyftpdlib._compat import super
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import _import_sendfile
@@ -40,29 +41,39 @@ else:
 sendfile = _import_sendfile()
 
 
+# --- platforms
+
+PYPY = '__pypy__' in sys.builtin_module_names
+# whether we're running this test suite on a Continuous Integration service
+APPVEYOR = 'APPVEYOR' in os.environ
+GITHUB_ACTIONS = 'GITHUB_ACTIONS' in os.environ or 'CIBUILDWHEEL' in os.environ
+CI_TESTING = APPVEYOR or GITHUB_ACTIONS
+# are we a 64 bit process?
+IS_64BIT = sys.maxsize > 2 ** 32
+OSX = sys.platform.startswith("darwin")
+POSIX = os.name == 'posix'
+WINDOWS = os.name == 'nt'
+
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
 try:
     HOST = socket.gethostbyname('localhost')
 except socket.error:
     HOST = 'localhost'
+
 USER = 'user'
 PASSWD = '12345'
 HOME = getcwdu()
 # Disambiguate TESTFN for parallel testing.
-if os.name == 'java':
-    # Jython disallows @ in module names
-    TESTFN_PREFIX = '$pyftpd-%s-' % os.getpid()
-else:
-    TESTFN_PREFIX = '@pyftpd-%s-' % os.getpid()
-TIMEOUT = 2
+TESTFN_PREFIX = '@pyftpd-%s-' % os.getpid()
+GLOBAL_TIMEOUT = 2
 BUFSIZE = 1024
 INTERRUPTED_TRANSF_SIZE = 32768
 NO_RETRIES = 5
-OSX = sys.platform.startswith("darwin")
-POSIX = os.name == 'posix'
-WINDOWS = os.name == 'nt'
-TRAVIS = bool(os.environ.get('TRAVIS'))
 VERBOSITY = 1 if os.getenv('SILENT') else 2
+
+if CI_TESTING:
+    GLOBAL_TIMEOUT *= 3
+    NO_RETRIES *= 3
 
 
 class TestCase(unittest.TestCase):
@@ -146,7 +157,7 @@ def safe_rmpath(path):
         # open handles or references preventing the delete operation
         # to succeed immediately, so we retry for a while. See:
         # https://bugs.python.org/issue33240
-        stop_at = time.time() + TIMEOUT
+        stop_at = time.time() + GLOBAL_TIMEOUT
         while time.time() < stop_at:
             try:
                 return fun()
@@ -212,22 +223,79 @@ def cleanup():
     map.clear()
 
 
-def retry_on_failure(ntimes=None):
-    """Decorator to retry a test in case of failure."""
-    def decorator(fun):
+class retry(object):
+    """A retry decorator."""
+
+    def __init__(self,
+                 exception=Exception,
+                 timeout=None,
+                 retries=None,
+                 interval=0.001,
+                 logfun=None,
+                 ):
+        if timeout and retries:
+            raise ValueError("timeout and retries args are mutually exclusive")
+        self.exception = exception
+        self.timeout = timeout
+        self.retries = retries
+        self.interval = interval
+        self.logfun = logfun
+
+    def __iter__(self):
+        if self.timeout:
+            stop_at = time.time() + self.timeout
+            while time.time() < stop_at:
+                yield
+        elif self.retries:
+            for _ in range(self.retries):
+                yield
+        else:
+            while True:
+                yield
+
+    def sleep(self):
+        if self.interval is not None:
+            time.sleep(self.interval)
+
+    def __call__(self, fun):
         @functools.wraps(fun)
-        def wrapper(*args, **kwargs):
-            for x in range(ntimes or NO_RETRIES):
+        def wrapper(cls, *args, **kwargs):
+            exc = None
+            for _ in self:
                 try:
-                    return fun(*args, **kwargs)
-                except AssertionError as _:
-                    err = _
-            raise err
+                    return fun(cls, *args, **kwargs)
+                except self.exception as _:  # NOQA
+                    exc = _
+                    if self.logfun is not None:
+                        self.logfun(exc)
+                    self.sleep()
+                    if isinstance(cls, unittest.TestCase):
+                        cls.tearDown()
+                        cls.setUp()
+                    continue
+            if PY3:
+                raise exc
+            else:
+                raise
+
+        # This way the user of the decorated function can change config
+        # parameters.
+        wrapper.decorator = self
         return wrapper
-    return decorator
 
 
-def call_until(fun, expr, timeout=TIMEOUT):
+def retry_on_failure(retries=NO_RETRIES):
+    """Decorator which runs a test function and retries N times before
+    actually failing.
+    """
+    def logfun(exc):
+        print("%r, retrying" % exc, file=sys.stderr)  # NOQA
+
+    return retry(exception=AssertionError, timeout=None, retries=retries,
+                 logfun=logfun)
+
+
+def call_until(fun, expr, timeout=GLOBAL_TIMEOUT):
     """Keep calling function for timeout secs and exit if eval()
     expression is True.
     """
@@ -276,12 +344,18 @@ def assert_free_resources():
     children = p.children()
     if children:
         for p in children:
-            p.kill()
-            p.wait(1)
-        assert not children, children
-    cons = [x for x in p.connections('tcp')
-            if x.status != psutil.CONN_CLOSE_WAIT]
-    assert not cons, cons
+            try:
+                p.kill()
+                p.wait(GLOBAL_TIMEOUT)
+            except psutil.NoSuchProcess:
+                pass
+        warnings.warn("some children didn't terminate %r" % str(children),
+                      UserWarning)
+    if POSIX:
+        cons = [x for x in p.connections('tcp')
+                if x.status != psutil.CONN_CLOSE_WAIT]
+        warnings.warn("some connections didn't close %r" % str(cons),
+                      UserWarning)
 
 
 def reset_server_opts():
@@ -329,7 +403,7 @@ def reset_server_opts():
     # Acceptors.
     ls = [pyftpdlib.servers.FTPServer,
           pyftpdlib.servers.ThreadedFTPServer]
-    if os.name == 'posix':
+    if POSIX:
         ls.append(pyftpdlib.servers.MultiprocessFTPServer)
     for klass in ls:
         klass.max_cons = 0
@@ -344,7 +418,7 @@ class ThreadedTestFTPd(threading.Thread):
     """
     handler = FTPHandler
     server_class = FTPServer
-    poll_interval = 0.001 if TRAVIS else 0.000001
+    poll_interval = 0.001 if CI_TESTING else 0.000001
     # Makes the thread stop on interpreter exit.
     daemon = True
 
@@ -375,25 +449,30 @@ class ThreadedTestFTPd(threading.Thread):
         assert_free_resources()
 
 
-class MProcessTestFTPd(multiprocessing.Process):
-    """Same as above but using a sub process instead."""
-    handler = FTPHandler
-    server_class = FTPServer
+if POSIX:
+    class MProcessTestFTPd(multiprocessing.Process):
+        """Same as above but using a sub process instead."""
+        handler = FTPHandler
+        server_class = FTPServer
 
-    def __init__(self, addr=None):
-        super().__init__(name='test-ftpd')
-        self.server = setup_server(self.handler, self.server_class, addr=addr)
-        self.host, self.port = self.server.socket.getsockname()[:2]
-        self._started = False
+        def __init__(self, addr=None):
+            super().__init__(name='test-ftpd')
+            self.server = setup_server(
+                self.handler, self.server_class, addr=addr)
+            self.host, self.port = self.server.socket.getsockname()[:2]
+            self._started = False
 
-    def run(self):
-        assert not self._started
-        self._started = True
-        self.server.serve_forever()
+        def run(self):
+            assert not self._started
+            self._started = True
+            self.server.serve_forever()
 
-    def stop(self):
-        self.server.close_all()
-        self.terminate()
-        self.join()
-        reset_server_opts()
-        assert_free_resources()
+        def stop(self):
+            self.server.close_all()
+            self.terminate()
+            self.join()
+            reset_server_opts()
+            assert_free_resources()
+else:
+    # Windows
+    MProcessTestFTPd = ThreadedTestFTPd

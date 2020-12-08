@@ -18,10 +18,11 @@ from pyftpdlib.test import HOST
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import TestCase
 from pyftpdlib.test import ThreadedTestFTPd
-from pyftpdlib.test import TIMEOUT
+from pyftpdlib.test import GLOBAL_TIMEOUT
 from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
 from pyftpdlib.test import VERBOSITY
+from pyftpdlib.test import WINDOWS
 from pyftpdlib.test.test_functional import TestCornerCases
 from pyftpdlib.test.test_functional import TestFtpAbort
 from pyftpdlib.test.test_functional import TestFtpAuthentication
@@ -53,6 +54,7 @@ class TestFTPServer(TestCase):
         if self.server is not None:
             self.server.stop()
 
+    @unittest.skipIf(WINDOWS, "POSIX only")
     def test_sock_instead_of_addr(self):
         # pass a socket object instead of an address tuple to FTPServer
         # constructor
@@ -62,7 +64,7 @@ class TestFTPServer(TestCase):
             ip, port = sock.getsockname()[:2]
             self.server = self.server_class(sock)
             self.server.start()
-            self.client = self.client_class(timeout=TIMEOUT)
+            self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
             self.client.connect(ip, port)
             self.client.login(USER, PASSWD)
 

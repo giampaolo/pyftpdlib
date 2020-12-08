@@ -13,7 +13,7 @@ import subprocess
 
 
 IGNORED_EXTS = ('.png', '.jpg', '.jpeg')
-IGNORED_FILES = ('.travis.yml', 'appveyor.yml')
+IGNORED_FILES = ('appveyor.yml', )
 
 
 def sh(cmd):

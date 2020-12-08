@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2009 Giampaolo Rodola'. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
@@ -12,9 +12,11 @@ that they should be deemed illegal!
 """
 
 from __future__ import print_function
+import argparse
+import atexit
+import ctypes
 import errno
 import fnmatch
-import functools
 import os
 import shutil
 import site
@@ -24,41 +26,44 @@ import sys
 import tempfile
 
 
-PROJECT = 'pyftpdlib'
 APPVEYOR = bool(os.environ.get('APPVEYOR'))
 if APPVEYOR:
     PYTHON = sys.executable
 else:
     PYTHON = os.getenv('PYTHON', sys.executable)
-TEST_SCRIPT = '%s\\test\\runner.py' % PROJECT
+RUNNER_PY = 'pyftpdlib\\test\\runner.py'
 GET_PIP_URL = "https://bootstrap.pypa.io/get-pip.py"
 PY3 = sys.version_info[0] == 3
 HERE = os.path.abspath(os.path.dirname(__file__))
-ROOT_DIR = os.path.realpath(os.path.join(HERE, ".."))
+ROOT_DIR = os.path.realpath(os.path.join(HERE, "..", ".."))
+PYPY = '__pypy__' in sys.builtin_module_names
 DEPS = [
-    "check-manifest",
     "coverage",
     "flake8",
-    "pip",
-    "pypiwin32==219" if sys.version_info[:2] <= (3, 4) else "pypiwin32",
     "nose",
-    "pyopenssl",
+    "pdbpp",
+    "pip",
+    "pyperf",
     "pyreadline",
     "setuptools",
-    "wmi",
+    "wheel",
+    "requests"
 ]
-if os.name == 'posix':
-    DEPS.append('pysendfile')
-if sys.version_info[:2] <= (2, 6):
+if sys.version_info[:2] <= (2, 7):
     DEPS.append('unittest2')
 if sys.version_info[:2] <= (2, 7):
     DEPS.append('mock')
-if sys.version_info[:2] <= (3, 2):
-    DEPS.append('ipaddress')
 
 _cmds = {}
 if PY3:
     basestring = str
+
+GREEN = 2
+LIGHTBLUE = 3
+YELLOW = 6
+RED = 4
+DEFAULT_COLOR = 7
+
 
 # ===================================================================
 # utils
@@ -85,6 +90,26 @@ def safe_print(text, file=sys.stdout, flush=False):
     file.write("\n")
 
 
+def stderr_handle():
+    GetStdHandle = ctypes.windll.Kernel32.GetStdHandle
+    STD_ERROR_HANDLE_ID = ctypes.c_ulong(0xfffffff4)
+    GetStdHandle.restype = ctypes.c_ulong
+    handle = GetStdHandle(STD_ERROR_HANDLE_ID)
+    atexit.register(ctypes.windll.Kernel32.CloseHandle, handle)
+    return handle
+
+
+def win_colorprint(s, color=LIGHTBLUE):
+    color += 8  # bold
+    handle = stderr_handle()
+    SetConsoleTextAttribute = ctypes.windll.Kernel32.SetConsoleTextAttribute
+    SetConsoleTextAttribute(handle, color)
+    try:
+        print(s)
+    finally:
+        SetConsoleTextAttribute(handle, DEFAULT_COLOR)
+
+
 def sh(cmd, nolog=False):
     if not nolog:
         safe_print("cmd: " + cmd)
@@ -94,18 +119,9 @@ def sh(cmd, nolog=False):
         sys.exit(p.returncode)
 
 
-def cmd(fun):
-    @functools.wraps(fun)
-    def wrapper(*args, **kwds):
-        return fun(*args, **kwds)
-
-    _cmds[fun.__name__] = fun.__doc__
-    return wrapper
-
-
 def rm(pattern, directory=False):
     """Recursively remove a file or dir by pattern."""
-    def safe_rmpath(path):
+    def safe_remove(path):
         try:
             os.remove(path)
         except OSError as err:
@@ -129,7 +145,7 @@ def rm(pattern, directory=False):
         if directory:
             safe_rmtree(pattern)
         else:
-            safe_rmpath(pattern)
+            safe_remove(pattern)
         return
 
     for root, subdirs, subfiles in os.walk('.'):
@@ -144,10 +160,10 @@ def rm(pattern, directory=False):
                 safe_rmtree(path)
             else:
                 safe_print("rm %s" % path)
-                safe_rmpath(path)
+                safe_remove(path)
 
 
-def safe_rmpath(path):
+def safe_remove(path):
     try:
         os.remove(path)
     except OSError as err:
@@ -178,15 +194,11 @@ def recursive_rm(*patterns):
         for file in subfiles:
             for pattern in patterns:
                 if fnmatch.fnmatch(file, pattern):
-                    safe_rmpath(os.path.join(root, file))
+                    safe_remove(os.path.join(root, file))
         for dir in subdirs:
             for pattern in patterns:
                 if fnmatch.fnmatch(dir, pattern):
                     safe_rmtree(os.path.join(root, dir))
-
-
-def test_setup():
-    os.environ['PYTHONWARNINGS'] = 'all'
 
 
 # ===================================================================
@@ -194,33 +206,57 @@ def test_setup():
 # ===================================================================
 
 
-@cmd
-def help():
-    """Print this help"""
-    safe_print('Run "make [-p <PYTHON>] <target>" where <target> is one of:')
-    for name in sorted(_cmds):
-        safe_print(
-            "    %-20s %s" % (name.replace('_', '-'), _cmds[name] or ''))
-    sys.exit(1)
-
-
-@cmd
 def build():
     """Build / compile"""
     # Make sure setuptools is installed (needed for 'develop' /
     # edit mode).
     sh('%s -c "import setuptools"' % PYTHON)
-    sh("%s setup.py build" % PYTHON)
+
+    cmd = [PYTHON, "setup.py", "build"]
+    # Print coloured warnings in real time.
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    try:
+        for line in iter(p.stdout.readline, b''):
+            if PY3:
+                line = line.decode()
+            line = line.strip()
+            if 'warning' in line:
+                win_colorprint(line, YELLOW)
+            elif 'error' in line:
+                win_colorprint(line, RED)
+            else:
+                print(line)
+        # retcode = p.poll()
+        p.communicate()
+        if p.returncode:
+            win_colorprint("failure", RED)
+            sys.exit(p.returncode)
+    finally:
+        p.terminate()
+        p.wait()
+
     # Make sure it actually worked.
-    sh('%s -c "import %s"' % (PYTHON, PROJECT))
+    sh('%s -c "import pyftpdlib"' % PYTHON)
+    win_colorprint("build + import successful", GREEN)
 
 
-@cmd
+def wheel():
+    """Create wheel file."""
+    build()
+    sh("%s setup.py bdist_wheel" % PYTHON)
+
+
+def upload_wheels():
+    """Upload wheel files on PyPI."""
+    build()
+    sh("%s -m twine upload dist/*.whl" % PYTHON)
+
+
 def install_pip():
     """Install pip"""
     try:
-        import pip  # NOQA
-    except ImportError:
+        sh('%s -c "import pip"' % PYTHON)
+    except SystemExit:
         if PY3:
             from urllib.request import urlopen
         else:
@@ -245,22 +281,14 @@ def install_pip():
             os.remove(tfile)
 
 
-@cmd
 def install():
     """Install in develop / edit mode"""
-    install_git_hooks()
     build()
     sh("%s setup.py develop" % PYTHON)
 
 
-@cmd
 def uninstall():
-    """Uninstall %s""" % PROJECT
-    # Uninstalling on Windows seems to be tricky.
-    # On "import pkgname" tests may import a psutil version living in
-    # C:\PythonXY\Lib\site-packages which is not what we want, so
-    # we try both "pip uninstall psutil" and manually remove stuff
-    # from site-packages.
+    """Uninstall"""
     clean()
     install_pip()
     here = os.getcwd()
@@ -280,9 +308,26 @@ def uninstall():
         for name in os.listdir(dir):
             if name.startswith('pyftpdlib'):
                 rm(os.path.join(dir, name))
+            elif name == 'easy-install.pth':
+                # easy_install can add a line (installation path) into
+                # easy-install.pth; that line alters sys.path.
+                path = os.path.join(dir, name)
+                with open(path, 'rt') as f:
+                    lines = f.readlines()
+                    hasit = False
+                    for line in lines:
+                        if 'pyftpdlib' in line:
+                            hasit = True
+                            break
+                if hasit:
+                    with open(path, 'wt') as f:
+                        for line in lines:
+                            if 'pyftpdlib' not in line:
+                                f.write(line)
+                            else:
+                                print("removed line %r from %r" % (line, path))
 
 
-@cmd
 def clean():
     """Deletes dev files"""
     recursive_rm(
@@ -299,7 +344,7 @@ def clean():
         "*.~",
         "*__pycache__",
         ".coverage",
-        ".tox",
+        ".failed-tests.txt",
     )
     safe_rmtree("build")
     safe_rmtree(".coverage")
@@ -309,7 +354,6 @@ def clean():
     safe_rmtree("tmp")
 
 
-@cmd
 def setup_dev_env():
     """Install useful deps"""
     install_pip()
@@ -317,8 +361,7 @@ def setup_dev_env():
     sh("%s -m pip install -U %s" % (PYTHON, " ".join(DEPS)))
 
 
-@cmd
-def flake8():
+def lint():
     """Run flake8 against all py files"""
     py_files = subprocess.check_output("git ls-files")
     if PY3:
@@ -328,47 +371,74 @@ def flake8():
     sh("%s -m flake8 %s" % (PYTHON, py_files), nolog=True)
 
 
-@cmd
-def test():
+def test(name=RUNNER_PY):
     """Run tests"""
-    try:
-        arg = sys.argv[2]
-    except IndexError:
-        arg = TEST_SCRIPT
-
-    install()
-    test_setup()
-    cmdline = "%s %s" % (PYTHON, arg)
-    safe_print(cmdline)
-    sh(cmdline)
+    build()
+    sh("%s %s" % (PYTHON, name))
 
 
-@cmd
+def test_authorizers():
+    build()
+    sh("%s pyftpdlib\\test\\test_authorizers.py" % PYTHON)
+
+
+def test_filesystems():
+    build()
+    sh("%s pyftpdlib\\test\\test_filesystems.py" % PYTHON)
+
+
+def test_functional():
+    build()
+    sh("%s pyftpdlib\\test\\test_functional.py" % PYTHON)
+
+
+def test_functional_ssl():
+    build()
+    sh("%s pyftpdlib\\test\\test_functional_ssl.py" % PYTHON)
+
+
+def test_ioloop():
+    build()
+    sh("%s pyftpdlib\\test\\test_ioloop.py" % PYTHON)
+
+
+def test_misc():
+    build()
+    sh("%s pyftpdlib\\test\\test_misc.py" % PYTHON)
+
+
+def test_servers():
+    build()
+    sh("%s pyftpdlib\\test\\test_servers.py" % PYTHON)
+
+
 def coverage():
     """Run coverage tests."""
     # Note: coverage options are controlled by .coveragerc file
-    install()
-    test_setup()
-    sh("%s -m coverage run %s" % (PYTHON, TEST_SCRIPT))
+    build()
+    sh("%s -m coverage run %s" % (PYTHON, RUNNER_PY))
     sh("%s -m coverage report" % PYTHON)
     sh("%s -m coverage html" % PYTHON)
     sh("%s -m webbrowser -t htmlcov/index.html" % PYTHON)
 
 
-@cmd
-def test_by_name():
+def test_by_name(name):
     """Run test by name"""
-    name = sys.argv[2]
-    install()
-    test_setup()
+    build()
     sh("%s -m unittest -v %s" % (PYTHON, name))
 
 
-@cmd
+def test_failed():
+    """Re-run tests which failed on last run."""
+    build()
+    sh("%s %s --last-failed" % (PYTHON, RUNNER_PY))
+
+
 def install_git_hooks():
     """Install GIT pre-commit hook."""
     if os.path.isdir('.git'):
-        src = os.path.join(ROOT_DIR, ".git-pre-commit")
+        src = os.path.join(
+            ROOT_DIR, "scripts", "internal", "git_pre_commit.py")
         dst = os.path.realpath(
             os.path.join(ROOT_DIR, ".git", "hooks", "pre-commit"))
         with open(src, "rt") as s:
@@ -376,50 +446,92 @@ def install_git_hooks():
                 d.write(s.read())
 
 
-def set_python(s):
-    global PYTHON
-    if os.path.isabs(s):
-        PYTHON = s
-    else:
-        # try to look for a python installation
-        orig = s
-        s = s.replace('.', '')
-        vers = ('26', '27', '34', '35', '36', '37',
-                '26-64', '27-64', '34-64', '35-64', '36-64', '37-64')
-        for v in vers:
-            if s == v:
-                path = r'C:\\python%s\python.exe' % s
-                if os.path.isfile(path):
-                    print(path)
-                    PYTHON = path
-                    os.putenv('PYTHON', path)
-                    return
-        return sys.exit(
-            "can't find any python installation matching %r" % orig)
-
-
-def parse_cmdline():
-    if '-p' in sys.argv:
-        try:
-            pos = sys.argv.index('-p')
-            sys.argv.pop(pos)
-            py = sys.argv.pop(pos)
-        except IndexError:
-            return help()
-        set_python(py)
+def get_python(path):
+    if not path:
+        return sys.executable
+    if os.path.isabs(path):
+        return path
+    # try to look for a python installation given a shortcut name
+    path = path.replace('.', '')
+    vers = (
+        '27',
+        '27-32',
+        '27-64',
+        '36',
+        '36-32',
+        '36-64',
+        '37',
+        '37-32',
+        '37-64',
+        '38',
+        '38-32',
+        '38-64',
+        '39-32',
+        '39-64',
+    )
+    for v in vers:
+        pypath = r'C:\\python%s\python.exe' % v
+        if path in pypath and os.path.isfile(pypath):
+            return pypath
 
 
 def main():
-    parse_cmdline()
-    try:
-        cmd = sys.argv[1].replace('-', '_')
-    except IndexError:
-        return help()
-    if cmd in _cmds:
-        fun = getattr(sys.modules[__name__], cmd)
-        fun()
-    else:
-        help()
+    global PYTHON
+    parser = argparse.ArgumentParser()
+    # option shared by all commands
+    parser.add_argument(
+        '-p', '--python',
+        help="use python executable path")
+    sp = parser.add_subparsers(dest='command', title='targets')
+    sp.add_parser('build', help="build")
+    sp.add_parser('clean', help="deletes dev files")
+    sp.add_parser('coverage', help="run coverage tests.")
+    sp.add_parser('help', help="print this help")
+    sp.add_parser('install', help="build + install in develop/edit mode")
+    sp.add_parser('install-git-hooks', help="install GIT pre-commit hook")
+    sp.add_parser('install-pip', help="install pip")
+    sp.add_parser('test', help="run tests")
+    sp.add_parser('test-authorizers')
+    sp.add_parser('test-filesystems')
+    sp.add_parser('test-functional')
+    sp.add_parser('test-functional-ssl')
+    sp.add_parser('test-ioloop')
+    sp.add_parser('test-misc')
+    sp.add_parser('test-servers')
+    sp.add_parser('lint', help="run flake8 against all py files")
+    sp.add_parser('setup-dev-env', help="install deps")
+    test = sp.add_parser('test', help="[ARG] run tests")
+    test_by_name = sp.add_parser('test-by-name', help="<ARG> run test by name")
+    sp.add_parser('uninstall', help="uninstall")
+
+    for p in (test, test_by_name):
+        p.add_argument('arg', type=str, nargs='?', default="", help="arg")
+    args = parser.parse_args()
+
+    # set python exe
+    PYTHON = get_python(args.python)
+    if not PYTHON:
+        return sys.exit(
+            "can't find any python installation matching %r" % args.python)
+    os.putenv('PYTHON', PYTHON)
+    win_colorprint("using " + PYTHON)
+
+    if not args.command or args.command == 'help':
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
+    fname = args.command.replace('-', '_')
+    fun = getattr(sys.modules[__name__], fname)  # err if fun not defined
+    funargs = []
+    # mandatory args
+    if args.command in ('test-by-name', 'test-script'):
+        if not args.arg:
+            sys.exit('command needs an argument')
+        funargs = [args.arg]
+    # optional args
+    if args.command == 'test' and args.arg:
+        funargs = [args.arg]
+    fun(*funargs)
 
 
 if __name__ == '__main__':

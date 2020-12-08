@@ -18,11 +18,14 @@ except ImportError:
     ctypes = None
 
 from pyftpdlib.test import configure_logging
+from pyftpdlib.test import POSIX
 from pyftpdlib.test import unittest
 from pyftpdlib.test import VERBOSITY
+from pyftpdlib.test import WINDOWS
+
 
 HERE = os.path.abspath(os.path.dirname(__file__))
-if os.name == 'posix':
+if POSIX:
     GREEN = 1
     RED = 2
     BROWN = 94
@@ -34,7 +37,7 @@ else:
 
 
 def term_supports_colors(file=sys.stdout):
-    if os.name == 'nt':
+    if WINDOWS:
         return ctypes is not None
     try:
         import curses
@@ -87,7 +90,7 @@ def win_colorprint(printer, s, color, bold=False):
 class ColouredResult(TextTestResult):
 
     def _color_print(self, s, color, bold=False):
-        if os.name == 'posix':
+        if POSIX:
             self.stream.writeln(hilite(s, color, bold=bold))
         else:
             win_colorprint(self.stream.writeln, s, color, bold=bold)

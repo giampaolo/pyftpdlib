@@ -17,7 +17,6 @@ DEV_DEPS = \
 	setuptools \
 	sphinx
 TEST_DEPS = \
-	nose \
 	psutil \
 	pyopenssl \
 	pysendfile \
@@ -25,6 +24,8 @@ TEST_DEPS = \
 
 # In not in a virtualenv, add --user options for install commands.
 INSTALL_OPTS = `$(PYTHON) -c "import sys; print('' if hasattr(sys, 'real_prefix') else '--user')"`
+TEST_PREFIX = PYTHONWARNINGS=always
+
 
 all: test
 
@@ -88,39 +89,39 @@ setup-dev-env:  ## Install GIT hooks, pip, test deps (also upgrades them).
 
 test:  ## Run all tests.
 	${MAKE} install
-	PYTHONWARNINGS=all $(PYTHON) $(TSCRIPT)
+	$(TEST_PREFIX) $(PYTHON) $(TSCRIPT)
 
 test-functional:  ## Run functional FTP tests.
 	${MAKE} install
-	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_functional.py
+	$(TEST_PREFIX) $(PYTHON) pyftpdlib/test/test_functional.py
 
 test-functional-ssl:  ## Run functional FTPS tests.
 	${MAKE} install
-	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_functional_ssl.py
+	$(TEST_PREFIX) $(PYTHON) pyftpdlib/test/test_functional_ssl.py
 
 test-servers:  ## Run tests for FTPServer and its subclasses.
 	${MAKE} install
-	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_servers.py
+	$(TEST_PREFIX) $(PYTHON) pyftpdlib/test/test_servers.py
 
 test-authorizers:  ## Run tests for authorizers.
 	${MAKE} install
-	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_authorizers.py
+	$(TEST_PREFIX) $(PYTHON) pyftpdlib/test/test_authorizers.py
 
 test-filesystems:  ## Run filesystem tests.
 	${MAKE} install
-	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_filesystems.py
+	$(TEST_PREFIX) $(PYTHON) pyftpdlib/test/test_filesystems.py
 
 test-ioloop:  ## Run IOLoop tests.
 	${MAKE} install
-	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_ioloop.py
+	$(TEST_PREFIX) $(PYTHON) pyftpdlib/test/test_ioloop.py
 
 test-misc:  ## Run miscellaneous tests.
 	${MAKE} install
-	PYTHONWARNINGS=all $(PYTHON) pyftpdlib/test/test_misc.py
+	$(TEST_PREFIX) $(PYTHON) pyftpdlib/test/test_misc.py
 
 test-by-name:  ## e.g.: make test-by-name ARGS=pyftpdlib.test.test_functional.TestFtpStoreData
 	${MAKE} install
-	PYTHONWARNINGS=all $(PYTHON) -m unittest -v $(ARGS)
+	$(TEST_PREFIX) $(PYTHON) -m unittest -v $(ARGS)
 
 test-coverage:  ## Run test coverage.
 	${MAKE} install
