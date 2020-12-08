@@ -109,6 +109,10 @@ class TestFtpStoreDataTLSMixin(TLSTestMixin, TestFtpStoreData):
     def test_stou(self):
         pass
 
+    @unittest.skipIf(os.name == 'nt', "unreliable on Windows + SSL")
+    def test_stor_ascii_2(self):
+        pass
+
 
 # class TestSendFileTLSMixin(TLSTestMixin, TestSendfile):
 
