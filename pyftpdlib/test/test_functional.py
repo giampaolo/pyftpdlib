@@ -30,6 +30,7 @@ from pyftpdlib.handlers import ThrottledDTPHandler
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.test import BUFSIZE
+from pyftpdlib.test import CI_TESTING
 from pyftpdlib.test import close_client
 from pyftpdlib.test import configure_logging
 from pyftpdlib.test import disable_log_warning
@@ -51,7 +52,6 @@ from pyftpdlib.test import TestCase
 from pyftpdlib.test import ThreadedTestFTPd
 from pyftpdlib.test import TIMEOUT
 from pyftpdlib.test import touch
-from pyftpdlib.test import TRAVIS
 from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
 from pyftpdlib.test import VERBOSITY
@@ -1404,7 +1404,6 @@ class TestThrottleBandwidth(TestCase):
         self.assertEqual(hash(data), hash(file_data))
 
 
-@unittest.skipIf(TRAVIS, "unreliable on TRAVIS")
 class TestTimeouts(TestCase):
     """Test idle-timeout capabilities of control and data channels.
     Some tests may fail on slow machines.
@@ -1457,7 +1456,7 @@ class TestTimeouts(TestCase):
         # Test data channel timeout.  The client which does not send
         # or receive any data within the time specified in
         # DTPHandler.timeout is supposed to be kicked off.
-        self._setUp(data_timeout=0.5 if TRAVIS else 0.1)
+        self._setUp(data_timeout=0.5 if CI_TESTING else 0.1)
         addr = self.client.makepasv()
         with contextlib.closing(socket.socket()) as s:
             s.settimeout(TIMEOUT)
@@ -1474,7 +1473,7 @@ class TestTimeouts(TestCase):
         # Impose a timeout for the data channel, then keep sending data for a
         # time which is longer than that to make sure that the code checking
         # whether the transfer stalled for with no progress is executed.
-        self._setUp(data_timeout=0.5 if TRAVIS else 0.1)
+        self._setUp(data_timeout=0.5 if CI_TESTING else 0.1)
         with contextlib.closing(
                 self.client.transfercmd('stor ' + self.testfn)) as sock:
             if hasattr(self.client_class, 'ssl_version'):
@@ -1488,8 +1487,8 @@ class TestTimeouts(TestCase):
     def test_idle_data_timeout1(self):
         # Tests that the control connection timeout is suspended while
         # the data channel is opened
-        self._setUp(idle_timeout=0.5 if TRAVIS else 0.1,
-                    data_timeout=0.6 if TRAVIS else 0.2)
+        self._setUp(idle_timeout=0.5 if CI_TESTING else 0.1,
+                    data_timeout=0.6 if CI_TESTING else 0.2)
         addr = self.client.makepasv()
         with contextlib.closing(socket.socket()) as s:
             s.settimeout(TIMEOUT)
@@ -1505,8 +1504,8 @@ class TestTimeouts(TestCase):
     def test_idle_data_timeout2(self):
         # Tests that the control connection timeout is restarted after
         # data channel has been closed
-        self._setUp(idle_timeout=0.5 if TRAVIS else 0.1,
-                    data_timeout=0.6 if TRAVIS else 0.2)
+        self._setUp(idle_timeout=0.5 if CI_TESTING else 0.1,
+                    data_timeout=0.6 if CI_TESTING else 0.2)
         addr = self.client.makepasv()
         with contextlib.closing(socket.socket()) as s:
             s.settimeout(TIMEOUT)
@@ -1524,7 +1523,7 @@ class TestTimeouts(TestCase):
         # Test pasv data channel timeout.  The client which does not
         # connect to the listening data socket within the time specified
         # in PassiveDTP.timeout is supposed to receive a 421 response.
-        self._setUp(pasv_timeout=0.5 if TRAVIS else 0.1)
+        self._setUp(pasv_timeout=0.5 if CI_TESTING else 0.1)
         self.client.makepasv()
         # fail if no msg is received within 1 second
         self.client.sock.settimeout(1)

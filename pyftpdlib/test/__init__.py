@@ -41,29 +41,39 @@ else:
 sendfile = _import_sendfile()
 
 
+# --- platforms
+
+PYPY = '__pypy__' in sys.builtin_module_names
+# whether we're running this test suite on a Continuous Integration service
+APPVEYOR = 'APPVEYOR' in os.environ
+GITHUB_ACTIONS = 'GITHUB_ACTIONS' in os.environ or 'CIBUILDWHEEL' in os.environ
+CI_TESTING = APPVEYOR or GITHUB_ACTIONS
+# are we a 64 bit process?
+IS_64BIT = sys.maxsize > 2 ** 32
+OSX = sys.platform.startswith("darwin")
+POSIX = os.name == 'posix'
+WINDOWS = os.name == 'nt'
+
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
 try:
     HOST = socket.gethostbyname('localhost')
 except socket.error:
     HOST = 'localhost'
+
 USER = 'user'
 PASSWD = '12345'
 HOME = getcwdu()
 # Disambiguate TESTFN for parallel testing.
-if os.name == 'java':
-    # Jython disallows @ in module names
-    TESTFN_PREFIX = '$pyftpd-%s-' % os.getpid()
-else:
-    TESTFN_PREFIX = '@pyftpd-%s-' % os.getpid()
+TESTFN_PREFIX = '@pyftpd-%s-' % os.getpid()
 TIMEOUT = 2
 BUFSIZE = 1024
 INTERRUPTED_TRANSF_SIZE = 32768
 NO_RETRIES = 5
-OSX = sys.platform.startswith("darwin")
-POSIX = os.name == 'posix'
-WINDOWS = os.name == 'nt'
-TRAVIS = bool(os.environ.get('TRAVIS'))
 VERBOSITY = 1 if os.getenv('SILENT') else 2
+
+if CI_TESTING:
+    TIMEOUT *= 3
+    NO_RETRIES *= 3
 
 
 class TestCase(unittest.TestCase):
@@ -335,9 +345,9 @@ def assert_free_resources():
     if children:
         for p in children:
             p.kill()
-            p.wait(1)
+            p.wait(TIMEOUT)
         assert not children, children
-    if os.name == 'posix':
+    if POSIX:
         cons = [x for x in p.connections('tcp')
                 if x.status != psutil.CONN_CLOSE_WAIT]
         assert not cons, cons
@@ -388,7 +398,7 @@ def reset_server_opts():
     # Acceptors.
     ls = [pyftpdlib.servers.FTPServer,
           pyftpdlib.servers.ThreadedFTPServer]
-    if os.name == 'posix':
+    if POSIX:
         ls.append(pyftpdlib.servers.MultiprocessFTPServer)
     for klass in ls:
         klass.max_cons = 0
@@ -403,7 +413,7 @@ class ThreadedTestFTPd(threading.Thread):
     """
     handler = FTPHandler
     server_class = FTPServer
-    poll_interval = 0.001 if TRAVIS else 0.000001
+    poll_interval = 0.001 if CI_TESTING else 0.000001
     # Makes the thread stop on interpreter exit.
     daemon = True
 
@@ -434,7 +444,7 @@ class ThreadedTestFTPd(threading.Thread):
         assert_free_resources()
 
 
-if os.name == 'posix':
+if POSIX:
     class MProcessTestFTPd(multiprocessing.Process):
         """Same as above but using a sub process instead."""
         handler = FTPHandler

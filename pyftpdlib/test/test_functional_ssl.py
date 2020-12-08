@@ -15,6 +15,7 @@ import OpenSSL  # requires "pip install pyopenssl"
 
 from pyftpdlib._compat import super
 from pyftpdlib.handlers import TLS_FTPHandler
+from pyftpdlib.test import CI_TESTING
 from pyftpdlib.test import close_client
 from pyftpdlib.test import configure_logging
 from pyftpdlib.test import MProcessTestFTPd
@@ -22,10 +23,10 @@ from pyftpdlib.test import OSX
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import TestCase
 from pyftpdlib.test import TIMEOUT
-from pyftpdlib.test import TRAVIS
 from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
 from pyftpdlib.test import VERBOSITY
+from pyftpdlib.test import WINDOWS
 from pyftpdlib.test.test_functional import TestConfigurableOptions
 from pyftpdlib.test.test_functional import TestCornerCases
 from pyftpdlib.test.test_functional import TestFtpAbort
@@ -109,7 +110,7 @@ class TestFtpStoreDataTLSMixin(TLSTestMixin, TestFtpStoreData):
     def test_stou(self):
         pass
 
-    @unittest.skipIf(os.name == 'nt', "unreliable on Windows + SSL")
+    @unittest.skipIf(WINDOWS, "unreliable on Windows + SSL")
     def test_stor_ascii_2(self):
         pass
 
@@ -123,7 +124,7 @@ class TestFtpStoreDataTLSMixin(TLSTestMixin, TestFtpStoreData):
 
 class TestFtpRetrieveDataTLSMixin(TLSTestMixin, TestFtpRetrieveData):
 
-    @unittest.skipIf(os.name == 'nt', "may fail on windows")
+    @unittest.skipIf(WINDOWS, "may fail on windows")
     def test_restore_on_retr(self):
         super().test_restore_on_retr()
 
@@ -137,7 +138,7 @@ class TestFtpListingCmdsTLSMixin(TLSTestMixin, TestFtpListingCmds):
     # File "/opt/python/2.7.9/lib/python2.7/ssl.py", line 771, in unwrap
     #    s = self._sslobj.shutdown()
     # error: [Errno 0] Error
-    @unittest.skipIf(TRAVIS or os.name == 'nt', "may fail on travis/windows")
+    @unittest.skipIf(CI_TESTING, "may fail on CI")
     def test_nlst(self):
         super().test_nlst()
 

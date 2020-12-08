@@ -7,7 +7,6 @@
 import contextlib
 import ftplib
 import inspect
-import os
 import socket
 import sys
 
@@ -23,6 +22,7 @@ from pyftpdlib.test import TIMEOUT
 from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
 from pyftpdlib.test import VERBOSITY
+from pyftpdlib.test import WINDOWS
 from pyftpdlib.test.test_functional import TestCornerCases
 from pyftpdlib.test.test_functional import TestFtpAbort
 from pyftpdlib.test.test_functional import TestFtpAuthentication
@@ -54,7 +54,7 @@ class TestFTPServer(TestCase):
         if self.server is not None:
             self.server.stop()
 
-    @unittest.skipIf(os.name == 'nt', "POSIX only")
+    @unittest.skipIf(WINDOWS, "POSIX only")
     def test_sock_instead_of_addr(self):
         # pass a socket object instead of an address tuple to FTPServer
         # constructor
