@@ -1,5 +1,10 @@
 Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 
+Version: 1.5.7 - XXXX-XX-XX
+===========================
+
+- #544: replace Travis with Github Actions for CI testing.
+
 Version: 1.5.6 - 2020-02-16
 ===========================
 
