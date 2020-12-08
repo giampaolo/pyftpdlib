@@ -1,4 +1,4 @@
-.. image:: http://pepy.tech/badge/pyftpdlib
+.. image:: https://pepy.tech/badge/pyftpdlib/month
     :target: http://pepy.tech/project/pyftpdlib
     :alt: Downloads
 

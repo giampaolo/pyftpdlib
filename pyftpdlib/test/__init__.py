@@ -354,8 +354,9 @@ def assert_free_resources():
     if POSIX:
         cons = [x for x in p.connections('tcp')
                 if x.status != psutil.CONN_CLOSE_WAIT]
-        warnings.warn("some connections didn't close %r" % str(cons),
-                      UserWarning)
+        if cons:
+            warnings.warn("some connections didn't close %r" % str(cons),
+                          UserWarning)
 
 
 def reset_server_opts():

@@ -3,7 +3,14 @@ Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 Version: 1.5.7 - XXXX-XX-XX
 ===========================
 
+**Enhancements**
+
 - #544: replace Travis with Github Actions for CI testing.
+
+**Bug fixes**
+
+- #481: fix [WinError 10038] an operation was attempted on something that is
+  not a socket.  (patch by Tailing Yuan)
 
 Version: 1.5.6 - 2020-02-16
 ===========================
