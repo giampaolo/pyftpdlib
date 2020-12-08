@@ -761,6 +761,7 @@ class TestFtpStoreData(TestCase):
             expected = data.replace(b'\r\n', b(os.linesep))
             self.client.retrbinary('retr ' + self.testfn,
                                    self.dummy_recvfile.write)
+            self.client.quit()
             self.dummy_recvfile.seek(0)
             self.assertEqual(expected, self.dummy_recvfile.read())
         finally:
