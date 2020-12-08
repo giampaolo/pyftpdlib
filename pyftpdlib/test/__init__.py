@@ -344,13 +344,18 @@ def assert_free_resources():
     children = p.children()
     if children:
         for p in children:
-            p.kill()
-            p.wait(GLOBAL_TIMEOUT)
-        assert not children, children
+            try:
+                p.kill()
+                p.wait(GLOBAL_TIMEOUT)
+            except psutil.NoSuchProcess:
+                pass
+        warnings.warn("some children didn't terminate %r" % str(children),
+                      UserWarning)
     if POSIX:
         cons = [x for x in p.connections('tcp')
                 if x.status != psutil.CONN_CLOSE_WAIT]
-        assert not cons, cons
+        warnings.warn("some connections didn't close %r" % str(cons),
+                      UserWarning)
 
 
 def reset_server_opts():
