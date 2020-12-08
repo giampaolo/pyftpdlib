@@ -249,16 +249,19 @@ class retry(object):
 
     def __call__(self, fun):
         @functools.wraps(fun)
-        def wrapper(*args, **kwargs):
+        def wrapper(cls, *args, **kwargs):
             exc = None
             for _ in self:
                 try:
-                    return fun(*args, **kwargs)
+                    return fun(cls, *args, **kwargs)
                 except self.exception as _:  # NOQA
                     exc = _
                     if self.logfun is not None:
                         self.logfun(exc)
                     self.sleep()
+                    if isinstance(cls, unittest.TestCase):
+                        cls.tearDown()
+                        cls.setUp()
                     continue
             if PY3:
                 raise exc

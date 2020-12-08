@@ -702,6 +702,7 @@ class TestFtpStoreData(TestCase):
         self.client.set_pasv(False)
         self.test_stor()
 
+    @retry_on_failure()
     def test_stor_ascii(self):
         # Test STOR in ASCII mode
 
@@ -731,6 +732,7 @@ class TestFtpStoreData(TestCase):
         self.assertEqual(len(expected), len(datafile))
         self.assertEqual(hash(expected), hash(datafile))
 
+    @retry_on_failure()
     def test_stor_ascii_2(self):
         # Test that no extra extra carriage returns are added to the
         # file in ASCII mode in case CRLF gets truncated in two chunks
@@ -1887,6 +1889,7 @@ class TestCallbacks(TestCase):
         self.read_file(
             'on_connect,on_login:%s,on_file_sent:%s,' % (USER, self.testfn2))
 
+    @retry_on_failure()
     def test_on_incomplete_file_received(self):
         self.client.login(USER, PASSWD)
         data = b'abcde12345' * 1000000
@@ -1912,6 +1915,7 @@ class TestCallbacks(TestCase):
             'on_connect,on_login:%s,on_incomplete_file_received:%s,' %
             (USER, self.testfn2))
 
+    @retry_on_failure()
     def test_on_incomplete_file_sent(self):
         self.client.login(USER, PASSWD)
         data = b'abcde12345' * 1000000
