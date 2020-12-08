@@ -22,7 +22,7 @@ from pyftpdlib.test import MProcessTestFTPd
 from pyftpdlib.test import OSX
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import TestCase
-from pyftpdlib.test import TIMEOUT
+from pyftpdlib.test import GLOBAL_TIMEOUT
 from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
 from pyftpdlib.test import VERBOSITY
@@ -192,7 +192,7 @@ class TestFTPS(TestCase):
         self.server.handler.tls_data_required = tls_data_required
         self.server.handler.ssl_protocol = ssl_protocol
         self.server.start()
-        self.client = ftplib.FTP_TLS(timeout=TIMEOUT)
+        self.client = ftplib.FTP_TLS(timeout=GLOBAL_TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
 
     def setUp(self):
@@ -290,7 +290,7 @@ class TestFTPS(TestCase):
             if err.errno == 0:
                 return
             raise
-        sock.settimeout(TIMEOUT)
+        sock.settimeout(GLOBAL_TIMEOUT)
         sock.sendall(b'noop')
         try:
             chunk = sock.recv(1024)

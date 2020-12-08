@@ -65,14 +65,14 @@ PASSWD = '12345'
 HOME = getcwdu()
 # Disambiguate TESTFN for parallel testing.
 TESTFN_PREFIX = '@pyftpd-%s-' % os.getpid()
-TIMEOUT = 2
+GLOBAL_TIMEOUT = 2
 BUFSIZE = 1024
 INTERRUPTED_TRANSF_SIZE = 32768
 NO_RETRIES = 5
 VERBOSITY = 1 if os.getenv('SILENT') else 2
 
 if CI_TESTING:
-    TIMEOUT *= 3
+    GLOBAL_TIMEOUT *= 3
     NO_RETRIES *= 3
 
 
@@ -157,7 +157,7 @@ def safe_rmpath(path):
         # open handles or references preventing the delete operation
         # to succeed immediately, so we retry for a while. See:
         # https://bugs.python.org/issue33240
-        stop_at = time.time() + TIMEOUT
+        stop_at = time.time() + GLOBAL_TIMEOUT
         while time.time() < stop_at:
             try:
                 return fun()
@@ -295,7 +295,7 @@ def retry_on_failure(retries=NO_RETRIES):
                  logfun=logfun)
 
 
-def call_until(fun, expr, timeout=TIMEOUT):
+def call_until(fun, expr, timeout=GLOBAL_TIMEOUT):
     """Keep calling function for timeout secs and exit if eval()
     expression is True.
     """
@@ -345,7 +345,7 @@ def assert_free_resources():
     if children:
         for p in children:
             p.kill()
-            p.wait(TIMEOUT)
+            p.wait(GLOBAL_TIMEOUT)
         assert not children, children
     if POSIX:
         cons = [x for x in p.connections('tcp')

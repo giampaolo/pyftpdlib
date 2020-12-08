@@ -18,7 +18,7 @@ from pyftpdlib.test import HOST
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import TestCase
 from pyftpdlib.test import ThreadedTestFTPd
-from pyftpdlib.test import TIMEOUT
+from pyftpdlib.test import GLOBAL_TIMEOUT
 from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
 from pyftpdlib.test import VERBOSITY
@@ -64,7 +64,7 @@ class TestFTPServer(TestCase):
             ip, port = sock.getsockname()[:2]
             self.server = self.server_class(sock)
             self.server.start()
-            self.client = self.client_class(timeout=TIMEOUT)
+            self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
             self.client.connect(ip, port)
             self.client.login(USER, PASSWD)
 
