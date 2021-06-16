@@ -379,6 +379,22 @@ Server (acceptor)
     Number of maximum connections accepted for the same IP address (default
     ``0`` == no limit).
 
+  .. data:: proxy_proto_enabled
+
+    Whether to enable the PROXY protocol for incoming connections (default ``False``)
+
+  .. data:: proxy_proto_trusted_nets
+
+    Contains a list of trusted proxies (written as strings) allowed to communicate
+    with the server. Use a /32 (or /128) network mask if you want to declare a
+    single IP, for example ``['10.11.12.13/32', 'fc88::2/128']`` (defaults to ``[]``).
+
+  .. data:: proxy_proto_allow_untrusted
+
+    Whether or not to parse non trusted (as defined by :data:`proxy_proto_trusted_nets`)
+    proxies headers (defaults to ``False``).
+
+
   .. method:: serve_forever(timeout=None, blocking=True, handle_exit=True, worker_processes=1)
 
     Starts the asynchronous IO loop.

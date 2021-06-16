@@ -76,6 +76,7 @@ from .log import config_logging
 from .log import debug
 from .log import is_logging_configured
 from .log import logger
+from .proxy_proto import ProxyProtocol
 
 
 timer = getattr(time, 'monotonic', time.time)
@@ -977,7 +978,29 @@ class Connector(AsyncChat):
 class Acceptor(AsyncChat):
     """Same as base AsyncChat and supposed to be used to
     accept new connections.
+
+    All relevant PROXY protocol information is stored in class attributes
+    described below.
+
+     - (bool) proxy_proto_enabled:
+        enable the use of PROXY protocol (defaults to False).
+
+     - (list) proxy_proto_trusted_nets:
+        the IP networks (written as strings) of the proxies you want to
+        trust. Use a /32 (or /128) network mask if you want to declare a
+        single IP (defaults to []).
+
+     - (bool) proxy_proto_allow_untrusted:
+        whether or not to parse untrusted proxies headers (defaults to False).
+
+     - (instance) proxy_proto_obj:
+        the ProxyProtocol instance populated with header's information
     """
+
+    proxy_proto_enabled = False
+    proxy_proto_trusted_nets = []
+    proxy_proto_allow_untrusted = False
+    proxy_proto_obj = None
 
     def add_channel(self, map=None, events=None):
         AsyncChat.add_channel(self, map=map, events=self.ioloop.READ)
@@ -1045,6 +1068,21 @@ class Acceptor(AsyncChat):
                 debug("call: handle_accept(); accept() returned ECONNABORTED",
                       self)
         else:
+            if self.proxy_proto_enabled:
+                # Retrieve a populated PROXY protocol object. If no exception
+                # is raised the returned object is considered valid
+                try:
+                    ProxyProtocol.trusted_networks = self.proxy_proto_trusted_nets
+                    ProxyProtocol.allow_untrusted = self.proxy_proto_allow_untrusted
+                    self.proxy_proto_obj = ProxyProtocol.create(sock)
+                except Exception as e:
+                    logger.error("proxy: {}".format(e))
+                    return
+
+                if self.proxy_proto_obj.trusted or self.proxy_proto_allow_untrusted:
+                    # Could result in a (None, None) tuple
+                    addr = (self.proxy_proto_obj.remote_ip, self.proxy_proto_obj.remote_port)
+
             # sometimes addr == None instead of (ip, port) (see issue 104)
             if addr is not None:
                 self.handle_accepted(sock, addr)
