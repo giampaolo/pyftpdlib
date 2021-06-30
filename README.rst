@@ -47,12 +47,7 @@ Python FTP server library provides a high-level portable interface to easily
 write very efficient, scalable and asynchronous FTP servers with Python. It is
 the most complete `RFC-959 <http://www.faqs.org/rfcs/rfc959.html>`__ FTP server
 implementation available for `Python <http://www.python.org/>`__ programming
-language and it's used in projects like
-`Google Chromium <http://www.code.google.com/chromium/>`__ and
-`Bazaar <http://bazaar-vcs.org/>`__ and included in
-`Debian <http://packages.debian.org/sid/python-pyftpdlib>`__,
-`Fedora <https://admin.fedoraproject.org/pkgdb/packages/name/pyftpdlib>`__ and
-`FreeBSD <http://www.freshports.org/ftp/py-pyftpdlib/>`__ package repositories.
+language.
 
 Features
 ========
@@ -85,12 +80,10 @@ Performances
 ============
 
 Despite being written in an interpreted language, pyftpdlib has transfer rates
-superior to most common UNIX FTP servers. It also scales better since whereas
-vsftpd and proftpd use multiple processes to achieve concurrency, pyftpdlib
-will only use one process and handle concurrency asynchronously (see
-`the C10K problem <http://www.kegel.com/c10k.html>`__). Here are some
-`benchmarks <https://github.com/giampaolo/pyftpdlib/blob/master/scripts/ftpbench>`__
-made against my Linux 3.0.0 box, Intel core-duo 3.1 Ghz:
+comparable or superior to common UNIX FTP servers written in C. It usually tends
+to scale better (see `benchmarks <https://pyftpdlib.readthedocs.io/en/latest/benchmarks.html>`__)
+because whereas vsftpd and proftpd use multiple processes to
+achieve concurrency, pyftpdlib only uses one (see `the C10K problem <http://www.kegel.com/c10k.html>`__).
 
 pyftpdlib vs. proftpd 1.3.4
 ---------------------------
@@ -176,27 +169,3 @@ Donate
 A lot of time and effort went into making pyftpdlib as it is right now.
 If you feel pyftpdlib is useful to you or your business and want to support its
 future development please consider `donating <https://gmpy.dev/donate>`__ me some money.
-
-Trademarks
-==========
-
-Some famous trademarks which adopted pyftpdlib (`complete list <http://pyftpdlib.readthedocs.io/en/latest/adoptions.html>`__).
-
-.. image:: docs/images/chrome.jpg
-  :target: http://www.google.com/chrome
-.. image:: docs/images/debian.png
-  :target: http://www.debian.org
-.. image:: docs/images/fedora.png
-  :target: http://fedoraproject.org/
-.. image:: docs/images/freebsd.gif
-  :target: http://www.freebsd.org
-.. image:: docs/images/openerp.jpg
-  :target: http://openerp.com
-.. image:: docs/images/bazaar.jpg
-  :target: http://bazaar-vcs.org
-.. image:: docs/images/bitsontherun.png
-  :target: http://www.bitsontherun.com
-.. image:: docs/images/openvms.png
-  :target: http://www.openvms.org/
-.. image:: docs/images/smartfile.png
-  :target: https://www.smartfile.com/
