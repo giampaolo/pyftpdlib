@@ -20,6 +20,7 @@ import time
 
 from pyftpdlib._compat import b
 from pyftpdlib._compat import PY3
+from pyftpdlib._compat import super
 from pyftpdlib._compat import u
 from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.handlers import _import_sendfile
@@ -35,6 +36,7 @@ from pyftpdlib.test import close_client
 from pyftpdlib.test import configure_logging
 from pyftpdlib.test import disable_log_warning
 from pyftpdlib.test import get_server_handler
+from pyftpdlib.test import GLOBAL_TIMEOUT
 from pyftpdlib.test import HOME
 from pyftpdlib.test import HOST
 from pyftpdlib.test import INTERRUPTED_TRANSF_SIZE
@@ -43,14 +45,13 @@ from pyftpdlib.test import MProcessTestFTPd
 from pyftpdlib.test import OSX
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import POSIX
+from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import retry_on_failure
 from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import SUPPORTS_IPV4
 from pyftpdlib.test import SUPPORTS_IPV6
 from pyftpdlib.test import SUPPORTS_SENDFILE
-from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import ThreadedTestFTPd
-from pyftpdlib.test import GLOBAL_TIMEOUT
 from pyftpdlib.test import touch
 from pyftpdlib.test import unittest
 from pyftpdlib.test import USER

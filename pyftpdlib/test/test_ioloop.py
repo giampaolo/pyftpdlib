@@ -12,6 +12,7 @@ import sys
 import time
 
 from pyftpdlib._compat import PY3
+from pyftpdlib._compat import super
 from pyftpdlib.ioloop import Acceptor
 from pyftpdlib.ioloop import AsyncChat
 from pyftpdlib.ioloop import IOLoop

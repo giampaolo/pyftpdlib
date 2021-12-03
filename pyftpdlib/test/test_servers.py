@@ -12,13 +12,14 @@ import sys
 
 from pyftpdlib import handlers
 from pyftpdlib import servers
+from pyftpdlib._compat import super
 from pyftpdlib.test import close_client
 from pyftpdlib.test import configure_logging
+from pyftpdlib.test import GLOBAL_TIMEOUT
 from pyftpdlib.test import HOST
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import ThreadedTestFTPd
-from pyftpdlib.test import GLOBAL_TIMEOUT
 from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
 from pyftpdlib.test import VERBOSITY

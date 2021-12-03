@@ -18,11 +18,11 @@ from pyftpdlib.handlers import TLS_FTPHandler
 from pyftpdlib.test import CI_TESTING
 from pyftpdlib.test import close_client
 from pyftpdlib.test import configure_logging
+from pyftpdlib.test import GLOBAL_TIMEOUT
 from pyftpdlib.test import MProcessTestFTPd
 from pyftpdlib.test import OSX
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import PyftpdlibTestCase
-from pyftpdlib.test import GLOBAL_TIMEOUT
 from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
 from pyftpdlib.test import VERBOSITY
