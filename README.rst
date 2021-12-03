@@ -1,4 +1,4 @@
-.. image:: https://pepy.tech/badge/pyftpdlib/month
+.. image:: https://img.shields.io/pypi/dm/pyftpdlib.svg
     :target: http://pepy.tech/project/pyftpdlib
     :alt: Downloads
 
@@ -6,7 +6,7 @@
     :target: https://github.com/giampaolo/pyftpdlib/actions?query=workflow%3A%22pyftpdlib+tests%22
     :alt: Linux tests
 
-.. image:: https://ci.appveyor.com/api/projects/status/mi5vhqt26vwvxg2b?svg=true
+.. image:: https://img.shields.io/appveyor/build/giampaolo/pyftpdlib/master.svg?maxAge=3600&label=Windows
     :target: https://ci.appveyor.com/project/giampaolo/pyftpdlib
     :alt: Windows tests (Appveyor)
 
