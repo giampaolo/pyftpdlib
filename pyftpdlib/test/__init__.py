@@ -16,10 +16,6 @@ import tempfile
 import threading
 import time
 import warnings
-try:
-    from unittest import mock  # py3
-except ImportError:
-    import mock  # NOQA - requires "pip install mock"
 
 from pyftpdlib._compat import FileNotFoundError
 from pyftpdlib._compat import getcwdu
@@ -33,10 +29,18 @@ from pyftpdlib.servers import FTPServer
 
 import psutil
 
-if sys.version_info < (2, 7):
-    import unittest2 as unittest  # pip install unittest2
-else:
+if PY3:
     import unittest
+else:
+    import unittest2 as unittest  # requires "pip install unittest2"
+
+try:
+    from unittest import mock  # py3
+except ImportError:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        import mock  # NOQA - requires "pip install mock"
+
 
 sendfile = _import_sendfile()
 

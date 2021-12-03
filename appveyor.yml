@@ -22,7 +22,7 @@ install:
   - "powershell .ci\\appveyor\\install.ps1"
   - "%WITH_COMPILER% %PYTHON%/python.exe -m pip --version"
   - "%WITH_COMPILER% %PYTHON%/python.exe -m pip install --upgrade --user setuptools pip wheel"
-  - "%WITH_COMPILER% %PYTHON%/python.exe -m pip install --upgrade unittest2 ipaddress pypiwin32 wmi pyopenssl psutil"
+  - "%WITH_COMPILER% %PYTHON%/python.exe -m pip install --upgrade unittest2 mock ipaddress pypiwin32 wmi pyopenssl psutil"
   - "%WITH_COMPILER% %PYTHON%/python.exe -m pip freeze"
   - "%WITH_COMPILER% %PYTHON%/python.exe setup.py install"
 
