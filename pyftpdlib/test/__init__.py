@@ -16,10 +16,6 @@ import tempfile
 import threading
 import time
 import warnings
-try:
-    from unittest import mock  # py3
-except ImportError:
-    import mock  # NOQA - requires "pip install mock"
 
 from pyftpdlib._compat import FileNotFoundError
 from pyftpdlib._compat import getcwdu
@@ -33,10 +29,18 @@ from pyftpdlib.servers import FTPServer
 
 import psutil
 
-if sys.version_info < (2, 7):
-    import unittest2 as unittest  # pip install unittest2
-else:
+if PY3:
     import unittest
+else:
+    import unittest2 as unittest  # requires "pip install unittest2"
+
+try:
+    from unittest import mock  # py3
+except ImportError:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        import mock  # NOQA - requires "pip install mock"
+
 
 sendfile = _import_sendfile()
 
@@ -76,11 +80,26 @@ if CI_TESTING:
     NO_RETRIES *= 3
 
 
-class TestCase(unittest.TestCase):
+class PyftpdlibTestCase(unittest.TestCase):
+    """All test classes inherit from this one."""
 
-    # Print a full path representation of the single unit tests
-    # being run.
+    def setUp(self):
+        self._test_ctx = {}
+        self._test_ctx["threads"] = set(threading.enumerate())
+
+    def tearDown(self):
+        if not hasattr(self, "_test_ctx"):
+            raise AssertionError("super().setUp() was not called for this "
+                                 "test class")
+        threads = set(threading.enumerate())
+        if len(threads) > len(self._test_ctx["threads"]):
+            extra = threads - self._test_ctx["threads"]
+            raise AssertionError("%s orphaned thread(s) were left "
+                                 "behind: %r" % (len(extra), extra))
+
     def __str__(self):
+        # Print a full path representation of the single unit tests
+        # being run.
         fqmod = self.__class__.__module__
         if not fqmod.startswith('pyftpdlib.'):
             fqmod = 'pyftpdlib.test.' + fqmod
@@ -96,11 +115,6 @@ class TestCase(unittest.TestCase):
         fname = get_testfn(suffix=suffix, dir=dir)
         self.addCleanup(safe_rmpath, fname)
         return fname
-
-
-# Hack that overrides default unittest.TestCase in order to print
-# a full path representation of the single unit tests being run.
-unittest.TestCase = TestCase
 
 
 def close_client(session):

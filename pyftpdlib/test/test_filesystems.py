@@ -13,7 +13,7 @@ from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.test import HOME
 from pyftpdlib.test import POSIX
 from pyftpdlib.test import safe_rmpath
-from pyftpdlib.test import TestCase
+from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import touch
 from pyftpdlib.test import unittest
 from pyftpdlib.test import VERBOSITY
@@ -22,7 +22,7 @@ if POSIX:
     from pyftpdlib.filesystems import UnixFilesystem
 
 
-class TestAbstractedFS(TestCase):
+class TestAbstractedFS(PyftpdlibTestCase):
     """Test for conversion utility methods of AbstractedFS class."""
 
     def test_ftpnorm(self):
@@ -197,7 +197,7 @@ class TestAbstractedFS(TestCase):
 
 
 @unittest.skipUnless(POSIX, "UNIX only")
-class TestUnixFilesystem(TestCase):
+class TestUnixFilesystem(PyftpdlibTestCase):
 
     def test_case(self):
         root = getcwdu()

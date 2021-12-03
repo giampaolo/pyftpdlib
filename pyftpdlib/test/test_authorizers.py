@@ -11,6 +11,7 @@ import sys
 import warnings
 
 from pyftpdlib._compat import getcwdu
+from pyftpdlib._compat import super
 from pyftpdlib._compat import unicode
 from pyftpdlib.authorizers import AuthenticationFailed
 from pyftpdlib.authorizers import AuthorizerError
@@ -18,7 +19,7 @@ from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.test import HOME
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import POSIX
-from pyftpdlib.test import TestCase
+from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import touch
 from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
@@ -41,11 +42,12 @@ else:
     WindowsAuthorizer = None
 
 
-class TestDummyAuthorizer(TestCase):
+class TestDummyAuthorizer(PyftpdlibTestCase):
     """Tests for DummyAuthorizer class."""
 
     # temporarily change warnings to exceptions for the purposes of testing
     def setUp(self):
+        super().setUp()
         self.tempdir = os.path.abspath(self.get_testfn())
         self.subtempdir = os.path.join(self.tempdir, self.get_testfn())
         self.tempfile = os.path.join(self.tempdir, self.get_testfn())
@@ -62,6 +64,7 @@ class TestDummyAuthorizer(TestCase):
         os.rmdir(self.subtempdir)
         os.rmdir(self.tempdir)
         warnings.resetwarnings()
+        super().tearDown()
 
     def test_common_methods(self):
         auth = DummyAuthorizer()
@@ -439,12 +442,13 @@ class _SharedAuthorizerTests(object):
 @unittest.skipUnless(POSIX, "UNIX only")
 @unittest.skipUnless(UnixAuthorizer is not None,
                      "UnixAuthorizer class not available")
-class TestUnixAuthorizer(_SharedAuthorizerTests, TestCase):
+class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
     """Unix authorizer specific tests."""
 
     authorizer_class = UnixAuthorizer
 
     def setUp(self):
+        super().setUp()
         try:
             UnixAuthorizer()
         except AuthorizerError:  # not root
@@ -539,7 +543,7 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, TestCase):
 
 
 @unittest.skipUnless(WINDOWS, "Windows only")
-class TestWindowsAuthorizer(_SharedAuthorizerTests, TestCase):
+class TestWindowsAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
     """Windows authorizer specific tests."""
 
     authorizer_class = WindowsAuthorizer

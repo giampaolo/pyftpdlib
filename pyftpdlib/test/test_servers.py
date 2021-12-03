@@ -12,13 +12,14 @@ import sys
 
 from pyftpdlib import handlers
 from pyftpdlib import servers
+from pyftpdlib._compat import super
 from pyftpdlib.test import close_client
 from pyftpdlib.test import configure_logging
+from pyftpdlib.test import GLOBAL_TIMEOUT
 from pyftpdlib.test import HOST
 from pyftpdlib.test import PASSWD
-from pyftpdlib.test import TestCase
+from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import ThreadedTestFTPd
-from pyftpdlib.test import GLOBAL_TIMEOUT
 from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
 from pyftpdlib.test import VERBOSITY
@@ -39,12 +40,13 @@ from pyftpdlib.test.test_functional import TestIPv6Environment
 MPROCESS_SUPPORT = hasattr(servers, 'MultiprocessFTPServer')
 
 
-class TestFTPServer(TestCase):
+class TestFTPServer(PyftpdlibTestCase):
     """Tests for *FTPServer classes."""
     server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
+        super().setUp()
         self.server = None
         self.client = None
 
@@ -53,6 +55,7 @@ class TestFTPServer(TestCase):
             close_client(self.client)
         if self.server is not None:
             self.server.stop()
+        super().tearDown()
 
     @unittest.skipIf(WINDOWS, "POSIX only")
     def test_sock_instead_of_addr(self):

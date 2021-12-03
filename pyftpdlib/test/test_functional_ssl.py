@@ -18,11 +18,11 @@ from pyftpdlib.handlers import TLS_FTPHandler
 from pyftpdlib.test import CI_TESTING
 from pyftpdlib.test import close_client
 from pyftpdlib.test import configure_logging
+from pyftpdlib.test import GLOBAL_TIMEOUT
 from pyftpdlib.test import MProcessTestFTPd
 from pyftpdlib.test import OSX
 from pyftpdlib.test import PASSWD
-from pyftpdlib.test import TestCase
-from pyftpdlib.test import GLOBAL_TIMEOUT
+from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
 from pyftpdlib.test import VERBOSITY
@@ -179,7 +179,7 @@ class TestCornerCasesTLSMixin(TLSTestMixin, TestCornerCases):
 
 
 @unittest.skipUnless(FTPS_SUPPORT, FTPS_UNSUPPORT_REASON)
-class TestFTPS(TestCase):
+class TestFTPS(PyftpdlibTestCase):
     """Specific tests fot TSL_FTPHandler class."""
 
     def _setup(self,
@@ -196,6 +196,7 @@ class TestFTPS(TestCase):
         self.client.connect(self.server.host, self.server.port)
 
     def setUp(self):
+        super().setUp()
         self.client = None
         self.server = None
 
@@ -208,6 +209,7 @@ class TestFTPS(TestCase):
             self.server.handler.tls_control_required = False
             self.server.handler.tls_data_required = False
             self.server.stop()
+        super().tearDown()
 
     def assertRaisesWithMsg(self, excClass, msg, callableObj, *args, **kwargs):
         try:

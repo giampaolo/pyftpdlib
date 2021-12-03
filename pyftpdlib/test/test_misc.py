@@ -14,22 +14,25 @@ except ImportError:
     from io import BytesIO
 
 from pyftpdlib._compat import PY3
+from pyftpdlib._compat import super
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.test import mock
+from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import unittest
-from pyftpdlib.test import TestCase
 from pyftpdlib.test import VERBOSITY
 import pyftpdlib
 import pyftpdlib.__main__
 
 
-class TestCommandLineParser(TestCase):
+class TestCommandLineParser(PyftpdlibTestCase):
     """Test command line parser."""
     SYSARGV = sys.argv
     STDERR = sys.stderr
 
     def setUp(self):
+        super().setUp()
+
         class DummyFTPServer(FTPServer):
             """An overridden version of FTPServer class which forces
             serve_forever() to return immediately.
@@ -53,6 +56,7 @@ class TestCommandLineParser(TestCase):
         sys.argv = self.SYSARGV[:]
         sys.stderr = self.STDERR
         pyftpdlib.servers.FTPServer = self.original_ftpserver_class
+        super().tearDown()
 
     def test_a_option(self):
         sys.argv += ["-i", "localhost", "-p", "0"]
