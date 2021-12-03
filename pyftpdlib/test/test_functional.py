@@ -1689,8 +1689,8 @@ class TestConfigurableOptions(TestCase):
         self.server.handler.masquerade_address = "256.256.256.256"
         self.server.start()
         self.connect()
-        host, port = self.client.makepasv()
-        self.assertEqual(host, "256.256.256.256")
+        self.assertEqual(ftplib.parse227(self.client.sendcmd('PASV'))[0],
+                         "256.256.256.256")
 
     def test_masquerade_address_map(self):
         # Test FTPHandler.masquerade_address_map attribute
