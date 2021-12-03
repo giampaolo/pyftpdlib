@@ -18,13 +18,13 @@ from pyftpdlib.servers import FTPServer
 from pyftpdlib.test import mock
 from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import unittest
-from pyftpdlib.test import TestCase
+from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import VERBOSITY
 import pyftpdlib
 import pyftpdlib.__main__
 
 
-class TestCommandLineParser(TestCase):
+class TestCommandLineParser(PyftpdlibTestCase):
     """Test command line parser."""
     SYSARGV = sys.argv
     STDERR = sys.stderr

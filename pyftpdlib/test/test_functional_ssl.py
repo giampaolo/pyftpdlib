@@ -21,7 +21,7 @@ from pyftpdlib.test import configure_logging
 from pyftpdlib.test import MProcessTestFTPd
 from pyftpdlib.test import OSX
 from pyftpdlib.test import PASSWD
-from pyftpdlib.test import TestCase
+from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import GLOBAL_TIMEOUT
 from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
@@ -179,7 +179,7 @@ class TestCornerCasesTLSMixin(TLSTestMixin, TestCornerCases):
 
 
 @unittest.skipUnless(FTPS_SUPPORT, FTPS_UNSUPPORT_REASON)
-class TestFTPS(TestCase):
+class TestFTPS(PyftpdlibTestCase):
     """Specific tests fot TSL_FTPHandler class."""
 
     def _setup(self,

@@ -16,7 +16,7 @@ from pyftpdlib.test import close_client
 from pyftpdlib.test import configure_logging
 from pyftpdlib.test import HOST
 from pyftpdlib.test import PASSWD
-from pyftpdlib.test import TestCase
+from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import ThreadedTestFTPd
 from pyftpdlib.test import GLOBAL_TIMEOUT
 from pyftpdlib.test import unittest
@@ -39,7 +39,7 @@ from pyftpdlib.test.test_functional import TestIPv6Environment
 MPROCESS_SUPPORT = hasattr(servers, 'MultiprocessFTPServer')
 
 
-class TestFTPServer(TestCase):
+class TestFTPServer(PyftpdlibTestCase):
     """Tests for *FTPServer classes."""
     server_class = ThreadedTestFTPd
     client_class = ftplib.FTP

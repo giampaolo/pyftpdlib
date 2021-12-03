@@ -18,7 +18,7 @@ from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.test import HOME
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import POSIX
-from pyftpdlib.test import TestCase
+from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import touch
 from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
@@ -41,7 +41,7 @@ else:
     WindowsAuthorizer = None
 
 
-class TestDummyAuthorizer(TestCase):
+class TestDummyAuthorizer(PyftpdlibTestCase):
     """Tests for DummyAuthorizer class."""
 
     # temporarily change warnings to exceptions for the purposes of testing
@@ -439,7 +439,7 @@ class _SharedAuthorizerTests(object):
 @unittest.skipUnless(POSIX, "UNIX only")
 @unittest.skipUnless(UnixAuthorizer is not None,
                      "UnixAuthorizer class not available")
-class TestUnixAuthorizer(_SharedAuthorizerTests, TestCase):
+class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
     """Unix authorizer specific tests."""
 
     authorizer_class = UnixAuthorizer
@@ -539,7 +539,7 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, TestCase):
 
 
 @unittest.skipUnless(WINDOWS, "Windows only")
-class TestWindowsAuthorizer(_SharedAuthorizerTests, TestCase):
+class TestWindowsAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
     """Windows authorizer specific tests."""
 
     authorizer_class = WindowsAuthorizer

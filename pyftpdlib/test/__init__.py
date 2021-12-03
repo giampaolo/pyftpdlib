@@ -76,11 +76,12 @@ if CI_TESTING:
     NO_RETRIES *= 3
 
 
-class TestCase(unittest.TestCase):
+class PyftpdlibTestCase(unittest.TestCase):
+    """All test classes inherit from this one."""
 
-    # Print a full path representation of the single unit tests
-    # being run.
     def __str__(self):
+        # Print a full path representation of the single unit tests
+        # being run.
         fqmod = self.__class__.__module__
         if not fqmod.startswith('pyftpdlib.'):
             fqmod = 'pyftpdlib.test.' + fqmod
@@ -96,11 +97,6 @@ class TestCase(unittest.TestCase):
         fname = get_testfn(suffix=suffix, dir=dir)
         self.addCleanup(safe_rmpath, fname)
         return fname
-
-
-# Hack that overrides default unittest.TestCase in order to print
-# a full path representation of the single unit tests being run.
-unittest.TestCase = TestCase
 
 
 def close_client(session):
