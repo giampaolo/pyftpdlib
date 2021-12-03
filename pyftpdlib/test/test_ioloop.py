@@ -282,6 +282,7 @@ class TestCallLater(PyftpdlibTestCase):
     """Tests for CallLater class."""
 
     def setUp(self):
+        super().setUp()
         self.ioloop = IOLoop.instance()
         for task in self.ioloop.sched._tasks:
             if not task.cancelled:
@@ -373,6 +374,7 @@ class TestCallEvery(PyftpdlibTestCase):
     """Tests for CallEvery class."""
 
     def setUp(self):
+        super().setUp()
         self.ioloop = IOLoop.instance()
         for task in self.ioloop.sched._tasks:
             if not task.cancelled:

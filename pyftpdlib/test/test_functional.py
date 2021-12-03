@@ -75,6 +75,7 @@ class TestFtpAuthentication(PyftpdlibTestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        super().setUp()
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
@@ -90,6 +91,7 @@ class TestFtpAuthentication(PyftpdlibTestCase):
             self.file.close()
         if not self.dummyfile.closed:
             self.dummyfile.close()
+        super().tearDown()
 
     def assert_auth_failed(self, user, passwd):
         self.assertRaisesRegex(ftplib.error_perm, '530 Authentication failed',
@@ -250,6 +252,7 @@ class TestFtpDummyCmds(PyftpdlibTestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        super().setUp()
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
@@ -259,6 +262,7 @@ class TestFtpDummyCmds(PyftpdlibTestCase):
     def tearDown(self):
         close_client(self.client)
         self.server.stop()
+        super().tearDown()
 
     def test_type(self):
         self.client.sendcmd('type a')
@@ -373,6 +377,7 @@ class TestFtpCmdsSemantic(PyftpdlibTestCase):
          'stru', 'type', 'user', 'xmkd', 'xrmd', 'site chmod']
 
     def setUp(self):
+        super().setUp()
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
@@ -382,6 +387,7 @@ class TestFtpCmdsSemantic(PyftpdlibTestCase):
     def tearDown(self):
         close_client(self.client)
         self.server.stop()
+        super().tearDown()
 
     def test_arg_cmds(self):
         # Test commands requiring an argument.
@@ -436,6 +442,7 @@ class TestFtpFsOperations(PyftpdlibTestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        super().setUp()
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
@@ -449,6 +456,7 @@ class TestFtpFsOperations(PyftpdlibTestCase):
     def tearDown(self):
         close_client(self.client)
         self.server.stop()
+        super().tearDown()
 
     def test_cwd(self):
         self.client.cwd(self.tempdir)
@@ -661,6 +669,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
     use_custom_io = False
 
     def setUp(self):
+        super().setUp()
         self.server = self.server_class()
         if self.use_sendfile is not None:
             self.server.handler.use_sendfile = self.use_sendfile
@@ -684,6 +693,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
         if self.use_sendfile is not None:
             from pyftpdlib.handlers import _import_sendfile
             self.server.handler.use_sendfile = _import_sendfile() is not None
+        super().tearDown()
 
     def test_stor(self):
         data = b'abcde12345' * 100000
@@ -972,6 +982,7 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
         return self.client.voidresp()
 
     def setUp(self):
+        super().setUp()
         self.server = self.server_class()
         if self.use_sendfile is not None:
             self.server.handler.use_sendfile = self.use_sendfile
@@ -992,6 +1003,7 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
         if self.use_sendfile is not None:
             from pyftpdlib.handlers import _import_sendfile
             self.server.handler.use_sendfile = _import_sendfile() is not None
+        super().tearDown()
 
     def test_retr(self):
         data = b'abcde12345' * 100000
@@ -1095,6 +1107,7 @@ class TestFtpListingCmds(PyftpdlibTestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        super().setUp()
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
@@ -1106,6 +1119,7 @@ class TestFtpListingCmds(PyftpdlibTestCase):
     def tearDown(self):
         close_client(self.client)
         self.server.stop()
+        super().tearDown()
 
     def _test_listing_cmds(self, cmd):
         """Tests common to LIST NLST and MLSD commands."""
@@ -1259,6 +1273,7 @@ class TestFtpAbort(PyftpdlibTestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        super().setUp()
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
@@ -1268,6 +1283,7 @@ class TestFtpAbort(PyftpdlibTestCase):
     def tearDown(self):
         close_client(self.client)
         self.server.stop()
+        super().tearDown()
 
     def test_abor_no_data(self):
         # Case 1: ABOR while no data channel is opened: respond with 225.
@@ -1343,6 +1359,7 @@ class TestThrottleBandwidth(PyftpdlibTestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        super().setUp()
 
         class CustomDTPHandler(ThrottledDTPHandler):
             # overridden so that the "awake" callback is executed
@@ -1373,6 +1390,7 @@ class TestThrottleBandwidth(PyftpdlibTestCase):
         self.server.stop()
         if not self.dummyfile.closed:
             self.dummyfile.close()
+        super().tearDown()
 
     def test_throttle_send(self):
         # This test doesn't test the actual speed accuracy, just
@@ -1412,6 +1430,7 @@ class TestTimeouts(PyftpdlibTestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        super().setUp()
         self.server = None
         self.client = None
         self.testfn = self.get_testfn()
@@ -1436,6 +1455,7 @@ class TestTimeouts(PyftpdlibTestCase):
             self.server.handler.passive_dtp.timeout = 30
             self.server.handler.active_dtp.timeout = 30
             self.server.stop()
+        super().tearDown()
 
     # Note: moved later.
 
@@ -1565,6 +1585,7 @@ class TestConfigurableOptions(PyftpdlibTestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        super().setUp()
         self.server = None
         self.client = None
 
@@ -1591,6 +1612,7 @@ class TestConfigurableOptions(PyftpdlibTestCase):
             self.server.handler.use_gmt_times = True
             self.server.handler.tcp_no_delay = hasattr(socket, 'TCP_NODELAY')
             self.server.stop()
+        super().tearDown()
 
     @disable_log_warning
     def test_max_connections(self):
@@ -1772,6 +1794,7 @@ class TestCallbacks(PyftpdlibTestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        super().setUp()
 
         class Handler(FTPHandler):
 
@@ -1819,6 +1842,7 @@ class TestCallbacks(PyftpdlibTestCase):
     def tearDown(self):
         close_client(self.client)
         self.server.stop()
+        super().tearDown()
 
     def read_file(self, text):
         stop_at = time.time() + 1
@@ -1942,6 +1966,7 @@ class _TestNetworkProtocols(object):
     """
 
     def setUp(self):
+        super().setUp()
         self.server = self.server_class((self.HOST, 0))
         self.server.start()
         self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
@@ -1957,6 +1982,7 @@ class _TestNetworkProtocols(object):
     def tearDown(self):
         close_client(self.client)
         self.server.stop()
+        super().tearDown()
 
     def cmdresp(self, cmd):
         """Send a command and return response, also if the command failed."""
@@ -2140,6 +2166,7 @@ class TestIPv6MixedEnvironment(PyftpdlibTestCase):
     HOST = "::"
 
     def setUp(self):
+        super().setUp()
         self.server = self.server_class((self.HOST, 0))
         self.server.start()
         self.client = None
@@ -2148,6 +2175,7 @@ class TestIPv6MixedEnvironment(PyftpdlibTestCase):
         if self.client is not None:
             close_client(self.client)
         self.server.stop()
+        super().tearDown()
 
     def test_port_v4(self):
         def noop(x):
@@ -2215,6 +2243,7 @@ class TestCornerCases(PyftpdlibTestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        super().setUp()
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
@@ -2224,6 +2253,7 @@ class TestCornerCases(PyftpdlibTestCase):
     def tearDown(self):
         close_client(self.client)
         self.server.stop()
+        super().tearDown()
 
     def test_port_race_condition(self):
         # Refers to bug #120, first sends PORT, then disconnects the
@@ -2343,6 +2373,7 @@ class TestCornerCases(PyftpdlibTestCase):
 #     client_class = ftplib.FTP
 
 #     def setUp(self):
+#         super().setUp()
 #         self.server = self.server_class()
 #         self.server.start()
 #         self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
@@ -2364,6 +2395,7 @@ class TestCornerCases(PyftpdlibTestCase):
 #     def tearDown(self):
 #         close_client(self.client)
 #         self.server.stop()
+#         super().tearDown()
 
 #     # --- fs operations
 
@@ -2514,6 +2546,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        super().setUp()
         self.server = self.server_class()
         self.server.start()
         self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
@@ -2531,6 +2564,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         self.server.stop()
         self.dummy_recvfile.close()
         self.dummy_sendfile.close()
+        super().tearDown()
 
     @retry_on_failure()
     def test_unforeseen_mdtm_event(self):

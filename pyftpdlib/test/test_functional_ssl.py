@@ -196,6 +196,7 @@ class TestFTPS(PyftpdlibTestCase):
         self.client.connect(self.server.host, self.server.port)
 
     def setUp(self):
+        super().setUp()
         self.client = None
         self.server = None
 
@@ -208,6 +209,7 @@ class TestFTPS(PyftpdlibTestCase):
             self.server.handler.tls_control_required = False
             self.server.handler.tls_data_required = False
             self.server.stop()
+        super().tearDown()
 
     def assertRaisesWithMsg(self, excClass, msg, callableObj, *args, **kwargs):
         try:

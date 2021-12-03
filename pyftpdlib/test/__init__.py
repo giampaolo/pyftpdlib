@@ -79,6 +79,20 @@ if CI_TESTING:
 class PyftpdlibTestCase(unittest.TestCase):
     """All test classes inherit from this one."""
 
+    def setUp(self):
+        self._test_ctx = {}
+        self._test_ctx["num_threads"] = set(threading.enumerate())
+
+    def tearDown(self):
+        if not hasattr(self, "_test_ctx"):
+            raise AssertionError("super().setUp() was not called for this "
+                                 "test class")
+        threads = set(threading.enumerate())
+        if len(threads) > len(self._test_ctx["threads"]):
+            extra = threads - self._test_ctx["threads"]
+            raise AssertionError("%s orphaned thread(s) were left "
+                                 "behind: %r" % (len(extra), extra))
+
     def __str__(self):
         # Print a full path representation of the single unit tests
         # being run.

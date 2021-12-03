@@ -46,6 +46,7 @@ class TestDummyAuthorizer(PyftpdlibTestCase):
 
     # temporarily change warnings to exceptions for the purposes of testing
     def setUp(self):
+        super().setUp()
         self.tempdir = os.path.abspath(self.get_testfn())
         self.subtempdir = os.path.join(self.tempdir, self.get_testfn())
         self.tempfile = os.path.join(self.tempdir, self.get_testfn())
@@ -62,6 +63,7 @@ class TestDummyAuthorizer(PyftpdlibTestCase):
         os.rmdir(self.subtempdir)
         os.rmdir(self.tempdir)
         warnings.resetwarnings()
+        super().tearDown()
 
     def test_common_methods(self):
         auth = DummyAuthorizer()
@@ -445,6 +447,7 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
     authorizer_class = UnixAuthorizer
 
     def setUp(self):
+        super().setUp()
         try:
             UnixAuthorizer()
         except AuthorizerError:  # not root

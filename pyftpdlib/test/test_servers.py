@@ -45,6 +45,7 @@ class TestFTPServer(PyftpdlibTestCase):
     client_class = ftplib.FTP
 
     def setUp(self):
+        super().setUp()
         self.server = None
         self.client = None
 
@@ -53,6 +54,7 @@ class TestFTPServer(PyftpdlibTestCase):
             close_client(self.client)
         if self.server is not None:
             self.server.stop()
+        super().tearDown()
 
     @unittest.skipIf(WINDOWS, "POSIX only")
     def test_sock_instead_of_addr(self):

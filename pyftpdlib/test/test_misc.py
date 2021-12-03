@@ -30,6 +30,8 @@ class TestCommandLineParser(PyftpdlibTestCase):
     STDERR = sys.stderr
 
     def setUp(self):
+        super().setUp()
+
         class DummyFTPServer(FTPServer):
             """An overridden version of FTPServer class which forces
             serve_forever() to return immediately.
@@ -53,6 +55,7 @@ class TestCommandLineParser(PyftpdlibTestCase):
         sys.argv = self.SYSARGV[:]
         sys.stderr = self.STDERR
         pyftpdlib.servers.FTPServer = self.original_ftpserver_class
+        super().tearDown()
 
     def test_a_option(self):
         sys.argv += ["-i", "localhost", "-p", "0"]
