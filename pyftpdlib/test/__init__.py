@@ -81,7 +81,7 @@ class PyftpdlibTestCase(unittest.TestCase):
 
     def setUp(self):
         self._test_ctx = {}
-        self._test_ctx["num_threads"] = set(threading.enumerate())
+        self._test_ctx["threads"] = set(threading.enumerate())
 
     def tearDown(self):
         if not hasattr(self, "_test_ctx"):
