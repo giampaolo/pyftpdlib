@@ -1,34 +1,54 @@
-.. image:: https://img.shields.io/pypi/dm/pyftpdlib.svg
-    :target: http://pepy.tech/project/pyftpdlib
+|  |downloads| |stars| |forks| |contributors| |coverage|
+|  |version| |packages| |license|
+|  |github-actions| |appveyor| |doc| |twitter|
+
+.. |downloads| image:: https://img.shields.io/pypi/dm/pyftpdlib.svg
+    :target: https://pepy.tech/project/pyftpdlib
     :alt: Downloads
 
-.. image:: https://github.com/giampaolo/pyftpdlib/workflows/pyftpdlib%20tests/badge.svg
-    :target: https://github.com/giampaolo/pyftpdlib/actions?query=workflow%3A%22pyftpdlib+tests%22
-    :alt: Linux tests
+.. |stars| image:: https://img.shields.io/github/stars/giampaolo/pyftpdlib.svg
+    :target: https://github.com/giampaolo/pyftpdlib/stargazers
+    :alt: Github stars
 
-.. image:: https://img.shields.io/appveyor/build/giampaolo/pyftpdlib/master.svg?maxAge=3600&label=Windows
+.. |forks| image:: https://img.shields.io/github/forks/giampaolo/pyftpdlib.svg
+    :target: https://github.com/giampaolo/pyftpdlib/network/members
+    :alt: Github forks
+
+.. |contributors| image:: https://img.shields.io/github/contributors/giampaolo/pyftpdlib.svg
+    :target: https://github.com/giampaolo/pyftpdlib/graphs/contributors
+    :alt: Contributors
+
+.. |github-actions| image:: https://github.com/giampaolo/pyftpdlib/actions/workflows/tests.yml/badge.svg
+    :target: https://github.com/giampaolo/pyftpdlib/actions/workflows/tests.yml
+    :alt: Linux, macOS, Windows tests
+
+.. |appveyor| image:: https://img.shields.io/appveyor/build/giampaolo/pyftpdlib/master.svg?label=windows%20tests
     :target: https://ci.appveyor.com/project/giampaolo/pyftpdlib
     :alt: Windows tests (Appveyor)
 
-.. image:: https://coveralls.io/repos/github/giampaolo/pyftpdlib/badge.svg?branch=master
+.. |coverage| image:: https://coveralls.io/repos/github/giampaolo/pyftpdlib/badge.svg?branch=master
     :target: https://coveralls.io/github/giampaolo/pyftpdlib?branch=master
     :alt: Test coverage (coverall.io)
 
-.. image:: https://readthedocs.org/projects/pyftpdlib/badge/?version=latest
-    :target: http://pyftpdlib.readthedocs.io/en/latest/?badge=latest
+.. |doc| image:: https://readthedocs.org/projects/pyftpdlib/badge/?version=latest
+    :target: https://pyftpdlib.readthedocs.io/en/latest/
     :alt: Documentation Status
 
-.. image:: https://img.shields.io/pypi/v/pyftpdlib.svg?label=pypi
-    :target: https://pypi.python.org/pypi/pyftpdlib/
+.. |version| image:: https://img.shields.io/pypi/v/pyftpdlib.svg?label=pypi
+    :target: https://pypi.org/project/pyftpdlib
     :alt: Latest version
 
-.. image:: https://img.shields.io/github/stars/giampaolo/pyftpdlib.svg
-    :target: https://github.com/giampaolo/pyftpdlib/
-    :alt: Github stars
+.. |packages| image:: https://repology.org/badge/tiny-repos/python:pyftpdlib.svg
+    :target: https://repology.org/metapackage/python:pyftpdlib/versions
+    :alt: Binary packages
 
-.. image:: https://img.shields.io/pypi/l/pyftpdlib.svg
-    :target: https://pypi.python.org/pypi/pyftpdlib/
+.. |license| image:: https://img.shields.io/pypi/l/pyftpdlib.svg
+    :target: https://github.com/giampaolo/pyftpdlib/blob/master/LICENSE
     :alt: License
+
+.. |twitter| image:: https://img.shields.io/twitter/follow/grodola.svg?label=follow&style=flat&logo=twitter&logoColor=4FADFF
+    :target: https://twitter.com/grodola
+    :alt: Twitter Follow
 
 Quick links
 ===========
