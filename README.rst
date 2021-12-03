@@ -22,7 +22,7 @@
     :target: https://github.com/giampaolo/pyftpdlib/actions/workflows/tests.yml
     :alt: Linux, macOS, Windows tests
 
-.. |appveyor| image:: https://img.shields.io/appveyor/ci/giampaolo/pyftpdlib/master.svg?maxAge=3600&label=Windows
+.. |appveyor| image:: https://img.shields.io/appveyor/build/giampaolo/pyftpdlib/master.svg?label=Windows%20tests
     :target: https://ci.appveyor.com/project/giampaolo/pyftpdlib
     :alt: Windows tests (Appveyor)
 
