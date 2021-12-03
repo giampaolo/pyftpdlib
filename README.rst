@@ -1,6 +1,6 @@
-|  |downloads| |stars| |forks| |contributors| |coverage| |quality|
+|  |downloads| |stars| |forks| |contributors| |coverage|
 |  |version| |py-versions| |packages| |license|
-|  |github-actions| |appveyor| |doc| |twitter| |tidelift|
+|  |github-actions| |appveyor| |doc| |twitter|
 
 .. |downloads| image:: https://img.shields.io/pypi/dm/pyftpdlib.svg
     :target: https://pepy.tech/project/pyftpdlib
@@ -17,10 +17,6 @@
 .. |contributors| image:: https://img.shields.io/github/contributors/giampaolo/pyftpdlib.svg
     :target: https://github.com/giampaolo/pyftpdlib/graphs/contributors
     :alt: Contributors
-
-.. |quality| image:: https://img.shields.io/codacy/grade/ce63e7f7f69d44b5b59682196e6fbfca.svg
-    :target: https://www.codacy.com/app/g-rodola/pyftpdlib?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=giampaolo/pyftpdlib&amp;utm_campaign=Badge_Grade
-    :alt: Code quality
 
 .. |github-actions| image:: https://img.shields.io/github/workflow/status/giampaolo/pyftpdlib/CI?label=Linux%2C%20macOS%2C%20FreeBSD
     :target: https://github.com/giampaolo/pyftpdlib/actions?query=workflow%3Abuild
@@ -56,11 +52,6 @@
 .. |twitter| image:: https://img.shields.io/twitter/follow/grodola.svg?label=follow&style=flat&logo=twitter&logoColor=4FADFF
     :target: https://twitter.com/grodola
     :alt: Twitter Follow
-
-.. |tidelift| image:: https://tidelift.com/badges/github/giampaolo/pyftpdlib?style=flat
-    :target: https://tidelift.com/subscription/pkg/pypi-pyftpdlib?utm_source=pypi-pyftpdlib&utm_medium=referral&utm_campaign=readme
-    :alt: Tidelift
-
 
 Quick links
 ===========
