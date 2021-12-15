@@ -28,3 +28,4 @@ jobs:
         python -m pip install --upgrade pip setuptools
         python -m pip install --upgrade mock==1.0.1 unittest2 pysendfile pyopenssl psutil
         make test PYTHON=python
+        make lint PYTHON=python

@@ -11,6 +11,7 @@ DEV_DEPS = \
 	coverage \
 	flake8 \
 	flake8-print \
+	isort \
 	mock==1.0.1 \
 	pep8 \
 	pyflakes \
@@ -26,6 +27,10 @@ TEST_DEPS = \
 INSTALL_OPTS = `$(PYTHON) -c "import sys; print('' if hasattr(sys, 'real_prefix') else '--user')"`
 TEST_PREFIX = PYTHONWARNINGS=always
 
+
+# ===================================================================
+# Install
+# ===================================================================
 
 all: test
 
@@ -87,6 +92,10 @@ setup-dev-env:  ## Install GIT hooks, pip, test deps (also upgrades them).
 	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(TEST_DEPS)
 	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(DEV_DEPS)
 
+# ===================================================================
+# Tests
+# ===================================================================
+
 test:  ## Run all tests.
 	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) $(TSCRIPT)
@@ -132,15 +141,26 @@ test-coverage:  ## Run test coverage.
 	$(PYTHON) -m coverage html
 	$(PYTHON) -m webbrowser -t htmlcov/index.html
 
-pep8:  ## PEP8 linter.
-	@git ls-files | grep \\.py$ | xargs $(PYTHON) -m pep8
+# ===================================================================
+# Linters
+# ===================================================================
 
-pyflakes:  ## Pyflakes linter.
-	@export PYFLAKES_NODOCTEST=1 && \
-		git ls-files | grep \\.py$ | xargs $(PYTHON) -m pyflakes
+check-flake8:  ## Run flake8 linter.
+	@git ls-files '*.py' | xargs $(PYTHON) -m flake8 --config=.flake8
 
-flake8:  ## flake8 linter.
-	@git ls-files | grep \\.py$ | xargs $(PYTHON) -m flake8
+check-imports:  ## Run isort linter.
+	@git ls-files '*.py' | xargs $(PYTHON) -m isort --settings=.isort.cfg --check-only
+
+lint:  ## Run all linters
+	${MAKE} check-flake8
+	${MAKE} check-imports
+
+fix-imports:  ## Fix imports with isort.
+	@git ls-files '*.py' | xargs $(PYTHON) -m isort --settings=.isort.cfg
+
+# ===================================================================
+# Distribution
+# ===================================================================
 
 check-manifest:  ## Inspect MANIFEST.in file.
 	$(PYTHON) -m check_manifest -v $(ARGS)
