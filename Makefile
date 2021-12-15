@@ -13,8 +13,6 @@ DEV_DEPS = \
 	flake8-print \
 	isort \
 	mock==1.0.1 \
-	pep8 \
-	pyflakes \
 	setuptools \
 	sphinx
 TEST_DEPS = \
@@ -89,7 +87,7 @@ install-pip:  ## (only if necessary)
 setup-dev-env:  ## Install GIT hooks, pip, test deps (also upgrades them).
 	${MAKE} install-git-hooks
 	${MAKE} install-pip
-	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade pip
+	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade pip setuptools
 	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(TEST_DEPS)
 	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(DEV_DEPS)
 
