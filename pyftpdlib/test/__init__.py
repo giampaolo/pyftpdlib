@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 from __future__ import print_function
+
 import contextlib
 import functools
 import logging
@@ -17,17 +18,18 @@ import threading
 import time
 import warnings
 
+import psutil
+
+from pyftpdlib._compat import PY3
 from pyftpdlib._compat import FileNotFoundError
 from pyftpdlib._compat import getcwdu
-from pyftpdlib._compat import PY3
 from pyftpdlib._compat import super
 from pyftpdlib.authorizers import DummyAuthorizer
-from pyftpdlib.handlers import _import_sendfile
 from pyftpdlib.handlers import FTPHandler
+from pyftpdlib.handlers import _import_sendfile
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
 
-import psutil
 
 if PY3:
     import unittest

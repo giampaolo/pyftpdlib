@@ -12,11 +12,12 @@ from pyftpdlib._compat import u
 from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.test import HOME
 from pyftpdlib.test import POSIX
-from pyftpdlib.test import safe_rmpath
+from pyftpdlib.test import VERBOSITY
 from pyftpdlib.test import PyftpdlibTestCase
+from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import touch
 from pyftpdlib.test import unittest
-from pyftpdlib.test import VERBOSITY
+
 
 if POSIX:
     from pyftpdlib.filesystems import UnixFilesystem

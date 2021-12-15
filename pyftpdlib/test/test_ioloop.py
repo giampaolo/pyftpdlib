@@ -11,18 +11,18 @@ import socket
 import sys
 import time
 
+import pyftpdlib.ioloop
 from pyftpdlib._compat import PY3
 from pyftpdlib._compat import super
 from pyftpdlib.ioloop import Acceptor
 from pyftpdlib.ioloop import AsyncChat
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.ioloop import RetryError
-from pyftpdlib.test import mock
 from pyftpdlib.test import POSIX
-from pyftpdlib.test import PyftpdlibTestCase
-from pyftpdlib.test import unittest
 from pyftpdlib.test import VERBOSITY
-import pyftpdlib.ioloop
+from pyftpdlib.test import PyftpdlibTestCase
+from pyftpdlib.test import mock
+from pyftpdlib.test import unittest
 
 
 if hasattr(socket, 'socketpair'):

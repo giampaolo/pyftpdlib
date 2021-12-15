@@ -12,6 +12,7 @@ that they should be deemed illegal!
 """
 
 from __future__ import print_function
+
 import argparse
 import atexit
 import ctypes

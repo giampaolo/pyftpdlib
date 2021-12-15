@@ -5,10 +5,11 @@ Compatibility module similar to six which helps maintaining
 a single code base working with python from 2.6 to 3.x.
 """
 
-import os
 import errno
-import types
+import os
 import sys
+import types
+
 
 PY3 = sys.version_info[0] == 3
 _SENTINEL = object()

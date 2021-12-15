@@ -6,22 +6,25 @@
 
 
 from __future__ import print_function
+
 import atexit
 import os
 import sys
 from unittest import TestResult
 from unittest import TextTestResult
 from unittest import TextTestRunner
+
+
 try:
     import ctypes
 except ImportError:
     ctypes = None
 
-from pyftpdlib.test import configure_logging
 from pyftpdlib.test import POSIX
-from pyftpdlib.test import unittest
 from pyftpdlib.test import VERBOSITY
 from pyftpdlib.test import WINDOWS
+from pyftpdlib.test import configure_logging
+from pyftpdlib.test import unittest
 
 
 HERE = os.path.abspath(os.path.dirname(__file__))
