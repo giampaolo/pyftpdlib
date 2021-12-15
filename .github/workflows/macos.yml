@@ -1,14 +1,14 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: pyftpdlib linux build
+name: pyftpdlib macos build
 on: [push, pull_request]
 jobs:
   tests:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     strategy:
       matrix:
-        python-version: ['2.7', '3.9']
+        python-version: ['3.9']
 
     steps:
     - name: Cancel previous runs
@@ -26,13 +26,3 @@ jobs:
       run: |
         make setup-dev-env PYTHON=python
         make test PYTHON=python
-
-  linters:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-    - name: 'Run linters'
-      run: |
-        python3 -m pip install flake8 isort
-        make lint
