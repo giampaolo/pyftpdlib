@@ -44,6 +44,7 @@ clean:  ## Remove all build files.
 		-o -type f -name \*.rej \
 		-o -type f -name \*.so \
 		-o -type f -name \*.~ \
+		-o -type f -name @pyftpd\* \
 		-o -type f -name \*\$testfn`
 	rm -rf \
 		*.core \
@@ -173,8 +174,8 @@ git-tag-release:  ## Git-tag a new release.
 	git tag -a release-`python -c "import setup; print(setup.VERSION)"` -m `git rev-list HEAD --count`:`git rev-parse --short HEAD`
 	git push --follow-tags
 
-install-git-hooks:  ## Install GIT pre-commit hook
-	ln -sf ../../.git-pre-commit .git/hooks/pre-commit
+install-git-hooks:  ## Install GIT pre-commit hook.
+	ln -sf ../../scripts/internal/git_pre_commit.py .git/hooks/pre-commit
 	chmod +x .git/hooks/pre-commit
 
 grep-todos:  ## Look for TODOs in source files.

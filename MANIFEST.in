@@ -1,6 +1,6 @@
 include .coveragerc
-include .git-pre-commit
 include .gitignore
+include .isort.cfg
 include CREDITS
 include HISTORY.rst
 include LICENSE
@@ -55,8 +55,8 @@ include pyftpdlib/test/test_misc.py
 include pyftpdlib/test/test_servers.py
 include scripts/ftpbench
 include scripts/internal/generate_manifest.py
+include scripts/internal/git_pre_commit.py
 include scripts/internal/print_announce.py
 include scripts/internal/purge_installation.py
 include scripts/internal/winmake.py
 include setup.py
-include tox.ini
