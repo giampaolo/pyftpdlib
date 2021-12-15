@@ -122,7 +122,7 @@ def main():
         cmd = "%s -m flake8 --config=.flake8 %s" % (PYTHON, " ".join(py_files))
         ret = subprocess.call(shlex.split(cmd))
         if ret != 0:
-            return exit("python code is not flake8 compliant; "
+            return exit("python code didn't pass 'flake8' style check; "
                         "try running 'make fix-flake8'")
         # isort
         assert os.path.exists('.isort.cfg')
@@ -130,7 +130,7 @@ def main():
             PYTHON, " ".join(py_files))
         ret = subprocess.call(shlex.split(cmd))
         if ret != 0:
-            return exit("python code is not flake8 compliant; "
+            return exit("python code didn't pass 'isort' style check; "
                         "try running 'make fix-imports'")
     if new_rm_mv:
         out = sh("%s scripts/internal/generate_manifest.py" % PYTHON)

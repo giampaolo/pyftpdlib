@@ -154,6 +154,9 @@ lint:  ## Run all linters
 	${MAKE} check-flake8
 	${MAKE} check-imports
 
+fix-flake8:  ## Attempt to automatically fix some Python flake8 issues.
+	@git ls-files | grep \\.py$ | xargs $(PYTHON) -m flake8 --exit-zero | $(PYTHON) scripts/internal/fix_flake8.py
+
 fix-imports:  ## Fix imports with isort.
 	@git ls-files '*.py' | xargs $(PYTHON) -m isort --settings=.isort.cfg
 
