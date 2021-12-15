@@ -4,7 +4,7 @@
 name: pyftpdlib tests
 on: [push, pull_request]
 jobs:
-  build:
+  tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -23,8 +23,16 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Run
+    - name: Tests
       run: |
         make setup-dev-env PYTHON=python
         make test PYTHON=python
-        make lint PYTHON=python
+
+  linters:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+    - name: 'Run linters'
+      run: |
+        make lint
