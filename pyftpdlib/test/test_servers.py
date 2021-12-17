@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2007 Giampaolo Rodola' <g.rodola@gmail.com>.
 # Use of this source code is governed by MIT license that can be
@@ -13,17 +13,17 @@ import sys
 from pyftpdlib import handlers
 from pyftpdlib import servers
 from pyftpdlib._compat import super
-from pyftpdlib.test import close_client
-from pyftpdlib.test import configure_logging
 from pyftpdlib.test import GLOBAL_TIMEOUT
 from pyftpdlib.test import HOST
 from pyftpdlib.test import PASSWD
-from pyftpdlib.test import PyftpdlibTestCase
-from pyftpdlib.test import ThreadedTestFTPd
-from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
 from pyftpdlib.test import VERBOSITY
 from pyftpdlib.test import WINDOWS
+from pyftpdlib.test import PyftpdlibTestCase
+from pyftpdlib.test import ThreadedTestFTPd
+from pyftpdlib.test import close_client
+from pyftpdlib.test import configure_logging
+from pyftpdlib.test import unittest
 from pyftpdlib.test.test_functional import TestCornerCases
 from pyftpdlib.test.test_functional import TestFtpAbort
 from pyftpdlib.test.test_functional import TestFtpAuthentication

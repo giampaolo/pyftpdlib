@@ -16,9 +16,10 @@ import traceback
 import warnings
 from datetime import datetime
 
+
 try:
-    import pwd
     import grp
+    import pwd
 except ImportError:
     pwd = grp = None
 
@@ -33,9 +34,9 @@ except ImportError:
     OrderedDict = dict
 
 from . import __ver__
+from ._compat import PY3
 from ._compat import b
 from ._compat import getcwdu
-from ._compat import PY3
 from ._compat import super
 from ._compat import u
 from ._compat import unicode
@@ -70,6 +71,7 @@ def _import_sendfile():
         except AttributeError:
             try:
                 import sendfile as sf
+
                 # dirty hack to detect whether old 1.2.4 version is installed
                 if hasattr(sf, 'has_sf_hdtr'):
                     raise ImportError

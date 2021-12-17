@@ -13,6 +13,8 @@ Instead you should use logging.basicConfig before serve_forever().
 import logging
 import sys
 import time
+
+
 try:
     import curses
 except ImportError:

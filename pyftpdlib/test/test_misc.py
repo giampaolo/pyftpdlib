@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2007 Giampaolo Rodola' <g.rodola@gmail.com>.
 # Use of this source code is governed by MIT license that can be
@@ -8,21 +8,23 @@ import logging
 import os
 import sys
 import warnings
+
+
 try:
     from StringIO import StringIO as BytesIO
 except ImportError:
     from io import BytesIO
 
+import pyftpdlib
+import pyftpdlib.__main__
 from pyftpdlib._compat import PY3
 from pyftpdlib._compat import super
 from pyftpdlib.servers import FTPServer
-from pyftpdlib.test import mock
+from pyftpdlib.test import VERBOSITY
 from pyftpdlib.test import PyftpdlibTestCase
+from pyftpdlib.test import mock
 from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import unittest
-from pyftpdlib.test import VERBOSITY
-import pyftpdlib
-import pyftpdlib.__main__
 
 
 class TestCommandLineParser(PyftpdlibTestCase):

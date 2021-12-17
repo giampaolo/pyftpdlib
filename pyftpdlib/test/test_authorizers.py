@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2007 Giampaolo Rodola' <g.rodola@gmail.com>.
 # Use of this source code is governed by MIT license that can be
@@ -19,12 +19,13 @@ from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.test import HOME
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import POSIX
-from pyftpdlib.test import PyftpdlibTestCase
-from pyftpdlib.test import touch
-from pyftpdlib.test import unittest
 from pyftpdlib.test import USER
 from pyftpdlib.test import VERBOSITY
 from pyftpdlib.test import WINDOWS
+from pyftpdlib.test import PyftpdlibTestCase
+from pyftpdlib.test import touch
+from pyftpdlib.test import unittest
+
 
 if POSIX:
     import pwd
@@ -37,6 +38,7 @@ else:
 
 if WINDOWS:
     from pywintypes import error as Win32ExtError
+
     from pyftpdlib.authorizers import WindowsAuthorizer
 else:
     WindowsAuthorizer = None

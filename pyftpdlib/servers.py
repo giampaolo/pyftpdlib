@@ -44,12 +44,12 @@ import traceback
 
 from .ioloop import Acceptor
 from .ioloop import IOLoop
+from .log import PREFIX
+from .log import PREFIX_MPROC
 from .log import config_logging
 from .log import debug
 from .log import is_logging_configured
 from .log import logger
-from .log import PREFIX
-from .log import PREFIX_MPROC
 from .prefork import fork_processes
 
 

@@ -6,13 +6,15 @@ import os
 import stat
 import tempfile
 import time
+
+
 try:
     from stat import filemode as _filemode  # PY 3.3
 except ImportError:
     from tarfile import filemode as _filemode
 try:
-    import pwd
     import grp
+    import pwd
 except ImportError:
     pwd = grp = None
 try:

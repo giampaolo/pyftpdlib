@@ -11,9 +11,8 @@ DEV_DEPS = \
 	coverage \
 	flake8 \
 	flake8-print \
+	isort \
 	mock==1.0.1 \
-	pep8 \
-	pyflakes \
 	setuptools \
 	sphinx
 TEST_DEPS = \
@@ -27,6 +26,10 @@ INSTALL_OPTS = `$(PYTHON) -c "import sys; print('' if hasattr(sys, 'real_prefix'
 TEST_PREFIX = PYTHONWARNINGS=always
 
 
+# ===================================================================
+# Install
+# ===================================================================
+
 all: test
 
 clean:  ## Remove all build files.
@@ -39,6 +42,7 @@ clean:  ## Remove all build files.
 		-o -type f -name \*.rej \
 		-o -type f -name \*.so \
 		-o -type f -name \*.~ \
+		-o -type f -name @pyftpd\* \
 		-o -type f -name \*\$testfn`
 	rm -rf \
 		*.core \
@@ -83,9 +87,13 @@ install-pip:  ## (only if necessary)
 setup-dev-env:  ## Install GIT hooks, pip, test deps (also upgrades them).
 	${MAKE} install-git-hooks
 	${MAKE} install-pip
-	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade pip
+	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade pip setuptools
 	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(TEST_DEPS)
 	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(DEV_DEPS)
+
+# ===================================================================
+# Tests
+# ===================================================================
 
 test:  ## Run all tests.
 	${MAKE} install
@@ -132,15 +140,29 @@ test-coverage:  ## Run test coverage.
 	$(PYTHON) -m coverage html
 	$(PYTHON) -m webbrowser -t htmlcov/index.html
 
-pep8:  ## PEP8 linter.
-	@git ls-files | grep \\.py$ | xargs $(PYTHON) -m pep8
+# ===================================================================
+# Linters
+# ===================================================================
 
-pyflakes:  ## Pyflakes linter.
-	@export PYFLAKES_NODOCTEST=1 && \
-		git ls-files | grep \\.py$ | xargs $(PYTHON) -m pyflakes
+check-flake8:  ## Run flake8 linter.
+	@git ls-files '*.py' | xargs $(PYTHON) -m flake8 --config=.flake8
 
-flake8:  ## flake8 linter.
-	@git ls-files | grep \\.py$ | xargs $(PYTHON) -m flake8
+check-imports:  ## Run isort linter.
+	@git ls-files '*.py' | xargs $(PYTHON) -m isort --settings=.isort.cfg --check-only
+
+lint:  ## Run all linters
+	${MAKE} check-flake8
+	${MAKE} check-imports
+
+fix-flake8:  ## Attempt to automatically fix some Python flake8 issues.
+	@git ls-files | grep \\.py$ | xargs $(PYTHON) -m flake8 --exit-zero | $(PYTHON) scripts/internal/fix_flake8.py
+
+fix-imports:  ## Fix imports with isort.
+	@git ls-files '*.py' | xargs $(PYTHON) -m isort --settings=.isort.cfg
+
+# ===================================================================
+# Distribution
+# ===================================================================
 
 check-manifest:  ## Inspect MANIFEST.in file.
 	$(PYTHON) -m check_manifest -v $(ARGS)
@@ -153,8 +175,8 @@ git-tag-release:  ## Git-tag a new release.
 	git tag -a release-`python -c "import setup; print(setup.VERSION)"` -m `git rev-list HEAD --count`:`git rev-parse --short HEAD`
 	git push --follow-tags
 
-install-git-hooks:  ## Install GIT pre-commit hook
-	ln -sf ../../.git-pre-commit .git/hooks/pre-commit
+install-git-hooks:  ## Install GIT pre-commit hook.
+	ln -sf ../../scripts/internal/git_pre_commit.py .git/hooks/pre-commit
 	chmod +x .git/hooks/pre-commit
 
 grep-todos:  ## Look for TODOs in source files.

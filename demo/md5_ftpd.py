@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2007 Giampaolo Rodola' <g.rodola@gmail.com>.
 # Use of this source code is governed by MIT license that can be
@@ -8,9 +8,9 @@
 A basic ftpd storing passwords as hash digests (platform independent).
 """
 
-from hashlib import md5
 import os
 import sys
+from hashlib import md5
 
 from pyftpdlib.authorizers import AuthenticationFailed
 from pyftpdlib.authorizers import DummyAuthorizer

@@ -24,8 +24,8 @@ import sys
 import warnings
 
 from ._compat import PY3
-from ._compat import unicode
 from ._compat import getcwdu
+from ._compat import unicode
 
 
 __all__ = ['DummyAuthorizer',
