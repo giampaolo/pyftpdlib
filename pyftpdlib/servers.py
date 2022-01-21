@@ -327,7 +327,7 @@ class FTPServerContext():
         # auto close the FTPServer
     """
 
-    def __init__(self, server: FTPServer):
+    def __init__(self, server):
         self.server = server
         self.thread = None
 
