@@ -42,7 +42,6 @@ clean:  ## Remove all build files.
 		-o -type f -name \*.rej \
 		-o -type f -name \*.so \
 		-o -type f -name \*.~ \
-		-o -type f -name @pyftpd\* \
 		-o -type f -name \*\$testfn`
 	rm -rf \
 		*.core \
@@ -50,6 +49,7 @@ clean:  ## Remove all build files.
 		*\$testfile* \
 		.coverage \
 		.tox \
+		pyftpd-tmp-\* \
 		build/ \
 		dist/ \
 		docs/_build/ \

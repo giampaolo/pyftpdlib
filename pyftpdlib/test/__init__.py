@@ -69,8 +69,8 @@ except socket.error:
 USER = 'user'
 PASSWD = '12345'
 HOME = getcwdu()
-# Disambiguate TESTFN for parallel testing.
-TESTFN_PREFIX = '@pyftpd-%s-' % os.getpid()
+# Use PID to disambiguate file name for parallel testing.
+TESTFN_PREFIX = 'pyftpd-tmp-%s-' % os.getpid()
 GLOBAL_TIMEOUT = 2
 BUFSIZE = 1024
 INTERRUPTED_TRANSF_SIZE = 32768
