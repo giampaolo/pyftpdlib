@@ -4,7 +4,7 @@
 [flake8]
 ignore =
    W504  # line break after binary operator
-   E741 ambiguous variable name 'l'
+   E741  # ambiguous variable name 'l'
 
    # --- flake8-bugbear plugin
    B007  # Loop control variable 'keyword' not used within the loop body. If this is intended, start the name with an underscore.
