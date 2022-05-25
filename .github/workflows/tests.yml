@@ -35,4 +35,4 @@ jobs:
     - name: 'Run linters'
       run: |
         python3 -m pip install flake8 isort
-        make lint
+        make lint-all
