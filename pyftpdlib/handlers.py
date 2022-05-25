@@ -1324,7 +1324,9 @@ class FTPHandler(AsyncChat):
             self._idler = self.ioloop.call_later(
                 self.timeout, self.handle_timeout, _errback=self.handle_error)
 
-    def get_repr_info(self, as_str=False, extra_info={}):
+    def get_repr_info(self, as_str=False, extra_info=None):
+        if extra_info is None:
+            extra_info = {}
         info = OrderedDict()
         info['id'] = id(self)
         info['addr'] = "%s:%s" % (self.remote_ip, self.remote_port)
@@ -3234,7 +3236,6 @@ if SSL is not None:
 
         def handle_ssl_established(self):
             """Called when SSL handshake has completed."""
-            pass
 
         def handle_ssl_shutdown(self):
             """Called when SSL shutdown() has completed."""

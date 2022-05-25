@@ -10,6 +10,9 @@ DEV_DEPS = \
 	check-manifest \
 	coverage \
 	flake8 \
+	flake8-blind-except \
+	flake8-bugbear \
+	flake8-debugger \
 	flake8-print \
 	isort \
 	mock==1.0.1 \
@@ -144,21 +147,22 @@ test-coverage:  ## Run test coverage.
 # Linters
 # ===================================================================
 
-check-flake8:  ## Run flake8 linter.
-	@git ls-files '*.py' | xargs $(PYTHON) -m flake8 --config=.flake8
+flake8:  ## Run flake8 linter.
+	git ls-files '*.py' | xargs $(PYTHON) -m flake8 --config=.flake8
 
-check-imports:  ## Run isort linter.
-	@git ls-files '*.py' | xargs $(PYTHON) -m isort --settings=.isort.cfg --check-only
+isort:  ## Run isort linter.
+	git ls-files '*.py' | xargs $(PYTHON) -m isort --settings=.isort.cfg --check-only
 
-lint:  ## Run all linters
-	${MAKE} check-flake8
-	${MAKE} check-imports
+lint-all:  ## Run all linters
+	${MAKE} flake8
+	${MAKE} isort
 
-fix-flake8:  ## Attempt to automatically fix some Python flake8 issues.
-	@git ls-files | grep \\.py$ | xargs $(PYTHON) -m flake8 --exit-zero | $(PYTHON) scripts/internal/fix_flake8.py
+fix-flake8:  ## Run autopep8, fix some Python flake8 / pep8 issues.
+	git ls-files | grep \\.py$ | xargs $(PYTHON) -m autopep8 --in-place --jobs 0 --global-config=.flake8
+	git ls-files | grep \\.py$ | xargs $(PYTHON) -m autoflake --in-place --remove-all-unused-imports --remove-unused-variables
 
-fix-imports:  ## Fix imports with isort.
-	@git ls-files '*.py' | xargs $(PYTHON) -m isort --settings=.isort.cfg
+fix-isort:  ## Fix imports with isort.
+	git ls-files '*.py' | xargs $(PYTHON) -m isort --settings=.isort.cfg
 
 # ===================================================================
 # Distribution

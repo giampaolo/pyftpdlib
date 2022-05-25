@@ -1,11 +1,22 @@
 # Configuration file for flake 8. This is used by "make lint" and by the
 # GIT commit hook script.
-# T001 = print() statement
 
 [flake8]
-ignore = E741, W504
+ignore =
+   W504  # line break after binary operator
+   E741 ambiguous variable name 'l'
+
+   # --- flake8-bugbear plugin
+   B007  # Loop control variable 'keyword' not used within the loop body. If this is intended, start the name with an underscore.
+   B014  # Redundant exception types in `except (IOError, OSError) as err:`.  Write `except OSError as err:`, which catches exactly the same exceptions.
+   B008  # Do not perform function calls in argument defaults.
+
+   # --- flake8-blind-except plugin
+   B902  # blind except Exception: statement
+
 per-file-ignores =
-   setup.py:T001
-   demo/*:T001
-   scripts/*:T001
-   pyftpdlib/test/runner.py:T001
+   # T001, T201 = print() statement (flake8-print plugin)
+   setup.py:T001,T201
+   demo/*:T001,T201
+   scripts/*:T001,T201
+   pyftpdlib/test/runner.py:T001,T201

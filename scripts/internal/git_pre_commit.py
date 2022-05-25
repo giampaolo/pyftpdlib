@@ -105,15 +105,6 @@ def main():
             if line.endswith(' '):
                 print("%s:%s %r" % (path, lineno, line))
                 return exit("space at end of line")
-            line = line.rstrip()
-            # pdb
-            if "pdb.set_trace" in line:
-                print("%s:%s %s" % (path, lineno, line))
-                return exit("you forgot a pdb in your python code")
-            # bare except clause
-            if "except:" in line and not line.endswith("# NOQA"):
-                print("%s:%s %s" % (path, lineno, line))
-                return exit("bare except clause")
 
     # Python linters
     if py_files:
