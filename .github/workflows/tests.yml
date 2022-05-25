@@ -33,7 +33,7 @@ jobs:
       #
       - name: Lint
         run: |
-          make lint PYTHON=python
+          make lint-all PYTHON=python
       #
       - name: Tests
         run: |
