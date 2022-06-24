@@ -167,7 +167,7 @@ def get_testfn(suffix="", dir=None):
 
 
 def safe_rmpath(path):
-    "Convenience function for removing temporary test files or dirs"
+    """Convenience function for removing temporary test files or dirs."""
     def retry_fun(fun):
         # On Windows it could happen that the file or directory has
         # open handles or references preventing the delete operation

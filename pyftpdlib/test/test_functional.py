@@ -71,8 +71,7 @@ sendfile = _import_sendfile()
 
 
 class TestFtpAuthentication(PyftpdlibTestCase):
-
-    "test: USER, PASS, REIN."
+    """Test: USER, PASS, REIN."""
     server_class = MProcessTestFTPd
     client_class = ftplib.FTP
 
@@ -249,7 +248,7 @@ class TestFtpAuthentication(PyftpdlibTestCase):
 
 
 class TestFtpDummyCmds(PyftpdlibTestCase):
-    "test: TYPE, STRU, MODE, NOOP, SYST, ALLO, HELP, SITE HELP"
+    """Test: TYPE, STRU, MODE, NOOP, SYST, ALLO, HELP, SITE HELP"""
     server_class = MProcessTestFTPd
     client_class = ftplib.FTP
 
@@ -438,8 +437,9 @@ class TestFtpCmdsSemantic(PyftpdlibTestCase):
 
 
 class TestFtpFsOperations(PyftpdlibTestCase):
-
-    "test: PWD, CWD, CDUP, SIZE, RNFR, RNTO, DELE, MKD, RMD, MDTM, STAT, MFMT"
+    """Test: PWD, CWD, CDUP, SIZE, RNFR, RNTO, DELE, MKD, RMD, MDTM,
+    STAT, MFMT.
+    """
     server_class = MProcessTestFTPd
     client_class = ftplib.FTP
 
@@ -1269,8 +1269,7 @@ class TestFtpListingCmds(PyftpdlibTestCase):
 
 
 class TestFtpAbort(PyftpdlibTestCase):
-
-    "test: ABOR"
+    """Test: ABOR."""
     server_class = MProcessTestFTPd
     client_class = ftplib.FTP
 

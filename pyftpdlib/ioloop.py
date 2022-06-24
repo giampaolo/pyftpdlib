@@ -429,9 +429,9 @@ class Select(_IOLoop):
             del self.socket_map[fd]
         except KeyError:
             debug("call: unregister(); fd was no longer in socket_map", self)
-        for l in (self._r, self._w):
+        for ls in (self._r, self._w):
             try:
-                l.remove(fd)
+                ls.remove(fd)
             except ValueError:
                 pass
 

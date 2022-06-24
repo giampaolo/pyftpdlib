@@ -29,15 +29,15 @@ if hasattr(socket, 'socketpair'):
     socketpair = socket.socketpair
 else:
     def socketpair(family=socket.AF_INET, type=socket.SOCK_STREAM, proto=0):
-        with contextlib.closing(socket.socket(family, type, proto)) as l:
-            l.bind(("localhost", 0))
-            l.listen(5)
+        with contextlib.closing(socket.socket(family, type, proto)) as ls:
+            ls.bind(("localhost", 0))
+            ls.listen(5)
             c = socket.socket(family, type, proto)
             try:
-                c.connect(l.getsockname())
+                c.connect(ls.getsockname())
                 caddr = c.getsockname()
                 while True:
-                    a, addr = l.accept()
+                    a, addr = ls.accept()
                     # check that we've got the correct client
                     if addr == caddr:
                         return c, a
@@ -311,22 +311,22 @@ class TestCallLater(PyftpdlibTestCase):
 
     def test_order(self):
         def fun(x):
-            l.append(x)
+            ls.append(x)
 
-        l = []
+        ls = []
         for x in [0.05, 0.04, 0.03, 0.02, 0.01]:
             self.ioloop.call_later(x, fun, x)
         self.scheduler()
-        self.assertEqual(l, [0.01, 0.02, 0.03, 0.04, 0.05])
+        self.assertEqual(ls, [0.01, 0.02, 0.03, 0.04, 0.05])
 
     # The test is reliable only on those systems where time.time()
     # provides time with a better precision than 1 second.
     if not str(time.time()).endswith('.0'):
         def test_reset(self):
             def fun(x):
-                l.append(x)
+                ls.append(x)
 
-            l = []
+            ls = []
             self.ioloop.call_later(0.01, fun, 0.01)
             self.ioloop.call_later(0.02, fun, 0.02)
             self.ioloop.call_later(0.03, fun, 0.03)
@@ -335,27 +335,27 @@ class TestCallLater(PyftpdlibTestCase):
             time.sleep(0.1)
             x.reset()
             self.scheduler()
-            self.assertEqual(l, [0.01, 0.02, 0.03, 0.05, 0.04])
+            self.assertEqual(ls, [0.01, 0.02, 0.03, 0.05, 0.04])
 
     def test_cancel(self):
         def fun(x):
-            l.append(x)
+            ls.append(x)
 
-        l = []
+        ls = []
         self.ioloop.call_later(0.01, fun, 0.01).cancel()
         self.ioloop.call_later(0.02, fun, 0.02)
         self.ioloop.call_later(0.03, fun, 0.03)
         self.ioloop.call_later(0.04, fun, 0.04)
         self.ioloop.call_later(0.05, fun, 0.05).cancel()
         self.scheduler()
-        self.assertEqual(l, [0.02, 0.03, 0.04])
+        self.assertEqual(ls, [0.02, 0.03, 0.04])
 
     def test_errback(self):
-        l = []
+        ls = []
         self.ioloop.call_later(
-            0.0, lambda: 1 // 0, _errback=lambda: l.append(True))
+            0.0, lambda: 1 // 0, _errback=lambda: ls.append(True))
         self.scheduler()
-        self.assertEqual(l, [True])
+        self.assertEqual(ls, [True])
 
     def test__repr__(self):
         repr(self.ioloop.call_later(0.01, lambda: 0, 0.01))
@@ -403,24 +403,24 @@ class TestCallEvery(PyftpdlibTestCase):
     def test_only_once(self):
         # make sure that callback is called only once per-loop
         def fun():
-            l1.append(None)
+            ls.append(None)
 
-        l1 = []
+        ls = []
         self.ioloop.call_every(0, fun)
         self.ioloop.sched.poll()
-        self.assertEqual(l1, [None])
+        self.assertEqual(ls, [None])
 
     def test_multi_0_timeout(self):
         # make sure a 0 timeout callback is called as many times
         # as the number of loops
         def fun():
-            l.append(None)
+            ls.append(None)
 
-        l = []
+        ls = []
         self.ioloop.call_every(0, fun)
         for x in range(100):
             self.ioloop.sched.poll()
-        self.assertEqual(len(l), 100)
+        self.assertEqual(len(ls), 100)
 
     # run it on systems where time.time() has a higher precision
     if POSIX:
@@ -446,22 +446,22 @@ class TestCallEvery(PyftpdlibTestCase):
     def test_cancel(self):
         # make sure a cancelled callback doesn't get called anymore
         def fun():
-            l.append(None)
+            ls.append(None)
 
-        l = []
+        ls = []
         call = self.ioloop.call_every(0.001, fun)
         self.scheduler()
-        len_l = len(l)
+        len_l = len(ls)
         call.cancel()
         self.scheduler()
-        self.assertEqual(len_l, len(l))
+        self.assertEqual(len_l, len(ls))
 
     def test_errback(self):
-        l = []
+        ls = []
         self.ioloop.call_every(
-            0.0, lambda: 1 // 0, _errback=lambda: l.append(True))
+            0.0, lambda: 1 // 0, _errback=lambda: ls.append(True))
         self.scheduler()
-        self.assertTrue(l)
+        self.assertTrue(ls)
 
 
 class TestAsyncChat(PyftpdlibTestCase):

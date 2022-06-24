@@ -14,6 +14,8 @@ DEV_DEPS = \
 	flake8-bugbear \
 	flake8-debugger \
 	flake8-print \
+	flake8-quotes \
+	git+https://github.com/PyCQA/autoflake.git@refs/pull/107/head \
 	isort \
 	mock==1.0.1 \
 	setuptools \
@@ -158,11 +160,15 @@ lint-all:  ## Run all linters
 	${MAKE} isort
 
 fix-flake8:  ## Run autopep8, fix some Python flake8 / pep8 issues.
-	git ls-files | grep \\.py$ | xargs $(PYTHON) -m autopep8 --in-place --jobs 0 --global-config=.flake8
-	git ls-files | grep \\.py$ | xargs $(PYTHON) -m autoflake --in-place --remove-all-unused-imports --remove-unused-variables
+	@git ls-files '*.py' | xargs $(PYTHON) -m autopep8 --in-place --jobs 0 --global-config=.flake8
+	@git ls-files '*.py' | xargs $(PYTHON) -m autoflake --in-place --jobs 0 --remove-all-unused-imports --remove-unused-variables --remove-duplicate-keys
 
 fix-isort:  ## Fix imports with isort.
 	git ls-files '*.py' | xargs $(PYTHON) -m isort --settings=.isort.cfg
+
+fix-all:  ## Run all fixers
+	${MAKE} fix-flake8
+	${MAKE} fix-isort
 
 # ===================================================================
 # Distribution

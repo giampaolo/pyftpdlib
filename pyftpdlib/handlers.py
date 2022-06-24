@@ -3110,23 +3110,25 @@ class FTPHandler(AsyncChat):
     # ftp.exe) still use them.
 
     def ftp_XCUP(self, line):
-        "Change to the parent directory. Synonym for CDUP. Deprecated."
+        """Change to the parent directory. Synonym for CDUP. Deprecated."""
         return self.ftp_CDUP(line)
 
     def ftp_XCWD(self, line):
-        "Change the current working directory. Synonym for CWD. Deprecated."
+        """Change the current working directory. Synonym for CWD.
+        Deprecated."""
         return self.ftp_CWD(line)
 
     def ftp_XMKD(self, line):
-        "Create the specified directory. Synonym for MKD. Deprecated."
+        """Create the specified directory. Synonym for MKD. Deprecated."""
         return self.ftp_MKD(line)
 
     def ftp_XPWD(self, line):
-        "Return the current working directory. Synonym for PWD. Deprecated."
+        """Return the current working directory. Synonym for PWD.
+        Deprecated."""
         return self.ftp_PWD(line)
 
     def ftp_XRMD(self, line):
-        "Remove the specified directory. Synonym for RMD. Deprecated."
+        """Remove the specified directory. Synonym for RMD. Deprecated."""
         return self.ftp_RMD(line)
 
 
