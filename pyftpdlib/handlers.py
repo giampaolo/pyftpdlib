@@ -3570,10 +3570,6 @@ if SSL is not None:
                 if cls.certfile is None:
                     raise ValueError("at least certfile must be specified")
                 cls.ssl_context = SSL.Context(cls.ssl_protocol)
-                if cls.ssl_protocol != SSL.SSLv2_METHOD:
-                    cls.ssl_context.set_options(SSL.OP_NO_SSLv2)
-                else:
-                    warnings.warn("SSLv2 protocol is insecure", RuntimeWarning)
                 cls.ssl_context.use_certificate_chain_file(cls.certfile)
                 if not cls.keyfile:
                     cls.keyfile = cls.certfile
