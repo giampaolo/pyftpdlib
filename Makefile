@@ -6,6 +6,7 @@ PYTHON = python3
 TSCRIPT = pyftpdlib/test/runner.py
 ARGS =
 DEV_DEPS = \
+	git+https://github.com/PyCQA/autoflake.git \
 	cffi \
 	check-manifest \
 	coverage \
@@ -15,7 +16,6 @@ DEV_DEPS = \
 	flake8-debugger \
 	flake8-print \
 	flake8-quotes \
-	git+https://github.com/PyCQA/autoflake.git@refs/pull/107/head \
 	isort \
 	mock==1.0.1 \
 	setuptools \

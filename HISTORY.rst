@@ -11,6 +11,7 @@ Version: 1.5.7 - XXXX-XX-XX
 
 - #481: fix [WinError 10038] an operation was attempted on something that is
   not a socket.  (patch by Tailing Yuan)
+- #578, [critical]: FTPS broke with PyOpenSSL version 22.1.0.
 
 Version: 1.5.6 - 2020-02-16
 ===========================
