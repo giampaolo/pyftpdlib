@@ -12,10 +12,11 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python-version: ["3.7", "3.8", "3.9", "3.10"]
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       #
@@ -30,25 +31,25 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       #
-      - name: Install deps
+      - name: Install dev deps
         run: |
-          python -m pip install --upgrade pip
-          make setup-dev-env PYTHON=python
+          make setup-dev-env
       #
       - name: Lint
         run: |
-          make lint-all PYTHON=python
+          make lint-all
       #
       - name: Tests
         run: |
-          make test PYTHON=python
+          make test
 
-  build-win:
+  build27:
 
-    runs-on: windows-2019
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ["2.7", "3.9"]
+        python-version: ["2.7"]
+        os: [ubuntu-latest, windows-2019]
 
     steps:
       #
@@ -63,13 +64,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       #
-      - name: Install deps
+      - name: Install test deps
         run: |
-          python.exe -m pip install --upgrade --user setuptools pip wheel
-          python.exe -m pip install --upgrade unittest2 mock ipaddress pypiwin32 wmi pyopenssl psutil
-          python.exe -m pip freeze
-          python.exe setup.py install
+          make setup-test-env
       #
       - name: Tests
         run: |
-          python.exe pyftpdlib/test/runner.py
+          make test

@@ -1,0 +1,5 @@
+psutil
+pyopenssl
+pysendfile; platform_python_system != "Windows"
+mock==1.0.1
+unittest2
