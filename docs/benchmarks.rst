@@ -226,7 +226,7 @@ twisted FTP server
 
 ::
 
-    $ sudo python twist_ftpd.py
+    $ sudo python3 twist_ftpd.py
 
 
 
@@ -256,7 +256,7 @@ The following patch was applied first:
 
 ::
 
-    $ sudo python demo/unix_daemon.py
+    $ sudo python3 demo/unix_daemon.py
 
 
 The `benchmark script <https://github.com/giampaolo/pyftpdlib/blob/master/scripts/ftpbench>`__
@@ -264,11 +264,11 @@ was run as:
 
 ::
 
-    python scripts/ftpbench -u USERNAME -p PASSWORD -b all -n 300
+    python3 scripts/ftpbench -u USERNAME -p PASSWORD -b all -n 300
 
 
 ...and for the memory test:
 
 ::
 
-    python scripts/ftpbench -u USERNAME -p PASSWORD -b all -n 300 -k FTP_SERVER_PID
+    python3 scripts/ftpbench -u USERNAME -p PASSWORD -b all -n 300 -k FTP_SERVER_PID

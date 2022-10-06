@@ -109,7 +109,7 @@ To enable DEBUG logging from command line use:
 
 .. code-block:: bash
 
-    python -m pyftpdlib -D
+    python3 -m pyftpdlib -D
 
 DEBUG logs look like this:
 
@@ -550,7 +550,7 @@ Anonymous FTPd sharing current directory:
 
 .. code-block:: sh
 
-    $ python -m pyftpdlib
+    $ python3 -m pyftpdlib
     [I 13-04-09 17:55:18] >>> starting FTP server on 0.0.0.0:2121, pid=6412 <<<
     [I 13-04-09 17:55:18] poller: <class 'pyftpdlib.ioloop.Epoll'>
     [I 13-04-09 17:55:18] masquerade (NAT) address: None
@@ -561,12 +561,12 @@ Anonymous FTPd with write permission:
 
 .. code-block:: sh
 
-    $ python -m pyftpdlib -w
+    $ python3 -m pyftpdlib -w
 
 Set a different address/port and home directory:
 
 .. code-block:: sh
 
-    $ python -m pyftpdlib -i localhost -p 8021 -d /home/someone
+    $ python3 -m pyftpdlib -i localhost -p 8021 -d /home/someone
 
-See ``python -m pyftpdlib -h`` for a complete list of options.
+See ``python3 -m pyftpdlib -h`` for a complete list of options.

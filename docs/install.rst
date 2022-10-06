@@ -13,7 +13,7 @@ From sources:
 
     $ git clone git@github.com:giampaolo/pyftpdlib.git
     $ cd pyftpdlib
-    $ python setup.py install
+    $ python3 setup.py install
 
 You might want to run tests to make sure pyftpdlib works:
 

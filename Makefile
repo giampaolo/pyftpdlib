@@ -182,7 +182,7 @@ upload-src:  ## Upload source on PYPI.
 	$(PYTHON) setup.py sdist upload
 
 git-tag-release:  ## Git-tag a new release.
-	git tag -a release-`python -c "import setup; print(setup.VERSION)"` -m `git rev-list HEAD --count`:`git rev-parse --short HEAD`
+	git tag -a release-`python3 -c "import setup; print(setup.VERSION)"` -m `git rev-list HEAD --count`:`git rev-parse --short HEAD`
 	git push --follow-tags
 
 install-git-hooks:  ## Install GIT pre-commit hook.

@@ -9,12 +9,12 @@ http://pypi.python.org/pypi/python-daemon
 
 Example usages:
 
- $ python unix_daemon.py start
- $ python unix_daemon.py stop
- $ python unix_daemon.py status
- $ python unix_daemon.py  # foreground (no daemon)
- $ python unix_daemon.py --logfile /var/log/ftpd.log start
- $ python unix_daemon.py --pidfile /var/run/ftpd.pid start
+ $ python3 unix_daemon.py start
+ $ python3 unix_daemon.py stop
+ $ python3 unix_daemon.py status
+ $ python3 unix_daemon.py  # foreground (no daemon)
+ $ python3 unix_daemon.py --logfile /var/log/ftpd.log start
+ $ python3 unix_daemon.py --pidfile /var/run/ftpd.pid start
 
 This is just a proof of concept which demonstrates how to daemonize
 the FTP server.
@@ -167,7 +167,7 @@ def daemonize():
 
 def main():
     global PID_FILE, LOG_FILE
-    USAGE = "python [-p PIDFILE] [-l LOGFILE]\n\n" \
+    USAGE = "python3 [-p PIDFILE] [-l LOGFILE]\n\n" \
             "Commands:\n  - start\n  - stop\n  - status"
     parser = optparse.OptionParser(usage=USAGE)
     parser.add_option('-l', '--logfile', dest='logfile',
