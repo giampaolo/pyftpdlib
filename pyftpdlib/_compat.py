@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 """
-Compatibility module similar to six which helps maintaining
-a single code base working with python from 2.7 to 3.x.
+Compatibility module similar to six lib, which helps maintaining
+a single code base working with both python 2.7 and 3.x.
 """
 
 import errno

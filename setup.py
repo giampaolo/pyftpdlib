@@ -63,8 +63,8 @@ def hilite(s, ok=True, bold=False):
         return '\x1b[%sm%s\x1b[0m' % (';'.join(attr), s)
 
 
-if sys.version_info < (2, 6):
-    sys.exit('python version not supported (< 2.6)')
+if sys.version_info < (2, 7):
+    sys.exit('python version not supported (< 2.7)')
 
 require_pysendfile = (os.name == 'posix' and sys.version_info < (3, 3))
 

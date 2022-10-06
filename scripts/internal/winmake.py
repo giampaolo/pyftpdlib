@@ -50,9 +50,9 @@ DEPS = [
     "wheel",
     "requests"
 ]
-if sys.version_info[:2] <= (2, 7):
+if sys.version_info[:2] == (2, 7):
     DEPS.append('unittest2')
-if sys.version_info[:2] <= (2, 7):
+if sys.version_info[:2] == (2, 7):
     DEPS.append('mock')
 
 _cmds = {}

@@ -9,7 +9,7 @@ A FTP server which handles every connection in a separate process.
 Useful if your handler class contains blocking calls or your
 filesystem is too slow.
 
-POSIX only; requires python >= 2.6.
+POSIX only.
 """
 
 from pyftpdlib.authorizers import DummyAuthorizer

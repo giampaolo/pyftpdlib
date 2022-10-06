@@ -535,10 +535,6 @@ class ThreadedFTPServer(_SpawnerBase):
     _lock = threading.Lock()
     _exit = threading.Event()
 
-    # compatibility with python <= 2.6
-    if not hasattr(_exit, 'is_set'):
-        _exit.is_set = _exit.isSet
-
     def _start_task(self, *args, **kwargs):
         return threading.Thread(*args, **kwargs)
 
