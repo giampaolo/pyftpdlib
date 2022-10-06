@@ -483,11 +483,6 @@ class ActiveDTP(Connector):
     def readable(self):
         return False
 
-    def handle_write(self):
-        # overridden to prevent unhandled read/write event messages to
-        # be printed by asyncore on Python < 2.6
-        pass
-
     def handle_connect(self):
         """Called when connection is established."""
         self.del_channel()

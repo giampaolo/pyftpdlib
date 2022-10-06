@@ -10,8 +10,8 @@ FTP server benchmark script.
 In order to run this you must have a listening FTP server with a user
 with writing permissions configured.
 This is a stand-alone script which does not depend from pyftpdlib.
-It just requires python >= 2.6 (and optionally psutil to keep track
-of FTP server memory usage).
+psutil dep (optional) can be installed to keep track of FTP server
+memory usage).
 
 Example usages:
   ftpbench -u USER -p PASSWORD
@@ -531,8 +531,6 @@ def main():
         TIMEOUT = options.timeout
         SSL = bool(options.ssl)
         DEBUG = options.debug
-        if SSL and sys.version_info < (2, 7):
-            sys.exit("--ssl option requires python >= 2.7")
         try:
             FILE_SIZE = human2bytes(options.filesize)
         except (ValueError, AssertionError):

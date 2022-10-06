@@ -694,4 +694,4 @@ Extended servers
 
   *Changed in 1.2.0: added ioloop parameter; address can also be a pre-existing socket.*
 
-  *Availability: POSIX + Python >= 2.6*
+  *Availability: POSIX*

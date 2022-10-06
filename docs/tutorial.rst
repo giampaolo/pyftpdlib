@@ -184,8 +184,7 @@ how to store passwords as one-way hashes by using md5 algorithm.
 .. code-block:: python
 
     import os
-    import sys
-    from hashlib import md5
+    import hashlib
 
     from pyftpdlib.handlers import FTPHandler
     from pyftpdlib.servers import FTPServer
@@ -195,11 +194,9 @@ how to store passwords as one-way hashes by using md5 algorithm.
     class DummyMD5Authorizer(DummyAuthorizer):
 
         def validate_authentication(self, username, password, handler):
-            if sys.version_info >= (3, 0):
-                password = password.encode('latin1')
-            hash = md5(password).hexdigest()
+            hash_ = hashlib.md5(password.encode('latin1')).hexdigest()
             try:
-                if self.user_table[username]['pwd'] != hash:
+                if self.user_table[username]['pwd'] != hash_:
                     raise KeyError
             except KeyError:
                 raise AuthenticationFailed
@@ -208,16 +205,15 @@ how to store passwords as one-way hashes by using md5 algorithm.
     def main():
         # get a hash digest from a clear-text password
         password = '12345'
-        if sys.version_info >= (3, 0):
-            password = password.encode('latin1')
-        hash = md5(password).hexdigest()
+        hash_ = hashlib.md5(password.encode('latin1')).hexdigest()
         authorizer = DummyMD5Authorizer()
-        authorizer.add_user('user', hash, os.getcwd(), perm='elradfmwMT')
+        authorizer.add_user('user', hash_, os.getcwd(), perm='elradfmwMT')
         authorizer.add_anonymous(os.getcwd())
         handler = FTPHandler
         handler.authorizer = authorizer
         server = FTPServer(('', 2121), handler)
         server.serve_forever()
+
 
     if __name__ == "__main__":
         main()

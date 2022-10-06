@@ -15,7 +15,6 @@ import re
 import select
 import socket
 import stat
-import sys
 import time
 
 from pyftpdlib._compat import PY3
@@ -951,7 +950,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
 
 
 @unittest.skipUnless(POSIX, "POSIX only")
-@unittest.skipIf(sys.version_info < (3, 3) and sendfile is None,
+@unittest.skipIf(not PY3 and sendfile is None,
                  "pysendfile not installed")
 class TestFtpStoreDataNoSendfile(TestFtpStoreData):
     """Test STOR, STOU, APPE, REST, TYPE not using sendfile()."""
@@ -1091,7 +1090,7 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
 
 
 @unittest.skipUnless(POSIX, "POSIX only")
-@unittest.skipIf(sys.version_info < (3, 3) and sendfile is None,
+@unittest.skipIf(not PY3 and sendfile is None,
                  "pysendfile not installed")
 class TestFtpRetrieveDataNoSendfile(TestFtpRetrieveData):
     """Test RETR, REST, TYPE by not using sendfile()."""
@@ -1338,8 +1337,6 @@ class TestFtpAbort(PyftpdlibTestCase):
             self.assertEqual('226', self.client.voidresp()[:3])
 
     @unittest.skipUnless(hasattr(socket, 'MSG_OOB'), "MSG_OOB not available")
-    @unittest.skipIf(sys.version_info < (2, 6),
-                     "does not work on python < 2.6")
     @unittest.skipIf(OSX, "does not work on OSX")
     def test_oob_abor(self):
         # Send ABOR by following the RFC-959 directives of sending
@@ -2720,7 +2717,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
             s.close()
 
     @unittest.skipUnless(POSIX, "POSIX only")
-    @unittest.skipIf(sys.version_info < (3, 3) and sendfile is None,
+    @unittest.skipIf(not PY3 and sendfile is None,
                      "pysendfile not installed")
     @retry_on_failure()
     def test_sendfile_fails(self):
