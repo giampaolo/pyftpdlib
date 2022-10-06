@@ -13,12 +13,6 @@ What is pyftpdlib?
 pyftpdlib is a high-level library to easily write asynchronous portable FTP
 servers with `Python <http://www.python.org/>`__.
 
-What is Python?
----------------
-
-Python is an interpreted, interactive, object-oriented, easy-to-learn
-programming language. It is often compared to *Tcl, Perl, Scheme* or *Java*.
-
 I'm not a python programmer. Can I use it anyway?
 -------------------------------------------------
 
@@ -28,7 +22,7 @@ running:
 
 .. code-block:: sh
 
-    $ sudo python -m pyftpdlib
+    $ sudo python3 -m pyftpdlib
     [I 13-02-20 14:16:36] >>> starting FTP server on 0.0.0.0:8021 <<<
     [I 13-02-20 14:16:36] poller: <class 'pyftpdlib.ioloop.Epoll'>
     [I 13-02-20 14:16:36] masquerade (NAT) address: None
@@ -37,14 +31,14 @@ running:
 
 This is useful in case you want a quick and dirty way to share a directory
 without, say, installing and configuring samba. Starting from version 0.6.0
-options can be passed to the command line (see ``python -m pyftpdlib --help``
+options can be passed to the command line (see ``python3 -m pyftpdlib --help``
 to see all available options). Examples:
 
 Anonymous FTP server with write access:
 
 .. code-block:: sh
 
-    $ sudo python -m pyftpdlib -w
+    $ sudo python3 -m pyftpdlib -w
     ~pyftpdlib-1.3.1-py2.7.egg/pyftpdlib/authorizers.py:265: RuntimeWarning: write permissions assigned to anonymous user.
     [I 13-02-20 14:16:36] >>> starting FTP server on 0.0.0.0:8021 <<<
     [I 13-02-20 14:16:36] poller: <class 'pyftpdlib.ioloop.Epoll'>
@@ -56,7 +50,7 @@ Listen on a different ip/port:
 
 .. code-block:: sh
 
-    $ python -m pyftpdlib -i 127.0.0.1 -p 8021
+    $ python3 -m pyftpdlib -i 127.0.0.1 -p 8021
     [I 13-02-20 14:16:36] >>> starting FTP server on 0.0.0.0:8021 <<<
     [I 13-02-20 14:16:36] poller: <class 'pyftpdlib.ioloop.Epoll'>
     [I 13-02-20 14:16:36] masquerade (NAT) address: None
@@ -90,14 +84,14 @@ If you are not new to Python you probably don't need that, otherwise follow the
 Which Python versions are compatible?
 -------------------------------------
 
-From *2.6* to *3.X*.
+*2.7* and *3.X*.
 
 On which platforms can pyftpdlib be used?
 -----------------------------------------
 
 pyftpdlib should work on any platform where **select()**, **poll()**,
 **epoll()** or **kqueue()** system calls are available and on any Python
-implementation which refers to *cPython 2.6* or superior.
+implementation which refers to *cPython 2.7* or superior.
 The development team has mainly tested it under various *Linux*, *Windows*,
 *OSX* and *FreeBSD* systems.
 For FreeBSD is also available a

@@ -1,6 +1,6 @@
 |  |downloads| |stars| |forks| |contributors| |coverage|
 |  |version| |packages| |license|
-|  |github-actions| |appveyor| |doc| |twitter|
+|  |github-actions| |doc| |twitter|
 
 .. |downloads| image:: https://img.shields.io/pypi/dm/pyftpdlib.svg
     :target: https://pepy.tech/project/pyftpdlib
@@ -21,10 +21,6 @@
 .. |github-actions| image:: https://github.com/giampaolo/pyftpdlib/actions/workflows/tests.yml/badge.svg
     :target: https://github.com/giampaolo/pyftpdlib/actions/workflows/tests.yml
     :alt: Linux, macOS, Windows tests
-
-.. |appveyor| image:: https://img.shields.io/appveyor/build/giampaolo/pyftpdlib/master.svg?label=windows%20tests
-    :target: https://ci.appveyor.com/project/giampaolo/pyftpdlib
-    :alt: Windows tests (Appveyor)
 
 .. |coverage| image:: https://coveralls.io/repos/github/giampaolo/pyftpdlib/badge.svg?branch=master
     :target: https://coveralls.io/github/giampaolo/pyftpdlib?branch=master
