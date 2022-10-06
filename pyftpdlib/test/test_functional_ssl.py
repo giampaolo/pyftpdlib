@@ -9,7 +9,6 @@ import ftplib
 import os
 import socket
 import ssl
-import sys
 
 import OpenSSL  # requires "pip install pyopenssl"
 
@@ -42,12 +41,6 @@ from pyftpdlib.test.test_functional import TestIPv6Environment
 from pyftpdlib.test.test_functional import TestTimeouts
 
 
-FTPS_SUPPORT = hasattr(ftplib, 'FTP_TLS')
-if sys.version_info < (2, 7):
-    FTPS_UNSUPPORT_REASON = "requires python 2.7+"
-else:
-    FTPS_UNSUPPORT_REASON = "FTPS test skipped"
-
 CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                         'keycert.pem'))
 
@@ -64,28 +57,25 @@ del OpenSSL
 # supposed to work no matter if the underlying protocol is FTP or FTPS.
 
 
-if FTPS_SUPPORT:
-    class FTPSClient(ftplib.FTP_TLS):
-        """A modified version of ftplib.FTP_TLS class which implicitly
-        secure the data connection after login().
-        """
+class FTPSClient(ftplib.FTP_TLS):
+    """A modified version of ftplib.FTP_TLS class which implicitly
+    secure the data connection after login().
+    """
 
-        def login(self, *args, **kwargs):
-            ftplib.FTP_TLS.login(self, *args, **kwargs)
-            self.prot_p()
+    def login(self, *args, **kwargs):
+        ftplib.FTP_TLS.login(self, *args, **kwargs)
+        self.prot_p()
 
-    class FTPSServer(MProcessTestFTPd):
-        """A threaded FTPS server used for functional testing."""
-        handler = TLS_FTPHandler
-        handler.certfile = CERTFILE
 
-    class TLSTestMixin:
-        server_class = FTPSServer
-        client_class = FTPSClient
-else:
-    @unittest.skipIf(True, FTPS_UNSUPPORT_REASON)
-    class TLSTestMixin:
-        pass
+class FTPSServer(MProcessTestFTPd):
+    """A threaded FTPS server used for functional testing."""
+    handler = TLS_FTPHandler
+    handler.certfile = CERTFILE
+
+
+class TLSTestMixin:
+    server_class = FTPSServer
+    client_class = FTPSClient
 
 
 class TestFtpAuthenticationTLSMixin(TLSTestMixin, TestFtpAuthentication):
@@ -178,7 +168,6 @@ class TestCornerCasesTLSMixin(TLSTestMixin, TestCornerCases):
 # =====================================================================
 
 
-@unittest.skipUnless(FTPS_SUPPORT, FTPS_UNSUPPORT_REASON)
 class TestFTPS(PyftpdlibTestCase):
     """Specific tests fot TSL_FTPHandler class."""
 
