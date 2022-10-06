@@ -1,5 +1,13 @@
 Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 
+Version: 1.5.8 - IN DEVELOPMENT
+===============================
+
+**Enhancements**
+
+- #586: removed Python 2.6 support.
+
+
 Version: 1.5.7 - 2022-10-04
 ===========================
 
