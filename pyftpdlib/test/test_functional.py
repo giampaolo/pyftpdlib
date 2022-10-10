@@ -2274,6 +2274,7 @@ class TestCornerCases(PyftpdlibTestCase):
             s, addr = sock.accept()
             s.close()
 
+    @unittest.skipUnless(POSIX, "POSIX only")
     def test_quick_connect(self):
         # Clients that connected and disconnected quickly could cause
         # the server to crash, due to a failure to catch errors in the

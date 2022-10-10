@@ -12,10 +12,11 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        python-version: [2.7, "3.7", "3.8", "3.9", "3.10"]
+        os: [ubuntu-latest]
 
     steps:
       #
@@ -30,12 +31,18 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       #
-      - name: Install deps
+      - name: Install dev deps
+        if: matrix.python-version != 2.7
         run: |
-          python -m pip install --upgrade pip
           make setup-dev-env PYTHON=python
       #
+      - name: Install test deps
+        if: matrix.python-version == 2.7
+        run: |
+          make setup-test-env PYTHON=python
+      #
       - name: Lint
+        if: matrix.python-version != 2.7
         run: |
           make lint-all PYTHON=python
       #
@@ -63,7 +70,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       #
-      - name: Install deps
+      - name: Install test deps
         run: |
           python.exe -m pip install --upgrade --user setuptools pip wheel
           python.exe -m pip install --upgrade unittest2 mock ipaddress pypiwin32 wmi pyopenssl psutil
