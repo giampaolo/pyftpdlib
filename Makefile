@@ -17,13 +17,13 @@ DEV_DEPS = \
 	flake8-print \
 	flake8-quotes \
 	isort \
-	mock==1.0.1 \
 	setuptools \
 	sphinx
 TEST_DEPS = \
 	psutil \
 	pyopenssl \
 	pysendfile \
+	mock==1.0.1 \
 	unittest2
 
 # In not in a virtualenv, add --user options for install commands.
@@ -89,11 +89,13 @@ install-pip:  ## (only if necessary)
 		f.close(); \
 		sys.exit(code);"
 
-setup-dev-env:  ## Install GIT hooks, pip, test deps (also upgrades them).
+setup-test-env:  ## Install GIT hooks, pip, test deps (also upgrades them).
 	${MAKE} install-git-hooks
 	${MAKE} install-pip
 	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade pip setuptools
 	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(TEST_DEPS)
+
+setup-dev-env: setup-test-env
 	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(DEV_DEPS)
 
 # ===================================================================
