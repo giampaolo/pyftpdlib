@@ -185,6 +185,3 @@ Donate
 A lot of time and effort went into making pyftpdlib as it is right now.
 If you feel pyftpdlib is useful to you or your business and want to support its
 future development please consider `donating <https://gmpy.dev/donate>`__ me some money.
-
-NOTE:
-- When using FTP on top of MPTCP make sure to enable the MPTCP Checksum by `sysctl net.mptcp.checksum_enabled=1`
