@@ -856,7 +856,6 @@ class AsyncChat(asynchat.async_chat):
         if _use_mptcp and type == socket.SOCK_STREAM:  
             try:
                 sock = socket.socket(family, type, IPPROTO_MPTCP)
-                logger.info("Enabled MPTCP")
             except socket.error as e:
                 # Multipath TCP is not supported, we fall back to regular TCP
                 # and remember that Multipath TCP is not enabled
@@ -864,7 +863,6 @@ class AsyncChat(asynchat.async_chat):
                     _use_mptcp = False
         if not sock:
             sock = socket.socket(family, type)
-            logger.info("Enabled TCP")
         sock.setblocking(False)
         self.set_socket(sock)
 
