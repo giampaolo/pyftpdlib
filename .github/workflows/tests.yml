@@ -2,8 +2,9 @@
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
 on: [push, pull_request]
+name: tests
 jobs:
-  tests:
+  linux:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -30,7 +31,7 @@ jobs:
         run: |
           make test PYTHON=python
 
-  tests-win:
+  windows:
     runs-on: windows-2019
     strategy:
       matrix:
@@ -66,6 +67,5 @@ jobs:
     - uses: actions/setup-python@v3
     - name: 'Run linters'
       run: |
-        # py3
         python3 -m pip install flake8==5.0.4 isort
         make lint-all
