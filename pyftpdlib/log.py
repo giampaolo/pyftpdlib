@@ -150,11 +150,10 @@ def is_logging_configured():
 
 def config_logging(level=LEVEL, prefix=PREFIX, other_loggers=None):
     # Speedup logging by preventing certain internal log record info to
-    # be unnecessarily fetched, see:
-    # https://docs.python.org/3/howto/logging.html#optimization
-    # https://docs.python.org/3/library/logging.html#logrecord-
-    # attributes https://stackoverflow.com/a/38924153/376587 This
-    # results in about 28% speedup.
+    # be unnecessarily fetched. This results in about 28% speedup. See:
+    # * https://docs.python.org/3/howto/logging.html#optimization
+    # * https://docs.python.org/3/library/logging.html#logrecord-attributes
+    # * https://stackoverflow.com/a/38924153/376587
     key_names = re.findall(
         r'(?<!%)%\(([^)]+)\)[-# +0-9.hlL]*[diouxXeEfFgGcrs]', prefix)
     if "process" not in key_names:
@@ -169,6 +168,7 @@ def config_logging(level=LEVEL, prefix=PREFIX, other_loggers=None):
             "module" not in key_names:
         # biggest speedup as it avoids calling sys._getframe()
         logging._srcfile = None
+
     handler = logging.StreamHandler()
     formatter = LogFormatter()
     formatter.PREFIX = prefix
