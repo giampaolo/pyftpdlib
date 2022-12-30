@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         python-version: [2.7, "3.8", "3.9", "3.10", "3.11"]
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-12]
 
     steps:
       - name: Cancel previous runs
@@ -70,5 +70,5 @@ jobs:
     - name: 'Run linters'
       run: |
         # py3
-        python3 -m pip install flake8 isort
+        python3 -m pip install flake8==5.0.4 isort
         make lint-all

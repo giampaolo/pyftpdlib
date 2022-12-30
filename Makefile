@@ -7,19 +7,21 @@ TSCRIPT = pyftpdlib/test/runner.py
 ARGS =
 PYDEPS = \
 	autoflake \
+	autopep8 \
 	check-manifest \
 	coverage \
-	flake8==5.0.4 \
 	flake8-blind-except \
 	flake8-bugbear \
 	flake8-debugger \
 	flake8-print \
 	flake8-quotes \
+	flake8==5.0.4 \
 	isort \
+	psutil \
+	pyopenssl \
 	setuptools \
 	sphinx \
-	psutil \
-	pyopenssl
+	twine
 PYVER = $(shell $(PYTHON) -c "import sys; print(sys.version_info[0])")
 ifeq ($(PYVER), 2)
 	PYDEPS = \
