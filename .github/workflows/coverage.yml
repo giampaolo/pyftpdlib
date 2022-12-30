@@ -1,6 +1,7 @@
 on: [push, pull_request]
+name: coverage
 jobs:
-  test:
+  coverage:
     runs-on: ubuntu-latest
     steps:
     - uses: styfle/cancel-workflow-action@0.9.1
@@ -21,5 +22,5 @@ jobs:
     - name: Upload to Codecov
     - uses: codecov/codecov-action@v3
       with:
-        fail_ci_if_error: true # optional (default = false)
-        verbose: true # optional (default = false)
+        fail_ci_if_error: true
+        verbose: true
