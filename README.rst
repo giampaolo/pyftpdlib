@@ -34,6 +34,9 @@
     :target: https://pypi.org/project/pyftpdlib
     :alt: Latest version
 
+.. |py-versions| image:: https://img.shields.io/pypi/pyversions/psutil.svg
+    :alt: Supported Python versions
+
 .. |packages| image:: https://repology.org/badge/tiny-repos/python:pyftpdlib.svg
     :target: https://repology.org/metapackage/python:pyftpdlib/versions
     :alt: Binary packages
