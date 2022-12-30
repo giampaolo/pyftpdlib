@@ -1,71 +1,71 @@
-# # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-# on: [push, pull_request]
-# jobs:
-#   tests:
-#     runs-on: ${{ matrix.os }}
-#     strategy:
-#       matrix:
-#         python-version: [2.7, "3.8", "3.9", "3.10", "3.11"]
-#         os: [ubuntu-latest]
+on: [push, pull_request]
+jobs:
+  tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: [2.7, "3.8", "3.9", "3.10", "3.11"]
+        os: [ubuntu-latest]
 
-#     steps:
-#       - uses: styfle/cancel-workflow-action@0.9.1
-#         with:
-#           access_token: ${{ github.token }}
+    steps:
+      - uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          access_token: ${{ github.token }}
 
-#       - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-#       - name: Set up Python ${{ matrix.python-version }}
-#         uses: actions/setup-python@v3
-#         with:
-#           python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
 
-#       - name: Install pydeps
-#         run: |
-#           make setup-dev-env PYTHON=python
+      - name: Install pydeps
+        run: |
+          make setup-dev-env PYTHON=python
 
-#       - name: Tests
-#         run: |
-#           make test PYTHON=python
+      - name: Tests
+        run: |
+          make test PYTHON=python
 
-#   tests-win:
-#     runs-on: windows-2019
-#     strategy:
-#       matrix:
-#         python-version: ["2.7", "3.9"]
+  tests-win:
+    runs-on: windows-2019
+    strategy:
+      matrix:
+        python-version: ["2.7", "3.9"]
 
-#     steps:
-#       - uses: styfle/cancel-workflow-action@0.9.1
-#         with:
-#           access_token: ${{ github.token }}
+    steps:
+      - uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          access_token: ${{ github.token }}
 
-#       - uses: actions/checkout@v3
-#       - name: Set up Python ${{ matrix.python-version }}
-#         uses: actions/setup-python@v3
-#         with:
-#           python-version: ${{ matrix.python-version }}
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
 
-#       - name: Install pydeps
-#         run: |
-#           python.exe -m pip install --upgrade --user setuptools pip wheel
-#           python.exe -m pip install --upgrade unittest2 mock ipaddress pypiwin32 wmi pyopenssl psutil
-#           python.exe -m pip freeze
-#           python.exe setup.py install
+      - name: Install pydeps
+        run: |
+          python.exe -m pip install --upgrade --user setuptools pip wheel
+          python.exe -m pip install --upgrade unittest2 mock ipaddress pypiwin32 wmi pyopenssl psutil
+          python.exe -m pip freeze
+          python.exe setup.py install
 
-#       - name: Tests
-#         run: |
-#           python.exe pyftpdlib/test/runner.py
+      - name: Tests
+        run: |
+          python.exe pyftpdlib/test/runner.py
 
-#   # Run linters
-#   linters:
-#     runs-on: ubuntu-latest
-#     steps:
-#     - uses: actions/checkout@v3
-#     - uses: actions/setup-python@v3
-#     - name: 'Run linters'
-#       run: |
-#         # py3
-#         python3 -m pip install flake8==5.0.4 isort
-#         make lint-all
+  # Run linters
+  linters:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v3
+    - name: 'Run linters'
+      run: |
+        # py3
+        python3 -m pip install flake8==5.0.4 isort
+        make lint-all
