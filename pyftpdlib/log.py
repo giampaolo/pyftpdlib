@@ -154,8 +154,8 @@ def config_logging(level=LEVEL, prefix=PREFIX, other_loggers=None):
     # * https://docs.python.org/3/howto/logging.html#optimization
     # * https://docs.python.org/3/library/logging.html#logrecord-attributes
     # * https://stackoverflow.com/a/38924153/376587
-    key_names = re.findall(
-        r'(?<!%)%\(([^)]+)\)[-# +0-9.hlL]*[diouxXeEfFgGcrs]', prefix)
+    key_names = set(re.findall(
+        r'(?<!%)%\(([^)]+)\)[-# +0-9.hlL]*[diouxXeEfFgGcrs]', prefix))
     if "process" not in key_names:
         logging.logProcesses = False
     if "processName" not in key_names:
