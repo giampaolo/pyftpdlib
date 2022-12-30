@@ -1,21 +1,31 @@
-name: Coverage
-on: [push, pull_request]
+name: Example workflow for Codecov
+on: [push]
 jobs:
   run:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
     env:
-      OS: ubuntu-latest
+      OS: ${{ matrix.os }}
       PYTHON: '3.9'
     steps:
-    - uses: checkout@v2
-
+    - uses: actions/checkout@master
     - name: Setup Python
       uses: actions/setup-python@master
       with:
         python-version: 3.9
-    - name: Tests
+    - name: Generate coverage report
       run: |
         make setup-dev-env
         make test-coverage
-    - name: Upload Coverage to Codecov
-      uses: codecov/codecov-action@v2
+
+    - name: Update coverage to Codecov
+    - uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+        files: ./coverage1.xml,./coverage2.xml # optional
+        flags: unittests # optional
+        name: codecov-umbrella # optional
+        fail_ci_if_error: true # optional (default = false)
+        verbose: true # optional (default = false)
