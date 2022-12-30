@@ -1,9 +1,13 @@
-on: ["push", "pull_request"]
+on: [push, pull_request]
 name: Test Coverage
 jobs:
-  test:
+  coverage:
     runs-on: ubuntu-latest
     steps:
+    - uses: styfle/cancel-workflow-action@0.9.1
+      with:
+        access_token: ${{ github.token }}
+
     - uses: actions/checkout@v3
 
     - name: Set up Python
@@ -25,7 +29,7 @@ jobs:
         parallel: true
         flag-name: Unit Test
 
-  coveralls_finish:
+  coveralls-finish:
     needs: test
     runs-on: ubuntu-latest
     steps:
