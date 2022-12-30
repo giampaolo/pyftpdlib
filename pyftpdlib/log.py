@@ -11,6 +11,7 @@ Instead you should use logging.basicConfig before serve_forever().
 """
 
 import logging
+import re
 import sys
 import time
 
@@ -146,14 +147,26 @@ def is_logging_configured():
 
 
 # TODO: write tests
+
 def config_logging(level=LEVEL, prefix=PREFIX, other_loggers=None):
-    # Little speed up
-    if "(process)" not in prefix:
+    # Speedup logging by disabling log record info to be fetched, see:
+    # https://docs.python.org/3/howto/logging.html#optimization
+    # https://docs.python.org/3/library/logging.html#logrecord-attributes
+    # https://stackoverflow.com/a/38924153/376587
+    # This results in about 28% speedup.
+    key_names = re.findall(
+        r'(?<!%)%\(([^)]+)\)[-# +0-9.hlL]*[diouxXeEfFgGcrs]', prefix)
+    if "process" not in key_names:
         logging.logProcesses = False
-    if "%(processName)s" not in prefix:
+    if "processName" not in key_names:
         logging.logMultiprocessing = False
-    if "%(thread)d" not in prefix and "%(threadName)s" not in prefix:
+    if "thread" not in key_names and "threadName" not in key_names:
         logging.logThreads = False
+    if "filename" not in key_names and \
+            "pathname" not in key_names and \
+            "lineno" not in key_names and \
+            "module" not in key_names:
+        logging._srcfile = None
     handler = logging.StreamHandler()
     formatter = LogFormatter()
     formatter.PREFIX = prefix
