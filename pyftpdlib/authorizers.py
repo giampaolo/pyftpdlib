@@ -645,7 +645,7 @@ try:
     import win32security
 except ImportError:
     pass
-else:
+else:  # pragma: no cover
     if PY3:
         import winreg
     else:

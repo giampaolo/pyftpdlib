@@ -39,21 +39,19 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 ROOT_DIR = os.path.realpath(os.path.join(HERE, "..", ".."))
 PYPY = '__pypy__' in sys.builtin_module_names
 DEPS = [
-    "coverage",
-    "flake8",
-    "nose",
-    "pdbpp",
     "pip",
-    "pyperf",
-    "pyreadline",
+    "psutil",
+    "pyopenssl",
+    "pypiwin32",
     "setuptools",
-    "wheel",
-    "requests"
+    "wmi",
 ]
 if sys.version_info[:2] == (2, 7):
-    DEPS.append('unittest2')
-if sys.version_info[:2] == (2, 7):
-    DEPS.append('mock')
+    DEPS.extend([
+        "ipaddress",
+        "mock",
+        "unittest2",
+    ])
 
 _cmds = {}
 if PY3:
@@ -415,7 +413,6 @@ def test_servers():
 
 def coverage():
     """Run coverage tests."""
-    # Note: coverage options are controlled by .coveragerc file
     build()
     sh("%s -m coverage run %s" % (PYTHON, RUNNER_PY))
     sh("%s -m coverage report" % PYTHON)

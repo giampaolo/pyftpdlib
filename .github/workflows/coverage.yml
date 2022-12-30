@@ -1,0 +1,23 @@
+on: [push, pull_request]
+name: coverage
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: styfle/cancel-workflow-action@0.9.1
+      with:
+        access_token: ${{ github.token }}
+
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v3
+
+    - name: Tests + Coverage
+      run: |
+        make setup-dev-env
+        make test-coverage
+
+    - name: Upload data to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        fail_ci_if_error: true
+        verbose: true

@@ -5,26 +5,34 @@
 PYTHON = python3
 TSCRIPT = pyftpdlib/test/runner.py
 ARGS =
-DEV_DEPS = \
+PYDEPS = \
 	autoflake \
-	cffi \
+	autopep8 \
 	check-manifest \
 	coverage \
-	flake8==5.0.4 \
 	flake8-blind-except \
 	flake8-bugbear \
 	flake8-debugger \
 	flake8-print \
 	flake8-quotes \
+	flake8==5.0.4 \
 	isort \
-	setuptools \
-	sphinx
-TEST_DEPS = \
 	psutil \
 	pyopenssl \
-	pysendfile \
-	mock==1.0.1 \
-	unittest2
+	setuptools \
+	sphinx \
+	twine
+PYVER = $(shell $(PYTHON) -c "import sys; print(sys.version_info[0])")
+ifeq ($(PYVER), 2)
+	PYDEPS = \
+		ipaddress \
+		mock \
+		psutil \
+		pyopenssl \
+		pysendfile \
+		setuptools \
+		unittest2
+endif
 
 # In not in a virtualenv, add --user options for install commands.
 INSTALL_OPTS = `$(PYTHON) -c "import sys; print('' if hasattr(sys, 'real_prefix') else '--user')"`
@@ -93,8 +101,7 @@ setup-dev-env: ## Install GIT hooks, pip, test deps (also upgrades them).
 	${MAKE} install-git-hooks
 	${MAKE} install-pip
 	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade pip setuptools
-	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(DEV_DEPS)
-	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(TEST_DEPS)
+	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(PYDEPS)
 
 # ===================================================================
 # Tests
@@ -153,7 +160,7 @@ flake8:  ## Run flake8 linter.
 	git ls-files '*.py' | xargs $(PYTHON) -m flake8 --config=.flake8
 
 isort:  ## Run isort linter.
-	git ls-files '*.py' | xargs $(PYTHON) -m isort --settings=.isort.cfg --check-only
+	git ls-files '*.py' | xargs $(PYTHON) -m isort --settings=pyproject.toml --check-only
 
 lint-all:  ## Run all linters
 	${MAKE} flake8
@@ -164,7 +171,7 @@ fix-flake8:  ## Run autopep8, fix some Python flake8 / pep8 issues.
 	@git ls-files '*.py' | xargs $(PYTHON) -m autoflake --in-place --jobs 0 --remove-all-unused-imports --remove-unused-variables --remove-duplicate-keys
 
 fix-isort:  ## Fix imports with isort.
-	git ls-files '*.py' | xargs $(PYTHON) -m isort --settings=.isort.cfg
+	git ls-files '*.py' | xargs $(PYTHON) -m isort --settings=pyproject.toml
 
 fix-all:  ## Run all fixers
 	${MAKE} fix-flake8

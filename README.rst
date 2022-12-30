@@ -18,13 +18,13 @@
     :target: https://github.com/giampaolo/pyftpdlib/graphs/contributors
     :alt: Contributors
 
-.. |github-actions| image:: https://github.com/giampaolo/pyftpdlib/actions/workflows/tests.yml/badge.svg
-    :target: https://github.com/giampaolo/pyftpdlib/actions/workflows/tests.yml
+.. |github-actions| image:: https://img.shields.io/github/actions/workflow/status/giampaolo/pyftpdlib/.github/workflows/tests.yml
+    :target: https://github.com/giampaolo/psutil/actions?query=workflow%3Abuild
     :alt: Linux, macOS, Windows tests
 
-.. |coverage| image:: https://coveralls.io/repos/github/giampaolo/pyftpdlib/badge.svg?branch=master
-    :target: https://coveralls.io/github/giampaolo/pyftpdlib?branch=master
-    :alt: Test coverage (coverall.io)
+.. |coverage| image:: https://img.shields.io/codecov/c/github/giampaolo/pyftpdlib/update-ci?label=coverage
+    :target: https://codecov.io/gh/giampaolo/pyftpdlib
+    :alt: Test coverage
 
 .. |doc| image:: https://readthedocs.org/projects/pyftpdlib/badge/?version=latest
     :target: https://pyftpdlib.readthedocs.io/en/latest/
@@ -33,6 +33,9 @@
 .. |version| image:: https://img.shields.io/pypi/v/pyftpdlib.svg?label=pypi
     :target: https://pypi.org/project/pyftpdlib
     :alt: Latest version
+
+.. |py-versions| image:: https://img.shields.io/pypi/pyversions/psutil.svg
+    :alt: Supported Python versions
 
 .. |packages| image:: https://repology.org/badge/tiny-repos/python:pyftpdlib.svg
     :target: https://repology.org/metapackage/python:pyftpdlib/versions
