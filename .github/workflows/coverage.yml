@@ -1,16 +1,13 @@
 on: ["push", "pull_request"]
 name: Test Coverage
 jobs:
-
-  build:
-    name: Build
+  test:
     runs-on: ubuntu-latest
     steps:
-
     - uses: actions/checkout@v3
 
     - name: Set up Python
-      uses: actions/setup-python@v3
+    - uses: actions/setup-python@v3
       with:
         python-version: 3.9
 
@@ -23,6 +20,16 @@ jobs:
         make test-coverage
 
     - name: Coveralls
-      uses: coverallsapp/github-action@1.1.3
+      uses: AndreMiras/coveralls-python-action@develop
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        parallel: true
+        flag-name: Unit Test
+
+  coveralls_finish:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Coveralls Finished
+      uses: AndreMiras/coveralls-python-action@develop
+      with:
+        parallel-finished: true
