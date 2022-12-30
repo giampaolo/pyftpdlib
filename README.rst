@@ -18,8 +18,8 @@
     :target: https://github.com/giampaolo/pyftpdlib/graphs/contributors
     :alt: Contributors
 
-.. |github-actions| image:: https://github.com/giampaolo/pyftpdlib/actions/workflows/tests.yml/badge.svg
-    :target: https://github.com/giampaolo/pyftpdlib/actions/workflows/tests.yml
+.. |github-actions| image:: https://img.shields.io/github/actions/workflow/status/giampaolo/pyftpdlib/.github/workflows/tests.yml
+    :target: https://github.com/giampaolo/psutil/actions?query=workflow%3Abuild
     :alt: Linux, macOS, Windows tests
 
 .. |coverage| image:: https://coveralls.io/repos/github/giampaolo/pyftpdlib/badge.svg?branch=master

@@ -1,0 +1,28 @@
+on: ["push", "pull_request"]
+name: Test Coverage
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3.9
+
+    - name: Install pydeps
+      run: |
+        make setup-dev-env
+
+    - name: Test coverage
+      run: |
+        make test-coverage
+
+    - name: Coveralls
+      uses: coverallsapp/github-action@1.1.3
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
