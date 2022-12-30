@@ -160,7 +160,7 @@ flake8:  ## Run flake8 linter.
 	git ls-files '*.py' | xargs $(PYTHON) -m flake8 --config=.flake8
 
 isort:  ## Run isort linter.
-	git ls-files '*.py' | xargs $(PYTHON) -m isort --settings=.isort.cfg --check-only
+	git ls-files '*.py' | xargs $(PYTHON) -m isort --settings=pyproject.toml --check-only
 
 lint-all:  ## Run all linters
 	${MAKE} flake8
@@ -171,7 +171,7 @@ fix-flake8:  ## Run autopep8, fix some Python flake8 / pep8 issues.
 	@git ls-files '*.py' | xargs $(PYTHON) -m autoflake --in-place --jobs 0 --remove-all-unused-imports --remove-unused-variables --remove-duplicate-keys
 
 fix-isort:  ## Fix imports with isort.
-	git ls-files '*.py' | xargs $(PYTHON) -m isort --settings=.isort.cfg
+	git ls-files '*.py' | xargs $(PYTHON) -m isort --settings=pyproject.toml
 
 fix-all:  ## Run all fixers
 	${MAKE} fix-flake8

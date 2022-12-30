@@ -1,0 +1,3 @@
+[tool.isort]
+force_single_line = true  # one import per line
+lines_after_imports = 2  # blank spaces after import section
