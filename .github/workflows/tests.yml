@@ -1,15 +1,14 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Tests
 on: [push, pull_request]
 jobs:
-  test-linux:
+  tests:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python-version: [2.7, "3.8", "3.9", "3.10", "3.11"]
-        os: [ubuntu-latest, macos-12]
+        os: [ubuntu-latest, windows-2019]
 
     steps:
       - name: Cancel previous runs
@@ -31,35 +30,35 @@ jobs:
         run: |
           make test PYTHON=python
 
-  test-win:
-    runs-on: windows-2019
-    strategy:
-      matrix:
-        python-version: ["2.7", "3.9"]
+  # tests-win:
+  #   runs-on: windows-2019
+  #   strategy:
+  #     matrix:
+  #       python-version: ["2.7", "3.9"]
 
-    steps:
-      #
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.9.1
-        with:
-          access_token: ${{ github.token }}
-      #
-      - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
-        with:
-          python-version: ${{ matrix.python-version }}
-      #
-      - name: Install test deps
-        run: |
-          python.exe -m pip install --upgrade --user setuptools pip wheel
-          python.exe -m pip install --upgrade unittest2 mock ipaddress pypiwin32 wmi pyopenssl psutil
-          python.exe -m pip freeze
-          python.exe setup.py install
-      #
-      - name: Tests
-        run: |
-          python.exe pyftpdlib/test/runner.py
+  #   steps:
+  #     #
+  #     - name: Cancel previous runs
+  #       uses: styfle/cancel-workflow-action@0.9.1
+  #       with:
+  #         access_token: ${{ github.token }}
+  #     #
+  #     - uses: actions/checkout@v3
+  #     - name: Set up Python ${{ matrix.python-version }}
+  #       uses: actions/setup-python@v3
+  #       with:
+  #         python-version: ${{ matrix.python-version }}
+  #     #
+  #     - name: Install test deps
+  #       run: |
+  #         python.exe -m pip install --upgrade --user setuptools pip wheel
+  #         python.exe -m pip install --upgrade unittest2 mock ipaddress pypiwin32 wmi pyopenssl psutil
+  #         python.exe -m pip freeze
+  #         python.exe setup.py install
+  #     #
+  #     - name: Tests
+  #       run: |
+  #         python.exe pyftpdlib/test/runner.py
 
   # Run linters
   linters:

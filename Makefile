@@ -26,7 +26,7 @@ PYVER = $(shell $(PYTHON) -c "import sys; print(sys.version_info[0])")
 ifeq ($(PYVER), 2)
 	PYDEPS = \
 		ipaddress \
-		mock==1.0.1 \
+		mock \
 		psutil \
 		pyopenssl \
 		pysendfile \
