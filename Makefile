@@ -54,7 +54,7 @@ clean:  ## Remove all build files.
 		*\$testfile* \
 		.coverage \
 		.tox \
-		pyftpd-tmp-\* \
+		pyftpd-tmp-* \
 		build/ \
 		dist/ \
 		docs/_build/ \
@@ -89,14 +89,12 @@ install-pip:  ## (only if necessary)
 		f.close(); \
 		sys.exit(code);"
 
-setup-test-env:  ## Install GIT hooks, pip, test deps (also upgrades them).
+setup-dev-env: ## Install GIT hooks, pip, test deps (also upgrades them).
 	${MAKE} install-git-hooks
 	${MAKE} install-pip
 	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade pip setuptools
-	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(TEST_DEPS)
-
-setup-dev-env: setup-test-env
 	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(DEV_DEPS)
+	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(TEST_DEPS)
 
 # ===================================================================
 # Tests

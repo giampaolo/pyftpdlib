@@ -39,7 +39,7 @@ jobs:
       - name: Install test deps
         if: matrix.python-version == 2.7
         run: |
-          make setup-test-env PYTHON=python
+          make setup-dev-env PYTHON=python
       #
       - name: Lint
         if: matrix.python-version != 2.7

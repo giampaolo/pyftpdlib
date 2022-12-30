@@ -6,7 +6,8 @@ Version: 1.5.8 - IN DEVELOPMENT
 **Enhancements**
 
 - #586: removed Python 2.6 support.
-
+- #591: speedup logging by 28% by using `logging._srcfile = None` trick. This
+  avoids calling `calling sys._getframe()` for each log record.
 
 Version: 1.5.7 - 2022-10-04
 ===========================
