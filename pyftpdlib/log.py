@@ -149,7 +149,8 @@ def is_logging_configured():
 # TODO: write tests
 
 def config_logging(level=LEVEL, prefix=PREFIX, other_loggers=None):
-    # Speedup logging by disabling log record info to be fetched, see:
+    # Speedup logging by preventing certain log record info to be
+    # fetched, see:
     # https://docs.python.org/3/howto/logging.html#optimization
     # https://docs.python.org/3/library/logging.html#logrecord-attributes
     # https://stackoverflow.com/a/38924153/376587
