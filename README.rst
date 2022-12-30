@@ -22,9 +22,9 @@
     :target: https://github.com/giampaolo/psutil/actions?query=workflow%3Abuild
     :alt: Linux, macOS, Windows tests
 
-.. |coverage| image:: https://coveralls.io/repos/github/giampaolo/pyftpdlib/badge.svg?branch=master
-    :target: https://coveralls.io/github/giampaolo/pyftpdlib?branch=master
-    :alt: Test coverage (coverall.io)
+.. |coverage| image:: https://img.shields.io/codecov/c/github/giampaolo/pyftpdlib/update-ci?label=coverage
+    :target: https://codecov.io/gh/giampaolo/pyftpdlib
+    :alt: Test coverage
 
 .. |doc| image:: https://readthedocs.org/projects/pyftpdlib/badge/?version=latest
     :target: https://pyftpdlib.readthedocs.io/en/latest/
