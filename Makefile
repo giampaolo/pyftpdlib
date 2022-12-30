@@ -20,9 +20,8 @@ PYDEPS = \
 	sphinx \
 	psutil \
 	pyopenssl
-
-IS_PY2 = $(shell $(PYTHON) -c "import sys; print(1 if sys.version_info[0] == 2 else 0)")
-ifeq ($(IS_PY2), 1)
+PYVER = $(shell $(PYTHON) -c "import sys; print(sys.version_info[0])")
+ifeq ($(PYVER), 2)
 	PYDEPS = \
 		ipaddress \
 		mock==1.0.1 \

@@ -2,16 +2,9 @@
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
 name: Tests
-
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-
+on: [push, pull_request]
 jobs:
-  build:
-
+  test-linux:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -41,17 +34,11 @@ jobs:
         run: |
           make setup-dev-env PYTHON=python
       #
-      - name: Lint
-        if: matrix.python-version != 2.7
-        run: |
-          make lint-all PYTHON=python
-      #
       - name: Tests
         run: |
           make test PYTHON=python
 
-  build-win:
-
+  test-win:
     runs-on: windows-2019
     strategy:
       matrix:
@@ -80,3 +67,15 @@ jobs:
       - name: Tests
         run: |
           python.exe pyftpdlib/test/runner.py
+
+  # Run linters
+  linters:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v3
+    - name: 'Run linters'
+      run: |
+        # py3
+        python3 -m pip install flake8 isort
+        make lint-all
