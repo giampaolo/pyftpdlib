@@ -1,16 +1,16 @@
 # Shortcuts for various tasks (UNIX only).
 # To use a specific Python version run:
-# $ make install PYTHON=python3.3
+# $ make install PYTHON=python3.7
 
 PYTHON = python3
 TSCRIPT = pyftpdlib/test/runner.py
 ARGS =
 DEV_DEPS = \
-	git+https://github.com/PyCQA/autoflake.git \
+	autoflake \
 	cffi \
 	check-manifest \
 	coverage \
-	flake8 \
+	flake8==5.0.4 \
 	flake8-blind-except \
 	flake8-bugbear \
 	flake8-debugger \
