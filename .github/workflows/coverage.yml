@@ -1,31 +1,27 @@
-name: Example workflow for Codecov
-on: [push]
+name: coverage
+on: [push, pull_request]
+
 jobs:
-  run:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-    env:
-      OS: ${{ matrix.os }}
-      PYTHON: '3.9'
+  test:
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@master
-    - name: Setup Python
-      uses: actions/setup-python@master
+    - uses: styfle/cancel-workflow-action@0.9.1
       with:
-        python-version: 3.9
-    - name: Generate coverage report
+        access_token: ${{ github.token }}
+
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v3
+
+    - name: Install pydeps
       run: |
         make setup-dev-env
+
+    - name: Coverage tests
+      run: |
         make test-coverage
 
-    - name: Update coverage to Codecov
+    - name: Upload to Codecov
     - uses: codecov/codecov-action@v3
       with:
-        token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-        files: ./coverage1.xml,./coverage2.xml # optional
-        flags: unittests # optional
-        name: codecov-umbrella # optional
         fail_ci_if_error: true # optional (default = false)
         verbose: true # optional (default = false)
