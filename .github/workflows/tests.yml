@@ -8,32 +8,25 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [2.7, "3.7", "3.8", "3.9", "3.10", "3.11"]
+        python-version: [2.7, "3.8", "3.9", "3.10", "3.11"]
         os: [ubuntu-latest]
 
     steps:
-      #
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.9.1
         with:
           access_token: ${{ github.token }}
-      #
+
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
-      #
-      - name: Install dev deps
-        if: matrix.python-version != 2.7
+
+      - name: Install pydeps
         run: |
           make setup-dev-env PYTHON=python
-      #
-      - name: Install test deps
-        if: matrix.python-version == 2.7
-        run: |
-          make setup-dev-env PYTHON=python
-      #
+
       - name: Tests
         run: |
           make test PYTHON=python
