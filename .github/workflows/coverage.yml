@@ -15,6 +15,7 @@ jobs:
     - name: Install pydeps
       run: |
         make setup-dev-env
+        python -m pip install coverage[toml]
 
     - name: Coverage tests
       run: |
