@@ -413,7 +413,6 @@ def test_servers():
 
 def coverage():
     """Run coverage tests."""
-    # Note: coverage options are controlled by .coveragerc file
     build()
     sh("%s -m coverage run %s" % (PYTHON, RUNNER_PY))
     sh("%s -m coverage report" % PYTHON)
