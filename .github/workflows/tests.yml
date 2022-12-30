@@ -8,11 +8,10 @@ jobs:
     strategy:
       matrix:
         python-version: [2.7, "3.8", "3.9", "3.10", "3.11"]
-        os: [ubuntu-latest, windows-2019]
+        os: [ubuntu-latest]
 
     steps:
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.9.1
+      - uses: styfle/cancel-workflow-action@0.9.1
         with:
           access_token: ${{ github.token }}
 
@@ -30,35 +29,33 @@ jobs:
         run: |
           make test PYTHON=python
 
-  # tests-win:
-  #   runs-on: windows-2019
-  #   strategy:
-  #     matrix:
-  #       python-version: ["2.7", "3.9"]
+  tests-win:
+    runs-on: windows-2019
+    strategy:
+      matrix:
+        python-version: ["2.7", "3.9"]
 
-  #   steps:
-  #     #
-  #     - name: Cancel previous runs
-  #       uses: styfle/cancel-workflow-action@0.9.1
-  #       with:
-  #         access_token: ${{ github.token }}
-  #     #
-  #     - uses: actions/checkout@v3
-  #     - name: Set up Python ${{ matrix.python-version }}
-  #       uses: actions/setup-python@v3
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
-  #     #
-  #     - name: Install test deps
-  #       run: |
-  #         python.exe -m pip install --upgrade --user setuptools pip wheel
-  #         python.exe -m pip install --upgrade unittest2 mock ipaddress pypiwin32 wmi pyopenssl psutil
-  #         python.exe -m pip freeze
-  #         python.exe setup.py install
-  #     #
-  #     - name: Tests
-  #       run: |
-  #         python.exe pyftpdlib/test/runner.py
+    steps:
+      - uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          access_token: ${{ github.token }}
+
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install pydeps
+        run: |
+          python.exe -m pip install --upgrade --user setuptools pip wheel
+          python.exe -m pip install --upgrade unittest2 mock ipaddress pypiwin32 wmi pyopenssl psutil
+          python.exe -m pip freeze
+          python.exe setup.py install
+
+      - name: Tests
+        run: |
+          python.exe pyftpdlib/test/runner.py
 
   # Run linters
   linters:
