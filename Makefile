@@ -5,9 +5,8 @@
 PYTHON = python3
 TSCRIPT = pyftpdlib/test/runner.py
 ARGS =
-DEV_DEPS = \
+PYDEPS = \
 	autoflake \
-	cffi \
 	check-manifest \
 	coverage \
 	flake8==5.0.4 \
@@ -18,13 +17,21 @@ DEV_DEPS = \
 	flake8-quotes \
 	isort \
 	setuptools \
-	sphinx
-TEST_DEPS = \
+	sphinx \
 	psutil \
-	pyopenssl \
-	pysendfile \
-	mock==1.0.1 \
-	unittest2
+	pyopenssl
+
+IS_PY2 = $(shell $(PYTHON) -c "import sys; print(1 if sys.version_info[0] == 2 else 0)")
+ifeq ($(IS_PY2), 1)
+	PYDEPS = \
+		ipaddress \
+		mock==1.0.1 \
+		psutil \
+		pyopenssl \
+		pysendfile \
+		setuptools \
+		unittest2
+endif
 
 # In not in a virtualenv, add --user options for install commands.
 INSTALL_OPTS = `$(PYTHON) -c "import sys; print('' if hasattr(sys, 'real_prefix') else '--user')"`
@@ -93,8 +100,7 @@ setup-dev-env: ## Install GIT hooks, pip, test deps (also upgrades them).
 	${MAKE} install-git-hooks
 	${MAKE} install-pip
 	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade pip setuptools
-	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(DEV_DEPS)
-	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(TEST_DEPS)
+	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade $(PYDEPS)
 
 # ===================================================================
 # Tests
