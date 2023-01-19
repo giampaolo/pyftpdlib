@@ -53,6 +53,144 @@ def _memoize(fun):
     return wrapper
 
 
+def format_list_line(perms, nlinks, uname, gname, size, mtime, basename,
+                     linktarget=None, use_gmtime=True):
+    """Returns a string formatted to emulate a line of "/bin/ls -lA".
+
+     - (int) perms: a unix-like permissions mask
+     - (int) nlinks: the number of hard links to the file
+     - (str) uname: the name of the owning user
+     - (str) gname: the name of the owning group
+     - (int) size: the size of the file
+     - (float) mtime: the modification time of the file, in seconds since unix
+    epoch
+     - (str) basename: the name of the file
+     - (str) linktarget: if the file is a symbolic link, the target path of the
+    file
+     - (bool) use_gmtime: if True, will use gmtime to format the time string;
+    otherwise will use localtime
+
+    This is how output appears to client:
+
+    -rw-rw-rw-   1 owner   group    7045120 Sep 02  3:47 music.mp3
+    drwxrwxrwx   1 owner   group          0 Aug 31 18:50 e-books
+    -rw-rw-rw-   1 owner   group        380 Sep 02  3:40 module.py
+    """
+    SIX_MONTHS = 180 * 24 * 60 * 60
+    now = time.time()
+    if use_gmtime:
+        timefunc = time.gmtime
+    else:
+        timefunc = time.localtime
+    tmtime = timefunc(mtime)
+    # if modification time > 6 months shows "month year"
+    # else "month hh:mm";  this matches proftpd format, see:
+    # https://github.com/giampaolo/pyftpdlib/issues/187
+    if (now - mtime) > SIX_MONTHS:
+        fmtstr = "%d  %Y"
+    else:
+        fmtstr = "%d %H:%M"
+    try:
+        mtimestr = "%s %s" % (_months_map[tmtime.tm_mon],
+                              time.strftime(fmtstr, tmtime))
+    except ValueError:
+        # It could be raised if last mtime happens to be too
+        # old (prior to year 1900) in which case we return
+        # the current time as last mtime.
+        tmtime = timefunc()
+        mtimestr = "%s %s" % (_months_map[tmtime.tm_mon],
+                              time.strftime("%d %H:%M", tmtime))
+
+    if linktarget is not None:
+        basename = basename + " -> " + linktarget
+
+    # formatting is matched with proftpd ls output
+    return "%s %3s %-8s %-8s %8s %s %s" % (
+        perms, nlinks, uname, gname, size, mtimestr, basename)
+
+
+def format_mlsx_facts(basename, st, perms, facts, use_gmtime=True):
+    """Return a set of standardized "facts" about a file.
+
+    See RFC-3659, chapter 7, to see what every single fact stands for.
+
+     - (str) basename: the name of the file
+     - (os.stat_result) st: the stats about a file
+     - (str) perms: the string referencing the user permissions.
+     - (str) facts: the list of "facts" to be returned.
+     - (bool) use_gmtime: if True, will use gmtime to format the time string;
+    otherwise will use localtime
+    """
+    if use_gmtime:
+        timefunc = time.gmtime
+    else:
+        timefunc = time.localtime
+    permdir = ''.join([x for x in perms if x not in 'arw'])
+    permfile = ''.join([x for x in perms if x not in 'celmp'])
+    if ('w' in perms) or ('a' in perms) or ('f' in perms):
+        permdir += 'c'
+    if 'd' in perms:
+        permdir += 'p'
+
+    retfacts = dict()
+    # type + perm
+    # same as stat.S_ISDIR(st.st_mode) but slightly faster
+    isdir = (st.st_mode & 61440) == stat.S_IFDIR
+    if isdir:
+        if 'type' in facts:
+            if basename == '.':
+                retfacts['type'] = 'cdir'
+            elif basename == '..':
+                retfacts['type'] = 'pdir'
+            else:
+                retfacts['type'] = 'dir'
+        if 'perm' in facts:
+            retfacts['perm'] = permdir
+    else:
+        if 'type' in facts:
+            retfacts['type'] = 'file'
+        if 'perm' in facts:
+            retfacts['perm'] = permfile
+    if 'size' in facts:
+        retfacts['size'] = st.st_size  # file size
+    # last modification time
+    if 'modify' in facts:
+        try:
+            retfacts['modify'] = time.strftime("%Y%m%d%H%M%S",
+                                               timefunc(st.st_mtime))
+        # it could be raised if last mtime happens to be too old
+        # (prior to year 1900)
+        except ValueError:
+            pass
+    if 'create' in facts:
+        # on Windows we can provide also the creation time
+        try:
+            retfacts['create'] = time.strftime("%Y%m%d%H%M%S",
+                                               timefunc(st.st_ctime))
+        except ValueError:
+            pass
+    # UNIX only
+    if 'unix.mode' in facts:
+        retfacts['unix.mode'] = oct(st.st_mode & 511)
+    if 'unix.uid' in facts:
+        retfacts['unix.uid'] = st.st_uid
+    if 'unix.gid' in facts:
+        retfacts['unix.gid'] = st.st_gid
+
+    # We provide unique fact (see RFC-3659, chapter 7.5.2) on
+    # posix platforms only; we get it by mixing st_dev and
+    # st_ino values which should be enough for granting an
+    # uniqueness for the file listed.
+    # The same approach is used by pure-ftpd.
+    # Implementors who want to provide unique fact on other
+    # platforms should use some platform-specific method (e.g.
+    # on Windows NTFS filesystems MTF records could be used).
+    if 'unique' in facts:
+        retfacts['unique'] = "%xg%x" % (st.st_dev, st.st_ino)
+
+    return retfacts
+
+
 # ===================================================================
 # --- custom exceptions
 # ===================================================================
@@ -433,13 +571,7 @@ class AbstractedFS(object):
             return self.get_group_by_gid(gid)
 
         assert isinstance(basedir, unicode), basedir
-        if self.cmd_channel.use_gmt_times:
-            timefunc = time.gmtime
-        else:
-            timefunc = time.localtime
-        SIX_MONTHS = 180 * 24 * 60 * 60
         readlink = getattr(self, 'readlink', None)
-        now = time.time()
         for basename in listing:
             if not PY3:
                 try:
@@ -469,39 +601,23 @@ class AbstractedFS(object):
             size = st.st_size  # file size
             uname = get_user_by_uid(st.st_uid)
             gname = get_group_by_gid(st.st_gid)
-            mtime = timefunc(st.st_mtime)
-            # if modification time > 6 months shows "month year"
-            # else "month hh:mm";  this matches proftpd format, see:
-            # https://github.com/giampaolo/pyftpdlib/issues/187
-            if (now - st.st_mtime) > SIX_MONTHS:
-                fmtstr = "%d  %Y"
-            else:
-                fmtstr = "%d %H:%M"
-            try:
-                mtimestr = "%s %s" % (_months_map[mtime.tm_mon],
-                                      time.strftime(fmtstr, mtime))
-            except ValueError:
-                # It could be raised if last mtime happens to be too
-                # old (prior to year 1900) in which case we return
-                # the current time as last mtime.
-                mtime = timefunc()
-                mtimestr = "%s %s" % (_months_map[mtime.tm_mon],
-                                      time.strftime("%d %H:%M", mtime))
-
+            linktarget = None
             # same as stat.S_ISLNK(st.st_mode) but slighlty faster
             islink = (st.st_mode & 61440) == stat.S_IFLNK
             if islink and readlink is not None:
-                # if the file is a symlink, resolve it, e.g.
-                # "symlink -> realfile"
                 try:
-                    basename = basename + " -> " + readlink(file)
+                    linktarget = readlink(file)
                 except (OSError, FilesystemError):
                     if not ignore_err:
                         raise
 
+            line = format_list_line(
+                    perms, nlinks, uname, gname, size,
+                    st.st_mtime, basename, linktarget=linktarget,
+                    use_gmtime=self.cmd_channel.use_gmt_times)
+            line += "\r\n"
+
             # formatting is matched with proftpd ls output
-            line = "%s %3s %-8s %-8s %8s %s %s\r\n" % (
-                perms, nlinks, uname, gname, size, mtimestr, basename)
             yield line.encode('utf8', self.cmd_channel.unicode_errors)
 
     def format_mlsx(self, basedir, listing, perms, facts, ignore_err=True):
@@ -531,27 +647,7 @@ class AbstractedFS(object):
         type=file;size=211;perm=r;modify=20071103093626;unique=192; module.py
         """
         assert isinstance(basedir, unicode), basedir
-        if self.cmd_channel.use_gmt_times:
-            timefunc = time.gmtime
-        else:
-            timefunc = time.localtime
-        permdir = ''.join([x for x in perms if x not in 'arw'])
-        permfile = ''.join([x for x in perms if x not in 'celmp'])
-        if ('w' in perms) or ('a' in perms) or ('f' in perms):
-            permdir += 'c'
-        if 'd' in perms:
-            permdir += 'p'
-        show_type = 'type' in facts
-        show_perm = 'perm' in facts
-        show_size = 'size' in facts
-        show_modify = 'modify' in facts
-        show_create = 'create' in facts
-        show_mode = 'unix.mode' in facts
-        show_uid = 'unix.uid' in facts
-        show_gid = 'unix.gid' in facts
-        show_unique = 'unique' in facts
         for basename in listing:
-            retfacts = dict()
             if not PY3:
                 try:
                     file = os.path.join(basedir, basename)
@@ -575,61 +671,9 @@ class AbstractedFS(object):
                 if ignore_err:
                     continue
                 raise
-            # type + perm
-            # same as stat.S_ISDIR(st.st_mode) but slightly faster
-            isdir = (st.st_mode & 61440) == stat.S_IFDIR
-            if isdir:
-                if show_type:
-                    if basename == '.':
-                        retfacts['type'] = 'cdir'
-                    elif basename == '..':
-                        retfacts['type'] = 'pdir'
-                    else:
-                        retfacts['type'] = 'dir'
-                if show_perm:
-                    retfacts['perm'] = permdir
-            else:
-                if show_type:
-                    retfacts['type'] = 'file'
-                if show_perm:
-                    retfacts['perm'] = permfile
-            if show_size:
-                retfacts['size'] = st.st_size  # file size
-            # last modification time
-            if show_modify:
-                try:
-                    retfacts['modify'] = time.strftime("%Y%m%d%H%M%S",
-                                                       timefunc(st.st_mtime))
-                # it could be raised if last mtime happens to be too old
-                # (prior to year 1900)
-                except ValueError:
-                    pass
-            if show_create:
-                # on Windows we can provide also the creation time
-                try:
-                    retfacts['create'] = time.strftime("%Y%m%d%H%M%S",
-                                                       timefunc(st.st_ctime))
-                except ValueError:
-                    pass
-            # UNIX only
-            if show_mode:
-                retfacts['unix.mode'] = oct(st.st_mode & 511)
-            if show_uid:
-                retfacts['unix.uid'] = st.st_uid
-            if show_gid:
-                retfacts['unix.gid'] = st.st_gid
-
-            # We provide unique fact (see RFC-3659, chapter 7.5.2) on
-            # posix platforms only; we get it by mixing st_dev and
-            # st_ino values which should be enough for granting an
-            # uniqueness for the file listed.
-            # The same approach is used by pure-ftpd.
-            # Implementors who want to provide unique fact on other
-            # platforms should use some platform-specific method (e.g.
-            # on Windows NTFS filesystems MTF records could be used).
-            if show_unique:
-                retfacts['unique'] = "%xg%x" % (st.st_dev, st.st_ino)
-
+            retfacts = format_mlsx_facts(
+                    basename, st, perms, facts,
+                    use_gmtime=self.cmd_channel.use_gmt_times)
             # facts can be in any order but we sort them by name
             factstring = "".join(["%s=%s;" % (x, retfacts[x])
                                   for x in sorted(retfacts.keys())])
