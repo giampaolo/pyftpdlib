@@ -105,6 +105,8 @@ class DummyAuthorizer(object):
         if not os.path.isdir(homedir):
             raise ValueError('no such directory: %r' % homedir)
         homedir = os.path.realpath(homedir)
+        if isinstance(homedir, bytes):
+            homedir = homedir.decode('utf8')
         self._check_permissions(username, perm)
         dic = {'pwd': str(password),
                'home': homedir,
