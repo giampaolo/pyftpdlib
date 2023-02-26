@@ -2992,12 +2992,14 @@ class FTPHandler(AsyncChat):
             if line.count(' ') > 1:
                 raise ValueError('Invalid number of arguments')
             if ' ' in line:
-                cmd, arg = line.split(' ')
-                if ';' not in arg:
-                    raise ValueError('Invalid argument')
+                cmd, arg = line.split(' ') 
             else:
                 cmd, arg = line, ''
-            # actually the only command able to accept options is MLST
+            if cmd.upper() in ("UTF8", "UTF-8"):
+                self.respond('200 Always in UTF8 mode.')
+                return
+            if arg and ';' not in arg:
+                    raise ValueError('Invalid argument') 
             if cmd.upper() != 'MLST' or 'MLST' not in self.proto_cmds:
                 raise ValueError('Unsupported command "%s"' % cmd)
         except ValueError as err:
