@@ -20,3 +20,26 @@ exclude_lines = [
     "if hasattr(select, 'devpoll'):",
     "if hasattr(select, 'kqueue'):",
 ]
+
+[tool.pylint.messages_control]
+disable = [
+    "broad-except",
+    "consider-using-f-string",
+    "import-outside-toplevel",
+    "inconsistent-return-statements",
+    "invalid-name",
+    "logging-not-lazy",
+    "misplaced-bare-raise",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "missing-module-docstring",
+    "no-else-return",
+    "raise-missing-from",
+    "redefined-builtin",
+    "too-many-instance-attributes",
+    "useless-object-inheritance",
+    # "global-statement",
+    # "logging-fstring-interpolation",
+    # "unspecified-encoding",
+    # important: consider-using-ternary
+]

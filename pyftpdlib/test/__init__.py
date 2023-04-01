@@ -182,7 +182,8 @@ def safe_rmpath(path):
                 pass
             except WindowsError as _:
                 err = _
-                warnings.warn("ignoring %s" % str(err), UserWarning)
+                warnings.warn("ignoring %s" % str(err), UserWarning,
+                              stacklevel=2)
             time.sleep(0.01)
         raise err
 
@@ -367,13 +368,13 @@ def assert_free_resources():
             except psutil.NoSuchProcess:
                 pass
         warnings.warn("some children didn't terminate %r" % str(children),
-                      UserWarning)
+                      UserWarning, stacklevel=2)
     if POSIX:
         cons = [x for x in p.connections('tcp')
                 if x.status != psutil.CONN_CLOSE_WAIT]
         if cons:
             warnings.warn("some connections didn't close %r" % str(cons),
-                          UserWarning)
+                          UserWarning, stacklevel=2)
 
 
 def reset_server_opts():

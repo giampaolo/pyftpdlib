@@ -1087,7 +1087,7 @@ class BufferedIteratorProducer(object):
         its next() method different times.
         """
         buffer = []
-        for x in xrange(self.loops):
+        for _ in xrange(self.loops):
             try:
                 buffer.append(next(self.iterator))
             except StopIteration:
@@ -2561,7 +2561,7 @@ class FTPHandler(AsyncChat):
                     '%s.get_home_dir returned a non-unicode string; now '
                     'casting to unicode' % (
                         self.authorizer.__class__.__name__),
-                    RuntimeWarning)
+                    RuntimeWarning, stacklevel=2)
                 home = home.decode('utf8')
 
         if len(msg_login) <= 75:
