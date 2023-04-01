@@ -14,8 +14,15 @@ import random
 import re
 import select
 import socket
+import ssl
 import stat
 import time
+
+
+try:
+    from StringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
 
 from pyftpdlib._compat import PY3
 from pyftpdlib._compat import b
@@ -56,14 +63,6 @@ from pyftpdlib.test import retry_on_failure
 from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import touch
 from pyftpdlib.test import unittest
-
-
-try:
-    from StringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
-
-import ssl
 
 
 sendfile = _import_sendfile()
@@ -692,7 +691,6 @@ class TestFtpStoreData(PyftpdlibTestCase):
         self.dummy_recvfile.close()
         self.dummy_sendfile.close()
         if self.use_sendfile is not None:
-            from pyftpdlib.handlers import _import_sendfile
             self.server.handler.use_sendfile = _import_sendfile() is not None
         super().tearDown()
 
@@ -790,7 +788,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
         filename = self.client.sendcmd('stou').split('FILE: ')[1]
         try:
             with contextlib.closing(self.client.makeport()) as sock:
-                conn, sockaddr = sock.accept()
+                conn, _ = sock.accept()
                 with contextlib.closing(conn):
                     conn.settimeout(GLOBAL_TIMEOUT)
                     if hasattr(self.client_class, 'ssl_version'):
@@ -1002,7 +1000,6 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
         self.server.stop()
         self.dummyfile.close()
         if self.use_sendfile is not None:
-            from pyftpdlib.handlers import _import_sendfile
             self.server.handler.use_sendfile = _import_sendfile() is not None
         super().tearDown()
 
@@ -2211,7 +2208,7 @@ class TestIPv6MixedEnvironment(PyftpdlibTestCase):
             ip, port = sock.getsockname()[:2]
             self.client.sendcmd('eprt |1|%s|%s|' % (ip, port))
             try:
-                sock2, addr = sock.accept()
+                sock2, _ = sock.accept()
                 sock2.close()
             except socket.timeout:
                 self.fail("Server didn't connect to passive socket")
@@ -2271,7 +2268,7 @@ class TestCornerCases(PyftpdlibTestCase):
             cmd = 'PORT ' + ','.join(bytes) + '\r\n'
             self.client.sock.sendall(b(cmd))
             self.client.getresp()
-            s, addr = sock.accept()
+            s, _ = sock.accept()
             s.close()
 
     @unittest.skipUnless(POSIX, "POSIX only")
@@ -2296,9 +2293,9 @@ class TestCornerCases(PyftpdlibTestCase):
                 except socket.error:
                     pass
 
-        for x in range(10):
+        for _ in range(10):
             connect((self.server.host, self.server.port))
-        for x in range(10):
+        for _ in range(10):
             addr = self.client.makepasv()
             connect(addr)
 
@@ -2347,7 +2344,6 @@ class TestCornerCases(PyftpdlibTestCase):
         def test_sendfile(self):
             # make sure that on python >= 3.3 we're using os.sendfile
             # rather than third party pysendfile module
-            from pyftpdlib.handlers import sendfile
             self.assertIs(sendfile, os.sendfile)
 
     if SUPPORTS_SENDFILE:
@@ -2714,7 +2710,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
             sock.listen(5)
             sock.settimeout(GLOBAL_TIMEOUT)
             self.client.sendport(HOST, port)
-            s, addr = sock.accept()
+            s, _ = sock.accept()
             s.close()
 
     @unittest.skipUnless(POSIX, "POSIX only")

@@ -445,7 +445,7 @@ class Select(_IOLoop):
 
     def poll(self, timeout):
         try:
-            r, w, e = select.select(self._r, self._w, [], timeout)
+            r, w, _ = select.select(self._r, self._w, [], timeout)
         except select.error as err:
             if getattr(err, "errno", None) == errno.EINTR:
                 return
