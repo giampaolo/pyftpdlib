@@ -127,8 +127,9 @@ def main():
         out = sh("%s scripts/internal/generate_manifest.py" % PYTHON)
         with open_text('MANIFEST.in') as f:
             if out.strip() != f.read().strip():
-                return sys.exit("some files were added, deleted or renamed; "
-                                "run 'make generate-manifest' and commit again")
+                return sys.exit(
+                    "some files were added, deleted or renamed; "
+                    "run 'make generate-manifest' and commit again")
 
 
 main()

@@ -14,9 +14,10 @@ import random
 import re
 import select
 import socket
+import ssl
 import stat
 import time
-import ssl
+
 
 try:
     from StringIO import StringIO as BytesIO

@@ -176,6 +176,6 @@ def config_logging(level=LEVEL, prefix=PREFIX, other_loggers=None):
     loggers = [logging.getLogger('pyftpdlib')]
     if other_loggers is not None:
         loggers.extend(other_loggers)
-    for l in loggers:
-        l.setLevel(level)
-        l.addHandler(handler)
+    for log in loggers:
+        log.setLevel(level)
+        log.addHandler(handler)
