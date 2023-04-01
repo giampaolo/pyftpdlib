@@ -206,13 +206,15 @@ class _SharedAuthorizerTests(object):
     def get_users(self):
         return self.authorizer_class._get_system_users()
 
-    def get_current_user(self):
+    @staticmethod
+    def get_current_user():
         if POSIX:
             return pwd.getpwuid(os.getuid()).pw_name
         else:
             return os.environ['USERNAME']
 
-    def get_current_user_homedir(self):
+    @staticmethod
+    def get_current_user_homedir():
         if POSIX:
             return pwd.getpwuid(os.getuid()).pw_dir
         else:
