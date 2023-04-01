@@ -382,7 +382,6 @@ def reset_server_opts():
     # we reset them at module.class level.
     import pyftpdlib.handlers
     import pyftpdlib.servers
-    from pyftpdlib.handlers import _import_sendfile
 
     # Control handlers.
     tls_handler = getattr(pyftpdlib.handlers, "TLS_FTPHandler",

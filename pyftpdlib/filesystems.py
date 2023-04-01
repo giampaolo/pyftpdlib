@@ -17,13 +17,6 @@ try:
     import pwd
 except ImportError:
     pwd = grp = None
-try:
-    from os import scandir  # py 3.5
-except ImportError:
-    try:
-        from scandir import scandir  # requires "pip install scandir"
-    except ImportError:
-        scandir = None
 
 from ._compat import PY3
 from ._compat import u
@@ -551,7 +544,7 @@ class AbstractedFS(object):
         show_gid = 'unix.gid' in facts
         show_unique = 'unique' in facts
         for basename in listing:
-            retfacts = dict()
+            retfacts = {}
             if not PY3:
                 try:
                     file = os.path.join(basedir, basename)

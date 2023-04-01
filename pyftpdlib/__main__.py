@@ -92,7 +92,7 @@ def main():
         options.interface = '0.0.0.0'
 
     authorizer = DummyAuthorizer()
-    perm = options.write and "elradfmwMT" or "elr"
+    perm = "elradfmwMT" if options.write else "elr"
     if options.username:
         if not options.password:
             parser.error(
