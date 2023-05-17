@@ -466,7 +466,7 @@ class ActiveDTP(Connector):
                                                  self.handle_timeout,
                                                  _errback=self.handle_error)
 
-        if ip.count('.') == 4:
+        if ip.count('.') == 3:
             self._cmd = "PORT"
             self._normalized_addr = "%s:%s" % (ip, port)
         else:
