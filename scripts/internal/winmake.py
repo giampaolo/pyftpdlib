@@ -69,7 +69,7 @@ DEFAULT_COLOR = 7
 # ===================================================================
 
 
-def safe_print(text, file=sys.stdout, flush=False):
+def safe_print(text, file=sys.stdout):
     """Prints a (unicode) string to the console, encoded depending on
     the stdout/file encoding (eg. cp437 on Windows). This is to avoid
     encoding errors in case of funky path names.

@@ -466,7 +466,7 @@ class ActiveDTP(Connector):
                                                  self.handle_timeout,
                                                  _errback=self.handle_error)
 
-        if ip.count('.') == 4:
+        if ip.count('.') == 3:
             self._cmd = "PORT"
             self._normalized_addr = "%s:%s" % (ip, port)
         else:
@@ -1087,7 +1087,7 @@ class BufferedIteratorProducer(object):
         its next() method different times.
         """
         buffer = []
-        for x in xrange(self.loops):
+        for _ in xrange(self.loops):
             try:
                 buffer.append(next(self.iterator))
             except StopIteration:
@@ -1472,12 +1472,12 @@ class FTPHandler(AsyncChat):
                     self.log_cmd(cmd, arg, 500, msg)
                 return
 
-        if not arg and self.proto_cmds[cmd]['arg'] == True:  # NOQA
+        if not arg and self.proto_cmds[cmd]['arg'] is True:  # NOQA
             msg = "Syntax error: command needs an argument."
             self.respond("501 " + msg)
             self.log_cmd(cmd, "", 501, msg)
             return
-        if arg and self.proto_cmds[cmd]['arg'] == False:  # NOQA
+        if arg and self.proto_cmds[cmd]['arg'] is False:  # NOQA
             msg = "Syntax error: command does not accept arguments."
             self.respond("501 " + msg)
             self.log_cmd(cmd, arg, 501, msg)
@@ -1748,8 +1748,8 @@ class FTPHandler(AsyncChat):
 
     # --- utility
 
-    def push(self, s):
-        asynchat.async_chat.push(self, s.encode('utf8'))
+    def push(self, data):
+        asynchat.async_chat.push(self, data.encode('utf8'))
 
     def respond(self, resp, logfun=logger.debug):
         """Send a response to the client using the command channel."""
@@ -2561,7 +2561,7 @@ class FTPHandler(AsyncChat):
                     '%s.get_home_dir returned a non-unicode string; now '
                     'casting to unicode' % (
                         self.authorizer.__class__.__name__),
-                    RuntimeWarning)
+                    RuntimeWarning, stacklevel=2)
                 home = home.decode('utf8')
 
         if len(msg_login) <= 75:
@@ -3381,7 +3381,7 @@ if SSL is not None:
                 laststate = self.socket.get_shutdown()
                 self.socket.set_shutdown(laststate | SSL.RECEIVED_SHUTDOWN)
                 done = self.socket.shutdown()
-                if not (laststate & SSL.RECEIVED_SHUTDOWN):
+                if not laststate & SSL.RECEIVED_SHUTDOWN:
                     self.socket.set_shutdown(SSL.SENT_SHUTDOWN)
             except SSL.WantReadError:
                 self._ssl_want_read = True

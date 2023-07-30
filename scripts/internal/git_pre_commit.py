@@ -104,7 +104,7 @@ def main():
             # space at end of line
             if line.endswith(' '):
                 print("%s:%s %r" % (path, lineno, line))
-                return exit("space at end of line")
+                return sys.exit("space at end of line")
 
     # Python linters
     if py_files:
@@ -113,22 +113,23 @@ def main():
         cmd = "%s -m flake8 --config=.flake8 %s" % (PYTHON, " ".join(py_files))
         ret = subprocess.call(shlex.split(cmd))
         if ret != 0:
-            return exit("python code didn't pass 'flake8' style check; "
-                        "try running 'make fix-flake8'")
+            return sys.exit("python code didn't pass 'flake8' style check; "
+                            "try running 'make fix-flake8'")
         # isort
         assert os.path.exists('pyproject.toml')
         cmd = "%s -m isort --settings=pyproject.toml --check-only %s" % (
             PYTHON, " ".join(py_files))
         ret = subprocess.call(shlex.split(cmd))
         if ret != 0:
-            return exit("python code didn't pass 'isort' style check; "
-                        "try running 'make fix-imports'")
+            return sys.exit("python code didn't pass 'isort' style check; "
+                            "try running 'make fix-imports'")
     if new_rm_mv:
         out = sh("%s scripts/internal/generate_manifest.py" % PYTHON)
         with open_text('MANIFEST.in') as f:
             if out.strip() != f.read().strip():
-                exit("some files were added, deleted or renamed; "
-                     "run 'make generate-manifest' and commit again")
+                return sys.exit(
+                    "some files were added, deleted or renamed; "
+                    "run 'make generate-manifest' and commit again")
 
 
 main()

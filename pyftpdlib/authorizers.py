@@ -240,7 +240,7 @@ class DummyAuthorizer(object):
                     p in self.write_perms and not \
                     warned:
                 warnings.warn("write permissions assigned to anonymous user.",
-                              RuntimeWarning)
+                              RuntimeWarning, stacklevel=2)
                 warned = 1
 
     def _issubpath(self, a, b):
