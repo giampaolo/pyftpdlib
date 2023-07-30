@@ -361,12 +361,12 @@ class TestCallLater(PyftpdlibTestCase):
     def test__lt__(self):
         a = self.ioloop.call_later(0.01, lambda: 0, 0.01)
         b = self.ioloop.call_later(0.02, lambda: 0, 0.02)
-        self.assertTrue(a < b)
+        self.assertLess(a, b)
 
     def test__le__(self):
         a = self.ioloop.call_later(0.01, lambda: 0, 0.01)
         b = self.ioloop.call_later(0.02, lambda: 0, 0.02)
-        self.assertTrue(a <= b)
+        self.assertLessEqual(a, b)
 
 
 class TestCallEvery(PyftpdlibTestCase):
@@ -439,7 +439,7 @@ class TestCallEvery(PyftpdlibTestCase):
             self.ioloop.call_every(0.005, fun)
             self.scheduler(timeout=0.01)
 
-            self.assertTrue(len(l1) > len(l2))
+            self.assertGreater(len(l1), len(l2))
 
     def test_cancel(self):
         # make sure a cancelled callback doesn't get called anymore

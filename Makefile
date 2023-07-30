@@ -21,6 +21,7 @@ PYDEPS = \
 	pyopenssl \
 	setuptools \
 	sphinx \
+	teyit \
 	twine
 PYVER = $(shell $(PYTHON) -c "import sys; print(sys.version_info[0])")
 ifeq ($(PYVER), 2)
@@ -166,6 +167,10 @@ lint-all:  ## Run all linters
 	${MAKE} flake8
 	${MAKE} isort
 
+# ===================================================================
+# Fixers
+# ===================================================================
+
 fix-flake8:  ## Run autopep8, fix some Python flake8 / pep8 issues.
 	@git ls-files '*.py' | xargs $(PYTHON) -m autopep8 --in-place --jobs 0 --global-config=.flake8
 	@git ls-files '*.py' | xargs $(PYTHON) -m autoflake --in-place --jobs 0 --remove-all-unused-imports --remove-unused-variables --remove-duplicate-keys
@@ -173,9 +178,13 @@ fix-flake8:  ## Run autopep8, fix some Python flake8 / pep8 issues.
 fix-isort:  ## Fix imports with isort.
 	git ls-files '*.py' | xargs $(PYTHON) -m isort --settings=pyproject.toml
 
+fix-unittests:  ## Fix unittest idioms.
+	@git ls-files '*test_*.py' | xargs $(PYTHON) -m teyit --show-stats
+
 fix-all:  ## Run all fixers
 	${MAKE} fix-flake8
 	${MAKE} fix-isort
+	${MAKE} fix-unittests
 
 # ===================================================================
 # Distribution

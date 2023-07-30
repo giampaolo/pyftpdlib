@@ -218,10 +218,10 @@ class TestFTPS(PyftpdlibTestCase):
         # unsecured
         self._setup()
         self.client.login(secure=False)
-        self.assertFalse(isinstance(self.client.sock, ssl.SSLSocket))
+        self.assertNotIsInstance(self.client.sock, ssl.SSLSocket)
         # secured
         self.client.login()
-        self.assertTrue(isinstance(self.client.sock, ssl.SSLSocket))
+        self.assertIsInstance(self.client.sock, ssl.SSLSocket)
         # AUTH issued twice
         msg = '503 Already using TLS.'
         self.assertRaisesWithMsg(ftplib.error_perm, msg,
@@ -254,7 +254,7 @@ class TestFTPS(PyftpdlibTestCase):
                 if not sock.recv(1024):
                     self.client.voidresp()
                     break
-            self.assertTrue(isinstance(sock, ssl.SSLSocket))
+            self.assertIsInstance(sock, ssl.SSLSocket)
             # unsecured
             self.client.prot_c()
         sock = self.client.transfercmd('list')
@@ -263,14 +263,14 @@ class TestFTPS(PyftpdlibTestCase):
                 if not sock.recv(1024):
                     self.client.voidresp()
                     break
-            self.assertFalse(isinstance(sock, ssl.SSLSocket))
+            self.assertNotIsInstance(sock, ssl.SSLSocket)
 
     def test_feat(self):
         self._setup()
         feat = self.client.sendcmd('feat')
         cmds = ['AUTH TLS', 'AUTH SSL', 'PBSZ', 'PROT']
         for cmd in cmds:
-            self.assertTrue(cmd in feat)
+            self.assertIn(cmd, feat)
 
     def test_unforseen_ssl_shutdown(self):
         self._setup()
