@@ -2,7 +2,6 @@
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
 
-import asynchat
 import contextlib
 import errno
 import glob
@@ -55,6 +54,12 @@ from .ioloop import RetryError
 from .ioloop import timer
 from .log import debug
 from .log import logger
+
+
+if sys.version_info[:2] >= (3, 12):
+    from . import _asynchat as asynchat
+else:
+    import asynchat
 
 
 CR_BYTE = ord('\r')
