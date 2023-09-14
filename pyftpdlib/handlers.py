@@ -1342,8 +1342,11 @@ class FTPHandler(AsyncChat):
             if dc.file_obj:
                 if self.data_channel.receive:
                     info['sending-file'] = dc.file_obj
-                    if dc.use_sendfile():
-                        info['use-sendfile(2)'] = True
+                    try:
+                        if dc.use_sendfile():
+                            info['use-sendfile(2)'] = True
+                    except Exception as e:
+                        logger.warning(e)
                 else:
                     info['receiving-file'] = dc.file_obj
                 info['bytes-trans'] = dc.get_transmitted_bytes()
