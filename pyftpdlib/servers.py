@@ -375,7 +375,7 @@ class _SpawnerBase(FTPServer):
 
     def _loop(self, handler):
         """Serve handler's IO loop in a separate thread or process."""
-        with IOLoop() as ioloop:
+        with self.ioloop.factory() as ioloop:
             handler.ioloop = ioloop
             try:
                 handler.add_channel()
