@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Copyright (C) 2007 Giampaolo Rodola' <g.rodola@gmail.com>.
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
@@ -206,13 +204,15 @@ class _SharedAuthorizerTests(object):
     def get_users(self):
         return self.authorizer_class._get_system_users()
 
-    def get_current_user(self):
+    @staticmethod
+    def get_current_user():
         if POSIX:
             return pwd.getpwuid(os.getuid()).pw_name
         else:
             return os.environ['USERNAME']
 
-    def get_current_user_homedir(self):
+    @staticmethod
+    def get_current_user_homedir():
         if POSIX:
             return pwd.getpwuid(os.getuid()).pw_dir
         else:
@@ -245,7 +245,7 @@ class _SharedAuthorizerTests(object):
     def test_get_home_dir(self):
         auth = self.authorizer_class()
         home = auth.get_home_dir(self.get_current_user())
-        self.assertTrue(isinstance(home, unicode))
+        self.assertIsInstance(home, unicode)
         nonexistent_user = self.get_nonexistent_user()
         self.assertTrue(os.path.isdir(home))
         if auth.has_user('nobody'):
@@ -304,8 +304,8 @@ class _SharedAuthorizerTests(object):
 
     def test_get_perms(self):
         auth = self.authorizer_class(global_perm='elr')
-        self.assertTrue('r' in auth.get_perms(self.get_current_user()))
-        self.assertFalse('w' in auth.get_perms(self.get_current_user()))
+        self.assertIn('r', auth.get_perms(self.get_current_user()))
+        self.assertNotIn('w', auth.get_perms(self.get_current_user()))
 
     def test_has_perm(self):
         auth = self.authorizer_class(global_perm='elr')
@@ -459,12 +459,12 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
     def test_get_perms_anonymous(self):
         auth = UnixAuthorizer(
             global_perm='elr', anonymous_user=self.get_current_user())
-        self.assertTrue('e' in auth.get_perms('anonymous'))
-        self.assertFalse('w' in auth.get_perms('anonymous'))
+        self.assertIn('e', auth.get_perms('anonymous'))
+        self.assertNotIn('w', auth.get_perms('anonymous'))
         warnings.filterwarnings("ignore")
         auth.override_user('anonymous', perm='w')
         warnings.resetwarnings()
-        self.assertTrue('w' in auth.get_perms('anonymous'))
+        self.assertIn('w', auth.get_perms('anonymous'))
 
     def test_has_perm_anonymous(self):
         auth = UnixAuthorizer(

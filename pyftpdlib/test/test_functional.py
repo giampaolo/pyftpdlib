@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Copyright (C) 2007 Giampaolo Rodola' <g.rodola@gmail.com>.
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
@@ -14,8 +12,15 @@ import random
 import re
 import select
 import socket
+import ssl
 import stat
 import time
+
+
+try:
+    from StringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
 
 from pyftpdlib._compat import PY3
 from pyftpdlib._compat import b
@@ -56,14 +61,6 @@ from pyftpdlib.test import retry_on_failure
 from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import touch
 from pyftpdlib.test import unittest
-
-
-try:
-    from StringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
-
-import ssl
 
 
 sendfile = _import_sendfile()
@@ -332,8 +329,8 @@ class TestFtpDummyCmds(PyftpdlibTestCase):
 
     def test_feat(self):
         resp = self.client.sendcmd('feat')
-        self.assertTrue('UTF8' in resp)
-        self.assertTrue('TVFS' in resp)
+        self.assertIn('UTF8', resp)
+        self.assertIn('TVFS', resp)
 
     def test_opts_feat(self):
         self.assertRaises(
@@ -350,22 +347,22 @@ class TestFtpDummyCmds(PyftpdlibTestCase):
             return re.search(r'^\s*MLST\s+(\S+)$', resp, re.MULTILINE).group(1)
         # we rely on "type", "perm", "size", and "modify" facts which
         # are those available on all platforms
-        self.assertTrue('type*;perm*;size*;modify*;' in mlst())
+        self.assertIn('type*;perm*;size*;modify*;', mlst())
         self.assertEqual(self.client.sendcmd(
             'opts mlst type;'), '200 MLST OPTS type;')
         self.assertEqual(self.client.sendcmd(
             'opts mLSt TypE;'), '200 MLST OPTS type;')
-        self.assertTrue('type*;perm;size;modify;' in mlst())
+        self.assertIn('type*;perm;size;modify;', mlst())
 
         self.assertEqual(self.client.sendcmd('opts mlst'), '200 MLST OPTS ')
-        self.assertTrue('*' not in mlst())
+        self.assertNotIn('*', mlst())
 
         self.assertEqual(
             self.client.sendcmd('opts mlst fish;cakes;'), '200 MLST OPTS ')
-        self.assertTrue('*' not in mlst())
+        self.assertNotIn('*', mlst())
         self.assertEqual(self.client.sendcmd('opts mlst fish;cakes;type;'),
                          '200 MLST OPTS type;')
-        self.assertTrue('type*;perm;size;modify;' in mlst())
+        self.assertIn('type*;perm;size;modify;', mlst())
 
 
 class TestFtpCmdsSemantic(PyftpdlibTestCase):
@@ -551,7 +548,7 @@ class TestFtpFsOperations(PyftpdlibTestCase):
         try:
             self.client.sendcmd('mdtm ' + self.tempdir)
         except ftplib.error_perm as err:
-            self.assertTrue("not retrievable" in str(err))
+            self.assertIn("not retrievable", str(err))
         else:
             self.fail('Exception not raised')
 
@@ -602,7 +599,7 @@ class TestFtpFsOperations(PyftpdlibTestCase):
         try:
             self.client.sendcmd('size ' + self.tempdir)
         except ftplib.error_perm as err:
-            self.assertTrue("not retrievable" in str(err))
+            self.assertIn("not retrievable", str(err))
         else:
             self.fail('Exception not raised')
 
@@ -692,7 +689,6 @@ class TestFtpStoreData(PyftpdlibTestCase):
         self.dummy_recvfile.close()
         self.dummy_sendfile.close()
         if self.use_sendfile is not None:
-            from pyftpdlib.handlers import _import_sendfile
             self.server.handler.use_sendfile = _import_sendfile() is not None
         super().tearDown()
 
@@ -790,7 +786,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
         filename = self.client.sendcmd('stou').split('FILE: ')[1]
         try:
             with contextlib.closing(self.client.makeport()) as sock:
-                conn, sockaddr = sock.accept()
+                conn, _ = sock.accept()
                 with contextlib.closing(conn):
                     conn.settimeout(GLOBAL_TIMEOUT)
                     if hasattr(self.client_class, 'ssl_version'):
@@ -1002,7 +998,6 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
         self.server.stop()
         self.dummyfile.close()
         if self.use_sendfile is not None:
-            from pyftpdlib.handlers import _import_sendfile
             self.server.handler.use_sendfile = _import_sendfile() is not None
         super().tearDown()
 
@@ -1187,8 +1182,8 @@ class TestFtpListingCmds(PyftpdlibTestCase):
         self.assertRaises(ftplib.error_perm, self.client.sendcmd,
                           'mlst ' + bogus)
         # test file/dir notations
-        self.assertTrue('type=dir' in mlstline('mlst'))
-        self.assertTrue('type=file' in mlstline('mlst ' + self.testfn))
+        self.assertIn('type=dir', mlstline('mlst'))
+        self.assertIn('type=file', mlstline('mlst ' + self.testfn))
         # let's add some tests for OPTS command
         self.client.sendcmd('opts mlst type;')
         self.assertEqual(mlstline('mlst'), ' type=dir; /')
@@ -1224,17 +1219,17 @@ class TestFtpListingCmds(PyftpdlibTestCase):
         returned = [x.split("=")[0] for x in returned.split(";")]
         self.assertEqual(sorted(local), sorted(returned))
 
-        self.assertTrue("type" in resp)
-        self.assertTrue("size" in resp)
-        self.assertTrue("perm" in resp)
-        self.assertTrue("modify" in resp)
+        self.assertIn("type", resp)
+        self.assertIn("size", resp)
+        self.assertIn("perm", resp)
+        self.assertIn("modify", resp)
         if POSIX:
-            self.assertTrue("unique" in resp)
-            self.assertTrue("unix.mode" in resp)
-            self.assertTrue("unix.uid" in resp)
-            self.assertTrue("unix.gid" in resp)
+            self.assertIn("unique", resp)
+            self.assertIn("unix.mode", resp)
+            self.assertIn("unix.uid", resp)
+            self.assertIn("unix.gid", resp)
         elif WINDOWS:
-            self.assertTrue("create" in resp)
+            self.assertIn("create", resp)
 
     def test_stat(self):
         # Test STAT provided with argument which is equal to LIST
@@ -1729,10 +1724,10 @@ class TestConfigurableOptions(PyftpdlibTestCase):
         self.server.handler.passive_ports = _range
         self.server.start()
         self.connect()
-        self.assertTrue(self.client.makepasv()[1] in _range)
-        self.assertTrue(self.client.makepasv()[1] in _range)
-        self.assertTrue(self.client.makepasv()[1] in _range)
-        self.assertTrue(self.client.makepasv()[1] in _range)
+        self.assertIn(self.client.makepasv()[1], _range)
+        self.assertIn(self.client.makepasv()[1], _range)
+        self.assertIn(self.client.makepasv()[1], _range)
+        self.assertIn(self.client.makepasv()[1], _range)
 
     @disable_log_warning
     def test_passive_ports_busy(self):
@@ -1748,7 +1743,7 @@ class TestConfigurableOptions(PyftpdlibTestCase):
             self.server.start()
             self.connect()
             resulting_port = self.client.makepasv()[1]
-            self.assertTrue(port != resulting_port)
+            self.assertNotEqual(port, resulting_port)
 
     @retry_on_failure()
     def test_use_gmt_times(self):
@@ -2028,7 +2023,7 @@ class _TestNetworkProtocols(object):
             self.assertEqual(self.cmdresp('eprt |1|1.2.3.256|2048|'), msg)
             # bad proto
             resp = self.cmdresp('eprt |2|1.2.3.256|2048|')
-            self.assertTrue("Network protocol not supported" in resp)
+            self.assertIn("Network protocol not supported", resp)
 
         # test connection
         with contextlib.closing(socket.socket(self.client.af)) as sock:
@@ -2211,7 +2206,7 @@ class TestIPv6MixedEnvironment(PyftpdlibTestCase):
             ip, port = sock.getsockname()[:2]
             self.client.sendcmd('eprt |1|%s|%s|' % (ip, port))
             try:
-                sock2, addr = sock.accept()
+                sock2, _ = sock.accept()
                 sock2.close()
             except socket.timeout:
                 self.fail("Server didn't connect to passive socket")
@@ -2271,7 +2266,7 @@ class TestCornerCases(PyftpdlibTestCase):
             cmd = 'PORT ' + ','.join(bytes) + '\r\n'
             self.client.sock.sendall(b(cmd))
             self.client.getresp()
-            s, addr = sock.accept()
+            s, _ = sock.accept()
             s.close()
 
     @unittest.skipUnless(POSIX, "POSIX only")
@@ -2296,9 +2291,9 @@ class TestCornerCases(PyftpdlibTestCase):
                 except socket.error:
                     pass
 
-        for x in range(10):
+        for _ in range(10):
             connect((self.server.host, self.server.port))
-        for x in range(10):
+        for _ in range(10):
             addr = self.client.makepasv()
             connect(addr)
 
@@ -2347,7 +2342,6 @@ class TestCornerCases(PyftpdlibTestCase):
         def test_sendfile(self):
             # make sure that on python >= 3.3 we're using os.sendfile
             # rather than third party pysendfile module
-            from pyftpdlib.handlers import sendfile
             self.assertIs(sendfile, os.sendfile)
 
     if SUPPORTS_SENDFILE:
@@ -2357,7 +2351,7 @@ class TestCornerCases(PyftpdlibTestCase):
     if hasattr(select, 'epoll') or hasattr(select, 'kqueue'):
         def test_ioloop_fileno(self):
             fd = self.server.server.ioloop.fileno()
-            self.assertTrue(isinstance(fd, int), fd)
+            self.assertIsInstance(fd, int, fd)
 
 
 # # TODO: disabled as on certain platforms (OSX and Windows)
@@ -2714,7 +2708,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
             sock.listen(5)
             sock.settimeout(GLOBAL_TIMEOUT)
             self.client.sendport(HOST, port)
-            s, addr = sock.accept()
+            s, _ = sock.accept()
             s.close()
 
     @unittest.skipUnless(POSIX, "POSIX only")

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Copyright (C) 2007 Giampaolo Rodola' <g.rodola@gmail.com>.
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
@@ -361,12 +359,12 @@ class TestCallLater(PyftpdlibTestCase):
     def test__lt__(self):
         a = self.ioloop.call_later(0.01, lambda: 0, 0.01)
         b = self.ioloop.call_later(0.02, lambda: 0, 0.02)
-        self.assertTrue(a < b)
+        self.assertLess(a, b)
 
     def test__le__(self):
         a = self.ioloop.call_later(0.01, lambda: 0, 0.01)
         b = self.ioloop.call_later(0.02, lambda: 0, 0.02)
-        self.assertTrue(a <= b)
+        self.assertLessEqual(a, b)
 
 
 class TestCallEvery(PyftpdlibTestCase):
@@ -416,7 +414,7 @@ class TestCallEvery(PyftpdlibTestCase):
 
         ls = []
         self.ioloop.call_every(0, fun)
-        for x in range(100):
+        for _ in range(100):
             self.ioloop.sched.poll()
         self.assertEqual(len(ls), 100)
 
@@ -425,21 +423,21 @@ class TestCallEvery(PyftpdlibTestCase):
         def test_low_and_high_timeouts(self):
             # make sure a callback with a lower timeout is called more
             # frequently than another with a greater timeout
-            def fun():
+            def fun_1():
                 l1.append(None)
 
             l1 = []
-            self.ioloop.call_every(0.001, fun)
+            self.ioloop.call_every(0.001, fun_1)
             self.scheduler()
 
-            def fun():
+            def fun_2():
                 l2.append(None)
 
             l2 = []
-            self.ioloop.call_every(0.005, fun)
+            self.ioloop.call_every(0.005, fun_2)
             self.scheduler(timeout=0.01)
 
-            self.assertTrue(len(l1) > len(l2))
+            self.assertGreater(len(l1), len(l2))
 
     def test_cancel(self):
         # make sure a cancelled callback doesn't get called anymore

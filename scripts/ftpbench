@@ -349,7 +349,7 @@ def bench_multi(howmany):
     def bench_multi_connect():
         with timethis("%i concurrent clients (connect, login)" % howmany):
             clients = []
-            for x in range(howmany):
+            for _ in range(howmany):
                 clients.append(connect())
             register_memory()
         return clients

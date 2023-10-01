@@ -56,8 +56,6 @@ server = Server('localhost', 8021)
 IOLoop.instance().loop()
 """
 
-import asynchat
-import asyncore
 import errno
 import heapq
 import os
@@ -78,6 +76,14 @@ from .log import config_logging
 from .log import debug
 from .log import is_logging_configured
 from .log import logger
+
+
+if sys.version_info[:2] >= (3, 12):
+    from . import _asynchat as asynchat
+    from . import _asyncore as asyncore
+else:
+    import asynchat
+    import asyncore
 
 
 timer = getattr(time, 'monotonic', time.time)
@@ -445,7 +451,7 @@ class Select(_IOLoop):
 
     def poll(self, timeout):
         try:
-            r, w, e = select.select(self._r, self._w, [], timeout)
+            r, w, _ = select.select(self._r, self._w, [], timeout)
         except select.error as err:
             if getattr(err, "errno", None) == errno.EINTR:
                 return

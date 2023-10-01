@@ -74,13 +74,16 @@ if require_pysendfile:
 
 VERSION = get_version()
 
+with open('README.rst') as f:
+    long_description = f.read()
+
 
 def main():
     setup(
         name='pyftpdlib',
         version=get_version(),
         description='Very fast asynchronous FTP server library',
-        long_description=open('README.rst').read(),
+        long_description=long_description,
         license='MIT',
         platforms='Platform Independent',
         author="Giampaolo Rodola'",
