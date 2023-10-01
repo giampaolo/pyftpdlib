@@ -36,16 +36,6 @@ build: off
 
 test_script:
   - "%WITH_COMPILER% %PYTHON%/python.exe scripts/internal/winmake.py test"
-  - "%WITH_COMPILER% %PYTHON%/python.exe scripts/internal/winmake.py test-memleaks"
-
-after_test:
-  - "%WITH_COMPILER% %PYTHON%/python.exe scripts/internal/winmake.py wheel"
-  - "%WITH_COMPILER% %PYTHON%/python.exe scripts/internal/print_hashes.py dist"
-  - "%WITH_COMPILER% %PYTHON%/python.exe scripts/internal/print_access_denied.py"
-  - "%WITH_COMPILER% %PYTHON%/python.exe scripts/internal/print_api_speed.py"
-
-artifacts:
-  - path: dist\*
 
 cache:
   - '%LOCALAPPDATA%\pip\Cache'
@@ -55,20 +45,3 @@ cache:
 
 skip_commits:
   message: skip-appveyor
-
-# run build only if one of the following files is modified on commit
-only_commits:
-  files:
-    - .ci/appveyor/*
-    - appveyor.yml
-    - psutil/__init__.py
-    - psutil/_common.py
-    - psutil/_compat.py
-    - psutil/_psutil_common.*
-    - psutil/_psutil_windows.*
-    - psutil/_pswindows.py
-    - psutil/arch/windows/*
-    - psutil/tests/*
-    - scripts/*
-    - scripts/internal/*
-    - setup.py
