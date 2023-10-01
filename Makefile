@@ -21,7 +21,6 @@ PYDEPS = \
 	pylint \
 	pyopenssl \
 	setuptools \
-	sphinx \
 	teyit \
 	twine
 PYVER = $(shell $(PYTHON) -c "import sys; print(sys.version_info[0])")
