@@ -17,6 +17,7 @@ include demo/tls_ftpd.py
 include demo/unix_daemon.py
 include demo/unix_ftpd.py
 include demo/winnt_ftpd.py
+include docs/.readthedocs.yaml
 include docs/Makefile
 include docs/README
 include docs/adoptions.rst
@@ -28,6 +29,7 @@ include docs/images/freebsd.gif
 include docs/index.rst
 include docs/install.rst
 include docs/make.bat
+include docs/requirements.txt
 include docs/rfc-compliance.rst
 include docs/tutorial.rst
 include make.bat
