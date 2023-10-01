@@ -15,13 +15,13 @@ PYDEPS = \
 	flake8-debugger \
 	flake8-print \
 	flake8-quotes \
-	flake8==5.0.4 \
+	flake8 \
 	isort \
 	psutil \
 	pylint \
 	pyopenssl \
 	setuptools \
-	sphinx==6.2.1 \
+	sphinx \
 	teyit \
 	twine
 PYVER = $(shell $(PYTHON) -c "import sys; print(sys.version_info[0])")
