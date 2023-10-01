@@ -300,6 +300,11 @@ class _IOLoop(object):
                 if cls._instance is None:
                     cls._instance = cls()
         return cls._instance
+    
+    @classmethod
+    def factory(cls):
+        """Constructs a new IOLoop instance."""
+        return cls()
 
     def register(self, fd, instance, events):
         """Register a fd, handled by instance for the given events."""
