@@ -49,10 +49,8 @@ from errno import errorcode
 _DISCONNECTED = frozenset(
     {ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, EPIPE, EBADF})
 
-try:
-    socket_map
-except NameError:
-    socket_map = {}
+
+socket_map = {}
 
 
 def _strerror(err):
@@ -64,11 +62,7 @@ def _strerror(err):
         return "Unknown error %s" % err
 
 
-class ExitNow(Exception):
-    pass
-
-
-_reraised_exceptions = (ExitNow, KeyboardInterrupt, SystemExit)
+_reraised_exceptions = (KeyboardInterrupt, SystemExit)
 
 
 def read(obj):

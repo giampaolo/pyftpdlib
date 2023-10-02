@@ -106,7 +106,7 @@ class BaseIOLoopTestCase(object):
         class Handler(AsyncChat):
 
             def close(self):
-                1 / 0
+                1 / 0  # noqa
 
         s = self.ioloop_class()
         self.addCleanup(s.close)

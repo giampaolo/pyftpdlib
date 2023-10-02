@@ -109,11 +109,6 @@ class PyftpdlibTestCase(unittest.TestCase):
         return "%s.%s.%s" % (
             fqmod, self.__class__.__name__, self._testMethodName)
 
-    # assertRaisesRegexp renamed to assertRaisesRegex in 3.3;
-    # add support for the new name.
-    if not hasattr(unittest.TestCase, 'assertRaisesRegex'):
-        assertRaisesRegex = unittest.TestCase.assertRaisesRegexp
-
     def get_testfn(self, suffix="", dir=None):
         fname = get_testfn(suffix=suffix, dir=dir)
         self.addCleanup(safe_rmpath, fname)

@@ -158,6 +158,9 @@ test-coverage:  ## Run test coverage.
 # Linters
 # ===================================================================
 
+ruff:  ## Run ruff linter.
+	@git ls-files '*.py' | xargs $(PYTHON) -m ruff check --config=pyproject.toml --no-cache
+
 flake8:  ## Run flake8 linter.
 	@git ls-files '*.py' | xargs $(PYTHON) -m flake8 --config=.flake8 --jobs=${NUM_WORKERS}
 
