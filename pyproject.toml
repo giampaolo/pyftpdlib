@@ -15,27 +15,28 @@ ignore = [
     "Q000",  # Single quotes found but double quotes preferred
     "T203",  # `pprint` found
 
-    "A001",  # Variable `X` is shadowing a Python builtin
     "ANN",  # missing annotation
-    "B904",  # Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    "D",  # pydocstyle
+    "FIX",  # Line contains TODO / XXX / ..., consider resolving the issue
+    "PT",  # pytest
+    "PTH",  # Use pathlib instead of os.path
+    "TD",  # all TODOs, XXXs, etc.
+
+    "A001",  # Variable `X` is shadowing a Python builtin
+    "B904",  # Within an `except` clause, raise exceptions with `raise ... from err`
     "C408",  # Unnecessary `dict` call (rewrite as a literal)
     "COM812",  # Trailing comma missing
-    "D",  # pydocstyle
     "ERA001",  # Found commented-out code
     "FBT002", #  Boolean default positional argument in function definition
     "FBT003", # Boolean positional value in function call
-    "FIX",  # Line contains TODO / XXX / ..., consider resolving the issue
     "G004", # Logging statement uses f-string
     "N801",  # Class name `async_chat` should use CapWords convention
     "N812",  # Lowercase `error` imported as non-lowercase `FooBarError`
     "N818",  # Exception name `FooBar` should be named with an Error suffix
     "PGH004",  # Use specific rule codes when using `noqa`
-    "PT",  # pytest
     "PT009",  # Use a regular `assert` instead of unittest-style `assertTrue`
-    "PTH",  # Use pathlib instead of os.path
     "S101",  # Use of 'assert' detected
     "SIM105",  # Use `contextlib.suppress(OSError)` instead of `try`-`except`-`pass`
-    "TD",  # all TODOs, XXXs, etc.
     "UP004",  # [*] Class `_Base` inherits from `object`
     "UP008", #  [*] Use `super()` instead of `super(__class__, self)`
     "UP010", # [*] Unnecessary `__future__` import `print_function` for target Python version
