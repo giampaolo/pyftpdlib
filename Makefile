@@ -225,7 +225,7 @@ pre-release:  ## All the necessary steps before making a release.
 
 release:  ## Creates a release (tar.gz + upload + git tag release).
 	${MAKE} pre-release
-	$(PYTHON) -m twine upload dist/*  # upload tar on PYPI
+	$(PYTHON) -m twine upload --verbose dist/*  # upload tar on PYPI
 	${MAKE} git-tag-release
 
 generate-manifest:  ## Generates MANIFEST.in file.

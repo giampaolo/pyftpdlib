@@ -43,7 +43,6 @@ import time
 import traceback
 
 from .ioloop import Acceptor
-from .ioloop import IOLoop
 from .log import PREFIX
 from .log import PREFIX_MPROC
 from .log import config_logging

@@ -15,7 +15,7 @@ from pyftpdlib import __ver__ as PRJ_VERSION
 
 
 HERE = os.path.abspath(os.path.dirname(__file__))
-HISTORY = os.path.abspath(os.path.join(HERE, '../HISTORY.rst'))
+HISTORY = os.path.abspath(os.path.join(HERE, '../../HISTORY.rst'))
 
 PRJ_NAME = 'pyftpdlib'
 PRJ_URL_HOME = 'https://github.com/giampaolo/pyftpdlib'
@@ -50,7 +50,7 @@ Links
 
 --
 
-Giampaolo - http://grodola.blogspot.com
+Giampaolo - https://gmpy.dev/
 """
 
 
