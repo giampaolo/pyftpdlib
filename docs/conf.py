@@ -27,7 +27,7 @@ import os
 
 
 PROJECT_NAME = "pyftpdlib"
-AUTHOR = u"Giampaolo Rodola"
+AUTHOR = "Giampaolo Rodola"
 THIS_YEAR = str(datetime.datetime.now().year)
 HERE = os.path.abspath(os.path.dirname(__file__))
 
@@ -289,7 +289,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'pyftpdlib.tex', u'pyftpdlib Documentation',
+    (master_doc, 'pyftpdlib.tex', 'pyftpdlib Documentation',
      AUTHOR, 'manual'),
 ]
 
@@ -331,7 +331,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'pyftpdlib', u'pyftpdlib Documentation',
+    (master_doc, 'pyftpdlib', 'pyftpdlib Documentation',
      [author], 1)
 ]
 
@@ -346,7 +346,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'pyftpdlib', u'pyftpdlib Documentation',
+    (master_doc, 'pyftpdlib', 'pyftpdlib Documentation',
      author, 'pyftpdlib', 'One line description of project.',
      'Miscellaneous'),
 ]

@@ -35,11 +35,13 @@ ignore = [
     "N801",  # Class name `async_chat` should use CapWords convention
     "N818",  # Exception name `FooBar` should be named with an Error suffix
     "N812",  # Lowercase `error` imported as non-lowercase `FooBarError`
+    "PT",  # pytest
 ]
 
 # to get a list of all values: `python3 -m ruff linter`
 select = [
-#    "ALL",
+    # "ALL",
+    "UP025",  # Remove unicode literals from strings
     "B",     # flake8-bugbear
     "E",     # pycodestyle
     "F",     # pyflakes

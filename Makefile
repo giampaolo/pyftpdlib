@@ -178,6 +178,9 @@ lint-all:  ## Run all linters
 # Fixers
 # ===================================================================
 
+fix-ruff:
+	@git ls-files '*.py' | xargs $(PYTHON) -m ruff --config=pyproject.toml --no-cache --fix
+
 fix-flake8:  ## Run autopep8, fix some Python flake8 / pep8 issues.
 	@git ls-files '*.py' | xargs $(PYTHON) -m autopep8 --in-place --jobs=${NUM_WORKERS} --global-config=.flake8
 	@git ls-files '*.py' | xargs $(PYTHON) -m autoflake --in-place --jobs=${NUM_WORKERS} --remove-all-unused-imports --remove-unused-variables --remove-duplicate-keys
