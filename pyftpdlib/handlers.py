@@ -643,7 +643,7 @@ class DTPHandler(AsyncChat):
             # also may raise ValueError if stream is closed
             # https://docs.python.org/3/library/io.html#io.IOBase
             self.file_obj.fileno()
-        except ValueError:
+        except (OSError, ValueError):
             return False
         if self.cmd_channel._current_type != 'i':
             # text file transfer (need to transform file content on the fly)

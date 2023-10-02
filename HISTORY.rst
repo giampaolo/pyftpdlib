@@ -10,6 +10,11 @@ Version: 1.5.8 - IN DEVELOPMENT
   avoids calling `calling sys._getframe()` for each log record.
 - #605: added support for Python 3.12.
 
+**Bug fixes**
+
+- #607: possible infinite wait in Epoll
+- #607: possible infinite traceback printing in DTPHandler
+
 Version: 1.5.7 - 2022-10-04
 ===========================
 
