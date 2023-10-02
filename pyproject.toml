@@ -7,35 +7,38 @@ lines_after_imports = 2  # blank spaces after import section
 target-version = "py38"
 line-length = 79
 ignore = [
-    "Q000",  # Single quotes found but double quotes preferred
     "B007",  # Loop control variable `x` not used within loop body
     "N802",  # Function name X should be lowercase.
     "N803",  # Argument name X should be lowercase.
     "N806",  # Variable X in function should be lowercase.
     "N817",  # CamelCase X imported as acronym X.
+    "Q000",  # Single quotes found but double quotes preferred
     "T203",  # `pprint` found
-    # ---
+
+    "A001",  # Variable `X` is shadowing a Python builtin
     "ANN",  # missing annotation
-    "D",  # pydocstyle
+    "B904",  # Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    "C408",  # Unnecessary `dict` call (rewrite as a literal)
     "COM812",  # Trailing comma missing
+    "D",  # pydocstyle
+    "ERA001",  # Found commented-out code
+    "FBT002", #  Boolean default positional argument in function definition
+    "FBT003", # Boolean positional value in function call
+    "FIX",  # Line contains TODO / XXX / ..., consider resolving the issue
+    "G004", # Logging statement uses f-string
+    "N801",  # Class name `async_chat` should use CapWords convention
+    "N812",  # Lowercase `error` imported as non-lowercase `FooBarError`
+    "N818",  # Exception name `FooBar` should be named with an Error suffix
     "PGH004",  # Use specific rule codes when using `noqa`
+    "PT",  # pytest
+    "PT009",  # Use a regular `assert` instead of unittest-style `assertTrue`
     "PTH",  # Use pathlib instead of os.path
     "S101",  # Use of 'assert' detected
-    "C408",  # Unnecessary `dict` call (rewrite as a literal)
-    "FBT002", #  Boolean default positional argument in function definition
-    "TD",  # all TODOs, XXXs, etc.
-    "ERA001",  # Found commented-out code
-    "FIX",  # Line contains TODO / XXX / ..., consider resolving the issue
     "SIM105",  # Use `contextlib.suppress(OSError)` instead of `try`-`except`-`pass`
-    "A001",  # Variable `X` is shadowing a Python builtin
-    "G004", # Logging statement uses f-string
-    "FBT003", # Boolean positional value in function call
-    "PT009",  # Use a regular `assert` instead of unittest-style `assertTrue`
-    "B904",  # Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
-    "N801",  # Class name `async_chat` should use CapWords convention
-    "N818",  # Exception name `FooBar` should be named with an Error suffix
-    "N812",  # Lowercase `error` imported as non-lowercase `FooBarError`
-    "PT",  # pytest
+    "TD",  # all TODOs, XXXs, etc.
+    "UP024",  # [*] Replace aliased errors with `OSError`
+    "UP031",  # [*] Use format specifiers instead of percent format
+    "UP010", # [*] Unnecessary `__future__` import `print_function` for target Python version
 ]
 
 # to get a list of all values: `python3 -m ruff linter`
