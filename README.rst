@@ -1,6 +1,6 @@
 |  |downloads| |stars| |forks| |contributors| |coverage|
 |  |version| |packages| |license|
-|  |github-actions| |doc| |twitter|
+|  |github-actions| |appveyor| |doc| |twitter|
 
 .. |downloads| image:: https://img.shields.io/pypi/dm/pyftpdlib.svg
     :target: https://pepy.tech/project/pyftpdlib
