@@ -28,10 +28,7 @@ import tempfile
 
 
 APPVEYOR = bool(os.environ.get('APPVEYOR'))
-if APPVEYOR:
-    PYTHON = sys.executable
-else:
-    PYTHON = os.getenv('PYTHON', sys.executable)
+PYTHON = sys.executable if APPVEYOR else os.getenv('PYTHON', sys.executable)
 RUNNER_PY = 'pyftpdlib\\test\\runner.py'
 GET_PIP_URL = "https://bootstrap.pypa.io/get-pip.py"
 PY3 = sys.version_info[0] == 3
@@ -439,9 +436,8 @@ def install_git_hooks():
             ROOT_DIR, "scripts", "internal", "git_pre_commit.py")
         dst = os.path.realpath(
             os.path.join(ROOT_DIR, ".git", "hooks", "pre-commit"))
-        with open(src) as s:
-            with open(dst, "w") as d:
-                d.write(s.read())
+        with open(src) as s, open(dst, "w") as d:
+            d.write(s.read())
 
 
 def get_python(path):

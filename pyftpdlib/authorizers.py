@@ -205,7 +205,7 @@ class DummyAuthorizer(object):
             return perm in self.user_table[username]['perm']
 
         path = os.path.normcase(path)
-        for dir in self.user_table[username]['operms'].keys():
+        for dir in self.user_table[username]['operms']:
             operm, recursive = self.user_table[username]['operms'][dir]
             if self._issubpath(path, dir):
                 if recursive:

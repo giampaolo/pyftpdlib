@@ -41,10 +41,7 @@ try:
     callable = callable
 except Exception:
     def callable(obj):
-        for klass in type(obj).__mro__:
-            if "__call__" in klass.__dict__:
-                return True
-        return False
+        return any("__call__" in klass.__dict__ for klass in type(obj).__mro__)
 
 
 # --- exceptions

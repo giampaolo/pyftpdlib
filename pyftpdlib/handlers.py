@@ -2331,10 +2331,7 @@ class FTPHandler(AsyncChat):
         # STOR: mode = 'w'
         # APPE: mode = 'a'
         # REST: mode = 'r+' (to permit seeking on file object)
-        if 'a' in mode:
-            cmd = 'APPE'
-        else:
-            cmd = 'STOR'
+        cmd = 'APPE' if 'a' in mode else 'STOR'
         rest_pos = self._restart_position
         self._restart_position = 0
         if rest_pos:
@@ -2700,10 +2697,7 @@ class FTPHandler(AsyncChat):
         if not self.fs.isfile(self.fs.realpath(path)):
             self.respond("550 %s is not retrievable" % line)
             return
-        if self.use_gmt_times:
-            timefunc = time.gmtime
-        else:
-            timefunc = time.localtime
+        timefunc = time.gmtime if self.use_gmt_times else time.localtime
         try:
             secs = self.run_as_current_user(self.fs.getmtime, path)
             lmt = time.strftime("%Y%m%d%H%M%S", timefunc(secs))
@@ -2738,10 +2732,7 @@ class FTPHandler(AsyncChat):
         if not self.fs.isfile(self.fs.realpath(path)):
             self.respond("550 %s is not retrievable" % line)
             return
-        if self.use_gmt_times:
-            timefunc = time.gmtime
-        else:
-            timefunc = time.localtime
+        timefunc = time.gmtime if self.use_gmt_times else time.localtime
         try:
             # convert timeval string to epoch seconds
             epoch = datetime.utcfromtimestamp(0)
@@ -2916,10 +2907,7 @@ class FTPHandler(AsyncChat):
                     s.append("Waiting for username.")
                 else:
                     s.append("Waiting for password.")
-            if self._current_type == 'a':
-                type = 'ASCII'
-            else:
-                type = 'Binary'
+            type = 'ASCII' if self._current_type == 'a' else 'Binary'
             s.append("TYPE: %s; STRUcture: File; MODE: Stream" % type)
             if self._dtp_acceptor is not None:
                 s.append('Passive data channel waiting for connection.')
@@ -3044,7 +3032,7 @@ class FTPHandler(AsyncChat):
             # provide a compact list of recognized commands
             def formatted_help():
                 cmds = []
-                keys = sorted([x for x in self.proto_cmds.keys()
+                keys = sorted([x for x in self.proto_cmds
                                if not x.startswith('SITE ')])
                 while keys:
                     elems = tuple(keys[0:8])

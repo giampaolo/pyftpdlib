@@ -19,6 +19,8 @@ ignore = [
     "D",  # pydocstyle
     "FIX",  # Line contains TODO / XXX / ..., consider resolving the issue
     "PT",  # pytest
+    "EM",    # flake8-errmsg
+    "ARG",  # flake8-unused-arguments
     "PTH",  # Use pathlib instead of os.path
     "TD",  # all TODOs, XXXs, etc.
 
@@ -53,6 +55,7 @@ select = [
     "I",     # isort
     "N",     # pep8-naming
     "Q",     # flake8 quotes
+    "SIM",  # flake8-simplify
     "T10",   # flake8-debugger
     "T20",   # flake8-print
     "UP",  # pyupgrade

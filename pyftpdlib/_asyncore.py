@@ -185,10 +185,7 @@ def loop(timeout=30.0, use_poll=False, map=None, count=None):
     if map is None:
         map = socket_map
 
-    if use_poll and hasattr(select, 'poll'):
-        poll_fun = poll2
-    else:
-        poll_fun = poll
+    poll_fun = poll2 if use_poll and hasattr(select, "poll") else poll
 
     if count is None:
         while map:
@@ -396,9 +393,8 @@ class dispatcher:
         if self.accepting:
             return
 
-        if not self.connected:
-            if self.connecting:
-                self.handle_connect_event()
+        if not self.connected and self.connecting:
+            self.handle_connect_event()
         self.handle_write()
 
     def handle_expt_event(self):

@@ -341,10 +341,9 @@ class TestFTPS(PyftpdlibTestCase):
                     self.client.connect(self.server.host, self.server.port)
                 self.assertRaises(socket.error, self.client.login)
             else:
-                with self.server.lock:
-                    with self.assertRaises(socket.error):
-                        self.client.connect(self.server.host, self.server.port,
-                                            timeout=0.1)
+                with self.server.lock, self.assertRaises(socket.error):
+                    self.client.connect(self.server.host, self.server.port,
+                                        timeout=0.1)
             self.client.ssl_version = ssl.PROTOCOL_SSLv2
 
 

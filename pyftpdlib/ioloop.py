@@ -544,12 +544,10 @@ class _BasePollEpoll(_IOLoop):
             if event & self._ERROR and not event & self.READ:
                 inst.handle_close()
             else:
-                if event & self.READ:
-                    if inst.readable():
-                        _read(inst)
-                if event & self.WRITE:
-                    if inst.writable():
-                        _write(inst)
+                if event & self.READ and inst.readable():
+                    _read(inst)
+                if event & self.WRITE and inst.writable():
+                    _write(inst)
 
 
 # ===================================================================
@@ -728,9 +726,8 @@ if hasattr(select, 'kqueue'):  # pragma: no cover
                 inst = self.socket_map.get(kevent.ident)
                 if inst is None:
                     continue
-                if kevent.filter == _READ:
-                    if inst.readable():
-                        _read(inst)
+                if kevent.filter == _READ and inst.readable():
+                    _read(inst)
                 if kevent.filter == _WRITE:
                     if kevent.flags & _EOF:
                         # If an asynchronous connection is refused,
