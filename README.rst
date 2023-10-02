@@ -19,8 +19,8 @@
     :alt: Contributors
 
 .. |github-actions| image:: https://img.shields.io/github/actions/workflow/status/giampaolo/pyftpdlib/.github/workflows/tests.yml
-    :target: https://github.com/giampaolo/psutil/actions?query=workflow%3Abuild
-    :alt: Linux, macOS, Windows tests
+    :target: https://github.com/giampaolo/pyftpdlib/actions
+    :alt: GH actions
 
 .. |coverage| image:: https://img.shields.io/codecov/c/github/giampaolo/pyftpdlib/update-ci?label=coverage
     :target: https://codecov.io/gh/giampaolo/pyftpdlib
