@@ -1,7 +1,16 @@
 Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 
-Version: 1.5.8 - IN DEVELOPMENT
+Version: 1.5.9 - IN DEVELOPMENT
 ===============================
+
+**Bug fixes**
+
+- #607: possible infinite wait in Epoll  (patch by @stat1c-void)
+- #607: possible infinite traceback printing in DTPHandler  (patch by 
+  @stat1c-void)
+
+Version: 1.5.8 - 2023-10-02
+===========================
 
 **Enhancements**
 
@@ -9,11 +18,6 @@ Version: 1.5.8 - IN DEVELOPMENT
 - #591: speedup logging by 28% by using `logging._srcfile = None` trick. This
   avoids calling `calling sys._getframe()` for each log record.
 - #605: added support for Python 3.12.
-
-**Bug fixes**
-
-- #607: possible infinite wait in Epoll
-- #607: possible infinite traceback printing in DTPHandler
 
 Version: 1.5.7 - 2022-10-04
 ===========================
