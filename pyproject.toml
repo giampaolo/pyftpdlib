@@ -6,6 +6,21 @@ lines_after_imports = 2  # blank spaces after import section
 # https://beta.ruff.rs/docs/settings/
 target-version = "py38"
 line-length = 79
+# to get a list of all values: `python3 -m ruff linter`
+select = [
+    # "ALL",
+    "B",     # flake8-bugbear
+    "E",     # pycodestyle
+    "F",     # pyflakes
+    "I",     # isort
+    "N",     # pep8-naming
+    "Q",     # flake8 quotes
+    "SIM",  # flake8-simplify
+    "T10",   # flake8-debugger
+    "T20",   # flake8-print
+    "UP",  # pyupgrade
+    # "E203",  # https://beta.ruff.rs/docs/rules/whitespace-before-punctuation/, provided by autopep8
+]
 ignore = [
     "B007",  # Loop control variable `x` not used within loop body
     "N802",  # Function name X should be lowercase.
@@ -38,28 +53,15 @@ ignore = [
     "PGH004",  # Use specific rule codes when using `noqa`
     "PT009",  # Use a regular `assert` instead of unittest-style `assertTrue`
     "S101",  # Use of 'assert' detected
+    "SIM102",  # Use a single `if` statement instead of nested `if` statements
     "SIM105",  # Use `contextlib.suppress(OSError)` instead of `try`-`except`-`pass`
+    "SIM115",  # Use context handler for opening files
+    "SIM117", # Use a single `with` statement with multiple contexts instead of nested `with` statements
     "UP004",  # [*] Class `_Base` inherits from `object`
     "UP008", #  [*] Use `super()` instead of `super(__class__, self)`
     "UP010", # [*] Unnecessary `__future__` import `print_function` for target Python version
     "UP024",  # [*] Replace aliased errors with `OSError`
     "UP031",  # [*] Use format specifiers instead of percent format
-]
-
-# to get a list of all values: `python3 -m ruff linter`
-select = [
-    # "ALL",
-    "B",     # flake8-bugbear
-    "E",     # pycodestyle
-    "F",     # pyflakes
-    "I",     # isort
-    "N",     # pep8-naming
-    "Q",     # flake8 quotes
-    "SIM",  # flake8-simplify
-    "T10",   # flake8-debugger
-    "T20",   # flake8-print
-    "UP",  # pyupgrade
-    # "E203",  # https://beta.ruff.rs/docs/rules/whitespace-before-punctuation/, provided by autopep8
 ]
 
 [tool.ruff.per-file-ignores]
