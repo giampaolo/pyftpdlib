@@ -3047,7 +3047,7 @@ class FTPHandler(AsyncChat):
                 keys = sorted([x for x in self.proto_cmds.keys()
                                if not x.startswith('SITE ')])
                 while keys:
-                    elems = tuple((keys[0:8]))
+                    elems = tuple(keys[0:8])
                     cmds.append(' %-6s' * len(elems) % elems + '\r\n')
                     del keys[0:8]
                 return ''.join(cmds)

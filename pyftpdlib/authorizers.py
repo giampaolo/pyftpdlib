@@ -612,7 +612,7 @@ else:
             in /etc/shells. If /etc/shells can't be found return True.
             """
             try:
-                file = open('/etc/shells', 'r')
+                file = open('/etc/shells')
             except IOError as err:
                 if err.errno == errno.ENOENT:
                     return True

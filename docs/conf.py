@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # pyftpdlib documentation build configuration file, created by
 # sphinx-quickstart on Wed Oct 19 21:54:30 2016.
@@ -35,7 +34,7 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 def get_version():
     INIT = os.path.abspath(os.path.join(HERE, '..', 'pyftpdlib',
                                         '__init__.py'))
-    with open(INIT, 'r') as f:
+    with open(INIT) as f:
         for line in f:
             if line.startswith('__ver__'):
                 ret = eval(line.strip().split(' = ')[1])

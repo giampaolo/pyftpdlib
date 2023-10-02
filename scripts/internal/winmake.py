@@ -311,7 +311,7 @@ def uninstall():
                 # easy_install can add a line (installation path) into
                 # easy-install.pth; that line alters sys.path.
                 path = os.path.join(dir, name)
-                with open(path, 'rt') as f:
+                with open(path) as f:
                     lines = f.readlines()
                     hasit = False
                     for line in lines:
@@ -319,7 +319,7 @@ def uninstall():
                             hasit = True
                             break
                 if hasit:
-                    with open(path, 'wt') as f:
+                    with open(path, "w") as f:
                         for line in lines:
                             if 'pyftpdlib' not in line:
                                 f.write(line)
@@ -439,8 +439,8 @@ def install_git_hooks():
             ROOT_DIR, "scripts", "internal", "git_pre_commit.py")
         dst = os.path.realpath(
             os.path.join(ROOT_DIR, ".git", "hooks", "pre-commit"))
-        with open(src, "rt") as s:
-            with open(dst, "wt") as d:
+        with open(src) as s:
+            with open(dst, "w") as d:
                 d.write(s.read())
 
 

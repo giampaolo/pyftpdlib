@@ -142,7 +142,7 @@ def daemonize():
         # redirect standard file descriptors
         sys.stdout.flush()
         sys.stderr.flush()
-        si = open(LOG_FILE, 'r')
+        si = open(LOG_FILE)
         so = open(LOG_FILE, 'a+')
         se = open(LOG_FILE, 'a+', 0)
         os.dup2(si.fileno(), sys.stdin.fileno())

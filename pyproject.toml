@@ -36,15 +36,16 @@ ignore = [
     "S101",  # Use of 'assert' detected
     "SIM105",  # Use `contextlib.suppress(OSError)` instead of `try`-`except`-`pass`
     "TD",  # all TODOs, XXXs, etc.
+    "UP004",  # [*] Class `_Base` inherits from `object`
+    "UP008", #  [*] Use `super()` instead of `super(__class__, self)`
+    "UP010", # [*] Unnecessary `__future__` import `print_function` for target Python version
     "UP024",  # [*] Replace aliased errors with `OSError`
     "UP031",  # [*] Use format specifiers instead of percent format
-    "UP010", # [*] Unnecessary `__future__` import `print_function` for target Python version
 ]
 
 # to get a list of all values: `python3 -m ruff linter`
 select = [
     # "ALL",
-    "UP025",  # Remove unicode literals from strings
     "B",     # flake8-bugbear
     "E",     # pycodestyle
     "F",     # pyflakes
@@ -53,6 +54,7 @@ select = [
     "Q",     # flake8 quotes
     "T10",   # flake8-debugger
     "T20",   # flake8-print
+    "UP",  # pyupgrade
     # "E203",  # https://beta.ruff.rs/docs/rules/whitespace-before-punctuation/, provided by autopep8
 ]
 

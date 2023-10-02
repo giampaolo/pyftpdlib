@@ -892,7 +892,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
         # on stor
         file_size = self.client.size(self.testfn)
         self.assertEqual(file_size, bytes_sent)
-        self.client.sendcmd('rest %s' % ((file_size + 1)))
+        self.client.sendcmd('rest %s' % (file_size + 1))
         self.assertRaises(ftplib.error_perm, self.client.sendcmd,
                           'stor ' + self.testfn)
         self.client.sendcmd('rest %s' % bytes_sent)
@@ -1066,7 +1066,7 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
         # file size stored on the server should result in an error
         # on retr (RFC-1123)
         file_size = self.client.size(self.testfn)
-        self.client.sendcmd('rest %s' % ((file_size + 1)))
+        self.client.sendcmd('rest %s' % (file_size + 1))
         self.assertRaises(ftplib.error_perm, self.client.sendcmd,
                           'retr ' + self.testfn)
         # test resume
@@ -1840,7 +1840,7 @@ class TestCallbacks(PyftpdlibTestCase):
     def read_file(self, text):
         stop_at = time.time() + 1
         while time.time() <= stop_at:
-            with open(self.testfn, "rt") as f:
+            with open(self.testfn) as f:
                 data = f.read()
                 if data == text:
                     return
