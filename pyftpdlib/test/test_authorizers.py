@@ -194,7 +194,7 @@ class TestDummyAuthorizer(PyftpdlibTestCase):
                              True)
 
 
-class _SharedAuthorizerTests(object):
+class _SharedAuthorizerTests:
     """Tests valid for both UnixAuthorizer and WindowsAuthorizer for
     those parts which share the same API.
     """

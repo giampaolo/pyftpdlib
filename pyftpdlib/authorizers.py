@@ -49,7 +49,7 @@ class AuthenticationFailed(Exception):
 # --- base class
 # ===================================================================
 
-class DummyAuthorizer(object):
+class DummyAuthorizer:
     """Basic "dummy" authorizer class, suitable for subclassing to
     create your own custom authorizers.
 
@@ -205,7 +205,7 @@ class DummyAuthorizer(object):
             return perm in self.user_table[username]['perm']
 
         path = os.path.normcase(path)
-        for dir in self.user_table[username]['operms'].keys():
+        for dir in self.user_table[username]['operms']:
             operm, recursive = self.user_table[username]['operms'][dir]
             if self._issubpath(path, dir):
                 if recursive:
@@ -267,7 +267,7 @@ def replace_anonymous(callable):
 # --- platform specific authorizers
 # ===================================================================
 
-class _Base(object):
+class _Base:
     """Methods common to both Unix and Windows authorizers.
     Not supposed to be used directly.
     """
@@ -380,7 +380,7 @@ else:
     PROCESS_UID = os.getuid()
     PROCESS_GID = os.getgid()
 
-    class BaseUnixAuthorizer(object):
+    class BaseUnixAuthorizer:
         """An authorizer compatible with Unix user account and password
         database.
         This class should not be used directly unless for subclassing.
@@ -394,7 +394,7 @@ else:
 
             if self.anonymous_user is not None:
                 try:
-                    pwd.getpwnam(self.anonymous_user).pw_dir
+                    pwd.getpwnam(self.anonymous_user).pw_dir  # noqa
                 except KeyError:
                     raise AuthorizerError('no such user %s' % anonymous_user)
 
@@ -612,7 +612,7 @@ else:
             in /etc/shells. If /etc/shells can't be found return True.
             """
             try:
-                file = open('/etc/shells', 'r')
+                file = open('/etc/shells')
             except IOError as err:
                 if err.errno == errno.ENOENT:
                     return True
@@ -653,7 +653,7 @@ else:  # pragma: no cover
 
     __all__.extend(['BaseWindowsAuthorizer', 'WindowsAuthorizer'])
 
-    class BaseWindowsAuthorizer(object):
+    class BaseWindowsAuthorizer:
         """An authorizer compatible with Windows user account and
         password database.
         This class should not be used directly unless for subclassing.
@@ -709,8 +709,8 @@ else:  # pragma: no cover
                     win32security.LookupAccountName(None, username)[0])
             except pywintypes.error as err:
                 raise AuthorizerError(err)
-            path = r"SOFTWARE\Microsoft\Windows NT" \
-                   r"\CurrentVersion\ProfileList" + "\\" + sid
+            path = r"SOFTWARE\Microsoft\Windows NT"
+            path += r"\CurrentVersion\ProfileList" + "\\" + sid
             try:
                 key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path)
             except WindowsError:

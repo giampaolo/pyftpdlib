@@ -402,14 +402,14 @@ class PassiveDTP(Acceptor):
                 except socket.error:
                     pass
                 msg = '425 Rejected data connection from foreign address ' \
-                      '%s:%s.' % (addr[0], addr[1])
+                    + '%s:%s.' % (addr[0], addr[1])
                 self.cmd_channel.respond_w_warning(msg)
                 # do not close listening socket: it couldn't be client's blame
                 return
             else:
                 # site-to-site FTP allowed
                 msg = 'Established data connection with foreign address ' \
-                      '%s:%s.' % (addr[0], addr[1])
+                    + '%s:%s.' % (addr[0], addr[1])
                 self.cmd_channel.log(msg, logfun=logger.warning)
         # Immediately close the current channel (we accept only one
         # connection at time) and avoid running out of max connections
@@ -933,7 +933,7 @@ if PY3:
     class _AsyncChatNewStyle(AsyncChat):
         pass
 else:
-    class _AsyncChatNewStyle(object, AsyncChat):
+    class _AsyncChatNewStyle(object, AsyncChat):  # noqa
 
         def __init__(self, *args, **kwargs):
             super(object, self).__init__(*args, **kwargs)  # bypass object
@@ -1030,7 +1030,7 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
 # --- producers
 
 
-class FileProducer(object):
+class FileProducer:
     """Producer wrapper for file[-like] objects."""
 
     buffer_size = 65536
@@ -1081,7 +1081,7 @@ class FileProducer(object):
             return data
 
 
-class BufferedIteratorProducer(object):
+class BufferedIteratorProducer:
     """Producer for iterator objects with buffer capabilities."""
     # how many times iterator.next() will be called before
     # returning some data
@@ -1550,8 +1550,8 @@ class FTPHandler(AsyncChat):
 
                 if not self.fs.validpath(arg):
                     line = self.fs.fs2ftp(arg)
-                    msg = '"%s" points to a path which is outside ' \
-                          "the user's root directory" % line
+                    msg = "%r points to a path which is outside " % line
+                    msg += "the user's root directory"
                     self.respond("550 %s." % msg)
                     self.log_cmd(cmd, arg, 550, msg)
                     return
@@ -2334,10 +2334,7 @@ class FTPHandler(AsyncChat):
         # STOR: mode = 'w'
         # APPE: mode = 'a'
         # REST: mode = 'r+' (to permit seeking on file object)
-        if 'a' in mode:
-            cmd = 'APPE'
-        else:
-            cmd = 'STOR'
+        cmd = 'APPE' if 'a' in mode else 'STOR'
         rest_pos = self._restart_position
         self._restart_position = 0
         if rest_pos:
@@ -2703,10 +2700,7 @@ class FTPHandler(AsyncChat):
         if not self.fs.isfile(self.fs.realpath(path)):
             self.respond("550 %s is not retrievable" % line)
             return
-        if self.use_gmt_times:
-            timefunc = time.gmtime
-        else:
-            timefunc = time.localtime
+        timefunc = time.gmtime if self.use_gmt_times else time.localtime
         try:
             secs = self.run_as_current_user(self.fs.getmtime, path)
             lmt = time.strftime("%Y%m%d%H%M%S", timefunc(secs))
@@ -2741,10 +2735,7 @@ class FTPHandler(AsyncChat):
         if not self.fs.isfile(self.fs.realpath(path)):
             self.respond("550 %s is not retrievable" % line)
             return
-        if self.use_gmt_times:
-            timefunc = time.gmtime
-        else:
-            timefunc = time.localtime
+        timefunc = time.gmtime if self.use_gmt_times else time.localtime
         try:
             # convert timeval string to epoch seconds
             epoch = datetime.utcfromtimestamp(0)
@@ -2821,7 +2812,7 @@ class FTPHandler(AsyncChat):
 
     def ftp_RNFR(self, path):
         """Rename the specified (only the source name is specified
-        here, see RNTO command)"""
+        here, see RNTO command)."""
         if not self.fs.lexists(path):
             self.respond("550 No such file or directory.")
         elif self.fs.realpath(path) == self.fs.realpath(self.fs.root):
@@ -2851,7 +2842,7 @@ class FTPHandler(AsyncChat):
 
         # --- others
     def ftp_TYPE(self, line):
-        """Set current type data type to binary/ascii"""
+        """Set current type data type to binary/ascii."""
         type = line.upper().replace(' ', '')
         if type in ("A", "L7"):
             self.respond("200 Type set to: ASCII.")
@@ -2919,10 +2910,7 @@ class FTPHandler(AsyncChat):
                     s.append("Waiting for username.")
                 else:
                     s.append("Waiting for password.")
-            if self._current_type == 'a':
-                type = 'ASCII'
-            else:
-                type = 'Binary'
+            type = 'ASCII' if self._current_type == 'a' else 'Binary'
             s.append("TYPE: %s; STRUcture: File; MODE: Stream" % type)
             if self._dtp_acceptor is not None:
                 s.append('Passive data channel waiting for connection.')
@@ -3047,10 +3035,10 @@ class FTPHandler(AsyncChat):
             # provide a compact list of recognized commands
             def formatted_help():
                 cmds = []
-                keys = sorted([x for x in self.proto_cmds.keys()
+                keys = sorted([x for x in self.proto_cmds
                                if not x.startswith('SITE ')])
                 while keys:
-                    elems = tuple((keys[0:8]))
+                    elems = tuple(keys[0:8])
                     cmds.append(' %-6s' * len(elems) % elems + '\r\n')
                     del keys[0:8]
                 return ''.join(cmds)

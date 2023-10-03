@@ -3,10 +3,15 @@ Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 Version: 1.5.9 - IN DEVELOPMENT
 ===============================
 
+**Enhancements**
+
+- #611: use `ruff` code style checker instead of flake8 + isort (much faster +
+  makes many more code quality checks).
+
 **Bug fixes**
 
 - #607: possible infinite wait in Epoll  (patch by @stat1c-void)
-- #607: possible infinite traceback printing in DTPHandler  (patch by 
+- #607: possible infinite traceback printing in DTPHandler (patch by
   @stat1c-void)
 
 Version: 1.5.8 - 2023-10-02

@@ -18,12 +18,11 @@ SKIP_PREFIXES = ('.ci/', '.github/')
 
 
 def sh(cmd):
-    return subprocess.check_output(
-        cmd, shell=True, universal_newlines=True).strip()
+    return subprocess.check_output(cmd, universal_newlines=True).strip()
 
 
 def main():
-    files = sh("git ls-files").split('\n')
+    files = sh(["git", "ls-files"]).split('\n')
     for file in files:
         if file.startswith(SKIP_PREFIXES) or \
                 os.path.splitext(file)[1].lower() in SKIP_EXTS or \

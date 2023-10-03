@@ -5,7 +5,7 @@
 # found in the LICENSE file.
 
 """A basic unix daemon using the python-daemon library:
-http://pypi.python.org/pypi/python-daemon
+http://pypi.python.org/pypi/python-daemon.
 
 Example usages:
 
@@ -142,7 +142,7 @@ def daemonize():
         # redirect standard file descriptors
         sys.stdout.flush()
         sys.stderr.flush()
-        si = open(LOG_FILE, 'r')
+        si = open(LOG_FILE)
         so = open(LOG_FILE, 'a+')
         se = open(LOG_FILE, 'a+', 0)
         os.dup2(si.fileno(), sys.stdin.fileno())
@@ -167,8 +167,8 @@ def daemonize():
 
 def main():
     global PID_FILE, LOG_FILE
-    USAGE = "python3 [-p PIDFILE] [-l LOGFILE]\n\n" \
-            "Commands:\n  - start\n  - stop\n  - status"
+    USAGE = "python3 [-p PIDFILE] [-l LOGFILE]\n\n"
+    USAGE += "Commands:\n  - start\n  - stop\n  - status"
     parser = optparse.OptionParser(usage=USAGE)
     parser.add_option('-l', '--logfile', dest='logfile',
                       help='the log file location')

@@ -187,7 +187,7 @@ class TestAbstractedFS(PyftpdlibTestCase):
             testfn = self.get_testfn()
             with tempfile.NamedTemporaryFile() as file:
                 try:
-                    if HOME == os.path.dirname(file.name):
+                    if os.path.dirname(file.name) == HOME:
                         return
                     os.symlink(file.name, testfn)
                     self.assertFalse(fs.validpath(u(testfn)))

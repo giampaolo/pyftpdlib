@@ -9,7 +9,7 @@ import sys
 import types
 
 
-PY3 = sys.version_info[0] == 3
+PY3 = sys.version_info[0] >= 3
 _SENTINEL = object()
 
 if PY3:
@@ -41,10 +41,7 @@ try:
     callable = callable
 except Exception:
     def callable(obj):
-        for klass in type(obj).__mro__:
-            if "__call__" in klass.__dict__:
-                return True
-        return False
+        return any("__call__" in klass.__dict__ for klass in type(obj).__mro__)
 
 
 # --- exceptions
@@ -69,7 +66,7 @@ else:
                             if not attr.startswith('__'):
                                 setattr(self, attr, getattr(unwrap_me, attr))
                     else:
-                        super(TemporaryClass, self).__init__(*args, **kwargs)
+                        super(TemporaryClass, self).__init__(*args, **kwargs)  # noqa
 
                 class __metaclass__(type):
                     def __instancecheck__(cls, inst):

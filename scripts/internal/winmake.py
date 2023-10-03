@@ -28,13 +28,10 @@ import tempfile
 
 
 APPVEYOR = bool(os.environ.get('APPVEYOR'))
-if APPVEYOR:
-    PYTHON = sys.executable
-else:
-    PYTHON = os.getenv('PYTHON', sys.executable)
+PYTHON = sys.executable if APPVEYOR else os.getenv('PYTHON', sys.executable)
 RUNNER_PY = 'pyftpdlib\\test\\runner.py'
 GET_PIP_URL = "https://bootstrap.pypa.io/get-pip.py"
-PY3 = sys.version_info[0] == 3
+PY3 = sys.version_info[0] >= 3
 HERE = os.path.abspath(os.path.dirname(__file__))
 ROOT_DIR = os.path.realpath(os.path.join(HERE, "..", ".."))
 PYPY = '__pypy__' in sys.builtin_module_names
@@ -186,7 +183,7 @@ def safe_rmtree(path):
 
 def recursive_rm(*patterns):
     """Recursively remove a file or matching a list of patterns."""
-    for root, subdirs, subfiles in os.walk(u'.'):
+    for root, subdirs, subfiles in os.walk('.'):
         root = os.path.normpath(root)
         if root.startswith('.git/'):
             continue
@@ -206,7 +203,7 @@ def recursive_rm(*patterns):
 
 
 def build():
-    """Build / compile"""
+    """Build / compile."""
     # Make sure setuptools is installed (needed for 'develop' /
     # edit mode).
     sh('%s -c "import setuptools"' % PYTHON)
@@ -252,7 +249,7 @@ def upload_wheels():
 
 
 def install_pip():
-    """Install pip"""
+    """Install pip."""
     try:
         sh('%s -c "import pip"' % PYTHON)
     except SystemExit:
@@ -281,13 +278,13 @@ def install_pip():
 
 
 def install():
-    """Install in develop / edit mode"""
+    """Install in develop / edit mode."""
     build()
     sh("%s setup.py develop" % PYTHON)
 
 
 def uninstall():
-    """Uninstall"""
+    """Uninstall."""
     clean()
     install_pip()
     here = os.getcwd()
@@ -311,7 +308,7 @@ def uninstall():
                 # easy_install can add a line (installation path) into
                 # easy-install.pth; that line alters sys.path.
                 path = os.path.join(dir, name)
-                with open(path, 'rt') as f:
+                with open(path) as f:
                     lines = f.readlines()
                     hasit = False
                     for line in lines:
@@ -319,7 +316,7 @@ def uninstall():
                             hasit = True
                             break
                 if hasit:
-                    with open(path, 'wt') as f:
+                    with open(path, "w") as f:
                         for line in lines:
                             if 'pyftpdlib' not in line:
                                 f.write(line)
@@ -328,7 +325,7 @@ def uninstall():
 
 
 def clean():
-    """Deletes dev files"""
+    """Deletes dev files."""
     recursive_rm(
         "$testfn*",
         "*.bak",
@@ -354,14 +351,14 @@ def clean():
 
 
 def setup_dev_env():
-    """Install useful deps"""
+    """Install useful deps."""
     install_pip()
     install_git_hooks()
     sh("%s -m pip install -U %s" % (PYTHON, " ".join(DEPS)))
 
 
 def lint():
-    """Run flake8 against all py files"""
+    """Run flake8 against all py files."""
     py_files = subprocess.check_output("git ls-files")
     if PY3:
         py_files = py_files.decode()
@@ -371,7 +368,7 @@ def lint():
 
 
 def test(name=RUNNER_PY):
-    """Run tests"""
+    """Run tests."""
     build()
     sh("%s %s" % (PYTHON, name))
 
@@ -421,7 +418,7 @@ def coverage():
 
 
 def test_by_name(name):
-    """Run test by name"""
+    """Run test by name."""
     build()
     sh("%s -m unittest -v %s" % (PYTHON, name))
 
@@ -439,9 +436,8 @@ def install_git_hooks():
             ROOT_DIR, "scripts", "internal", "git_pre_commit.py")
         dst = os.path.realpath(
             os.path.join(ROOT_DIR, ".git", "hooks", "pre-commit"))
-        with open(src, "rt") as s:
-            with open(dst, "wt") as d:
-                d.write(s.read())
+        with open(src) as s, open(dst, "w") as d:
+            d.write(s.read())
 
 
 def get_python(path):

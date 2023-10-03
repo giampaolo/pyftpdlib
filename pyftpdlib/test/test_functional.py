@@ -244,7 +244,7 @@ class TestFtpAuthentication(PyftpdlibTestCase):
 
 
 class TestFtpDummyCmds(PyftpdlibTestCase):
-    """Test: TYPE, STRU, MODE, NOOP, SYST, ALLO, HELP, SITE HELP"""
+    """Test: TYPE, STRU, MODE, NOOP, SYST, ALLO, HELP, SITE HELP."""
     server_class = MProcessTestFTPd
     client_class = ftplib.FTP
 
@@ -646,7 +646,7 @@ class TestFtpFsOperations(PyftpdlibTestCase):
 class CustomIO(io.RawIOBase):
 
     def __init__(self):
-        super(CustomIO, self).__init__()
+        super().__init__()
         self._bytesio = io.BytesIO()
 
     def seek(self, offset, whence=io.SEEK_SET):
@@ -892,7 +892,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
         # on stor
         file_size = self.client.size(self.testfn)
         self.assertEqual(file_size, bytes_sent)
-        self.client.sendcmd('rest %s' % ((file_size + 1)))
+        self.client.sendcmd('rest %s' % (file_size + 1))
         self.assertRaises(ftplib.error_perm, self.client.sendcmd,
                           'stor ' + self.testfn)
         self.client.sendcmd('rest %s' % bytes_sent)
@@ -959,7 +959,7 @@ class TestFtpStoreDataWithCustomIO(TestFtpStoreData):
 
 
 class TestFtpRetrieveData(PyftpdlibTestCase):
-    """Test RETR, REST, TYPE"""
+    """Test RETR, REST, TYPE."""
     server_class = MProcessTestFTPd
     client_class = ftplib.FTP
     use_sendfile = None
@@ -1066,7 +1066,7 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
         # file size stored on the server should result in an error
         # on retr (RFC-1123)
         file_size = self.client.size(self.testfn)
-        self.client.sendcmd('rest %s' % ((file_size + 1)))
+        self.client.sendcmd('rest %s' % (file_size + 1))
         self.assertRaises(ftplib.error_perm, self.client.sendcmd,
                           'retr ' + self.testfn)
         # test resume
@@ -1840,7 +1840,7 @@ class TestCallbacks(PyftpdlibTestCase):
     def read_file(self, text):
         stop_at = time.time() + 1
         while time.time() <= stop_at:
-            with open(self.testfn, "rt") as f:
+            with open(self.testfn) as f:
                 data = f.read()
                 if data == text:
                     return
@@ -1951,7 +1951,7 @@ class TestCallbacks(PyftpdlibTestCase):
             (USER, self.testfn2))
 
 
-class _TestNetworkProtocols(object):
+class _TestNetworkProtocols(object):  # noqa
     """Test PASV, EPSV, PORT and EPRT commands.
 
     Do not use this class directly, let TestIPv4Environment and

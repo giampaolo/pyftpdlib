@@ -114,7 +114,7 @@ class RetryError(Exception):
 # --- scheduler
 # ===================================================================
 
-class _Scheduler(object):
+class _Scheduler:
     """Run the scheduled functions due to expire soonest (if any)."""
 
     def __init__(self):
@@ -177,7 +177,7 @@ class _Scheduler(object):
         heapq.heapify(self._tasks)
 
 
-class _CallLater(object):
+class _CallLater:
     """Container object which instance is returned by ioloop.call_later()."""
 
     __slots__ = ('_delay', '_target', '_args', '_kwargs', '_errback', '_sched',
@@ -265,7 +265,7 @@ class _CallEvery(_CallLater):
                 self._sched.register(self)
 
 
-class _IOLoop(object):
+class _IOLoop:
     """Base class which will later be referred as IOLoop."""
 
     READ = 1
@@ -546,12 +546,10 @@ class _BasePollEpoll(_IOLoop):
             if event & self._ERROR and not event & self.READ:
                 inst.handle_close()
             else:
-                if event & self.READ:
-                    if inst.readable():
-                        _read(inst)
-                if event & self.WRITE:
-                    if inst.writable():
-                        _write(inst)
+                if event & self.READ and inst.readable():
+                    _read(inst)
+                if event & self.WRITE and inst.writable():
+                    _write(inst)
 
 
 # ===================================================================
@@ -730,9 +728,8 @@ if hasattr(select, 'kqueue'):  # pragma: no cover
                 inst = self.socket_map.get(kevent.ident)
                 if inst is None:
                     continue
-                if kevent.filter == _READ:
-                    if inst.readable():
-                        _read(inst)
+                if kevent.filter == _READ and inst.readable():
+                    _read(inst)
                 if kevent.filter == _WRITE:
                     if kevent.flags & _EOF:
                         # If an asynchronous connection is refused,

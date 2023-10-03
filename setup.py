@@ -9,6 +9,7 @@ $ python setup.py install
 
 from __future__ import print_function
 
+import ast
 import os
 import sys
 import textwrap
@@ -23,10 +24,10 @@ except ImportError:
 def get_version():
     INIT = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                         'pyftpdlib', '__init__.py'))
-    with open(INIT, 'r') as f:
+    with open(INIT) as f:
         for line in f:
             if line.startswith('__ver__'):
-                ret = eval(line.strip().split(' = ')[1])
+                ret = ast.literal_eval(line.strip().split(' = ')[1])
                 assert ret.count('.') == 2, ret
                 for num in ret.split('.'):
                     assert num.isdigit(), ret
@@ -63,7 +64,7 @@ def hilite(s, ok=True, bold=False):
         return '\x1b[%sm%s\x1b[0m' % (';'.join(attr), s)
 
 
-if sys.version_info < (2, 7):
+if sys.version_info < (2, 7):  # noqa
     sys.exit('python version not supported (< 2.7)')
 
 require_pysendfile = (os.name == 'posix' and sys.version_info < (3, 3))
