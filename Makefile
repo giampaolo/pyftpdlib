@@ -188,6 +188,7 @@ fix-unittests:  ## Fix unittest idioms.
 	@git ls-files '*test_*.py' | xargs $(PYTHON) -m teyit --show-stats
 
 fix-all:  ## Run all code fixers.
+	${MAKE} fix-ruff
 	${MAKE} fix-imports
 	${MAKE} fix-toml
 	${MAKE} fix-unittests

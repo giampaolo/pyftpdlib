@@ -11,6 +11,7 @@ select = [
     "ALL",
     "B",  # flake8-bugbear
     "BLE",  # flake8-blind-except
+    "D400",  # [*] Docstring's first line should end with a period (IMPORTANT)
     "E",  # pycodestyle
     "F",  # pyflakes
     "I",  # isort

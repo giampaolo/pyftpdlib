@@ -244,7 +244,7 @@ class TestFtpAuthentication(PyftpdlibTestCase):
 
 
 class TestFtpDummyCmds(PyftpdlibTestCase):
-    """Test: TYPE, STRU, MODE, NOOP, SYST, ALLO, HELP, SITE HELP"""
+    """Test: TYPE, STRU, MODE, NOOP, SYST, ALLO, HELP, SITE HELP."""
     server_class = MProcessTestFTPd
     client_class = ftplib.FTP
 
@@ -959,7 +959,7 @@ class TestFtpStoreDataWithCustomIO(TestFtpStoreData):
 
 
 class TestFtpRetrieveData(PyftpdlibTestCase):
-    """Test RETR, REST, TYPE"""
+    """Test RETR, REST, TYPE."""
     server_class = MProcessTestFTPd
     client_class = ftplib.FTP
     use_sendfile = None

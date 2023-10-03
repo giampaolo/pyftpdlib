@@ -8,7 +8,7 @@
 """Shortcuts for various tasks, emulating UNIX "make" on Windows.
 This is supposed to be invoked by "make.bat" and not used directly.
 This was originally written as a bat file but they suck so much
-that they should be deemed illegal!
+that they should be deemed illegal!.
 """
 
 from __future__ import print_function
@@ -203,7 +203,7 @@ def recursive_rm(*patterns):
 
 
 def build():
-    """Build / compile"""
+    """Build / compile."""
     # Make sure setuptools is installed (needed for 'develop' /
     # edit mode).
     sh('%s -c "import setuptools"' % PYTHON)
@@ -249,7 +249,7 @@ def upload_wheels():
 
 
 def install_pip():
-    """Install pip"""
+    """Install pip."""
     try:
         sh('%s -c "import pip"' % PYTHON)
     except SystemExit:
@@ -278,13 +278,13 @@ def install_pip():
 
 
 def install():
-    """Install in develop / edit mode"""
+    """Install in develop / edit mode."""
     build()
     sh("%s setup.py develop" % PYTHON)
 
 
 def uninstall():
-    """Uninstall"""
+    """Uninstall."""
     clean()
     install_pip()
     here = os.getcwd()
@@ -325,7 +325,7 @@ def uninstall():
 
 
 def clean():
-    """Deletes dev files"""
+    """Deletes dev files."""
     recursive_rm(
         "$testfn*",
         "*.bak",
@@ -351,14 +351,14 @@ def clean():
 
 
 def setup_dev_env():
-    """Install useful deps"""
+    """Install useful deps."""
     install_pip()
     install_git_hooks()
     sh("%s -m pip install -U %s" % (PYTHON, " ".join(DEPS)))
 
 
 def lint():
-    """Run flake8 against all py files"""
+    """Run flake8 against all py files."""
     py_files = subprocess.check_output("git ls-files")
     if PY3:
         py_files = py_files.decode()
@@ -368,7 +368,7 @@ def lint():
 
 
 def test(name=RUNNER_PY):
-    """Run tests"""
+    """Run tests."""
     build()
     sh("%s %s" % (PYTHON, name))
 
@@ -418,7 +418,7 @@ def coverage():
 
 
 def test_by_name(name):
-    """Run test by name"""
+    """Run test by name."""
     build()
     sh("%s -m unittest -v %s" % (PYTHON, name))
 

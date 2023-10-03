@@ -83,7 +83,7 @@ class AbstractedFS(object):
     def __init__(self, root, cmd_channel):
         """
          - (str) root: the user "real" home directory (e.g. '/home/user')
-         - (instance) cmd_channel: the FTPHandler class instance
+         - (instance) cmd_channel: the FTPHandler class instance.
         """
         assert isinstance(root, unicode)
         # Set initial current working directory.
@@ -301,7 +301,7 @@ class AbstractedFS(object):
         return os.stat(path)
 
     def utime(self, path, timeval):
-        """Perform a utime() call on the given path"""
+        """Perform a utime() call on the given path."""
         # utime expects a int/float (atime, mtime) in seconds
         # thus, setting both access and modify time to timeval
         return os.utime(path, (timeval, timeval))

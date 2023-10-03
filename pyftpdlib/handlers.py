@@ -2812,7 +2812,7 @@ class FTPHandler(AsyncChat):
 
     def ftp_RNFR(self, path):
         """Rename the specified (only the source name is specified
-        here, see RNTO command)"""
+        here, see RNTO command)."""
         if not self.fs.lexists(path):
             self.respond("550 No such file or directory.")
         elif self.fs.realpath(path) == self.fs.realpath(self.fs.root):
@@ -2842,7 +2842,7 @@ class FTPHandler(AsyncChat):
 
         # --- others
     def ftp_TYPE(self, line):
-        """Set current type data type to binary/ascii"""
+        """Set current type data type to binary/ascii."""
         type = line.upper().replace(' ', '')
         if type in ("A", "L7"):
             self.respond("200 Type set to: ASCII.")
