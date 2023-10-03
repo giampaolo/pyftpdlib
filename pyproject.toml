@@ -8,7 +8,7 @@ target-version = "py38"
 line-length = 79
 # to get a list of all values: `python3 -m ruff linter`
 select = [
-    # "ALL",
+    "ALL",
     "B",  # flake8-bugbear
     "BLE",  # flake8-blind-except
     "E",  # pycodestyle
@@ -28,15 +28,14 @@ select = [
 ]
 ignore = [
     "A",  # flake8-builtins
-    "A001",  # Variable `X` is shadowing a Python builtin
     "ANN",  # flake8-annotations
     "ARG",  # flake8-unused-arguments
     "B007",  # Loop control variable `x` not used within loop body
-    "B904",  # Within an `except` clause, raise exceptions with `raise ... from err`
+    "B904",  # Within an `except` clause, raise exceptions with `raise ... from err` (PYTHON2.7 COMPAT)
     "BLE001",  # Do not catch blind exception: `Exception`
     "C4",  # flake8-comprehensions (PYTHON2.7 COMPAT)
-    "C408",  # Unnecessary `dict` call (rewrite as a literal)
-    "C90",  # mccabe
+    # "C408",  # Unnecessary `dict` call (rewrite as a literal)
+    "C90",  # mccabe (function `X` is too complex)
     "COM812",  # Trailing comma missing
     "D",  # pydocstyle
     "DTZ",  # flake8-datetimez
@@ -65,6 +64,7 @@ ignore = [
     "PYI",  # flake8-pyi
     "Q000",  # Single quotes found but double quotes preferred
     "RET",  # flake8-return
+    "RUF",  # Ruff-specific rules
     "S",  # flake8-bandit
     "S101",  # Use of 'assert' detected
     "SIM102",  # Use a single `if` statement instead of nested `if` statements
