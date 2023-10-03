@@ -49,7 +49,7 @@ class AuthenticationFailed(Exception):
 # --- base class
 # ===================================================================
 
-class DummyAuthorizer(object):
+class DummyAuthorizer:
     """Basic "dummy" authorizer class, suitable for subclassing to
     create your own custom authorizers.
 
@@ -267,7 +267,7 @@ def replace_anonymous(callable):
 # --- platform specific authorizers
 # ===================================================================
 
-class _Base(object):
+class _Base:
     """Methods common to both Unix and Windows authorizers.
     Not supposed to be used directly.
     """
@@ -380,7 +380,7 @@ else:
     PROCESS_UID = os.getuid()
     PROCESS_GID = os.getgid()
 
-    class BaseUnixAuthorizer(object):
+    class BaseUnixAuthorizer:
         """An authorizer compatible with Unix user account and password
         database.
         This class should not be used directly unless for subclassing.
@@ -653,7 +653,7 @@ else:  # pragma: no cover
 
     __all__.extend(['BaseWindowsAuthorizer', 'WindowsAuthorizer'])
 
-    class BaseWindowsAuthorizer(object):
+    class BaseWindowsAuthorizer:
         """An authorizer compatible with Windows user account and
         password database.
         This class should not be used directly unless for subclassing.

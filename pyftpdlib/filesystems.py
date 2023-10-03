@@ -61,7 +61,7 @@ class FilesystemError(Exception):
 # --- base class
 # ===================================================================
 
-class AbstractedFS(object):
+class AbstractedFS:
     """A class used to interact with the file system, providing a
     cross-platform interface compatible with both Windows and
     UNIX style filesystems where all paths use "/" separator.

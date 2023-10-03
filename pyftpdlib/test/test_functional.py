@@ -1951,7 +1951,7 @@ class TestCallbacks(PyftpdlibTestCase):
             (USER, self.testfn2))
 
 
-class _TestNetworkProtocols(object):
+class _TestNetworkProtocols(object):  # noqa
     """Test PASV, EPSV, PORT and EPRT commands.
 
     Do not use this class directly, let TestIPv4Environment and

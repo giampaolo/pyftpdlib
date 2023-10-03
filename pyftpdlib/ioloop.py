@@ -114,7 +114,7 @@ class RetryError(Exception):
 # --- scheduler
 # ===================================================================
 
-class _Scheduler(object):
+class _Scheduler:
     """Run the scheduled functions due to expire soonest (if any)."""
 
     def __init__(self):
@@ -177,7 +177,7 @@ class _Scheduler(object):
         heapq.heapify(self._tasks)
 
 
-class _CallLater(object):
+class _CallLater:
     """Container object which instance is returned by ioloop.call_later()."""
 
     __slots__ = ('_delay', '_target', '_args', '_kwargs', '_errback', '_sched',
@@ -265,7 +265,7 @@ class _CallEvery(_CallLater):
                 self._sched.register(self)
 
 
-class _IOLoop(object):
+class _IOLoop:
     """Base class which will later be referred as IOLoop."""
 
     READ = 1

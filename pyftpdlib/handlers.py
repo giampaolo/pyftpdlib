@@ -933,7 +933,7 @@ if PY3:
     class _AsyncChatNewStyle(AsyncChat):
         pass
 else:
-    class _AsyncChatNewStyle(object, AsyncChat):
+    class _AsyncChatNewStyle(object, AsyncChat):  # noqa
 
         def __init__(self, *args, **kwargs):
             super(object, self).__init__(*args, **kwargs)  # bypass object
@@ -1030,7 +1030,7 @@ class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
 # --- producers
 
 
-class FileProducer(object):
+class FileProducer:
     """Producer wrapper for file[-like] objects."""
 
     buffer_size = 65536
@@ -1081,7 +1081,7 @@ class FileProducer(object):
             return data
 
 
-class BufferedIteratorProducer(object):
+class BufferedIteratorProducer:
     """Producer for iterator objects with buffer capabilities."""
     # how many times iterator.next() will be called before
     # returning some data

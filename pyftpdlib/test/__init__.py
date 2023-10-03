@@ -236,7 +236,7 @@ def cleanup():
     map.clear()
 
 
-class retry(object):
+class retry:
     """A retry decorator."""
 
     def __init__(self,

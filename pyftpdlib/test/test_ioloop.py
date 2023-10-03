@@ -45,7 +45,7 @@ else:
 
 
 # TODO: write more tests.
-class BaseIOLoopTestCase(object):
+class BaseIOLoopTestCase:
 
     ioloop_class = None
 
