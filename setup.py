@@ -26,7 +26,7 @@ def get_version():
     with open(INIT) as f:
         for line in f:
             if line.startswith('__ver__'):
-                ret = eval(line.strip().split(' = ')[1])
+                ret = eval(line.strip().split(' = ')[1])  # noqa
                 assert ret.count('.') == 2, ret
                 for num in ret.split('.'):
                     assert num.isdigit(), ret

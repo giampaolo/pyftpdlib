@@ -22,17 +22,7 @@ select = [
     "YTT",  # flake8-2020
 ]
 ignore = [
-    # "ANN",  # missing annotation
-    # "D",  # pydocstyle
-    # "FIX",  # Line contains TODO / XXX / ..., consider resolving the issue
-    # "PT",  # pytest
-    # "EM",    # flake8-errmsg
-    # "ARG",  # flake8-unused-arguments
-    # "PTH",  # Use pathlib instead of os.path
-    # "RET",  # flake8-return
-    # "SLF",  # flake8-self
-    # "FLY",  # flynt
-    # "TD",  # all TODOs, XXXs, etc.
+    "A",  # flake8-builtins
     "A001",  # Variable `X` is shadowing a Python builtin
     "ANN",  # flake8-annotations
     "ARG",  # flake8-unused-arguments
@@ -41,9 +31,12 @@ ignore = [
     "C408",  # Unnecessary `dict` call (rewrite as a literal)
     "COM812",  # Trailing comma missing
     "D",  # pydocstyle
+    "EM",  # flake8-errmsg
     "ERA001",  # Found commented-out code
     "FBT002",  # Boolean default positional argument in function definition
     "FBT003",  # Boolean positional value in function call
+    "FIX",  # Line contains TODO / XXX / ..., consider resolving the issue
+    "FLY",  # flynt
     "G004",  # Logging statement uses f-string
     "N801",  # Class name `async_chat` should use CapWords convention
     "N802",  # Function name X should be lowercase.
@@ -57,11 +50,14 @@ ignore = [
     "PT009",  # Use a regular `assert` instead of unittest-style `assertTrue`
     "PTH",  # flake8-use-pathlib
     "Q000",  # Single quotes found but double quotes preferred
+    "RET",  # flake8-return
     "S101",  # Use of 'assert' detected
     "SIM102",  # Use a single `if` statement instead of nested `if` statements
     "SIM105",  # Use `contextlib.suppress(OSError)` instead of `try`-`except`-`pass`
     "SIM115",  # Use context handler for opening files
     "SIM117",  # Use a single `with` statement with multiple contexts instead of nested `with` statements
+    "SLF",  # flake8-self
+    "TD",  # all TODOs, XXXs, etc.
     "UP004",  # [*] Class `_Base` inherits from `object`
     "UP008",  # [*] Use `super()` instead of `super(__class__, self)`
     "UP010",  # [*] Unnecessary `__future__` import `print_function` for target Python version
