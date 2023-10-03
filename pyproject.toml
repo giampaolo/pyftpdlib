@@ -58,6 +58,7 @@ ignore = [
     "PTH",  # flake8-use-pathlib
     "Q000",  # Single quotes found but double quotes preferred
     "RET",  # flake8-return
+    "S",  # flake8-bandit
     "S101",  # Use of 'assert' detected
     "SIM102",  # Use a single `if` statement instead of nested `if` statements
     "SIM105",  # Use `contextlib.suppress(OSError)` instead of `try`-`except`-`pass`
