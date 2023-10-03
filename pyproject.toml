@@ -34,10 +34,13 @@ ignore = [
     # "FLY",  # flynt
     # "TD",  # all TODOs, XXXs, etc.
     "A001",  # Variable `X` is shadowing a Python builtin
+    "ANN",  # flake8-annotations
+    "ARG",  # flake8-unused-arguments
     "B007",  # Loop control variable `x` not used within loop body
     "B904",  # Within an `except` clause, raise exceptions with `raise ... from err`
     "C408",  # Unnecessary `dict` call (rewrite as a literal)
     "COM812",  # Trailing comma missing
+    "D",  # pydocstyle
     "ERA001",  # Found commented-out code
     "FBT002",  # Boolean default positional argument in function definition
     "FBT003",  # Boolean positional value in function call
@@ -50,7 +53,9 @@ ignore = [
     "N817",  # CamelCase X imported as acronym X.
     "N818",  # Exception name `FooBar` should be named with an Error suffix
     "PGH004",  # Use specific rule codes when using `noqa`
+    "PT",  # flake8-pytest-style
     "PT009",  # Use a regular `assert` instead of unittest-style `assertTrue`
+    "PTH",  # flake8-use-pathlib
     "Q000",  # Single quotes found but double quotes preferred
     "S101",  # Use of 'assert' detected
     "SIM102",  # Use a single `if` statement instead of nested `if` statements
