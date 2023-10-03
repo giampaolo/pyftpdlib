@@ -1,26 +1,9 @@
 [tool.ruff]
 # https://beta.ruff.rs/docs/settings/
-target-version = "py38"
+target-version = "py37"
 line-length = 79
-# to get a list of all values: `python3 -m ruff linter`
 select = [
-    "ALL",
-    "B",  # flake8-bugbear
-    "BLE",  # flake8-blind-except
-    "E",  # pycodestyle
-    "F",  # pyflakes
-    "I",  # isort
-    "ISC",  # flake8-implicit-str-concat
-    "N",  # pep8-naming
-    "Q",  # flake8 quotes
-    "S110",  # `try`-`except`-`pass` detected, consider logging the exception (IMPORTANT)
-    "S307",  # Use of possibly insecure function; consider using `ast.literal_eval`
-    "SIM",  # flake8-simplify
-    "T10",  # flake8-debugger
-    "T20",  # flake8-print
-    "TRY",  # tryceratops
-    "UP",  # pyupgrade
-    "YTT",  # flake8-2020
+    "ALL",  # to get a list of all values: `python3 -m ruff linter`
 ]
 ignore = [
     "A",  # flake8-builtins
@@ -80,7 +63,6 @@ ignore = [
 "pyftpdlib/test/runner.py" = ["T201"]
 "scripts/*" = ["T201"]
 "setup.py" = ["T201"]
-"sysconf.py" = ["T201"]
 
 [tool.ruff.isort]
 # https://beta.ruff.rs/docs/settings/#isort
