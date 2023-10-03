@@ -67,5 +67,6 @@ jobs:
     - uses: actions/setup-python@v3
     - name: 'Run linters'
       run: |
-        python3 -m pip install flake8==5.0.4 isort rstcheck toml-sort
+        python3 -m pip install flake8==5.0.4 isort rstcheck toml-sort sphinx-rtd-theme
+        python3 -m pip freeze
         make lint-all
