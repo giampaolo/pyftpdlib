@@ -154,7 +154,7 @@ test-coverage:  ## Run test coverage.
 ruff:  ## Run ruff linter.
 	@git ls-files '*.py' | xargs $(PYTHON) -m ruff check --config=pyproject.toml --no-cache
 
-pylint:  ## Python pylint (not mandatory, just run it from time to time)
+_pylint:  ## Python pylint (not mandatory, just run it from time to time)
 	@git ls-files '*.py' | xargs $(PYTHON) -m pylint --rcfile=pyproject.toml --jobs=${NUM_WORKERS}
 
 lint-rst:  ## Run RsT linter.
@@ -164,6 +164,7 @@ lint-toml:  ## Linter for pyproject.toml
 	@git ls-files '*.toml' | xargs toml-sort --check
 
 lint-all:  ## Run all linters
+	${MAKE} ruff
 	${MAKE} lint-rst
 	${MAKE} lint-toml
 
@@ -182,7 +183,6 @@ fix-unittests:  ## Fix unittest idioms.
 
 fix-all:  ## Run all code fixers.
 	${MAKE} fix-ruff
-	${MAKE} fix-imports
 	${MAKE} fix-toml
 	${MAKE} fix-unittests
 
