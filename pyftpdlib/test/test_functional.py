@@ -646,7 +646,7 @@ class TestFtpFsOperations(PyftpdlibTestCase):
 class CustomIO(io.RawIOBase):
 
     def __init__(self):
-        super(CustomIO, self).__init__()
+        super().__init__()
         self._bytesio = io.BytesIO()
 
     def seek(self, offset, whence=io.SEEK_SET):
