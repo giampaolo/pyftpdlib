@@ -11,7 +11,6 @@ select = [
     "ALL",
     "B",  # flake8-bugbear
     "BLE",  # flake8-blind-except
-    "D400",  # [*] Docstring's first line should end with a period (IMPORTANT)
     "E",  # pycodestyle
     "F",  # pyflakes
     "I",  # isort
@@ -42,32 +41,27 @@ ignore = [
     "DTZ",  # flake8-datetimez
     "EM",  # flake8-errmsg
     "ERA001",  # Found commented-out code
-    "FBT002",  # Boolean default positional argument in function definition
-    "FBT003",  # Boolean positional value in function call
+    "FBT",  # flake8-boolean-trap
     "FIX",  # Line contains TODO / XXX / ..., consider resolving the issue
-    "FLY",  # flynt
-    "G004",  # Logging statement uses f-string
+    "FLY",  # flynt (PYTHON2.7 COMPAT)
     "INP",  # flake8-no-pep420
-    "N801",  # Class name `async_chat` should use CapWords convention
+    "N801",  # Class name `async_chat` should use CapWords convention (ASYNCORE COMPAT)
     "N802",  # Function name X should be lowercase.
     "N803",  # Argument name X should be lowercase.
     "N806",  # Variable X in function should be lowercase.
     "N812",  # Lowercase `error` imported as non-lowercase `FooBarError`
-    "N817",  # CamelCase X imported as acronym X.
     "N818",  # Exception name `FooBar` should be named with an Error suffix
     "PERF",  # Perflint
     "PGH004",  # Use specific rule codes when using `noqa`
     "PLR",  # pylint
     "PLW",  # pylint
     "PT",  # flake8-pytest-style
-    "PT009",  # Use a regular `assert` instead of unittest-style `assertTrue`
     "PTH",  # flake8-use-pathlib
     "PYI",  # flake8-pyi
     "Q000",  # Single quotes found but double quotes preferred
     "RET",  # flake8-return
     "RUF",  # Ruff-specific rules
     "S",  # flake8-bandit
-    "S101",  # Use of 'assert' detected
     "SIM102",  # Use a single `if` statement instead of nested `if` statements
     "SIM105",  # Use `contextlib.suppress(OSError)` instead of `try`-`except`-`pass`
     "SIM115",  # Use context handler for opening files
@@ -75,7 +69,7 @@ ignore = [
     "SLF",  # flake8-self
     "TD",  # all TODOs, XXXs, etc.
     "TRY003",  # Avoid specifying long messages outside the exception class
-    "TRY200",  # Use `raise from` to specify exception cause
+    "TRY200",  # Use `raise from` to specify exception cause (PYTHON2.7 COMPAT)
     "TRY300",  # Consider moving this statement to an `else` block
     "TRY301",  # Abstract `raise` to an inner function
     "UP004",  # [*] Class `_Base` inherits from `object`
