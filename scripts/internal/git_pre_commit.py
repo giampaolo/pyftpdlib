@@ -7,7 +7,7 @@
 """
 This gets executed on 'git commit' and rejects the commit in case the
 submitted code does not pass validation. Validation is run only against
-the files which were modified in the commit.Install this with "make
+the files which were modified in the commit. Install this with "make
 install-git-hooks".
 """
 
@@ -81,7 +81,7 @@ def open_text(path):
     return open(path, **kw)
 
 
-def git_commit_files():
+def git_committed_files():
     out = sh(["git", "diff", "--cached", "--name-only"])
     py_files = [
         x for x in out.split("\n") if x.endswith(".py") and os.path.exists(x)
@@ -92,11 +92,10 @@ def git_commit_files():
     toml_files = [
         x for x in out.split("\n") if x.endswith(".toml") and os.path.exists(x)
     ]
+    # XXX: we should escape spaces and possibly other amenities here
     new_rm_mv = sh(
         ["git", "diff", "--name-only", "--diff-filter=ADR", "--cached"]
-    )
-    # XXX: we should escape spaces and possibly other amenities here
-    new_rm_mv = new_rm_mv.split()
+    ).split()
     return (py_files, rst_files, toml_files, new_rm_mv)
 
 
@@ -132,7 +131,7 @@ def toml_sort(files):
 
 
 def main():
-    py_files, rst_files, toml_files, new_rm_mv = git_commit_files()
+    py_files, rst_files, toml_files, new_rm_mv = git_committed_files()
     if py_files:
         ruff(py_files)
     if rst_files:
