@@ -94,6 +94,21 @@ def git_commit_files():
     return (py_files, rst_files, toml_files, new_rm_mv)
 
 
+def ruff(files):
+    print("running ruff (%s)" % len(files))
+    cmd = [
+        PYTHON,
+        '-m',
+        'ruff',
+        'check',
+        '--no-cache',
+        '--config=pyproject.toml',
+    ] + files
+    ret = subprocess.call(cmd)
+    if ret != 0:
+        return exit("Python code didn't pass 'ruff' style check.")
+
+
 def main():
     py_files, rst_files, toml_files, new_rm_mv = git_commit_files()
     # Check file content.
@@ -119,21 +134,7 @@ def main():
 
     # Python linters
     if py_files:
-        # flake8
-        assert os.path.exists('.flake8')
-        print("running flake8 (%s)" % len(py_files))
-        cmd = [PYTHON, "-m", "flake8", "--config=.flake8"] + py_files
-        ret = subprocess.call(cmd)
-        if ret != 0:
-            return sys.exit("python code didn't pass 'flake8' style check; "
-                            "try running 'make fix-flake8'")
-        # isort
-        print("running isort (%s)" % len(py_files))
-        cmd = [PYTHON, "-m", "isort", "--check-only"] + py_files
-        ret = subprocess.call(cmd)
-        if ret != 0:
-            return sys.exit("python code didn't pass 'isort' style check; "
-                            "try running 'make fix-imports'")
+        ruff(py_files)
 
     # RST linter
     if rst_files:

@@ -6,17 +6,8 @@ PYTHON = python3
 TSCRIPT = pyftpdlib/test/runner.py
 ARGS =
 PYDEPS = \
-	autoflake \
-	autopep8 \
 	check-manifest \
 	coverage \
-	flake8 \
-	flake8-blind-except \
-	flake8-bugbear \
-	flake8-debugger \
-	flake8-print \
-	flake8-quotes \
-	isort \
 	psutil \
 	pylint \
 	pyopenssl \
@@ -163,9 +154,6 @@ test-coverage:  ## Run test coverage.
 ruff:  ## Run ruff linter.
 	@git ls-files '*.py' | xargs $(PYTHON) -m ruff check --config=pyproject.toml --no-cache
 
-flake8:  ## Run flake8 linter.
-	@git ls-files '*.py' | xargs $(PYTHON) -m flake8 --config=.flake8 --jobs=${NUM_WORKERS}
-
 isort:  ## Run isort linter.
 	@git ls-files '*.py' | xargs $(PYTHON) -m isort --check-only --jobs=${NUM_WORKERS}
 
@@ -179,7 +167,6 @@ lint-toml:  ## Linter for pyproject.toml
 	@git ls-files '*.toml' | xargs toml-sort --check
 
 lint-all:  ## Run all linters
-	${MAKE} flake8
 	${MAKE} isort
 	${MAKE} lint-rst
 	${MAKE} lint-toml
@@ -191,10 +178,6 @@ lint-all:  ## Run all linters
 fix-ruff:
 	@git ls-files '*.py' | xargs $(PYTHON) -m ruff --config=pyproject.toml --no-cache --fix
 
-fix-flake8:  ## Run autopep8, fix some Python flake8 / pep8 issues.
-	@git ls-files '*.py' | xargs $(PYTHON) -m autopep8 --in-place --jobs=${NUM_WORKERS} --global-config=.flake8
-	@git ls-files '*.py' | xargs $(PYTHON) -m autoflake --in-place --jobs=${NUM_WORKERS} --remove-all-unused-imports --remove-unused-variables --remove-duplicate-keys
-
 fix-imports:  ## Fix imports with isort.
 	@git ls-files '*.py' | xargs $(PYTHON) -m isort --jobs=${NUM_WORKERS}
 
@@ -205,7 +188,6 @@ fix-unittests:  ## Fix unittest idioms.
 	@git ls-files '*test_*.py' | xargs $(PYTHON) -m teyit --show-stats
 
 fix-all:  ## Run all code fixers.
-	${MAKE} fix-flake8
 	${MAKE} fix-imports
 	${MAKE} fix-toml
 	${MAKE} fix-unittests
