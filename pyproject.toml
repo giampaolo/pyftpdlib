@@ -10,6 +10,7 @@ line-length = 79
 select = [
     # "ALL",
     "B",  # flake8-bugbear
+    "BLE",  # flake8-blind-except
     "E",  # pycodestyle
     "F",  # pyflakes
     "I",  # isort
@@ -31,6 +32,7 @@ ignore = [
     "ARG",  # flake8-unused-arguments
     "B007",  # Loop control variable `x` not used within loop body
     "B904",  # Within an `except` clause, raise exceptions with `raise ... from err`
+    "BLE001",  # Do not catch blind exception: `Exception`
     "C408",  # Unnecessary `dict` call (rewrite as a literal)
     "COM812",  # Trailing comma missing
     "D",  # pydocstyle
