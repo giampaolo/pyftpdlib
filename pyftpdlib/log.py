@@ -36,7 +36,7 @@ def _stderr_supports_color():
             curses.setupterm()
             if curses.tigetnum("colors") > 0:
                 color = True
-        except Exception:
+        except Exception:  # noqa
             pass
     return color
 

@@ -121,7 +121,7 @@ def close_client(session):
         if session.sock is not None:
             try:
                 resp = session.quit()
-            except Exception:
+            except Exception:  # noqa
                 pass
             else:
                 # ...just to make sure the server isn't replying to some
@@ -231,7 +231,7 @@ def cleanup():
         try:
             sys.stderr.write("garbage: %s\n" % repr(x))
             x.close()
-        except Exception:
+        except Exception:  # noqa
             pass
     map.clear()
 
@@ -315,7 +315,7 @@ def call_until(fun, expr, timeout=GLOBAL_TIMEOUT):
     stop_at = time.time() + timeout
     while time.time() < stop_at:
         ret = fun()
-        if eval(expr):
+        if eval(expr):  # noqa
             return ret
         time.sleep(0.001)
     raise RuntimeError('timed out (ret=%r)' % ret)

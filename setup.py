@@ -9,6 +9,7 @@ $ python setup.py install
 
 from __future__ import print_function
 
+import ast
 import os
 import sys
 import textwrap
@@ -26,7 +27,7 @@ def get_version():
     with open(INIT) as f:
         for line in f:
             if line.startswith('__ver__'):
-                ret = eval(line.strip().split(' = ')[1])  # noqa
+                ret = ast.literal_eval(line.strip().split(' = ')[1])
                 assert ret.count('.') == 2, ret
                 for num in ret.split('.'):
                     assert num.isdigit(), ret
