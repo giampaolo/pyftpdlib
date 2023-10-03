@@ -14,6 +14,7 @@ select = [
     "E",  # pycodestyle
     "F",  # pyflakes
     "I",  # isort
+    "ISC",  # flake8-implicit-str-concat
     "N",  # pep8-naming
     "Q",  # flake8 quotes
     "S110",  # `try`-`except`-`pass` detected, consider logging the exception (IMPORTANT)
@@ -33,10 +34,12 @@ ignore = [
     "B007",  # Loop control variable `x` not used within loop body
     "B904",  # Within an `except` clause, raise exceptions with `raise ... from err`
     "BLE001",  # Do not catch blind exception: `Exception`
+    "C4",  # flake8-comprehensions (PYTHON2.7 COMPAT)
     "C408",  # Unnecessary `dict` call (rewrite as a literal)
     "C90",  # mccabe
     "COM812",  # Trailing comma missing
     "D",  # pydocstyle
+    "DTZ",  # flake8-datetimez
     "EM",  # flake8-errmsg
     "ERA001",  # Found commented-out code
     "FBT002",  # Boolean default positional argument in function definition
@@ -59,6 +62,7 @@ ignore = [
     "PT",  # flake8-pytest-style
     "PT009",  # Use a regular `assert` instead of unittest-style `assertTrue`
     "PTH",  # flake8-use-pathlib
+    "PYI",  # flake8-pyi
     "Q000",  # Single quotes found but double quotes preferred
     "RET",  # flake8-return
     "S",  # flake8-bandit

@@ -402,14 +402,14 @@ class PassiveDTP(Acceptor):
                 except socket.error:
                     pass
                 msg = '425 Rejected data connection from foreign address ' \
-                      '%s:%s.' % (addr[0], addr[1])
+                    + '%s:%s.' % (addr[0], addr[1])
                 self.cmd_channel.respond_w_warning(msg)
                 # do not close listening socket: it couldn't be client's blame
                 return
             else:
                 # site-to-site FTP allowed
                 msg = 'Established data connection with foreign address ' \
-                      '%s:%s.' % (addr[0], addr[1])
+                    + '%s:%s.' % (addr[0], addr[1])
                 self.cmd_channel.log(msg, logfun=logger.warning)
         # Immediately close the current channel (we accept only one
         # connection at time) and avoid running out of max connections
@@ -1550,8 +1550,8 @@ class FTPHandler(AsyncChat):
 
                 if not self.fs.validpath(arg):
                     line = self.fs.fs2ftp(arg)
-                    msg = '"%s" points to a path which is outside ' \
-                          "the user's root directory" % line
+                    msg = "%r points to a path which is outside " % line
+                    msg += "the user's root directory"
                     self.respond("550 %s." % msg)
                     self.log_cmd(cmd, arg, 550, msg)
                     return

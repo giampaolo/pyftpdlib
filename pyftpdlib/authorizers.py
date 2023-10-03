@@ -709,8 +709,8 @@ else:  # pragma: no cover
                     win32security.LookupAccountName(None, username)[0])
             except pywintypes.error as err:
                 raise AuthorizerError(err)
-            path = r"SOFTWARE\Microsoft\Windows NT" \
-                   r"\CurrentVersion\ProfileList" + "\\" + sid
+            path = r"SOFTWARE\Microsoft\Windows NT"
+            path += r"\CurrentVersion\ProfileList" + "\\" + sid
             try:
                 key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path)
             except WindowsError:

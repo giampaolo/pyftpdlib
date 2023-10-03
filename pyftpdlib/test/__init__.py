@@ -277,7 +277,7 @@ class retry(object):
             for _ in self:
                 try:
                     return fun(cls, *args, **kwargs)
-                except self.exception as _:  # NOQA
+                except self.exception as _:
                     exc = _
                     if self.logfun is not None:
                         self.logfun(exc)
