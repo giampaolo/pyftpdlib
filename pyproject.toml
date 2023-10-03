@@ -9,16 +9,16 @@ omit = [
     "setup.py",
 ]
 exclude_lines = [
-    "pragma: no cover",
-    "if __name__ == .__main__.:",
     "except ImportError:",
-    "if os.name == 'nt':",
-    "raise NotImplementedError('must be implemented in subclass')",
+    "if PY3:",
+    "if __name__ == .__main__.:",
+    "if hasattr(select, 'devpoll'):",
     "if hasattr(select, 'epoll'):",
     "if hasattr(select, 'kqueue'):",
-    "if PY3:",
-    "if hasattr(select, 'devpoll'):",
     "if hasattr(select, 'kqueue'):",
+    "if os.name == 'nt':",
+    "pragma: no cover",
+    "raise NotImplementedError('must be implemented in subclass')",
 ]
 
 [tool.pylint.messages_control]
@@ -47,3 +47,16 @@ disable = [
     "use-maxsplit-arg",
     "useless-object-inheritance",
 ]
+
+[tool.rstcheck]
+ignore_messages = [
+    "Unexpected possible title overline or transition",
+]
+
+[tool.tomlsort]
+in_place = true
+no_sort_tables = true
+sort_inline_arrays = true
+spaces_before_inline_comment = 2
+spaces_indent_inline_array = 4
+trailing_comma_inline_array = true

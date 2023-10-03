@@ -10,18 +10,20 @@ PYDEPS = \
 	autopep8 \
 	check-manifest \
 	coverage \
+	flake8 \
 	flake8-blind-except \
 	flake8-bugbear \
 	flake8-debugger \
 	flake8-print \
 	flake8-quotes \
-	flake8 \
 	isort \
 	psutil \
 	pylint \
 	pyopenssl \
+	rstcheck \
 	setuptools \
 	teyit \
+	toml-sort \
 	twine
 PYVER = $(shell $(PYTHON) -c "import sys; print(sys.version_info[0])")
 ifeq ($(PYVER), 2)
@@ -167,9 +169,17 @@ isort:  ## Run isort linter.
 pylint:  ## Python pylint (not mandatory, just run it from time to time)
 	@git ls-files '*.py' | xargs $(PYTHON) -m pylint --rcfile=pyproject.toml --jobs=${NUM_WORKERS}
 
+lint-rst:  ## Run RsT linter.
+	@git ls-files '*.rst' | xargs rstcheck --config=pyproject.toml
+
+lint-toml:  ## Linter for pyproject.toml
+	@git ls-files '*.toml' | xargs toml-sort --check
+
 lint-all:  ## Run all linters
 	${MAKE} flake8
 	${MAKE} isort
+	${MAKE} lint-rst
+	${MAKE} lint-toml
 
 # ===================================================================
 # Fixers
@@ -182,12 +192,16 @@ fix-flake8:  ## Run autopep8, fix some Python flake8 / pep8 issues.
 fix-imports:  ## Fix imports with isort.
 	@git ls-files '*.py' | xargs $(PYTHON) -m isort --jobs=${NUM_WORKERS}
 
+fix-toml:  ## Fix pyproject.toml
+	@git ls-files '*.toml' | xargs toml-sort
+
 fix-unittests:  ## Fix unittest idioms.
 	@git ls-files '*test_*.py' | xargs $(PYTHON) -m teyit --show-stats
 
 fix-all:  ## Run all code fixers.
 	${MAKE} fix-flake8
 	${MAKE} fix-imports
+	${MAKE} fix-toml
 	${MAKE} fix-unittests
 
 # ===================================================================
