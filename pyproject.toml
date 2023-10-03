@@ -39,6 +39,7 @@ ignore = [
     "FIX",  # Line contains TODO / XXX / ..., consider resolving the issue
     "FLY",  # flynt
     "G004",  # Logging statement uses f-string
+    "INP",  # flake8-no-pep420
     "N801",  # Class name `async_chat` should use CapWords convention
     "N802",  # Function name X should be lowercase.
     "N803",  # Argument name X should be lowercase.
