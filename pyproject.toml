@@ -18,6 +18,7 @@ select = [
     "SIM",  # flake8-simplify
     "T10",  # flake8-debugger
     "T20",  # flake8-print
+    "TRY",  # tryceratops
     "UP",  # pyupgrade
     "YTT",  # flake8-2020
 ]
@@ -58,6 +59,10 @@ ignore = [
     "SIM117",  # Use a single `with` statement with multiple contexts instead of nested `with` statements
     "SLF",  # flake8-self
     "TD",  # all TODOs, XXXs, etc.
+    "TRY003",  # Avoid specifying long messages outside the exception class
+    "TRY200",  # Use `raise from` to specify exception cause
+    "TRY300",  # Consider moving this statement to an `else` block
+    "TRY301",  # Abstract `raise` to an inner function
     "UP004",  # [*] Class `_Base` inherits from `object`
     "UP008",  # [*] Use `super()` instead of `super(__class__, self)`
     "UP010",  # [*] Unnecessary `__future__` import `print_function` for target Python version
