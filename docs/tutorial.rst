@@ -280,8 +280,6 @@ installed.
     if __name__ == "__main__":
         main()
 
-.. _changing-the-concurrency-model:
-
 Changing the concurrency model
 ==============================
 
@@ -346,13 +344,11 @@ Multiple processes
     if __name__ == "__main__":
         main()
 
-.. _pre-fork:
-
-Pre-fork
+Pre fork
 ^^^^^^^^
 
 There also exists a third option (UNIX only): the pre-fork model.
-Pre-fork means that a certain number of worker processes are ``spawn()``ed
+Pre-fork means that a certain number of worker processes are ``spawn()``-ed
 before starting the server.
 Each worker process will keep using a 1-thread, async concurrency model,
 handling multiple concurrent connections, but the workload is split.
@@ -490,7 +486,7 @@ A small example which shows how to use callback methods via
     class MyHandler(FTPHandler):
 
         def on_connect(self):
-            print "%s:%s connected" % (self.remote_ip, self.remote_port)
+            print("%s:%s connected" % (self.remote_ip, self.remote_port))
 
         def on_disconnect(self):
             # do something when client disconnects

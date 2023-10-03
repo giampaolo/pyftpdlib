@@ -528,8 +528,10 @@ class _BasePollEpoll(_IOLoop):
                 raise
 
     def poll(self, timeout):
+        if timeout is None:
+            timeout = -1  # -1 waits indefinitely
         try:
-            events = self._poller.poll(timeout or -1)  # -1 waits indefinitely
+            events = self._poller.poll(timeout)
         except (IOError, select.error) as err:
             # for epoll() and poll() respectively
             if err.errno == errno.EINTR:

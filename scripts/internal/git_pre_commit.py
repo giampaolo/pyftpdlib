@@ -7,16 +7,8 @@
 """
 This gets executed on 'git commit' and rejects the commit in case the
 submitted code does not pass validation. Validation is run only against
-the files which were modified in the commit. Checks:
-
-- assert no space at EOLs
-- assert not pdb.set_trace in code
-- assert no bare except clause ("except:") in code
-- assert "flake8" checks pass
-- assert "isort" checks pass
-- abort if files were added/renamed/removed and MANIFEST.in was not updated
-
-Install this with "make install-git-hooks".
+the files which were modified in the commit.Install this with "make
+install-git-hooks".
 """
 
 from __future__ import print_function
@@ -65,8 +57,12 @@ def exit(msg):
 
 
 def sh(cmd):
-    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE, universal_newlines=True)
+    if isinstance(cmd, str):
+        cmd = shlex.split(cmd)
+    p = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        universal_newlines=True
+    )
     stdout, stderr = p.communicate()
     if p.returncode != 0:
         raise RuntimeError(stderr)
@@ -83,17 +79,23 @@ def open_text(path):
 
 
 def git_commit_files():
-    out = sh("git diff --cached --name-only")
+    out = sh(["git", "diff", "--cached", "--name-only"])
     py_files = [x for x in out.split('\n') if x.endswith('.py') and
                 os.path.exists(x)]
-    new_rm_mv = sh("git diff --name-only --diff-filter=ADR --cached")
+    rst_files = [x for x in out.split('\n') if x.endswith('.rst') and
+                 os.path.exists(x)]
+    toml_files = [x for x in out.split('\n') if x.endswith('.toml') and
+                  os.path.exists(x)]
+    new_rm_mv = sh(
+        ["git", "diff", "--name-only", "--diff-filter=ADR", "--cached"]
+    )
     # XXX: we should escape spaces and possibly other amenities here
     new_rm_mv = new_rm_mv.split()
-    return (py_files, new_rm_mv)
+    return (py_files, rst_files, toml_files, new_rm_mv)
 
 
 def main():
-    py_files, new_rm_mv = git_commit_files()
+    py_files, rst_files, toml_files, new_rm_mv = git_commit_files()
     # Check file content.
     for path in py_files:
         if os.path.realpath(path) == THIS_SCRIPT:
@@ -105,31 +107,56 @@ def main():
             if line.endswith(' '):
                 print("%s:%s %r" % (path, lineno, line))
                 return sys.exit("space at end of line")
+            line = line.rstrip()
+            # # pdb (now provided by flake8-debugger plugin)
+            # if "pdb.set_trace" in line:
+            #     print("%s:%s %s" % (path, lineno, line))
+            #     return sys.exit("you forgot a pdb in your python code")
+            # # bare except clause (now provided by flake8-blind-except plugin)
+            # if "except:" in line and not line.endswith("# NOQA"):
+            #     print("%s:%s %s" % (path, lineno, line))
+            #     return sys.exit("bare except clause")
 
     # Python linters
     if py_files:
         # flake8
         assert os.path.exists('.flake8')
-        cmd = "%s -m flake8 --config=.flake8 %s" % (PYTHON, " ".join(py_files))
-        ret = subprocess.call(shlex.split(cmd))
+        print("running flake8 (%s)" % len(py_files))
+        cmd = [PYTHON, "-m", "flake8", "--config=.flake8"] + py_files
+        ret = subprocess.call(cmd)
         if ret != 0:
             return sys.exit("python code didn't pass 'flake8' style check; "
                             "try running 'make fix-flake8'")
         # isort
-        assert os.path.exists('pyproject.toml')
-        cmd = "%s -m isort --settings=pyproject.toml --check-only %s" % (
-            PYTHON, " ".join(py_files))
-        ret = subprocess.call(shlex.split(cmd))
+        print("running isort (%s)" % len(py_files))
+        cmd = [PYTHON, "-m", "isort", "--check-only"] + py_files
+        ret = subprocess.call(cmd)
         if ret != 0:
             return sys.exit("python code didn't pass 'isort' style check; "
                             "try running 'make fix-imports'")
+
+    # RST linter
+    if rst_files:
+        print("running rst linter (%s)" % len(rst_files))
+        cmd = ["rstcheck", "--config=pyproject.toml"] + rst_files
+        ret = subprocess.call(cmd)
+        if ret != 0:
+            return sys.exit("RST code didn't pass style check")
+
+    # TOML linter
+    if toml_files:
+        print("running toml linter (%s)" % len(toml_files))
+        cmd = ["toml-sort", "--check"] + toml_files
+        ret = subprocess.call(cmd)
+        if ret != 0:
+            return sys.exit("RST code didn't pass style check")
+
     if new_rm_mv:
-        out = sh("%s scripts/internal/generate_manifest.py" % PYTHON)
+        out = sh([PYTHON, "scripts/internal/generate_manifest.py"])
         with open_text('MANIFEST.in') as f:
             if out.strip() != f.read().strip():
-                return sys.exit(
-                    "some files were added, deleted or renamed; "
-                    "run 'make generate-manifest' and commit again")
+                sys.exit("some files were added, deleted or renamed; "
+                         "run 'make generate-manifest' and commit again")
 
 
 main()
