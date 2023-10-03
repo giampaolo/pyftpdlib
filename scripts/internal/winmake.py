@@ -8,7 +8,7 @@
 """Shortcuts for various tasks, emulating UNIX "make" on Windows.
 This is supposed to be invoked by "make.bat" and not used directly.
 This was originally written as a bat file but they suck so much
-that they should be deemed illegal!.
+that they should be deemed illegal!
 """
 
 from __future__ import print_function
