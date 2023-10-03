@@ -34,6 +34,7 @@ ignore = [
     "B904",  # Within an `except` clause, raise exceptions with `raise ... from err`
     "BLE001",  # Do not catch blind exception: `Exception`
     "C408",  # Unnecessary `dict` call (rewrite as a literal)
+    "C90",  # mccabe
     "COM812",  # Trailing comma missing
     "D",  # pydocstyle
     "EM",  # flake8-errmsg
