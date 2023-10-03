@@ -1,4 +1,4 @@
-[tool.isort]
+ [tool.isort]
 force_single_line = true  # one import per line
 lines_after_imports = 2  # blank spaces after import section
 
@@ -9,19 +9,19 @@ line-length = 79
 # to get a list of all values: `python3 -m ruff linter`
 select = [
     # "ALL",
-    "B",     # flake8-bugbear
-    "E",     # pycodestyle
-    "F",     # pyflakes
-    "I",     # isort
-    "N",     # pep8-naming
-    "Q",     # flake8 quotes
-    "YTT",  # flake8-2020
+    "B",  # flake8-bugbear
+    "E",  # pycodestyle
+    "F",  # pyflakes
+    "I",  # isort
+    "N",  # pep8-naming
+    "Q",  # flake8 quotes
     "SIM",  # flake8-simplify
-    "T10",   # flake8-debugger
-    "T20",   # flake8-print
+    "T10",  # flake8-debugger
+    "T20",  # flake8-print
     "UP",  # pyupgrade
-    # "E203",  # https://beta.ruff.rs/docs/rules/whitespace-before-punctuation/, provided by autopep8
+    "YTT",  # flake8-2020
 ]
+
 ignore = [
     "B007",  # Loop control variable `x` not used within loop body
     "N802",  # Function name X should be lowercase.
@@ -29,16 +29,18 @@ ignore = [
     "N806",  # Variable X in function should be lowercase.
     "N817",  # CamelCase X imported as acronym X.
     "Q000",  # Single quotes found but double quotes preferred
-    "T203",  # `pprint` found
 
-    "ANN",  # missing annotation
-    "D",  # pydocstyle
-    "FIX",  # Line contains TODO / XXX / ..., consider resolving the issue
-    "PT",  # pytest
-    "EM",    # flake8-errmsg
-    "ARG",  # flake8-unused-arguments
-    "PTH",  # Use pathlib instead of os.path
-    "TD",  # all TODOs, XXXs, etc.
+    # "ANN",  # missing annotation
+    # "D",  # pydocstyle
+    # "FIX",  # Line contains TODO / XXX / ..., consider resolving the issue
+    # "PT",  # pytest
+    # "EM",    # flake8-errmsg
+    # "ARG",  # flake8-unused-arguments
+    # "PTH",  # Use pathlib instead of os.path
+    # "RET",  # flake8-return
+    # "SLF",  # flake8-self
+    # "FLY",  # flynt
+    # "TD",  # all TODOs, XXXs, etc.
 
     "A001",  # Variable `X` is shadowing a Python builtin
     "B904",  # Within an `except` clause, raise exceptions with `raise ... from err`
@@ -59,8 +61,8 @@ ignore = [
     "SIM115",  # Use context handler for opening files
     "SIM117", # Use a single `with` statement with multiple contexts instead of nested `with` statements
     "UP004",  # [*] Class `_Base` inherits from `object`
-    "UP008", #  [*] Use `super()` instead of `super(__class__, self)`
-    "UP010", # [*] Unnecessary `__future__` import `print_function` for target Python version
+    "UP008",  #  [*] Use `super()` instead of `super(__class__, self)`
+    "UP010",  # [*] Unnecessary `__future__` import `print_function` for target Python version
     "UP024",  # [*] Replace aliased errors with `OSError`
     "UP031",  # [*] Use format specifiers instead of percent format
 ]
