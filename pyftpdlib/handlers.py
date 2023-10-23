@@ -3145,7 +3145,7 @@ if SSL is not None:
             self._ssl_want_write = False
 
         def readable(self):
-            return self._ssl_want_read or super().readable()
+            return self._ssl_accepting or self._ssl_want_read or super().readable()
 
         def writable(self):
             return self._ssl_want_write or super().writable()
