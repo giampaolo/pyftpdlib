@@ -10,6 +10,8 @@ Version: 1.5.9 - IN DEVELOPMENT
 
 **Bug fixes**
 
+- #604: client connection may be reset in PASV/EPSV mode during TLS handshake.
+  (patch by Benedikt McMullin)
 - #607: possible infinite wait in Epoll  (patch by @stat1c-void)
 - #607: possible infinite traceback printing in DTPHandler (patch by
   @stat1c-void)

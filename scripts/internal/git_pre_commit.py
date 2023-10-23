@@ -101,33 +101,25 @@ def git_committed_files():
 
 def ruff(files):
     print("running ruff (%s)" % len(files))
-    cmd = [
-        PYTHON,
-        "-m",
-        "ruff",
-        "check",
-        "--no-cache",
-        "--config=pyproject.toml",
-    ] + files
-    ret = subprocess.call(cmd)
-    if ret != 0:
-        return exit("Python code didn't pass 'ruff' style check.")
+    cmd = [PYTHON, "-m", "ruff", "check", "--no-cache"] + files
+    if subprocess.call(cmd) != 0:
+        msg = "Python code didn't pass 'ruff' style check. "
+        msg += "Try running 'make fix-ruff'."
+        return exit(msg)
 
 
 def rstcheck(files):
     print("running rst linter (%s)" % len(files))
     cmd = ["rstcheck", "--config=pyproject.toml"] + files
-    ret = subprocess.call(cmd)
-    if ret != 0:
+    if subprocess.call(cmd) != 0:
         return sys.exit("RST code didn't pass style check")
 
 
 def toml_sort(files):
     print("running toml linter (%s)" % len(files))
     cmd = ["toml-sort", "--check"] + files
-    ret = subprocess.call(cmd)
-    if ret != 0:
-        return sys.exit("RST code didn't pass style check")
+    if subprocess.call(cmd) != 0:
+        return sys.exit("%s didn't pass style check" % ' '.join(files))
 
 
 def main():
