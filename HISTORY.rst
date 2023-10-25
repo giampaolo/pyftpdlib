@@ -15,6 +15,10 @@ Version: 1.5.9 - IN DEVELOPMENT
 - #607: possible infinite wait in Epoll  (patch by @stat1c-void)
 - #607: possible infinite traceback printing in DTPHandler (patch by
   @stat1c-void)
+- #613: (CRITICAL) bugfix for TLS disconnect causing 100% CPU usage. (patch by
+  @hakai)
+- #614: close connection on SSL EOF error, instead of erroneously replying with
+  "226 Transfer completed."
 
 Version: 1.5.8 - 2023-10-02
 ===========================
