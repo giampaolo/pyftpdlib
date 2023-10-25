@@ -68,6 +68,6 @@ Usage example:
 """
 
 
-__ver__ = '1.5.8'
+__ver__ = '1.5.9'
 __author__ = "Giampaolo Rodola' <g.rodola@gmail.com>"
 __web__ = 'https://github.com/giampaolo/pyftpdlib/'

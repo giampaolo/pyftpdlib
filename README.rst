@@ -85,19 +85,17 @@ Features
   `multiple thread / process <http://pyftpdlib.readthedocs.io/en/latest/tutorial.html#changing-the-concurrency-model>`__
   model (as in: you'll be free to block or use slow filesystems).
 - Portable: entirely written in pure Python; works with Python **2.7** and
-  **3.X** by using a single code base.
+  **3.X** using a single code base.
 - Supports **FTPS** (`RFC-4217 <http://tools.ietf.org/html/rfc4217>`__),
   **IPv6** (`RFC-2428 <ftp://ftp.rfc-editor.org/in-notes/rfc2428.txt>`__),
   **Unicode** file names (`RFC-2640 <http://tools.ietf.org/html/rfc2640>`__),
   **MLSD/MLST** commands (`RFC-3659 <ftp://ftp.rfc-editor.org/in-notes/rfc3659.txt>`__).
 - Support for virtual users and virtual filesystem.
-- Extremely flexible system of "authorizers" able to manage both "virtual" and
+- Flexible system of "authorizers" able to manage both "virtual" and
   "real" users on on both
   `UNIX <http://pyftpdlib.readthedocs.io/en/latest/tutorial.html#unix-ftp-server>`__
   and
   `Windows <http://pyftpdlib.readthedocs.io/en/latest/tutorial.html#windows-ftp-server>`__.
-- `Test coverage <https://github.com/giampaolo/pyftpdlib/blob/master/pyftpdlib/test/>`__
-  close to 100%.
 
 Performances
 ============
