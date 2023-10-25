@@ -22,6 +22,8 @@ try:
 except ImportError:
     from io import BytesIO
 
+import unittest
+
 from pyftpdlib._compat import PY3
 from pyftpdlib._compat import b
 from pyftpdlib._compat import super
@@ -47,20 +49,17 @@ from pyftpdlib.test import SUPPORTS_IPV4
 from pyftpdlib.test import SUPPORTS_IPV6
 from pyftpdlib.test import SUPPORTS_SENDFILE
 from pyftpdlib.test import USER
-from pyftpdlib.test import VERBOSITY
 from pyftpdlib.test import WINDOWS
 from pyftpdlib.test import MProcessTestFTPd
 from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import ThreadedTestFTPd
 from pyftpdlib.test import close_client
-from pyftpdlib.test import configure_logging
 from pyftpdlib.test import disable_log_warning
 from pyftpdlib.test import get_server_handler
 from pyftpdlib.test import mock
 from pyftpdlib.test import retry_on_failure
 from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import touch
-from pyftpdlib.test import unittest
 
 
 sendfile = _import_sendfile()
@@ -2734,8 +2733,6 @@ class ThreadedFTPTests(PyftpdlibTestCase):
             self.assertEqual(hash(data), hash(datafile))
 
 
-configure_logging()
-
-
 if __name__ == '__main__':
-    unittest.main(verbosity=VERBOSITY)
+    from pyftpdlib.test.runner import run_from_name
+    run_from_name(__file__)

@@ -6,6 +6,7 @@ import os
 import random
 import string
 import sys
+import unittest
 import warnings
 
 from pyftpdlib._compat import getcwdu
@@ -18,11 +19,9 @@ from pyftpdlib.test import HOME
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import POSIX
 from pyftpdlib.test import USER
-from pyftpdlib.test import VERBOSITY
 from pyftpdlib.test import WINDOWS
 from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import touch
-from pyftpdlib.test import unittest
 
 
 if POSIX:
@@ -558,4 +557,5 @@ class TestWindowsAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=VERBOSITY)
+    from pyftpdlib.test.runner import run_from_name
+    run_from_name(__file__)

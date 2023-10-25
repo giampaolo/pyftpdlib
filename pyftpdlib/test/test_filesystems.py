@@ -4,17 +4,16 @@
 
 import os
 import tempfile
+import unittest
 
 from pyftpdlib._compat import getcwdu
 from pyftpdlib._compat import u
 from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.test import HOME
 from pyftpdlib.test import POSIX
-from pyftpdlib.test import VERBOSITY
 from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import touch
-from pyftpdlib.test import unittest
 
 
 if POSIX:
@@ -209,4 +208,5 @@ class TestUnixFilesystem(PyftpdlibTestCase):
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=VERBOSITY)
+    from pyftpdlib.test.runner import run_from_name
+    run_from_name(__file__)

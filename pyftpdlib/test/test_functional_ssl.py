@@ -7,6 +7,7 @@ import ftplib
 import os
 import socket
 import ssl
+import unittest
 
 import OpenSSL  # requires "pip install pyopenssl"
 
@@ -17,13 +18,10 @@ from pyftpdlib.test import GLOBAL_TIMEOUT
 from pyftpdlib.test import OSX
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import USER
-from pyftpdlib.test import VERBOSITY
 from pyftpdlib.test import WINDOWS
 from pyftpdlib.test import MProcessTestFTPd
 from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import close_client
-from pyftpdlib.test import configure_logging
-from pyftpdlib.test import unittest
 from pyftpdlib.test.test_functional import TestConfigurableOptions
 from pyftpdlib.test.test_functional import TestCornerCases
 from pyftpdlib.test.test_functional import TestFtpAbort
@@ -347,8 +345,6 @@ class TestFTPS(PyftpdlibTestCase):
             self.client.ssl_version = ssl.PROTOCOL_SSLv2
 
 
-configure_logging()
-
-
 if __name__ == '__main__':
-    unittest.main(verbosity=VERBOSITY)
+    from pyftpdlib.test.runner import run_from_name
+    run_from_name(__file__)

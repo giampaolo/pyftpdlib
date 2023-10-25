@@ -51,7 +51,7 @@ jobs:
       - name: Install pydeps
         run: |
           python.exe -m pip install --upgrade --user setuptools pip wheel
-          python.exe -m pip install --upgrade unittest2 mock ipaddress pypiwin32 wmi pyopenssl psutil
+          python.exe -m pip install --upgrade mock ipaddress pypiwin32 wmi pyopenssl psutil
           python.exe -m pip freeze
           python.exe setup.py install
 

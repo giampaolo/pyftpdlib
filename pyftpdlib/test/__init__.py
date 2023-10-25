@@ -4,6 +4,7 @@
 
 from __future__ import print_function
 
+import atexit
 import contextlib
 import functools
 import logging
@@ -16,6 +17,7 @@ import sys
 import tempfile
 import threading
 import time
+import unittest
 import warnings
 
 import psutil
@@ -31,11 +33,6 @@ from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
 
 
-if PY3:
-    import unittest
-else:
-    import unittest2 as unittest  # requires "pip install unittest2"
-
 try:
     from unittest import mock  # py3
 except ImportError:
@@ -49,6 +46,8 @@ sendfile = _import_sendfile()
 
 # --- platforms
 
+HERE = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
+ROOT_DIR = os.path.realpath(os.path.join(HERE, '..', '..'))
 PYPY = '__pypy__' in sys.builtin_module_names
 # whether we're running this test suite on a Continuous Integration service
 APPVEYOR = 'APPVEYOR' in os.environ
@@ -60,6 +59,9 @@ IS_64BIT = sys.maxsize > 2 ** 32
 OSX = sys.platform.startswith("darwin")
 POSIX = os.name == 'posix'
 WINDOWS = os.name == 'nt'
+LOG_FMT = "[%(levelname)1.1s t: %(threadName)-15s p: %(processName)-25s "
+LOG_FMT += "@%(module)-12s: %(lineno)-4s] %(message)s"
+
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
 try:
@@ -108,6 +110,11 @@ class PyftpdlibTestCase(unittest.TestCase):
             fqmod = 'pyftpdlib.test.' + fqmod
         return "%s.%s.%s" % (
             fqmod, self.__class__.__name__, self._testMethodName)
+
+    # assertRaisesRegexp renamed to assertRaisesRegex in 3.3;
+    # add support for the new name.
+    if not hasattr(unittest.TestCase, 'assertRaisesRegex'):
+        assertRaisesRegex = unittest.TestCase.assertRaisesRegexp  # noqa
 
     def get_testfn(self, suffix="", dir=None):
         fname = get_testfn(suffix=suffix, dir=dir)
@@ -204,10 +211,13 @@ def touch(name):
 
 def configure_logging():
     """Set pyftpdlib logger to "WARNING" level."""
-    channel = logging.StreamHandler()
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter(fmt=LOG_FMT)
+    handler.setFormatter(formatter)
     logger = logging.getLogger('pyftpdlib')
     logger.setLevel(logging.WARNING)
-    logger.addHandler(channel)
+    logger.addHandler(handler)
+
 
 
 def disable_log_warning(fun):
@@ -350,22 +360,25 @@ def setup_server(handler, server_class, addr=None):
     return server
 
 
-def assert_free_resources():
+def assert_free_resources(parent_pid=None):
+    # check orphaned threads
     ts = threading.enumerate()
     assert len(ts) == 1, ts
-    p = psutil.Process()
-    children = p.children()
+    # check orphaned process children
+    this_proc = psutil.Process(parent_pid or os.getpid())
+    children = this_proc.children()
     if children:
-        for p in children:
-            try:
-                p.kill()
-                p.wait(GLOBAL_TIMEOUT)
-            except psutil.NoSuchProcess:
-                pass
         warnings.warn("some children didn't terminate %r" % str(children),
                       UserWarning, stacklevel=2)
+        for child in children:
+            try:
+                child.kill()
+                child.wait(GLOBAL_TIMEOUT)
+            except psutil.NoSuchProcess:
+                pass
+    # check unclosed connections
     if POSIX:
-        cons = [x for x in p.connections('tcp')
+        cons = [x for x in this_proc.connections('tcp')
                 if x.status != psutil.CONN_CLOSE_WAIT]
         if cons:
             warnings.warn("some connections didn't close %r" % str(cons),
@@ -436,6 +449,7 @@ class ThreadedTestFTPd(threading.Thread):
     daemon = True
 
     def __init__(self, addr=None):
+        self.parent_pid = os.getpid()
         super().__init__(name='test-ftpd')
         self.server = setup_server(self.handler, self.server_class, addr=addr)
         self.host, self.port = self.server.socket.getsockname()[:2]
@@ -459,7 +473,7 @@ class ThreadedTestFTPd(threading.Thread):
         self.server.close_all()
         self.join()
         reset_server_opts()
-        assert_free_resources()
+        assert_free_resources(self.parent_pid)
 
 
 if POSIX:
@@ -469,7 +483,7 @@ if POSIX:
         server_class = FTPServer
 
         def __init__(self, addr=None):
-            super().__init__(name='test-ftpd')
+            super().__init__()
             self.server = setup_server(
                 self.handler, self.server_class, addr=addr)
             self.host, self.port = self.server.socket.getsockname()[:2]
@@ -478,6 +492,7 @@ if POSIX:
         def run(self):
             assert not self._started
             self._started = True
+            self.name = "%s(%s)" % (self.__class__.__name__, self.pid)
             self.server.serve_forever()
 
         def stop(self):
@@ -489,3 +504,10 @@ if POSIX:
 else:
     # Windows
     MProcessTestFTPd = ThreadedTestFTPd
+
+
+@atexit.register
+def exit_cleanup():
+    for name in os.listdir(ROOT_DIR):
+        if name.startswith(TESTFN_PREFIX):
+            safe_rmpath(os.path.join(ROOT_DIR, name))

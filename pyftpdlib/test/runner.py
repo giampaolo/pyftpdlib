@@ -2,44 +2,40 @@
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
 
+"""Unit test runner, providing additional features on top of unittest
+module:
+- colourized output
+- print failures/tracebacks on CTRL+C
+- re-run failed tests only (make test-failed).
+
+Invocation examples:
+- make test
+- make test-failed
+"""
 
 from __future__ import print_function
 
-import atexit
+import optparse
 import os
 import sys
-from unittest import TestResult
-from unittest import TextTestResult
-from unittest import TextTestRunner
+import unittest
 
-
-try:
-    import ctypes
-except ImportError:
-    ctypes = None
-
+from pyftpdlib._compat import super
+from pyftpdlib.test import CI_TESTING
 from pyftpdlib.test import POSIX
-from pyftpdlib.test import VERBOSITY
-from pyftpdlib.test import WINDOWS
 from pyftpdlib.test import configure_logging
-from pyftpdlib.test import unittest
+from pyftpdlib.test import safe_rmpath
 
 
+VERBOSITY = 2
+FAILED_TESTS_FNAME = '.failed-tests.txt'
 HERE = os.path.abspath(os.path.dirname(__file__))
-if POSIX:
-    GREEN = 1
-    RED = 2
-    BROWN = 94
-else:
-    GREEN = 2
-    RED = 4
-    BROWN = 6
-    DEFAULT_COLOR = 7
+loadTestsFromTestCase = unittest.defaultTestLoader.loadTestsFromTestCase  # noqa
 
 
-def term_supports_colors(file=sys.stdout):
-    if WINDOWS:
-        return ctypes is not None
+def term_supports_colors(file=sys.stdout):  # pragma: no cover
+    if os.name == 'nt':
+        return True
     try:
         import curses
         assert file.isatty()
@@ -51,109 +47,252 @@ def term_supports_colors(file=sys.stdout):
         return True
 
 
-def hilite(s, color, bold=False):
-    """Return an highlighted version of 'string'."""
-    attr = []
-    if color == GREEN:
-        attr.append('32')
-    elif color == RED:
-        attr.append('91')
-    elif color == BROWN:
-        attr.append('33')
+USE_COLORS = not CI_TESTING and term_supports_colors()
+
+
+def print_color(
+        s, color=None, bold=False, file=sys.stdout):  # pragma: no cover
+    """Print a colorized version of string."""
+    if not term_supports_colors():
+        print(s, file=file)  # NOQA
+    elif POSIX:
+        print(hilite(s, color, bold), file=file)  # NOQA
     else:
-        raise ValueError("unrecognized color")
+        import ctypes
+
+        DEFAULT_COLOR = 7
+        GetStdHandle = ctypes.windll.Kernel32.GetStdHandle
+        SetConsoleTextAttribute = \
+            ctypes.windll.Kernel32.SetConsoleTextAttribute
+
+        colors = dict(green=2, red=4, brown=6, yellow=6)
+        colors[None] = DEFAULT_COLOR
+        try:
+            color = colors[color]
+        except KeyError:
+            raise ValueError("invalid color %r; choose between %r" % (
+                color, list(colors.keys())))
+        if bold and color <= 7:
+            color += 8
+
+        handle_id = -12 if file is sys.stderr else -11
+        GetStdHandle.restype = ctypes.c_ulong
+        handle = GetStdHandle(handle_id)
+        SetConsoleTextAttribute(handle, color)
+        try:
+            print(s, file=file)    # NOQA
+        finally:
+            SetConsoleTextAttribute(handle, DEFAULT_COLOR)
+
+
+
+def hilite(s, color=None, bold=False):  # pragma: no cover
+    """Return an highlighted version of 'string'."""
+    if not term_supports_colors():
+        return s
+    attr = []
+    colors = dict(green='32', red='91', brown='33', yellow='93', blue='34',
+                  violet='35', lightblue='36', grey='37', darkgrey='30')
+    colors[None] = '29'
+    try:
+        color = colors[color]
+    except KeyError:
+        raise ValueError("invalid color %r; choose between %s" % (
+            list(colors.keys())))
+    attr.append(color)
     if bold:
         attr.append('1')
     return '\x1b[%sm%s\x1b[0m' % (';'.join(attr), s)
 
 
-def _stderr_handle():
-    GetStdHandle = ctypes.windll.Kernel32.GetStdHandle
-    STD_ERROR_HANDLE_ID = ctypes.c_ulong(0xfffffff4)
-    GetStdHandle.restype = ctypes.c_ulong
-    handle = GetStdHandle(STD_ERROR_HANDLE_ID)
-    atexit.register(ctypes.windll.Kernel32.CloseHandle, handle)
-    return handle
+def import_module_by_path(path):
+    name = os.path.splitext(os.path.basename(path))[0]
+    if sys.version_info[0] < 3:
+        import imp
+        return imp.load_source(name, path)
+    else:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(name, path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
 
 
-def win_colorprint(printer, s, color, bold=False):
-    if bold and color <= 7:
-        color += 8
-    handle = _stderr_handle()
-    SetConsoleTextAttribute = ctypes.windll.Kernel32.SetConsoleTextAttribute
-    SetConsoleTextAttribute(handle, color)
-    try:
-        printer(s)
-    finally:
-        SetConsoleTextAttribute(handle, DEFAULT_COLOR)
+def cprint(msg, color, bold=False, file=None):
+    if file is None:
+        file = sys.stderr if color == 'red' else sys.stdout
+    if USE_COLORS:
+        print_color(msg, color, bold=bold, file=file)
+    else:
+        print(msg, file=file)
 
 
-class ColouredResult(TextTestResult):
+class TestLoader:
 
-    def _color_print(self, s, color, bold=False):
-        if POSIX:
-            self.stream.writeln(hilite(s, color, bold=bold))
-        else:
-            win_colorprint(self.stream.writeln, s, color, bold=bold)
+    testdir = HERE
+    skip_files = []
+
+    def _get_testmods(self):
+        return [os.path.join(self.testdir, x)
+                for x in os.listdir(self.testdir)
+                if x.startswith('test_') and x.endswith('.py') and
+                x not in self.skip_files]
+
+    def _iter_testmod_classes(self):
+        """Iterate over all test files in this directory and return
+        all TestCase classes in them.
+        """
+        for path in self._get_testmods():
+            mod = import_module_by_path(path)
+            for name in dir(mod):
+                obj = getattr(mod, name)
+                if isinstance(obj, type) and \
+                        issubclass(obj, unittest.TestCase):
+                    yield obj
+
+    def all(self):
+        suite = unittest.TestSuite()
+        for obj in self._iter_testmod_classes():
+            test = loadTestsFromTestCase(obj)
+            suite.addTest(test)
+        return suite
+
+    def last_failed(self):
+        # ...from previously failed test run
+        suite = unittest.TestSuite()
+        if not os.path.isfile(FAILED_TESTS_FNAME):
+            return suite
+        with open(FAILED_TESTS_FNAME) as f:
+            names = f.read().split()
+        for n in names:
+            test = unittest.defaultTestLoader.loadTestsFromName(n)
+            suite.addTest(test)
+        return suite
+
+    def from_name(self, name):
+        if name.endswith('.py'):
+            name = os.path.splitext(os.path.basename(name))[0]
+        return unittest.defaultTestLoader.loadTestsFromName(name)
+
+
+class ColouredResult(unittest.TextTestResult):
 
     def addSuccess(self, test):
-        TestResult.addSuccess(self, test)
-        self._color_print("OK", GREEN)
+        unittest.TestResult.addSuccess(self, test)
+        cprint("OK", "green")
 
     def addError(self, test, err):
-        TestResult.addError(self, test, err)
-        self._color_print("ERROR", RED, bold=True)
+        unittest.TestResult.addError(self, test, err)
+        cprint("ERROR", "red", bold=True)
 
     def addFailure(self, test, err):
-        TestResult.addFailure(self, test, err)
-        self._color_print("FAIL", RED)
+        unittest.TestResult.addFailure(self, test, err)
+        cprint("FAIL", "red")
 
     def addSkip(self, test, reason):
-        TestResult.addSkip(self, test, reason)
-        self._color_print("skipped: %s" % reason, BROWN)
+        unittest.TestResult.addSkip(self, test, reason)
+        cprint("skipped: %s" % reason.strip(), "brown")
 
     def printErrorList(self, flavour, errors):
-        flavour = hilite(flavour, RED, bold=flavour == 'ERROR')
-        TextTestResult.printErrorList(self, flavour, errors)
+        flavour = hilite(flavour, "red", bold=flavour == 'ERROR')
+        super().printErrorList(flavour, errors)
 
 
-class ColouredRunner(TextTestRunner):
-    resultclass = ColouredResult if term_supports_colors() else TextTestResult
+class ColouredTextRunner(unittest.TextTestRunner):
+    """A coloured text runner which also prints failed tests on
+    KeyboardInterrupt and save failed tests in a file so that they can
+    be re-run.
+    """
+
+    resultclass = ColouredResult if USE_COLORS else unittest.TextTestResult
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.failed_tnames = set()
 
     def _makeResult(self):
         # Store result instance so that it can be accessed on
         # KeyboardInterrupt.
-        self.result = TextTestRunner._makeResult(self)
+        self.result = super()._makeResult()
         return self.result
 
+    def _write_last_failed(self):
+        if self.failed_tnames:
+            with open(FAILED_TESTS_FNAME, "w") as f:
+                for tname in self.failed_tnames:
+                    f.write(tname + '\n')
 
-def get_suite(name=None):
-    suite = unittest.TestSuite()
-    if name is None:
-        testmods = [os.path.splitext(x)[0] for x in os.listdir(HERE)
-                    if x.endswith('.py') and x.startswith('test_')]
-        for tm in testmods:
-            # ...so that the full test paths are printed on screen
-            tm = "pyftpdlib.test.%s" % tm
-            suite.addTest(unittest.defaultTestLoader.loadTestsFromName(tm))
-    else:
-        name = os.path.splitext(os.path.basename(name))[0]
-        suite.addTest(unittest.defaultTestLoader.loadTestsFromName(name))
-    return suite
+    def _save_result(self, result):
+        if not result.wasSuccessful():
+            for t in result.errors + result.failures:
+                tname = t[0].id()
+                self.failed_tnames.add(tname)
+
+    def _run(self, suite):
+        try:
+            result = super().run(suite)
+        except (KeyboardInterrupt, SystemExit):
+            result = self.runner.result
+            result.printErrors()
+            raise sys.exit(1)
+        else:
+            self._save_result(result)
+            return result
+
+    def _exit(self, success):
+        if success:
+            cprint("SUCCESS", "green", bold=True)
+            safe_rmpath(FAILED_TESTS_FNAME)
+            sys.exit(0)
+        else:
+            cprint("FAILED", "red", bold=True)
+            self._write_last_failed()
+            sys.exit(1)
+
+    def run(self, suite):
+        result = self._run(suite)
+        self._exit(result.wasSuccessful())
 
 
-def main(name=None):
+def setup():
     configure_logging()
-    runner = ColouredRunner(verbosity=VERBOSITY)
-    try:
-        result = runner.run(get_suite(name))
-    except (KeyboardInterrupt, SystemExit) as err:
-        print("received %s" % err.__class__.__name__, file=sys.stderr)
-        runner.result.printErrors()
-        sys.exit(1)
+
+
+# Used by test_*,py modules.
+def run_from_name(name):
+    setup()
+    suite = TestLoader().from_name(name)
+    runner = ColouredTextRunner(verbosity=VERBOSITY)
+    runner.run(suite)
+
+
+def main():
+    usage = "python3 -m pyftpdlib.test [opts] [test-name]"
+    parser = optparse.OptionParser(usage=usage, description="run unit tests")
+    parser.add_option("--last-failed",
+                      action="store_true", default=False,
+                      help="only run last failed tests")
+    opts, args = parser.parse_args()
+
+    if not opts.last_failed:
+        safe_rmpath(FAILED_TESTS_FNAME)
+
+    # loader
+    loader = TestLoader()
+    if args:
+        if len(args) > 1:
+            parser.print_usage()
+            return sys.exit(1)
+        else:
+            suite = loader.from_name(args[0])
+    elif opts.last_failed:
+        suite = loader.last_failed()
     else:
-        success = result.wasSuccessful()
-        sys.exit(0 if success else 1)
+        suite = loader.all()
+
+    setup()
+    runner = ColouredTextRunner(verbosity=VERBOSITY)
+    runner.run(suite)
 
 
 if __name__ == '__main__':

@@ -18,11 +18,9 @@ import pyftpdlib.__main__
 from pyftpdlib._compat import PY3
 from pyftpdlib._compat import super
 from pyftpdlib.servers import FTPServer
-from pyftpdlib.test import VERBOSITY
 from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import mock
 from pyftpdlib.test import safe_rmpath
-from pyftpdlib.test import unittest
 
 
 class TestCommandLineParser(PyftpdlibTestCase):
@@ -151,4 +149,5 @@ class TestCommandLineParser(PyftpdlibTestCase):
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=VERBOSITY)
+    from pyftpdlib.test.runner import run_from_name
+    run_from_name(__file__)

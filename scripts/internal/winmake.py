@@ -47,7 +47,6 @@ if sys.version_info[:2] == (2, 7):
     DEPS.extend([
         "ipaddress",
         "mock",
-        "unittest2",
     ])
 
 _cmds = {}

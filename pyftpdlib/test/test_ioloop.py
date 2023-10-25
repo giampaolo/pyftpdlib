@@ -7,6 +7,7 @@ import errno
 import select
 import socket
 import time
+import unittest
 
 import pyftpdlib.ioloop
 from pyftpdlib._compat import PY3
@@ -16,10 +17,8 @@ from pyftpdlib.ioloop import AsyncChat
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.ioloop import RetryError
 from pyftpdlib.test import POSIX
-from pyftpdlib.test import VERBOSITY
 from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import mock
-from pyftpdlib.test import unittest
 
 
 if hasattr(socket, 'socketpair'):
@@ -548,4 +547,5 @@ class TestAcceptor(PyftpdlibTestCase):
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=VERBOSITY)
+    from pyftpdlib.test.runner import run_from_name
+    run_from_name(__file__)

@@ -12,6 +12,7 @@ PYDEPS = \
 	pylint \
 	pyopenssl \
 	rstcheck \
+	ruff \
 	setuptools \
 	teyit \
 	toml-sort \
@@ -24,8 +25,7 @@ ifeq ($(PYVER), 2)
 		psutil \
 		pyopenssl \
 		pysendfile \
-		setuptools \
-		unittest2
+		setuptools
 endif
 
 # In not in a virtualenv, add --user options for install commands.
@@ -41,7 +41,8 @@ NUM_WORKERS = `$(PYTHON) -c "import os; print(os.cpu_count() or 1)"`
 all: test
 
 clean:  ## Remove all build files.
-	rm -rf `find . -type d -name __pycache__ \
+	@rm -rfv `find . \
+		-type d -name __pycache__ \
 		-o -type f -name \*.bak \
 		-o -type f -name \*.orig \
 		-o -type f -name \*.pyc \
@@ -51,17 +52,19 @@ clean:  ## Remove all build files.
 		-o -type f -name \*.so \
 		-o -type f -name \*.~ \
 		-o -type f -name \*\$testfn`
-	rm -rf \
+	@rm -rfv \
 		*.core \
 		*.egg-info \
 		*\$testfile* \
 		.coverage \
-		.tox \
-		pyftpd-tmp-* \
+		.failed-tests.txt \
+		.pytest_cache \
+		.ruff_cache/ \
 		build/ \
 		dist/ \
 		docs/_build/ \
 		htmlcov/ \
+		pyftpd-tmp-* \
 		tmp/
 
 install:  ## Install this package.
@@ -102,9 +105,9 @@ setup-dev-env: ## Install GIT hooks, pip, test deps (also upgrades them).
 # Tests
 # ===================================================================
 
-test:  ## Run all tests.
+test:  ## Run all tests. To run a specific test: do "make test ARGS=pyftpdlib.test.test_functional.TestFtpStoreData"
 	${MAKE} install
-	$(TEST_PREFIX) $(PYTHON) $(TSCRIPT)
+	$(TEST_PREFIX) $(PYTHON) $(TSCRIPT) $(ARGS)
 
 test-functional:  ## Run functional FTP tests.
 	${MAKE} install
@@ -133,10 +136,6 @@ test-ioloop:  ## Run IOLoop tests.
 test-misc:  ## Run miscellaneous tests.
 	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) pyftpdlib/test/test_misc.py
-
-test-by-name:  ## e.g.: make test-by-name ARGS=pyftpdlib.test.test_functional.TestFtpStoreData
-	${MAKE} install
-	$(TEST_PREFIX) $(PYTHON) -m unittest -v $(ARGS)
 
 test-coverage:  ## Run test coverage.
 	${MAKE} install

@@ -7,6 +7,7 @@ import ftplib
 import inspect
 import socket
 import sys
+import unittest
 
 from pyftpdlib import handlers
 from pyftpdlib import servers
@@ -20,8 +21,6 @@ from pyftpdlib.test import WINDOWS
 from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import ThreadedTestFTPd
 from pyftpdlib.test import close_client
-from pyftpdlib.test import configure_logging
-from pyftpdlib.test import unittest
 from pyftpdlib.test.test_functional import TestCornerCases
 from pyftpdlib.test.test_functional import TestFtpAbort
 from pyftpdlib.test.test_functional import TestFtpAuthentication
@@ -224,9 +223,6 @@ class TestCornerCasesMProcMixin(MProcFTPTestMixin, TestCornerCases):
 
 # class TestFTPServerMProcMixin(MProcFTPTestMixin, TestFTPServer):
 #     pass
-
-
-configure_logging()
 
 
 def main():
