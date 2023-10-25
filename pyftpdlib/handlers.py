@@ -3218,11 +3218,19 @@ if SSL is not None:
                 debug("call: _do_ssl_handshake, err: %r" % err, inst=self)
                 retval, desc = err.args
                 if (retval == -1 and desc == 'Unexpected EOF') or retval > 0:
-                    return self.handle_close()
-                raise
+                    # Happens when the other side closes the socket before
+                    # completing the SSL handshake, e.g.:
+                    # client.sock.sendall(b"PORT ...\r\n")
+                    # client.getresp()
+                    # sock, _ = sock.accept()
+                    # sock.close()
+                    self.log("Unexpected SSL EOF.")
+                    self.close()
+                else:
+                    raise
             except SSL.Error as err:
                 debug("call: _do_ssl_handshake, err: %r" % err, inst=self)
-                return self.handle_failed_ssl_handshake()
+                self.handle_failed_ssl_handshake()
             else:
                 debug("SSL connection established", self)
                 self._ssl_accepting = False
