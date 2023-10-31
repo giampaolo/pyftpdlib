@@ -71,6 +71,18 @@ try:
 except ImportError:
     import dummy_threading as threading
 
+# On Python 3.10 and above, socket.IPPROTO_MPTCP is defined.
+# If not, we set it manually
+try:
+  IPPROTO_MPTCP = socket.IPPROTO_MPTCP
+except AttributeError:
+  IPPROTO_MPTCP = 262
+
+# By default, the application wishes to use Multipath TCP for all sockets
+# provided that it is running on a system that supports Multipath TCP
+_use_mptcp = True
+
+
 from ._compat import callable
 from .log import config_logging
 from .log import debug
@@ -845,6 +857,24 @@ class AsyncChat(asynchat.async_chat):
     def connect(self, addr):
         self.modify_ioloop_events(self.ioloop.WRITE)
         asynchat.async_chat.connect(self, addr)
+
+    def create_socket(self, family=socket.AF_INET, type=socket.SOCK_STREAM) -> None:
+        global _use_mptcp
+        global IPPROTO_MPTCP
+        self.family_and_type = family, type
+        sock = None
+        if _use_mptcp and type == socket.SOCK_STREAM:  
+            try:
+                sock = socket.socket(family, type, IPPROTO_MPTCP)
+            except socket.error as e:
+                # Multipath TCP is not supported, we fall back to regular TCP
+                # and remember that Multipath TCP is not enabled
+                if e.errno == errno.ENOPROTOOPT or e.errno == errno.ENOPROTONOSUPPORT :
+                    _use_mptcp = False
+        if not sock:
+            sock = socket.socket(family, type)
+        sock.setblocking(False)
+        self.set_socket(sock)
 
     def connect_af_unspecified(self, addr, source_address=None):
         """Same as connect() but guesses address family from addr.
