@@ -3604,7 +3604,7 @@ if SSL is not None:
         def close(self):
             SSLConnection.close(self)
             FTPHandler.close(self)
-        
+
         # --- new methods
 
         def handle_failed_ssl_handshake(self):
