@@ -81,8 +81,7 @@ class TestDummyAuthorizer(PyftpdlibTestCase):
         auth.remove_user(USER)
         auth.remove_user('anonymous')
         # raise exc if user does not exists
-        with self.assertRaises(KeyError):
-            auth.remove_user(USER)
+        self.assertRaises(KeyError, auth.remove_user, USER)
         # raise exc if path does not exist
         with self.assertRaisesRegex(ValueError, 'no such directory'):
             auth.add_user(USER, PASSWD, '?:\\')
@@ -252,8 +251,7 @@ class _SharedAuthorizerTests:
         self.assertTrue(os.path.isdir(home))
         if auth.has_user('nobody'):
             home = auth.get_home_dir('nobody')
-        with self.assertRaises(AuthorizerError):
-            auth.get_home_dir(nonexistent_user)
+        self.assertRaises(AuthorizerError, auth.get_home_dir, nonexistent_user)
 
     def test_has_user(self):
         auth = self.authorizer_class()
@@ -273,10 +271,20 @@ class _SharedAuthorizerTests:
             auth = self.authorizer_class()
         current_user = self.get_current_user()
         nonexistent_user = self.get_nonexistent_user()
-        with self.assertRaises(AuthenticationFailed):
-            auth.validate_authentication(current_user, 'wrongpasswd', None)
-        with self.assertRaises(AuthenticationFailed):
-            auth.validate_authentication(nonexistent_user, 'bar', None)
+        self.assertRaises(
+            AuthenticationFailed,
+            auth.validate_authentication,
+            current_user,
+            'wrongpasswd',
+            None,
+        )
+        self.assertRaises(
+            AuthenticationFailed,
+            auth.validate_authentication,
+            nonexistent_user,
+            'bar',
+            None,
+        )
 
     def test_impersonate_user(self):
         auth = self.authorizer_class()
@@ -284,13 +292,25 @@ class _SharedAuthorizerTests:
         try:
             if self.authorizer_class.__name__ == 'UnixAuthorizer':
                 auth.impersonate_user(self.get_current_user(), '')
-                with self.assertRaises(AuthorizerError):
-                    auth.impersonate_user(nonexistent_user, 'pwd')
+                self.assertRaises(
+                    AuthorizerError,
+                    auth.impersonate_user,
+                    nonexistent_user,
+                    'pwd',
+                )
             else:
-                with self.assertRaises(Win32ExtError):
-                    auth.impersonate_user(nonexistent_user, 'pwd')
-                with self.assertRaises(Win32ExtError):
-                    auth.impersonate_user(self.get_current_user(), '')
+                self.assertRaises(
+                    Win32ExtError,
+                    auth.impersonate_user,
+                    nonexistent_user,
+                    'pwd',
+                )
+                self.assertRaises(
+                    Win32ExtError,
+                    auth.impersonate_user,
+                    self.get_current_user(),
+                    '',
+                )
         finally:
             auth.terminate_impersonation('')
 
@@ -316,37 +336,50 @@ class _SharedAuthorizerTests:
 
     def test_error_options(self):
         wrong_user = self.get_nonexistent_user()
-        with self.assertRaisesWithMsg(
+        self.assertRaisesWithMsg(
             AuthorizerError,
             "rejected_users and allowed_users options are mutually exclusive",
-        ):
-            self.authorizer_class(
-                allowed_users=['foo'], rejected_users=['bar']
-            )
-        with self.assertRaisesWithMsg(
-            AuthorizerError, 'invalid username "anonymous"'
-        ):
-            self.authorizer_class(allowed_users=['anonymous'])
-        with self.assertRaisesWithMsg(
-            AuthorizerError, 'invalid username "anonymous"'
-        ):
-            self.authorizer_class(rejected_users=['anonymous'])
-        with self.assertRaisesWithMsg(
-            AuthorizerError, 'unknown user %s' % wrong_user
-        ):
-            self.authorizer_class(allowed_users=[wrong_user])
-        with self.assertRaisesWithMsg(
-            AuthorizerError, 'unknown user %s' % wrong_user
-        ):
-            self.authorizer_class(rejected_users=[wrong_user])
+            self.authorizer_class,
+            allowed_users=['foo'],
+            rejected_users=['bar'],
+        )
+        self.assertRaisesWithMsg(
+            AuthorizerError,
+            'invalid username "anonymous"',
+            self.authorizer_class,
+            allowed_users=['anonymous'],
+        )
+        self.assertRaisesWithMsg(
+            AuthorizerError,
+            'invalid username "anonymous"',
+            self.authorizer_class,
+            rejected_users=['anonymous'],
+        )
+        self.assertRaisesWithMsg(
+            AuthorizerError,
+            'unknown user %s' % wrong_user,
+            self.authorizer_class,
+            allowed_users=[wrong_user],
+        )
+        self.assertRaisesWithMsg(
+            AuthorizerError,
+            'unknown user %s' % wrong_user,
+            self.authorizer_class,
+            rejected_users=[wrong_user],
+        )
 
     def test_override_user_password(self):
         auth = self.authorizer_class()
         user = self.get_current_user()
         auth.override_user(user, password='foo')
         auth.validate_authentication(user, 'foo', None)
-        with self.assertRaises(AuthenticationFailed):
-            auth.validate_authentication(user, 'bar', None)
+        self.assertRaises(
+            AuthenticationFailed,
+            auth.validate_authentication,
+            user,
+            'bar',
+            None,
+        )
         # make sure other settings keep using default values
         self.assertEqual(
             auth.get_home_dir(user), self.get_current_user_homedir()
@@ -406,14 +439,19 @@ class _SharedAuthorizerTests:
                 another_user = x
                 break
         nonexistent_user = self.get_nonexistent_user()
-        with self.assertRaisesWithMsg(
-            AuthorizerError, "at least one keyword argument must be specified"
-        ):
-            auth.override_user(this_user)
-        with self.assertRaisesWithMsg(
-            AuthorizerError, 'no such user %s' % nonexistent_user
-        ):
-            auth.override_user(nonexistent_user, perm='r')
+        self.assertRaisesWithMsg(
+            AuthorizerError,
+            "at least one keyword argument must be specified",
+            auth.override_user,
+            this_user,
+        )
+        self.assertRaisesWithMsg(
+            AuthorizerError,
+            'no such user %s' % nonexistent_user,
+            auth.override_user,
+            nonexistent_user,
+            perm='r',
+        )
         if self.authorizer_class.__name__ == 'UnixAuthorizer':
             auth = self.authorizer_class(
                 allowed_users=[this_user], require_valid_shell=False
@@ -421,10 +459,13 @@ class _SharedAuthorizerTests:
         else:
             auth = self.authorizer_class(allowed_users=[this_user])
         auth.override_user(this_user, perm='r')
-        with self.assertRaisesWithMsg(
-            AuthorizerError, '%s is not an allowed user' % another_user
-        ):
-            auth.override_user(another_user, perm='r')
+        self.assertRaisesWithMsg(
+            AuthorizerError,
+            '%s is not an allowed user' % another_user,
+            auth.override_user,
+            another_user,
+            perm='r',
+        )
         if self.authorizer_class.__name__ == 'UnixAuthorizer':
             auth = self.authorizer_class(
                 rejected_users=[this_user], require_valid_shell=False
@@ -432,14 +473,20 @@ class _SharedAuthorizerTests:
         else:
             auth = self.authorizer_class(rejected_users=[this_user])
         auth.override_user(another_user, perm='r')
-        with self.assertRaisesWithMsg(
-            AuthorizerError, '%s is not an allowed user' % this_user
-        ):
-            auth.override_user(this_user, perm='r')
-        with self.assertRaisesWithMsg(
-            AuthorizerError, "can't assign password to anonymous user"
-        ):
-            auth.override_user("anonymous", password='foo')
+        self.assertRaisesWithMsg(
+            AuthorizerError,
+            '%s is not an allowed user' % this_user,
+            auth.override_user,
+            this_user,
+            perm='r',
+        )
+        self.assertRaisesWithMsg(
+            AuthorizerError,
+            "can't assign password to anonymous user",
+            auth.override_user,
+            "anonymous",
+            password='foo',
+        )
 
 
 # =====================================================================
@@ -490,29 +537,41 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
     def test_validate_authentication(self):
         # we can only test for invalid credentials
         auth = UnixAuthorizer(require_valid_shell=False)
-        with self.assertRaises(AuthenticationFailed):
-            auth.validate_authentication('?!foo', '?!foo', None)
+        self.assertRaises(
+            AuthenticationFailed,
+            auth.validate_authentication,
+            '?!foo',
+            '?!foo',
+            None,
+        )
         auth = UnixAuthorizer(require_valid_shell=True)
-        with self.assertRaises(AuthenticationFailed):
-            auth.validate_authentication('?!foo', '?!foo', None)
+        self.assertRaises(
+            AuthenticationFailed,
+            auth.validate_authentication,
+            '?!foo',
+            '?!foo',
+            None,
+        )
 
     def test_validate_authentication_anonymous(self):
         current_user = self.get_current_user()
         auth = UnixAuthorizer(
             anonymous_user=current_user, require_valid_shell=False
         )
-        with self.assertRaises(AuthenticationFailed):
-            auth.validate_authentication(
-                'foo',
-                'passwd',
-                None,
-            )
-        with self.assertRaises(AuthenticationFailed):
-            auth.validate_authentication(
-                current_user,
-                'passwd',
-                None,
-            )
+        self.assertRaises(
+            AuthenticationFailed,
+            auth.validate_authentication,
+            'foo',
+            'passwd',
+            None,
+        )
+        self.assertRaises(
+            AuthenticationFailed,
+            auth.validate_authentication,
+            current_user,
+            'passwd',
+            None,
+        )
         auth.validate_authentication('anonymous', 'passwd', None)
 
     def test_require_valid_shell(self):
@@ -528,10 +587,12 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
             self.fail("no user found")
 
         user = get_fake_shell_user()
-        with self.assertRaisesWithMsg(
-            AuthorizerError, "user %s has not a valid shell" % user
-        ):
-            UnixAuthorizer(allowed_users=[user])
+        self.assertRaisesWithMsg(
+            AuthorizerError,
+            "user %s has not a valid shell" % user,
+            UnixAuthorizer,
+            allowed_users=[user],
+        )
         # commented as it first fails for invalid home
         # self.assertRaisesWithMsg(
         #     ValueError,
@@ -540,20 +601,24 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
         auth = UnixAuthorizer()
         self.assertTrue(auth._has_valid_shell(self.get_current_user()))
         self.assertFalse(auth._has_valid_shell(user))
-        with self.assertRaisesWithMsg(
-            AuthorizerError, "User %s doesn't have a valid shell." % user
-        ):
-            auth.override_user(user, perm='r')
+        self.assertRaisesWithMsg(
+            AuthorizerError,
+            "User %s doesn't have a valid shell." % user,
+            auth.override_user,
+            user,
+            perm='r',
+        )
 
     def test_not_root(self):
         # UnixAuthorizer is supposed to work only as super user
         auth = self.authorizer_class()
         try:
             auth.impersonate_user('nobody', '')
-            with self.assertRaisesWithMsg(
-                AuthorizerError, "super user privileges are required"
-            ):
-                UnixAuthorizer()
+            self.assertRaisesWithMsg(
+                AuthorizerError,
+                "super user privileges are required",
+                UnixAuthorizer,
+            )
         finally:
             auth.terminate_impersonation('nobody')
 
