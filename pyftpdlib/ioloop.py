@@ -1000,7 +1000,7 @@ class Acceptor(AsyncChat):
         """
         assert self.socket is None
         host, port = addr
-        if host == "":
+        if not host:
             # When using bind() "" is a symbolic name meaning all
             # available interfaces. People might not know we're
             # using getaddrinfo() internally, which uses None

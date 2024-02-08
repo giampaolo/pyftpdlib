@@ -431,7 +431,7 @@ class PassiveDTP(Acceptor):
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
         try:
-            raise
+            raise  # noqa: PLE0704
         except Exception:
             logger.error(traceback.format_exc())
         try:
@@ -536,7 +536,7 @@ class ActiveDTP(Connector):
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
         try:
-            raise
+            raise  # noqa: PLE0704
         except (socket.gaierror, socket.error):
             pass
         except Exception:
@@ -848,7 +848,7 @@ class DTPHandler(AsyncChat):
     def handle_error(self):
         """Called when an exception is raised and not otherwise handled."""
         try:
-            raise
+            raise  # noqa: PLE0704
         # an error could occur in case we fail reading / writing
         # from / to file (e.g. file system gets full)
         except _FileReadWriteError as err:
@@ -3276,7 +3276,7 @@ if SSL is not None:
         def handle_error(self):
             self._error = True
             try:
-                raise
+                raise  # noqa: PLE0704
             except Exception:
                 self.log_exception(self)
             # when facing an unhandled exception in here it's better
@@ -3604,7 +3604,7 @@ if SSL is not None:
         def close(self):
             SSLConnection.close(self)
             FTPHandler.close(self)
-        
+
         # --- new methods
 
         def handle_failed_ssl_handshake(self):

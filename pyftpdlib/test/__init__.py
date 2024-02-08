@@ -297,9 +297,9 @@ class retry:
                         cls.setUp()
                     continue
             if PY3:
-                raise exc
+                raise exc  # noqa: PLE0704
             else:
-                raise
+                raise  # noqa: PLE0704
 
         # This way the user of the decorated function can change config
         # parameters.

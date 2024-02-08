@@ -2098,7 +2098,7 @@ class TestIPv4Environment(_TestNetworkProtocols, PyftpdlibTestCase):
         resp = self.cmdresp('port %s,1,1' % self.HOST.replace('.', ','))
         self.assertEqual(resp[:3], '501')
         self.assertIn('privileged port', resp)
-        if "1.2.3.4" != self.HOST:
+        if self.HOST != "1.2.3.4":
             resp = self.cmdresp('port 1,2,3,4,4,4')
             assert 'foreign address' in resp, resp
 

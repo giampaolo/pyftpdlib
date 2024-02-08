@@ -2,6 +2,9 @@
 # https://beta.ruff.rs/docs/settings/
 target-version = "py37"
 line-length = 79
+
+[tool.ruff.lint]
+preview = true
 select = [
     "ALL",  # to get a list of all values: `python3 -m ruff linter`
 ]
@@ -11,6 +14,7 @@ ignore = [
     "ARG",  # flake8-unused-arguments
     "B007",  # Loop control variable `x` not used within loop body
     "B904",  # Within an `except` clause, raise exceptions with `raise ... from err` (PYTHON2.7 COMPAT)
+    "B904",  # Use `raise from` to specify exception cause (PYTHON2.7 COMPAT)
     "BLE001",  # Do not catch blind exception: `Exception`
     "C4",  # flake8-comprehensions (PYTHON2.7 COMPAT)
     # "C408",  # Unnecessary `dict` call (rewrite as a literal)
@@ -20,9 +24,12 @@ ignore = [
     "DTZ",  # flake8-datetimez
     "EM",  # flake8-errmsg
     "ERA001",  # Found commented-out code
+    "F841",  # Local variable `wr` is assigned to but never used
     "FBT",  # flake8-boolean-trap
     "FIX",  # Line contains TODO / XXX / ..., consider resolving the issue
     "FLY",  # flynt (PYTHON2.7 COMPAT)
+    "FURB101",  # `open` and `read` should be replaced by `Path(x).read_text()`
+    "FURB113",  # Use `s.extend(...)` instead of repeatedly calling `s.append()`
     "INP",  # flake8-no-pep420
     "N801",  # Class name `async_chat` should use CapWords convention (ASYNCORE COMPAT)
     "N802",  # Function name X should be lowercase.
@@ -32,6 +39,8 @@ ignore = [
     "N818",  # Exception name `FooBar` should be named with an Error suffix
     "PERF",  # Perflint
     "PGH004",  # Use specific rule codes when using `noqa`
+    "PLC0415",  # `import` should be at the top-level of a file
+    "PLC2701",  # Private name import `_winreg`
     "PLR",  # pylint
     "PLW",  # pylint
     "PT",  # flake8-pytest-style
@@ -48,7 +57,6 @@ ignore = [
     "SLF",  # flake8-self
     "TD",  # all TODOs, XXXs, etc.
     "TRY003",  # Avoid specifying long messages outside the exception class
-    "TRY200",  # Use `raise from` to specify exception cause (PYTHON2.7 COMPAT)
     "TRY300",  # Consider moving this statement to an `else` block
     "TRY301",  # Abstract `raise` to an inner function
     "UP010",  # [*] Unnecessary `__future__` import `print_function` for target Python version (PYTHON2.7 COMPAT)
@@ -56,7 +64,7 @@ ignore = [
     "UP031",  # [*] Use format specifiers instead of percent format
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 ".git_pre_commit.py" = ["T201"]  # T201 == print()
 "demo/*" = ["T201"]
 "doc/*" = ["T201"]
@@ -64,7 +72,7 @@ ignore = [
 "scripts/*" = ["T201"]
 "setup.py" = ["T201"]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 # https://beta.ruff.rs/docs/settings/#isort
 force-single-line = true  # one import per line
 lines-after-imports = 2

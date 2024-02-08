@@ -1,4 +1,7 @@
-#
+# Copyright (C) 2007 Giampaolo Rodola' <g.rodola@gmail.com>.
+# Use of this source code is governed by MIT license that can be
+# found in the LICENSE file.
+
 # pyftpdlib documentation build configuration file, created by
 # sphinx-quickstart on Wed Oct 19 21:54:30 2016.
 #

@@ -305,7 +305,7 @@ class FTPServer(Acceptor):
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
         try:
-            raise
+            raise  # noqa: PLE0704
         except Exception:
             logger.error(traceback.format_exc())
         self.close()
