@@ -1,5 +1,12 @@
 Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 
+Version: 1.5.10 - (UNRELEASED)
+==============================
+
+**Enhancements**
+
+* #621: use black formatter.
+
 Version: 1.5.9 - 2023-10-25
 ===========================
 
