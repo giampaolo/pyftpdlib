@@ -122,6 +122,7 @@ def get_server():
 
 def daemonize():
     """A wrapper around python-daemonize context manager."""
+
     def _daemonize():
         pid = os.fork()
         if pid > 0:
@@ -170,10 +171,16 @@ def main():
     USAGE = "python3 [-p PIDFILE] [-l LOGFILE]\n\n"
     USAGE += "Commands:\n  - start\n  - stop\n  - status"
     parser = optparse.OptionParser(usage=USAGE)
-    parser.add_option('-l', '--logfile', dest='logfile',
-                      help='the log file location')
-    parser.add_option('-p', '--pidfile', dest='pidfile', default=PID_FILE,
-                      help='file to store/retreive daemon pid')
+    parser.add_option(
+        '-l', '--logfile', dest='logfile', help='the log file location'
+    )
+    parser.add_option(
+        '-p',
+        '--pidfile',
+        dest='pidfile',
+        default=PID_FILE,
+        help='file to store/retreive daemon pid',
+    )
     options, args = parser.parse_args()
 
     if options.pidfile:

@@ -55,7 +55,7 @@ GITHUB_ACTIONS = 'GITHUB_ACTIONS' in os.environ or 'CIBUILDWHEEL' in os.environ
 CI_TESTING = APPVEYOR or GITHUB_ACTIONS
 COVERAGE = 'COVERAGE_RUN' in os.environ
 # are we a 64 bit process?
-IS_64BIT = sys.maxsize > 2 ** 32
+IS_64BIT = sys.maxsize > 2**32
 OSX = sys.platform.startswith("darwin")
 POSIX = os.name == 'posix'
 WINDOWS = os.name == 'nt'
@@ -94,13 +94,16 @@ class PyftpdlibTestCase(unittest.TestCase):
 
     def tearDown(self):
         if not hasattr(self, "_test_ctx"):
-            raise AssertionError("super().setUp() was not called for this "
-                                 "test class")
+            raise AssertionError(
+                "super().setUp() was not called for this test class"
+            )
         threads = set(threading.enumerate())
         if len(threads) > len(self._test_ctx["threads"]):
             extra = threads - self._test_ctx["threads"]
-            raise AssertionError("%s orphaned thread(s) were left "
-                                 "behind: %r" % (len(extra), extra))
+            raise AssertionError(
+                "%s orphaned thread(s) were left behind: %r"
+                % (len(extra), extra)
+            )
 
     def __str__(self):
         # Print a full path representation of the single unit tests
@@ -109,7 +112,10 @@ class PyftpdlibTestCase(unittest.TestCase):
         if not fqmod.startswith('pyftpdlib.'):
             fqmod = 'pyftpdlib.test.' + fqmod
         return "%s.%s.%s" % (
-            fqmod, self.__class__.__name__, self._testMethodName)
+            fqmod,
+            self.__class__.__name__,
+            self._testMethodName,
+        )
 
     # assertRaisesRegexp renamed to assertRaisesRegex in 3.3;
     # add support for the new name.
@@ -171,6 +177,7 @@ def get_testfn(suffix="", dir=None):
 
 def safe_rmpath(path):
     """Convenience function for removing temporary test files or dirs."""
+
     def retry_fun(fun):
         # On Windows it could happen that the file or directory has
         # open handles or references preventing the delete operation
@@ -184,8 +191,9 @@ def safe_rmpath(path):
                 pass
             except WindowsError as _:
                 err = _
-                warnings.warn("ignoring %s" % str(err), UserWarning,
-                              stacklevel=2)
+                warnings.warn(
+                    "ignoring %s" % str(err), UserWarning, stacklevel=2
+                )
             time.sleep(0.01)
         raise err
 
@@ -219,9 +227,9 @@ def configure_logging():
     logger.addHandler(handler)
 
 
-
 def disable_log_warning(fun):
     """Temporarily set FTP server's logging level to ERROR."""
+
     @functools.wraps(fun)
     def wrapper(self, *args, **kwargs):
         logger = logging.getLogger('pyftpdlib')
@@ -231,6 +239,7 @@ def disable_log_warning(fun):
             return fun(self, *args, **kwargs)
         finally:
             logger.setLevel(level)
+
     return wrapper
 
 
@@ -249,13 +258,14 @@ def cleanup():
 class retry:
     """A retry decorator."""
 
-    def __init__(self,
-                 exception=Exception,
-                 timeout=None,
-                 retries=None,
-                 interval=0.001,
-                 logfun=None,
-                 ):
+    def __init__(
+        self,
+        exception=Exception,
+        timeout=None,
+        retries=None,
+        interval=0.001,
+        logfun=None,
+    ):
         if timeout and retries:
             raise ValueError("timeout and retries args are mutually exclusive")
         self.exception = exception
@@ -311,11 +321,13 @@ def retry_on_failure(retries=NO_RETRIES):
     """Decorator which runs a test function and retries N times before
     actually failing.
     """
+
     def logfun(exc):
         print("%r, retrying" % exc, file=sys.stderr)  # NOQA
 
-    return retry(exception=AssertionError, timeout=None, retries=retries,
-                 logfun=logfun)
+    return retry(
+        exception=AssertionError, timeout=None, retries=retries, logfun=logfun
+    )
 
 
 def call_until(fun, expr, timeout=GLOBAL_TIMEOUT):
@@ -344,6 +356,7 @@ def get_server_handler():
 # commented out as per bug http://bugs.python.org/issue10354
 # tempfile.template = 'tmp-pyftpdlib'
 
+
 def setup_server(handler, server_class, addr=None):
     addr = (HOST, 0) if addr is None else addr
     authorizer = DummyAuthorizer()
@@ -368,8 +381,11 @@ def assert_free_resources(parent_pid=None):
     this_proc = psutil.Process(parent_pid or os.getpid())
     children = this_proc.children()
     if children:
-        warnings.warn("some children didn't terminate %r" % str(children),
-                      UserWarning, stacklevel=2)
+        warnings.warn(
+            "some children didn't terminate %r" % str(children),
+            UserWarning,
+            stacklevel=2,
+        )
         for child in children:
             try:
                 child.kill()
@@ -378,11 +394,17 @@ def assert_free_resources(parent_pid=None):
                 pass
     # check unclosed connections
     if POSIX:
-        cons = [x for x in this_proc.connections('tcp')
-                if x.status != psutil.CONN_CLOSE_WAIT]
+        cons = [
+            x
+            for x in this_proc.connections('tcp')
+            if x.status != psutil.CONN_CLOSE_WAIT
+        ]
         if cons:
-            warnings.warn("some connections didn't close %r" % str(cons),
-                          UserWarning, stacklevel=2)
+            warnings.warn(
+                "some connections didn't close %r" % str(cons),
+                UserWarning,
+                stacklevel=2,
+            )
 
 
 def reset_server_opts():
@@ -392,8 +414,9 @@ def reset_server_opts():
     import pyftpdlib.servers
 
     # Control handlers.
-    tls_handler = getattr(pyftpdlib.handlers, "TLS_FTPHandler",
-                          pyftpdlib.handlers.FTPHandler)
+    tls_handler = getattr(
+        pyftpdlib.handlers, "TLS_FTPHandler", pyftpdlib.handlers.FTPHandler
+    )
     for klass in (pyftpdlib.handlers.FTPHandler, tls_handler):
         klass.auth_failed_timeout = 0.001
         klass.authorizer = DummyAuthorizer()
@@ -416,8 +439,9 @@ def reset_server_opts():
             klass.tls_data_required = False
 
     # Data handlers.
-    tls_handler = getattr(pyftpdlib.handlers, "TLS_DTPHandler",
-                          pyftpdlib.handlers.DTPHandler)
+    tls_handler = getattr(
+        pyftpdlib.handlers, "TLS_DTPHandler", pyftpdlib.handlers.DTPHandler
+    )
     for klass in (pyftpdlib.handlers.DTPHandler, tls_handler):
         klass.timeout = 300
         klass.ac_in_buffer_size = 4096
@@ -427,8 +451,7 @@ def reset_server_opts():
     pyftpdlib.handlers.ThrottledDTPHandler.auto_sized_buffers = True
 
     # Acceptors.
-    ls = [pyftpdlib.servers.FTPServer,
-          pyftpdlib.servers.ThreadedFTPServer]
+    ls = [pyftpdlib.servers.FTPServer, pyftpdlib.servers.ThreadedFTPServer]
     if POSIX:
         ls.append(pyftpdlib.servers.MultiprocessFTPServer)
     for klass in ls:
@@ -442,6 +465,7 @@ class ThreadedTestFTPd(threading.Thread):
     wraps the polling loop into a thread.
     The instance returned can be start()ed and stop()ped.
     """
+
     handler = FTPHandler
     server_class = FTPServer
     poll_interval = 0.001 if CI_TESTING else 0.000001
@@ -462,8 +486,9 @@ class ThreadedTestFTPd(threading.Thread):
         try:
             while not self._stop_flag:
                 with self.lock:
-                    self.server.serve_forever(timeout=self.poll_interval,
-                                              blocking=False)
+                    self.server.serve_forever(
+                        timeout=self.poll_interval, blocking=False
+                    )
         finally:
             self._event_stop.set()
 
@@ -477,15 +502,18 @@ class ThreadedTestFTPd(threading.Thread):
 
 
 if POSIX:
+
     class MProcessTestFTPd(multiprocessing.Process):
         """Same as above but using a sub process instead."""
+
         handler = FTPHandler
         server_class = FTPServer
 
         def __init__(self, addr=None):
             super().__init__()
             self.server = setup_server(
-                self.handler, self.server_class, addr=addr)
+                self.handler, self.server_class, addr=addr
+            )
             self.host, self.port = self.server.socket.getsockname()[:2]
             self._started = False
 
@@ -501,6 +529,7 @@ if POSIX:
             self.join()
             reset_server_opts()
             assert_free_resources()
+
 else:
     # Windows
     MProcessTestFTPd = ThreadedTestFTPd

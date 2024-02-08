@@ -106,12 +106,19 @@ def fork_processes(number, max_restarts=100):
             continue
         id = children.pop(pid)
         if os.WIFSIGNALED(status):
-            logger.warning("child %d (pid %d) killed by signal %d, restarting",
-                           id, pid, os.WTERMSIG(status))
+            logger.warning(
+                "child %d (pid %d) killed by signal %d, restarting",
+                id,
+                pid,
+                os.WTERMSIG(status),
+            )
         elif os.WEXITSTATUS(status) != 0:
             logger.warning(
                 "child %d (pid %d) exited with status %d, restarting",
-                id, pid, os.WEXITSTATUS(status))
+                id,
+                pid,
+                os.WEXITSTATUS(status),
+            )
         else:
             logger.info("child %d (pid %d) exited normally", id, pid)
             continue

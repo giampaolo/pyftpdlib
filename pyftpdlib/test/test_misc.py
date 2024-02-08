@@ -25,6 +25,7 @@ from pyftpdlib.test import safe_rmpath
 
 class TestCommandLineParser(PyftpdlibTestCase):
     """Test command line parser."""
+
     SYSARGV = sys.argv
     STDERR = sys.stderr
 
@@ -41,6 +42,7 @@ class TestCommandLineParser(PyftpdlibTestCase):
 
         if PY3:
             import io
+
             self.devnull = io.StringIO()
         else:
             self.devnull = BytesIO()
@@ -150,4 +152,5 @@ class TestCommandLineParser(PyftpdlibTestCase):
 
 if __name__ == '__main__':
     from pyftpdlib.test.runner import run_from_name
+
     run_from_name(__file__)

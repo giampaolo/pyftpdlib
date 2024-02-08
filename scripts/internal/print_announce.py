@@ -21,8 +21,9 @@ PRJ_NAME = 'pyftpdlib'
 PRJ_URL_HOME = 'https://github.com/giampaolo/pyftpdlib'
 PRJ_URL_DOC = 'http://pyftpdlib.readthedocs.io'
 PRJ_URL_DOWNLOAD = 'https://pypi.python.org/pypi/pyftpdlib'
-PRJ_URL_WHATSNEW = \
+PRJ_URL_WHATSNEW = (
     'https://github.com/giampaolo/pyftpdlib/blob/master/HISTORY.rst'
+)
 
 template = """\
 Hello all,
@@ -92,15 +93,17 @@ def get_changes():
 
 def main():
     changes = get_changes()
-    print(template.format(
-        prj_name=PRJ_NAME,
-        prj_version=PRJ_VERSION,
-        prj_urlhome=PRJ_URL_HOME,
-        prj_urldownload=PRJ_URL_DOWNLOAD,
-        prj_urldoc=PRJ_URL_DOC,
-        prj_urlwhatsnew=PRJ_URL_WHATSNEW,
-        changes=changes,
-    ))
+    print(
+        template.format(
+            prj_name=PRJ_NAME,
+            prj_version=PRJ_VERSION,
+            prj_urlhome=PRJ_URL_HOME,
+            prj_urldownload=PRJ_URL_DOWNLOAD,
+            prj_urldoc=PRJ_URL_DOC,
+            prj_urlwhatsnew=PRJ_URL_WHATSNEW,
+            changes=changes,
+        )
+    )
 
 
 if __name__ == '__main__':

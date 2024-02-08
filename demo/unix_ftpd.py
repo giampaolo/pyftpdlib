@@ -17,8 +17,9 @@ from pyftpdlib.servers import FTPServer
 
 
 def main():
-    authorizer = UnixAuthorizer(rejected_users=["root"],
-                                require_valid_shell=True)
+    authorizer = UnixAuthorizer(
+        rejected_users=["root"], require_valid_shell=True
+    )
     handler = FTPHandler
     handler.authorizer = authorizer
     handler.abstracted_fs = UnixFilesystem

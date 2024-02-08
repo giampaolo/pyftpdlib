@@ -19,14 +19,15 @@ from pyftpdlib.servers import FTPServer
 class AntiFloodHandler(FTPHandler):
 
     cmds_per_second = 300  # max number of cmds per second
-    ban_for = 60 * 60      # 1 hour
+    ban_for = 60 * 60  # 1 hour
     banned_ips = []
 
     def __init__(self, *args, **kwargs):
         FTPHandler.__init__(self, *args, **kwargs)
         self.processed_cmds = 0
-        self.pcmds_callback = \
-            self.ioloop.call_every(1, self.check_processed_cmds)
+        self.pcmds_callback = self.ioloop.call_every(
+            1, self.check_processed_cmds
+        )
 
     def on_connect(self):
         # called when client connects.

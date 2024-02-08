@@ -22,8 +22,9 @@ except ImportError:
 
 
 def get_version():
-    INIT = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                        'pyftpdlib', '__init__.py'))
+    INIT = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), 'pyftpdlib', '__init__.py')
+    )
     with open(INIT) as f:
         for line in f:
             if line.startswith('__ver__'):
@@ -38,6 +39,7 @@ def get_version():
 def term_supports_colors():
     try:
         import curses
+
         assert sys.stderr.isatty()
         curses.setupterm()
         assert curses.tigetnum("colors") > 0
@@ -67,7 +69,7 @@ def hilite(s, ok=True, bold=False):
 if sys.version_info < (2, 7):  # noqa
     sys.exit('python version not supported (< 2.7)')
 
-require_pysendfile = (os.name == 'posix' and sys.version_info < (3, 3))
+require_pysendfile = os.name == 'posix' and sys.version_info < (3, 3)
 
 extras_require = {'ssl': ["PyOpenSSL"]}
 if require_pysendfile:
@@ -98,10 +100,12 @@ def main():
                 'keycert.pem',
             ],
         },
+        # fmt: off
         keywords=['ftp', 'ftps', 'server', 'ftpd', 'daemon', 'python', 'ssl',
                   'sendfile', 'asynchronous', 'nonblocking', 'eventdriven',
                   'rfc959', 'rfc1123', 'rfc2228', 'rfc2428', 'rfc2640',
                   'rfc3659'],
+        # fmt: on
         extras_require=extras_require,
         classifiers=[
             'Development Status :: 5 - Production/Stable',
@@ -129,6 +133,7 @@ def main():
                 # fallback on using third-party pysendfile module
                 # https://github.com/giampaolo/pysendfile/
                 import sendfile
+
                 if hasattr(sendfile, 'has_sf_hdtr'):  # old 1.2.4 version
                     raise ImportError
         except ImportError:
