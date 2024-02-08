@@ -39,6 +39,7 @@ MPROCESS_SUPPORT = hasattr(servers, 'MultiprocessFTPServer')
 
 class TestFTPServer(PyftpdlibTestCase):
     """Tests for *FTPServer classes."""
+
     server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
@@ -92,8 +93,9 @@ class ThreadFTPTestMixin:
     server_class = _TFTPd
 
 
-class TestFtpAuthenticationThreadMixin(ThreadFTPTestMixin,
-                                       TestFtpAuthentication):
+class TestFtpAuthenticationThreadMixin(
+    ThreadFTPTestMixin, TestFtpAuthentication
+):
     pass
 
 
@@ -156,19 +158,23 @@ class TestCornerCasesThreadMixin(ThreadFTPTestMixin, TestCornerCases):
 # =====================================================================
 
 if MPROCESS_SUPPORT:
+
     class MultiProcFTPd(ThreadedTestFTPd):
         server_class = servers.MultiprocessFTPServer
 
     class MProcFTPTestMixin:
         server_class = MultiProcFTPd
+
 else:
+
     @unittest.skipIf(True, "multiprocessing module not installed")
     class MProcFTPTestMixin:
         pass
 
 
-class TestFtpAuthenticationMProcMixin(MProcFTPTestMixin,
-                                      TestFtpAuthentication):
+class TestFtpAuthenticationMProcMixin(
+    MProcFTPTestMixin, TestFtpAuthentication
+):
     pass
 
 

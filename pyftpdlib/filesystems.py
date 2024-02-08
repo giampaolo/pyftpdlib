@@ -26,14 +26,27 @@ from ._compat import unicode
 __all__ = ['FilesystemError', 'AbstractedFS']
 
 
-_months_map = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
-               7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
+_months_map = {
+    1: 'Jan',
+    2: 'Feb',
+    3: 'Mar',
+    4: 'Apr',
+    5: 'May',
+    6: 'Jun',
+    7: 'Jul',
+    8: 'Aug',
+    9: 'Sep',
+    10: 'Oct',
+    11: 'Nov',
+    12: 'Dec',
+}
 
 
 def _memoize(fun):
     """A simple memoize decorator for functions supporting (hashable)
     positional arguments.
     """
+
     def wrapper(*args, **kwargs):
         key = (args, frozenset(sorted(kwargs.items())))
         try:
@@ -50,6 +63,7 @@ def _memoize(fun):
 # --- custom exceptions
 # ===================================================================
 
+
 class FilesystemError(Exception):
     """Custom class for filesystem-related exceptions.
     You can raise this from an AbstractedFS subclass in order to
@@ -60,6 +74,7 @@ class FilesystemError(Exception):
 # ===================================================================
 # --- base class
 # ===================================================================
+
 
 class AbstractedFS:
     """A class used to interact with the file system, providing a
@@ -82,8 +97,8 @@ class AbstractedFS:
 
     def __init__(self, root, cmd_channel):
         """
-         - (str) root: the user "real" home directory (e.g. '/home/user')
-         - (instance) cmd_channel: the FTPHandler class instance.
+        - (str) root: the user "real" home directory (e.g. '/home/user')
+        - (instance) cmd_channel: the FTPHandler class instance.
         """
         assert isinstance(root, unicode)
         # Set initial current working directory.
@@ -191,7 +206,7 @@ class AbstractedFS:
         if not self.validpath(p):
             return u('/')
         p = p.replace(os.sep, "/")
-        p = p[len(self.root):]
+        p = p[len(self.root) :]
         if not p.startswith('/'):
             p = '/' + p
         return p
@@ -213,7 +228,7 @@ class AbstractedFS:
             root = root + os.sep
         if not path.endswith(os.sep):
             path = path + os.sep
-        if path[0:len(root)] == root:
+        if path[0 : len(root)] == root:
             return True
         return False
 
@@ -229,6 +244,7 @@ class AbstractedFS:
         name.  Unlike mkstemp it returns an object with a file-like
         interface.
         """
+
         class FileWrapper:
 
             def __init__(self, fd, name):
@@ -307,15 +323,18 @@ class AbstractedFS:
         return os.utime(path, (timeval, timeval))
 
     if hasattr(os, 'lstat'):
+
         def lstat(self, path):
             """Like stat but does not follow symbolic links."""
             # on python 2 we might also get bytes from os.lisdir()
             # assert isinstance(path, unicode), path
             return os.lstat(path)
+
     else:
         lstat = stat
 
     if hasattr(os, 'readlink'):
+
         def readlink(self, path):
             """Return a string representing the path to which a
             symbolic link points.
@@ -367,6 +386,7 @@ class AbstractedFS:
         return os.path.lexists(path)
 
     if pwd is not None:
+
         def get_user_by_uid(self, uid):
             """Return the username associated with user id.
             If this can't be determined return raw uid instead.
@@ -376,11 +396,14 @@ class AbstractedFS:
                 return pwd.getpwuid(uid).pw_name
             except KeyError:
                 return uid
+
     else:
+
         def get_user_by_uid(self, uid):
             return "owner"
 
     if grp is not None:
+
         def get_group_by_gid(self, gid):
             """Return the group name associated with group id.
             If this can't be determined return raw gid instead.
@@ -390,7 +413,9 @@ class AbstractedFS:
                 return grp.getgrgid(gid).gr_name
             except KeyError:
                 return gid
+
     else:
+
         def get_group_by_gid(self, gid):
             return "group"
 
@@ -417,6 +442,7 @@ class AbstractedFS:
         drwxrwxrwx   1 owner   group          0 Aug 31 18:50 e-books
         -rw-rw-rw-   1 owner   group        380 Sep 02  3:40 module.py
         """
+
         @_memoize
         def get_user_by_uid(uid):
             return self.get_user_by_uid(uid)
@@ -468,15 +494,19 @@ class AbstractedFS:
             # https://github.com/giampaolo/pyftpdlib/issues/187
             fmtstr = '%d  %Y' if now - st.st_mtime > SIX_MONTHS else '%d %H:%M'
             try:
-                mtimestr = "%s %s" % (_months_map[mtime.tm_mon],
-                                      time.strftime(fmtstr, mtime))
+                mtimestr = "%s %s" % (
+                    _months_map[mtime.tm_mon],
+                    time.strftime(fmtstr, mtime),
+                )
             except ValueError:
                 # It could be raised if last mtime happens to be too
                 # old (prior to year 1900) in which case we return
                 # the current time as last mtime.
                 mtime = timefunc()
-                mtimestr = "%s %s" % (_months_map[mtime.tm_mon],
-                                      time.strftime("%d %H:%M", mtime))
+                mtimestr = "%s %s" % (
+                    _months_map[mtime.tm_mon],
+                    time.strftime("%d %H:%M", mtime),
+                )
 
             # same as stat.S_ISLNK(st.st_mode) but slighlty faster
             islink = (st.st_mode & 61440) == stat.S_IFLNK
@@ -491,7 +521,14 @@ class AbstractedFS:
 
             # formatting is matched with proftpd ls output
             line = "%s %3s %-8s %-8s %8s %s %s\r\n" % (
-                perms, nlinks, uname, gname, size, mtimestr, basename)
+                perms,
+                nlinks,
+                uname,
+                gname,
+                size,
+                mtimestr,
+                basename,
+            )
             yield line.encode('utf8', self.cmd_channel.unicode_errors)
 
     def format_mlsx(self, basedir, listing, perms, facts, ignore_err=True):
@@ -588,8 +625,9 @@ class AbstractedFS:
             # last modification time
             if show_modify:
                 try:
-                    retfacts['modify'] = time.strftime("%Y%m%d%H%M%S",
-                                                       timefunc(st.st_mtime))
+                    retfacts['modify'] = time.strftime(
+                        "%Y%m%d%H%M%S", timefunc(st.st_mtime)
+                    )
                 # it could be raised if last mtime happens to be too old
                 # (prior to year 1900)
                 except ValueError:
@@ -597,8 +635,9 @@ class AbstractedFS:
             if show_create:
                 # on Windows we can provide also the creation time
                 try:
-                    retfacts['create'] = time.strftime("%Y%m%d%H%M%S",
-                                                       timefunc(st.st_ctime))
+                    retfacts['create'] = time.strftime(
+                        "%Y%m%d%H%M%S", timefunc(st.st_ctime)
+                    )
                 except ValueError:
                     pass
             # UNIX only
@@ -621,8 +660,9 @@ class AbstractedFS:
                 retfacts['unique'] = "%xg%x" % (st.st_dev, st.st_ino)
 
             # facts can be in any order but we sort them by name
-            factstring = "".join(["%s=%s;" % (x, retfacts[x])
-                                  for x in sorted(retfacts.keys())])
+            factstring = "".join(
+                ["%s=%s;" % (x, retfacts[x]) for x in sorted(retfacts.keys())]
+            )
             line = "%s %s\r\n" % (factstring, basename)
             yield line.encode('utf8', self.cmd_channel.unicode_errors)
 

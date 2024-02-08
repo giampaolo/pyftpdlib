@@ -58,6 +58,7 @@ class LogFormatter(logging.Formatter):
     * Timestamps on every log line.
     * Robust against str/bytes encoding problems.
     """
+
     PREFIX = PREFIX
 
     def __init__(self, *args, **kwargs):
@@ -72,8 +73,9 @@ class LogFormatter(logging.Formatter):
             # works with unicode strings. The explicit calls to
             # unicode() below are harmless in python2 but will do the
             # right conversion in python 3.
-            fg_color = \
+            fg_color = (
                 curses.tigetstr("setaf") or curses.tigetstr("setf") or ""
+            )
             if not PY3:
                 fg_color = unicode(fg_color, "ascii")
             self._colors = {
@@ -84,7 +86,7 @@ class LogFormatter(logging.Formatter):
                 # yellow
                 logging.WARNING: unicode(curses.tparm(fg_color, 3), "ascii"),
                 # red
-                logging.ERROR: unicode(curses.tparm(fg_color, 1), "ascii")
+                logging.ERROR: unicode(curses.tparm(fg_color, 1), "ascii"),
             }
             self._normal = unicode(curses.tigetstr("sgr0"), "ascii")
 
@@ -94,12 +96,16 @@ class LogFormatter(logging.Formatter):
         except Exception as err:
             record.message = "Bad message (%r): %r" % (err, record.__dict__)
 
-        record.asctime = time.strftime(TIME_FORMAT,
-                                       self.converter(record.created))
+        record.asctime = time.strftime(
+            TIME_FORMAT, self.converter(record.created)
+        )
         prefix = self.PREFIX % record.__dict__
         if self._coloured:
-            prefix = self._colors.get(record.levelno, self._normal) + \
-                prefix + self._normal
+            prefix = (
+                self._colors.get(record.levelno, self._normal)
+                + prefix
+                + self._normal
+            )
 
         # Encoding notes:  The logging module prefers to work with character
         # strings, but only enforces that log messages are instances of
@@ -147,24 +153,30 @@ def is_logging_configured():
 
 # TODO: write tests
 
+
 def config_logging(level=LEVEL, prefix=PREFIX, other_loggers=None):
     # Speedup logging by preventing certain internal log record info to
     # be unnecessarily fetched. This results in about 28% speedup. See:
     # * https://docs.python.org/3/howto/logging.html#optimization
     # * https://docs.python.org/3/library/logging.html#logrecord-attributes
     # * https://stackoverflow.com/a/38924153/376587
-    key_names = set(re.findall(
-        r'(?<!%)%\(([^)]+)\)[-# +0-9.hlL]*[diouxXeEfFgGcrs]', prefix))
+    key_names = set(
+        re.findall(
+            r'(?<!%)%\(([^)]+)\)[-# +0-9.hlL]*[diouxXeEfFgGcrs]', prefix
+        )
+    )
     if "process" not in key_names:
         logging.logProcesses = False
     if "processName" not in key_names:
         logging.logMultiprocessing = False
     if "thread" not in key_names and "threadName" not in key_names:
         logging.logThreads = False
-    if "filename" not in key_names and \
-            "pathname" not in key_names and \
-            "lineno" not in key_names and \
-            "module" not in key_names:
+    if (
+        "filename" not in key_names
+        and "pathname" not in key_names
+        and "lineno" not in key_names
+        and "module" not in key_names
+    ):
         # biggest speedup as it avoids calling sys._getframe()
         logging._srcfile = None
 

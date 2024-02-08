@@ -30,7 +30,9 @@ from pyftpdlib.test import safe_rmpath
 VERBOSITY = 2
 FAILED_TESTS_FNAME = '.failed-tests.txt'
 HERE = os.path.abspath(os.path.dirname(__file__))
-loadTestsFromTestCase = unittest.defaultTestLoader.loadTestsFromTestCase  # noqa
+loadTestsFromTestCase = (  # noqa
+    unittest.defaultTestLoader.loadTestsFromTestCase
+)
 
 
 def term_supports_colors(file=sys.stdout):  # pragma: no cover
@@ -38,6 +40,7 @@ def term_supports_colors(file=sys.stdout):  # pragma: no cover
         return True
     try:
         import curses
+
         assert file.isatty()
         curses.setupterm()
         assert curses.tigetnum("colors") > 0
@@ -51,7 +54,8 @@ USE_COLORS = not CI_TESTING and term_supports_colors()
 
 
 def print_color(
-        s, color=None, bold=False, file=sys.stdout):  # pragma: no cover
+    s, color=None, bold=False, file=sys.stdout
+):  # pragma: no cover
     """Print a colorized version of string."""
     if not term_supports_colors():
         print(s, file=file)  # NOQA
@@ -62,16 +66,19 @@ def print_color(
 
         DEFAULT_COLOR = 7
         GetStdHandle = ctypes.windll.Kernel32.GetStdHandle
-        SetConsoleTextAttribute = \
+        SetConsoleTextAttribute = (
             ctypes.windll.Kernel32.SetConsoleTextAttribute
+        )
 
         colors = dict(green=2, red=4, brown=6, yellow=6)
         colors[None] = DEFAULT_COLOR
         try:
             color = colors[color]
         except KeyError:
-            raise ValueError("invalid color %r; choose between %r" % (
-                color, list(colors.keys())))
+            raise ValueError(
+                "invalid color %r; choose between %r"
+                % (color, list(colors.keys()))
+            )
         if bold and color <= 7:
             color += 8
 
@@ -80,10 +87,9 @@ def print_color(
         handle = GetStdHandle(handle_id)
         SetConsoleTextAttribute(handle, color)
         try:
-            print(s, file=file)    # NOQA
+            print(s, file=file)  # NOQA
         finally:
             SetConsoleTextAttribute(handle, DEFAULT_COLOR)
-
 
 
 def hilite(s, color=None, bold=False):  # pragma: no cover
@@ -91,14 +97,24 @@ def hilite(s, color=None, bold=False):  # pragma: no cover
     if not term_supports_colors():
         return s
     attr = []
-    colors = dict(green='32', red='91', brown='33', yellow='93', blue='34',
-                  violet='35', lightblue='36', grey='37', darkgrey='30')
+    colors = dict(
+        green='32',
+        red='91',
+        brown='33',
+        yellow='93',
+        blue='34',
+        violet='35',
+        lightblue='36',
+        grey='37',
+        darkgrey='30',
+    )
     colors[None] = '29'
     try:
         color = colors[color]
     except KeyError:
-        raise ValueError("invalid color %r; choose between %s" % (
-            list(colors.keys())))
+        raise ValueError(
+            "invalid color %r; choose between %s" % (list(colors.keys()))
+        )
     attr.append(color)
     if bold:
         attr.append('1')
@@ -109,9 +125,11 @@ def import_module_by_path(path):
     name = os.path.splitext(os.path.basename(path))[0]
     if sys.version_info[0] < 3:
         import imp
+
         return imp.load_source(name, path)
     else:
         import importlib.util
+
         spec = importlib.util.spec_from_file_location(name, path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
@@ -133,10 +151,13 @@ class TestLoader:
     skip_files = []
 
     def _get_testmods(self):
-        return [os.path.join(self.testdir, x)
-                for x in os.listdir(self.testdir)
-                if x.startswith('test_') and x.endswith('.py') and
-                x not in self.skip_files]
+        return [
+            os.path.join(self.testdir, x)
+            for x in os.listdir(self.testdir)
+            if x.startswith('test_')
+            and x.endswith('.py')
+            and x not in self.skip_files
+        ]
 
     def _iter_testmod_classes(self):
         """Iterate over all test files in this directory and return
@@ -146,8 +167,9 @@ class TestLoader:
             mod = import_module_by_path(path)
             for name in dir(mod):
                 obj = getattr(mod, name)
-                if isinstance(obj, type) and \
-                        issubclass(obj, unittest.TestCase):
+                if isinstance(obj, type) and issubclass(
+                    obj, unittest.TestCase
+                ):
                     yield obj
 
     def all(self):
@@ -269,9 +291,12 @@ def run_from_name(name):
 def main():
     usage = "python3 -m pyftpdlib.test [opts] [test-name]"
     parser = optparse.OptionParser(usage=usage, description="run unit tests")
-    parser.add_option("--last-failed",
-                      action="store_true", default=False,
-                      help="only run last failed tests")
+    parser.add_option(
+        "--last-failed",
+        action="store_true",
+        default=False,
+        help="only run last failed tests",
+    )
     opts, args = parser.parse_args()
 
     if not opts.last_failed:

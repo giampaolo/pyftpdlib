@@ -17,6 +17,7 @@ PY3 = sys.version_info[0] >= 3
 _SENTINEL = object()
 
 if PY3:
+
     def u(s):
         return s
 
@@ -28,6 +29,7 @@ if PY3:
     xrange = range
     long = int
 else:
+
     def u(s):
         return unicode(s)
 
@@ -44,6 +46,7 @@ else:
 try:
     callable = callable
 except Exception:
+
     def callable(obj):
         return any("__call__" in klass.__dict__ for klass in type(obj).__mro__)
 
@@ -70,7 +73,9 @@ else:
                             if not attr.startswith('__'):
                                 setattr(self, attr, getattr(unwrap_me, attr))
                     else:
-                        super(TemporaryClass, self).__init__(*args, **kwargs)  # noqa
+                        super(TemporaryClass, self).__init__(  # noqa
+                            *args, **kwargs
+                        )
 
                 class __metaclass__(type):
                     def __instancecheck__(cls, inst):
@@ -102,7 +107,8 @@ else:
         except OSError:
             raise RuntimeError(
                 "broken or incompatible Python implementation, see: "
-                "https://github.com/giampaolo/psutil/issues/1659")
+                "https://github.com/giampaolo/psutil/issues/1659"
+            )
 
 
 # Python 3 super().

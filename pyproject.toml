@@ -1,3 +1,11 @@
+[tool.black]
+target-version = ["py37"]
+line-length = 79
+skip-string-normalization = true
+# https://black.readthedocs.io/en/stable/the_black_code_style/future_style.html
+preview = true
+enable-unstable-feature = ["multiline_string_handling", "string_processing", "wrap_long_dict_values_in_parens"]
+
 [tool.ruff]
 # https://beta.ruff.rs/docs/settings/
 target-version = "py37"
@@ -22,6 +30,7 @@ ignore = [
     "COM812",  # Trailing comma missing
     "D",  # pydocstyle
     "DTZ",  # flake8-datetimez
+    "E203",  # [*] Whitespace before ':' (clashes with black)
     "EM",  # flake8-errmsg
     "ERA001",  # Found commented-out code
     "F841",  # Local variable `wr` is assigned to but never used

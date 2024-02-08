@@ -37,8 +37,9 @@ from pyftpdlib.test.test_functional import TestIPv6Environment
 from pyftpdlib.test.test_functional import TestTimeouts
 
 
-CERTFILE = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                        'keycert.pem'))
+CERTFILE = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), 'keycert.pem')
+)
 
 del OpenSSL
 
@@ -65,6 +66,7 @@ class FTPSClient(ftplib.FTP_TLS):
 
 class FTPSServer(MProcessTestFTPd):
     """A threaded FTPS server used for functional testing."""
+
     handler = TLS_FTPHandler
     handler.certfile = CERTFILE
 
@@ -167,11 +169,12 @@ class TestCornerCasesTLSMixin(TLSTestMixin, TestCornerCases):
 class TestFTPS(PyftpdlibTestCase):
     """Specific tests fot TSL_FTPHandler class."""
 
-    def _setup(self,
-               tls_control_required=False,
-               tls_data_required=False,
-               ssl_protocol=ssl.PROTOCOL_SSLv23,
-               ):
+    def _setup(
+        self,
+        tls_control_required=False,
+        tls_data_required=False,
+        ssl_protocol=ssl.PROTOCOL_SSLv23,
+    ):
         self.server = FTPSServer()
         self.server.handler.tls_control_required = tls_control_required
         self.server.handler.tls_data_required = tls_data_required
@@ -220,16 +223,18 @@ class TestFTPS(PyftpdlibTestCase):
         self.assertIsInstance(self.client.sock, ssl.SSLSocket)
         # AUTH issued twice
         msg = '503 Already using TLS.'
-        self.assertRaisesWithMsg(ftplib.error_perm, msg,
-                                 self.client.sendcmd, 'auth tls')
+        self.assertRaisesWithMsg(
+            ftplib.error_perm, msg, self.client.sendcmd, 'auth tls'
+        )
 
     def test_pbsz(self):
         # unsecured
         self._setup()
         self.client.login(secure=False)
         msg = "503 PBSZ not allowed on insecure control connection."
-        self.assertRaisesWithMsg(ftplib.error_perm, msg,
-                                 self.client.sendcmd, 'pbsz 0')
+        self.assertRaisesWithMsg(
+            ftplib.error_perm, msg, self.client.sendcmd, 'pbsz 0'
+        )
         # secured
         self.client.login(secure=True)
         resp = self.client.sendcmd('pbsz 0')
@@ -239,8 +244,9 @@ class TestFTPS(PyftpdlibTestCase):
         self._setup()
         self.client.login(secure=False)
         msg = "503 PROT not allowed on insecure control connection."
-        self.assertRaisesWithMsg(ftplib.error_perm, msg,
-                                 self.client.sendcmd, 'prot p')
+        self.assertRaisesWithMsg(
+            ftplib.error_perm, msg, self.client.sendcmd, 'prot p'
+        )
         self.client.login(secure=True)
         # secured
         self.client.prot_p()
@@ -289,18 +295,21 @@ class TestFTPS(PyftpdlibTestCase):
     def test_tls_control_required(self):
         self._setup(tls_control_required=True)
         msg = "550 SSL/TLS required on the control channel."
-        self.assertRaisesWithMsg(ftplib.error_perm, msg,
-                                 self.client.sendcmd, "user " + USER)
-        self.assertRaisesWithMsg(ftplib.error_perm, msg,
-                                 self.client.sendcmd, "pass " + PASSWD)
+        self.assertRaisesWithMsg(
+            ftplib.error_perm, msg, self.client.sendcmd, "user " + USER
+        )
+        self.assertRaisesWithMsg(
+            ftplib.error_perm, msg, self.client.sendcmd, "pass " + PASSWD
+        )
         self.client.login(secure=True)
 
     def test_tls_data_required(self):
         self._setup(tls_data_required=True)
         self.client.login(secure=True)
         msg = "550 SSL/TLS required on the data channel."
-        self.assertRaisesWithMsg(ftplib.error_perm, msg,
-                                 self.client.retrlines, 'list', lambda x: x)
+        self.assertRaisesWithMsg(
+            ftplib.error_perm, msg, self.client.retrlines, 'list', lambda x: x
+        )
         self.client.prot_p()
         self.client.retrlines('list', lambda x: x)
 
@@ -331,6 +340,7 @@ class TestFTPS(PyftpdlibTestCase):
     #         self.try_protocol_combo(ssl.PROTOCOL_TLSv1, proto)
 
     if hasattr(ssl, "PROTOCOL_SSLv2"):
+
         def test_sslv2(self):
             self.client.ssl_version = ssl.PROTOCOL_SSLv2
             close_client(self.client)
@@ -340,11 +350,13 @@ class TestFTPS(PyftpdlibTestCase):
                 self.assertRaises(socket.error, self.client.login)
             else:
                 with self.server.lock, self.assertRaises(socket.error):
-                    self.client.connect(self.server.host, self.server.port,
-                                        timeout=0.1)
+                    self.client.connect(
+                        self.server.host, self.server.port, timeout=0.1
+                    )
             self.client.ssl_version = ssl.PROTOCOL_SSLv2
 
 
 if __name__ == '__main__':
     from pyftpdlib.test.runner import run_from_name
+
     run_from_name(__file__)

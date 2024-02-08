@@ -47,7 +47,8 @@ from errno import errorcode
 
 
 _DISCONNECTED = frozenset(
-    {ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, EPIPE, EBADF})
+    {ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, EPIPE, EBADF}
+)
 
 
 socket_map = {}
@@ -178,7 +179,7 @@ def poll2(timeout=0.0, map=None):
             readwrite(obj, flags)
 
 
-poll3 = poll2                           # Alias for backward compatibility
+poll3 = poll2  # Alias for backward compatibility
 
 
 def loop(timeout=30.0, use_poll=False, map=None, count=None):
@@ -231,8 +232,9 @@ class dispatcher:
             self.socket = None
 
     def __repr__(self):
-        status = [self.__class__.__module__ +
-                  "." + self.__class__.__qualname__]
+        status = [
+            self.__class__.__module__ + "." + self.__class__.__qualname__
+        ]
         if self.accepting and self.addr:
             status.append('listening')
         elif self.connected:
@@ -272,9 +274,10 @@ class dispatcher:
     def set_reuse_addr(self):
         try:
             self.socket.setsockopt(
-                socket.SOL_SOCKET, socket.SO_REUSEADDR,
-                self.socket.getsockopt(socket.SOL_SOCKET,
-                                       socket.SO_REUSEADDR) | 1
+                socket.SOL_SOCKET,
+                socket.SO_REUSEADDR,
+                self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
+                | 1,
             )
         except OSError:
             pass
@@ -299,8 +302,11 @@ class dispatcher:
         self.connected = False
         self.connecting = True
         err = self.socket.connect_ex(address)
-        if err in (EINPROGRESS, EALREADY, EWOULDBLOCK) \
-                or err == EINVAL and os.name == 'nt':
+        if (
+            err in (EINPROGRESS, EALREADY, EWOULDBLOCK)
+            or err == EINVAL
+            and os.name == 'nt'
+        ):
             self.addr = address
             return
         if err in (0, EISCONN):
@@ -412,13 +418,9 @@ class dispatcher:
             self_repr = '<__repr__(self) failed for object at %0x>' % id(self)
 
         self.log_info(
-            'uncaptured python exception, closing channel %s (%s:%s %s)' % (
-                self_repr,
-                t,
-                v,
-                tbinfo
-            ),
-            'error'
+            'uncaptured python exception, closing channel %s (%s:%s %s)'
+            % (self_repr, t, v, tbinfo),
+            'error',
         )
         self.handle_close()
 
@@ -471,6 +473,7 @@ class dispatcher_with_send(dispatcher):
         self.out_buffer = self.out_buffer + data
         self.initiate_send()
 
+
 # ---------------------------------------------------------------------------
 # used for debugging.
 # ---------------------------------------------------------------------------
@@ -485,7 +488,7 @@ def compact_traceback():
         tbinfo.append((
             tb.tb_frame.f_code.co_filename,
             tb.tb_frame.f_code.co_name,
-            str(tb.tb_lineno)
+            str(tb.tb_lineno),
         ))
         tb = tb.tb_next
 
@@ -517,6 +520,7 @@ def close_all(map=None, ignore_all=False):
 
 
 if os.name == 'posix':
+
     class file_wrapper:
         # Here we override just enough to make a file
         # look like a socket for the purposes of asyncore.
@@ -527,8 +531,12 @@ if os.name == 'posix':
 
         def __del__(self):
             if self.fd >= 0:
-                warnings.warn("unclosed file %r" % self, ResourceWarning,
-                              source=self, stacklevel=2)
+                warnings.warn(
+                    "unclosed file %r" % self,
+                    ResourceWarning,
+                    source=self,
+                    stacklevel=2,
+                )
             self.close()
 
         def recv(self, *args):
@@ -538,12 +546,15 @@ if os.name == 'posix':
             return os.write(self.fd, *args)
 
         def getsockopt(self, level, optname, buflen=None):
-            if (level == socket.SOL_SOCKET and
-                optname == socket.SO_ERROR and
-                    not buflen):
+            if (
+                level == socket.SOL_SOCKET
+                and optname == socket.SO_ERROR
+                and not buflen
+            ):
                 return 0
-            raise NotImplementedError("Only asyncore specific behaviour "
-                                      "implemented.")
+            raise NotImplementedError(
+                "Only asyncore specific behaviour implemented."
+            )
 
         read = recv
         write = send

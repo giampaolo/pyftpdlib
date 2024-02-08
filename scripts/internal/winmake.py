@@ -87,7 +87,7 @@ def safe_print(text, file=sys.stdout):
 
 def stderr_handle():
     GetStdHandle = ctypes.windll.Kernel32.GetStdHandle
-    STD_ERROR_HANDLE_ID = ctypes.c_ulong(0xfffffff4)
+    STD_ERROR_HANDLE_ID = ctypes.c_ulong(0xFFFFFFF4)
     GetStdHandle.restype = ctypes.c_ulong
     handle = GetStdHandle(STD_ERROR_HANDLE_ID)
     atexit.register(ctypes.windll.Kernel32.CloseHandle, handle)
@@ -116,6 +116,7 @@ def sh(cmd, nolog=False):
 
 def rm(pattern, directory=False):
     """Recursively remove a file or dir by pattern."""
+
     def safe_remove(path):
         try:
             os.remove(path)
@@ -432,9 +433,11 @@ def install_git_hooks():
     """Install GIT pre-commit hook."""
     if os.path.isdir('.git'):
         src = os.path.join(
-            ROOT_DIR, "scripts", "internal", "git_pre_commit.py")
+            ROOT_DIR, "scripts", "internal", "git_pre_commit.py"
+        )
         dst = os.path.realpath(
-            os.path.join(ROOT_DIR, ".git", "hooks", "pre-commit"))
+            os.path.join(ROOT_DIR, ".git", "hooks", "pre-commit")
+        )
         with open(src) as s, open(dst, "w") as d:
             d.write(s.read())
 
@@ -472,9 +475,7 @@ def main():
     global PYTHON
     parser = argparse.ArgumentParser()
     # option shared by all commands
-    parser.add_argument(
-        '-p', '--python',
-        help="use python executable path")
+    parser.add_argument('-p', '--python', help="use python executable path")
     sp = parser.add_subparsers(dest='command', title='targets')
     sp.add_parser('build', help="build")
     sp.add_parser('clean', help="deletes dev files")
@@ -505,7 +506,8 @@ def main():
     PYTHON = get_python(args.python)
     if not PYTHON:
         return sys.exit(
-            "can't find any python installation matching %r" % args.python)
+            "can't find any python installation matching %r" % args.python
+        )
     os.putenv('PYTHON', PYTHON)
     win_colorprint("using " + PYTHON)
 
