@@ -77,22 +77,24 @@ uninstall:  ## Uninstall this package.
 	cd ..; $(PYTHON) -m pip uninstall -y -v pyftpdlib || true
 	$(PYTHON) scripts/internal/purge_installation.py
 
-install-pip:  ## (only if necessary)
-	$(PYTHON) -c \
+install-pip:  ## Install pip (no-op if already installed).
+	@$(PYTHON) -c \
 		"import sys, ssl, os, pkgutil, tempfile, atexit; \
 		sys.exit(0) if pkgutil.find_loader('pip') else None; \
-		pyexc = 'from urllib.request import urlopen' if sys.version_info[0] >= 3 else 'from urllib2 import urlopen'; \
+		PY3 = sys.version_info[0] == 3; \
+		pyexc = 'from urllib.request import urlopen' if PY3 else 'from urllib2 import urlopen'; \
 		exec(pyexc); \
 		ctx = ssl._create_unverified_context() if hasattr(ssl, '_create_unverified_context') else None; \
+		url = 'https://bootstrap.pypa.io/pip/2.7/get-pip.py' if not PY3 else 'https://bootstrap.pypa.io/get-pip.py'; \
 		kw = dict(context=ctx) if ctx else {}; \
-		req = urlopen('https://bootstrap.pypa.io/get-pip.py', **kw); \
+		req = urlopen(url, **kw); \
 		data = req.read(); \
 		f = tempfile.NamedTemporaryFile(suffix='.py'); \
 		atexit.register(f.close); \
 		f.write(data); \
 		f.flush(); \
 		print('downloaded %s' % f.name); \
-		code = os.system('%s %s --user' % (sys.executable, f.name)); \
+		code = os.system('%s %s --user --upgrade' % (sys.executable, f.name)); \
 		f.close(); \
 		sys.exit(code);"
 
