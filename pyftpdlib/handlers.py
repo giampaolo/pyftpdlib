@@ -1755,7 +1755,8 @@ class FTPHandler(AsyncChat):
         if self._closed:
             return
         self._last_response = ""
-        method = getattr(self, 'ftp_' + cmd.replace(' ', '_'))
+        method_name = 'ftp_' + cmd.replace(' ', '_').replace('=', '_')
+        method = getattr(self, method_name)
         method(*args, **kwargs)
         if self._last_response:
             code = int(self._last_response[:3])
