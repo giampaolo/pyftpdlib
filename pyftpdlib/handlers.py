@@ -1263,14 +1263,14 @@ class BufferedIteratorProducer:
         """Attempt a chunk of data from iterator by calling
         its next() method different times.
         """
-        buffer = []
-        for _ in xrange(self.loops):
-            try:
-                buffer.append(next(self.iterator))
-            except StopIteration:
-                break
-        return b''.join(buffer)
-
+        if self.iterator:
+            buffer = next(self.iterator, None)
+            if buffer is not None:
+                # Convert buffer to bytes if it's a string
+                if isinstance(buffer, str):
+                    buffer = buffer.encode()
+                return buffer
+        return b''  # Return an empty bytes object when there's no more data
 
 # --- FTP
 
