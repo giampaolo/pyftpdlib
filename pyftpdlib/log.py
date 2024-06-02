@@ -146,9 +146,7 @@ def debug(s, inst=None):
 def is_logging_configured():
     if logging.getLogger('pyftpdlib').handlers:
         return True
-    if logging.root.handlers:
-        return True
-    return False
+    return bool(logging.root.handlers)
 
 
 # TODO: write tests

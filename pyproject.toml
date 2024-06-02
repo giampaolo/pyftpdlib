@@ -38,6 +38,7 @@ ignore = [
     "FIX",  # Line contains TODO / XXX / ..., consider resolving the issue
     "FLY",  # flynt (PYTHON2.7 COMPAT)
     "FURB101",  # `open` and `read` should be replaced by `Path(x).read_text()`
+    "FURB103",  # `open` and `write` should be replaced by `Path(...).write_bytes(data)`
     "FURB113",  # Use `s.extend(...)` instead of repeatedly calling `s.append()`
     "INP",  # flake8-no-pep420
     "N801",  # Class name `async_chat` should use CapWords convention (ASYNCORE COMPAT)

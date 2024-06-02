@@ -71,7 +71,7 @@ def get_changes():
             break
     lines.pop(0)
 
-    for line in lines:
+    while lines:
         line = lines.pop(0)
         line = line.rstrip()
         if re.match(r"^- \d+_: ", line):

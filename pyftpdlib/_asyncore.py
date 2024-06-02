@@ -485,11 +485,13 @@ def compact_traceback():
     if not tb:  # Must have a traceback
         raise AssertionError("traceback does not exist")
     while tb:
-        tbinfo.append((
-            tb.tb_frame.f_code.co_filename,
-            tb.tb_frame.f_code.co_name,
-            str(tb.tb_lineno),
-        ))
+        tbinfo.append(
+            (
+                tb.tb_frame.f_code.co_filename,
+                tb.tb_frame.f_code.co_name,
+                str(tb.tb_lineno),
+            )
+        )
         tb = tb.tb_next
 
     # just to be safe

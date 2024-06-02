@@ -228,9 +228,7 @@ class AbstractedFS:
             root = root + os.sep
         if not path.endswith(os.sep):
             path = path + os.sep
-        if path[0 : len(root)] == root:
-            return True
-        return False
+        return path[0 : len(root)] == root
 
     # --- Wrapper methods around open() and tempfile.mkstemp
 

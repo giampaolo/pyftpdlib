@@ -397,9 +397,7 @@ class _Base:
         """
         if self.allowed_users and username not in self.allowed_users:
             return True
-        if self.rejected_users and username in self.rejected_users:
-            return True
-        return False
+        return bool(self.rejected_users and username in self.rejected_users)
 
 
 # ===================================================================
