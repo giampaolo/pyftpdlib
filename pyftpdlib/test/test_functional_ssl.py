@@ -355,6 +355,37 @@ class TestFTPS(PyftpdlibTestCase):
                     )
             self.client.ssl_version = ssl.PROTOCOL_SSLv2
 
+    def test_auth_trailing_cmds(self):
+        """Commands received between the AUTH cmd and when the secure socket is
+        established should be discarded
+
+        CVE-2011-1575
+        https://github.com/giampaolo/pyftpdlib/issues/315
+
+        If the commands are not discarded then we send an encrypted
+        response to an unencrypted cmd (which maybe problematic in the case
+        of a man in the middle attack).
+        """
+        self.server = FTPSServer()
+        self.server.start()
+        self.client = ftplib.FTP_TLS(timeout=0.1)
+        self.client.connect(self.server.host, self.server.port)
+        # Send 2 commands together, unencrypted.
+        self.client.sock.sendall(b'AUTH TLS\r\nNOOP\r\n')
+        # AUTH response - unencrypted response to unencrypted cmd
+        auth_resp = self.client.getresp()
+        self.assertEqual(auth_resp, "234 AUTH TLS successful.")
+        # wrap sock as done in ftplib after successful AUTH
+        self.client.sock = self.client.context.wrap_socket(
+            self.client.sock,
+            server_hostname=self.client.host
+        )
+        self.client.file = self.client.sock.makefile(mode='r')
+        # noop response - encrypted response to unencrypted cmd
+        # The noop cmd should be discarded so there won't be any resp to
+        # get. We're expecting a timeout here.
+        self.assertRaises((socket.timeout, ssl.SSLError), self.client.getresp)
+
 
 if __name__ == '__main__':
     from pyftpdlib.test.runner import run_from_name
