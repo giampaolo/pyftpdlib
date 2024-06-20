@@ -29,6 +29,7 @@ import tempfile
 
 APPVEYOR = bool(os.environ.get('APPVEYOR'))
 PYTHON = sys.executable if APPVEYOR else os.getenv('PYTHON', sys.executable)
+PYTEST_ARGS = "-v --tb=native -o "
 GET_PIP_URL = "https://bootstrap.pypa.io/get-pip.py"
 PY3 = sys.version_info[0] >= 3
 HERE = os.path.abspath(os.path.dirname(__file__))
@@ -60,11 +61,6 @@ LIGHTBLUE = 3
 YELLOW = 6
 RED = 4
 DEFAULT_COLOR = 7
-
-PYTEST_ARGS = "-v --tb=native -o "
-PYTEST_COV_ARGS = (
-    "--source=. --omit=__pycache__ --omit=scripts --omit=pyftpdlib/test"
-)
 
 
 # ===================================================================
@@ -418,10 +414,7 @@ def test_servers():
 def coverage():
     """Run coverage tests."""
     build()
-    sh(
-        "%s -m coverage run %s -m pytest %s"
-        % (PYTHON, PYTEST_COV_ARGS, PYTEST_ARGS)
-    )
+    sh("%s -m coverage run -m pytest %s" % (PYTHON, PYTEST_ARGS))
     sh("%s -m coverage report" % PYTHON)
     sh("%s -m coverage html" % PYTHON)
     sh("%s -m webbrowser -t htmlcov/index.html" % PYTHON)

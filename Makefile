@@ -34,11 +34,6 @@ endif
 INSTALL_OPTS = `$(PYTHON) -c "import sys; print('' if hasattr(sys, 'real_prefix') else '--user')"`
 TEST_PREFIX = PYTHONWARNINGS=always
 PYTEST_ARGS = -v --tb=native -o cache_dir=/tmp/pyftpdlib-pytest-cache
-PYTEST_COV_ARGS = \
-	--source=. \
-	--omit=__pycache__ \
-	--omit=scripts \
-	--omit=pyftpdlib/test
 NUM_WORKERS = `$(PYTHON) -c "import os; print(os.cpu_count() or 1)"`
 
 
@@ -154,7 +149,7 @@ test-lastfailed:  ## Run previously failed tests
 test-coverage:  ## Run test coverage.
 	${MAKE} install
 	rm -rf .coverage htmlcov
-	$(TEST_PREFIX) $(PYTHON) -m coverage run $(PYTEST_COV_ARGS) -m pytest $(PYTEST_ARGS) $(ARGS)
+	$(TEST_PREFIX) $(PYTHON) -m coverage run -m pytest $(PYTEST_ARGS) $(ARGS)
 	$(PYTHON) -m coverage report
 	@echo "writing results to htmlcov/index.html"
 	$(PYTHON) -m coverage html
