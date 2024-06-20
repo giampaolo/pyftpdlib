@@ -107,6 +107,15 @@ class TestCommandLineParser(PyftpdlibTestCase):
         with self.assertRaisesRegex(ValueError, "no such directory"):
             main(["-d", "?!?"])
 
+    def test_nat_address_opt(self):
+        ftpd = main(["-n", "127.0.0.1"])
+        self.assertEqual(ftpd.handler.masquerade_address, "127.0.0.1")
+        ftpd = main(["--nat-address", "127.0.0.1"])
+        self.assertEqual(ftpd.handler.masquerade_address, "127.0.0.1")
+        # without argument
+        with self.assertRaises(SystemExit):
+            main(["-n"])
+
     def test_r_option(self):
         sys.argv += ["-r 60000-61000", "-p", "0"]
         pyftpdlib.__main__.main()
