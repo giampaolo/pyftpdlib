@@ -6,6 +6,7 @@ Version: 1.5.10 - (UNRELEASED)
 **Enhancements**
 
 * #621: use black formatter.
+* #626: use argparse instead of deprecated optparse.
 
 Version: 1.5.9 - 2023-10-25
 ===========================
