@@ -7,6 +7,8 @@ import os
 import sys
 import warnings
 
+from pyftpdlib.authorizers import DummyAuthorizer
+
 
 try:
     from StringIO import StringIO as BytesIO
@@ -14,7 +16,7 @@ except ImportError:
     from io import BytesIO
 
 import pyftpdlib
-import pyftpdlib.__main__
+from pyftpdlib.__main__ import main
 from pyftpdlib._compat import PY3
 from pyftpdlib._compat import super
 from pyftpdlib.servers import FTPServer
@@ -26,9 +28,6 @@ from pyftpdlib.test import safe_rmpath
 class TestCommandLineParser(PyftpdlibTestCase):
     """Test command line parser."""
 
-    SYSARGV = sys.argv
-    STDERR = sys.stderr
-
     def setUp(self):
         super().setUp()
 
@@ -37,7 +36,10 @@ class TestCommandLineParser(PyftpdlibTestCase):
             serve_forever() to return immediately.
             """
 
+            started = False
+
             def serve_forever(self, *args, **kwargs):
+                self.started = True
                 return
 
         if PY3:
@@ -46,53 +48,39 @@ class TestCommandLineParser(PyftpdlibTestCase):
             self.devnull = io.StringIO()
         else:
             self.devnull = BytesIO()
-        sys.argv = self.SYSARGV[:]
-        sys.stderr = self.STDERR
         self.original_ftpserver_class = FTPServer
         pyftpdlib.__main__.FTPServer = DummyFTPServer
 
     def tearDown(self):
         self.devnull.close()
-        sys.argv = self.SYSARGV[:]
-        sys.stderr = self.STDERR
         pyftpdlib.servers.FTPServer = self.original_ftpserver_class
         super().tearDown()
 
-    def test_a_option(self):
-        sys.argv += ["-i", "localhost", "-p", "0"]
-        pyftpdlib.__main__.main()
-        sys.argv = self.SYSARGV[:]
+    def test_port_opt(self):
+        # no param
+        with self.assertRaises(SystemExit) as cm:
+            main(["-p"])
+        # not an int
+        with self.assertRaises(SystemExit) as cm:
+            main(["-p", "foo"])
+        main(["-p", "0"])
+        main(["--port", "0"])
 
-        # no argument
-        sys.argv += ["-a"]
-        sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
-
-    def test_p_option(self):
-        sys.argv += ["-p", "0"]
-        pyftpdlib.__main__.main()
-
-        # no argument
-        sys.argv = self.SYSARGV[:]
-        sys.argv += ["-p"]
-        sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
-
-        # invalid argument
-        sys.argv += ["-p foo"]
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
-
-    def test_w_option(self):
-        sys.argv += ["-w", "-p", "0"]
+    def test_write_opt(self):
         with warnings.catch_warnings():
             warnings.filterwarnings("error")
-            self.assertRaises(RuntimeWarning, pyftpdlib.__main__.main)
+            with self.assertRaises(RuntimeWarning):
+                main(["-w", "-p", "0"])
+
+        with warnings.catch_warnings():
+            ftpd = main(["-w", "-p", "0"])
+            perms = ftpd.handler.authorizer.get_perms("anonymous")
+            self.assertEqual(
+                perms, DummyAuthorizer.read_perms + DummyAuthorizer.write_perms
+            )
 
         # unexpected argument
-        sys.argv = self.SYSARGV[:]
-        sys.argv += ["-w foo"]
-        sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        self.assertRaises(SystemExit, main, ["-w", "foo", "-p", "0"])
 
     def test_d_option(self):
         dirname = self.get_testfn()
