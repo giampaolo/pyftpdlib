@@ -25,7 +25,6 @@ Example usages:
 """
 
 # Some benchmarks (Linux 3.0.0, Intel core duo - 3.1 Ghz).
-
 # pyftpdlib 1.0.0:
 #
 #   (starting with 6.7M of memory being used)
@@ -64,18 +63,21 @@ Example usages:
 #   300 concurrent clients (STOR 10.0M file)               9.74 secs    140.9M
 #   300 concurrent clients (QUIT)                          0.00 secs
 
+from __future__ import division
+from __future__ import print_function
 
-from __future__ import division, print_function
+import argparse
 import asynchat
 import asyncore
 import atexit
 import contextlib
 import ftplib
-import optparse
 import os
 import ssl
 import sys
 import time
+
+
 try:
     import resource
 except ImportError:
@@ -109,8 +111,10 @@ SSL_ERROR_WANT_WRITE = getattr(ssl, "SSL_ERROR_WANT_WRITE", object())
 
 
 if not sys.stdout.isatty() or os.name != 'posix':
+
     def hilite(s, *args, **kwargs):
         return s
+
 else:
     # http://goo.gl/6V8Rm
     def hilite(string, ok=True, bold=False):
@@ -118,9 +122,9 @@ else:
         attr = []
         if ok is None:  # no color
             pass
-        elif ok:   # green
+        elif ok:  # green
             attr.append('32')
-        else:   # red
+        else:  # red
             attr.append('31')
         if bold:
             attr.append('1')
@@ -128,9 +132,11 @@ else:
 
 
 def print_bench(what, value, unit=""):
-    s = "%s %s %-8s" % (hilite("%-50s" % what, ok=None, bold=0),
-                        hilite("%8.2f" % value),
-                        unit)
+    s = "%s %s %-8s" % (
+        hilite("%-50s" % what, ok=None, bold=0),
+        hilite("%8.2f" % value),
+        unit,
+    )
     if server_memory:
         s += "%s" % hilite(server_memory.pop())
     print(s.strip())
@@ -178,6 +184,7 @@ def register_memory():
     """Register an approximation of memory used by FTP server process
     and all of its children.
     """
+
     # XXX How to get a reliable representation of memory being used is
     # not clear. (rss - shared) seems kind of ok but we might also use
     # the private working set via get_memory_maps().private*.
@@ -200,22 +207,25 @@ def register_memory():
 
 
 def timethis(what):
-    """"Utility function for making simple benchmarks (calculates time calls).
+    """Utility function for making simple benchmarks (calculates time calls).
     It can be used either as a context manager or as a decorator.
     """
+
     @contextlib.contextmanager
     def benchmark():
         timer = time.clock if sys.platform == "win32" else time.time
         start = timer()
         yield
         stop = timer()
-        res = (stop - start)
+        res = stop - start
         print_bench(what, res, "secs")
 
-    if hasattr(what, "__call__"):
+    if callable(what):
+
         def timed(*args, **kwargs):
             with benchmark():
                 return what(*args, **kwargs)
+
         return timed
     else:
         return benchmark()
@@ -273,6 +283,7 @@ def bytes_per_second(ftp, retr=True):
     """Return the number of bytes transmitted in 1 second."""
     tot_bytes = 0
     if retr:
+
         def request_file():
             ftp.voidcmd('TYPE I')
             conn = ftp.transfercmd("retr " + TESTFN)
@@ -356,8 +367,10 @@ def bench_multi(howmany):
 
     def bench_multi_retr(clients):
         stor(clients[0])
-        with timethis("%s concurrent clients (RETR %s file)" % (
-                howmany, bytes2human(FILE_SIZE))):
+        with timethis(
+            "%s concurrent clients (RETR %s file)"
+            % (howmany, bytes2human(FILE_SIZE))
+        ):
             for ftp in clients:
                 ftp.voidcmd('TYPE I')
                 conn = ftp.transfercmd("RETR " + TESTFN)
@@ -368,8 +381,10 @@ def bench_multi(howmany):
             ftp.voidresp()
 
     def bench_multi_stor(clients):
-        with timethis("%s concurrent clients (STOR %s file)" % (
-                howmany, bytes2human(FILE_SIZE))):
+        with timethis(
+            "%s concurrent clients (STOR %s file)"
+            % (howmany, bytes2human(FILE_SIZE))
+        ):
             for ftp in clients:
                 ftp.voidcmd('TYPE I')
                 conn = ftp.transfercmd("STOR " + TESTFN)
@@ -470,75 +485,105 @@ class AsyncQuit(asynchat.async_chat):
         raise
 
 
-class OptFormatter(optparse.IndentedHelpFormatter):
-
-    def format_epilog(self, s):
-        return s.lstrip()
-
-    def format_option(self, option):
-        result = []
-        opts = self.option_strings[option]
-        result.append('  %s\n' % opts)
-        if option.help:
-            help_text = '     %s\n\n' % self.expand_default(option)
-            result.append(help_text)
-        return ''.join(result)
-
-
 def main():
-    global HOST, PORT, USER, PASSWORD, SERVER_PROC, TIMEOUT, SSL, FILE_SIZE, \
-        DEBUG
-    USAGE = "%s -u USERNAME -p PASSWORD [-H] [-P] [-b] [-n] [-s] [-k] " \
-            "[-t] [-d] [-S]" % (os.path.basename(__file__))
-    parser = optparse.OptionParser(usage=USAGE,
-                                   epilog=__doc__[__doc__.find('Example'):],
-                                   formatter=OptFormatter())
-    parser.add_option('-u', '--user', dest='user', help='username')
-    parser.add_option('-p', '--pass', dest='password', help='password')
-    parser.add_option('-H', '--host', dest='host', default=HOST,
-                      help='hostname')
-    parser.add_option('-P', '--port', dest='port', default=PORT, help='port',
-                      type=int)
-    parser.add_option('-b', '--benchmark', dest='benchmark',
-                      default='transfer',
-                      help="benchmark type ('transfer', 'download', 'upload', "
-                           "'concurrence', 'all')")
-    parser.add_option('-n', '--clients', dest='clients', default=200,
-                      type="int",
-                      help="number of concurrent clients used by "
-                           "'concurrence' benchmark")
-    parser.add_option('-s', '--filesize', dest='filesize', default="10M",
-                      help="file size used by 'concurrence' benchmark "
-                           "(e.g. '10M')")
-    parser.add_option('-k', '--pid', dest='pid', default=None, type="int",
-                      help="the PID of the FTP server process, to track its "
-                           "memory usage")
-    parser.add_option('-t', '--timeout', dest='timeout',
-                      default=TIMEOUT, type="int", help="the socket timeout")
-    parser.add_option('-d', '--debug', action='store_true', dest='debug',
-                      help="whether to print debugging info")
-    parser.add_option('-S', '--ssl', action='store_true', dest='ssl',
-                      help="whether to use FTPS")
+    global HOST, PORT, USER, PASSWORD, SERVER_PROC, TIMEOUT, SSL, FILE_SIZE, DEBUG
 
-    options, args = parser.parse_args()
-    if not options.user or not options.password:
-        sys.exit(USAGE)
-    else:
-        USER = options.user
-        PASSWORD = options.password
-        HOST = options.host
-        PORT = options.port
-        TIMEOUT = options.timeout
-        SSL = bool(options.ssl)
-        DEBUG = options.debug
-        try:
-            FILE_SIZE = human2bytes(options.filesize)
-        except (ValueError, AssertionError):
-            parser.error("invalid file size %r" % options.filesize)
-        if options.pid is not None:
-            if psutil is None:
-                raise ImportError("-p option requires psutil module")
-            SERVER_PROC = psutil.Process(options.pid)
+    USAGE = (
+        "%s -u USERNAME -p PASSWORD [-H] [-P] [-b] [-n] [-s] [-k] "
+        "[-t] [-d] [-S]" % (os.path.basename(__file__))
+    )
+
+    parser = argparse.ArgumentParser(
+        usage=USAGE,
+    )
+
+    parser.add_argument(
+        '-u', '--user', dest='user', required=True, help='username'
+    )
+    parser.add_argument(
+        '-p', '--pass', dest='password', required=True, help='password'
+    )
+    parser.add_argument(
+        '-H', '--host', dest='host', default=HOST, help='hostname'
+    )
+    parser.add_argument(
+        '-P', '--port', dest='port', default=PORT, type=int, help='port'
+    )
+    parser.add_argument(
+        '-b',
+        '--benchmark',
+        dest='benchmark',
+        default='transfer',
+        help=(
+            "benchmark type ('transfer', 'download', 'upload', 'concurrence',"
+            " 'all')"
+        ),
+    )
+    parser.add_argument(
+        '-n',
+        '--clients',
+        dest='clients',
+        default=200,
+        type=int,
+        help="number of concurrent clients used by 'concurrence' benchmark",
+    )
+    parser.add_argument(
+        '-s',
+        '--filesize',
+        dest='filesize',
+        default="10M",
+        help="file size used by 'concurrence' benchmark (e.g. '10M')",
+    )
+    parser.add_argument(
+        '-k',
+        '--pid',
+        dest='pid',
+        default=None,
+        type=int,
+        help="the PID of the FTP server process, to track its memory usage",
+    )
+    parser.add_argument(
+        '-t',
+        '--timeout',
+        dest='timeout',
+        default=TIMEOUT,
+        type=int,
+        help="the socket timeout",
+    )
+    parser.add_argument(
+        '-d',
+        '--debug',
+        action='store_true',
+        dest='debug',
+        help="whether to print debugging info",
+    )
+    parser.add_argument(
+        '-S',
+        '--ssl',
+        action='store_true',
+        dest='ssl',
+        help="whether to use FTPS",
+    )
+
+    options = parser.parse_args()
+
+    USER = options.user
+    PASSWORD = options.password
+    HOST = options.host
+    PORT = options.port
+    TIMEOUT = options.timeout
+    SSL = options.ssl
+    DEBUG = options.debug
+
+    try:
+        FILE_SIZE = human2bytes(options.filesize)
+    except (ValueError, AssertionError):
+        parser.error("invalid file size %r" % options.filesize)
+
+    if options.pid is not None:
+        if psutil is None:
+            raise ImportError("-k option requires psutil module")
+        SERVER_PROC = psutil.Process(options.pid)
 
     # before starting make sure we have write permissions
     ftp = connect()
@@ -552,8 +597,11 @@ def main():
     # start benchmark
     if SERVER_PROC is not None:
         register_memory()
-        print("(starting with %s of memory being used)" % (
-            hilite(server_memory.pop())))
+        print(
+            "(starting with %s of memory being used)"
+            % (hilite(SERVER_PROC.memory_info().rss))
+        )
+
     if options.benchmark == 'download':
         stor()
         bench_retr()
