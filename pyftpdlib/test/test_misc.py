@@ -22,7 +22,6 @@ from pyftpdlib._compat import super
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import mock
-from pyftpdlib.test import safe_rmpath
 
 
 class TestCommandLineParser(PyftpdlibTestCase):
@@ -90,23 +89,23 @@ class TestCommandLineParser(PyftpdlibTestCase):
         # unexpected argument
         self.assertRaises(SystemExit, main, ["-w", "foo", "-p", "0"])
 
-    def test_d_option(self):
+    def test_directory_opt(self):
         dirname = self.get_testfn()
         os.mkdir(dirname)
-        sys.argv += ["-d", dirname, "-p", "0"]
-        pyftpdlib.__main__.main()
+        ftpd = main(["-d", dirname, "-p", "0"])
+        ftpd = main(["--directory", dirname, "-p", "0"])
+        self.assertEqual(
+            ftpd.handler.authorizer.get_home_dir("anonymous"),
+            os.path.abspath(dirname),
+        )
 
         # without argument
-        sys.argv = self.SYSARGV[:]
-        sys.argv += ["-d"]
-        sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        with self.assertRaises(SystemExit):
+            main(["-d"])
 
         # no such directory
-        sys.argv = self.SYSARGV[:]
-        sys.argv += ["-d %s" % dirname]
-        safe_rmpath(dirname)
-        self.assertRaises(ValueError, pyftpdlib.__main__.main)
+        with self.assertRaisesRegex(ValueError, "no such directory"):
+            main(["-d", "?!?"])
 
     def test_r_option(self):
         sys.argv += ["-r 60000-61000", "-p", "0"]
