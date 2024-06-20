@@ -2827,7 +2827,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
             handler.remote_ip = '9.9.9.9'
         with pytest.raises(ftplib.error_perm) as cm:
             self.client.makeport()
-        assert 'foreign address' in str(cm.exception)
+        assert 'foreign address' in str(cm.value)
 
     @retry_on_failure()
     def test_permit_foreign_address_true(self):
