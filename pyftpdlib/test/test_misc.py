@@ -116,20 +116,18 @@ class TestCommandLineParser(PyftpdlibTestCase):
         with self.assertRaises(SystemExit):
             main(["-n"])
 
-    def test_r_option(self):
-        sys.argv += ["-r 60000-61000", "-p", "0"]
-        pyftpdlib.__main__.main()
+    def test_range_opt(self):
+        ftpd = main(["-r", "60000-61000"])
+        self.assertEqual(
+            ftpd.handler.passive_ports, list(range(60000, 61000 + 1))
+        )
 
         # without arg
-        sys.argv = self.SYSARGV[:]
-        sys.argv += ["-r"]
-        sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
-
+        with self.assertRaises(SystemExit):
+            main(["-r"])
         # wrong arg
-        sys.argv = self.SYSARGV[:]
-        sys.argv += ["-r yyy-zzz"]
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        with self.assertRaises(SystemExit):
+            main(["-r", "yyy-zzz"])
 
     def test_v_option(self):
         sys.argv += ["-v"]
