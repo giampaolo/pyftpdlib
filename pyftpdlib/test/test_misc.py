@@ -127,22 +127,28 @@ class TestCommandLineParser(PyftpdlibTestCase):
         with self.assertRaises(SystemExit):
             main(["-r", "yyy-zzz"])
 
-    def test_debug_option(self):
+    def test_debug_opt(self):
         main(["-D"])
         main(["--debug"])
-        # without arg
+        # with arg
         with self.assertRaises(SystemExit):
             main(["-D", "xxx"])
 
-    def test_version_option(self):
+    def test_version_opt(self):
         for opt in ("-v", "--version"):
             with self.assertRaises(SystemExit) as cm:
                 main([opt])
             self.assertEqual(str(cm.exception), "pyftpdlib %s" % __ver__)
 
-    def test_verbose_option(self):
+    def test_verbose_opt(self):
         for opt in ("-V", "--verbose"):
             main([opt])
+
+    def test_username_opt(self):
+        ftpd = main(["--username", "foo", "--password", "bar"])
+        self.assertTrue(
+            ftpd.handler.authorizer.has_user("foo"),
+        )
 
 
 if __name__ == '__main__':
