@@ -4,9 +4,7 @@
 
 import contextlib
 import ftplib
-import inspect
 import socket
-import sys
 import unittest
 
 from pyftpdlib import handlers
@@ -16,7 +14,6 @@ from pyftpdlib.test import GLOBAL_TIMEOUT
 from pyftpdlib.test import HOST
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import USER
-from pyftpdlib.test import VERBOSITY
 from pyftpdlib.test import WINDOWS
 from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import ThreadedTestFTPd
@@ -229,25 +226,3 @@ class TestCornerCasesMProcMixin(MProcFTPTestMixin, TestCornerCases):
 
 # class TestFTPServerMProcMixin(MProcFTPTestMixin, TestFTPServer):
 #     pass
-
-
-def main():
-    test_classes = set()
-    for name, obj in inspect.getmembers(sys.modules[__name__]):
-        if inspect.isclass(obj):
-            if obj.__module__ == '__main__' and name.startswith('Test'):
-                test_classes.add(obj)
-
-    loader = unittest.TestLoader()
-    suite = []
-    for test_class in test_classes:
-        suite.append(loader.loadTestsFromTestCase(test_class))
-
-    runner = unittest.TextTestRunner(verbosity=VERBOSITY)
-    result = runner.run(unittest.TestSuite(unittest.TestSuite(suite)))
-    success = result.wasSuccessful()
-    sys.exit(0 if success else 1)
-
-
-if __name__ == '__main__':
-    main()

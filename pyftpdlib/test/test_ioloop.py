@@ -588,9 +588,3 @@ class TestAcceptor(PyftpdlibTestCase):
             ac.handle_accept()
             assert m.called
             assert ac.socket is None
-
-
-if __name__ == '__main__':
-    from pyftpdlib.test.runner import run_from_name
-
-    run_from_name(__file__)

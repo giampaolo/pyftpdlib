@@ -57,7 +57,7 @@ jobs:
 
       - name: Tests
         run: |
-          python.exe pyftpdlib/test/runner.py
+          make test
 
   # Run linters
   linters:

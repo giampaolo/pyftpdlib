@@ -2908,9 +2908,3 @@ class ThreadedFTPTests(PyftpdlibTestCase):
             datafile = self.dummy_recvfile.read()
             assert len(data) == len(datafile)
             assert hash(data) == hash(datafile)
-
-
-if __name__ == '__main__':
-    from pyftpdlib.test.runner import run_from_name
-
-    run_from_name(__file__)

@@ -626,9 +626,3 @@ class TestWindowsAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
             self.authorizer_class(
                 anonymous_user=user, anonymous_password='$|1wrongpasswd'
             )
-
-
-if __name__ == '__main__':
-    from pyftpdlib.test.runner import run_from_name
-
-    run_from_name(__file__)

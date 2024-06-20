@@ -11,6 +11,7 @@ PYDEPS = \
 	psutil \
 	pylint \
 	pyopenssl \
+	pytest \
 	rstcheck \
 	ruff \
 	setuptools \
