@@ -56,6 +56,14 @@ class TestCommandLineParser(PyftpdlibTestCase):
         pyftpdlib.servers.FTPServer = self.original_ftpserver_class
         super().tearDown()
 
+    def test_interface_opt(self):
+        # no param
+        with self.assertRaises(SystemExit) as cm:
+            main(["-i"])
+        with self.assertRaises(SystemExit) as cm:
+            main(["--interface"])
+        ftpd = main(["--interface", "127.0.0.1"])
+
     def test_port_opt(self):
         # no param
         with self.assertRaises(SystemExit) as cm:
