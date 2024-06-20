@@ -154,20 +154,20 @@ class TestDummyAuthorizer(PyftpdlibTestCase):
     def test_override_perm_recursive_paths(self):
         auth = DummyAuthorizer()
         auth.add_user(USER, PASSWD, HOME, perm='elr')
-        assert auth.has_perm(USER, 'w', self.tempdir) == False
+        assert not auth.has_perm(USER, 'w', self.tempdir)
         auth.override_perm(USER, self.tempdir, perm='w', recursive=True)
-        assert auth.has_perm(USER, 'w', HOME) == False
-        assert auth.has_perm(USER, 'w', self.tempdir) == True
-        assert auth.has_perm(USER, 'w', self.tempfile) == True
-        assert auth.has_perm(USER, 'w', self.subtempdir) == True
-        assert auth.has_perm(USER, 'w', self.subtempfile) == True
+        assert not auth.has_perm(USER, 'w', HOME)
+        assert auth.has_perm(USER, 'w', self.tempdir)
+        assert auth.has_perm(USER, 'w', self.tempfile)
+        assert auth.has_perm(USER, 'w', self.subtempdir)
+        assert auth.has_perm(USER, 'w', self.subtempfile)
 
-        assert auth.has_perm(USER, 'w', HOME + '@') == False
-        assert auth.has_perm(USER, 'w', self.tempdir + '@') == False
+        assert not auth.has_perm(USER, 'w', HOME + '@')
+        assert not auth.has_perm(USER, 'w', self.tempdir + '@')
         path = os.path.join(
             self.tempdir + '@', os.path.basename(self.tempfile)
         )
-        assert auth.has_perm(USER, 'w', path) == False
+        assert not auth.has_perm(USER, 'w', path)
         # test case-sensitiveness
         if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
             assert auth.has_perm(USER, 'w', self.tempdir.upper())
@@ -175,23 +175,23 @@ class TestDummyAuthorizer(PyftpdlibTestCase):
     def test_override_perm_not_recursive_paths(self):
         auth = DummyAuthorizer()
         auth.add_user(USER, PASSWD, HOME, perm='elr')
-        assert auth.has_perm(USER, 'w', self.tempdir) == False
+        assert not auth.has_perm(USER, 'w', self.tempdir)
         auth.override_perm(USER, self.tempdir, perm='w')
-        assert auth.has_perm(USER, 'w', HOME) == False
-        assert auth.has_perm(USER, 'w', self.tempdir) == True
-        assert auth.has_perm(USER, 'w', self.tempfile) == True
-        assert auth.has_perm(USER, 'w', self.subtempdir) == False
-        assert auth.has_perm(USER, 'w', self.subtempfile) == False
+        assert not auth.has_perm(USER, 'w', HOME)
+        assert auth.has_perm(USER, 'w', self.tempdir)
+        assert auth.has_perm(USER, 'w', self.tempfile)
+        assert not auth.has_perm(USER, 'w', self.subtempdir)
+        assert not auth.has_perm(USER, 'w', self.subtempfile)
 
-        assert auth.has_perm(USER, 'w', HOME + '@') == False
-        assert auth.has_perm(USER, 'w', self.tempdir + '@') == False
+        assert not auth.has_perm(USER, 'w', HOME + '@')
+        assert not auth.has_perm(USER, 'w', self.tempdir + '@')
         path = os.path.join(
             self.tempdir + '@', os.path.basename(self.tempfile)
         )
-        assert auth.has_perm(USER, 'w', path) == False
+        assert not auth.has_perm(USER, 'w', path)
         # test case-sensitiveness
         if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
-            assert auth.has_perm(USER, 'w', self.tempdir.upper()) == True
+            assert auth.has_perm(USER, 'w', self.tempdir.upper())
 
 
 class _SharedAuthorizerTests:

@@ -323,9 +323,9 @@ class TestCallLater(PyftpdlibTestCase):
         with pytest.raises(AssertionError):
             self.ioloop.call_later(-1, fun)
         x = self.ioloop.call_later(3, fun)
-        assert x.cancelled == False
+        assert not x.cancelled
         x.cancel()
-        assert x.cancelled == True
+        assert x.cancelled
         with pytest.raises(AssertionError):
             x.call()
         with pytest.raises(AssertionError):
@@ -419,9 +419,9 @@ class TestCallEvery(PyftpdlibTestCase):
         with pytest.raises(AssertionError):
             self.ioloop.call_every(-1, fun)
         x = self.ioloop.call_every(3, fun)
-        assert x.cancelled == False
+        assert x.cancelled is False
         x.cancel()
-        assert x.cancelled == True
+        assert x.cancelled is True
         with pytest.raises(AssertionError):
             x.call()
         with pytest.raises(AssertionError):

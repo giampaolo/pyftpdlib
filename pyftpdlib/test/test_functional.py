@@ -1040,7 +1040,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
         self.client.storbinary('stor ' + self.testfn, self.dummy_sendfile)
         self.client.quit()
         with open(self.testfn) as f:
-            assert f.read() == ""
+            assert not f.read()
 
 
 @unittest.skipUnless(POSIX, "POSIX only")
@@ -2514,7 +2514,7 @@ class TestCornerCases(PyftpdlibTestCase):
     if SUPPORTS_SENDFILE:
 
         def test_sendfile_enabled(self):
-            assert FTPHandler.use_sendfile == True
+            assert FTPHandler.use_sendfile is True
 
     if hasattr(select, 'epoll') or hasattr(select, 'kqueue'):
 
