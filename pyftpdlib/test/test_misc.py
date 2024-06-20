@@ -5,8 +5,6 @@
 import os
 import warnings
 
-from pyftpdlib.authorizers import DummyAuthorizer
-
 
 try:
     from StringIO import StringIO as BytesIO
@@ -18,6 +16,7 @@ from pyftpdlib import __ver__
 from pyftpdlib.__main__ import main
 from pyftpdlib._compat import PY3
 from pyftpdlib._compat import super
+from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.test import PyftpdlibTestCase
 
@@ -33,10 +32,7 @@ class TestCommandLineParser(PyftpdlibTestCase):
             serve_forever() to return immediately.
             """
 
-            started = False
-
             def serve_forever(self, *args, **kwargs):
-                self.started = True
                 return
 
         if PY3:
