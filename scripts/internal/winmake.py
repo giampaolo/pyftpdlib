@@ -37,6 +37,7 @@ PYPY = '__pypy__' in sys.builtin_module_names
 DEPS = [
     "pip",
     "psutil",
+    "pytest",
     "pyopenssl",
     "pypiwin32",
     "setuptools",
