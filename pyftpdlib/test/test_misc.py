@@ -144,11 +144,14 @@ class TestCommandLineParser(PyftpdlibTestCase):
         for opt in ("-V", "--verbose"):
             main([opt])
 
-    def test_username_opt(self):
+    def test_username_and_password_opt(self):
         ftpd = main(["--username", "foo", "--password", "bar"])
         self.assertTrue(
             ftpd.handler.authorizer.has_user("foo"),
         )
+        # no --password
+        with self.assertRaises(SystemExit) as cm:
+            main(["--username", "foo"])
 
 
 if __name__ == '__main__':
