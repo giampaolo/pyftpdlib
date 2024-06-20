@@ -33,6 +33,7 @@ class TestCommandLineParser(PyftpdlibTestCase):
             """
 
             def serve_forever(self, *args, **kwargs):
+                self.close_all()
                 return
 
         if PY3:
@@ -55,7 +56,7 @@ class TestCommandLineParser(PyftpdlibTestCase):
             main(["-i"])
         with self.assertRaises(SystemExit) as cm:
             main(["--interface"])
-        ftpd = main(["--interface", "127.0.0.1"])
+        ftpd = main(["--interface", "127.0.0.1", "-p", "0"])
 
     def test_port_opt(self):
         # no param
@@ -99,19 +100,21 @@ class TestCommandLineParser(PyftpdlibTestCase):
 
         # no such directory
         with self.assertRaisesRegex(ValueError, "no such directory"):
-            main(["-d", "?!?"])
+            main(["-d", "?!?", "-p", "0"])
 
     def test_nat_address_opt(self):
-        ftpd = main(["-n", "127.0.0.1"])
+        ftpd = main(["-n", "127.0.0.1", "-p", "0"])
         self.assertEqual(ftpd.handler.masquerade_address, "127.0.0.1")
-        ftpd = main(["--nat-address", "127.0.0.1"])
+        ftpd.close_all()
+        ftpd = main(["--nat-address", "127.0.0.1", "-p", "0"])
+        ftpd.close_all()
         self.assertEqual(ftpd.handler.masquerade_address, "127.0.0.1")
         # without argument
         with self.assertRaises(SystemExit):
-            main(["-n"])
+            main(["-n", "-p", "0"])
 
     def test_range_opt(self):
-        ftpd = main(["-r", "60000-61000"])
+        ftpd = main(["-r", "60000-61000", "-p", "0"])
         self.assertEqual(
             ftpd.handler.passive_ports, list(range(60000, 61000 + 1))
         )
@@ -124,8 +127,8 @@ class TestCommandLineParser(PyftpdlibTestCase):
             main(["-r", "yyy-zzz"])
 
     def test_debug_opt(self):
-        main(["-D"])
-        main(["--debug"])
+        main(["-D", "-p", "0"])
+        main(["--debug", "-p", "0"])
         # with arg
         with self.assertRaises(SystemExit):
             main(["-D", "xxx"])
@@ -133,15 +136,15 @@ class TestCommandLineParser(PyftpdlibTestCase):
     def test_version_opt(self):
         for opt in ("-v", "--version"):
             with self.assertRaises(SystemExit) as cm:
-                main([opt])
+                main([opt, "-p", "0"])
             self.assertEqual(str(cm.exception), "pyftpdlib %s" % __ver__)
 
     def test_verbose_opt(self):
         for opt in ("-V", "--verbose"):
-            main([opt])
+            main([opt, "-p", "0"])
 
     def test_username_and_password_opt(self):
-        ftpd = main(["--username", "foo", "--password", "bar"])
+        ftpd = main(["--username", "foo", "--password", "bar", "-p", "0"])
         self.assertTrue(
             ftpd.handler.authorizer.has_user("foo"),
         )
