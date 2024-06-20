@@ -373,10 +373,10 @@ def lint():
     sh("%s -m flake8 %s" % (PYTHON, py_files), nolog=True)
 
 
-def test():
+def test(args=""):
     """Run tests."""
     build()
-    sh("%s -m pytest %s" % (PYTHON, PYTEST_ARGS))
+    sh("%s -m pytest %s %s" % (PYTHON, PYTEST_ARGS, args))
 
 
 def test_authorizers():
@@ -429,7 +429,7 @@ def coverage():
 def test_by_name(name):
     """Run test by name."""
     build()
-    sh("%s -m unittest -v %s" % (PYTHON, name))
+    test(name)
 
 
 def test_failed():
