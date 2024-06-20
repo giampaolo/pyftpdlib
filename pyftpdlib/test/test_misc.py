@@ -2,9 +2,7 @@
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
 
-import logging
 import os
-import sys
 import warnings
 
 from pyftpdlib.authorizers import DummyAuthorizer
@@ -22,7 +20,6 @@ from pyftpdlib._compat import PY3
 from pyftpdlib._compat import super
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.test import PyftpdlibTestCase
-from pyftpdlib.test import mock
 
 
 class TestCommandLineParser(PyftpdlibTestCase):
@@ -130,6 +127,13 @@ class TestCommandLineParser(PyftpdlibTestCase):
         with self.assertRaises(SystemExit):
             main(["-r", "yyy-zzz"])
 
+    def test_debug_option(self):
+        main(["-D"])
+        main(["--debug"])
+        # without arg
+        with self.assertRaises(SystemExit):
+            main(["-D", "xxx"])
+
     def test_version_option(self):
         for opt in ("-v", "--version"):
             with self.assertRaises(SystemExit) as cm:
@@ -139,18 +143,6 @@ class TestCommandLineParser(PyftpdlibTestCase):
     def test_verbose_option(self):
         for opt in ("-V", "--verbose"):
             main([opt])
-
-    def test_D_option(self):
-        with mock.patch('pyftpdlib.__main__.config_logging') as fun:
-            sys.argv += ["-D", "-p 0"]
-            pyftpdlib.__main__.main()
-            fun.assert_called_once_with(level=logging.DEBUG)
-
-        # unexpected argument
-        sys.argv = self.SYSARGV[:]
-        sys.argv += ["-V foo"]
-        sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
 
 
 if __name__ == '__main__':
