@@ -13,6 +13,8 @@ try:
 except ImportError:
     from io import BytesIO
 
+import pytest
+
 import pyftpdlib
 import pyftpdlib.__main__
 from pyftpdlib._compat import PY3
@@ -21,7 +23,6 @@ from pyftpdlib.servers import FTPServer
 from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import mock
 from pyftpdlib.test import safe_rmpath
-import pytest
 
 
 class TestCommandLineParser(PyftpdlibTestCase):

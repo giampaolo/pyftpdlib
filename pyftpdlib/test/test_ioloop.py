@@ -9,6 +9,8 @@ import socket
 import time
 import unittest
 
+import pytest
+
 import pyftpdlib.ioloop
 from pyftpdlib._compat import PY3
 from pyftpdlib._compat import super
@@ -19,7 +21,6 @@ from pyftpdlib.ioloop import RetryError
 from pyftpdlib.test import POSIX
 from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import mock
-import pytest
 
 
 if hasattr(socket, 'socketpair'):

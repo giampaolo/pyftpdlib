@@ -9,6 +9,8 @@ import sys
 import unittest
 import warnings
 
+import pytest
+
 from pyftpdlib._compat import getcwdu
 from pyftpdlib._compat import super
 from pyftpdlib._compat import unicode
@@ -22,7 +24,6 @@ from pyftpdlib.test import USER
 from pyftpdlib.test import WINDOWS
 from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import touch
-import pytest
 
 
 if POSIX:
@@ -94,7 +95,9 @@ class TestDummyAuthorizer(PyftpdlibTestCase):
         auth.add_anonymous(HOME)
         with pytest.raises(ValueError, match='user %r already exists' % USER):
             auth.add_user(USER, PASSWD, HOME)
-        with pytest.raises(ValueError, match="user 'anonymous' already exists"):
+        with pytest.raises(
+            ValueError, match="user 'anonymous' already exists"
+        ):
             auth.add_anonymous(HOME)
         auth.remove_user(USER)
         auth.remove_user('anonymous')
@@ -105,7 +108,10 @@ class TestDummyAuthorizer(PyftpdlibTestCase):
             auth.add_anonymous(HOME, perm='?')
         # expect warning on write permissions assigned to anonymous user
         for x in "adfmw":
-            with pytest.raises(RuntimeWarning, match="write permissions assigned to anonymous user."):
+            with pytest.raises(
+                RuntimeWarning,
+                match="write permissions assigned to anonymous user.",
+            ):
                 auth.add_anonymous(HOME, perm=x)
 
     def test_override_perm_interface(self):
@@ -125,14 +131,21 @@ class TestDummyAuthorizer(PyftpdlibTestCase):
         # expect warning on write permissions assigned to anonymous user
         auth.add_anonymous(HOME)
         for p in "adfmw":
-            with pytest.raises(RuntimeWarning, match="write permissions assigned to anonymous user."):
+            with pytest.raises(
+                RuntimeWarning,
+                match="write permissions assigned to anonymous user.",
+            ):
                 auth.override_perm('anonymous', HOME, p)
         # raise on attempt to override home directory permissions
-        with pytest.raises(ValueError, match="can't override home directory permissions"):
+        with pytest.raises(
+            ValueError, match="can't override home directory permissions"
+        ):
             auth.override_perm(USER, HOME, perm='w')
         # raise on attempt to override a path escaping home directory
         if os.path.dirname(HOME) != HOME:
-            with pytest.raises(ValueError, match="path escapes user home directory"):
+            with pytest.raises(
+                ValueError, match="path escapes user home directory"
+            ):
                 auth.override_perm(USER, os.path.dirname(HOME), perm='w')
         # try to re-set an overridden permission
         auth.override_perm(USER, self.tempdir, perm='w')
@@ -261,13 +274,17 @@ class _SharedAuthorizerTests:
         current_user = self.get_current_user()
         nonexistent_user = self.get_nonexistent_user()
         with pytest.raises(AuthenticationFailed):
-            auth.validate_authentication(current_user,
-            'wrongpasswd',
-            None,)
+            auth.validate_authentication(
+                current_user,
+                'wrongpasswd',
+                None,
+            )
         with pytest.raises(AuthenticationFailed):
-            auth.validate_authentication(nonexistent_user,
-            'bar',
-            None,)
+            auth.validate_authentication(
+                nonexistent_user,
+                'bar',
+                None,
+            )
 
     def test_impersonate_user(self):
         auth = self.authorizer_class()
@@ -276,15 +293,21 @@ class _SharedAuthorizerTests:
             if self.authorizer_class.__name__ == 'UnixAuthorizer':
                 auth.impersonate_user(self.get_current_user(), '')
                 with pytest.raises(AuthorizerError):
-                    auth.impersonate_user(nonexistent_user,
-                    'pwd',)
+                    auth.impersonate_user(
+                        nonexistent_user,
+                        'pwd',
+                    )
             else:
                 with pytest.raises(Win32ExtError):
-                    auth.impersonate_user(nonexistent_user,
-                    'pwd',)
+                    auth.impersonate_user(
+                        nonexistent_user,
+                        'pwd',
+                    )
                 with pytest.raises(Win32ExtError):
-                    auth.impersonate_user(self.get_current_user(),
-                    '',)
+                    auth.impersonate_user(
+                        self.get_current_user(),
+                        '',
+                    )
         finally:
             auth.terminate_impersonation('')
 
@@ -348,9 +371,11 @@ class _SharedAuthorizerTests:
         auth.override_user(user, password='foo')
         auth.validate_authentication(user, 'foo', None)
         with pytest.raises(AuthenticationFailed):
-            auth.validate_authentication(user,
-            'bar',
-            None,)
+            auth.validate_authentication(
+                user,
+                'bar',
+                None,
+            )
         # make sure other settings keep using default values
         assert auth.get_home_dir(user) == self.get_current_user_homedir()
         assert auth.get_perms(user) == "elradfmwMT"
@@ -503,14 +528,18 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
         # we can only test for invalid credentials
         auth = UnixAuthorizer(require_valid_shell=False)
         with pytest.raises(AuthenticationFailed):
-            auth.validate_authentication('?!foo',
-            '?!foo',
-            None,)
+            auth.validate_authentication(
+                '?!foo',
+                '?!foo',
+                None,
+            )
         auth = UnixAuthorizer(require_valid_shell=True)
         with pytest.raises(AuthenticationFailed):
-            auth.validate_authentication('?!foo',
-            '?!foo',
-            None,)
+            auth.validate_authentication(
+                '?!foo',
+                '?!foo',
+                None,
+            )
 
     def test_validate_authentication_anonymous(self):
         current_user = self.get_current_user()
@@ -518,13 +547,17 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
             anonymous_user=current_user, require_valid_shell=False
         )
         with pytest.raises(AuthenticationFailed):
-            auth.validate_authentication('foo',
-            'passwd',
-            None,)
+            auth.validate_authentication(
+                'foo',
+                'passwd',
+                None,
+            )
         with pytest.raises(AuthenticationFailed):
-            auth.validate_authentication(current_user,
-            'passwd',
-            None,)
+            auth.validate_authentication(
+                current_user,
+                'passwd',
+                None,
+            )
         auth.validate_authentication('anonymous', 'passwd', None)
 
     def test_require_valid_shell(self):

@@ -10,6 +10,7 @@ import ssl
 import unittest
 
 import OpenSSL  # requires "pip install pyopenssl"
+import pytest
 
 from pyftpdlib._compat import super
 from pyftpdlib.handlers import TLS_FTPHandler
@@ -35,7 +36,6 @@ from pyftpdlib.test.test_functional import TestFtpStoreData
 from pyftpdlib.test.test_functional import TestIPv4Environment
 from pyftpdlib.test.test_functional import TestIPv6Environment
 from pyftpdlib.test.test_functional import TestTimeouts
-import pytest
 
 
 CERTFILE = os.path.abspath(
