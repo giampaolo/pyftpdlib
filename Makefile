@@ -3,7 +3,6 @@
 # $ make install PYTHON=python3.7
 
 PYTHON = python3
-TSCRIPT = pyftpdlib/test/runner.py
 ARGS =
 PYDEPS = \
 	black \
@@ -32,6 +31,7 @@ endif
 # In not in a virtualenv, add --user options for install commands.
 INSTALL_OPTS = `$(PYTHON) -c "import sys; print('' if hasattr(sys, 'real_prefix') else '--user')"`
 TEST_PREFIX = PYTHONWARNINGS=always
+PYTEST_ARGS = -v --tb=native -o cache_dir=/tmp/pyftpdlib-pytest-cache
 NUM_WORKERS = `$(PYTHON) -c "import os; print(os.cpu_count() or 1)"`
 
 
@@ -110,7 +110,7 @@ setup-dev-env: ## Install GIT hooks, pip, test deps (also upgrades them).
 
 test:  ## Run all tests. To run a specific test: do "make test ARGS=pyftpdlib.test.test_functional.TestFtpStoreData"
 	${MAKE} install
-	$(TEST_PREFIX) $(PYTHON) $(TSCRIPT) $(ARGS)
+	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS)
 
 test-functional:  ## Run functional FTP tests.
 	${MAKE} install
