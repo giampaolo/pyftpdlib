@@ -30,9 +30,9 @@ Authors:
  - Giampaolo Rodola' - g.rodola <at> gmail.com
 """
 
+import argparse
 import atexit
 import errno
-import optparse
 import os
 import signal
 import sys
@@ -170,40 +170,45 @@ def main():
     global PID_FILE, LOG_FILE
     USAGE = "python3 [-p PIDFILE] [-l LOGFILE]\n\n"
     USAGE += "Commands:\n  - start\n  - stop\n  - status"
-    parser = optparse.OptionParser(usage=USAGE)
-    parser.add_option(
+
+    parser = argparse.ArgumentParser(usage=USAGE)
+    parser.add_argument(
         '-l', '--logfile', dest='logfile', help='the log file location'
     )
-    parser.add_option(
+    parser.add_argument(
         '-p',
         '--pidfile',
         dest='pidfile',
         default=PID_FILE,
-        help='file to store/retreive daemon pid',
+        help='file to store/retrieve daemon pid',
     )
-    options, args = parser.parse_args()
+    parser.add_argument(
+        'command',
+        nargs='?',
+        help='command to execute: start, stop, restart, status',
+    )
+
+    options = parser.parse_args()
 
     if options.pidfile:
         PID_FILE = options.pidfile
     if options.logfile:
         LOG_FILE = options.logfile
 
-    if not args:
+    if not options.command:
         server = get_server()
         server.serve_forever()
     else:
-        if len(args) != 1:
-            sys.exit('too many commands')
-        elif args[0] == 'start':
+        if options.command == 'start':
             daemonize()
-        elif args[0] == 'stop':
+        elif options.command == 'stop':
             stop()
-        elif args[0] == 'restart':
+        elif options.command == 'restart':
             try:
                 stop()
             finally:
                 daemonize()
-        elif args[0] == 'status':
+        elif options.command == 'status':
             status()
         else:
             sys.exit('invalid command')
