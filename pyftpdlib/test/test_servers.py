@@ -71,7 +71,7 @@ class TestFTPServer(PyftpdlibTestCase):
 
     def test_ctx_mgr(self):
         with servers.FTPServer((HOST, 0), handlers.FTPHandler) as server:
-            self.assertIsNotNone(server)
+            assert server is not None
 
 
 # =====================================================================

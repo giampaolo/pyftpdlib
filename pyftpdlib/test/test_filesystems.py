@@ -158,9 +158,9 @@ class TestAbstractedFS(PyftpdlibTestCase):
         # Tests for validpath method.
         fs = AbstractedFS(u('/'), None)
         fs._root = HOME
-        self.assertTrue(fs.validpath(HOME))
-        self.assertTrue(fs.validpath(HOME + '/'))
-        self.assertFalse(fs.validpath(HOME + 'bar'))
+        assert fs.validpath(HOME)
+        assert fs.validpath(HOME + '/')
+        assert not fs.validpath(HOME + 'bar')
 
     if hasattr(os, 'symlink'):
 
@@ -173,7 +173,7 @@ class TestAbstractedFS(PyftpdlibTestCase):
             fs._root = HOME
             touch(testfn)
             os.symlink(testfn, testfn2)
-            self.assertTrue(fs.validpath(u(testfn)))
+            assert fs.validpath(u(testfn))
 
         def test_validpath_external_symlink(self):
             # Test validpath by issuing a symlink pointing to a path
@@ -189,7 +189,7 @@ class TestAbstractedFS(PyftpdlibTestCase):
                     if os.path.dirname(file.name) == HOME:
                         return
                     os.symlink(file.name, testfn)
-                    self.assertFalse(fs.validpath(u(testfn)))
+                    assert not fs.validpath(u(testfn))
                 finally:
                     safe_rmpath(testfn)
 
@@ -200,11 +200,11 @@ class TestUnixFilesystem(PyftpdlibTestCase):
     def test_case(self):
         root = getcwdu()
         fs = UnixFilesystem(root, None)
-        self.assertEqual(fs.root, root)
-        self.assertEqual(fs.cwd, root)
+        assert fs.root == root
+        assert fs.cwd == root
         cdup = os.path.dirname(root)
-        self.assertEqual(fs.ftp2fs(u('..')), cdup)
-        self.assertEqual(fs.fs2ftp(root), root)
+        assert fs.ftp2fs(u('..')) == cdup
+        assert fs.fs2ftp(root) == root
 
 
 if __name__ == '__main__':

@@ -19,6 +19,7 @@ from pyftpdlib.ioloop import RetryError
 from pyftpdlib.test import POSIX
 from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import mock
+import pytest
 
 
 if hasattr(socket, 'socketpair'):
@@ -62,16 +63,16 @@ class BaseIOLoopTestCase:
         handler = AsyncChat(rd)
         s.register(rd, handler, s.READ)
         s.register(wr, handler, s.WRITE)
-        self.assertIn(rd, s.socket_map)
-        self.assertIn(wr, s.socket_map)
+        assert rd in s.socket_map
+        assert wr in s.socket_map
         return (s, rd, wr)
 
     def test_unregister(self):
         s, rd, wr = self.test_register()
         s.unregister(rd)
         s.unregister(wr)
-        self.assertNotIn(rd, s.socket_map)
-        self.assertNotIn(wr, s.socket_map)
+        assert rd not in s.socket_map
+        assert wr not in s.socket_map
 
     def test_unregister_twice(self):
         s, rd, wr = self.test_register()
@@ -98,7 +99,7 @@ class BaseIOLoopTestCase:
     def test_close(self):
         s, rd, wr = self.test_register()
         s.close()
-        self.assertEqual(s.socket_map, {})
+        assert s.socket_map == {}
 
     def test_close_w_handler_exc(self):
         # Simulate an exception when close()ing a socket handler.
@@ -116,7 +117,7 @@ class BaseIOLoopTestCase:
         with mock.patch("pyftpdlib.ioloop.logger.error") as m:
             s.close()
             assert m.called
-            self.assertIn('ZeroDivisionError', m.call_args[0][0])
+            assert 'ZeroDivisionError' in m.call_args[0][0]
 
     def test_close_w_handler_ebadf_exc(self):
         # Simulate an exception when close()ing a socket handler.
@@ -148,7 +149,7 @@ class BaseIOLoopTestCase:
                 s.close()
                 assert cancel.called
                 assert logerr.called
-                self.assertIn('ZeroDivisionError', logerr.call_args[0][0])
+                assert 'ZeroDivisionError' in logerr.call_args[0][0]
 
 
 class DefaultIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
@@ -177,7 +178,8 @@ class SelectIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
         ) as m:
             m.side_effect.errno = errno.EBADF
             s, rd, wr = self.test_register()
-            self.assertRaises(select.error, s.poll, 0)
+            with pytest.raises(select.error):
+                s.poll(0)
 
 
 # ===================================================================
@@ -211,7 +213,8 @@ class PollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
             else:
                 m.return_value.poll.side_effect = OSError(errno.EBADF, "")
             s, rd, wr = self.test_register()
-            self.assertRaises(select.error, s.poll, 0)
+            with pytest.raises(select.error):
+                s.poll(0)
             assert m.called
 
     def test_eexist_on_register(self):
@@ -226,7 +229,8 @@ class PollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
             m.return_value.register.side_effect = EnvironmentError(
                 errno.EBADF, ""
             )
-            self.assertRaises(EnvironmentError, self.test_register)
+            with pytest.raises(EnvironmentError):
+                self.test_register()
 
     def test_enoent_ebadf_on_unregister(self):
         # ENOENT and EBADF are supposed to be ignored
@@ -243,7 +247,8 @@ class PollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
                 errno.EEXIST, ""
             )
             s, rd, wr = self.test_register()
-            self.assertRaises(EnvironmentError, s.unregister, rd)
+            with pytest.raises(EnvironmentError):
+                s.unregister(rd)
 
     def test_enoent_on_modify(self):
         # ENOENT is supposed to be ignored
@@ -314,13 +319,16 @@ class TestCallLater(PyftpdlibTestCase):
         def fun():
             return 0
 
-        self.assertRaises(AssertionError, self.ioloop.call_later, -1, fun)
+        with pytest.raises(AssertionError):
+            self.ioloop.call_later(-1, fun)
         x = self.ioloop.call_later(3, fun)
-        self.assertEqual(x.cancelled, False)
+        assert x.cancelled == False
         x.cancel()
-        self.assertEqual(x.cancelled, True)
-        self.assertRaises(AssertionError, x.call)
-        self.assertRaises(AssertionError, x.reset)
+        assert x.cancelled == True
+        with pytest.raises(AssertionError):
+            x.call()
+        with pytest.raises(AssertionError):
+            x.reset()
         x.cancel()
 
     def test_order(self):
@@ -331,7 +339,7 @@ class TestCallLater(PyftpdlibTestCase):
         for x in [0.05, 0.04, 0.03, 0.02, 0.01]:
             self.ioloop.call_later(x, fun, x)
         self.scheduler()
-        self.assertEqual(ls, [0.01, 0.02, 0.03, 0.04, 0.05])
+        assert ls == [0.01, 0.02, 0.03, 0.04, 0.05]
 
     # The test is reliable only on those systems where time.time()
     # provides time with a better precision than 1 second.
@@ -350,7 +358,7 @@ class TestCallLater(PyftpdlibTestCase):
             time.sleep(0.1)
             x.reset()
             self.scheduler()
-            self.assertEqual(ls, [0.01, 0.02, 0.03, 0.05, 0.04])
+            assert ls == [0.01, 0.02, 0.03, 0.05, 0.04]
 
     def test_cancel(self):
         def fun(x):
@@ -363,7 +371,7 @@ class TestCallLater(PyftpdlibTestCase):
         self.ioloop.call_later(0.04, fun, 0.04)
         self.ioloop.call_later(0.05, fun, 0.05).cancel()
         self.scheduler()
-        self.assertEqual(ls, [0.02, 0.03, 0.04])
+        assert ls == [0.02, 0.03, 0.04]
 
     def test_errback(self):
         ls = []
@@ -371,7 +379,7 @@ class TestCallLater(PyftpdlibTestCase):
             0.0, lambda: 1 // 0, _errback=lambda: ls.append(True)
         )
         self.scheduler()
-        self.assertEqual(ls, [True])
+        assert ls == [True]
 
     def test__repr__(self):
         repr(self.ioloop.call_later(0.01, lambda: 0, 0.01))
@@ -379,12 +387,12 @@ class TestCallLater(PyftpdlibTestCase):
     def test__lt__(self):
         a = self.ioloop.call_later(0.01, lambda: 0, 0.01)
         b = self.ioloop.call_later(0.02, lambda: 0, 0.02)
-        self.assertLess(a, b)
+        assert a < b
 
     def test__le__(self):
         a = self.ioloop.call_later(0.01, lambda: 0, 0.01)
         b = self.ioloop.call_later(0.02, lambda: 0, 0.02)
-        self.assertLessEqual(a, b)
+        assert a <= b
 
 
 class TestCallEvery(PyftpdlibTestCase):
@@ -407,13 +415,16 @@ class TestCallEvery(PyftpdlibTestCase):
         def fun():
             return 0
 
-        self.assertRaises(AssertionError, self.ioloop.call_every, -1, fun)
+        with pytest.raises(AssertionError):
+            self.ioloop.call_every(-1, fun)
         x = self.ioloop.call_every(3, fun)
-        self.assertEqual(x.cancelled, False)
+        assert x.cancelled == False
         x.cancel()
-        self.assertEqual(x.cancelled, True)
-        self.assertRaises(AssertionError, x.call)
-        self.assertRaises(AssertionError, x.reset)
+        assert x.cancelled == True
+        with pytest.raises(AssertionError):
+            x.call()
+        with pytest.raises(AssertionError):
+            x.reset()
         x.cancel()
 
     def test_only_once(self):
@@ -424,7 +435,7 @@ class TestCallEvery(PyftpdlibTestCase):
         ls = []
         self.ioloop.call_every(0, fun)
         self.ioloop.sched.poll()
-        self.assertEqual(ls, [None])
+        assert ls == [None]
 
     def test_multi_0_timeout(self):
         # make sure a 0 timeout callback is called as many times
@@ -436,7 +447,7 @@ class TestCallEvery(PyftpdlibTestCase):
         self.ioloop.call_every(0, fun)
         for _ in range(100):
             self.ioloop.sched.poll()
-        self.assertEqual(len(ls), 100)
+        assert len(ls) == 100
 
     # run it on systems where time.time() has a higher precision
     if POSIX:
@@ -458,7 +469,7 @@ class TestCallEvery(PyftpdlibTestCase):
             self.ioloop.call_every(0.005, fun_2)
             self.scheduler(timeout=0.01)
 
-            self.assertGreater(len(l1), len(l2))
+            assert len(l1) > len(l2)
 
     def test_cancel(self):
         # make sure a cancelled callback doesn't get called anymore
@@ -471,7 +482,7 @@ class TestCallEvery(PyftpdlibTestCase):
         len_l = len(ls)
         call.cancel()
         self.scheduler()
-        self.assertEqual(len_l, len(ls))
+        assert len_l == len(ls)
 
     def test_errback(self):
         ls = []
@@ -479,7 +490,7 @@ class TestCallEvery(PyftpdlibTestCase):
             0.0, lambda: 1 // 0, _errback=lambda: ls.append(True)
         )
         self.scheduler()
-        self.assertTrue(ls)
+        assert ls
 
 
 class TestAsyncChat(PyftpdlibTestCase):
@@ -498,7 +509,7 @@ class TestAsyncChat(PyftpdlibTestCase):
                 "pyftpdlib.ioloop.socket.socket.send",
                 side_effect=socket.error(errnum, ""),
             ) as m:
-                self.assertEqual(ac.send(b"x"), 0)
+                assert ac.send(b"x") == 0
                 assert m.called
 
     def test_send_disconnect(self):
@@ -509,7 +520,7 @@ class TestAsyncChat(PyftpdlibTestCase):
                 side_effect=socket.error(errnum, ""),
             ) as send:
                 with mock.patch.object(ac, "handle_close") as handle_close:
-                    self.assertEqual(ac.send(b"x"), 0)
+                    assert ac.send(b"x") == 0
                     assert send.called
                     assert handle_close.called
 
@@ -520,7 +531,8 @@ class TestAsyncChat(PyftpdlibTestCase):
                 "pyftpdlib.ioloop.socket.socket.recv",
                 side_effect=socket.error(errnum, ""),
             ) as m:
-                self.assertRaises(RetryError, ac.recv, 1024)
+                with pytest.raises(RetryError):
+                    ac.recv(1024)
                 assert m.called
 
     def test_recv_disconnect(self):
@@ -531,7 +543,7 @@ class TestAsyncChat(PyftpdlibTestCase):
                 side_effect=socket.error(errnum, ""),
             ) as send:
                 with mock.patch.object(ac, "handle_close") as handle_close:
-                    self.assertEqual(ac.recv(b"x"), b'')
+                    assert ac.recv(b"x") == b''
                     assert send.called
                     assert handle_close.called
 
@@ -540,11 +552,10 @@ class TestAsyncChat(PyftpdlibTestCase):
         with mock.patch.object(
             ac, "connect", side_effect=socket.error(errno.EBADF, "")
         ) as m:
-            self.assertRaises(
-                socket.error, ac.connect_af_unspecified, ("localhost", 0)
-            )
+            with pytest.raises(socket.error):
+                ac.connect_af_unspecified(("localhost", 0))
             assert m.called
-            self.assertIsNone(ac.socket)
+            assert ac.socket is None
 
 
 class TestAcceptor(PyftpdlibTestCase):
@@ -554,11 +565,10 @@ class TestAcceptor(PyftpdlibTestCase):
         with mock.patch.object(
             ac, "bind", side_effect=socket.error(errno.EBADF, "")
         ) as m:
-            self.assertRaises(
-                socket.error, ac.bind_af_unspecified, ("localhost", 0)
-            )
+            with pytest.raises(socket.error):
+                ac.bind_af_unspecified(("localhost", 0))
             assert m.called
-            self.assertIsNone(ac.socket)
+            assert ac.socket is None
 
     def test_handle_accept_econnacorted(self):
         # https://github.com/giampaolo/pyftpdlib/issues/105
@@ -568,7 +578,7 @@ class TestAcceptor(PyftpdlibTestCase):
         ) as m:
             ac.handle_accept()
             assert m.called
-            self.assertIsNone(ac.socket)
+            assert ac.socket is None
 
     def test_handle_accept_typeerror(self):
         # https://github.com/giampaolo/pyftpdlib/issues/91
@@ -576,7 +586,7 @@ class TestAcceptor(PyftpdlibTestCase):
         with mock.patch.object(ac, "accept", side_effect=TypeError) as m:
             ac.handle_accept()
             assert m.called
-            self.assertIsNone(ac.socket)
+            assert ac.socket is None
 
 
 if __name__ == '__main__':

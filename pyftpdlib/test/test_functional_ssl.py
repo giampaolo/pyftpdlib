@@ -35,6 +35,7 @@ from pyftpdlib.test.test_functional import TestFtpStoreData
 from pyftpdlib.test.test_functional import TestIPv4Environment
 from pyftpdlib.test.test_functional import TestIPv6Environment
 from pyftpdlib.test.test_functional import TestTimeouts
+import pytest
 
 
 CERTFILE = os.path.abspath(
@@ -217,10 +218,10 @@ class TestFTPS(PyftpdlibTestCase):
         # unsecured
         self._setup()
         self.client.login(secure=False)
-        self.assertNotIsInstance(self.client.sock, ssl.SSLSocket)
+        assert not isinstance(self.client.sock, ssl.SSLSocket)
         # secured
         self.client.login()
-        self.assertIsInstance(self.client.sock, ssl.SSLSocket)
+        assert isinstance(self.client.sock, ssl.SSLSocket)
         # AUTH issued twice
         msg = '503 Already using TLS.'
         self.assertRaisesWithMsg(
@@ -238,7 +239,7 @@ class TestFTPS(PyftpdlibTestCase):
         # secured
         self.client.login(secure=True)
         resp = self.client.sendcmd('pbsz 0')
-        self.assertEqual(resp, "200 PBSZ=0 successful.")
+        assert resp == "200 PBSZ=0 successful."
 
     def test_prot(self):
         self._setup()
@@ -256,7 +257,7 @@ class TestFTPS(PyftpdlibTestCase):
                 if not sock.recv(1024):
                     self.client.voidresp()
                     break
-            self.assertIsInstance(sock, ssl.SSLSocket)
+            assert isinstance(sock, ssl.SSLSocket)
             # unsecured
             self.client.prot_c()
         sock = self.client.transfercmd('list')
@@ -265,14 +266,14 @@ class TestFTPS(PyftpdlibTestCase):
                 if not sock.recv(1024):
                     self.client.voidresp()
                     break
-            self.assertNotIsInstance(sock, ssl.SSLSocket)
+            assert not isinstance(sock, ssl.SSLSocket)
 
     def test_feat(self):
         self._setup()
         feat = self.client.sendcmd('feat')
         cmds = ['AUTH TLS', 'AUTH SSL', 'PBSZ', 'PROT']
         for cmd in cmds:
-            self.assertIn(cmd, feat)
+            assert cmd in feat
 
     def test_unforseen_ssl_shutdown(self):
         self._setup()
@@ -290,7 +291,7 @@ class TestFTPS(PyftpdlibTestCase):
         except socket.error:
             pass
         else:
-            self.assertEqual(chunk, b"")
+            assert chunk == b""
 
     def test_tls_control_required(self):
         self._setup(tls_control_required=True)
@@ -347,9 +348,10 @@ class TestFTPS(PyftpdlibTestCase):
             if not OSX:
                 with self.server.lock:
                     self.client.connect(self.server.host, self.server.port)
-                self.assertRaises(socket.error, self.client.login)
+                with pytest.raises(socket.error):
+                    self.client.login()
             else:
-                with self.server.lock, self.assertRaises(socket.error):
+                with self.server.lock, pytest.raises(socket.error):
                     self.client.connect(
                         self.server.host, self.server.port, timeout=0.1
                     )

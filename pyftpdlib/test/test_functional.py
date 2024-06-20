@@ -60,6 +60,7 @@ from pyftpdlib.test import mock
 from pyftpdlib.test import retry_on_failure
 from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import touch
+import pytest
 
 
 sendfile = _import_sendfile()
@@ -91,9 +92,7 @@ class TestFtpAuthentication(PyftpdlibTestCase):
         super().tearDown()
 
     def assert_auth_failed(self, user, passwd):
-        with self.assertRaisesRegex(
-            ftplib.error_perm, '530 Authentication failed'
-        ):
+        with pytest.raises(ftplib.error_perm, match='530 Authentication failed'):
             self.client.login(user, passwd)
 
     def test_auth_ok(self):
@@ -116,14 +115,10 @@ class TestFtpAuthentication(PyftpdlibTestCase):
         self.assert_auth_failed('wrong', 'wrong')
 
     def test_wrong_cmds_order(self):
-        with self.assertRaisesRegex(
-            ftplib.error_perm, '503 Login with USER first'
-        ):
+        with pytest.raises(ftplib.error_perm, match='503 Login with USER first'):
             self.client.sendcmd('pass ' + PASSWD)
         self.client.login(user=USER, passwd=PASSWD)
-        with self.assertRaisesRegex(
-            ftplib.error_perm, "503 User already authenticated."
-        ):
+        with pytest.raises(ftplib.error_perm, match="503 User already authenticated."):
             self.client.sendcmd('pass ' + PASSWD)
 
     def test_max_auth(self):
@@ -136,15 +131,14 @@ class TestFtpAuthentication(PyftpdlibTestCase):
         # closed it should be raised a socket.error exception (Windows)
         # or a EOFError exception (Linux).
         self.client.sock.settimeout(0.1)
-        self.assertRaises((socket.error, EOFError), self.client.sendcmd, '')
+        with pytest.raises((socket.error, EOFError)):
+            self.client.sendcmd('')
 
     def test_rein(self):
         self.client.login(user=USER, passwd=PASSWD)
         self.client.sendcmd('rein')
         # user not authenticated, error response expected
-        with self.assertRaisesRegex(
-            ftplib.error_perm, '530 Log in with USER and PASS first'
-        ):
+        with pytest.raises(ftplib.error_perm, match='530 Log in with USER and PASS first'):
             self.client.sendcmd('pwd')
         # by logging-in again we should be able to execute a
         # file-system command
@@ -174,18 +168,13 @@ class TestFtpAuthentication(PyftpdlibTestCase):
                     rein_sent = True
                     # flush account, error response expected
                     self.client.sendcmd('rein')
-                    with self.assertRaisesRegex(
-                        ftplib.error_perm,
-                        '530 Log in with USER and PASS first',
-                    ):
+                    with pytest.raises(ftplib.error_perm, match='530 Log in with USER and PASS first'):
                         self.client.dir()
 
         # a 226 response is expected once transfer finishes
-        self.assertEqual(self.client.voidresp()[:3], '226')
+        assert self.client.voidresp()[:3] == '226'
         # account is still flushed, error response is still expected
-        with self.assertRaisesRegex(
-            ftplib.error_perm, '530 Log in with USER and PASS first'
-        ):
+        with pytest.raises(ftplib.error_perm, match='530 Log in with USER and PASS first'):
             self.client.sendcmd('size ' + self.testfn)
         # by logging-in again we should be able to execute a
         # filesystem command
@@ -193,17 +182,15 @@ class TestFtpAuthentication(PyftpdlibTestCase):
         self.client.sendcmd('pwd')
         self.dummyfile.seek(0)
         datafile = self.dummyfile.read()
-        self.assertEqual(len(data), len(datafile))
-        self.assertEqual(hash(data), hash(datafile))
+        assert len(data) == len(datafile)
+        assert hash(data) == hash(datafile)
 
     def test_user(self):
         # Test USER while already authenticated and no transfer
         # is in progress.
         self.client.login(user=USER, passwd=PASSWD)
         self.client.sendcmd('user ' + USER)  # authentication flushed
-        with self.assertRaisesRegex(
-            ftplib.error_perm, '530 Log in with USER and PASS first'
-        ):
+        with pytest.raises(ftplib.error_perm, match='530 Log in with USER and PASS first'):
             self.client.sendcmd('pwd')
         self.client.sendcmd('pass ' + PASSWD)
         self.client.sendcmd('pwd')
@@ -231,18 +218,13 @@ class TestFtpAuthentication(PyftpdlibTestCase):
                     rein_sent = True
                     # flush account, expect an error response
                     self.client.sendcmd('user ' + USER)
-                    with self.assertRaisesRegex(
-                        ftplib.error_perm,
-                        '530 Log in with USER and PASS first',
-                    ):
+                    with pytest.raises(ftplib.error_perm, match='530 Log in with USER and PASS first'):
                         self.client.dir()
 
             # a 226 response is expected once transfer finishes
-            self.assertEqual(self.client.voidresp()[:3], '226')
+            assert self.client.voidresp()[:3] == '226'
             # account is still flushed, error response is still expected
-            with self.assertRaisesRegex(
-                ftplib.error_perm, '530 Log in with USER and PASS first'
-            ):
+            with pytest.raises(ftplib.error_perm, match='530 Log in with USER and PASS first'):
                 self.client.sendcmd('pwd')
             # by logging-in again we should be able to execute a
             # filesystem command
@@ -250,8 +232,8 @@ class TestFtpAuthentication(PyftpdlibTestCase):
             self.client.sendcmd('pwd')
             self.dummyfile.seek(0)
             datafile = self.dummyfile.read()
-            self.assertEqual(len(data), len(datafile))
-            self.assertEqual(hash(data), hash(datafile))
+            assert len(data) == len(datafile)
+            assert hash(data) == hash(datafile)
 
 
 class TestFtpDummyCmds(PyftpdlibTestCase):
@@ -278,21 +260,28 @@ class TestFtpDummyCmds(PyftpdlibTestCase):
         self.client.sendcmd('type i')
         self.client.sendcmd('type l7')
         self.client.sendcmd('type l8')
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'type ?!?')
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('type ?!?')
 
     def test_stru(self):
         self.client.sendcmd('stru f')
         self.client.sendcmd('stru F')
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'stru p')
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'stru r')
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'stru ?!?')
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('stru p')
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('stru r')
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('stru ?!?')
 
     def test_mode(self):
         self.client.sendcmd('mode s')
         self.client.sendcmd('mode S')
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'mode b')
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'mode c')
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'mode ?!?')
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('mode b')
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('mode c')
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('mode ?!?')
 
     def test_noop(self):
         self.client.sendcmd('noop')
@@ -310,51 +299,53 @@ class TestFtpDummyCmds(PyftpdlibTestCase):
         self.client.sendcmd('help')
         cmd = random.choice(list(FTPHandler.proto_cmds.keys()))
         self.client.sendcmd('help %s' % cmd)
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'help ?!?')
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('help ?!?')
 
     def test_site(self):
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'site')
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'site ?!?')
-        self.assertRaises(
-            ftplib.error_perm, self.client.sendcmd, 'site foo bar'
-        )
-        self.assertRaises(
-            ftplib.error_perm, self.client.sendcmd, 'sitefoo bar'
-        )
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('site')
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('site ?!?')
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('site foo bar')
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('sitefoo bar')
 
     def test_site_help(self):
         self.client.sendcmd('site help')
         self.client.sendcmd('site help help')
-        self.assertRaises(
-            ftplib.error_perm, self.client.sendcmd, 'site help ?!?'
-        )
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('site help ?!?')
 
     def test_rest(self):
         # Test error conditions only; resumed data transfers are
         # tested later.
         self.client.sendcmd('type i')
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest')
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest str')
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest -1')
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'rest 10.1')
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('rest')
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('rest str')
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('rest -1')
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('rest 10.1')
         # REST is not supposed to be allowed in ASCII mode
         self.client.sendcmd('type a')
-        with self.assertRaisesRegex(
-            ftplib.error_perm, 'not allowed in ASCII mode'
-        ):
+        with pytest.raises(ftplib.error_perm, match='not allowed in ASCII mode'):
             self.client.sendcmd('rest 10')
 
     def test_feat(self):
         resp = self.client.sendcmd('feat')
-        self.assertIn('UTF8', resp)
-        self.assertIn('TVFS', resp)
+        assert 'UTF8' in resp
+        assert 'TVFS' in resp
 
     def test_opts_feat(self):
-        with self.assertRaises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm):
             self.client.sendcmd('opts mlst bad_fact')
-        with self.assertRaises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm):
             self.client.sendcmd('opts mlst type ;')
-        with self.assertRaises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm):
             self.client.sendcmd('opts not_mlst')
         # utility function which used for extracting the MLST "facts"
         # string from the FEAT response
@@ -365,27 +356,19 @@ class TestFtpDummyCmds(PyftpdlibTestCase):
 
         # we rely on "type", "perm", "size", and "modify" facts which
         # are those available on all platforms
-        self.assertIn('type*;perm*;size*;modify*;', mlst())
-        self.assertEqual(
-            self.client.sendcmd('opts mlst type;'), '200 MLST OPTS type;'
-        )
-        self.assertEqual(
-            self.client.sendcmd('opts mLSt TypE;'), '200 MLST OPTS type;'
-        )
-        self.assertIn('type*;perm;size;modify;', mlst())
+        assert 'type*;perm*;size*;modify*;' in mlst()
+        assert self.client.sendcmd('opts mlst type;') == '200 MLST OPTS type;'
+        assert self.client.sendcmd('opts mLSt TypE;') == '200 MLST OPTS type;'
+        assert 'type*;perm;size;modify;' in mlst()
 
-        self.assertEqual(self.client.sendcmd('opts mlst'), '200 MLST OPTS ')
-        self.assertNotIn('*', mlst())
+        assert self.client.sendcmd('opts mlst') == '200 MLST OPTS '
+        assert '*' not in mlst()
 
-        self.assertEqual(
-            self.client.sendcmd('opts mlst fish;cakes;'), '200 MLST OPTS '
-        )
-        self.assertNotIn('*', mlst())
-        self.assertEqual(
-            self.client.sendcmd('opts mlst fish;cakes;type;'),
-            '200 MLST OPTS type;',
-        )
-        self.assertIn('type*;perm;size;modify;', mlst())
+        assert self.client.sendcmd('opts mlst fish;cakes;') == '200 MLST OPTS '
+        assert '*' not in mlst()
+        assert self.client.sendcmd('opts mlst fish;cakes;type;') == \
+            '200 MLST OPTS type;'
+        assert 'type*;perm;size;modify;' in mlst()
 
 
 class TestFtpCmdsSemantic(PyftpdlibTestCase):
@@ -437,7 +420,7 @@ class TestFtpCmdsSemantic(PyftpdlibTestCase):
         for cmd in self.arg_cmds:
             self.client.putcmd(cmd)
             resp = self.client.getmultiline()
-            self.assertEqual(resp, expected)
+            assert resp == expected
 
     def test_no_arg_cmds(self):
         # Test commands accepting no arguments.
@@ -458,7 +441,7 @@ class TestFtpCmdsSemantic(PyftpdlibTestCase):
         for cmd in narg_cmds:
             self.client.putcmd(cmd + ' arg')
             resp = self.client.getmultiline()
-            self.assertEqual(resp, expected)
+            assert resp == expected
 
     def test_auth_cmds(self):
         # Test those commands requiring client to be authenticated.
@@ -487,7 +470,7 @@ class TestFtpCmdsSemantic(PyftpdlibTestCase):
                 cmd = cmd + ' arg'
             self.client.putcmd(cmd)
             resp = self.client.getmultiline()
-            self.assertEqual(resp, expected)
+            assert resp == expected
 
     def test_no_auth_cmds(self):
         # Test those commands that do not require client to be authenticated.
@@ -496,7 +479,7 @@ class TestFtpCmdsSemantic(PyftpdlibTestCase):
             self.client.sendcmd(cmd)
         # STAT provided with an argument is equal to LIST hence not allowed
         # if not authenticated
-        with self.assertRaisesRegex(ftplib.error_perm, '530 Log in with USER'):
+        with pytest.raises(ftplib.error_perm, match='530 Log in with USER'):
             self.client.sendcmd('stat /')
         self.client.sendcmd('quit')
 
@@ -528,42 +511,41 @@ class TestFtpFsOperations(PyftpdlibTestCase):
 
     def test_cwd(self):
         self.client.cwd(self.tempdir)
-        self.assertEqual(self.client.pwd(), '/' + self.tempdir)
-        self.assertRaises(ftplib.error_perm, self.client.cwd, 'subtempdir')
+        assert self.client.pwd() == '/' + self.tempdir
+        with pytest.raises(ftplib.error_perm):
+            self.client.cwd('subtempdir')
         # cwd provided with no arguments is supposed to move us to the
         # root directory
         self.client.sendcmd('cwd')
-        self.assertEqual(self.client.pwd(), u('/'))
+        assert self.client.pwd() == u('/')
 
     def test_pwd(self):
-        self.assertEqual(self.client.pwd(), u('/'))
+        assert self.client.pwd() == u('/')
         self.client.cwd(self.tempdir)
-        self.assertEqual(self.client.pwd(), '/' + self.tempdir)
+        assert self.client.pwd() == '/' + self.tempdir
 
     def test_cdup(self):
         subfolder = self.get_testfn(dir=self.tempdir)
         os.mkdir(os.path.join(self.tempdir, subfolder))
-        self.assertEqual(self.client.pwd(), u('/'))
+        assert self.client.pwd() == u('/')
         self.client.cwd(self.tempdir)
-        self.assertEqual(self.client.pwd(), '/%s' % self.tempdir)
+        assert self.client.pwd() == '/%s' % self.tempdir
         self.client.cwd(subfolder)
-        self.assertEqual(
-            self.client.pwd(), '/%s/%s' % (self.tempdir, subfolder)
-        )
+        assert self.client.pwd() == '/%s/%s' % (self.tempdir, subfolder)
         self.client.sendcmd('cdup')
-        self.assertEqual(self.client.pwd(), '/%s' % self.tempdir)
+        assert self.client.pwd() == '/%s' % self.tempdir
         self.client.sendcmd('cdup')
-        self.assertEqual(self.client.pwd(), u('/'))
+        assert self.client.pwd() == u('/')
 
         # make sure we can't escape from root directory
         self.client.sendcmd('cdup')
-        self.assertEqual(self.client.pwd(), u('/'))
+        assert self.client.pwd() == u('/')
 
     def test_mkd(self):
         tempdir = self.get_testfn()
         dirname = self.client.mkd(tempdir)
         # the 257 response is supposed to include the absolute dirname
-        self.assertEqual(dirname, '/' + tempdir)
+        assert dirname == '/' + tempdir
         # make sure we can't create directories which already exist
         # (probably not really necessary);
         # let's use a try/except statement to avoid leaving behind
@@ -577,16 +559,16 @@ class TestFtpFsOperations(PyftpdlibTestCase):
 
     def test_rmd(self):
         self.client.rmd(self.tempdir)
-        self.assertRaises(ftplib.error_perm, self.client.rmd, self.tempfile)
+        with pytest.raises(ftplib.error_perm):
+            self.client.rmd(self.tempfile)
         # make sure we can't remove the root directory
-        with self.assertRaisesRegex(
-            ftplib.error_perm, "Can't remove root directory"
-        ):
+        with pytest.raises(ftplib.error_perm, match="Can't remove root directory"):
             self.client.rmd(u('/'))
 
     def test_dele(self):
         self.client.delete(self.tempfile)
-        self.assertRaises(ftplib.error_perm, self.client.delete, self.tempdir)
+        with pytest.raises(ftplib.error_perm):
+            self.client.delete(self.tempdir)
 
     def test_rnfr_rnto(self):
         # rename file
@@ -599,30 +581,28 @@ class TestFtpFsOperations(PyftpdlibTestCase):
         self.client.rename(tempname, self.tempdir)
         # rnfr/rnto over non-existing paths
         bogus = self.get_testfn()
-        with self.assertRaises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm):
             self.client.rename(bogus, '/x')
-        with self.assertRaises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm):
             self.client.rename(self.tempfile, u('/'))
         # rnto sent without first specifying the source
-        with self.assertRaises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm):
             self.client.sendcmd('rnto ' + self.tempfile)
 
         # make sure we can't rename root directory
-        with self.assertRaisesRegex(
-            ftplib.error_perm, "Can't rename home directory"
-        ):
+        with pytest.raises(ftplib.error_perm, match="Can't rename home directory"):
             self.client.rename('/', '/x')
 
     def test_mdtm(self):
         self.client.sendcmd('mdtm ' + self.tempfile)
         bogus = self.get_testfn()
-        with self.assertRaises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm):
             self.client.sendcmd('mdtm ' + bogus)
         # make sure we can't use mdtm against directories
         try:
             self.client.sendcmd('mdtm ' + self.tempdir)
         except ftplib.error_perm as err:
-            self.assertIn("not retrievable", str(err))
+            assert "not retrievable" in str(err)
         else:
             self.fail('Exception not raised')
 
@@ -632,7 +612,7 @@ class TestFtpFsOperations(PyftpdlibTestCase):
         self.client.sendcmd('mfmt ' + test_timestamp + ' ' + self.tempfile)
         resp_time = os.path.getmtime(self.tempfile)
         resp_time_str = time.strftime('%Y%m%d%H%M%S', time.gmtime(resp_time))
-        self.assertIn(test_timestamp, resp_time_str)
+        assert test_timestamp in resp_time_str
 
     def test_invalid_mfmt_timeval(self):
         # testing MFMT with invalid timeval argument
@@ -644,7 +624,7 @@ class TestFtpFsOperations(PyftpdlibTestCase):
                 'mfmt ' + test_timestamp_with_chars + ' ' + self.tempfile
             )
         except ftplib.error_perm as err:
-            self.assertIn('Invalid time format', str(err))
+            assert 'Invalid time format' in str(err)
         else:
             self.fail('Exception not raised')
 
@@ -653,7 +633,7 @@ class TestFtpFsOperations(PyftpdlibTestCase):
                 'mfmt ' + test_timestamp_invalid_length + ' ' + self.tempfile
             )
         except ftplib.error_perm as err:
-            self.assertIn('Invalid time format', str(err))
+            assert 'Invalid time format' in str(err)
         else:
             self.fail('Exception not raised')
 
@@ -662,41 +642,42 @@ class TestFtpFsOperations(PyftpdlibTestCase):
         try:
             self.client.sendcmd('mfmt ' + self.tempfile)
         except ftplib.error_perm as err:
-            self.assertIn('Syntax error', str(err))
+            assert 'Syntax error' in str(err)
         else:
             self.fail('Exception not raised')
 
     def test_size(self):
         self.client.sendcmd('type a')
-        self.assertRaises(ftplib.error_perm, self.client.size, self.tempfile)
+        with pytest.raises(ftplib.error_perm):
+            self.client.size(self.tempfile)
         self.client.sendcmd('type i')
         self.client.size(self.tempfile)
         # make sure we can't use size against directories
         try:
             self.client.sendcmd('size ' + self.tempdir)
         except ftplib.error_perm as err:
-            self.assertIn("not retrievable", str(err))
+            assert "not retrievable" in str(err)
         else:
             self.fail('Exception not raised')
 
     if not hasattr(os, 'chmod'):
 
         def test_site_chmod(self):
-            with self.assertRaises(ftplib.error_perm):
+            with pytest.raises(ftplib.error_perm):
                 self.client.sendcmd('site chmod 777 ' + self.tempfile)
 
     else:
 
         def test_site_chmod(self):
             # not enough args
-            with self.assertRaises(ftplib.error_perm):
+            with pytest.raises(ftplib.error_perm):
                 self.client.sendcmd('site chmod 777')
             # bad args
-            with self.assertRaises(ftplib.error_perm):
+            with pytest.raises(ftplib.error_perm):
                 self.client.sendcmd('site chmod -177 ' + self.tempfile)
-            with self.assertRaises(ftplib.error_perm):
+            with pytest.raises(ftplib.error_perm):
                 self.client.sendcmd('site chmod 778 ' + self.tempfile)
-            with self.assertRaises(ftplib.error_perm):
+            with pytest.raises(ftplib.error_perm):
                 self.client.sendcmd('site chmod foo ' + self.tempfile)
 
             def getmode():
@@ -708,18 +689,18 @@ class TestFtpFsOperations(PyftpdlibTestCase):
             # on Windows it is possible to set read-only flag only
             if WINDOWS:
                 self.client.sendcmd('site chmod 777 ' + self.tempfile)
-                self.assertEqual(getmode(), '0666')
+                assert getmode() == '0666'
                 self.client.sendcmd('site chmod 444 ' + self.tempfile)
-                self.assertEqual(getmode(), '0444')
+                assert getmode() == '0444'
                 self.client.sendcmd('site chmod 666 ' + self.tempfile)
-                self.assertEqual(getmode(), '0666')
+                assert getmode() == '0666'
             else:
                 self.client.sendcmd('site chmod 777 ' + self.tempfile)
-                self.assertEqual(getmode(), '0777')
+                assert getmode() == '0777'
                 self.client.sendcmd('site chmod 755 ' + self.tempfile)
-                self.assertEqual(getmode(), '0755')
+                assert getmode() == '0755'
                 self.client.sendcmd('site chmod 555 ' + self.tempfile)
-                self.assertEqual(getmode(), '0555')
+                assert getmode() == '0555'
 
 
 class CustomIO(io.RawIOBase):
@@ -782,8 +763,8 @@ class TestFtpStoreData(PyftpdlibTestCase):
         )
         self.dummy_recvfile.seek(0)
         datafile = self.dummy_recvfile.read()
-        self.assertEqual(len(data), len(datafile))
-        self.assertEqual(hash(data), hash(datafile))
+        assert len(data) == len(datafile)
+        assert hash(data) == hash(datafile)
 
     def test_stor_active(self):
         # Like test_stor but using PORT
@@ -818,8 +799,8 @@ class TestFtpStoreData(PyftpdlibTestCase):
         expected = data.replace(b'\r\n', b(os.linesep))
         self.dummy_recvfile.seek(0)
         datafile = self.dummy_recvfile.read()
-        self.assertEqual(len(expected), len(datafile))
-        self.assertEqual(hash(expected), hash(datafile))
+        assert len(expected) == len(datafile)
+        assert hash(expected) == hash(datafile)
 
     @retry_on_failure()
     def test_stor_ascii_2(self):
@@ -855,7 +836,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
             )
             self.client.quit()
             self.dummy_recvfile.seek(0)
-            self.assertEqual(expected, self.dummy_recvfile.read())
+            assert expected == self.dummy_recvfile.read()
         finally:
             DTPHandler.ac_in_buffer_size = old_buffer
 
@@ -880,14 +861,14 @@ class TestFtpStoreData(PyftpdlibTestCase):
                             break
                         conn.sendall(buf)
             # transfer finished, a 226 response is expected
-            self.assertEqual('226', self.client.voidresp()[:3])
+            assert '226' == self.client.voidresp()[:3]
             self.client.retrbinary(
                 'retr ' + filename, self.dummy_recvfile.write
             )
             self.dummy_recvfile.seek(0)
             datafile = self.dummy_recvfile.read()
-            self.assertEqual(len(data), len(datafile))
-            self.assertEqual(hash(data), hash(datafile))
+            assert len(data) == len(datafile)
+            assert hash(data) == hash(datafile)
         finally:
             # We do not use os.remove() because file could still be
             # locked by ftpd thread.  If DELE through FTP fails try
@@ -902,9 +883,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
         # Watch for STOU preceded by REST, which makes no sense.
         self.client.sendcmd('type i')
         self.client.sendcmd('rest 10')
-        with self.assertRaisesRegex(
-            ftplib.error_temp, "Can't STOU while REST"
-        ):
+        with pytest.raises(ftplib.error_temp, match="Can't STOU while REST"):
             self.client.sendcmd('stou')
 
     def test_stou_orphaned_file(self):
@@ -918,13 +897,12 @@ class TestFtpStoreData(PyftpdlibTestCase):
         # login as a limited user in order to make STOU fail
         self.client.login('anonymous', '@nopasswd')
         before = os.listdir(HOME)
-        self.assertRaises(
-            ftplib.error_perm, self.client.sendcmd, 'stou ' + self.testfn
-        )
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('stou ' + self.testfn)
         after = os.listdir(HOME)
         if before != after:
             for file in after:
-                self.assertFalse(file.startswith(self.testfn))
+                assert not file.startswith(self.testfn)
 
     def test_appe(self):
         data1 = b'abcde12345' * 100000
@@ -942,16 +920,14 @@ class TestFtpStoreData(PyftpdlibTestCase):
         )
         self.dummy_recvfile.seek(0)
         datafile = self.dummy_recvfile.read()
-        self.assertEqual(len(data1 + data2), len(datafile))
-        self.assertEqual(hash(data1 + data2), hash(datafile))
+        assert len(data1 + data2) == len(datafile)
+        assert hash(data1 + data2) == hash(datafile)
 
     def test_appe_rest(self):
         # Watch for APPE preceded by REST, which makes no sense.
         self.client.sendcmd('type i')
         self.client.sendcmd('rest 10')
-        with self.assertRaisesRegex(
-            ftplib.error_temp, "Can't APPE while REST"
-        ):
+        with pytest.raises(ftplib.error_temp, match="Can't APPE while REST"):
             self.client.sendcmd('appe x')
 
     def test_rest_on_stor(self):
@@ -977,14 +953,14 @@ class TestFtpStoreData(PyftpdlibTestCase):
 
         # transfer wasn't finished yet but server can't know this,
         # hence expect a 226 response
-        self.assertEqual('226', self.client.voidresp()[:3])
+        assert '226' == self.client.voidresp()[:3]
         # resuming transfer by using a marker value greater than the
         # file size stored on the server should result in an error
         # on stor
         file_size = self.client.size(self.testfn)
-        self.assertEqual(file_size, bytes_sent)
+        assert file_size == bytes_sent
         self.client.sendcmd('rest %s' % (file_size + 1))
-        with self.assertRaises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm):
             self.client.sendcmd('stor ' + self.testfn)
         self.client.sendcmd('rest %s' % bytes_sent)
         self.client.storbinary('stor ' + self.testfn, self.dummy_sendfile)
@@ -997,14 +973,14 @@ class TestFtpStoreData(PyftpdlibTestCase):
 
         data_sendfile = self.dummy_sendfile.read()
         data_recvfile = self.dummy_recvfile.read()
-        self.assertEqual(len(data_sendfile), len(data_recvfile))
-        self.assertEqual(len(data_sendfile), len(data_recvfile))
+        assert len(data_sendfile) == len(data_recvfile)
+        assert len(data_sendfile) == len(data_recvfile)
 
     def test_failing_rest_on_stor(self):
         # Test REST -> STOR against a non existing file.
         self.client.sendcmd('type i')
         self.client.sendcmd('rest 10')
-        with self.assertRaises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm):
             self.client.storbinary('stor ' + self.testfn, lambda x: x)
         # if the first STOR failed because of REST, the REST marker
         # is supposed to be resetted to 0
@@ -1023,20 +999,19 @@ class TestFtpStoreData(PyftpdlibTestCase):
             self.client.sendcmd('quit')
             conn.sendall(b'abcde12345' * 50000)
         # expect the response (transfer ok)
-        self.assertEqual('226', self.client.voidresp()[:3])
+        assert '226' == self.client.voidresp()[:3]
         # Make sure client has been disconnected.
         # socket.error (Windows) or EOFError (Linux) exception is supposed
         # to be raised in such a case.
         self.client.sock.settimeout(0.1)
-        self.assertRaises(
-            (socket.error, EOFError), self.client.sendcmd, 'noop'
-        )
+        with pytest.raises((socket.error, EOFError)):
+            self.client.sendcmd('noop')
 
     def test_stor_empty_file(self):
         self.client.storbinary('stor ' + self.testfn, self.dummy_sendfile)
         self.client.quit()
         with open(self.testfn) as f:
-            self.assertEqual(f.read(), "")
+            assert f.read() == ""
 
 
 @unittest.skipUnless(POSIX, "POSIX only")
@@ -1103,12 +1078,12 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
         self.client.retrbinary("retr " + self.testfn, self.dummyfile.write)
         self.dummyfile.seek(0)
         datafile = self.dummyfile.read()
-        self.assertEqual(len(data), len(datafile))
-        self.assertEqual(hash(data), hash(datafile))
+        assert len(data) == len(datafile)
+        assert hash(data) == hash(datafile)
 
         # attempt to retrieve a file which doesn't exist
         bogus = self.get_testfn()
-        with self.assertRaises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm):
             self.client.retrbinary("retr " + bogus, lambda x: x)
 
     def test_retr_ascii(self):
@@ -1120,8 +1095,8 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
         expected = data.replace(b(os.linesep), b'\r\n')
         self.dummyfile.seek(0)
         datafile = self.dummyfile.read()
-        self.assertEqual(len(expected), len(datafile))
-        self.assertEqual(hash(expected), hash(datafile))
+        assert len(expected) == len(datafile)
+        assert hash(expected) == hash(datafile)
 
     def test_retr_ascii_already_crlf(self):
         # Test ASCII mode RETR for data with CRLF line endings.
@@ -1131,8 +1106,8 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
         self.retrieve_ascii("retr " + self.testfn, self.dummyfile.write)
         self.dummyfile.seek(0)
         datafile = self.dummyfile.read()
-        self.assertEqual(len(data), len(datafile))
-        self.assertEqual(hash(data), hash(datafile))
+        assert len(data) == len(datafile)
+        assert hash(data) == hash(datafile)
 
     @retry_on_failure()
     def test_restore_on_retr(self):
@@ -1156,29 +1131,28 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
                     break
 
         # transfer wasn't finished yet so we expect a 426 response
-        self.assertEqual(self.client.getline()[:3], "426")
+        assert self.client.getline()[:3] == "426"
 
         # resuming transfer by using a marker value greater than the
         # file size stored on the server should result in an error
         # on retr (RFC-1123)
         file_size = self.client.size(self.testfn)
         self.client.sendcmd('rest %s' % (file_size + 1))
-        self.assertRaises(
-            ftplib.error_perm, self.client.sendcmd, 'retr ' + self.testfn
-        )
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('retr ' + self.testfn)
         # test resume
         self.client.sendcmd('rest %s' % received_bytes)
         self.client.retrbinary("retr " + self.testfn, self.dummyfile.write)
         self.dummyfile.seek(0)
         datafile = self.dummyfile.read()
-        self.assertEqual(len(data), len(datafile))
-        self.assertEqual(hash(data), hash(datafile))
+        assert len(data) == len(datafile)
+        assert hash(data) == hash(datafile)
 
     def test_retr_empty_file(self):
         touch(self.testfn)
         self.client.retrbinary("retr " + self.testfn, self.dummyfile.write)
         self.dummyfile.seek(0)
-        self.assertEqual(self.dummyfile.read(), b"")
+        assert self.dummyfile.read() == b""
 
 
 @unittest.skipUnless(POSIX, "POSIX only")
@@ -1222,16 +1196,16 @@ class TestFtpListingCmds(PyftpdlibTestCase):
         l1 = l2 = []
         self.client.retrlines(cmd, l1.append)
         self.client.retrlines(cmd + ' /', l2.append)
-        self.assertEqual(l1, l2)
+        assert l1 == l2
         if cmd.lower() != 'mlsd':
             # if pathname is a file one line is expected
             x = []
             self.client.retrlines('%s ' % cmd + self.testfn, x.append)
-            self.assertEqual(len(x), 1)
-            self.assertTrue(''.join(x).endswith(self.testfn))
+            assert len(x) == 1
+            assert ''.join(x).endswith(self.testfn)
         # non-existent path, 550 response is expected
         bogus = self.get_testfn()
-        with self.assertRaises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm):
             self.client.retrlines('%s ' % cmd + bogus, lambda x: x)
         # for an empty directory we excpect that the data channel is
         # opened anyway and that no data is received
@@ -1240,7 +1214,7 @@ class TestFtpListingCmds(PyftpdlibTestCase):
         os.mkdir(tempdir)
         try:
             self.client.retrlines('%s %s' % (cmd, tempdir), x.append)
-            self.assertEqual(x, [])
+            assert x == []
         finally:
             safe_rmpath(tempdir)
 
@@ -1261,7 +1235,7 @@ class TestFtpListingCmds(PyftpdlibTestCase):
         self.client.retrlines('list -la', l5.append)
         tot = (l1, l2, l3, l4, l5)
         for x in range(len(tot) - 1):
-            self.assertEqual(tot[x], tot[x + 1])
+            assert tot[x] == tot[x + 1]
 
     def test_mlst(self):
         # utility function for extracting the line of interest
@@ -1269,29 +1243,26 @@ class TestFtpListingCmds(PyftpdlibTestCase):
             return self.client.voidcmd(cmd).split('\n')[1]
 
         # the fact set must be preceded by a space
-        self.assertTrue(mlstline('mlst').startswith(' '))
+        assert mlstline('mlst').startswith(' ')
         # where TVFS is supported, a fully qualified pathname is expected
-        self.assertTrue(
-            mlstline('mlst ' + self.testfn).endswith('/' + self.testfn)
-        )
-        self.assertTrue(mlstline('mlst').endswith('/'))
+        assert mlstline('mlst ' + self.testfn).endswith('/' + self.testfn)
+        assert mlstline('mlst').endswith('/')
         # assume that no argument has the same meaning of "/"
-        self.assertEqual(mlstline('mlst'), mlstline('mlst /'))
+        assert mlstline('mlst') == mlstline('mlst /')
         # non-existent path
         bogus = self.get_testfn()
-        self.assertRaises(
-            ftplib.error_perm, self.client.sendcmd, 'mlst ' + bogus
-        )
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('mlst ' + bogus)
         # test file/dir notations
-        self.assertIn('type=dir', mlstline('mlst'))
-        self.assertIn('type=file', mlstline('mlst ' + self.testfn))
+        assert 'type=dir' in mlstline('mlst')
+        assert 'type=file' in mlstline('mlst ' + self.testfn)
         # let's add some tests for OPTS command
         self.client.sendcmd('opts mlst type;')
-        self.assertEqual(mlstline('mlst'), ' type=dir; /')
+        assert mlstline('mlst') == ' type=dir; /'
         # where no facts are present, two leading spaces before the
         # pathname are required (RFC-3659)
         self.client.sendcmd('opts mlst')
-        self.assertEqual(mlstline('mlst'), '  /')
+        assert mlstline('mlst') == '  /'
 
     def test_mlsd(self):
         # common tests
@@ -1303,7 +1274,7 @@ class TestFtpListingCmds(PyftpdlibTestCase):
         except ftplib.error_perm as err:
             resp = str(err)
             # if path is a file a 501 response code is expected
-            self.assertEqual(str(resp)[0:3], "501")
+            assert str(resp)[0:3] == "501"
         else:
             self.fail("Exception not raised")
 
@@ -1318,19 +1289,19 @@ class TestFtpListingCmds(PyftpdlibTestCase):
         local = facts[:-1].split(";")
         returned = resp.split("\n")[1].strip()[:-3]
         returned = [x.split("=")[0] for x in returned.split(";")]
-        self.assertEqual(sorted(local), sorted(returned))
+        assert sorted(local) == sorted(returned)
 
-        self.assertIn("type", resp)
-        self.assertIn("size", resp)
-        self.assertIn("perm", resp)
-        self.assertIn("modify", resp)
+        assert "type" in resp
+        assert "size" in resp
+        assert "perm" in resp
+        assert "modify" in resp
         if POSIX:
-            self.assertIn("unique", resp)
-            self.assertIn("unix.mode", resp)
-            self.assertIn("unix.uid", resp)
-            self.assertIn("unix.gid", resp)
+            assert "unique" in resp
+            assert "unix.mode" in resp
+            assert "unix.uid" in resp
+            assert "unix.gid" in resp
         elif WINDOWS:
-            self.assertIn("create", resp)
+            assert "create" in resp
 
     def test_stat(self):
         # Test STAT provided with argument which is equal to LIST
@@ -1338,11 +1309,10 @@ class TestFtpListingCmds(PyftpdlibTestCase):
         self.client.sendcmd('stat ' + self.testfn)
         self.client.putcmd('stat *')
         resp = self.client.getmultiline()
-        self.assertEqual(resp, '550 Globbing not supported.')
+        assert resp == '550 Globbing not supported.'
         bogus = self.get_testfn()
-        self.assertRaises(
-            ftplib.error_perm, self.client.sendcmd, 'stat ' + bogus
-        )
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('stat ' + bogus)
 
     def test_unforeseen_time_event(self):
         # Emulate a case where the file last modification time is prior
@@ -1386,7 +1356,7 @@ class TestFtpAbort(PyftpdlibTestCase):
     def test_abor_no_data(self):
         # Case 1: ABOR while no data channel is opened: respond with 225.
         resp = self.client.sendcmd('ABOR')
-        self.assertEqual('225 No transfer to abort.', resp)
+        assert '225 No transfer to abort.' == resp
         self.client.retrlines('list', [].append)
 
     def test_abor_pasv(self):
@@ -1395,7 +1365,7 @@ class TestFtpAbort(PyftpdlibTestCase):
         # socket, respond with 225.
         self.client.makepasv()
         respcode = self.client.sendcmd('ABOR')[:3]
-        self.assertEqual('225', respcode)
+        assert '225' == respcode
         self.client.retrlines('list', [].append)
 
     def test_abor_port(self):
@@ -1405,7 +1375,7 @@ class TestFtpAbort(PyftpdlibTestCase):
         self.client.set_pasv(0)
         with contextlib.closing(self.client.makeport()):
             respcode = self.client.sendcmd('ABOR')[:3]
-        self.assertEqual('225', respcode)
+        assert '225' == respcode
         self.client.retrlines('list', [].append)
 
     def test_abor_during_transfer(self):
@@ -1429,11 +1399,11 @@ class TestFtpAbort(PyftpdlibTestCase):
             self.client.putcmd('ABOR')
 
             # transfer isn't finished yet so ftpd should respond with 426
-            self.assertEqual(self.client.getline()[:3], "426")
+            assert self.client.getline()[:3] == "426"
 
             # transfer successfully aborted, so should now respond
             # with a 226
-            self.assertEqual('226', self.client.voidresp()[:3])
+            assert '226' == self.client.voidresp()[:3]
 
     @unittest.skipUnless(hasattr(socket, 'MSG_OOB'), "MSG_OOB not available")
     @unittest.skipIf(OSX, "does not work on OSX")
@@ -1447,7 +1417,7 @@ class TestFtpAbort(PyftpdlibTestCase):
         self.client.sock.sendall(b(chr(244)), socket.MSG_OOB)
         self.client.sock.sendall(b(chr(255)), socket.MSG_OOB)
         self.client.sock.sendall(b'abor\r\n')
-        self.assertEqual(self.client.getresp()[:3], '225')
+        assert self.client.getresp()[:3] == '225'
 
 
 class TestThrottleBandwidth(PyftpdlibTestCase):
@@ -1503,8 +1473,8 @@ class TestThrottleBandwidth(PyftpdlibTestCase):
         self.client.retrbinary("retr " + self.testfn, self.dummyfile.write)
         self.dummyfile.seek(0)
         datafile = self.dummyfile.read()
-        self.assertEqual(len(data), len(datafile))
-        self.assertEqual(hash(data), hash(datafile))
+        assert len(data) == len(datafile)
+        assert hash(data) == hash(datafile)
 
     def test_throttle_recv(self):
         # This test doesn't test the actual speed accuracy, just
@@ -1518,8 +1488,8 @@ class TestThrottleBandwidth(PyftpdlibTestCase):
         self.client.quit()  # needed to fix occasional failures
         with open(self.testfn, 'rb') as file:
             file_data = file.read()
-        self.assertEqual(len(data), len(file_data))
-        self.assertEqual(hash(data), hash(file_data))
+        assert len(data) == len(file_data)
+        assert hash(data) == hash(file_data)
 
 
 class TestTimeouts(PyftpdlibTestCase):
@@ -1590,11 +1560,10 @@ class TestTimeouts(PyftpdlibTestCase):
             # fail if no msg is received within 1 second
             self.client.sock.settimeout(1)
             data = self.client.sock.recv(BUFSIZE)
-            self.assertEqual(data, b"421 Data connection timed out.\r\n")
+            assert data == b"421 Data connection timed out.\r\n"
             # ensure client has been kicked off
-            self.assertRaises(
-                (socket.error, EOFError), self.client.sendcmd, 'noop'
-            )
+            with pytest.raises((socket.error, EOFError)):
+                self.client.sendcmd('noop')
 
     def test_data_timeout_not_reached(self):
         # Impose a timeout for the data channel, then keep sending data for a
@@ -1626,11 +1595,10 @@ class TestTimeouts(PyftpdlibTestCase):
             # fail if no msg is received within 1 second
             self.client.sock.settimeout(1)
             data = self.client.sock.recv(BUFSIZE)
-            self.assertEqual(data, b"421 Data connection timed out.\r\n")
+            assert data == b"421 Data connection timed out.\r\n"
             # ensure client has been kicked off
-            self.assertRaises(
-                (socket.error, EOFError), self.client.sendcmd, 'noop'
-            )
+            with pytest.raises((socket.error, EOFError)):
+                self.client.sendcmd('noop')
 
     def test_idle_data_timeout2(self):
         # Tests that the control connection timeout is restarted after
@@ -1647,11 +1615,10 @@ class TestTimeouts(PyftpdlibTestCase):
             self.client.sendcmd('abor')
             self.client.sock.settimeout(1)
             data = self.client.sock.recv(BUFSIZE)
-            self.assertEqual(data, b"421 Control connection timed out.\r\n")
+            assert data == b"421 Control connection timed out.\r\n"
             # ensure client has been kicked off
-            self.assertRaises(
-                (socket.error, EOFError), self.client.sendcmd, 'noop'
-            )
+            with pytest.raises((socket.error, EOFError)):
+                self.client.sendcmd('noop')
 
     def test_pasv_timeout(self):
         # Test pasv data channel timeout.  The client which does not
@@ -1662,7 +1629,7 @@ class TestTimeouts(PyftpdlibTestCase):
         # fail if no msg is received within 1 second
         self.client.sock.settimeout(1)
         data = self.client.sock.recv(BUFSIZE)
-        self.assertEqual(data, b"421 Passive data channel timed out.\r\n")
+        assert data == b"421 Passive data channel timed out.\r\n"
         # client is not expected to be kicked off
         self.client.sendcmd('noop')
 
@@ -1742,40 +1709,28 @@ class TestConfigurableOptions(PyftpdlibTestCase):
         try:
             c1.connect(self.server.host, self.server.port)
             c2.connect(self.server.host, self.server.port)
-            self.assertRaises(
-                ftplib.error_temp,
-                c3.connect,
-                self.server.host,
-                self.server.port,
-            )
+            with pytest.raises(ftplib.error_temp):
+                c3.connect(self.server.host,
+                self.server.port,)
             # with passive data channel established
             c2.quit()
             c1.login(USER, PASSWD)
             c1.makepasv()
-            self.assertRaises(
-                ftplib.error_temp,
-                c2.connect,
-                self.server.host,
-                self.server.port,
-            )
+            with pytest.raises(ftplib.error_temp):
+                c2.connect(self.server.host,
+                self.server.port,)
             # with passive data socket waiting for connection
             c1.login(USER, PASSWD)
             c1.sendcmd('pasv')
-            self.assertRaises(
-                ftplib.error_temp,
-                c2.connect,
-                self.server.host,
-                self.server.port,
-            )
+            with pytest.raises(ftplib.error_temp):
+                c2.connect(self.server.host,
+                self.server.port,)
             # with active data channel established
             c1.login(USER, PASSWD)
             with contextlib.closing(c1.makeport()):
-                self.assertRaises(
-                    ftplib.error_temp,
-                    c2.connect,
-                    self.server.host,
-                    self.server.port,
-                )
+                with pytest.raises(ftplib.error_temp):
+                    c2.connect(self.server.host,
+                    self.server.port,)
         finally:
             for c in (c1, c2, c3):
                 try:
@@ -1798,16 +1753,14 @@ class TestConfigurableOptions(PyftpdlibTestCase):
             c1.connect(self.server.host, self.server.port)
             c2.connect(self.server.host, self.server.port)
             c3.connect(self.server.host, self.server.port)
-            self.assertRaises(
-                ftplib.error_temp,
-                c4.connect,
-                self.server.host,
-                self.server.port,
-            )
+            with pytest.raises(ftplib.error_temp):
+                c4.connect(self.server.host,
+                self.server.port,)
             # Make sure client has been disconnected.
             # socket.error (Windows) or EOFError (Linux) exception is
             # supposed to be raised in such a case.
-            self.assertRaises((socket.error, EOFError), c4.sendcmd, 'noop')
+            with pytest.raises((socket.error, EOFError)):
+                c4.sendcmd('noop')
         finally:
             for c in (c1, c2, c3, c4):
                 try:
@@ -1822,7 +1775,7 @@ class TestConfigurableOptions(PyftpdlibTestCase):
         self.server.start()
         self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
-        self.assertEqual(self.client.getwelcome()[4:], 'hello there')
+        assert self.client.getwelcome()[4:] == 'hello there'
 
     def test_max_login_attempts(self):
         # Test FTPHandler.max_login_attempts attribute.
@@ -1831,15 +1784,13 @@ class TestConfigurableOptions(PyftpdlibTestCase):
         self.server.handler.auth_failed_timeout = 0
         self.server.start()
         self.connect()
-        self.assertRaises(
-            ftplib.error_perm, self.client.login, 'wrong', 'wrong'
-        )
+        with pytest.raises(ftplib.error_perm):
+            self.client.login('wrong', 'wrong')
         # socket.error (Windows) or EOFError (Linux) exceptions are
         # supposed to be raised when attempting to send/recv some data
         # using a disconnected socket
-        self.assertRaises(
-            (socket.error, EOFError), self.client.sendcmd, 'noop'
-        )
+        with pytest.raises((socket.error, EOFError)):
+            self.client.sendcmd('noop')
 
     def test_masquerade_address(self):
         # Test FTPHandler.masquerade_address attribute
@@ -1848,7 +1799,7 @@ class TestConfigurableOptions(PyftpdlibTestCase):
         self.server.start()
         self.connect()
         host = ftplib.parse227(self.client.sendcmd('PASV'))[0]
-        self.assertEqual(host, "256.256.256.256")
+        assert host == "256.256.256.256"
 
     def test_masquerade_address_map(self):
         # Test FTPHandler.masquerade_address_map attribute
@@ -1859,7 +1810,7 @@ class TestConfigurableOptions(PyftpdlibTestCase):
         self.server.start()
         self.connect()
         host = ftplib.parse227(self.client.sendcmd('PASV'))[0]
-        self.assertEqual(host, "128.128.128.128")
+        assert host == "128.128.128.128"
 
     def test_passive_ports(self):
         # Test FTPHandler.passive_ports attribute
@@ -1868,10 +1819,10 @@ class TestConfigurableOptions(PyftpdlibTestCase):
         self.server.handler.passive_ports = _range
         self.server.start()
         self.connect()
-        self.assertIn(self.client.makepasv()[1], _range)
-        self.assertIn(self.client.makepasv()[1], _range)
-        self.assertIn(self.client.makepasv()[1], _range)
-        self.assertIn(self.client.makepasv()[1], _range)
+        assert self.client.makepasv()[1] in _range
+        assert self.client.makepasv()[1] in _range
+        assert self.client.makepasv()[1] in _range
+        assert self.client.makepasv()[1] in _range
 
     @disable_log_warning
     def test_passive_ports_busy(self):
@@ -1887,7 +1838,7 @@ class TestConfigurableOptions(PyftpdlibTestCase):
             self.server.start()
             self.connect()
             resulting_port = self.client.makepasv()[1]
-            self.assertNotEqual(port, resulting_port)
+            assert port != resulting_port
 
     @retry_on_failure()
     def test_use_gmt_times(self):
@@ -1916,14 +1867,14 @@ class TestConfigurableOptions(PyftpdlibTestCase):
         # if we're not in a GMT time zone times are supposed to be
         # different
         if time.timezone != 0:
-            self.assertNotEqual(gmt1, loc1)
-            self.assertNotEqual(gmt2, loc2)
-            self.assertNotEqual(gmt3, loc3)
+            assert gmt1 != loc1
+            assert gmt2 != loc2
+            assert gmt3 != loc3
         # ...otherwise they should be the same
         else:
-            self.assertEqual(gmt1, loc1)
-            self.assertEqual(gmt2, loc2)
-            self.assertEqual(gmt3, loc3)
+            assert gmt1 == loc1
+            assert gmt2 == loc2
+            assert gmt3 == loc3
 
 
 class TestCallbacks(PyftpdlibTestCase):
@@ -2027,9 +1978,8 @@ class TestCallbacks(PyftpdlibTestCase):
         )
 
     def test_on_login_failed(self):
-        self.assertRaises(
-            ftplib.error_perm, self.client.login, 'foo', 'bar?!?'
-        )
+        with pytest.raises(ftplib.error_perm):
+            self.client.login('foo', 'bar?!?')
         self.read_file('on_connect,on_login_failed:foo+bar?!?,')
 
     def test_on_file_received(self):
@@ -2075,8 +2025,9 @@ class TestCallbacks(PyftpdlibTestCase):
                     break
         # If a data transfer is in progress server is supposed to send
         # a 426 reply followed by a 226 reply.
-        self.assertRaises(ftplib.error_temp, self.client.getresp)  # 426
-        self.assertEqual(self.client.getresp()[:3], "226")
+        with pytest.raises(ftplib.error_temp):
+            self.client.getresp()  # 426
+        assert self.client.getresp()[:3] == "226"
         self.read_file(
             'on_connect,on_login:%s,on_incomplete_file_received:%s,'
             % (USER, self.testfn2)
@@ -2097,7 +2048,7 @@ class TestCallbacks(PyftpdlibTestCase):
                 bytes_recv += len(chunk)
                 if bytes_recv >= INTERRUPTED_TRANSF_SIZE or not chunk:
                     break
-        self.assertEqual(self.client.getline()[:3], "426")
+        assert self.client.getline()[:3] == "426"
         self.read_file(
             'on_connect,on_login:%s,on_incomplete_file_sent:%s,'
             % (USER, self.testfn2)
@@ -2147,40 +2098,37 @@ class _TestNetworkProtocols(object):  # noqa
                     % (self.other_proto, self.server.host, self.server.port)
                 )
             except ftplib.error_perm as err:
-                self.assertEqual(str(err)[0:3], "522")
+                assert str(err)[0:3] == "522"
             else:
                 self.fail("Exception not raised")
 
         # test bad args
         msg = "501 Invalid EPRT format."
         # len('|') > 3
-        self.assertEqual(self.cmdresp('eprt ||||'), msg)
+        assert self.cmdresp('eprt ||||') == msg
         # len('|') < 3
-        self.assertEqual(self.cmdresp('eprt ||'), msg)
+        assert self.cmdresp('eprt ||') == msg
         # port > 65535
-        self.assertEqual(
-            self.cmdresp('eprt |%s|%s|65536|' % (self.proto, self.HOST)), msg
-        )
+        assert self.cmdresp('eprt |%s|%s|65536|' % (self.proto, self.HOST)) == msg
         # port < 0
-        self.assertEqual(
-            self.cmdresp('eprt |%s|%s|-1|' % (self.proto, self.HOST)), msg
-        )
+        assert self.cmdresp('eprt |%s|%s|-1|' % (self.proto, self.HOST)) == msg
         # port < 1024
         resp = self.cmdresp('eprt |%s|%s|222|' % (self.proto, self.HOST))
-        self.assertEqual(resp[:3], '501')
-        self.assertIn('privileged port', resp)
+        assert resp[:3] == '501'
+        assert 'privileged port' in resp
         # proto > 2
         _cmd = 'eprt |3|%s|%s|' % (self.server.host, self.server.port)
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, _cmd)
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd(_cmd)
 
         if self.proto == '1':
             # len(ip.octs) > 4
-            self.assertEqual(self.cmdresp('eprt |1|1.2.3.4.5|2048|'), msg)
+            assert self.cmdresp('eprt |1|1.2.3.4.5|2048|') == msg
             # ip.oct > 255
-            self.assertEqual(self.cmdresp('eprt |1|1.2.3.256|2048|'), msg)
+            assert self.cmdresp('eprt |1|1.2.3.256|2048|') == msg
             # bad proto
             resp = self.cmdresp('eprt |2|1.2.3.256|2048|')
-            self.assertIn("Network protocol not supported", resp)
+            assert "Network protocol not supported" in resp
 
         # test connection
         with contextlib.closing(socket.socket(self.client.af)) as sock:
@@ -2200,12 +2148,13 @@ class _TestNetworkProtocols(object):  # noqa
         try:
             self.client.sendcmd('epsv ' + self.other_proto)
         except ftplib.error_perm as err:
-            self.assertEqual(str(err)[0:3], "522")
+            assert str(err)[0:3] == "522"
         else:
             self.fail("Exception not raised")
 
         # proto > 2
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'epsv 3')
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('epsv 3')
 
         # test connection
         for cmd in ('EPSV', 'EPSV ' + self.proto):
@@ -2221,15 +2170,12 @@ class _TestNetworkProtocols(object):  # noqa
 
     def test_epsv_all(self):
         self.client.sendcmd('epsv all')
-        self.assertRaises(ftplib.error_perm, self.client.sendcmd, 'pasv')
-        self.assertRaises(
-            ftplib.error_perm, self.client.sendport, self.HOST, 2000
-        )
-        self.assertRaises(
-            ftplib.error_perm,
-            self.client.sendcmd,
-            'eprt |%s|%s|%s|' % (self.proto, self.HOST, 2000),
-        )
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('pasv')
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendport(self.HOST, 2000)
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendcmd('eprt |%s|%s|%s|' % (self.proto, self.HOST, 2000),)
 
 
 @unittest.skipUnless(SUPPORTS_IPV4, "IPv4 not supported")
@@ -2261,8 +2207,8 @@ class TestIPv4Environment(_TestNetworkProtocols, PyftpdlibTestCase):
         ae(self.cmdresp('port 127,0,0,1,-1,0'), msg)  # port < 0
         # port < 1024
         resp = self.cmdresp('port %s,1,1' % self.HOST.replace('.', ','))
-        self.assertEqual(resp[:3], '501')
-        self.assertIn('privileged port', resp)
+        assert resp[:3] == '501'
+        assert 'privileged port' in resp
         if self.HOST != "1.2.3.4":
             resp = self.cmdresp('port 1,2,3,4,4,4')
             assert 'foreign address' in resp, resp
@@ -2270,8 +2216,8 @@ class TestIPv4Environment(_TestNetworkProtocols, PyftpdlibTestCase):
     @disable_log_warning
     def test_eprt_v4(self):
         resp = self.cmdresp('eprt |1|0.10.10.10|2222|')
-        self.assertEqual(resp[:3], '501')
-        self.assertIn('foreign address', resp)
+        assert resp[:3] == '501'
+        assert 'foreign address' in resp
 
     def test_pasv_v4(self):
         host, port = ftplib.parse227(self.client.sendcmd('pasv'))
@@ -2296,12 +2242,9 @@ class TestIPv6Environment(_TestNetworkProtocols, PyftpdlibTestCase):
 
     def test_port_v6(self):
         # PORT is not supposed to work
-        self.assertRaises(
-            ftplib.error_perm,
-            self.client.sendport,
-            self.server.host,
-            self.server.port,
-        )
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendport(self.server.host,
+            self.server.port,)
 
     def test_pasv_v6(self):
         # PASV is still supposed to work to support clients using
@@ -2311,8 +2254,8 @@ class TestIPv6Environment(_TestNetworkProtocols, PyftpdlibTestCase):
     @disable_log_warning
     def test_eprt_v6(self):
         resp = self.cmdresp('eprt |2|::foo|2222|')
-        self.assertEqual(resp[:3], '501')
-        self.assertIn('foreign address', resp)
+        assert resp[:3] == '501'
+        assert 'foreign address' in resp
 
 
 @unittest.skipUnless(SUPPORTS_HYBRID_IPV6, "IPv4/6 dual stack not supported")
@@ -2362,7 +2305,7 @@ class TestIPv6MixedEnvironment(PyftpdlibTestCase):
         self.client.retrlines('list', noop)
         # make sure pasv response doesn't return an IPv4-mapped address
         ip = self.client.makepasv()[0]
-        self.assertFalse(ip.startswith("::ffff:"))
+        assert not ip.startswith("::ffff:")
 
     def test_eprt_v4(self):
         self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
@@ -2393,13 +2336,13 @@ class TestIPv6MixedEnvironment(PyftpdlibTestCase):
         host, port = ftplib.parse229(
             self.client.sendcmd('EPSV'), self.client.sock.getpeername()
         )
-        self.assertEqual('127.0.0.1', host)
+        assert '127.0.0.1' == host
         with contextlib.closing(
             socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         ) as s:
             s.settimeout(GLOBAL_TIMEOUT)
             s.connect((host, port))
-            self.assertTrue(mlstline('mlst /').endswith('/'))
+            assert mlstline('mlst /').endswith('/')
 
 
 class TestCornerCases(PyftpdlibTestCase):
@@ -2487,7 +2430,7 @@ class TestCornerCases(PyftpdlibTestCase):
             IOLoop.instance().call_later(0, lambda: 1 // 0)
             server.serve_forever(timeout=0.001, blocking=False)
             len2 = len(IOLoop.instance().socket_map)
-            self.assertEqual(len1, len2)
+            assert len1 == len2
         finally:
             logger.disabled = False
             server.close()
@@ -2503,11 +2446,11 @@ class TestCornerCases(PyftpdlibTestCase):
             try:
                 resp = self.client.sendport(HOST, port)
             except ftplib.error_temp as err:
-                self.assertEqual(str(err)[:3], '425')
+                assert str(err)[:3] == '425'
             except (socket.timeout, getattr(ssl, "SSLError", object())):
                 pass
             else:
-                self.assertNotEqual(str(resp)[:3], '200')
+                assert str(resp)[:3] != '200'
 
     def test_repr(self):
         # make sure the FTP/DTP handler classes have a sane repr()
@@ -2521,18 +2464,18 @@ class TestCornerCases(PyftpdlibTestCase):
         def test_sendfile(self):
             # make sure that on python >= 3.3 we're using os.sendfile
             # rather than third party pysendfile module
-            self.assertIs(sendfile, os.sendfile)
+            assert sendfile is os.sendfile
 
     if SUPPORTS_SENDFILE:
 
         def test_sendfile_enabled(self):
-            self.assertEqual(FTPHandler.use_sendfile, True)
+            assert FTPHandler.use_sendfile == True
 
     if hasattr(select, 'epoll') or hasattr(select, 'kqueue'):
 
         def test_ioloop_fileno(self):
             fd = self.server.server.ioloop.fileno()
-            self.assertIsInstance(fd, int, fd)
+            assert isinstance(fd, int), fd
 
 
 # # TODO: disabled as on certain platforms (OSX and Windows)
@@ -2757,12 +2700,8 @@ class ThreadedFTPTests(PyftpdlibTestCase):
             _getmtime = AbstractedFS.getmtime
             try:
                 AbstractedFS.getmtime = lambda x, y: -9000000000
-                self.assertRaisesRegex(
-                    ftplib.error_perm,
-                    "550 Can't determine file's last modification time",
-                    self.client.sendcmd,
-                    'mdtm ' + self.tempfile,
-                )
+                with pytest.raises(ftplib.error_perm, match="550 Can't determine file's last modification time"):
+                    self.client.sendcmd('mdtm ' + self.tempfile,)
                 # make sure client hasn't been disconnected
                 self.client.sendcmd('noop')
             finally:
@@ -2786,7 +2725,8 @@ class ThreadedFTPTests(PyftpdlibTestCase):
             self.client.quit()
             self.client.connect(self.server.host, self.server.port)
             self.client.login(USER, PASSWD)
-            self.assertRaises(ftplib.error_temp, self.client.sendcmd, 'stou')
+            with pytest.raises(ftplib.error_temp):
+                self.client.sendcmd('stou')
         finally:
             with self.server.lock:
                 self.server.handler.abstracted_fs = AbstractedFS
@@ -2806,11 +2746,10 @@ class ThreadedFTPTests(PyftpdlibTestCase):
             # fail if no msg is received within 1 second
             self.client.sock.settimeout(1)
             data = self.client.sock.recv(BUFSIZE)
-            self.assertEqual(data, b"421 Control connection timed out.\r\n")
+            assert data == b"421 Control connection timed out.\r\n"
             # ensure client has been kicked off
-            self.assertRaises(
-                (socket.error, EOFError), self.client.sendcmd, 'noop'
-            )
+            with pytest.raises((socket.error, EOFError)):
+                self.client.sendcmd('noop')
         finally:
             with self.server.lock:
                 self.server.handler.timeout = 0.1
@@ -2821,14 +2760,14 @@ class ThreadedFTPTests(PyftpdlibTestCase):
     @retry_on_failure()
     def test_tcp_no_delay(self):
         s = get_server_handler().socket
-        self.assertTrue(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
+        assert s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY)
         self.client.quit()
         with self.server.lock:
             self.server.handler.tcp_no_delay = False
         self.client.connect(self.server.host, self.server.port)
         self.client.sendcmd('noop')
         s = get_server_handler().socket
-        self.assertFalse(s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY))
+        assert not s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY)
 
     @retry_on_failure()
     def test_permit_foreign_address_false(self):
@@ -2836,9 +2775,9 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         with self.server.lock:
             handler.permit_foreign_addresses = False
             handler.remote_ip = '9.9.9.9'
-        with self.assertRaises(ftplib.error_perm) as cm:
+        with pytest.raises(ftplib.error_perm) as cm:
             self.client.makeport()
-        self.assertIn('foreign address', str(cm.exception))
+        assert 'foreign address' in str(cm.exception)
 
     @retry_on_failure()
     def test_permit_foreign_address_true(self):
@@ -2885,7 +2824,8 @@ class ThreadedFTPTests(PyftpdlibTestCase):
 
         with self.server.lock:
             self.server.handler.permit_privileged_ports = False
-        self.assertRaises(ftplib.error_perm, self.client.sendport, HOST, port)
+        with pytest.raises(ftplib.error_perm):
+            self.client.sendport(HOST, port)
         if sock:
             port = sock.getsockname()[1]
             with self.server.lock:
@@ -2916,8 +2856,8 @@ class ThreadedFTPTests(PyftpdlibTestCase):
             assert fun.called
             self.dummy_recvfile.seek(0)
             datafile = self.dummy_recvfile.read()
-            self.assertEqual(len(data), len(datafile))
-            self.assertEqual(hash(data), hash(datafile))
+            assert len(data) == len(datafile)
+            assert hash(data) == hash(datafile)
 
 
 if __name__ == '__main__':

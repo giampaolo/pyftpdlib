@@ -21,6 +21,7 @@ from pyftpdlib.servers import FTPServer
 from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import mock
 from pyftpdlib.test import safe_rmpath
+import pytest
 
 
 class TestCommandLineParser(PyftpdlibTestCase):
@@ -66,7 +67,8 @@ class TestCommandLineParser(PyftpdlibTestCase):
         # no argument
         sys.argv += ["-a"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        with pytest.raises(SystemExit):
+            pyftpdlib.__main__.main()
 
     def test_p_option(self):
         sys.argv += ["-p", "0"]
@@ -76,23 +78,27 @@ class TestCommandLineParser(PyftpdlibTestCase):
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-p"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        with pytest.raises(SystemExit):
+            pyftpdlib.__main__.main()
 
         # invalid argument
         sys.argv += ["-p foo"]
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        with pytest.raises(SystemExit):
+            pyftpdlib.__main__.main()
 
     def test_w_option(self):
         sys.argv += ["-w", "-p", "0"]
         with warnings.catch_warnings():
             warnings.filterwarnings("error")
-            self.assertRaises(RuntimeWarning, pyftpdlib.__main__.main)
+            with pytest.raises(RuntimeWarning):
+                pyftpdlib.__main__.main()
 
         # unexpected argument
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-w foo"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        with pytest.raises(SystemExit):
+            pyftpdlib.__main__.main()
 
     def test_d_option(self):
         dirname = self.get_testfn()
@@ -104,13 +110,15 @@ class TestCommandLineParser(PyftpdlibTestCase):
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-d"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        with pytest.raises(SystemExit):
+            pyftpdlib.__main__.main()
 
         # no such directory
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-d %s" % dirname]
         safe_rmpath(dirname)
-        self.assertRaises(ValueError, pyftpdlib.__main__.main)
+        with pytest.raises(ValueError):
+            pyftpdlib.__main__.main()
 
     def test_r_option(self):
         sys.argv += ["-r 60000-61000", "-p", "0"]
@@ -120,22 +128,26 @@ class TestCommandLineParser(PyftpdlibTestCase):
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-r"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        with pytest.raises(SystemExit):
+            pyftpdlib.__main__.main()
 
         # wrong arg
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-r yyy-zzz"]
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        with pytest.raises(SystemExit):
+            pyftpdlib.__main__.main()
 
     def test_v_option(self):
         sys.argv += ["-v"]
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        with pytest.raises(SystemExit):
+            pyftpdlib.__main__.main()
 
         # unexpected argument
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-v foo"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        with pytest.raises(SystemExit):
+            pyftpdlib.__main__.main()
 
     def test_D_option(self):
         with mock.patch('pyftpdlib.__main__.config_logging') as fun:
@@ -147,7 +159,8 @@ class TestCommandLineParser(PyftpdlibTestCase):
         sys.argv = self.SYSARGV[:]
         sys.argv += ["-V foo"]
         sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+        with pytest.raises(SystemExit):
+            pyftpdlib.__main__.main()
 
 
 if __name__ == '__main__':
