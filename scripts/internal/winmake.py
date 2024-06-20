@@ -29,7 +29,6 @@ import tempfile
 
 APPVEYOR = bool(os.environ.get('APPVEYOR'))
 PYTHON = sys.executable if APPVEYOR else os.getenv('PYTHON', sys.executable)
-RUNNER_PY = 'pyftpdlib\\test\\runner.py'
 GET_PIP_URL = "https://bootstrap.pypa.io/get-pip.py"
 PY3 = sys.version_info[0] >= 3
 HERE = os.path.abspath(os.path.dirname(__file__))
@@ -60,6 +59,11 @@ LIGHTBLUE = 3
 YELLOW = 6
 RED = 4
 DEFAULT_COLOR = 7
+
+PYTEST_ARGS = "-v --tb=native -o "
+PYTEST_COV_ARGS = (
+    "--source=. --omit=__pycache__ --omit=scripts --omit=pyftpdlib/test"
+)
 
 
 # ===================================================================
@@ -369,10 +373,10 @@ def lint():
     sh("%s -m flake8 %s" % (PYTHON, py_files), nolog=True)
 
 
-def test(name=RUNNER_PY):
+def test():
     """Run tests."""
     build()
-    sh("%s %s" % (PYTHON, name))
+    sh("%s -m pytest %s" % (PYTHON, PYTEST_ARGS))
 
 
 def test_authorizers():
@@ -413,7 +417,10 @@ def test_servers():
 def coverage():
     """Run coverage tests."""
     build()
-    sh("%s -m coverage run %s" % (PYTHON, RUNNER_PY))
+    sh(
+        "%s -m coverage run %s -m pytest %s"
+        % (PYTHON, PYTEST_COV_ARGS, PYTEST_ARGS)
+    )
     sh("%s -m coverage report" % PYTHON)
     sh("%s -m coverage html" % PYTHON)
     sh("%s -m webbrowser -t htmlcov/index.html" % PYTHON)
@@ -428,7 +435,7 @@ def test_by_name(name):
 def test_failed():
     """Re-run tests which failed on last run."""
     build()
-    sh("%s %s --last-failed" % (PYTHON, RUNNER_PY))
+    sh("%s -m pytest %s --last-failed" % (PYTHON, PYTEST_ARGS))
 
 
 def install_git_hooks():

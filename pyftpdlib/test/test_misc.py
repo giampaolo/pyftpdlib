@@ -150,9 +150,3 @@ class TestCommandLineParser(PyftpdlibTestCase):
         # no --password
         with pytest.raises(SystemExit) as cm:
             main(["--username", "foo"])
-
-
-if __name__ == '__main__':
-    from pyftpdlib.test.runner import run_from_name
-
-    run_from_name(__file__)
