@@ -136,6 +136,10 @@ class TestCommandLineParser(PyftpdlibTestCase):
                 main([opt])
             self.assertEqual(str(cm.exception), "pyftpdlib %s" % __ver__)
 
+    def test_verbose_option(self):
+        for opt in ("-V", "--verbose"):
+            main([opt])
+
     def test_D_option(self):
         with mock.patch('pyftpdlib.__main__.config_logging') as fun:
             sys.argv += ["-D", "-p 0"]
