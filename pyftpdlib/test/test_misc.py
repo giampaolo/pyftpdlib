@@ -16,6 +16,7 @@ except ImportError:
     from io import BytesIO
 
 import pyftpdlib
+from pyftpdlib import __ver__
 from pyftpdlib.__main__ import main
 from pyftpdlib._compat import PY3
 from pyftpdlib._compat import super
@@ -129,15 +130,11 @@ class TestCommandLineParser(PyftpdlibTestCase):
         with self.assertRaises(SystemExit):
             main(["-r", "yyy-zzz"])
 
-    def test_v_option(self):
-        sys.argv += ["-v"]
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
-
-        # unexpected argument
-        sys.argv = self.SYSARGV[:]
-        sys.argv += ["-v foo"]
-        sys.stderr = self.devnull
-        self.assertRaises(SystemExit, pyftpdlib.__main__.main)
+    def test_version_option(self):
+        for opt in ("-v", "--version"):
+            with self.assertRaises(SystemExit) as cm:
+                main([opt])
+            self.assertEqual(str(cm.exception), "pyftpdlib %s" % __ver__)
 
     def test_D_option(self):
         with mock.patch('pyftpdlib.__main__.config_logging') as fun:
