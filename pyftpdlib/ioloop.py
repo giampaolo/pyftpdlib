@@ -65,6 +65,8 @@ import sys
 import time
 import traceback
 
+from ._compat import PY3
+
 
 try:
     import threading
@@ -78,7 +80,7 @@ from .log import is_logging_configured
 from .log import logger
 
 
-if sys.version_info[:2] >= (3, 12):
+if PY3:
     from . import _asynchat as asynchat
     from . import _asyncore as asyncore
 else:

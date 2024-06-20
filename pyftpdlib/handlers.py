@@ -56,7 +56,7 @@ from .log import debug
 from .log import logger
 
 
-if sys.version_info[:2] >= (3, 12):
+if PY3:
     from . import _asynchat as asynchat
 else:
     import asynchat
