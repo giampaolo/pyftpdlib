@@ -141,6 +141,10 @@ test-misc:  ## Run miscellaneous tests.
 	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_misc.py
 
+test-lastfailed:  ## Run previously failed tests
+	${MAKE} install
+	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) --last-failed $(ARGS)
+
 test-coverage:  ## Run test coverage.
 	${MAKE} install
 	rm -rf .coverage htmlcov
