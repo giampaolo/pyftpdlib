@@ -1,26 +1,34 @@
 # Shortcuts for various tasks (UNIX only).
 # To use a specific Python version run:
-# $ make install PYTHON=python3.7
+# 	$ make install PYTHON=python3.7
+# To run a specific test:
+# 	$ make test ARGS="-v -s pyftpdlib/test/test_functional.py::TestIPv6MixedEnvironment::test_port_v4"
 
 PYTHON = python3
 ARGS =
+
+# mandatory deps for running tests
 PYDEPS = \
-	black \
-	check-manifest \
-	coverage \
 	psutil \
-	pylint \
 	pyopenssl \
 	pytest \
-	pytest-cov \
-	rstcheck \
-	ruff \
-	setuptools \
-	teyit \
-	toml-sort \
-	twine
-PYVER = $(shell $(PYTHON) -c "import sys; print(sys.version_info[0])")
-ifeq ($(PYVER), 2)
+	setuptools
+# dev deps
+ifndef GITHUB_ACTIONS
+	PYDEPS += \
+		black \
+		check-manifest \
+		coverage \
+		pylint \
+		pytest-cov \
+		rstcheck \
+		ruff \
+		teyit \
+		toml-sort \
+		twine
+endif
+# python 2 deps
+ifeq ($(shell $(PYTHON) -c "import sys; print(sys.version_info[0])"), 2)
 	PYDEPS = \
 		ipaddress \
 		mock \
@@ -37,6 +45,8 @@ TEST_PREFIX = PYTHONWARNINGS=always
 PYTEST_ARGS = -v --tb=native -o cache_dir=/tmp/pyftpdlib-pytest-cache
 NUM_WORKERS = `$(PYTHON) -c "import os; print(os.cpu_count() or 1)"`
 
+# if make is invoked with no arg, default to `make help`
+.DEFAULT_GOAL := help
 
 # ===================================================================
 # Install
