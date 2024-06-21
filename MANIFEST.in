@@ -47,7 +47,6 @@ include pyftpdlib/servers.py
 include pyftpdlib/test/README
 include pyftpdlib/test/__init__.py
 include pyftpdlib/test/keycert.pem
-include pyftpdlib/test/runner.py
 include pyftpdlib/test/test_authorizers.py
 include pyftpdlib/test/test_filesystems.py
 include pyftpdlib/test/test_functional.py

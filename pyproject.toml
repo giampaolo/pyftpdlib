@@ -78,7 +78,6 @@ ignore = [
 ".git_pre_commit.py" = ["T201"]  # T201 == print()
 "demo/*" = ["T201"]
 "doc/*" = ["T201"]
-"pyftpdlib/test/runner.py" = ["T201"]
 "scripts/*" = ["T201"]
 "setup.py" = ["T201"]
 

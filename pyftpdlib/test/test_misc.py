@@ -11,6 +11,8 @@ try:
 except ImportError:
     from io import BytesIO
 
+import pytest
+
 import pyftpdlib
 from pyftpdlib import __ver__
 from pyftpdlib.__main__ import main
@@ -52,18 +54,18 @@ class TestCommandLineParser(PyftpdlibTestCase):
 
     def test_interface_opt(self):
         # no param
-        with self.assertRaises(SystemExit) as cm:
+        with pytest.raises(SystemExit) as cm:
             main(["-i"])
-        with self.assertRaises(SystemExit) as cm:
+        with pytest.raises(SystemExit) as cm:
             main(["--interface"])
         ftpd = main(["--interface", "127.0.0.1", "-p", "0"])
 
     def test_port_opt(self):
         # no param
-        with self.assertRaises(SystemExit) as cm:
+        with pytest.raises(SystemExit) as cm:
             main(["-p"])
         # not an int
-        with self.assertRaises(SystemExit) as cm:
+        with pytest.raises(SystemExit) as cm:
             main(["-p", "foo"])
         main(["-p", "0"])
         main(["--port", "0"])
@@ -71,73 +73,72 @@ class TestCommandLineParser(PyftpdlibTestCase):
     def test_write_opt(self):
         with warnings.catch_warnings():
             warnings.filterwarnings("error")
-            with self.assertRaises(RuntimeWarning):
+            with pytest.raises(RuntimeWarning):
                 main(["-w", "-p", "0"])
 
         with warnings.catch_warnings():
             ftpd = main(["-w", "-p", "0"])
             perms = ftpd.handler.authorizer.get_perms("anonymous")
-            self.assertEqual(
-                perms, DummyAuthorizer.read_perms + DummyAuthorizer.write_perms
+            assert (
+                perms
+                == DummyAuthorizer.read_perms + DummyAuthorizer.write_perms
             )
 
         # unexpected argument
-        self.assertRaises(SystemExit, main, ["-w", "foo", "-p", "0"])
+        with pytest.raises(SystemExit):
+            main(["-w", "foo", "-p", "0"])
 
     def test_directory_opt(self):
         dirname = self.get_testfn()
         os.mkdir(dirname)
         ftpd = main(["-d", dirname, "-p", "0"])
         ftpd = main(["--directory", dirname, "-p", "0"])
-        self.assertEqual(
-            ftpd.handler.authorizer.get_home_dir("anonymous"),
-            os.path.abspath(dirname),
-        )
+        assert ftpd.handler.authorizer.get_home_dir(
+            "anonymous"
+        ) == os.path.abspath(dirname)
 
         # without argument
-        with self.assertRaises(SystemExit):
+        with pytest.raises(SystemExit):
             main(["-d"])
 
         # no such directory
-        with self.assertRaisesRegex(ValueError, "no such directory"):
+        with pytest.raises(ValueError, match="no such directory"):
             main(["-d", "?!?", "-p", "0"])
 
     def test_nat_address_opt(self):
         ftpd = main(["-n", "127.0.0.1", "-p", "0"])
-        self.assertEqual(ftpd.handler.masquerade_address, "127.0.0.1")
+        assert ftpd.handler.masquerade_address == "127.0.0.1"
         ftpd.close_all()
         ftpd = main(["--nat-address", "127.0.0.1", "-p", "0"])
         ftpd.close_all()
-        self.assertEqual(ftpd.handler.masquerade_address, "127.0.0.1")
+        assert ftpd.handler.masquerade_address == "127.0.0.1"
         # without argument
-        with self.assertRaises(SystemExit):
+        with pytest.raises(SystemExit):
             main(["-n", "-p", "0"])
 
     def test_range_opt(self):
         ftpd = main(["-r", "60000-61000", "-p", "0"])
-        self.assertEqual(
-            ftpd.handler.passive_ports, list(range(60000, 61000 + 1))
-        )
+        assert ftpd.handler.passive_ports == list(range(60000, 61000 + 1))
 
         # without arg
-        with self.assertRaises(SystemExit):
+        with pytest.raises(SystemExit):
             main(["-r"])
         # wrong arg
-        with self.assertRaises(SystemExit):
+        with pytest.raises(SystemExit):
             main(["-r", "yyy-zzz"])
 
     def test_debug_opt(self):
         main(["-D", "-p", "0"])
         main(["--debug", "-p", "0"])
         # with arg
-        with self.assertRaises(SystemExit):
+        with pytest.raises(SystemExit):
             main(["-D", "xxx"])
 
     def test_version_opt(self):
         for opt in ("-v", "--version"):
-            with self.assertRaises(SystemExit) as cm:
+            with pytest.raises(SystemExit) as cm:
                 main([opt, "-p", "0"])
-            self.assertEqual(str(cm.exception), "pyftpdlib %s" % __ver__)
+            assert str(cm.value) == "pyftpdlib %s" % __ver__
 
     def test_verbose_opt(self):
         for opt in ("-V", "--verbose"):
@@ -145,15 +146,7 @@ class TestCommandLineParser(PyftpdlibTestCase):
 
     def test_username_and_password_opt(self):
         ftpd = main(["--username", "foo", "--password", "bar", "-p", "0"])
-        self.assertTrue(
-            ftpd.handler.authorizer.has_user("foo"),
-        )
+        assert ftpd.handler.authorizer.has_user("foo")
         # no --password
-        with self.assertRaises(SystemExit) as cm:
+        with pytest.raises(SystemExit) as cm:
             main(["--username", "foo"])
-
-
-if __name__ == '__main__':
-    from pyftpdlib.test.runner import run_from_name
-
-    run_from_name(__file__)

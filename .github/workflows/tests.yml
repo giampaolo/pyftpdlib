@@ -51,13 +51,13 @@ jobs:
       - name: Install pydeps
         run: |
           python.exe -m pip install --upgrade --user setuptools pip wheel
-          python.exe -m pip install --upgrade mock ipaddress pypiwin32 wmi pyopenssl psutil
+          python.exe -m pip install --upgrade mock ipaddress pypiwin32 wmi pyopenssl psutil pytest
           python.exe -m pip freeze
           python.exe setup.py install
 
       - name: Tests
         run: |
-          python.exe pyftpdlib/test/runner.py
+          make test
 
   # Run linters
   linters:

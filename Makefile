@@ -3,7 +3,6 @@
 # $ make install PYTHON=python3.7
 
 PYTHON = python3
-TSCRIPT = pyftpdlib/test/runner.py
 ARGS =
 PYDEPS = \
 	black \
@@ -12,6 +11,8 @@ PYDEPS = \
 	psutil \
 	pylint \
 	pyopenssl \
+	pytest \
+	pytest-cov \
 	rstcheck \
 	ruff \
 	setuptools \
@@ -32,6 +33,7 @@ endif
 # In not in a virtualenv, add --user options for install commands.
 INSTALL_OPTS = `$(PYTHON) -c "import sys; print('' if hasattr(sys, 'real_prefix') else '--user')"`
 TEST_PREFIX = PYTHONWARNINGS=always
+PYTEST_ARGS = -v --tb=native -o cache_dir=/tmp/pyftpdlib-pytest-cache
 NUM_WORKERS = `$(PYTHON) -c "import os; print(os.cpu_count() or 1)"`
 
 
@@ -110,40 +112,44 @@ setup-dev-env: ## Install GIT hooks, pip, test deps (also upgrades them).
 
 test:  ## Run all tests. To run a specific test: do "make test ARGS=pyftpdlib.test.test_functional.TestFtpStoreData"
 	${MAKE} install
-	$(TEST_PREFIX) $(PYTHON) $(TSCRIPT) $(ARGS)
+	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS)
 
 test-functional:  ## Run functional FTP tests.
 	${MAKE} install
-	$(TEST_PREFIX) $(PYTHON) pyftpdlib/test/test_functional.py
+	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_functional.py
 
 test-functional-ssl:  ## Run functional FTPS tests.
 	${MAKE} install
-	$(TEST_PREFIX) $(PYTHON) pyftpdlib/test/test_functional_ssl.py
+	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_functional_ssl.py
 
 test-servers:  ## Run tests for FTPServer and its subclasses.
 	${MAKE} install
-	$(TEST_PREFIX) $(PYTHON) pyftpdlib/test/test_servers.py
+	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_servers.py
 
 test-authorizers:  ## Run tests for authorizers.
 	${MAKE} install
-	$(TEST_PREFIX) $(PYTHON) pyftpdlib/test/test_authorizers.py
+	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_authorizers.py
 
 test-filesystems:  ## Run filesystem tests.
 	${MAKE} install
-	$(TEST_PREFIX) $(PYTHON) pyftpdlib/test/test_filesystems.py
+	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_filesystems.py
 
 test-ioloop:  ## Run IOLoop tests.
 	${MAKE} install
-	$(TEST_PREFIX) $(PYTHON) pyftpdlib/test/test_ioloop.py
+	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_ioloop.py
 
 test-misc:  ## Run miscellaneous tests.
 	${MAKE} install
-	$(TEST_PREFIX) $(PYTHON) pyftpdlib/test/test_misc.py
+	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_misc.py
+
+test-lastfailed:  ## Run previously failed tests
+	${MAKE} install
+	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) --last-failed $(ARGS)
 
 test-coverage:  ## Run test coverage.
 	${MAKE} install
 	rm -rf .coverage htmlcov
-	PYTHONWARNINGS=all $(PYTHON) -m coverage run $(TSCRIPT)
+	$(TEST_PREFIX) $(PYTHON) -m coverage run -m pytest $(PYTEST_ARGS) $(ARGS)
 	$(PYTHON) -m coverage report
 	@echo "writing results to htmlcov/index.html"
 	$(PYTHON) -m coverage html
@@ -182,7 +188,7 @@ fix-black:
 	git ls-files '*.py' | xargs $(PYTHON) -m black
 
 fix-ruff:
-	@git ls-files '*.py' | xargs $(PYTHON) -m ruff --config=pyproject.toml --no-cache --fix  $(ARGS)
+	@git ls-files '*.py' | xargs $(PYTHON) -m ruff check --no-cache --fix $(ARGS)
 
 fix-toml:  ## Fix pyproject.toml
 	@git ls-files '*.toml' | xargs toml-sort

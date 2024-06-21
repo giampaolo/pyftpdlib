@@ -1,4 +1,4 @@
-|  |downloads| |stars| |forks| |contributors| |coverage|
+|  |downloads| |stars| |forks| |contributors|
 |  |version| |packages| |license|
 |  |github-actions| |appveyor| |doc| |twitter|
 
@@ -25,10 +25,6 @@
 .. |appveyor| image:: https://img.shields.io/appveyor/build/giampaolo/pyftpdlib/master.svg?maxAge=3600&label=Windows%20(py2)
     :target: https://ci.appveyor.com/project/giampaolo/pyftpdlib
     :alt: Windows (Py2, Windows)
-
-.. |coverage| image:: https://img.shields.io/codecov/c/github/giampaolo/pyftpdlib/update-ci?label=coverage
-    :target: https://codecov.io/gh/giampaolo/pyftpdlib
-    :alt: Test coverage
 
 .. |doc| image:: https://readthedocs.org/projects/pyftpdlib/badge/?version=latest
     :target: https://pyftpdlib.readthedocs.io/en/latest/

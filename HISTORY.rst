@@ -7,6 +7,7 @@ Version: 1.5.10 - (UNRELEASED)
 
 * #621: use black formatter.
 * #626: use argparse instead of deprecated optparse.
+* #628: use pytest instead of unittest.
 
 Version: 1.5.9 - 2023-10-25
 ===========================

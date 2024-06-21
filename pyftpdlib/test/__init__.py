@@ -396,7 +396,7 @@ def assert_free_resources(parent_pid=None):
     if POSIX:
         cons = [
             x
-            for x in this_proc.connections('tcp')
+            for x in this_proc.net_connections('tcp')
             if x.status != psutil.CONN_CLOSE_WAIT
         ]
         if cons:
