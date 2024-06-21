@@ -77,6 +77,7 @@ class TestCommandLineParser(PyftpdlibTestCase):
                 main(["-w", "-p", "0"])
 
         with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
             ftpd = main(["-w", "-p", "0"])
             perms = ftpd.handler.authorizer.get_perms("anonymous")
             assert (
@@ -85,8 +86,9 @@ class TestCommandLineParser(PyftpdlibTestCase):
             )
 
         # unexpected argument
-        with pytest.raises(SystemExit):
-            main(["-w", "foo", "-p", "0"])
+        with warnings.catch_warnings():
+            with pytest.raises(SystemExit):
+                main(["-w", "foo", "-p", "0"])
 
     def test_directory_opt(self):
         dirname = self.get_testfn()
