@@ -13,6 +13,7 @@ import pytest
 
 import pyftpdlib.ioloop
 from pyftpdlib._compat import PY3
+from pyftpdlib._compat import InterruptedError
 from pyftpdlib._compat import super
 from pyftpdlib.ioloop import Acceptor
 from pyftpdlib.ioloop import AsyncChat
@@ -168,9 +169,8 @@ class SelectIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
     def test_select_eintr(self):
         # EINTR is supposed to be ignored
         with mock.patch(
-            'pyftpdlib.ioloop.select.select', side_effect=select.error()
+            'pyftpdlib.ioloop.select.select', side_effect=InterruptedError
         ) as m:
-            m.side_effect.errno = errno.EINTR
             s, rd, wr = self.test_register()
             s.poll(0)
         # ...but just that

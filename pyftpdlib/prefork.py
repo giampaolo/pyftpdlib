@@ -4,7 +4,6 @@
 
 """Process utils."""
 
-import errno
 import os
 import sys
 import time
@@ -16,6 +15,7 @@ try:
 except ImportError:
     multiprocessing = None
 
+from ._compat import InterruptedError
 from ._compat import long
 from .log import logger
 
@@ -98,10 +98,8 @@ def fork_processes(number, max_restarts=100):
     while children:
         try:
             pid, status = os.wait()
-        except OSError as e:
-            if e.errno == errno.EINTR:
-                continue
-            raise
+        except InterruptedError:
+            continue
         if pid not in children:
             continue
         id = children.pop(pid)

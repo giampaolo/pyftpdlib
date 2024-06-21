@@ -66,6 +66,7 @@ import time
 import traceback
 
 from ._compat import PY3
+from ._compat import InterruptedError
 
 
 try:
@@ -485,10 +486,8 @@ class Select(_IOLoop):
     def poll(self, timeout):
         try:
             r, w, _ = select.select(self._r, self._w, [], timeout)
-        except select.error as err:
-            if getattr(err, "errno", None) == errno.EINTR:
-                return
-            raise
+        except InterruptedError:
+            return
 
         smap_get = self.socket_map.get
         for fd in r:
@@ -564,11 +563,8 @@ class _BasePollEpoll(_IOLoop):
             timeout = -1  # -1 waits indefinitely
         try:
             events = self._poller.poll(timeout)
-        except (IOError, select.error) as err:
-            # for epoll() and poll() respectively
-            if err.errno == errno.EINTR:
-                return
-            raise
+        except InterruptedError:
+            return
         # localize variable access to minimize overhead
         smap_get = self.socket_map.get
         for fd, event in events:
@@ -767,10 +763,8 @@ if hasattr(select, 'kqueue'):  # pragma: no cover
                 kevents = self._kqueue.control(
                     None, _len(self.socket_map), timeout
                 )
-            except OSError as err:
-                if err.errno == errno.EINTR:
-                    return
-                raise
+            except InterruptedError:
+                return
             for kevent in kevents:
                 inst = self.socket_map.get(kevent.ident)
                 if inst is None:
