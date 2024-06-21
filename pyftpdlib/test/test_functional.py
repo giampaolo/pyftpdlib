@@ -2758,7 +2758,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         self.client.login(USER, PASSWD)
 
     @retry_on_failure()
-    @pytest.mark.skipif(PY3, reason="PY2 only")
+    @pytest.mark.skipif(not PY3, reason="PY3 only")
     def test_unforeseen_mdtm_event(self):
         # Emulate a case where the file last modification time is prior
         # to year 1900.  This most likely will never happen unless
@@ -2768,9 +2768,6 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         # returns a negative value referring to a year prior to 1900.
         # It causes time.localtime/gmtime to raise a ValueError exception
         # which is supposed to be handled by server.
-
-        # On python 3 it seems that the trick of replacing the original
-        # method with the lambda doesn't work.
 
         class TestFS(AbstractedFS):
             def getmtime(self, *args, **kwargs):
