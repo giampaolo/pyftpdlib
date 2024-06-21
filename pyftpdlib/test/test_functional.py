@@ -281,27 +281,27 @@ class TestFtpDummyCmds(PyftpdlibTestCase):
         self.client.sendcmd('type i')
         self.client.sendcmd('type l7')
         self.client.sendcmd('type l8')
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="Unsupported type"):
             self.client.sendcmd('type ?!?')
 
     def test_stru(self):
         self.client.sendcmd('stru f')
         self.client.sendcmd('stru F')
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="Unimplemented"):
             self.client.sendcmd('stru p')
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="Unimplemented"):
             self.client.sendcmd('stru r')
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="Unrecognized"):
             self.client.sendcmd('stru ?!?')
 
     def test_mode(self):
         self.client.sendcmd('mode s')
         self.client.sendcmd('mode S')
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="Unimplemented"):
             self.client.sendcmd('mode b')
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="Unimplemented"):
             self.client.sendcmd('mode c')
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="Unrecognized"):
             self.client.sendcmd('mode ?!?')
 
     def test_noop(self):
@@ -320,7 +320,7 @@ class TestFtpDummyCmds(PyftpdlibTestCase):
         self.client.sendcmd('help')
         cmd = random.choice(list(FTPHandler.proto_cmds.keys()))
         self.client.sendcmd('help %s' % cmd)
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="Unrecognized"):
             self.client.sendcmd('help ?!?')
 
     def test_site(self):
