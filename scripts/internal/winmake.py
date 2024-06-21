@@ -403,9 +403,9 @@ def test_ioloop():
     sh("%s pyftpdlib\\test\\test_ioloop.py" % PYTHON)
 
 
-def test_misc():
+def test_cli():
     build()
-    sh("%s pyftpdlib\\test\\test_misc.py" % PYTHON)
+    sh("%s pyftpdlib\\test\\test_cli.py" % PYTHON)
 
 
 def test_servers():
