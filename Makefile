@@ -25,6 +25,7 @@ ifeq ($(PYVER), 2)
 		ipaddress \
 		mock \
 		psutil \
+		pytest \
 		pyopenssl \
 		pysendfile \
 		setuptools

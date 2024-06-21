@@ -2745,6 +2745,8 @@ class ThreadedFTPTests(PyftpdlibTestCase):
             close_client(self.client)
         if self.server:
             self.server.stop()
+            self.server.handler = FTPHandler
+            self.server.handler.abstracted_fs = AbstractedFS
         self.dummy_recvfile.close()
         self.dummy_sendfile.close()
         super().tearDown()
@@ -2755,6 +2757,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         self.client.login(USER, PASSWD)
 
     @retry_on_failure()
+    @pytest.mark.skipif(PY3, reason="PY2 only")
     def test_unforeseen_mdtm_event(self):
         # Emulate a case where the file last modification time is prior
         # to year 1900.  This most likely will never happen unless
@@ -2767,22 +2770,24 @@ class ThreadedFTPTests(PyftpdlibTestCase):
 
         # On python 3 it seems that the trick of replacing the original
         # method with the lambda doesn't work.
-        if not PY3:
-            _getmtime = AbstractedFS.getmtime
-            try:
-                AbstractedFS.getmtime = lambda x, y: -9000000000
-                with pytest.raises(
-                    ftplib.error_perm,
-                    match="550 Can't determine file's last modification time",
-                ):
-                    self.client.sendcmd(
-                        'mdtm ' + self.tempfile,
-                    )
-                # make sure client hasn't been disconnected
-                self.client.sendcmd('noop')
-                import pdb; pdb.set_trace()  # fmt: skip # noqa
-            finally:
-                AbstractedFS.getmtime = _getmtime
+
+        class TestFS(AbstractedFS):
+            def getmtime(self, *args, **kwargs):
+                return -9000000000
+
+        self.server = self.server_class()
+        self.server.handler.abstracted_fs = TestFS
+        self.server.start()
+        self.connect_client()
+
+        AbstractedFS.getmtime = lambda x, y: -9000000000
+        with pytest.raises(
+            ftplib.error_perm,
+            match="550 Can't determine file's last modification time",
+        ):
+            self.client.sendcmd(
+                'mdtm ' + self.tempfile,
+            )
 
     @retry_on_failure()
     def test_stou_max_tries(self):
@@ -2800,15 +2805,8 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         self.server.handler.abstracted_fs = TestFS
         self.server.start()
         self.connect_client()
-
-        try:
-            self.client.quit()
-            self.client.connect(self.server.host, self.server.port)
-            self.client.login(USER, PASSWD)
-            with pytest.raises(ftplib.error_temp):
-                self.client.sendcmd('stou')
-        finally:
-            self.server.handler.abstracted_fs = AbstractedFS
+        with pytest.raises(ftplib.error_temp):
+            self.client.sendcmd('stou')
 
     @retry_on_failure()
     def test_idle_timeout(self):
@@ -2820,19 +2818,16 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         self.server.start()
         self.connect_client()
 
-        try:
-            self.client.quit()
-            self.client.connect()
-            self.client.login(USER, PASSWD)
-            # fail if no msg is received within 1 second
-            self.client.sock.settimeout(1)
-            data = self.client.sock.recv(BUFSIZE)
-            assert data == b"421 Control connection timed out.\r\n"
-            # ensure client has been kicked off
-            with pytest.raises((socket.error, EOFError)):
-                self.client.sendcmd('noop')
-        finally:
-            self.server.handler.timeout = 0.1
+        self.client.quit()
+        self.client.connect()
+        self.client.login(USER, PASSWD)
+        # fail if no msg is received within 1 second
+        self.client.sock.settimeout(1)
+        data = self.client.sock.recv(BUFSIZE)
+        assert data == b"421 Control connection timed out.\r\n"
+        # ensure client has been kicked off
+        with pytest.raises((socket.error, EOFError)):
+            self.client.sendcmd('noop')
 
     @retry_on_failure()
     def test_permit_foreign_address_false(self):
