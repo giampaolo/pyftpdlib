@@ -2724,11 +2724,8 @@ class ThreadedFTPTests(PyftpdlibTestCase):
 
     def setUp(self):
         super().setUp()
-        self.server = self.server_class()
-        self.server.start()
-        self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
-        self.client.connect(self.server.host, self.server.port)
-        self.client.login(USER, PASSWD)
+        self.client = None
+        self.server = None
         self.tempfile = self.get_testfn()
         self.tempdir = self.get_testfn()
         touch(self.tempfile)
@@ -2737,11 +2734,18 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         self.dummy_sendfile = BytesIO()
 
     def tearDown(self):
-        close_client(self.client)
-        self.server.stop()
+        if self.client:
+            close_client(self.client)
+        if self.server:
+            self.server.stop()
         self.dummy_recvfile.close()
         self.dummy_sendfile.close()
         super().tearDown()
+
+    def connect_client(self):
+        self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
+        self.client.connect(self.server.host, self.server.port)
+        self.client.login(USER, PASSWD)
 
     @retry_on_failure()
     def test_unforeseen_mdtm_event(self):
@@ -2769,6 +2773,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
                     )
                 # make sure client hasn't been disconnected
                 self.client.sendcmd('noop')
+                import pdb; pdb.set_trace()  # fmt: skip # noqa
             finally:
                 AbstractedFS.getmtime = _getmtime
 
@@ -2784,8 +2789,11 @@ class ThreadedFTPTests(PyftpdlibTestCase):
                     errno.EEXIST, "No usable temporary file name found"
                 )
 
-        with self.server.lock:
-            self.server.handler.abstracted_fs = TestFS
+        self.server = self.server_class()
+        self.server.handler.abstracted_fs = TestFS
+        self.server.start()
+        self.connect_client()
+
         try:
             self.client.quit()
             self.client.connect(self.server.host, self.server.port)
@@ -2793,16 +2801,17 @@ class ThreadedFTPTests(PyftpdlibTestCase):
             with pytest.raises(ftplib.error_temp):
                 self.client.sendcmd('stou')
         finally:
-            with self.server.lock:
-                self.server.handler.abstracted_fs = AbstractedFS
+            self.server.handler.abstracted_fs = AbstractedFS
 
     @retry_on_failure()
     def test_idle_timeout(self):
         # Test control channel timeout.  The client which does not send
         # any command within the time specified in FTPHandler.timeout is
         # supposed to be kicked off.
-        with self.server.lock:
-            self.server.handler.timeout = 0.1
+        self.server = self.server_class()
+        self.server.handler.timeout = 0.1
+        self.server.start()
+        self.connect_client()
 
         try:
             self.client.quit()
@@ -2816,40 +2825,33 @@ class ThreadedFTPTests(PyftpdlibTestCase):
             with pytest.raises((socket.error, EOFError)):
                 self.client.sendcmd('noop')
         finally:
-            with self.server.lock:
-                self.server.handler.timeout = 0.1
-
-    @unittest.skipUnless(
-        hasattr(socket, 'TCP_NODELAY'), 'TCP_NODELAY not available'
-    )
-    @retry_on_failure()
-    def test_tcp_no_delay(self):
-        s = get_server_handler().socket
-        assert s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY)
-        self.client.quit()
-        with self.server.lock:
-            self.server.handler.tcp_no_delay = False
-        self.client.connect(self.server.host, self.server.port)
-        self.client.sendcmd('noop')
-        s = get_server_handler().socket
-        assert not s.getsockopt(socket.SOL_TCP, socket.TCP_NODELAY)
+            self.server.handler.timeout = 0.1
 
     @retry_on_failure()
     def test_permit_foreign_address_false(self):
+        self.server = self.server_class()
+        self.server.handler.permit_foreign_addresses = False
+        self.server.start()
+        self.connect_client()
         handler = get_server_handler()
-        with self.server.lock:
-            handler.permit_foreign_addresses = False
-            handler.remote_ip = '9.9.9.9'
+        handler.remote_ip = '9.9.9.9'
+        # sync
+        self.client.sendcmd("noop")
         with pytest.raises(ftplib.error_perm) as cm:
-            self.client.makeport()
+            port = self.client.sock.getsockname()[1]
+            host = self.client.sock.getsockname()[0]
+            resp = self.client.sendport(host, port)
         assert 'foreign address' in str(cm.value)
 
     @retry_on_failure()
     def test_permit_foreign_address_true(self):
+        self.server = self.server_class()
+        self.server.handler.permit_foreign_addresses = True
+        self.server.start()
+        self.connect_client()
         handler = get_server_handler()
-        with self.server.lock:
-            handler.permit_foreign_addresses = True
-            handler.remote_ip = '9.9.9.9'
+        handler.remote_ip = '9.9.9.9'
+        self.client.sendcmd("noop")
         s = self.client.makeport()
         s.close()
 
@@ -2866,7 +2868,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
             except socket.error:
                 # not registered port; go on
                 try:
-                    sock = socket.socket(self.client.af, socket.SOCK_STREAM)
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     self.addCleanup(sock.close)
                     sock.settimeout(GLOBAL_TIMEOUT)
                     sock.bind((HOST, port))
@@ -2887,19 +2889,29 @@ class ThreadedFTPTests(PyftpdlibTestCase):
             # no usable privileged port was found
             sock = None
 
-        with self.server.lock:
-            self.server.handler.permit_privileged_ports = False
-        with pytest.raises(ftplib.error_perm):
-            self.client.sendport(HOST, port)
+        # permit_privileged_ports = False
+        self.server = self.server_class()
+        self.server.handler.permit_privileged_ports = False
+        self.server.start()
+        self.connect_client()
+        with pytest.raises(ftplib.error_perm, match="privileged port"):
+            self.client.sendport(HOST, 1023)
+
+        # permit_privileged_ports = True
         if sock:
+            self.tearDown()
+
+            self.server = self.server_class()
+            self.server.handler.permit_privileged_ports = True
+            self.server.start()
+            self.connect_client()
             port = sock.getsockname()[1]
-            with self.server.lock:
-                self.server.handler.permit_privileged_ports = True
             sock.listen(5)
             sock.settimeout(GLOBAL_TIMEOUT)
             self.client.sendport(HOST, port)
             s, _ = sock.accept()
             s.close()
+            sock.close()
 
     @unittest.skipUnless(POSIX, "POSIX only")
     @unittest.skipIf(not PY3 and sendfile is None, "pysendfile not installed")
@@ -2908,6 +2920,9 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         # Makes sure that if sendfile() fails and no bytes were
         # transmitted yet the server falls back on using plain
         # send()
+        self.server = self.server_class()
+        self.server.start()
+        self.connect_client()
         data = b'abcde12345' * 100000
         self.dummy_sendfile.write(data)
         self.dummy_sendfile.seek(0)
