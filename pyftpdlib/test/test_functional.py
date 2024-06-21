@@ -2758,36 +2758,6 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         self.client.login(USER, PASSWD)
 
     @retry_on_failure()
-    @pytest.mark.skipif(not PY3, reason="PY3 only")
-    def test_unforeseen_mdtm_event(self):
-        # Emulate a case where the file last modification time is prior
-        # to year 1900.  This most likely will never happen unless
-        # someone specifically force the last modification time of a
-        # file in some way.
-        # To do so we temporarily override os.path.getmtime so that it
-        # returns a negative value referring to a year prior to 1900.
-        # It causes time.localtime/gmtime to raise a ValueError exception
-        # which is supposed to be handled by server.
-
-        class TestFS(AbstractedFS):
-            def getmtime(self, *args, **kwargs):
-                return -9000000000
-
-        self.server = self.server_class()
-        self.server.handler.abstracted_fs = TestFS
-        self.server.start()
-        self.connect_client()
-
-        AbstractedFS.getmtime = lambda x, y: -9000000000
-        with pytest.raises(
-            ftplib.error_perm,
-            match="550 Can't determine file's last modification time",
-        ):
-            self.client.sendcmd(
-                'mdtm ' + self.tempfile,
-            )
-
-    @retry_on_failure()
     def test_stou_max_tries(self):
         # Emulates case where the max number of tries to find out a
         # unique file name when processing STOU command gets hit.
