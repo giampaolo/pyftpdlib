@@ -22,7 +22,6 @@ try:
 except ImportError:
     from io import BytesIO
 
-import unittest
 
 import pytest
 
@@ -1043,8 +1042,10 @@ class TestFtpStoreData(PyftpdlibTestCase):
             assert not f.read()
 
 
-@unittest.skipUnless(POSIX, "POSIX only")
-@unittest.skipIf(not PY3 and sendfile is None, "pysendfile not installed")
+@pytest.mark.skipif(not POSIX, reason="POSIX only")
+@pytest.mark.skipif(
+    not PY3 and sendfile is None, reason="pysendfile not installed"
+)
 class TestFtpStoreDataNoSendfile(TestFtpStoreData):
     """Test STOR, STOU, APPE, REST, TYPE not using sendfile()."""
 
@@ -1184,8 +1185,10 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
         assert self.dummyfile.read() == b""
 
 
-@unittest.skipUnless(POSIX, "POSIX only")
-@unittest.skipIf(not PY3 and sendfile is None, "pysendfile not installed")
+@pytest.mark.skipif(not POSIX, reason="POSIX only")
+@pytest.mark.skipif(
+    not PY3 and sendfile is None, reason="pysendfile not installed"
+)
 class TestFtpRetrieveDataNoSendfile(TestFtpRetrieveData):
     """Test RETR, REST, TYPE by not using sendfile()."""
 
@@ -1434,8 +1437,10 @@ class TestFtpAbort(PyftpdlibTestCase):
             # with a 226
             assert self.client.voidresp()[:3] == '226'
 
-    @unittest.skipUnless(hasattr(socket, 'MSG_OOB'), "MSG_OOB not available")
-    @unittest.skipIf(OSX, "does not work on OSX")
+    @pytest.mark.skipif(
+        not hasattr(socket, 'MSG_OOB'), reason="MSG_OOB not available"
+    )
+    @pytest.mark.skipif(OSX, reason="does not work on OSX")
     def test_oob_abor(self):
         # Send ABOR by following the RFC-959 directives of sending
         # Telnet IP/Synch sequence as OOB data.
@@ -2236,7 +2241,7 @@ class _TestNetworkProtocols(object):  # noqa
             )
 
 
-@unittest.skipUnless(SUPPORTS_IPV4, "IPv4 not supported")
+@pytest.mark.skipif(not SUPPORTS_IPV4, reason="IPv4 not supported")
 class TestIPv4Environment(_TestNetworkProtocols, PyftpdlibTestCase):
     """Test PASV, EPSV, PORT and EPRT commands.
 
@@ -2286,7 +2291,7 @@ class TestIPv4Environment(_TestNetworkProtocols, PyftpdlibTestCase):
             s.connect((host, port))
 
 
-@unittest.skipUnless(SUPPORTS_IPV6, "IPv6 not supported")
+@pytest.mark.skipif(not SUPPORTS_IPV6, reason="IPv6 not supported")
 class TestIPv6Environment(_TestNetworkProtocols, PyftpdlibTestCase):
     """Test PASV, EPSV, PORT and EPRT commands.
 
@@ -2318,7 +2323,9 @@ class TestIPv6Environment(_TestNetworkProtocols, PyftpdlibTestCase):
         assert 'foreign address' in resp
 
 
-@unittest.skipUnless(SUPPORTS_HYBRID_IPV6, "IPv4/6 dual stack not supported")
+@pytest.mark.skipif(
+    not SUPPORTS_HYBRID_IPV6, reason="IPv4/6 dual stack not supported"
+)
 class TestIPv6MixedEnvironment(PyftpdlibTestCase):
     """By running the server by specifying "::" as IP address the
     server is supposed to listen on all interfaces, supporting both
@@ -2447,7 +2454,7 @@ class TestCornerCases(PyftpdlibTestCase):
             s, _ = sock.accept()
             s.close()
 
-    @unittest.skipUnless(POSIX, "POSIX only")
+    @pytest.mark.skipif(not POSIX, reason="POSIX only")
     def test_quick_connect(self):
         # Clients that connected and disconnected quickly could cause
         # the server to crash, due to a failure to catch errors in the
@@ -2541,7 +2548,7 @@ class TestCornerCases(PyftpdlibTestCase):
 # # TODO: disabled as on certain platforms (OSX and Windows)
 # # produces failures with python3. Will have to get back to
 # # this and fix it.
-# @unittest.skipIf(OSX or WINDOWS, "fails on OSX or Windows")
+# @pytest.mark.skipif(OSX or WINDOWS, reason="fails on OSX or Windows")
 # class TestUnicodePathNames(PyftpdlibTestCase):
 #     """Test FTP commands and responses by using path names with non
 #     ASCII characters.
@@ -2913,8 +2920,10 @@ class ThreadedFTPTests(PyftpdlibTestCase):
             s.close()
             sock.close()
 
-    @unittest.skipUnless(POSIX, "POSIX only")
-    @unittest.skipIf(not PY3 and sendfile is None, "pysendfile not installed")
+    @pytest.mark.skipif(not POSIX, reason="POSIX only")
+    @pytest.mark.skipif(
+        not PY3 and sendfile is None, reason="pysendfile not installed"
+    )
     @retry_on_failure()
     def test_sendfile_fails(self):
         # Makes sure that if sendfile() fails and no bytes were

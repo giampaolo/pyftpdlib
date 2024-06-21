@@ -7,7 +7,6 @@ import errno
 import select
 import socket
 import time
-import unittest
 
 import pytest
 
@@ -188,8 +187,9 @@ class SelectIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
 # ===================================================================
 
 
-@unittest.skipUnless(
-    hasattr(pyftpdlib.ioloop, 'Poll'), "poll() not available on this platform"
+@pytest.mark.skipif(
+    not hasattr(pyftpdlib.ioloop, 'Poll'),
+    reason="poll() not available on this platform",
 )
 class PollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
     ioloop_class = getattr(pyftpdlib.ioloop, "Poll", None)
@@ -264,9 +264,9 @@ class PollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
 # ===================================================================
 
 
-@unittest.skipUnless(
-    hasattr(pyftpdlib.ioloop, 'Epoll'),
-    "epoll() not available on this platform (Linux only)",
+@pytest.mark.skipif(
+    not hasattr(pyftpdlib.ioloop, 'Epoll'),
+    reason="epoll() not available on this platform (Linux only)",
 )
 class EpollIOLoopTestCase(PollIOLoopTestCase):
     ioloop_class = getattr(pyftpdlib.ioloop, "Epoll", None)
@@ -278,9 +278,9 @@ class EpollIOLoopTestCase(PollIOLoopTestCase):
 # ===================================================================
 
 
-@unittest.skipUnless(
-    hasattr(pyftpdlib.ioloop, 'DevPoll'),
-    "/dev/poll not available on this platform (Solaris only)",
+@pytest.mark.skipif(
+    not hasattr(pyftpdlib.ioloop, 'DevPoll'),
+    reason="/dev/poll not available on this platform (Solaris only)",
 )
 class DevPollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
     ioloop_class = getattr(pyftpdlib.ioloop, "DevPoll", None)
@@ -291,9 +291,9 @@ class DevPollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
 # ===================================================================
 
 
-@unittest.skipUnless(
-    hasattr(pyftpdlib.ioloop, 'Kqueue'),
-    "/dev/poll not available on this platform (BSD only)",
+@pytest.mark.skipif(
+    not hasattr(pyftpdlib.ioloop, 'Kqueue'),
+    reason="/dev/poll not available on this platform (BSD only)",
 )
 class KqueueIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
     ioloop_class = getattr(pyftpdlib.ioloop, "Kqueue", None)
