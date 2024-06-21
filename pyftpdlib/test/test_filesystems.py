@@ -4,7 +4,8 @@
 
 import os
 import tempfile
-import unittest
+
+import pytest
 
 from pyftpdlib._compat import getcwdu
 from pyftpdlib._compat import u
@@ -194,7 +195,7 @@ class TestAbstractedFS(PyftpdlibTestCase):
                     safe_rmpath(testfn)
 
 
-@unittest.skipUnless(POSIX, "UNIX only")
+@pytest.mark.skipif(not POSIX, reason="UNIX only")
 class TestUnixFilesystem(PyftpdlibTestCase):
 
     def test_case(self):

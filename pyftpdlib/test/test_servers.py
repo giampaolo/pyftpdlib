@@ -5,7 +5,8 @@
 import contextlib
 import ftplib
 import socket
-import unittest
+
+import pytest
 
 from pyftpdlib import handlers
 from pyftpdlib import servers
@@ -52,7 +53,7 @@ class TestFTPServer(PyftpdlibTestCase):
             self.server.stop()
         super().tearDown()
 
-    @unittest.skipIf(WINDOWS, "POSIX only")
+    @pytest.mark.skipif(WINDOWS, reason="POSIX only")
     def test_sock_instead_of_addr(self):
         # pass a socket object instead of an address tuple to FTPServer
         # constructor
@@ -164,7 +165,7 @@ if MPROCESS_SUPPORT:
 
 else:
 
-    @unittest.skipIf(True, "multiprocessing module not installed")
+    @pytest.mark.skip(reason="multiprocessing module not installed")
     class MProcFTPTestMixin:
         pass
 

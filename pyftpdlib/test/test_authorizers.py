@@ -6,7 +6,6 @@ import os
 import random
 import string
 import sys
-import unittest
 import warnings
 
 import pytest
@@ -484,9 +483,9 @@ class _SharedAuthorizerTests:
 # =====================================================================
 
 
-@unittest.skipUnless(POSIX, "UNIX only")
-@unittest.skipUnless(
-    UnixAuthorizer is not None, "UnixAuthorizer class not available"
+@pytest.mark.skipif(not POSIX, reason="UNIX only")
+@pytest.mark.skipif(
+    UnixAuthorizer is None, reason="UnixAuthorizer class not available"
 )
 class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
     """Unix authorizer specific tests."""
@@ -614,7 +613,7 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
 # =====================================================================
 
 
-@unittest.skipUnless(WINDOWS, "Windows only")
+@pytest.mark.skipif(not WINDOWS, reason="Windows only")
 class TestWindowsAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
     """Windows authorizer specific tests."""
 

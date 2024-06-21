@@ -7,7 +7,6 @@ import ftplib
 import os
 import socket
 import ssl
-import unittest
 
 import OpenSSL  # requires "pip install pyopenssl"
 import pytest
@@ -95,11 +94,11 @@ class TestFtpFsOperationsTLSMixin(TLSTestMixin, TestFtpFsOperations):
 
 class TestFtpStoreDataTLSMixin(TLSTestMixin, TestFtpStoreData):
 
-    @unittest.skipIf(1, "fails with SSL")
+    @pytest.mark.skip(reason="fails with SSL")
     def test_stou(self):
         pass
 
-    @unittest.skipIf(WINDOWS, "unreliable on Windows + SSL")
+    @pytest.mark.skipif(WINDOWS, reason="unreliable on Windows + SSL")
     def test_stor_ascii_2(self):
         pass
 
@@ -113,7 +112,7 @@ class TestFtpStoreDataTLSMixin(TLSTestMixin, TestFtpStoreData):
 
 class TestFtpRetrieveDataTLSMixin(TLSTestMixin, TestFtpRetrieveData):
 
-    @unittest.skipIf(WINDOWS, "may fail on windows")
+    @pytest.mark.skipif(WINDOWS, reason="may fail on windows")
     def test_restore_on_retr(self):
         super().test_restore_on_retr()
 
@@ -127,21 +126,21 @@ class TestFtpListingCmdsTLSMixin(TLSTestMixin, TestFtpListingCmds):
     # File "/opt/python/2.7.9/lib/python2.7/ssl.py", line 771, in unwrap
     #    s = self._sslobj.shutdown()
     # error: [Errno 0] Error
-    @unittest.skipIf(CI_TESTING, "may fail on CI")
+    @pytest.mark.skipif(CI_TESTING, reason="may fail on CI")
     def test_nlst(self):
         super().test_nlst()
 
 
 class TestFtpAbortTLSMixin(TLSTestMixin, TestFtpAbort):
 
-    @unittest.skipIf(1, "fails with SSL")
+    @pytest.mark.skip(reason="fails with SSL")
     def test_oob_abor(self):
         pass
 
 
 class TestTimeoutsTLSMixin(TLSTestMixin, TestTimeouts):
 
-    @unittest.skipIf(1, "fails with SSL")
+    @pytest.mark.skip(reason="fails with SSL")
     def test_data_timeout_not_reached(self):
         pass
 

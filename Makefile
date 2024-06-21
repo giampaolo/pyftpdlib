@@ -25,6 +25,7 @@ ifeq ($(PYVER), 2)
 		ipaddress \
 		mock \
 		psutil \
+		pytest \
 		pyopenssl \
 		pysendfile \
 		setuptools
@@ -138,9 +139,9 @@ test-ioloop:  ## Run IOLoop tests.
 	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_ioloop.py
 
-test-misc:  ## Run miscellaneous tests.
+test-cli:  ## Run miscellaneous tests.
 	${MAKE} install
-	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_misc.py
+	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_cli.py
 
 test-lastfailed:  ## Run previously failed tests
 	${MAKE} install

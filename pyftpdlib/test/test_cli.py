@@ -21,6 +21,7 @@ from pyftpdlib._compat import super
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.test import PyftpdlibTestCase
+from pyftpdlib.test import mock
 
 
 class TestCommandLineParser(PyftpdlibTestCase):
@@ -36,7 +37,6 @@ class TestCommandLineParser(PyftpdlibTestCase):
 
             def serve_forever(self, *args, **kwargs):
                 self.close_all()
-                return
 
         if PY3:
             import io
@@ -45,10 +45,12 @@ class TestCommandLineParser(PyftpdlibTestCase):
         else:
             self.devnull = BytesIO()
         self.original_ftpserver_class = FTPServer
+        self.clog = mock.patch("pyftpdlib.__main__.config_logging")
+        self.clog.start()
         pyftpdlib.__main__.FTPServer = DummyFTPServer
 
     def tearDown(self):
-        self.devnull.close()
+        self.clog.stop()
         pyftpdlib.servers.FTPServer = self.original_ftpserver_class
         super().tearDown()
 
@@ -77,6 +79,7 @@ class TestCommandLineParser(PyftpdlibTestCase):
                 main(["-w", "-p", "0"])
 
         with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
             ftpd = main(["-w", "-p", "0"])
             perms = ftpd.handler.authorizer.get_perms("anonymous")
             assert (
@@ -85,8 +88,9 @@ class TestCommandLineParser(PyftpdlibTestCase):
             )
 
         # unexpected argument
-        with pytest.raises(SystemExit):
-            main(["-w", "foo", "-p", "0"])
+        with warnings.catch_warnings():
+            with pytest.raises(SystemExit):
+                main(["-w", "foo", "-p", "0"])
 
     def test_directory_opt(self):
         dirname = self.get_testfn()
