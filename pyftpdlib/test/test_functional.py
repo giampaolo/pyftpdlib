@@ -1736,33 +1736,45 @@ class TestConfigurableOptions(PyftpdlibTestCase):
         c2 = self.client_class()
         c3 = self.client_class()
         try:
+            # on control connection
             c1.connect(self.server.host, self.server.port)
             c2.connect(self.server.host, self.server.port)
-            with pytest.raises(ftplib.error_temp):
+            with pytest.raises(
+                ftplib.error_temp, match="Too many connections"
+            ):
                 c3.connect(
                     self.server.host,
                     self.server.port,
                 )
+
             # with passive data channel established
             c2.quit()
             c1.login(USER, PASSWD)
             c1.makepasv()
-            with pytest.raises(ftplib.error_temp):
+            with pytest.raises(
+                ftplib.error_temp, match="Too many connections"
+            ):
                 c2.connect(
                     self.server.host,
                     self.server.port,
                 )
+
             # with passive data socket waiting for connection
             c1.login(USER, PASSWD)
             c1.sendcmd('pasv')
-            with pytest.raises(ftplib.error_temp):
+            with pytest.raises(
+                ftplib.error_temp, match="Too many connections"
+            ):
+                c2.close()
                 c2.connect(
                     self.server.host,
                     self.server.port,
                 )
+
             # with active data channel established
             c1.login(USER, PASSWD)
             with contextlib.closing(c1.makeport()):
+                c2.close()
                 with pytest.raises(ftplib.error_temp):
                     c2.connect(
                         self.server.host,
@@ -1772,7 +1784,10 @@ class TestConfigurableOptions(PyftpdlibTestCase):
             for c in (c1, c2, c3):
                 try:
                     c.quit()
-                except (socket.error, EOFError):  # already disconnected
+                except (socket.error, EOFError, ftplib.Error):
+                    # already disconnected
+                    pass
+                finally:
                     c.close()
 
     @disable_log_warning
