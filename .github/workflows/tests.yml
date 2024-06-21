@@ -3,57 +3,37 @@
 
 on: [push, pull_request]
 name: tests
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && github.sha || '' }}
+  cancel-in-progress: true
 jobs:
-  linux:
+  # Run unit tests
+  py3:
+    name: "py-${{ matrix.python-version }}, ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.11"]
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest]
 
     steps:
-      - uses: styfle/cancel-workflow-action@0.9.1
-        with:
-          access_token: ${{ github.token }}
+      - uses: actions/checkout@v4
 
-      - uses: actions/checkout@v3
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install pydeps
+      - name: Install pydeps ${{ matrix.os }}
+        if: matrix.os == 'windows-latest'
         run: |
-          make setup-dev-env PYTHON=python
-
-      - name: Tests
+          python.exe -m pip install --upgrade pypiwin32 wmi pyopenssl psutil pytest
+      - name: Install pydeps ${{ matrix.os }}
+        if: matrix.os != 'windows-latest'
         run: |
-          make test PYTHON=python
-
-  windows:
-    runs-on: windows-2019
-    strategy:
-      matrix:
-        python-version: ["3.11"]
-
-    steps:
-      - uses: styfle/cancel-workflow-action@0.9.1
-        with:
-          access_token: ${{ github.token }}
-
-      - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install pydeps
-        run: |
-          python.exe -m pip install --upgrade --user setuptools pip wheel
-          python.exe -m pip install --upgrade mock ipaddress pypiwin32 wmi pyopenssl psutil pytest
-          python.exe -m pip freeze
-          python.exe setup.py install
+          make setup-dev-env
 
       - name: Tests
         run: |
@@ -63,10 +43,10 @@ jobs:
   linters:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v3
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
     - name: 'Run linters'
       run: |
-        python3 -m pip install black ruff rstcheck toml-sort sphinx-rtd-theme
+        python3 -m pip install --upgrade black ruff rstcheck toml-sort sphinx-rtd-theme
         python3 -m pip freeze
         make lint-all
