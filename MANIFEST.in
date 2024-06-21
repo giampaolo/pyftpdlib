@@ -46,6 +46,7 @@ include pyftpdlib/prefork.py
 include pyftpdlib/servers.py
 include pyftpdlib/test/README
 include pyftpdlib/test/__init__.py
+include pyftpdlib/test/conftest.py
 include pyftpdlib/test/keycert.pem
 include pyftpdlib/test/test_authorizers.py
 include pyftpdlib/test/test_cli.py
