@@ -9,6 +9,11 @@ Version: 1.5.10 - (UNRELEASED)
 * #626: use argparse instead of deprecated optparse.
 * #628: use pytest instead of unittest.
 
+**Bug fixes**
+
+* #627: PermissionError may occur on Windows when binding ports from a
+  pre-configured PASV range.
+
 Version: 1.5.9 - 2023-10-25
 ===========================
 

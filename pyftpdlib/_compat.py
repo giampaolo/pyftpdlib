@@ -58,6 +58,7 @@ if PY3:
     FileNotFoundError = FileNotFoundError  # NOQA
     FileExistsError = FileExistsError  # NOQA
     InterruptedError = InterruptedError  # NOQA
+    PermissionError = PermissionError  # NOQA
 else:
     # https://github.com/PythonCharmers/python-future/blob/exceptions/
     #     src/future/types/exceptions/pep3151.py
@@ -97,12 +98,16 @@ else:
         return getattr(inst, 'errno', _SENTINEL) == errno.ENOENT
 
     @_instance_checking_exception(EnvironmentError)
-    def FileExistsError(inst):
-        return getattr(inst, 'errno', _SENTINEL) == errno.EEXIST
-
-    @_instance_checking_exception(EnvironmentError)
     def InterruptedError(inst):
         return getattr(inst, 'errno', _SENTINEL) == errno.EINTR
+
+    @_instance_checking_exception(EnvironmentError)
+    def PermissionError(inst):
+        return getattr(inst, 'errno', _SENTINEL) in (errno.EACCES, errno.EPERM)
+
+    @_instance_checking_exception(EnvironmentError)
+    def FileExistsError(inst):
+        return getattr(inst, 'errno', _SENTINEL) == errno.EEXIST
 
     if platform.python_implementation() != "CPython":
         try:

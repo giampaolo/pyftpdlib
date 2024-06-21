@@ -34,6 +34,7 @@ except ImportError:
 
 from . import __ver__
 from ._compat import PY3
+from ._compat import PermissionError
 from ._compat import b
 from ._compat import getcwdu
 from ._compat import super
@@ -477,6 +478,11 @@ class PassiveDTP(Acceptor):
                 self.set_reuse_addr()
                 try:
                     self.bind((local_ip, port))
+                except PermissionError:
+                    self.cmd_channel.log(
+                        "ignoring EPERM when bind()ing port %s" % port,
+                        logfun=logger.debug,
+                    )
                 except socket.error as err:
                     if err.errno == errno.EADDRINUSE:  # port already in use
                         if ports:
