@@ -2084,9 +2084,10 @@ class TestCallbacks(PyftpdlibTestCase):
                     break
         # If a data transfer is in progress server is supposed to send
         # a 426 reply followed by a 226 reply.
-        with pytest.raises(ftplib.error_temp):
-            self.client.getresp()  # 426
-        assert self.client.getresp()[:3] == "226"
+        resp = self.client.getmultiline()
+        assert resp == "426 Transfer aborted via ABOR."
+        resp = self.client.getmultiline()
+        assert resp.startswith("226")
         self.read_file(
             'on_connect,on_login:%s,on_incomplete_file_received:%s,'
             % (USER, self.testfn2)
