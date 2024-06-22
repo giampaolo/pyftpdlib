@@ -1,13 +1,14 @@
 Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 
-Version: 1.5.10 - (UNRELEASED)
-==============================
+Version: 1.6.0 - (UNRELEASED)
+=============================
 
 **Enhancements**
 
 * #621: use black formatter.
 * #626: use argparse instead of deprecated optparse.
 * #628: use pytest instead of unittest.
+* #632: add ability to run tests in parallel with `make test-parallel`.
 
 **Bug fixes**
 
