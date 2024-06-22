@@ -21,6 +21,7 @@ ifndef GITHUB_ACTIONS
 		coverage \
 		pylint \
 		pytest-cov \
+		pytest-xdist \
 		rstcheck \
 		ruff \
 		teyit \
@@ -124,6 +125,10 @@ setup-dev-env: ## Install GIT hooks, pip, test deps (also upgrades them).
 test:  ## Run all tests. To run a specific test: do "make test ARGS=pyftpdlib.test.test_functional.TestFtpStoreData"
 	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS)
+
+test-parallel:  ## Run all tests in parallel.
+	${MAKE} install
+	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) -n auto --dist loadgroup $(ARGS)
 
 test-functional:  ## Run functional FTP tests.
 	${MAKE} install
