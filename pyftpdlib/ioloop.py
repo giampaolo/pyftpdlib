@@ -62,14 +62,9 @@ import os
 import select
 import socket
 import sys
+import threading
 import time
 import traceback
-
-
-try:
-    import threading
-except ImportError:
-    import dummy_threading as threading
 
 from . import _asynchat as asynchat
 from . import _asyncore as asyncore
