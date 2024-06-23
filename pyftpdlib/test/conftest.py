@@ -28,12 +28,6 @@ def collect_resources():
     return res
 
 
-def setup(origin):
-    ctx = collect_resources()
-    ctx["_origin"] = origin
-    return ctx
-
-
 def warn(msg):
     warnings.warn(msg, ResourceWarning, stacklevel=3)
 
@@ -61,7 +55,17 @@ def assert_closed_resources(setup_ctx, request):
                 warn(msg)
 
 
+def setup_method(origin):
+    ctx = collect_resources()
+    ctx["_origin"] = origin
+    return ctx
+
+
+def teardown_method(setup_ctx, request):
+    assert_closed_resources(setup_ctx, request)
+
+
 @pytest.fixture(autouse=True, scope="function")
 def for_each_test_method(request):
-    ctx = setup(request.node.nodeid)
-    request.addfinalizer(lambda: assert_closed_resources(ctx, request))
+    ctx = setup_method(request.node.nodeid)
+    request.addfinalizer(lambda: teardown_method(ctx, request))
