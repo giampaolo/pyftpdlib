@@ -21,29 +21,27 @@ import warnings
 
 import psutil
 
+import pyftpdlib.servers
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
 
 
-# --- platforms
-
 HERE = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
 ROOT_DIR = os.path.realpath(os.path.join(HERE, '..', '..'))
+
 PYPY = '__pypy__' in sys.builtin_module_names
-GITHUB_ACTIONS = 'GITHUB_ACTIONS' in os.environ or 'CIBUILDWHEEL' in os.environ
-CI_TESTING = GITHUB_ACTIONS
-COVERAGE = 'COVERAGE_RUN' in os.environ
-# are we a 64 bit process?
-IS_64BIT = sys.maxsize > 2**32
 OSX = sys.platform.startswith("darwin")
 POSIX = os.name == 'posix'
 BSD = "bsd" in sys.platform
 WINDOWS = os.name == 'nt'
+
+GITHUB_ACTIONS = 'GITHUB_ACTIONS' in os.environ or 'CIBUILDWHEEL' in os.environ
+CI_TESTING = GITHUB_ACTIONS
+COVERAGE = 'COVERAGE_RUN' in os.environ
 LOG_FMT = "[%(levelname)1.1s t: %(threadName)-15s p: %(processName)-25s "
 LOG_FMT += "@%(module)-12s: %(lineno)-4s] %(message)s"
-
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
 try:
@@ -65,6 +63,12 @@ VERBOSITY = 1 if os.getenv('SILENT') else 2
 if CI_TESTING:
     GLOBAL_TIMEOUT *= 3
     NO_RETRIES *= 3
+
+SUPPORTS_IPV4 = None  # set later
+SUPPORTS_IPV6 = None  # set later
+SUPPORTS_MULTIPROCESSING = hasattr(pyftpdlib.servers, 'MultiprocessFTPServer')
+if BSD or OSX and GITHUB_ACTIONS:
+    SUPPORTS_MULTIPROCESSING = False  # XXX: it's broken!!
 
 
 class PyftpdlibTestCase(unittest.TestCase):
@@ -107,6 +111,8 @@ def close_client(session):
 def try_address(host, port=0, family=socket.AF_INET):
     """Try to bind a socket on the given host:port and return True
     if that has been possible."""
+    # Note: if IPv6 fails on Linux do:
+    # $ sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
     try:
         with contextlib.closing(socket.socket(family)) as sock:
             sock.bind((host, port))
@@ -117,8 +123,6 @@ def try_address(host, port=0, family=socket.AF_INET):
 
 
 SUPPORTS_IPV4 = try_address('127.0.0.1')
-# If this fails on Linux do:
-# $ sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
 SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
 
 
