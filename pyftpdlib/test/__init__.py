@@ -23,7 +23,6 @@ import warnings
 import psutil
 
 from pyftpdlib._compat import PY3
-from pyftpdlib._compat import FileNotFoundError
 from pyftpdlib._compat import super
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler

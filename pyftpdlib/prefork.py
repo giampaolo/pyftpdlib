@@ -15,7 +15,6 @@ try:
 except ImportError:
     multiprocessing = None
 
-from ._compat import InterruptedError
 from .log import logger
 
 

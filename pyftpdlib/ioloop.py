@@ -66,7 +66,6 @@ import time
 import traceback
 
 from ._compat import PY3
-from ._compat import InterruptedError
 
 
 try:
