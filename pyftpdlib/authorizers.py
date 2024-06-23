@@ -22,8 +22,6 @@ import errno
 import os
 import warnings
 
-from ._compat import PY3
-
 
 __all__ = [
     'DummyAuthorizer',
@@ -478,13 +476,9 @@ else:
         def get_home_dir(self, username):
             """Return user home directory."""
             try:
-                home = pwd.getpwnam(username).pw_dir
+                return pwd.getpwnam(username).pw_dir
             except KeyError:
                 raise AuthorizerError(self.msg_no_such_user)
-            else:
-                if not PY3:
-                    home = home.decode('utf8')
-                return home
 
         @staticmethod
         def _get_system_users():
@@ -689,10 +683,7 @@ try:
 except ImportError:
     pass
 else:  # pragma: no cover
-    if PY3:
-        import winreg
-    else:
-        import _winreg as winreg
+    import winreg
 
     __all__.extend(['BaseWindowsAuthorizer', 'WindowsAuthorizer'])
 

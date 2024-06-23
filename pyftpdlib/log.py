@@ -21,8 +21,6 @@ try:
 except ImportError:
     curses = None
 
-from ._compat import PY3
-
 
 # default logger
 logger = logging.getLogger('pyftpdlib')
@@ -75,8 +73,6 @@ class LogFormatter(logging.Formatter):
             fg_color = (
                 curses.tigetstr("setaf") or curses.tigetstr("setf") or ""
             )
-            if not PY3:
-                fg_color = str(fg_color, "ascii")
             self._colors = {
                 # blues
                 logging.DEBUG: str(curses.tparm(fg_color, 4), "ascii"),

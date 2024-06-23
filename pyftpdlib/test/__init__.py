@@ -22,7 +22,6 @@ import warnings
 
 import psutil
 
-from pyftpdlib._compat import PY3
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.handlers import _import_sendfile
@@ -286,10 +285,8 @@ class retry:
                         cls.tearDown()
                         cls.setUp()
                     continue
-            if PY3:
-                raise exc  # noqa: PLE0704
-            else:
-                raise  # noqa: PLE0704
+
+            raise exc  # noqa: PLE0704
 
         # This way the user of the decorated function can change config
         # parameters.

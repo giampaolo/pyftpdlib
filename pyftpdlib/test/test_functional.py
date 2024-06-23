@@ -707,8 +707,7 @@ class TestFtpFsOperations(PyftpdlibTestCase):
 
             def getmode():
                 mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
-                if PY3:
-                    mode = mode.replace('o', '')
+                mode = mode.replace('o', '')
                 return mode
 
             # on Windows it is possible to set read-only flag only

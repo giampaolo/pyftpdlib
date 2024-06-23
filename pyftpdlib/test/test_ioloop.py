@@ -11,7 +11,6 @@ import time
 import pytest
 
 import pyftpdlib.ioloop
-from pyftpdlib._compat import PY3
 from pyftpdlib.ioloop import Acceptor
 from pyftpdlib.ioloop import AsyncChat
 from pyftpdlib.ioloop import IOLoop
@@ -196,21 +195,13 @@ class PollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
     def test_eintr_on_poll(self):
         # EINTR is supposed to be ignored
         with mock.patch(self.poller_mock, return_vaue=mock.Mock()) as m:
-            if not PY3:
-                m.return_value.poll.side_effect = select.error
-                m.return_value.poll.side_effect.errno = errno.EINTR
-            else:
-                m.return_value.poll.side_effect = OSError(errno.EINTR, "")
+            m.return_value.poll.side_effect = OSError(errno.EINTR, "")
             s, rd, wr = self.test_register()
             s.poll(0)
             assert m.called
         # ...but just that
         with mock.patch(self.poller_mock, return_vaue=mock.Mock()) as m:
-            if not PY3:
-                m.return_value.poll.side_effect = select.error
-                m.return_value.poll.side_effect.errno = errno.EBADF
-            else:
-                m.return_value.poll.side_effect = OSError(errno.EBADF, "")
+            m.return_value.poll.side_effect = OSError(errno.EBADF, "")
             s, rd, wr = self.test_register()
             with pytest.raises(select.error):
                 s.poll(0)

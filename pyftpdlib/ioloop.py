@@ -65,26 +65,18 @@ import sys
 import time
 import traceback
 
-from ._compat import PY3
-
 
 try:
     import threading
 except ImportError:
     import dummy_threading as threading
 
+from . import _asynchat as asynchat
+from . import _asyncore as asyncore
 from .log import config_logging
 from .log import debug
 from .log import is_logging_configured
 from .log import logger
-
-
-if PY3:
-    from . import _asynchat as asynchat
-    from . import _asyncore as asyncore
-else:
-    import asynchat
-    import asyncore
 
 
 timer = getattr(time, 'monotonic', time.time)

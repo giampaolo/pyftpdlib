@@ -32,6 +32,7 @@ except ImportError:
     OrderedDict = dict
 
 from . import __ver__
+from . import _asynchat as asynchat
 from ._compat import PY3
 from .authorizers import AuthenticationFailed
 from .authorizers import AuthorizerError
@@ -47,12 +48,6 @@ from .ioloop import RetryError
 from .ioloop import timer
 from .log import debug
 from .log import logger
-
-
-if PY3:
-    from . import _asynchat as asynchat
-else:
-    import asynchat
 
 
 CR_BYTE = ord('\r')

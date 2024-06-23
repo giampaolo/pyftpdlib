@@ -2,21 +2,15 @@
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
 
+import io
 import os
 import warnings
-
-
-try:
-    from StringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
 
 import pytest
 
 import pyftpdlib
 from pyftpdlib import __ver__
 from pyftpdlib.__main__ import main
-from pyftpdlib._compat import PY3
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.test import PyftpdlibTestCase
@@ -37,12 +31,7 @@ class TestCommandLineParser(PyftpdlibTestCase):
             def serve_forever(self, *args, **kwargs):
                 self.close_all()
 
-        if PY3:
-            import io
-
-            self.devnull = io.StringIO()
-        else:
-            self.devnull = BytesIO()
+        self.devnull = io.BytesIO()
         self.original_ftpserver_class = FTPServer
         self.clog = mock.patch("pyftpdlib.__main__.config_logging")
         self.clog.start()
