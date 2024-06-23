@@ -24,7 +24,7 @@ THIS_SCRIPT = os.path.realpath(__file__)
 
 def term_supports_colors():
     try:
-        import curses
+        import curses  # noqa: PLC0415
 
         assert sys.stderr.isatty()
         curses.setupterm()

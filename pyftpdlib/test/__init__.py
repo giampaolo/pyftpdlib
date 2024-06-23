@@ -366,8 +366,8 @@ def assert_free_resources(parent_pid=None):
 def reset_server_opts():
     # Since all pyftpdlib configurable "options" are class attributes
     # we reset them at module.class level.
-    import pyftpdlib.handlers
-    import pyftpdlib.servers
+    import pyftpdlib.handlers  # noqa: PLC0415
+    import pyftpdlib.servers  # noqa: PLC0415
 
     # Control handlers.
     tls_handler = getattr(

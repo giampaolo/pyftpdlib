@@ -37,7 +37,7 @@ def get_version():
 
 def term_supports_colors():
     try:
-        import curses
+        import curses  # noqa: PLC0415
 
         assert sys.stderr.isatty()
         curses.setupterm()

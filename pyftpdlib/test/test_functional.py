@@ -14,6 +14,7 @@ import select
 import socket
 import ssl
 import stat
+import struct
 import time
 from unittest.mock import patch
 
@@ -2439,8 +2440,6 @@ class TestCornerCases(PyftpdlibTestCase):
         # initial part of the connection process.
         # Tracked in issues #91, #104 and #105.
         # See also https://bugs.launchpad.net/zodb/+bug/135108
-        import struct
-
         def connect(addr):
             with contextlib.closing(socket.socket()) as s:
                 # Set SO_LINGER to 1,0 causes a connection reset (RST) to

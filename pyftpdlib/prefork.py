@@ -5,6 +5,7 @@
 """Process utils."""
 
 import os
+import random
 import sys
 import time
 from binascii import hexlify
@@ -37,9 +38,6 @@ def cpu_count():
 
 
 def _reseed_random():
-    if 'random' not in sys.modules:
-        return
-    import random
 
     # If os.urandom is available, this method does the same thing as
     # random.seed.  If os.urandom is not available, we mix in the pid in
