@@ -2477,7 +2477,7 @@ class TestCornerCases(PyftpdlibTestCase):
             assert len1 == len2
         finally:
             logger.disabled = False
-            server.close()
+            server.close_all()
 
     def test_active_conn_error(self):
         # we open a socket() but avoid to invoke accept() to
