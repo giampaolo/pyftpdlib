@@ -26,7 +26,6 @@ except ImportError:
 import pytest
 
 from pyftpdlib._compat import PY3
-from pyftpdlib._compat import b
 from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.handlers import SUPPORTS_HYBRID_IPV6
 from pyftpdlib.handlers import DTPHandler
@@ -822,7 +821,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
         self.client.retrbinary(
             'retr ' + self.testfn, self.dummy_recvfile.write
         )
-        expected = data.replace(b'\r\n', b(os.linesep))
+        expected = data.replace(b'\r\n', bytes(os.linesep, "ascii"))
         self.dummy_recvfile.seek(0)
         datafile = self.dummy_recvfile.read()
         assert len(expected) == len(datafile)
@@ -856,7 +855,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
             self.dummy_sendfile.seek(0)
             store('stor ' + self.testfn, self.dummy_sendfile)
 
-            expected = data.replace(b'\r\n', b(os.linesep))
+            expected = data.replace(b'\r\n', bytes(os.linesep, "ascii"))
             self.client.retrbinary(
                 'retr ' + self.testfn, self.dummy_recvfile.write
             )
@@ -1116,11 +1115,11 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
 
     def test_retr_ascii(self):
         # Test RETR in ASCII mode.
-        data = (b'abcde12345' + b(os.linesep)) * 100000
+        data = (b'abcde12345' + bytes(os.linesep, "ascii")) * 100000
         with open(self.testfn, 'wb') as f:
             f.write(data)
         self.retrieve_ascii("retr " + self.testfn, self.dummyfile.write)
-        expected = data.replace(b(os.linesep), b'\r\n')
+        expected = data.replace(bytes(os.linesep, "ascii"), b'\r\n')
         self.dummyfile.seek(0)
         datafile = self.dummyfile.read()
         assert len(expected) == len(datafile)
@@ -1446,8 +1445,8 @@ class TestFtpAbort(PyftpdlibTestCase):
         # due to a different SO_OOBINLINE behavior.
         # On some platforms (e.g. Python CE) the test may fail
         # although the MSG_OOB constant is defined.
-        self.client.sock.sendall(b(chr(244)), socket.MSG_OOB)
-        self.client.sock.sendall(b(chr(255)), socket.MSG_OOB)
+        self.client.sock.sendall(bytes(chr(244), "latin-1"), socket.MSG_OOB)
+        self.client.sock.sendall(bytes(chr(255), "latin-1"), socket.MSG_OOB)
         self.client.sock.sendall(b'abor\r\n')
         assert self.client.getresp()[:3] == '225'
 
@@ -2446,9 +2445,9 @@ class TestCornerCases(PyftpdlibTestCase):
 
             hbytes = host.split('.')
             pbytes = [repr(port // 256), repr(port % 256)]
-            bytes = hbytes + pbytes
-            cmd = 'PORT ' + ','.join(bytes) + '\r\n'
-            self.client.sock.sendall(b(cmd))
+            data = hbytes + pbytes
+            cmd = 'PORT ' + ','.join(data) + '\r\n'
+            self.client.sock.sendall(bytes(cmd, "latin-1"))
             self.client.getresp()
             s, _ = sock.accept()
             s.close()

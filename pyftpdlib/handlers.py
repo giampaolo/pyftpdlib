@@ -34,7 +34,6 @@ except ImportError:
 
 from . import __ver__
 from ._compat import PY3
-from ._compat import b
 from ._compat import unicode
 from .authorizers import AuthenticationFailed
 from .authorizers import AuthorizerError
@@ -881,7 +880,7 @@ class DTPHandler(AsyncChat):
         else:
             self._had_cr = False
 
-        return chunk.replace(b'\r\n', b(os.linesep))
+        return chunk.replace(b'\r\n', bytes(os.linesep, "ascii"))
 
     def enable_receiving(self, type, cmd):
         """Enable receiving of data over the channel. Depending on the

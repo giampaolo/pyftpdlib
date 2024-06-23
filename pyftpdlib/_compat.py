@@ -13,15 +13,4 @@ import sys
 PY3 = sys.version_info[0] >= 3
 _SENTINEL = object()
 
-if PY3:
-
-    def b(s):
-        return s.encode("latin-1")
-
-    unicode = str
-else:
-
-    def b(s):
-        return s
-
-    unicode = unicode
+unicode = str if PY3 else unicode  # noqa
