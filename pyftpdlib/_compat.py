@@ -35,15 +35,6 @@ else:
     unicode = unicode
 
 
-# removed in 3.0, reintroduced in 3.2
-try:
-    callable = callable
-except Exception:
-
-    def callable(obj):
-        return any("__call__" in klass.__dict__ for klass in type(obj).__mro__)
-
-
 # --- exceptions
 
 

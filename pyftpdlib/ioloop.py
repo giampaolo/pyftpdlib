@@ -74,7 +74,6 @@ try:
 except ImportError:
     import dummy_threading as threading
 
-from ._compat import callable
 from .log import config_logging
 from .log import debug
 from .log import is_logging_configured
