@@ -2426,7 +2426,7 @@ class FTPHandler(AsyncChat):
         self._restart_position = 0
         try:
             fd = self.run_as_current_user(self.fs.open, file, 'rb')
-        except (EnvironmentError, FilesystemError) as err:
+        except (OSError, FilesystemError) as err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
             return
@@ -2450,7 +2450,7 @@ class FTPHandler(AsyncChat):
                         rest_pos,
                         fsize,
                     )
-                except (EnvironmentError, FilesystemError) as err:
+                except (OSError, FilesystemError) as err:
                     why = _strerror(err)
                 if not ok:
                     fd.close()
@@ -2479,7 +2479,7 @@ class FTPHandler(AsyncChat):
             mode = 'r+'
         try:
             fd = self.run_as_current_user(self.fs.open, file, mode + 'b')
-        except (EnvironmentError, FilesystemError) as err:
+        except (OSError, FilesystemError) as err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
             return
@@ -2503,7 +2503,7 @@ class FTPHandler(AsyncChat):
                         rest_pos,
                         fsize,
                     )
-                except (EnvironmentError, FilesystemError) as err:
+                except (OSError, FilesystemError) as err:
                     why = _strerror(err)
                 if not ok:
                     fd.close()
@@ -2553,7 +2553,7 @@ class FTPHandler(AsyncChat):
             fd = self.run_as_current_user(
                 self.fs.mkstemp, prefix=prefix, dir=basedir
             )
-        except (EnvironmentError, FilesystemError) as err:
+        except (OSError, FilesystemError) as err:
             # likely, we hit the max number of retries to find out a
             # file with a unique name
             if getattr(err, "errno", -1) == errno.EEXIST:

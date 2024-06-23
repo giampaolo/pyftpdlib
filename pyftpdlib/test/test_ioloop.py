@@ -210,15 +210,11 @@ class PollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
     def test_eexist_on_register(self):
         # EEXIST is supposed to be ignored
         with patch(self.poller_mock, return_vaue=Mock()) as m:
-            m.return_value.register.side_effect = EnvironmentError(
-                errno.EEXIST, ""
-            )
+            m.return_value.register.side_effect = OSError(errno.EEXIST, "")
             s, rd, wr = self.test_register()
         # ...but just that
         with patch(self.poller_mock, return_vaue=Mock()) as m:
-            m.return_value.register.side_effect = EnvironmentError(
-                errno.EBADF, ""
-            )
+            m.return_value.register.side_effect = OSError(errno.EBADF, "")
             with pytest.raises(EnvironmentError):
                 self.test_register()
 
@@ -226,16 +222,12 @@ class PollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
         # ENOENT and EBADF are supposed to be ignored
         for errnum in (errno.EBADF, errno.ENOENT):
             with patch(self.poller_mock, return_vaue=Mock()) as m:
-                m.return_value.unregister.side_effect = EnvironmentError(
-                    errnum, ""
-                )
+                m.return_value.unregister.side_effect = OSError(errnum, "")
                 s, rd, wr = self.test_register()
                 s.unregister(rd)
         # ...but just those
         with patch(self.poller_mock, return_vaue=Mock()) as m:
-            m.return_value.unregister.side_effect = EnvironmentError(
-                errno.EEXIST, ""
-            )
+            m.return_value.unregister.side_effect = OSError(errno.EEXIST, "")
             s, rd, wr = self.test_register()
             with pytest.raises(EnvironmentError):
                 s.unregister(rd)

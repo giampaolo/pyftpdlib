@@ -397,7 +397,7 @@ class _SpawnerBase(FTPServer):
             handler.ioloop = ioloop
             try:
                 handler.add_channel()
-            except EnvironmentError as err:
+            except OSError as err:
                 if err.errno == errno.EBADF:
                     # we might get here in case the other end quickly
                     # disconnected (see test_quick_connect())

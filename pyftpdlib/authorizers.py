@@ -18,7 +18,6 @@ interact with UNIX and Windows password database.
 """
 
 
-import errno
 import os
 import warnings
 
@@ -650,10 +649,8 @@ else:
             """
             try:
                 file = open('/etc/shells')
-            except IOError as err:
-                if err.errno == errno.ENOENT:
-                    return True
-                raise
+            except FileNotFoundError:
+                return True
             else:
                 with file:
                     try:
@@ -756,7 +753,7 @@ else:  # pragma: no cover
             path += r"\CurrentVersion\ProfileList" + "\\" + sid
             try:
                 key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path)
-            except WindowsError:
+            except OSError:
                 raise AuthorizerError(
                     "No profile directory defined for user %s" % username
                 )

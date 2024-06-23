@@ -68,7 +68,7 @@ def get_pid():
     try:
         with open(PID_FILE) as f:
             return int(f.read().strip())
-    except IOError as err:
+    except OSError as err:
         if err.errno != errno.ENOENT:
             raise
 

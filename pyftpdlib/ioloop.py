@@ -506,7 +506,7 @@ class _BasePollEpoll(_IOLoop):
     def register(self, fd, instance, events):
         try:
             self._poller.register(fd, events)
-        except EnvironmentError as err:
+        except OSError as err:
             if err.errno == errno.EEXIST:
                 debug("call: register(); poller raised EEXIST; ignored", self)
             else:
@@ -521,7 +521,7 @@ class _BasePollEpoll(_IOLoop):
         else:
             try:
                 self._poller.unregister(fd)
-            except EnvironmentError as err:
+            except OSError as err:
                 if err.errno in (errno.ENOENT, errno.EBADF):
                     debug(
                         "call: unregister(); poller returned %r; ignoring it"
@@ -680,13 +680,8 @@ if hasattr(select, 'kqueue'):  # pragma: no cover
             self.socket_map[fd] = instance
             try:
                 self._control(fd, events, select.KQ_EV_ADD)
-            except EnvironmentError as err:
-                if err.errno == errno.EEXIST:
-                    debug(
-                        "call: register(); poller raised EEXIST; ignored", self
-                    )
-                else:
-                    raise
+            except FileExistsError:
+                debug("call: register(); poller raised EEXIST; ignored", self)
             self._active[fd] = events
 
         def unregister(self, fd):
@@ -698,7 +693,7 @@ if hasattr(select, 'kqueue'):  # pragma: no cover
             else:
                 try:
                     self._control(fd, events, select.KQ_EV_DELETE)
-                except EnvironmentError as err:
+                except OSError as err:
                     if err.errno in (errno.ENOENT, errno.EBADF):
                         debug(
                             "call: unregister(); poller returned %r; "

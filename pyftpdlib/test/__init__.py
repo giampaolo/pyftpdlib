@@ -147,7 +147,7 @@ def safe_rmpath(path):
                 return fun()
             except FileNotFoundError:
                 pass
-            except WindowsError as _:
+            except OSError as _:
                 err = _
                 warnings.warn(
                     "ignoring %s" % str(err), UserWarning, stacklevel=2
