@@ -39,6 +39,7 @@ COVERAGE = 'COVERAGE_RUN' in os.environ
 IS_64BIT = sys.maxsize > 2**32
 OSX = sys.platform.startswith("darwin")
 POSIX = os.name == 'posix'
+BSD = "bsd" in sys.platform
 WINDOWS = os.name == 'nt'
 LOG_FMT = "[%(levelname)1.1s t: %(threadName)-15s p: %(processName)-25s "
 LOG_FMT += "@%(module)-12s: %(lineno)-4s] %(message)s"

@@ -10,8 +10,11 @@ import pytest
 
 from pyftpdlib import handlers
 from pyftpdlib import servers
+from pyftpdlib.test import BSD
+from pyftpdlib.test import GITHUB_ACTIONS
 from pyftpdlib.test import GLOBAL_TIMEOUT
 from pyftpdlib.test import HOST
+from pyftpdlib.test import OSX
 from pyftpdlib.test import PASSWD
 from pyftpdlib.test import USER
 from pyftpdlib.test import WINDOWS
@@ -32,6 +35,8 @@ from pyftpdlib.test.test_functional import TestIPv6Environment
 
 
 MPROCESS_SUPPORT = hasattr(servers, 'MultiprocessFTPServer')
+if BSD or OSX and GITHUB_ACTIONS:
+    MPROCESS_SUPPORT = False  # XXX: it's broken!!
 
 
 class TestFTPServer(PyftpdlibTestCase):

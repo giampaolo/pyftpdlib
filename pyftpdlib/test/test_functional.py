@@ -40,7 +40,6 @@ from pyftpdlib.test import SUPPORTS_IPV4
 from pyftpdlib.test import SUPPORTS_IPV6
 from pyftpdlib.test import USER
 from pyftpdlib.test import WINDOWS
-from pyftpdlib.test import MProcessTestFTPd
 from pyftpdlib.test import PyftpdlibTestCase
 from pyftpdlib.test import ThreadedTestFTPd
 from pyftpdlib.test import close_client
@@ -54,7 +53,7 @@ from pyftpdlib.test import touch
 class TestFtpAuthentication(PyftpdlibTestCase):
     """Test: USER, PASS, REIN."""
 
-    server_class = MProcessTestFTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -244,7 +243,7 @@ class TestFtpAuthentication(PyftpdlibTestCase):
 class TestFtpDummyCmds(PyftpdlibTestCase):
     """Test: TYPE, STRU, MODE, NOOP, SYST, ALLO, HELP, SITE HELP."""
 
-    server_class = MProcessTestFTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -381,7 +380,7 @@ class TestFtpDummyCmds(PyftpdlibTestCase):
 
 
 class TestFtpCmdsSemantic(PyftpdlibTestCase):
-    server_class = MProcessTestFTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
     arg_cmds = [
         'allo',
@@ -498,7 +497,7 @@ class TestFtpFsOperations(PyftpdlibTestCase):
     STAT, MFMT.
     """
 
-    server_class = MProcessTestFTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -734,7 +733,7 @@ class CustomIO(io.RawIOBase):
 class TestFtpStoreData(PyftpdlibTestCase):
     """Test STOR, STOU, APPE, REST, TYPE."""
 
-    server_class = MProcessTestFTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
     use_sendfile = None
     use_custom_io = False
@@ -1042,7 +1041,7 @@ class TestFtpStoreDataWithCustomIO(TestFtpStoreData):
 class TestFtpRetrieveData(PyftpdlibTestCase):
     """Test RETR, REST, TYPE."""
 
-    server_class = MProcessTestFTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
     use_sendfile = None
     use_custom_io = False
@@ -1182,7 +1181,7 @@ class TestFtpRetrieveDataCustomIO(TestFtpRetrieveData):
 class TestFtpListingCmds(PyftpdlibTestCase):
     """Test LIST, NLST, argumented STAT."""
 
-    server_class = MProcessTestFTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -1347,7 +1346,7 @@ class TestFtpListingCmds(PyftpdlibTestCase):
 class TestFtpAbort(PyftpdlibTestCase):
     """Test: ABOR."""
 
-    server_class = MProcessTestFTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -1435,7 +1434,7 @@ class TestFtpAbort(PyftpdlibTestCase):
 class TestThrottleBandwidth(PyftpdlibTestCase):
     """Test ThrottledDTPHandler class."""
 
-    server_class = MProcessTestFTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -1509,7 +1508,7 @@ class TestTimeouts(PyftpdlibTestCase):
     Some tests may fail on slow machines.
     """
 
-    server_class = MProcessTestFTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -1675,7 +1674,7 @@ class TestTimeouts(PyftpdlibTestCase):
 class TestConfigurableOptions(PyftpdlibTestCase):
     """Test those daemon options which are commonly modified by user."""
 
-    server_class = MProcessTestFTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -1915,7 +1914,7 @@ class TestConfigurableOptions(PyftpdlibTestCase):
 
 
 class TestCallbacks(PyftpdlibTestCase):
-    server_class = MProcessTestFTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -2228,7 +2227,7 @@ class TestIPv4Environment(_TestNetworkProtocols, PyftpdlibTestCase):
     plus some additional specific tests.
     """
 
-    server_class = MProcessTestFTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
     HOST = '127.0.0.1'
 
@@ -2278,7 +2277,7 @@ class TestIPv6Environment(_TestNetworkProtocols, PyftpdlibTestCase):
     plus some additional specific tests.
     """
 
-    server_class = MProcessTestFTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
     HOST = '::1'
 
@@ -2314,7 +2313,7 @@ class TestIPv6MixedEnvironment(PyftpdlibTestCase):
     manner and try to connect by using an IPv4 client.
     """
 
-    server_class = MProcessTestFTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
     HOST = "::"
 
@@ -2396,7 +2395,7 @@ class TestCornerCases(PyftpdlibTestCase):
     mainly referring to bugs signaled on the bug tracker.
     """
 
-    server_class = MProcessTestFTPd
+    server_class = ThreadedTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -2518,7 +2517,7 @@ class TestCornerCases(PyftpdlibTestCase):
 #     """Test FTP commands and responses by using path names with non
 #     ASCII characters.
 #     """
-#     server_class = MProcessTestFTPd
+#     server_class = ThreadedTestFTPd
 #     client_class = ftplib.FTP
 
 #     def setUp(self):
