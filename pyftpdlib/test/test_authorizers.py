@@ -13,13 +13,14 @@ import pytest
 from pyftpdlib.authorizers import AuthenticationFailed
 from pyftpdlib.authorizers import AuthorizerError
 from pyftpdlib.authorizers import DummyAuthorizer
-from pyftpdlib.test import HOME
-from pyftpdlib.test import PASSWD
-from pyftpdlib.test import POSIX
-from pyftpdlib.test import USER
-from pyftpdlib.test import WINDOWS
-from pyftpdlib.test import PyftpdlibTestCase
-from pyftpdlib.test import touch
+
+from . import HOME
+from . import PASSWD
+from . import POSIX
+from . import USER
+from . import WINDOWS
+from . import PyftpdlibTestCase
+from . import touch
 
 
 if POSIX:

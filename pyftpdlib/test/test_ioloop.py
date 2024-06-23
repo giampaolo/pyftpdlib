@@ -16,8 +16,9 @@ from pyftpdlib.ioloop import Acceptor
 from pyftpdlib.ioloop import AsyncChat
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.ioloop import RetryError
-from pyftpdlib.test import POSIX
-from pyftpdlib.test import PyftpdlibTestCase
+
+from . import POSIX
+from . import PyftpdlibTestCase
 
 
 if hasattr(socket, 'socketpair'):

@@ -8,11 +8,12 @@ import tempfile
 import pytest
 
 from pyftpdlib.filesystems import AbstractedFS
-from pyftpdlib.test import HOME
-from pyftpdlib.test import POSIX
-from pyftpdlib.test import PyftpdlibTestCase
-from pyftpdlib.test import safe_rmpath
-from pyftpdlib.test import touch
+
+from . import HOME
+from . import POSIX
+from . import PyftpdlibTestCase
+from . import safe_rmpath
+from . import touch
 
 
 if POSIX:

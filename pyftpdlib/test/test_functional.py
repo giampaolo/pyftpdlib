@@ -27,27 +27,28 @@ from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.handlers import ThrottledDTPHandler
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
-from pyftpdlib.test import BUFSIZE
-from pyftpdlib.test import CI_TESTING
-from pyftpdlib.test import GLOBAL_TIMEOUT
-from pyftpdlib.test import HOME
-from pyftpdlib.test import HOST
-from pyftpdlib.test import INTERRUPTED_TRANSF_SIZE
-from pyftpdlib.test import OSX
-from pyftpdlib.test import PASSWD
-from pyftpdlib.test import POSIX
-from pyftpdlib.test import SUPPORTS_IPV4
-from pyftpdlib.test import SUPPORTS_IPV6
-from pyftpdlib.test import USER
-from pyftpdlib.test import WINDOWS
-from pyftpdlib.test import PyftpdlibTestCase
-from pyftpdlib.test import ThreadedTestFTPd
-from pyftpdlib.test import close_client
-from pyftpdlib.test import disable_log_warning
-from pyftpdlib.test import get_server_handler
-from pyftpdlib.test import retry_on_failure
-from pyftpdlib.test import safe_rmpath
-from pyftpdlib.test import touch
+
+from . import BUFSIZE
+from . import CI_TESTING
+from . import GLOBAL_TIMEOUT
+from . import HOME
+from . import HOST
+from . import INTERRUPTED_TRANSF_SIZE
+from . import OSX
+from . import PASSWD
+from . import POSIX
+from . import SUPPORTS_IPV4
+from . import SUPPORTS_IPV6
+from . import USER
+from . import WINDOWS
+from . import PyftpdlibTestCase
+from . import ThreadedTestFTPd
+from . import close_client
+from . import disable_log_warning
+from . import get_server_handler
+from . import retry_on_failure
+from . import safe_rmpath
+from . import touch
 
 
 class TestFtpAuthentication(PyftpdlibTestCase):

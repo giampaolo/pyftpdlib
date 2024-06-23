@@ -10,26 +10,27 @@ import pytest
 
 from pyftpdlib import handlers
 from pyftpdlib import servers
-from pyftpdlib.test import GLOBAL_TIMEOUT
-from pyftpdlib.test import HOST
-from pyftpdlib.test import PASSWD
-from pyftpdlib.test import SUPPORTS_MULTIPROCESSING
-from pyftpdlib.test import USER
-from pyftpdlib.test import WINDOWS
-from pyftpdlib.test import PyftpdlibTestCase
-from pyftpdlib.test import ThreadedTestFTPd
-from pyftpdlib.test import close_client
-from pyftpdlib.test.test_functional import TestCornerCases
-from pyftpdlib.test.test_functional import TestFtpAbort
-from pyftpdlib.test.test_functional import TestFtpAuthentication
-from pyftpdlib.test.test_functional import TestFtpCmdsSemantic
-from pyftpdlib.test.test_functional import TestFtpDummyCmds
-from pyftpdlib.test.test_functional import TestFtpFsOperations
-from pyftpdlib.test.test_functional import TestFtpListingCmds
-from pyftpdlib.test.test_functional import TestFtpRetrieveData
-from pyftpdlib.test.test_functional import TestFtpStoreData
-from pyftpdlib.test.test_functional import TestIPv4Environment
-from pyftpdlib.test.test_functional import TestIPv6Environment
+
+from . import GLOBAL_TIMEOUT
+from . import HOST
+from . import PASSWD
+from . import SUPPORTS_MULTIPROCESSING
+from . import USER
+from . import WINDOWS
+from . import PyftpdlibTestCase
+from . import ThreadedTestFTPd
+from . import close_client
+from .test_functional import TestCornerCases
+from .test_functional import TestFtpAbort
+from .test_functional import TestFtpAuthentication
+from .test_functional import TestFtpCmdsSemantic
+from .test_functional import TestFtpDummyCmds
+from .test_functional import TestFtpFsOperations
+from .test_functional import TestFtpListingCmds
+from .test_functional import TestFtpRetrieveData
+from .test_functional import TestFtpStoreData
+from .test_functional import TestIPv4Environment
+from .test_functional import TestIPv6Environment
 
 
 class TestFTPServer(PyftpdlibTestCase):

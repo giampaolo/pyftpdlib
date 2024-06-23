@@ -14,7 +14,8 @@ from pyftpdlib import __ver__
 from pyftpdlib.__main__ import main
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.servers import FTPServer
-from pyftpdlib.test import PyftpdlibTestCase
+
+from . import PyftpdlibTestCase
 
 
 class TestCommandLineParser(PyftpdlibTestCase):
