@@ -79,17 +79,15 @@ _read = asyncore.read
 _write = asyncore.write
 
 # These errnos indicate that a connection has been abruptly terminated.
-_ERRNOS_DISCONNECTED = set(
-    (
-        errno.ECONNRESET,
-        errno.ENOTCONN,
-        errno.ESHUTDOWN,
-        errno.ECONNABORTED,
-        errno.EPIPE,
-        errno.EBADF,
-        errno.ETIMEDOUT,
-    )
-)
+_ERRNOS_DISCONNECTED = {
+    errno.ECONNRESET,
+    errno.ENOTCONN,
+    errno.ESHUTDOWN,
+    errno.ECONNABORTED,
+    errno.EPIPE,
+    errno.EBADF,
+    errno.ETIMEDOUT,
+}
 if hasattr(errno, "WSAECONNRESET"):
     _ERRNOS_DISCONNECTED.add(errno.WSAECONNRESET)
 if hasattr(errno, "WSAECONNABORTED"):
@@ -97,7 +95,7 @@ if hasattr(errno, "WSAECONNABORTED"):
 
 # These errnos indicate that a non-blocking operation must be retried
 # at a later time.
-_ERRNOS_RETRY = set((errno.EAGAIN, errno.EWOULDBLOCK))
+_ERRNOS_RETRY = {errno.EAGAIN, errno.EWOULDBLOCK}
 if hasattr(errno, "WSAEWOULDBLOCK"):
     _ERRNOS_RETRY.add(errno.WSAEWOULDBLOCK)
 

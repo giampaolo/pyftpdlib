@@ -3095,7 +3095,7 @@ class FTPHandler(AsyncChat):
 
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
-        features = set(['UTF8', 'TVFS'])
+        features = {'UTF8', 'TVFS'}
         features.update(
             [
                 feat

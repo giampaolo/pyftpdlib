@@ -1923,7 +1923,7 @@ class TestCallbacks(PyftpdlibTestCase):
         class Handler(FTPHandler):
 
             def write(self, text):
-                with open(testfn, "at") as f:
+                with open(testfn, "a") as f:
                     f.write(text)
 
             def on_connect(self):
