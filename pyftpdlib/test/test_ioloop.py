@@ -305,6 +305,9 @@ class TestCallLater(PyftpdlibTestCase):
                 task.cancel()
         del self.ioloop.sched._tasks[:]
 
+    def tearDown(self):
+        self.ioloop.close()
+
     def scheduler(self, timeout=0.01, count=100):
         while self.ioloop.sched._tasks and count > 0:
             self.ioloop.sched.poll()
@@ -401,6 +404,9 @@ class TestCallEvery(PyftpdlibTestCase):
             if not task.cancelled:
                 task.cancel()
         del self.ioloop.sched._tasks[:]
+
+    def tearDown(self):
+        self.ioloop.close()
 
     def scheduler(self, timeout=0.003):
         stop_at = time.time() + timeout
