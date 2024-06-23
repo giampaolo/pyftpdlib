@@ -4,23 +4,20 @@
 
 import contextlib
 import errno
-import select
 import socket
 import time
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import pytest
 
 import pyftpdlib.ioloop
-from pyftpdlib._compat import PY3
-from pyftpdlib._compat import InterruptedError
-from pyftpdlib._compat import super
 from pyftpdlib.ioloop import Acceptor
 from pyftpdlib.ioloop import AsyncChat
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.ioloop import RetryError
 from pyftpdlib.test import POSIX
 from pyftpdlib.test import PyftpdlibTestCase
-from pyftpdlib.test import mock
 
 
 if hasattr(socket, 'socketpair'):
@@ -115,7 +112,7 @@ class BaseIOLoopTestCase:
         rd, wr = self.make_socketpair()
         handler = Handler(rd)
         s.register(rd, handler, s.READ)
-        with mock.patch("pyftpdlib.ioloop.logger.error") as m:
+        with patch("pyftpdlib.ioloop.logger.error") as m:
             s.close()
             assert m.called
             assert 'ZeroDivisionError' in m.call_args[0][0]
@@ -133,15 +130,15 @@ class BaseIOLoopTestCase:
         rd, wr = self.make_socketpair()
         handler = Handler(rd)
         s.register(rd, handler, s.READ)
-        with mock.patch("pyftpdlib.ioloop.logger.error") as m:
+        with patch("pyftpdlib.ioloop.logger.error") as m:
             s.close()
             assert not m.called
 
     def test_close_w_callback_exc(self):
         # Simulate an exception when close()ing the IO loop and a
         # scheduled callback raises an exception on cancel().
-        with mock.patch("pyftpdlib.ioloop.logger.error") as logerr:
-            with mock.patch(
+        with patch("pyftpdlib.ioloop.logger.error") as logerr:
+            with patch(
                 "pyftpdlib.ioloop._CallLater.cancel", side_effect=lambda: 1 / 0
             ) as cancel:
                 s = self.ioloop_class()
@@ -167,18 +164,18 @@ class SelectIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
 
     def test_select_eintr(self):
         # EINTR is supposed to be ignored
-        with mock.patch(
+        with patch(
             'pyftpdlib.ioloop.select.select', side_effect=InterruptedError
         ) as m:
             s, rd, wr = self.test_register()
             s.poll(0)
         # ...but just that
-        with mock.patch(
-            'pyftpdlib.ioloop.select.select', side_effect=select.error()
+        with patch(
+            'pyftpdlib.ioloop.select.select', side_effect=OSError()
         ) as m:
             m.side_effect.errno = errno.EBADF
             s, rd, wr = self.test_register()
-            with pytest.raises(select.error):
+            with pytest.raises(OSError):
                 s.poll(0)
 
 
@@ -197,63 +194,47 @@ class PollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
 
     def test_eintr_on_poll(self):
         # EINTR is supposed to be ignored
-        with mock.patch(self.poller_mock, return_vaue=mock.Mock()) as m:
-            if not PY3:
-                m.return_value.poll.side_effect = select.error
-                m.return_value.poll.side_effect.errno = errno.EINTR
-            else:
-                m.return_value.poll.side_effect = OSError(errno.EINTR, "")
+        with patch(self.poller_mock, return_vaue=Mock()) as m:
+            m.return_value.poll.side_effect = OSError(errno.EINTR, "")
             s, rd, wr = self.test_register()
             s.poll(0)
             assert m.called
         # ...but just that
-        with mock.patch(self.poller_mock, return_vaue=mock.Mock()) as m:
-            if not PY3:
-                m.return_value.poll.side_effect = select.error
-                m.return_value.poll.side_effect.errno = errno.EBADF
-            else:
-                m.return_value.poll.side_effect = OSError(errno.EBADF, "")
+        with patch(self.poller_mock, return_vaue=Mock()) as m:
+            m.return_value.poll.side_effect = OSError(errno.EBADF, "")
             s, rd, wr = self.test_register()
-            with pytest.raises(select.error):
+            with pytest.raises(OSError):
                 s.poll(0)
             assert m.called
 
     def test_eexist_on_register(self):
         # EEXIST is supposed to be ignored
-        with mock.patch(self.poller_mock, return_vaue=mock.Mock()) as m:
-            m.return_value.register.side_effect = EnvironmentError(
-                errno.EEXIST, ""
-            )
+        with patch(self.poller_mock, return_vaue=Mock()) as m:
+            m.return_value.register.side_effect = OSError(errno.EEXIST, "")
             s, rd, wr = self.test_register()
         # ...but just that
-        with mock.patch(self.poller_mock, return_vaue=mock.Mock()) as m:
-            m.return_value.register.side_effect = EnvironmentError(
-                errno.EBADF, ""
-            )
+        with patch(self.poller_mock, return_vaue=Mock()) as m:
+            m.return_value.register.side_effect = OSError(errno.EBADF, "")
             with pytest.raises(EnvironmentError):
                 self.test_register()
 
     def test_enoent_ebadf_on_unregister(self):
         # ENOENT and EBADF are supposed to be ignored
         for errnum in (errno.EBADF, errno.ENOENT):
-            with mock.patch(self.poller_mock, return_vaue=mock.Mock()) as m:
-                m.return_value.unregister.side_effect = EnvironmentError(
-                    errnum, ""
-                )
+            with patch(self.poller_mock, return_vaue=Mock()) as m:
+                m.return_value.unregister.side_effect = OSError(errnum, "")
                 s, rd, wr = self.test_register()
                 s.unregister(rd)
         # ...but just those
-        with mock.patch(self.poller_mock, return_vaue=mock.Mock()) as m:
-            m.return_value.unregister.side_effect = EnvironmentError(
-                errno.EEXIST, ""
-            )
+        with patch(self.poller_mock, return_vaue=Mock()) as m:
+            m.return_value.unregister.side_effect = OSError(errno.EEXIST, "")
             s, rd, wr = self.test_register()
             with pytest.raises(EnvironmentError):
                 s.unregister(rd)
 
     def test_enoent_on_modify(self):
         # ENOENT is supposed to be ignored
-        with mock.patch(self.poller_mock, return_vaue=mock.Mock()) as m:
+        with patch(self.poller_mock, return_vaue=Mock()) as m:
             m.return_value.modify.side_effect = OSError(errno.ENOENT, "")
             s, rd, wr = self.test_register()
             s.modify(rd, s.READ)
@@ -506,9 +487,9 @@ class TestAsyncChat(PyftpdlibTestCase):
     def test_send_retry(self):
         ac = self.get_connected_handler()
         for errnum in pyftpdlib.ioloop._ERRNOS_RETRY:
-            with mock.patch(
+            with patch(
                 "pyftpdlib.ioloop.socket.socket.send",
-                side_effect=socket.error(errnum, ""),
+                side_effect=OSError(errnum, ""),
             ) as m:
                 assert ac.send(b"x") == 0
                 assert m.called
@@ -516,11 +497,11 @@ class TestAsyncChat(PyftpdlibTestCase):
     def test_send_disconnect(self):
         ac = self.get_connected_handler()
         for errnum in pyftpdlib.ioloop._ERRNOS_DISCONNECTED:
-            with mock.patch(
+            with patch(
                 "pyftpdlib.ioloop.socket.socket.send",
-                side_effect=socket.error(errnum, ""),
+                side_effect=OSError(errnum, ""),
             ) as send:
-                with mock.patch.object(ac, "handle_close") as handle_close:
+                with patch.object(ac, "handle_close") as handle_close:
                     assert ac.send(b"x") == 0
                     assert send.called
                     assert handle_close.called
@@ -528,9 +509,9 @@ class TestAsyncChat(PyftpdlibTestCase):
     def test_recv_retry(self):
         ac = self.get_connected_handler()
         for errnum in pyftpdlib.ioloop._ERRNOS_RETRY:
-            with mock.patch(
+            with patch(
                 "pyftpdlib.ioloop.socket.socket.recv",
-                side_effect=socket.error(errnum, ""),
+                side_effect=OSError(errnum, ""),
             ) as m:
                 with pytest.raises(RetryError):
                     ac.recv(1024)
@@ -539,21 +520,21 @@ class TestAsyncChat(PyftpdlibTestCase):
     def test_recv_disconnect(self):
         ac = self.get_connected_handler()
         for errnum in pyftpdlib.ioloop._ERRNOS_DISCONNECTED:
-            with mock.patch(
+            with patch(
                 "pyftpdlib.ioloop.socket.socket.recv",
-                side_effect=socket.error(errnum, ""),
+                side_effect=OSError(errnum, ""),
             ) as send:
-                with mock.patch.object(ac, "handle_close") as handle_close:
+                with patch.object(ac, "handle_close") as handle_close:
                     assert ac.recv(b"x") == b''
                     assert send.called
                     assert handle_close.called
 
     def test_connect_af_unspecified_err(self):
         ac = AsyncChat()
-        with mock.patch.object(
-            ac, "connect", side_effect=socket.error(errno.EBADF, "")
+        with patch.object(
+            ac, "connect", side_effect=OSError(errno.EBADF, "")
         ) as m:
-            with pytest.raises(socket.error):
+            with pytest.raises(OSError):
                 ac.connect_af_unspecified(("localhost", 0))
             assert m.called
             assert ac.socket is None
@@ -563,10 +544,10 @@ class TestAcceptor(PyftpdlibTestCase):
 
     def test_bind_af_unspecified_err(self):
         ac = Acceptor()
-        with mock.patch.object(
-            ac, "bind", side_effect=socket.error(errno.EBADF, "")
+        with patch.object(
+            ac, "bind", side_effect=OSError(errno.EBADF, "")
         ) as m:
-            with pytest.raises(socket.error):
+            with pytest.raises(OSError):
                 ac.bind_af_unspecified(("localhost", 0))
             assert m.called
             assert ac.socket is None
@@ -574,8 +555,8 @@ class TestAcceptor(PyftpdlibTestCase):
     def test_handle_accept_econnacorted(self):
         # https://github.com/giampaolo/pyftpdlib/issues/105
         ac = Acceptor()
-        with mock.patch.object(
-            ac, "accept", side_effect=socket.error(errno.ECONNABORTED, "")
+        with patch.object(
+            ac, "accept", side_effect=OSError(errno.ECONNABORTED, "")
         ) as m:
             ac.handle_accept()
             assert m.called
@@ -584,7 +565,7 @@ class TestAcceptor(PyftpdlibTestCase):
     def test_handle_accept_typeerror(self):
         # https://github.com/giampaolo/pyftpdlib/issues/91
         ac = Acceptor()
-        with mock.patch.object(ac, "accept", side_effect=TypeError) as m:
+        with patch.object(ac, "accept", side_effect=TypeError) as m:
             ac.handle_accept()
             assert m.called
             assert ac.socket is None

@@ -14,7 +14,6 @@ import os
 import sys
 
 from . import __ver__
-from ._compat import getcwdu
 from .authorizers import DummyAuthorizer
 from .handlers import FTPHandler
 from .log import config_logging
@@ -53,7 +52,7 @@ def main(args=None):
     parser.add_argument(
         '-d',
         '--directory',
-        default=getcwdu(),
+        default=os.getcwd(),
         metavar="FOLDER",
         help="specify the directory to share (default current directory)",
     )

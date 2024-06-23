@@ -14,27 +14,17 @@ import select
 import socket
 import ssl
 import stat
+import struct
 import time
-
-
-try:
-    from StringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
-
+from unittest.mock import patch
 
 import pytest
 
-from pyftpdlib._compat import PY3
-from pyftpdlib._compat import b
-from pyftpdlib._compat import super
-from pyftpdlib._compat import u
 from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.handlers import SUPPORTS_HYBRID_IPV6
 from pyftpdlib.handlers import DTPHandler
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.handlers import ThrottledDTPHandler
-from pyftpdlib.handlers import _import_sendfile
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.test import BUFSIZE
@@ -48,7 +38,6 @@ from pyftpdlib.test import PASSWD
 from pyftpdlib.test import POSIX
 from pyftpdlib.test import SUPPORTS_IPV4
 from pyftpdlib.test import SUPPORTS_IPV6
-from pyftpdlib.test import SUPPORTS_SENDFILE
 from pyftpdlib.test import USER
 from pyftpdlib.test import WINDOWS
 from pyftpdlib.test import PyftpdlibTestCase
@@ -56,13 +45,9 @@ from pyftpdlib.test import ThreadedTestFTPd
 from pyftpdlib.test import close_client
 from pyftpdlib.test import disable_log_warning
 from pyftpdlib.test import get_server_handler
-from pyftpdlib.test import mock
 from pyftpdlib.test import retry_on_failure
 from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import touch
-
-
-sendfile = _import_sendfile()
 
 
 class TestFtpAuthentication(PyftpdlibTestCase):
@@ -79,7 +64,7 @@ class TestFtpAuthentication(PyftpdlibTestCase):
         self.client.connect(self.server.host, self.server.port)
         self.testfn = self.get_testfn()
         self.file = open(self.testfn, 'w+b')
-        self.dummyfile = BytesIO()
+        self.dummyfile = io.BytesIO()
 
     def tearDown(self):
         close_client(self.client)
@@ -133,10 +118,10 @@ class TestFtpAuthentication(PyftpdlibTestCase):
         # If authentication fails for 3 times ftpd disconnects the
         # client.  We can check if that happens by using self.client.sendcmd()
         # on the 'dead' socket object.  If socket object is really
-        # closed it should be raised a socket.error exception (Windows)
+        # closed it should be raised a OSError exception (Windows)
         # or a EOFError exception (Linux).
         self.client.sock.settimeout(0.1)
-        with pytest.raises((socket.error, EOFError)):
+        with pytest.raises((OSError, EOFError)):
             self.client.sendcmd('')
 
     def test_rein(self):
@@ -540,17 +525,17 @@ class TestFtpFsOperations(PyftpdlibTestCase):
         # cwd provided with no arguments is supposed to move us to the
         # root directory
         self.client.sendcmd('cwd')
-        assert self.client.pwd() == u('/')
+        assert self.client.pwd() == '/'
 
     def test_pwd(self):
-        assert self.client.pwd() == u('/')
+        assert self.client.pwd() == '/'
         self.client.cwd(self.tempdir)
         assert self.client.pwd() == '/' + self.tempdir
 
     def test_cdup(self):
         subfolder = self.get_testfn(dir=self.tempdir)
         os.mkdir(os.path.join(self.tempdir, subfolder))
-        assert self.client.pwd() == u('/')
+        assert self.client.pwd() == '/'
         self.client.cwd(self.tempdir)
         assert self.client.pwd() == '/%s' % self.tempdir
         self.client.cwd(subfolder)
@@ -558,11 +543,11 @@ class TestFtpFsOperations(PyftpdlibTestCase):
         self.client.sendcmd('cdup')
         assert self.client.pwd() == '/%s' % self.tempdir
         self.client.sendcmd('cdup')
-        assert self.client.pwd() == u('/')
+        assert self.client.pwd() == '/'
 
         # make sure we can't escape from root directory
         self.client.sendcmd('cdup')
-        assert self.client.pwd() == u('/')
+        assert self.client.pwd() == '/'
 
     def test_mkd(self):
         tempdir = self.get_testfn()
@@ -588,7 +573,7 @@ class TestFtpFsOperations(PyftpdlibTestCase):
         with pytest.raises(
             ftplib.error_perm, match="Can't remove root directory"
         ):
-            self.client.rmd(u('/'))
+            self.client.rmd('/')
 
     def test_dele(self):
         self.client.delete(self.tempfile)
@@ -609,7 +594,7 @@ class TestFtpFsOperations(PyftpdlibTestCase):
         with pytest.raises(ftplib.error_perm):
             self.client.rename(bogus, '/x')
         with pytest.raises(ftplib.error_perm):
-            self.client.rename(self.tempfile, u('/'))
+            self.client.rename(self.tempfile, '/')
         # rnto sent without first specifying the source
         with pytest.raises(ftplib.error_perm):
             self.client.sendcmd('rnto ' + self.tempfile)
@@ -709,8 +694,7 @@ class TestFtpFsOperations(PyftpdlibTestCase):
 
             def getmode():
                 mode = oct(stat.S_IMODE(os.stat(self.tempfile).st_mode))
-                if PY3:
-                    mode = mode.replace('o', '')
+                mode = mode.replace('o', '')
                 return mode
 
             # on Windows it is possible to set read-only flag only
@@ -767,8 +751,8 @@ class TestFtpStoreData(PyftpdlibTestCase):
             self.dummy_recvfile = CustomIO()
             self.dummy_sendfile = CustomIO()
         else:
-            self.dummy_recvfile = BytesIO()
-            self.dummy_sendfile = BytesIO()
+            self.dummy_recvfile = io.BytesIO()
+            self.dummy_sendfile = io.BytesIO()
         self.testfn = self.get_testfn()
 
     def tearDown(self):
@@ -777,7 +761,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
         self.dummy_recvfile.close()
         self.dummy_sendfile.close()
         if self.use_sendfile is not None:
-            self.server.handler.use_sendfile = _import_sendfile() is not None
+            self.server.handler.use_sendfile = hasattr(os, "sendfile")
         super().tearDown()
 
     def test_stor(self):
@@ -823,7 +807,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
         self.client.retrbinary(
             'retr ' + self.testfn, self.dummy_recvfile.write
         )
-        expected = data.replace(b'\r\n', b(os.linesep))
+        expected = data.replace(b'\r\n', bytes(os.linesep, "ascii"))
         self.dummy_recvfile.seek(0)
         datafile = self.dummy_recvfile.read()
         assert len(expected) == len(datafile)
@@ -857,7 +841,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
             self.dummy_sendfile.seek(0)
             store('stor ' + self.testfn, self.dummy_sendfile)
 
-            expected = data.replace(b'\r\n', b(os.linesep))
+            expected = data.replace(b'\r\n', bytes(os.linesep, "ascii"))
             self.client.retrbinary(
                 'retr ' + self.testfn, self.dummy_recvfile.write
             )
@@ -903,7 +887,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
             if os.path.exists(filename):
                 try:
                     self.client.delete(filename)
-                except (ftplib.Error, EOFError, socket.error):
+                except (ftplib.Error, EOFError, OSError):
                     safe_rmpath(filename)
 
     def test_stou_rest(self):
@@ -1028,10 +1012,10 @@ class TestFtpStoreData(PyftpdlibTestCase):
         # expect the response (transfer ok)
         assert self.client.voidresp()[:3] == '226'
         # Make sure client has been disconnected.
-        # socket.error (Windows) or EOFError (Linux) exception is supposed
+        # OSError (Windows) or EOFError (Linux) exception is supposed
         # to be raised in such a case.
         self.client.sock.settimeout(0.1)
-        with pytest.raises((socket.error, EOFError)):
+        with pytest.raises((OSError, EOFError)):
             self.client.sendcmd('noop')
 
     def test_stor_empty_file(self):
@@ -1042,9 +1026,6 @@ class TestFtpStoreData(PyftpdlibTestCase):
 
 
 @pytest.mark.skipif(not POSIX, reason="POSIX only")
-@pytest.mark.skipif(
-    not PY3 and sendfile is None, reason="pysendfile not installed"
-)
 class TestFtpStoreDataNoSendfile(TestFtpStoreData):
     """Test STOR, STOU, APPE, REST, TYPE not using sendfile()."""
 
@@ -1090,14 +1071,14 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
         if self.use_custom_io:
             self.dummyfile = CustomIO()
         else:
-            self.dummyfile = BytesIO()
+            self.dummyfile = io.BytesIO()
 
     def tearDown(self):
         close_client(self.client)
         self.server.stop()
         self.dummyfile.close()
         if self.use_sendfile is not None:
-            self.server.handler.use_sendfile = _import_sendfile() is not None
+            self.server.handler.use_sendfile = hasattr(os, "sendfile")
         super().tearDown()
 
     def test_retr(self):
@@ -1117,11 +1098,11 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
 
     def test_retr_ascii(self):
         # Test RETR in ASCII mode.
-        data = (b'abcde12345' + b(os.linesep)) * 100000
+        data = (b'abcde12345' + bytes(os.linesep, "ascii")) * 100000
         with open(self.testfn, 'wb') as f:
             f.write(data)
         self.retrieve_ascii("retr " + self.testfn, self.dummyfile.write)
-        expected = data.replace(b(os.linesep), b'\r\n')
+        expected = data.replace(bytes(os.linesep, "ascii"), b'\r\n')
         self.dummyfile.seek(0)
         datafile = self.dummyfile.read()
         assert len(expected) == len(datafile)
@@ -1185,9 +1166,6 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
 
 
 @pytest.mark.skipif(not POSIX, reason="POSIX only")
-@pytest.mark.skipif(
-    not PY3 and sendfile is None, reason="pysendfile not installed"
-)
 class TestFtpRetrieveDataNoSendfile(TestFtpRetrieveData):
     """Test RETR, REST, TYPE by not using sendfile()."""
 
@@ -1447,8 +1425,8 @@ class TestFtpAbort(PyftpdlibTestCase):
         # due to a different SO_OOBINLINE behavior.
         # On some platforms (e.g. Python CE) the test may fail
         # although the MSG_OOB constant is defined.
-        self.client.sock.sendall(b(chr(244)), socket.MSG_OOB)
-        self.client.sock.sendall(b(chr(255)), socket.MSG_OOB)
+        self.client.sock.sendall(bytes(chr(244), "latin-1"), socket.MSG_OOB)
+        self.client.sock.sendall(bytes(chr(255), "latin-1"), socket.MSG_OOB)
         self.client.sock.sendall(b'abor\r\n')
         assert self.client.getresp()[:3] == '225'
 
@@ -1482,7 +1460,7 @@ class TestThrottleBandwidth(PyftpdlibTestCase):
         self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
         self.client.login(USER, PASSWD)
-        self.dummyfile = BytesIO()
+        self.dummyfile = io.BytesIO()
         self.testfn = self.get_testfn()
 
     def tearDown(self):
@@ -1578,7 +1556,7 @@ class TestTimeouts(PyftpdlibTestCase):
     #     data = self.client.sock.recv(BUFSIZE)
     #     self.assertEqual(data, b"421 Control connection timed out.\r\n")
     #     # ensure client has been kicked off
-    #     self.assertRaises((socket.error, EOFError), self.client.sendcmd,
+    #     self.assertRaises((OSError, EOFError), self.client.sendcmd,
     #                       'noop')
 
     def test_data_timeout(self):
@@ -1595,7 +1573,7 @@ class TestTimeouts(PyftpdlibTestCase):
             data = self.client.sock.recv(BUFSIZE)
             assert data == b"421 Data connection timed out.\r\n"
             # ensure client has been kicked off
-            with pytest.raises((socket.error, EOFError)):
+            with pytest.raises((OSError, EOFError)):
                 self.client.sendcmd('noop')
 
     def test_data_timeout_not_reached(self):
@@ -1630,7 +1608,7 @@ class TestTimeouts(PyftpdlibTestCase):
             data = self.client.sock.recv(BUFSIZE)
             assert data == b"421 Data connection timed out.\r\n"
             # ensure client has been kicked off
-            with pytest.raises((socket.error, EOFError)):
+            with pytest.raises((OSError, EOFError)):
                 self.client.sendcmd('noop')
 
     def test_idle_data_timeout2(self):
@@ -1650,7 +1628,7 @@ class TestTimeouts(PyftpdlibTestCase):
             data = self.client.sock.recv(BUFSIZE)
             assert data == b"421 Control connection timed out.\r\n"
             # ensure client has been kicked off
-            with pytest.raises((socket.error, EOFError)):
+            with pytest.raises((OSError, EOFError)):
                 self.client.sendcmd('noop')
 
     def test_pasv_timeout(self):
@@ -1788,7 +1766,7 @@ class TestConfigurableOptions(PyftpdlibTestCase):
             for c in (c1, c2, c3):
                 try:
                     c.quit()
-                except (socket.error, EOFError, ftplib.Error):
+                except (OSError, EOFError, ftplib.Error):
                     # already disconnected
                     pass
                 finally:
@@ -1815,15 +1793,15 @@ class TestConfigurableOptions(PyftpdlibTestCase):
                     self.server.port,
                 )
             # Make sure client has been disconnected.
-            # socket.error (Windows) or EOFError (Linux) exception is
+            # OSError (Windows) or EOFError (Linux) exception is
             # supposed to be raised in such a case.
-            with pytest.raises((socket.error, EOFError)):
+            with pytest.raises((OSError, EOFError)):
                 c4.sendcmd('noop')
         finally:
             for c in (c1, c2, c3, c4):
                 try:
                     c.quit()
-                except (socket.error, EOFError):  # already disconnected
+                except (OSError, EOFError):  # already disconnected
                     c.close()
 
     def test_banner(self):
@@ -1844,10 +1822,10 @@ class TestConfigurableOptions(PyftpdlibTestCase):
         self.connect()
         with pytest.raises(ftplib.error_perm):
             self.client.login('wrong', 'wrong')
-        # socket.error (Windows) or EOFError (Linux) exceptions are
+        # OSError (Windows) or EOFError (Linux) exceptions are
         # supposed to be raised when attempting to send/recv some data
         # using a disconnected socket
-        with pytest.raises((socket.error, EOFError)):
+        with pytest.raises((OSError, EOFError)):
             self.client.sendcmd('noop')
 
     def test_masquerade_address(self):
@@ -1945,7 +1923,7 @@ class TestCallbacks(PyftpdlibTestCase):
         class Handler(FTPHandler):
 
             def write(self, text):
-                with open(testfn, "at") as f:
+                with open(testfn, "a") as f:
                     f.write(text)
 
             def on_connect(self):
@@ -2042,7 +2020,7 @@ class TestCallbacks(PyftpdlibTestCase):
 
     def test_on_file_received(self):
         data = b'abcde12345' * 100000
-        dummyfile = BytesIO()
+        dummyfile = io.BytesIO()
         dummyfile.write(data)
         dummyfile.seek(0)
         self.client.login(USER, PASSWD)
@@ -2066,7 +2044,7 @@ class TestCallbacks(PyftpdlibTestCase):
     def test_on_incomplete_file_received(self):
         self.client.login(USER, PASSWD)
         data = b'abcde12345' * 1000000
-        dummyfile = BytesIO()
+        dummyfile = io.BytesIO()
         dummyfile.write(data)
         dummyfile.seek(0)
         with contextlib.closing(
@@ -2114,7 +2092,7 @@ class TestCallbacks(PyftpdlibTestCase):
         )
 
 
-class _TestNetworkProtocols(object):  # noqa
+class _TestNetworkProtocols:
     """Test PASV, EPSV, PORT and EPRT commands.
 
     Do not use this class directly, let TestIPv4Environment and
@@ -2447,9 +2425,9 @@ class TestCornerCases(PyftpdlibTestCase):
 
             hbytes = host.split('.')
             pbytes = [repr(port // 256), repr(port % 256)]
-            bytes = hbytes + pbytes
-            cmd = 'PORT ' + ','.join(bytes) + '\r\n'
-            self.client.sock.sendall(b(cmd))
+            data = hbytes + pbytes
+            cmd = 'PORT ' + ','.join(data) + '\r\n'
+            self.client.sock.sendall(bytes(cmd, "latin-1"))
             self.client.getresp()
             s, _ = sock.accept()
             s.close()
@@ -2461,8 +2439,6 @@ class TestCornerCases(PyftpdlibTestCase):
         # initial part of the connection process.
         # Tracked in issues #91, #104 and #105.
         # See also https://bugs.launchpad.net/zodb/+bug/135108
-        import struct
-
         def connect(addr):
             with contextlib.closing(socket.socket()) as s:
                 # Set SO_LINGER to 1,0 causes a connection reset (RST) to
@@ -2476,7 +2452,7 @@ class TestCornerCases(PyftpdlibTestCase):
                 s.settimeout(GLOBAL_TIMEOUT)
                 try:
                     s.connect(addr)
-                except socket.error:
+                except OSError:
                     pass
 
         for _ in range(10):
@@ -2526,18 +2502,6 @@ class TestCornerCases(PyftpdlibTestCase):
                 repr(inst)
                 str(inst)
 
-    if hasattr(os, 'sendfile'):
-
-        def test_sendfile(self):
-            # make sure that on python >= 3.3 we're using os.sendfile
-            # rather than third party pysendfile module
-            assert sendfile is os.sendfile
-
-    if SUPPORTS_SENDFILE:
-
-        def test_sendfile_enabled(self):
-            assert FTPHandler.use_sendfile is True
-
     if hasattr(select, 'epoll') or hasattr(select, 'kqueue'):
 
         def test_ioloop_fileno(self):
@@ -2561,20 +2525,12 @@ class TestCornerCases(PyftpdlibTestCase):
 #         self.server = self.server_class()
 #         self.server.start()
 #         self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
-#         self.client.encoding = 'utf8'  # PY3 only
+#         self.client.encoding = 'utf8'
 #         self.client.connect(self.server.host, self.server.port)
 #         self.client.login(USER, PASSWD)
-#         if PY3:
-#             safe_mkdir(bytes(TESTFN_UNICODE, 'utf8'))
-#             touch(bytes(TESTFN_UNICODE_2, 'utf8'))
-#             self.utf8fs = TESTFN_UNICODE in os.listdir('.')
-#         else:
-#             warnings.filterwarnings("ignore")
-#             safe_mkdir(TESTFN_UNICODE)
-#             touch(TESTFN_UNICODE_2)
-#             self.utf8fs = \
-#                 unicode(TESTFN_UNICODE, 'utf8') in os.listdir(u('.'))
-#             warnings.resetwarnings()
+#         safe_mkdir(bytes(TESTFN_UNICODE, 'utf8'))
+#         touch(bytes(TESTFN_UNICODE_2, 'utf8'))
+#         self.utf8fs = TESTFN_UNICODE in os.listdir('.')
 
 #     def tearDown(self):
 #         close_client(self.client)
@@ -2695,17 +2651,17 @@ class TestCornerCases(PyftpdlibTestCase):
 #         if self.utf8fs:
 #             data = b'abcde12345' * 500
 #             os.remove(TESTFN_UNICODE_2)
-#             dummy = BytesIO()
+#             dummy = io.BytesIO()
 #             dummy.write(data)
 #             dummy.seek(0)
 #             self.client.storbinary('stor ' + TESTFN_UNICODE_2, dummy)
-#             dummy_recv = BytesIO()
+#             dummy_recv = io.BytesIO()
 #             self.client.retrbinary('retr ' + TESTFN_UNICODE_2,
 #                                    dummy_recv.write)
 #             dummy_recv.seek(0)
 #             self.assertEqual(dummy_recv.read(), data)
 #         else:
-#             dummy = BytesIO()
+#             dummy = io.BytesIO()
 #             self.assertRaises(ftplib.error_perm, self.client.storbinary,
 #                               'stor ' + TESTFN_UNICODE_2, dummy)
 
@@ -2714,12 +2670,12 @@ class TestCornerCases(PyftpdlibTestCase):
 #             data = b'abcd1234' * 500
 #             with open(TESTFN_UNICODE_2, 'wb') as f:
 #                 f.write(data)
-#             dummy = BytesIO()
+#             dummy = io.BytesIO()
 #             self.client.retrbinary('retr ' + TESTFN_UNICODE_2, dummy.write)
 #             dummy.seek(0)
 #             self.assertEqual(dummy.read(), data)
 #         else:
-#             dummy = BytesIO()
+#             dummy = io.BytesIO()
 #             self.assertRaises(ftplib.error_perm, self.client.retrbinary,
 #                               'retr ' + TESTFN_UNICODE_2, dummy.write)
 
@@ -2737,8 +2693,8 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         self.tempdir = self.get_testfn()
         touch(self.tempfile)
         touch(self.tempdir)
-        self.dummy_recvfile = BytesIO()
-        self.dummy_sendfile = BytesIO()
+        self.dummy_recvfile = io.BytesIO()
+        self.dummy_sendfile = io.BytesIO()
 
     def tearDown(self):
         if self.client:
@@ -2764,7 +2720,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         class TestFS(AbstractedFS):
 
             def mkstemp(self, *args, **kwargs):
-                raise IOError(
+                raise OSError(
                     errno.EEXIST, "No usable temporary file name found"
                 )
 
@@ -2793,7 +2749,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         data = self.client.sock.recv(BUFSIZE)
         assert data == b"421 Control connection timed out.\r\n"
         # ensure client has been kicked off
-        with pytest.raises((socket.error, EOFError)):
+        with pytest.raises((OSError, EOFError)):
             self.client.sendcmd('noop')
 
     @retry_on_failure()
@@ -2834,7 +2790,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         for port in reversed(range(1, 1024)):
             try:
                 socket.getservbyport(port)
-            except socket.error:
+            except OSError:
                 # not registered port; go on
                 try:
                     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -2842,7 +2798,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
                     sock.settimeout(GLOBAL_TIMEOUT)
                     sock.bind((HOST, port))
                     break
-                except socket.error as err:
+                except OSError as err:
                     if err.errno == errno.EACCES:
                         # root privileges needed
                         if sock is not None:
@@ -2884,7 +2840,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
 
     @pytest.mark.skipif(not POSIX, reason="POSIX only")
     @pytest.mark.skipif(
-        not PY3 and sendfile is None, reason="pysendfile not installed"
+        not hasattr(os, "sendfile"), reason="os.sendfile() not available"
     )
     @retry_on_failure()
     def test_sendfile_fails(self):
@@ -2898,8 +2854,8 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         self.dummy_sendfile.write(data)
         self.dummy_sendfile.seek(0)
         self.client.storbinary('stor ' + self.tempfile, self.dummy_sendfile)
-        with mock.patch(
-            'pyftpdlib.handlers.sendfile', side_effect=OSError(errno.EINVAL)
+        with patch(
+            'pyftpdlib.handlers.os.sendfile', side_effect=OSError(errno.EINVAL)
         ) as fun:
             self.client.retrbinary(
                 'retr ' + self.tempfile, self.dummy_recvfile.write

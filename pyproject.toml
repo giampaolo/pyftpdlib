@@ -15,13 +15,13 @@ line-length = 79
 preview = true
 select = [
     "ALL",  # to get a list of all values: `python3 -m ruff linter`
+    "PLR2044",  # [*] Line with empty comment
 ]
 ignore = [
     "A",  # flake8-builtins
     "ANN",  # flake8-annotations
     "ARG",  # flake8-unused-arguments
     "B007",  # Loop control variable `x` not used within loop body
-    "B904",  # Within an `except` clause, raise exceptions with `raise ... from err` (PYTHON2.7 COMPAT)
     "B904",  # Use `raise from` to specify exception cause (PYTHON2.7 COMPAT)
     "BLE001",  # Do not catch blind exception: `Exception`
     "C4",  # flake8-comprehensions (PYTHON2.7 COMPAT)
@@ -49,7 +49,6 @@ ignore = [
     "N818",  # Exception name `FooBar` should be named with an Error suffix
     "PERF",  # Perflint
     "PGH004",  # Use specific rule codes when using `noqa`
-    "PLC0415",  # `import` should be at the top-level of a file
     "PLC2701",  # Private name import `_winreg`
     "PLR",  # pylint
     "PLW",  # pylint
@@ -69,8 +68,6 @@ ignore = [
     "TRY003",  # Avoid specifying long messages outside the exception class
     "TRY300",  # Consider moving this statement to an `else` block
     "TRY301",  # Abstract `raise` to an inner function
-    "UP010",  # [*] Unnecessary `__future__` import `print_function` for target Python version (PYTHON2.7 COMPAT)
-    "UP024",  # [*] Replace aliased errors with `OSError` (PYTHON2.7 COMPAT)
     "UP031",  # [*] Use format specifiers instead of percent format
 ]
 
@@ -94,7 +91,6 @@ omit = [
 ]
 exclude_lines = [
     "except ImportError:",
-    "if PY3:",
     "if __name__ == .__main__.:",
     "if hasattr(select, 'devpoll'):",
     "if hasattr(select, 'epoll'):",

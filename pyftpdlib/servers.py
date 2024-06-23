@@ -229,7 +229,6 @@ class FTPServer(Acceptor):
         """
         log = handle_exit and blocking
 
-        #
         if worker_processes != 1 and os.name == 'posix':
             if not blocking:
                 raise ValueError(
@@ -242,14 +241,12 @@ class FTPServer(Acceptor):
             if log:
                 self._log_start()
 
-        #
         proto = "FTP+SSL" if hasattr(self.handler, 'ssl_protocol') else "FTP"
         logger.info(
             ">>> starting %s server on %s:%s, pid=%i <<<"
             % (proto, self.address[0], self.address[1], os.getpid())
         )
 
-        #
         if handle_exit:
             try:
                 self.ioloop.loop(timeout, blocking)
@@ -397,7 +394,7 @@ class _SpawnerBase(FTPServer):
             handler.ioloop = ioloop
             try:
                 handler.add_channel()
-            except EnvironmentError as err:
+            except OSError as err:
                 if err.errno == errno.EBADF:
                     # we might get here in case the other end quickly
                     # disconnected (see test_quick_connect())
@@ -449,7 +446,7 @@ class _SpawnerBase(FTPServer):
                         for fd in list(ioloop.socket_map.keys()):
                             try:
                                 select.select([fd], [], [], 0)
-                            except select.error:
+                            except OSError:
                                 try:
                                     logger.info(
                                         "discarding broken socket %r",
@@ -524,9 +521,8 @@ class _SpawnerBase(FTPServer):
                     # as the process hangs on kqueue.control() or
                     # select.select(). Use SIGKILL instead.
                     os.kill(t.pid, signal.SIGKILL)
-            except OSError as err:
-                if err.errno != errno.ESRCH:
-                    raise
+            except ProcessLookupError:
+                pass
 
     def _join_task(self, t):
         logger.debug("join()ing task %r" % t)

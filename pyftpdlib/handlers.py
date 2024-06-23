@@ -12,7 +12,6 @@ import socket
 import sys
 import time
 import traceback
-import warnings
 from datetime import datetime
 
 
@@ -27,20 +26,8 @@ try:
 except ImportError:
     SSL = None
 
-try:
-    from collections import OrderedDict  # python >= 2.7
-except ImportError:
-    OrderedDict = dict
-
 from . import __ver__
-from ._compat import PY3
-from ._compat import PermissionError
-from ._compat import b
-from ._compat import getcwdu
-from ._compat import super
-from ._compat import u
-from ._compat import unicode
-from ._compat import xrange
+from . import _asynchat as asynchat
 from .authorizers import AuthenticationFailed
 from .authorizers import AuthorizerError
 from .authorizers import DummyAuthorizer
@@ -57,37 +44,8 @@ from .log import debug
 from .log import logger
 
 
-if PY3:
-    from . import _asynchat as asynchat
-else:
-    import asynchat
-
-
 CR_BYTE = ord('\r')
 
-
-def _import_sendfile():
-    # By default attempt to use os.sendfile introduced in Python 3.3:
-    # http://bugs.python.org/issue10882
-    # ...otherwise fallback on using third-party pysendfile module:
-    # https://github.com/giampaolo/pysendfile/
-    if os.name == 'posix':
-        try:
-            return os.sendfile  # py >= 3.3
-        except AttributeError:
-            try:
-                import sendfile as sf
-
-                # dirty hack to detect whether old 1.2.4 version is installed
-                if hasattr(sf, 'has_sf_hdtr'):
-                    raise ImportError
-                return sf.sendfile
-            except ImportError:
-                pass
-    return None
-
-
-sendfile = _import_sendfile()
 
 proto_cmds = {
     'ABOR': dict(
@@ -403,7 +361,7 @@ def _support_hybrid_ipv6():
             return False
         with contextlib.closing(socket.socket(socket.AF_INET6)) as sock:
             return not sock.getsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY)
-    except (socket.error, AttributeError):
+    except (OSError, AttributeError):
         return False
 
 
@@ -483,7 +441,7 @@ class PassiveDTP(Acceptor):
                         "ignoring EPERM when bind()ing port %s" % port,
                         logfun=logger.debug,
                     )
-                except socket.error as err:
+                except OSError as err:
                     if err.errno == errno.EADDRINUSE:  # port already in use
                         if ports:
                             continue
@@ -548,7 +506,7 @@ class PassiveDTP(Acceptor):
             if not self.cmd_channel.permit_foreign_addresses:
                 try:
                     sock.close()
-                except socket.error:
+                except OSError:
                     pass
                 msg = (
                     '425 Rejected data connection from foreign address '
@@ -637,7 +595,7 @@ class ActiveDTP(Connector):
         # dual stack IPv4/IPv6 support
         try:
             self.connect_af_unspecified((ip, port), (source_ip, 0))
-        except (socket.gaierror, socket.error):
+        except (socket.gaierror, OSError):
             self.handle_close()
 
     def readable(self):
@@ -650,17 +608,13 @@ class ActiveDTP(Connector):
             self._idler.cancel()
         if not self.cmd_channel.connected:
             return self.close()
-        # fix for asyncore on python < 2.6, meaning we aren't
-        # actually connected.
         # test_active_conn_error tests this condition
         err = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
         if err != 0:
-            raise socket.error(err)
-        #
+            raise OSError(err)
         msg = 'Active data connection established.'
         self.cmd_channel.respond('200 ' + msg)
         self.cmd_channel.log_cmd(self._cmd, self._normalized_addr, 200, msg)
-        #
         if not self.cmd_channel.connected:
             return self.close()
         # delegate such connection to DTP handler
@@ -694,7 +648,7 @@ class ActiveDTP(Connector):
         """Called to handle any uncaught exceptions."""
         try:
             raise  # noqa: PLE0704
-        except (socket.gaierror, socket.error):
+        except (socket.gaierror, OSError):
             pass
         except Exception:
             self.log_exception(self)
@@ -759,7 +713,7 @@ class DTPHandler(AsyncChat):
         self._initialized = False
         try:
             AsyncChat.__init__(self, sock, ioloop=cmd_channel.ioloop)
-        except socket.error as err:
+        except OSError as err:
             # if we get an exception here we want the dispatcher
             # instance to set socket attribute before closing, see:
             # https://github.com/giampaolo/pyftpdlib/issues/188
@@ -842,7 +796,7 @@ class DTPHandler(AsyncChat):
     def initiate_sendfile(self):
         """A wrapper around sendfile."""
         try:
-            sent = sendfile(
+            sent = os.sendfile(
                 self._fileno,
                 self._filefd,
                 self._offset,
@@ -886,7 +840,7 @@ class DTPHandler(AsyncChat):
         else:
             self._had_cr = False
 
-        return chunk.replace(b'\r\n', b(os.linesep))
+        return chunk.replace(b'\r\n', bytes(os.linesep, "ascii"))
 
     def enable_receiving(self, type, cmd):
         """Enable receiving of data over the channel. Depending on the
@@ -964,7 +918,7 @@ class DTPHandler(AsyncChat):
             chunk = self.recv(self.ac_in_buffer_size)
         except RetryError:
             pass
-        except socket.error:
+        except OSError:
             self.handle_error()
         else:
             self.tot_bytes_received += len(chunk)
@@ -1096,22 +1050,7 @@ class DTPHandler(AsyncChat):
             self.cmd_channel._on_dtp_close()
 
 
-# dirty hack in order to turn AsyncChat into a new style class in
-# python 2.x so that we can use super()
-if PY3:
-
-    class _AsyncChatNewStyle(AsyncChat):
-        pass
-
-else:
-
-    class _AsyncChatNewStyle(object, AsyncChat):  # noqa
-
-        def __init__(self, *args, **kwargs):
-            super(object, self).__init__(*args, **kwargs)  # bypass object
-
-
-class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
+class ThrottledDTPHandler(DTPHandler):
     """A DTPHandler subclass which wraps sending and receiving in a data
     counter and temporarily "sleeps" the channel so that you burst to no
     more than x Kb/sec average.
@@ -1270,7 +1209,7 @@ class BufferedIteratorProducer:
         its next() method different times.
         """
         buffer = []
-        for _ in xrange(self.loops):
+        for _ in range(self.loops):
             try:
                 buffer.append(next(self.iterator))
             except StopIteration:
@@ -1392,7 +1331,7 @@ class FTPHandler(AsyncChat):
     masquerade_address_map = {}
     passive_ports = None
     use_gmt_times = True
-    use_sendfile = sendfile is not None
+    use_sendfile = hasattr(os, "sendfile")  # added in python 3.3
     tcp_no_delay = hasattr(socket, "TCP_NODELAY")
     unicode_errors = 'replace'
     log_prefix = '%(remote_ip)s:%(remote_port)s-[%(username)s]'
@@ -1447,7 +1386,7 @@ class FTPHandler(AsyncChat):
 
         try:
             AsyncChat.__init__(self, conn, ioloop=ioloop)
-        except socket.error as err:
+        except OSError as err:
             # if we get an exception here we want the dispatcher
             # instance to set socket attribute before closing, see:
             # https://github.com/giampaolo/pyftpdlib/issues/188
@@ -1464,7 +1403,7 @@ class FTPHandler(AsyncChat):
         # connection properties
         try:
             self.remote_ip, self.remote_port = self.socket.getpeername()[:2]
-        except socket.error as err:
+        except OSError as err:
             debug(
                 "call: FTPHandler.__init__, err on getpeername() %r" % err,
                 self,
@@ -1484,7 +1423,7 @@ class FTPHandler(AsyncChat):
         # try to handle urgent data inline
         try:
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_OOBINLINE, 1)
-        except socket.error as err:
+        except OSError as err:
             debug(
                 "call: FTPHandler.__init__, err on SO_OOBINLINE %r" % err, self
             )
@@ -1494,7 +1433,7 @@ class FTPHandler(AsyncChat):
         if self.tcp_no_delay:
             try:
                 self.socket.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
-            except socket.error as err:
+            except OSError as err:
                 debug(
                     "call: FTPHandler.__init__, err on TCP_NODELAY %r" % err,
                     self,
@@ -1513,7 +1452,7 @@ class FTPHandler(AsyncChat):
     def get_repr_info(self, as_str=False, extra_info=None):
         if extra_info is None:
             extra_info = {}
-        info = OrderedDict()
+        info = {}
         info['id'] = id(self)
         info['addr'] = "%s:%s" % (self.remote_ip, self.remote_port)
         if _is_ssl_sock(self.socket):
@@ -1687,16 +1626,16 @@ class FTPHandler(AsyncChat):
                 return
         else:
             if (cmd == 'STAT') and not arg:
-                self.ftp_STAT(u(''))
+                self.ftp_STAT('')
                 return
 
             # for file-system related commands check whether real path
             # destination is valid
             if self.proto_cmds[cmd]['perm'] and (cmd != 'STOU'):
                 if cmd in ('CWD', 'XCWD'):
-                    arg = self.fs.ftp2fs(arg or u('/'))
+                    arg = self.fs.ftp2fs(arg or '/')
                 elif cmd in ('CDUP', 'XCUP'):
-                    arg = self.fs.ftp2fs(u('..'))
+                    arg = self.fs.ftp2fs('..')
                 elif cmd == 'LIST':
                     if arg.lower() in ('-a', '-l', '-al', '-la'):
                         arg = self.fs.ftp2fs(self.fs.cwd)
@@ -2376,17 +2315,8 @@ class FTPHandler(AsyncChat):
             isdir = self.fs.isdir(path)
             if isdir:
                 listing = self.run_as_current_user(self.fs.listdir, path)
-                if isinstance(listing, list):
-                    try:
-                        # RFC 959 recommends the listing to be sorted.
-                        listing.sort()
-                    except UnicodeDecodeError:
-                        # (Python 2 only) might happen on filesystem not
-                        # supporting UTF8 meaning os.listdir() returned a list
-                        # of mixed bytes and unicode strings:
-                        # http://goo.gl/6DLHD
-                        # http://bugs.python.org/issue683592
-                        pass
+                # RFC 959 recommends the listing to be sorted.
+                listing.sort()
                 iterator = self.fs.format_list(path, listing)
             else:
                 basedir, filename = os.path.split(path)
@@ -2417,20 +2347,8 @@ class FTPHandler(AsyncChat):
         else:
             data = ''
             if listing:
-                try:
-                    listing.sort()
-                except UnicodeDecodeError:
-                    # (Python 2 only) might happen on filesystem not
-                    # supporting UTF8 meaning os.listdir() returned a list
-                    # of mixed bytes and unicode strings:
-                    # http://goo.gl/6DLHD
-                    # http://bugs.python.org/issue683592
-                    ls = []
-                    for x in listing:
-                        if not isinstance(x, unicode):
-                            x = unicode(x, 'utf8')
-                        ls.append(x)
-                    listing = sorted(ls)
+                # RFC 959 recommends the listing to be sorted.
+                listing.sort()
                 data = '\r\n'.join(listing) + '\r\n'
             data = data.encode('utf8', self.unicode_errors)
             self.push_dtp_data(data, cmd="NLST")
@@ -2506,7 +2424,7 @@ class FTPHandler(AsyncChat):
         self._restart_position = 0
         try:
             fd = self.run_as_current_user(self.fs.open, file, 'rb')
-        except (EnvironmentError, FilesystemError) as err:
+        except (OSError, FilesystemError) as err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
             return
@@ -2530,7 +2448,7 @@ class FTPHandler(AsyncChat):
                         rest_pos,
                         fsize,
                     )
-                except (EnvironmentError, FilesystemError) as err:
+                except (OSError, FilesystemError) as err:
                     why = _strerror(err)
                 if not ok:
                     fd.close()
@@ -2559,7 +2477,7 @@ class FTPHandler(AsyncChat):
             mode = 'r+'
         try:
             fd = self.run_as_current_user(self.fs.open, file, mode + 'b')
-        except (EnvironmentError, FilesystemError) as err:
+        except (OSError, FilesystemError) as err:
             why = _strerror(err)
             self.respond('550 %s.' % why)
             return
@@ -2583,7 +2501,7 @@ class FTPHandler(AsyncChat):
                         rest_pos,
                         fsize,
                     )
-                except (EnvironmentError, FilesystemError) as err:
+                except (OSError, FilesystemError) as err:
                     why = _strerror(err)
                 if not ok:
                     fd.close()
@@ -2633,7 +2551,7 @@ class FTPHandler(AsyncChat):
             fd = self.run_as_current_user(
                 self.fs.mkstemp, prefix=prefix, dir=basedir
             )
-        except (EnvironmentError, FilesystemError) as err:
+        except (OSError, FilesystemError) as err:
             # likely, we hit the max number of retries to find out a
             # file with a unique name
             if getattr(err, "errno", -1) == errno.EEXIST:
@@ -2790,19 +2708,6 @@ class FTPHandler(AsyncChat):
         self.username = ""
 
     def handle_auth_success(self, home, password, msg_login):
-        if not isinstance(home, unicode):
-            if PY3:
-                raise TypeError('type(home) != text')
-            else:
-                warnings.warn(
-                    '%s.get_home_dir returned a non-unicode string; now '
-                    'casting to unicode'
-                    % (self.authorizer.__class__.__name__),
-                    RuntimeWarning,
-                    stacklevel=2,
-                )
-                home = home.decode('utf8')
-
         if len(msg_login) <= 75:
             self.respond('230 %s' % msg_login)
         else:
@@ -2856,7 +2761,6 @@ class FTPHandler(AsyncChat):
         # name and in case it contains embedded double-quotes
         # they must be doubled (see RFC-959, chapter 7, appendix 2).
         cwd = self.fs.cwd
-        assert isinstance(cwd, unicode), cwd
         self.respond(
             '257 "%s" is the current directory.' % cwd.replace('"', '""')
         )
@@ -2872,7 +2776,7 @@ class FTPHandler(AsyncChat):
         # the process is started we'll get into troubles (os.getcwd()
         # will fail with ENOENT) but we can't do anything about that
         # except logging an error.
-        init_cwd = getcwdu()
+        init_cwd = os.getcwd()
         try:
             self.run_as_current_user(self.fs.chdir, path)
         except (OSError, FilesystemError) as err:
@@ -2880,9 +2784,8 @@ class FTPHandler(AsyncChat):
             self.respond('550 %s.' % why)
         else:
             cwd = self.fs.cwd
-            assert isinstance(cwd, unicode), cwd
             self.respond('250 "%s" is the current directory.' % cwd)
-            if getcwdu() != init_cwd:
+            if os.getcwd() != init_cwd:
                 os.chdir(init_cwd)
             return path
 
@@ -3174,16 +3077,8 @@ class FTPHandler(AsyncChat):
                 if isdir:
                     listing = self.run_as_current_user(self.fs.listdir, path)
                     if isinstance(listing, list):
-                        try:
-                            # RFC 959 recommends the listing to be sorted.
-                            listing.sort()
-                        except UnicodeDecodeError:
-                            # (Python 2 only) might happen on filesystem not
-                            # supporting UTF8 meaning os.listdir() returned a
-                            # list of mixed bytes and unicode strings:
-                            # http://goo.gl/6DLHD
-                            # http://bugs.python.org/issue683592
-                            pass
+                        # RFC 959 recommends the listing to be sorted.
+                        listing.sort()
                     iterator = self.fs.format_list(path, listing)
                 else:
                     basedir, filename = os.path.split(path)
@@ -3200,7 +3095,7 @@ class FTPHandler(AsyncChat):
 
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
-        features = set(['UTF8', 'TVFS'])
+        features = {'UTF8', 'TVFS'}
         features.update(
             [
                 feat
@@ -3374,7 +3269,7 @@ class FTPHandler(AsyncChat):
 
 if SSL is not None:
 
-    class SSLConnection(_AsyncChatNewStyle):
+    class SSLConnection:
         """An AsyncChat subclass supporting TLS/SSL."""
 
         _ssl_accepting = False
@@ -3406,7 +3301,7 @@ if SSL is not None:
             self._ssl_requested = True
             try:
                 self.socket = SSL.Connection(ssl_context, self.socket)
-            except socket.error as err:
+            except OSError as err:
                 # may happen in case the client connects/disconnects
                 # very quickly
                 debug(
@@ -3613,7 +3508,7 @@ if SSL is not None:
                 # connection has gone away
                 try:
                     os.write(self.socket.fileno(), b'')
-                except (OSError, socket.error) as err:
+                except OSError as err:
                     debug(
                         "call: _do_ssl_shutdown() -> os.write, err: %r" % err,
                         inst=self,
@@ -3688,7 +3583,7 @@ if SSL is not None:
                     pass
                 else:
                     raise
-            except socket.error as err:
+            except OSError as err:
                 debug(
                     "call: _do_ssl_shutdown() -> shutdown(), err: %r" % err,
                     inst=self,

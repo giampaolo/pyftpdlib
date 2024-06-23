@@ -2,7 +2,6 @@
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
 
-from __future__ import print_function
 
 import atexit
 import contextlib
@@ -22,26 +21,10 @@ import warnings
 
 import psutil
 
-from pyftpdlib._compat import PY3
-from pyftpdlib._compat import FileNotFoundError
-from pyftpdlib._compat import getcwdu
-from pyftpdlib._compat import super
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
-from pyftpdlib.handlers import _import_sendfile
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
-
-
-try:
-    from unittest import mock  # py3
-except ImportError:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        import mock  # NOQA - requires "pip install mock"
-
-
-sendfile = _import_sendfile()
 
 
 # --- platforms
@@ -49,10 +32,8 @@ sendfile = _import_sendfile()
 HERE = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
 ROOT_DIR = os.path.realpath(os.path.join(HERE, '..', '..'))
 PYPY = '__pypy__' in sys.builtin_module_names
-# whether we're running this test suite on a Continuous Integration service
-APPVEYOR = 'APPVEYOR' in os.environ
 GITHUB_ACTIONS = 'GITHUB_ACTIONS' in os.environ or 'CIBUILDWHEEL' in os.environ
-CI_TESTING = APPVEYOR or GITHUB_ACTIONS
+CI_TESTING = GITHUB_ACTIONS
 COVERAGE = 'COVERAGE_RUN' in os.environ
 # are we a 64 bit process?
 IS_64BIT = sys.maxsize > 2**32
@@ -67,12 +48,12 @@ LOG_FMT += "@%(module)-12s: %(lineno)-4s] %(message)s"
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
 try:
     HOST = socket.gethostbyname('localhost')
-except socket.error:
+except OSError:
     HOST = 'localhost'
 
 USER = 'user'
 PASSWD = '12345'
-HOME = getcwdu()
+HOME = os.getcwd()
 # Use PID to disambiguate file name for parallel testing.
 TESTFN_PREFIX = 'pyftpd-tmp-%s-' % os.getpid()
 GLOBAL_TIMEOUT = 2
@@ -100,11 +81,6 @@ class PyftpdlibTestCase(unittest.TestCase):
             self.__class__.__name__,
             self._testMethodName,
         )
-
-    # assertRaisesRegexp renamed to assertRaisesRegex in 3.3;
-    # add support for the new name.
-    if not hasattr(unittest.TestCase, 'assertRaisesRegex'):
-        assertRaisesRegex = unittest.TestCase.assertRaisesRegexp  # noqa
 
     def get_testfn(self, suffix="", dir=None):
         fname = get_testfn(suffix=suffix, dir=dir)
@@ -134,7 +110,7 @@ def try_address(host, port=0, family=socket.AF_INET):
     try:
         with contextlib.closing(socket.socket(family)) as sock:
             sock.bind((host, port))
-    except (socket.error, socket.gaierror):
+    except (OSError, socket.gaierror):
         return False
     else:
         return True
@@ -142,7 +118,6 @@ def try_address(host, port=0, family=socket.AF_INET):
 
 SUPPORTS_IPV4 = try_address('127.0.0.1')
 SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
-SUPPORTS_SENDFILE = hasattr(os, 'sendfile') or sendfile is not None
 
 
 def get_testfn(suffix="", dir=None):
@@ -173,7 +148,7 @@ def safe_rmpath(path):
                 return fun()
             except FileNotFoundError:
                 pass
-            except WindowsError as _:
+            except OSError as _:
                 err = _
                 warnings.warn(
                     "ignoring %s" % str(err), UserWarning, stacklevel=2
@@ -290,10 +265,8 @@ class retry:
                         cls.tearDown()
                         cls.setUp()
                     continue
-            if PY3:
-                raise exc  # noqa: PLE0704
-            else:
-                raise  # noqa: PLE0704
+
+            raise exc  # noqa: PLE0704
 
         # This way the user of the decorated function can change config
         # parameters.
@@ -394,8 +367,8 @@ def assert_free_resources(parent_pid=None):
 def reset_server_opts():
     # Since all pyftpdlib configurable "options" are class attributes
     # we reset them at module.class level.
-    import pyftpdlib.handlers
-    import pyftpdlib.servers
+    import pyftpdlib.handlers  # noqa: PLC0415
+    import pyftpdlib.servers  # noqa: PLC0415
 
     # Control handlers.
     tls_handler = getattr(
@@ -415,7 +388,7 @@ def reset_server_opts():
         klass.timeout = 300
         klass.unicode_errors = "replace"
         klass.use_gmt_times = True
-        klass.use_sendfile = _import_sendfile() is not None
+        klass.use_sendfile = hasattr(os, "sendfile")
         klass.ac_in_buffer_size = 4096
         klass.ac_out_buffer_size = 4096
         if klass.__name__ == 'TLS_FTPHandler':

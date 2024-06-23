@@ -62,31 +62,16 @@ import os
 import select
 import socket
 import sys
+import threading
 import time
 import traceback
 
-from ._compat import PY3
-from ._compat import InterruptedError
-
-
-try:
-    import threading
-except ImportError:
-    import dummy_threading as threading
-
-from ._compat import callable
+from . import _asynchat as asynchat
+from . import _asyncore as asyncore
 from .log import config_logging
 from .log import debug
 from .log import is_logging_configured
 from .log import logger
-
-
-if PY3:
-    from . import _asynchat as asynchat
-    from . import _asyncore as asyncore
-else:
-    import asynchat
-    import asyncore
 
 
 timer = getattr(time, 'monotonic', time.time)
@@ -94,17 +79,15 @@ _read = asyncore.read
 _write = asyncore.write
 
 # These errnos indicate that a connection has been abruptly terminated.
-_ERRNOS_DISCONNECTED = set(
-    (
-        errno.ECONNRESET,
-        errno.ENOTCONN,
-        errno.ESHUTDOWN,
-        errno.ECONNABORTED,
-        errno.EPIPE,
-        errno.EBADF,
-        errno.ETIMEDOUT,
-    )
-)
+_ERRNOS_DISCONNECTED = {
+    errno.ECONNRESET,
+    errno.ENOTCONN,
+    errno.ESHUTDOWN,
+    errno.ECONNABORTED,
+    errno.EPIPE,
+    errno.EBADF,
+    errno.ETIMEDOUT,
+}
 if hasattr(errno, "WSAECONNRESET"):
     _ERRNOS_DISCONNECTED.add(errno.WSAECONNRESET)
 if hasattr(errno, "WSAECONNABORTED"):
@@ -112,7 +95,7 @@ if hasattr(errno, "WSAECONNABORTED"):
 
 # These errnos indicate that a non-blocking operation must be retried
 # at a later time.
-_ERRNOS_RETRY = set((errno.EAGAIN, errno.EWOULDBLOCK))
+_ERRNOS_RETRY = {errno.EAGAIN, errno.EWOULDBLOCK}
 if hasattr(errno, "WSAEWOULDBLOCK"):
     _ERRNOS_RETRY.add(errno.WSAEWOULDBLOCK)
 
@@ -521,11 +504,8 @@ class _BasePollEpoll(_IOLoop):
     def register(self, fd, instance, events):
         try:
             self._poller.register(fd, events)
-        except EnvironmentError as err:
-            if err.errno == errno.EEXIST:
-                debug("call: register(); poller raised EEXIST; ignored", self)
-            else:
-                raise
+        except FileExistsError:
+            debug("call: register(); poller raised EEXIST; ignored", self)
         self.socket_map[fd] = instance
 
     def unregister(self, fd):
@@ -536,7 +516,7 @@ class _BasePollEpoll(_IOLoop):
         else:
             try:
                 self._poller.unregister(fd)
-            except EnvironmentError as err:
+            except OSError as err:
                 if err.errno in (errno.ENOENT, errno.EBADF):
                     debug(
                         "call: unregister(); poller returned %r; ignoring it"
@@ -549,8 +529,8 @@ class _BasePollEpoll(_IOLoop):
     def modify(self, fd, events):
         try:
             self._poller.modify(fd, events)
-        except OSError as err:
-            if err.errno == errno.ENOENT and fd in self.socket_map:
+        except FileNotFoundError:
+            if fd in self.socket_map:
                 # XXX - see:
                 # https://github.com/giampaolo/pyftpdlib/issues/329
                 instance = self.socket_map[fd]
@@ -695,13 +675,8 @@ if hasattr(select, 'kqueue'):  # pragma: no cover
             self.socket_map[fd] = instance
             try:
                 self._control(fd, events, select.KQ_EV_ADD)
-            except EnvironmentError as err:
-                if err.errno == errno.EEXIST:
-                    debug(
-                        "call: register(); poller raised EEXIST; ignored", self
-                    )
-                else:
-                    raise
+            except FileExistsError:
+                debug("call: register(); poller raised EEXIST; ignored", self)
             self._active[fd] = events
 
         def unregister(self, fd):
@@ -713,7 +688,7 @@ if hasattr(select, 'kqueue'):  # pragma: no cover
             else:
                 try:
                     self._control(fd, events, select.KQ_EV_DELETE)
-                except EnvironmentError as err:
+                except OSError as err:
                     if err.errno in (errno.ENOENT, errno.EBADF):
                         debug(
                             "call: unregister(); poller returned %r; "
@@ -931,7 +906,7 @@ class AsyncChat(asynchat.async_chat):
                         )
                     self.bind(source_address)
                 self.connect((host, port))
-            except socket.error as _:
+            except OSError as _:
                 err = _
                 if self.socket is not None:
                     self.socket.close()
@@ -941,7 +916,7 @@ class AsyncChat(asynchat.async_chat):
             break
         if self.socket is None:
             self.del_channel()
-            raise socket.error(err)
+            raise OSError(err)
         return af
 
     # send() and recv() overridden as a fix around various bugs:
@@ -952,7 +927,7 @@ class AsyncChat(asynchat.async_chat):
     def send(self, data):
         try:
             return self.socket.send(data)
-        except socket.error as err:
+        except OSError as err:
             debug("call: send(), err: %s" % err, inst=self)
             if err.errno in _ERRNOS_RETRY:
                 return 0
@@ -965,7 +940,7 @@ class AsyncChat(asynchat.async_chat):
     def recv(self, buffer_size):
         try:
             data = self.socket.recv(buffer_size)
-        except socket.error as err:
+        except OSError as err:
             debug("call: recv(), err: %s" % err, inst=self)
             if err.errno in _ERRNOS_DISCONNECTED:
                 self.handle_close()
@@ -1080,7 +1055,7 @@ class Acceptor(AsyncChat):
                 self.create_socket(af, socktype)
                 self.set_reuse_addr()
                 self.bind(sa)
-            except socket.error as _:
+            except OSError as _:
                 err = _
                 if self.socket is not None:
                     self.socket.close()
@@ -1090,7 +1065,7 @@ class Acceptor(AsyncChat):
             break
         if self.socket is None:
             self.del_channel()
-            raise socket.error(err)
+            raise OSError(err)
         return af
 
     def listen(self, num):
@@ -1111,7 +1086,7 @@ class Acceptor(AsyncChat):
             # https://github.com/giampaolo/pyftpdlib/issues/91
             debug("call: handle_accept(); accept() returned None", self)
             return
-        except socket.error as err:
+        except OSError as err:
             # ECONNABORTED might be thrown on *BSD, see:
             # https://github.com/giampaolo/pyftpdlib/issues/105
             if err.errno != errno.ECONNABORTED:

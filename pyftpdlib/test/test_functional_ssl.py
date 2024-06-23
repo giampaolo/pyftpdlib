@@ -5,13 +5,11 @@
 import contextlib
 import ftplib
 import os
-import socket
 import ssl
 
 import OpenSSL  # requires "pip install pyopenssl"
 import pytest
 
-from pyftpdlib._compat import super
 from pyftpdlib.handlers import TLS_FTPHandler
 from pyftpdlib.test import CI_TESTING
 from pyftpdlib.test import GLOBAL_TIMEOUT
@@ -279,7 +277,7 @@ class TestFTPS(PyftpdlibTestCase):
         self.client.login()
         try:
             sock = self.client.sock.unwrap()
-        except socket.error as err:
+        except OSError as err:
             if err.errno == 0:
                 return
             raise
@@ -287,7 +285,7 @@ class TestFTPS(PyftpdlibTestCase):
         sock.sendall(b'noop')
         try:
             chunk = sock.recv(1024)
-        except socket.error:
+        except OSError:
             pass
         else:
             assert chunk == b""
@@ -320,7 +318,7 @@ class TestFTPS(PyftpdlibTestCase):
         self.client.connect(self.server.host, self.server.port)
         try:
             self.client.login()
-        except (ssl.SSLError, socket.error):
+        except (ssl.SSLError, OSError):
             self.client.close()
         else:
             self.client.quit()
@@ -347,10 +345,10 @@ class TestFTPS(PyftpdlibTestCase):
             if not OSX:
                 with self.server.lock:
                     self.client.connect(self.server.host, self.server.port)
-                with pytest.raises(socket.error):
+                with pytest.raises(OSError):
                     self.client.login()
             else:
-                with self.server.lock, pytest.raises(socket.error):
+                with self.server.lock, pytest.raises(OSError):
                     self.client.connect(
                         self.server.host, self.server.port, timeout=0.1
                     )

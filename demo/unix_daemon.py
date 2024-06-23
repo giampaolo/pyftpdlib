@@ -32,7 +32,6 @@ Authors:
 
 import argparse
 import atexit
-import errno
 import os
 import signal
 import sys
@@ -57,8 +56,9 @@ def pid_exists(pid):
     """Return True if a process with the given PID is currently running."""
     try:
         os.kill(pid, 0)
-    except OSError as err:
-        return err.errno == errno.EPERM
+    except PermissionError:
+        # EPERM clearly means there's a process to deny access to
+        return True
     else:
         return True
 
@@ -68,9 +68,8 @@ def get_pid():
     try:
         with open(PID_FILE) as f:
             return int(f.read().strip())
-    except IOError as err:
-        if err.errno != errno.ENOENT:
-            raise
+    except FileNotFoundError:
+        pass
 
 
 def stop():
@@ -87,12 +86,8 @@ def stop():
         sys.stdout.flush()
         try:
             os.kill(pid, sig)
-        except OSError as err:
-            if err.errno == errno.ESRCH:
-                print("\nstopped (pid %s)" % pid)
-                return
-            else:
-                raise
+        except ProcessLookupError:
+            print("\nstopped (pid %s)" % pid)
         i += 1
         if i == 25:
             sig = signal.SIGKILL

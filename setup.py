@@ -7,7 +7,6 @@
 $ python setup.py install
 """
 
-from __future__ import print_function
 
 import ast
 import os
@@ -38,7 +37,7 @@ def get_version():
 
 def term_supports_colors():
     try:
-        import curses
+        import curses  # noqa: PLC0415
 
         assert sys.stderr.isatty()
         curses.setupterm()
@@ -66,14 +65,13 @@ def hilite(s, ok=True, bold=False):
         return '\x1b[%sm%s\x1b[0m' % (';'.join(attr), s)
 
 
-if sys.version_info < (2, 7):  # noqa
-    sys.exit('python version not supported (< 2.7)')
-
-require_pysendfile = os.name == 'posix' and sys.version_info < (3, 3)
+if sys.version_info[0] < 3:
+    sys.exit(
+        'Python 2 is no longer supported. Latest version is 1.5.10; use:\n'
+        'python3 -m pip install pyftpdlib==1.5.10'
+    )
 
 extras_require = {'ssl': ["PyOpenSSL"]}
-if require_pysendfile:
-    extras_require.update({'sendfile': ['pysendfile']})
 
 VERSION = get_version()
 
@@ -119,30 +117,9 @@ def main():
             'Topic :: Software Development :: Libraries :: Python Modules',
             'Topic :: System :: Filesystems',
             'Programming Language :: Python',
-            'Programming Language :: Python :: 2',
             'Programming Language :: Python :: 3',
         ],
     )
-
-    # suggest to install pysendfile
-    if require_pysendfile:
-        try:
-            # os.sendfile() appeared in python 3.3
-            # http://bugs.python.org/issue10882
-            if not hasattr(os, 'sendfile'):
-                # fallback on using third-party pysendfile module
-                # https://github.com/giampaolo/pysendfile/
-                import sendfile
-
-                if hasattr(sendfile, 'has_sf_hdtr'):  # old 1.2.4 version
-                    raise ImportError
-        except ImportError:
-            msg = textwrap.dedent("""
-                'pysendfile' third-party module is not installed. This is not
-                essential but it considerably speeds up file transfers.
-                You can install it with 'pip install pysendfile'.
-                More at: https://github.com/giampaolo/pysendfile""")
-            print(hilite(msg, ok=False), file=sys.stderr)
 
     try:
         from OpenSSL import SSL  # NOQA

@@ -527,8 +527,7 @@ Filesystem
 
     Wrapper around
     `os.listdir <http://docs.python.org/library/os.html#os.listdir>`_.
-    It is expected to return a list of unicode strings or a generator yielding
-    unicode strings.
+    It is expected to return a list of strings or a generator yielding strings.
 
     .. versionchanged:: 1.6.0 can also return a generator.
 

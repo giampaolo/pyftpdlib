@@ -5,6 +5,7 @@
 """Process utils."""
 
 import os
+import random
 import sys
 import time
 from binascii import hexlify
@@ -15,8 +16,6 @@ try:
 except ImportError:
     multiprocessing = None
 
-from ._compat import InterruptedError
-from ._compat import long
 from .log import logger
 
 
@@ -39,15 +38,12 @@ def cpu_count():
 
 
 def _reseed_random():
-    if 'random' not in sys.modules:
-        return
-    import random
 
     # If os.urandom is available, this method does the same thing as
     # random.seed.  If os.urandom is not available, we mix in the pid in
     # addition to a timestamp.
     try:
-        seed = long(hexlify(os.urandom(16)), 16)
+        seed = int(hexlify(os.urandom(16)), 16)
     except NotImplementedError:
         seed = int(time.time() * 1000) ^ os.getpid()
     random.seed(seed)

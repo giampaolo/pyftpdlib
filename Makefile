@@ -28,17 +28,6 @@ ifndef GITHUB_ACTIONS
 		toml-sort \
 		twine
 endif
-# python 2 deps
-ifeq ($(shell $(PYTHON) -c "import sys; print(sys.version_info[0])"), 2)
-	PYDEPS = \
-		ipaddress \
-		mock \
-		psutil \
-		pytest \
-		pyopenssl \
-		pysendfile \
-		setuptools
-endif
 
 # In not in a virtualenv, add --user options for install commands.
 INSTALL_OPTS = `$(PYTHON) -c "import sys; print('' if hasattr(sys, 'real_prefix') else '--user')"`
@@ -94,12 +83,11 @@ uninstall:  ## Uninstall this package.
 install-pip:  ## Install pip (no-op if already installed).
 	@$(PYTHON) -c \
 		"import sys, ssl, os, pkgutil, tempfile, atexit; \
+		from urllib.request import urlopen; \
 		sys.exit(0) if pkgutil.find_loader('pip') else None; \
-		PY3 = sys.version_info[0] == 3; \
-		pyexc = 'from urllib.request import urlopen' if PY3 else 'from urllib2 import urlopen'; \
 		exec(pyexc); \
 		ctx = ssl._create_unverified_context() if hasattr(ssl, '_create_unverified_context') else None; \
-		url = 'https://bootstrap.pypa.io/pip/2.7/get-pip.py' if not PY3 else 'https://bootstrap.pypa.io/get-pip.py'; \
+		url = 'https://bootstrap.pypa.io/get-pip.py'; \
 		kw = dict(context=ctx) if ctx else {}; \
 		req = urlopen(url, **kw); \
 		data = req.read(); \

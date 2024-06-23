@@ -1,5 +1,18 @@
 Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 
+Version: 2.0.0 - (IN DEVELOPMENT)
+=================================
+
+**Enhancements**
+
+* #629: removed Python 2.7 support.
+
+**Notes about backward compatibility**
+
+* #629: Python 2.7 is no longer supported.
+* #629: pysendfile module is no longer a required dependency, because we ceased
+  support for Python 2.
+
 Version: 1.5.10 - 2024-06-23
 ============================
 

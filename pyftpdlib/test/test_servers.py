@@ -10,7 +10,6 @@ import pytest
 
 from pyftpdlib import handlers
 from pyftpdlib import servers
-from pyftpdlib._compat import super
 from pyftpdlib.test import BSD
 from pyftpdlib.test import GITHUB_ACTIONS
 from pyftpdlib.test import GLOBAL_TIMEOUT

@@ -21,9 +21,6 @@ try:
 except ImportError:
     curses = None
 
-from ._compat import PY3
-from ._compat import unicode
-
 
 # default logger
 logger = logging.getLogger('pyftpdlib')
@@ -71,24 +68,22 @@ class LogFormatter(logging.Formatter):
             # bytes, but only accept strings. In addition, we want to
             # output these strings with the logging module, which
             # works with unicode strings. The explicit calls to
-            # unicode() below are harmless in python2 but will do the
+            # str() below are harmless in python2 but will do the
             # right conversion in python 3.
             fg_color = (
                 curses.tigetstr("setaf") or curses.tigetstr("setf") or ""
             )
-            if not PY3:
-                fg_color = unicode(fg_color, "ascii")
             self._colors = {
                 # blues
-                logging.DEBUG: unicode(curses.tparm(fg_color, 4), "ascii"),
+                logging.DEBUG: str(curses.tparm(fg_color, 4), "ascii"),
                 # green
-                logging.INFO: unicode(curses.tparm(fg_color, 2), "ascii"),
+                logging.INFO: str(curses.tparm(fg_color, 2), "ascii"),
                 # yellow
-                logging.WARNING: unicode(curses.tparm(fg_color, 3), "ascii"),
+                logging.WARNING: str(curses.tparm(fg_color, 3), "ascii"),
                 # red
-                logging.ERROR: unicode(curses.tparm(fg_color, 1), "ascii"),
+                logging.ERROR: str(curses.tparm(fg_color, 1), "ascii"),
             }
-            self._normal = unicode(curses.tigetstr("sgr0"), "ascii")
+            self._normal = str(curses.tigetstr("sgr0"), "ascii")
 
     def format(self, record):
         try:
@@ -124,7 +119,7 @@ class LogFormatter(logging.Formatter):
         # result are so useless (and tornado is fond of using utf8-encoded
         # byte strings wherever possible).
         try:
-            message = unicode(record.message)
+            message = str(record.message)
         except UnicodeDecodeError:
             message = repr(record.message)
 

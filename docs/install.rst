@@ -32,12 +32,3 @@ Additional dependencies
 .. code-block:: sh
 
     $ pip install PyOpenSSL
-
-`pysendfile <https://github.com/giampaolo/pysendfile>`__, if you're on UNIX,
-in order to
-`speedup uploads <http://pyftpdlib.readthedocs.io/faqs.html#sendfile>`__
-(from server to client):
-
-.. code-block:: sh
-
-    $ pip install pysendfile

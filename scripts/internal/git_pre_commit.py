@@ -11,7 +11,6 @@ the files which were modified in the commit. Install this with "make
 install-git-hooks".
 """
 
-from __future__ import print_function
 
 import os
 import shlex
@@ -20,13 +19,12 @@ import sys
 
 
 PYTHON = sys.executable
-PY3 = sys.version_info[0] >= 3
 THIS_SCRIPT = os.path.realpath(__file__)
 
 
 def term_supports_colors():
     try:
-        import curses
+        import curses  # noqa: PLC0415
 
         assert sys.stderr.isatty()
         curses.setupterm()
@@ -77,8 +75,7 @@ def sh(cmd):
 
 
 def open_text(path):
-    kw = {"encoding": "utf8"} if PY3 else {}
-    return open(path, **kw)
+    return open(path, encoding="utf8")
 
 
 def git_committed_files():

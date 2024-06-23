@@ -84,14 +84,23 @@ If you are not new to Python you probably don't need that, otherwise follow the
 Which Python versions are compatible?
 -------------------------------------
 
-*2.7* and *3.X*.
+Python *3.X*. Anything above 3.8 should be good to go. Pypy should also work.
+
+What about Python 2.7?
+----------------------
+
+Latest pyftpdlib version supporting Python 2.7 is 1.5.10. You can install it
+with:
+
+.. code-block:: sh
+
+    python3 -m pip install pyftpdlib==1.5.10
 
 On which platforms can pyftpdlib be used?
 -----------------------------------------
 
 pyftpdlib should work on any platform where **select()**, **poll()**,
-**epoll()** or **kqueue()** system calls are available and on any Python
-implementation which refers to *cPython 2.7* or superior.
+**epoll()** or **kqueue()** system calls are available.
 The development team has mainly tested it under various *Linux*, *Windows*,
 *OSX* and *FreeBSD* systems.
 For FreeBSD is also available a
@@ -140,8 +149,8 @@ avoid race conditions, dead locks etc.
 Another possibility is to
 `change the default concurrency model <tutorial.html#changing-the-concurrency-model>`__.
 
-Why do I get socket.error "Permission denied" error on ftpd starting?
----------------------------------------------------------------------
+Why do I get "Permission denied" error on startup?
+--------------------------------------------------
 
 Probably because you're on a Unix system and you're trying to start ftpd as an
 unprivileged user. FTP servers bind on port 21 by default and only super-user
@@ -244,10 +253,8 @@ Implementation
 sendfile()
 ----------
 
-Starting from version 0.7.0 if
-`pysendfile <https://github.com/giampaolo/pysendfile/>`__ module is installed
-sendfile(2) system call be used when uploading files (from server to client)
-via RETR command.
+Starting from version 0.7.0, sendfile(2) system call be used when uploading
+files (from server to client) via RETR command.
 Using sendfile(2) usually results in transfer rates from 2x to 3x faster
 and less CPU usage.
 Note: use of sendfile() might introduce some unexpected issues with "non
