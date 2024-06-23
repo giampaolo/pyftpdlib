@@ -66,8 +66,11 @@ def hilite(s, ok=True, bold=False):
         return '\x1b[%sm%s\x1b[0m' % (';'.join(attr), s)
 
 
-if sys.version_info < (2, 7):  # noqa
-    sys.exit('python version not supported (< 2.7)')
+if sys.version_info[0] < 3:
+    sys.exit(
+        'Python 2 is no longer supported. Latest version is 1.5.10; use:\n'
+        'python3 -m pip install pyftpdlib==1.5.10'
+    )
 
 extras_require = {'ssl': ["PyOpenSSL"]}
 

@@ -45,14 +45,6 @@ DEPS = [
     "wmi",
 ]
 
-if sys.version_info[:2] == (2, 7):
-    DEPS.extend(
-        [
-            "ipaddress",
-            "mock",
-        ]
-    )
-
 _cmds = {}
 
 GREEN = 2

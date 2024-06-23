@@ -27,17 +27,6 @@ ifndef GITHUB_ACTIONS
 		teyit \
 		toml-sort \
 		twine
-endif
-# python 2 deps
-ifeq ($(shell $(PYTHON) -c "import sys; print(sys.version_info[0])"), 2)
-	PYDEPS = \
-		ipaddress \
-		mock \
-		psutil \
-		pytest \
-		pyopenssl \
-		setuptools
-endif
 
 # In not in a virtualenv, add --user options for install commands.
 INSTALL_OPTS = `$(PYTHON) -c "import sys; print('' if hasattr(sys, 'real_prefix') else '--user')"`
