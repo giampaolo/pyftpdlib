@@ -33,7 +33,6 @@ except ImportError:
 
 from . import __ver__
 from . import _asynchat as asynchat
-from ._compat import PY3
 from .authorizers import AuthenticationFailed
 from .authorizers import AuthorizerError
 from .authorizers import DummyAuthorizer
@@ -1062,20 +1061,9 @@ class DTPHandler(AsyncChat):
 
 # dirty hack in order to turn AsyncChat into a new style class in
 # python 2.x so that we can use super()
-if PY3:
-
-    class _AsyncChatNewStyle(AsyncChat):
-        pass
-
-else:
-
-    class _AsyncChatNewStyle(object, AsyncChat):  # noqa
-
-        def __init__(self, *args, **kwargs):
-            super(object, self).__init__(*args, **kwargs)  # bypass object
 
 
-class ThrottledDTPHandler(_AsyncChatNewStyle, DTPHandler):
+class ThrottledDTPHandler(DTPHandler):
     """A DTPHandler subclass which wraps sending and receiving in a data
     counter and temporarily "sleeps" the channel so that you burst to no
     more than x Kb/sec average.
@@ -3294,7 +3282,7 @@ class FTPHandler(AsyncChat):
 
 if SSL is not None:
 
-    class SSLConnection(_AsyncChatNewStyle):
+    class SSLConnection:
         """An AsyncChat subclass supporting TLS/SSL."""
 
         _ssl_accepting = False
