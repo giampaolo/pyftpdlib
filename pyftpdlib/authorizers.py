@@ -396,9 +396,11 @@ class _Base:
 # ===================================================================
 
 try:
-    import crypt
-    import pwd
-    import spwd
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        import crypt
+        import pwd
+        import spwd
 except ImportError:
     pass
 else:
