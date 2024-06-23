@@ -671,9 +671,11 @@ if hasattr(select, 'epoll'):
 
 # ===================================================================
 # --- kqueue() - BSD / OSX
+# XXX: disabled as it got broke at some point
 # ===================================================================
 
-if hasattr(select, 'kqueue'):  # pragma: no cover
+# if hasattr(select, 'kqueue'):  # pragma: no cover
+if False:  # noqa
 
     class Kqueue(_IOLoop):
         """kqueue() based poller."""
@@ -794,7 +796,8 @@ if hasattr(select, 'kqueue'):  # pragma: no cover
 
 if hasattr(select, 'epoll'):  # epoll() - Linux
     IOLoop = Epoll
-elif hasattr(select, 'kqueue'):  # kqueue() - BSD / OSX
+# elif hasattr(select, 'kqueue'):  # kqueue() - BSD / OSX
+if False:  # XXX: disabled as it got broken
     IOLoop = Kqueue
 elif hasattr(select, 'devpoll'):  # /dev/poll - Solaris
     IOLoop = DevPoll

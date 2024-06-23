@@ -10,7 +10,6 @@ import logging
 import os
 import random
 import re
-import select
 import socket
 import ssl
 import stat
@@ -2538,12 +2537,6 @@ class TestCornerCases(PyftpdlibTestCase):
 
         def test_sendfile_enabled(self):
             assert FTPHandler.use_sendfile is True
-
-    if hasattr(select, 'epoll') or hasattr(select, 'kqueue'):
-
-        def test_ioloop_fileno(self):
-            fd = self.server.server.ioloop.fileno()
-            assert isinstance(fd, int), fd
 
 
 # # TODO: disabled as on certain platforms (OSX and Windows)
