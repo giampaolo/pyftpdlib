@@ -2720,7 +2720,9 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         class TestFS(AbstractedFS):
 
             def mkstemp(self, *args, **kwargs):
-                raise FileExistsError
+                raise OSError(
+                    errno.EEXIST, "No usable temporary file name found"
+                )
 
         self.server = self.server_class()
         self.server.handler.abstracted_fs = TestFS
