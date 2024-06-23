@@ -24,7 +24,6 @@ if PY3:
         return s.encode("latin-1")
 
     unicode = str
-    long = int
 else:
 
     def u(s):
@@ -34,7 +33,6 @@ else:
         return s
 
     unicode = unicode
-    long = long
 
 
 # removed in 3.0, reintroduced in 3.2

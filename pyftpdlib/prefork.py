@@ -16,7 +16,6 @@ except ImportError:
     multiprocessing = None
 
 from ._compat import InterruptedError
-from ._compat import long
 from .log import logger
 
 
@@ -47,7 +46,7 @@ def _reseed_random():
     # random.seed.  If os.urandom is not available, we mix in the pid in
     # addition to a timestamp.
     try:
-        seed = long(hexlify(os.urandom(16)), 16)
+        seed = int(hexlify(os.urandom(16)), 16)
     except NotImplementedError:
         seed = int(time.time() * 1000) ^ os.getpid()
     random.seed(seed)
