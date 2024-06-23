@@ -118,7 +118,6 @@ def main():
             'Topic :: Software Development :: Libraries :: Python Modules',
             'Topic :: System :: Filesystems',
             'Programming Language :: Python',
-            'Programming Language :: Python :: 2',
             'Programming Language :: Python :: 3',
         ],
     )

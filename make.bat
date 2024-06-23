@@ -6,10 +6,6 @@ rem It is primarly intended as a shortcut for compiling / installing
 rem psutil ("make.bat build", "make.bat install") and running tests
 rem ("make.bat test").
 rem
-rem This script is modeled after my Windows installation which uses:
-rem - Visual studio 2010 for Python 3.4+
-rem ...therefore it might not work on your Windows installation.
-rem
 rem To compile for a specific Python version run:
 rem     set PYTHON=C:\Python34\python.exe & make.bat build
 rem

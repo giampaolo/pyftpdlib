@@ -608,8 +608,6 @@ class ActiveDTP(Connector):
             self._idler.cancel()
         if not self.cmd_channel.connected:
             return self.close()
-        # fix for asyncore on python < 2.6, meaning we aren't
-        # actually connected.
         # test_active_conn_error tests this condition
         err = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
         if err != 0:

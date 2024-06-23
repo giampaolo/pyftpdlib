@@ -76,8 +76,7 @@ Features
 - ...But can optionally skip to a
   `multiple thread / process <http://pyftpdlib.readthedocs.io/en/latest/tutorial.html#changing-the-concurrency-model>`__
   model (as in: you'll be free to block or use slow filesystems).
-- Portable: entirely written in pure Python; works with Python **2.7** and
-  **3.X** using a single code base.
+- Portable: entirely written in pure Python.
 - Supports **FTPS** (`RFC-4217 <http://tools.ietf.org/html/rfc4217>`__),
   **IPv6** (`RFC-2428 <ftp://ftp.rfc-editor.org/in-notes/rfc2428.txt>`__),
   **Unicode** file names (`RFC-2640 <http://tools.ietf.org/html/rfc2640>`__),
