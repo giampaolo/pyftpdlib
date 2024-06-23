@@ -23,7 +23,6 @@ import os
 import warnings
 
 from ._compat import PY3
-from ._compat import getcwdu
 from ._compat import unicode
 
 
@@ -362,7 +361,7 @@ class _Base:
         self._dummy_authorizer.add_user(
             username,
             password or "",
-            homedir or getcwdu(),
+            homedir or os.getcwd(),
             perm or "",
             msg_login or "",
             msg_quit or "",

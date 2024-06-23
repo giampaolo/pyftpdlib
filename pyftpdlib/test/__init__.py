@@ -24,7 +24,6 @@ import psutil
 
 from pyftpdlib._compat import PY3
 from pyftpdlib._compat import FileNotFoundError
-from pyftpdlib._compat import getcwdu
 from pyftpdlib._compat import super
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
@@ -71,7 +70,7 @@ except socket.error:
 
 USER = 'user'
 PASSWD = '12345'
-HOME = getcwdu()
+HOME = os.getcwd()
 # Use PID to disambiguate file name for parallel testing.
 TESTFN_PREFIX = 'pyftpd-tmp-%s-' % os.getpid()
 GLOBAL_TIMEOUT = 2

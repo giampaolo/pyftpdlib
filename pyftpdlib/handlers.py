@@ -36,7 +36,6 @@ from . import __ver__
 from ._compat import PY3
 from ._compat import PermissionError
 from ._compat import b
-from ._compat import getcwdu
 from ._compat import super
 from ._compat import u
 from ._compat import unicode
@@ -2872,7 +2871,7 @@ class FTPHandler(AsyncChat):
         # the process is started we'll get into troubles (os.getcwd()
         # will fail with ENOENT) but we can't do anything about that
         # except logging an error.
-        init_cwd = getcwdu()
+        init_cwd = os.getcwd()
         try:
             self.run_as_current_user(self.fs.chdir, path)
         except (OSError, FilesystemError) as err:
@@ -2882,7 +2881,7 @@ class FTPHandler(AsyncChat):
             cwd = self.fs.cwd
             assert isinstance(cwd, unicode), cwd
             self.respond('250 "%s" is the current directory.' % cwd)
-            if getcwdu() != init_cwd:
+            if os.getcwd() != init_cwd:
                 os.chdir(init_cwd)
             return path
 

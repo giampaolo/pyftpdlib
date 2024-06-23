@@ -7,7 +7,6 @@ import tempfile
 
 import pytest
 
-from pyftpdlib._compat import getcwdu
 from pyftpdlib._compat import u
 from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.test import HOME
@@ -105,7 +104,7 @@ class TestAbstractedFS(PyftpdlibTestCase):
             goforit(u('/'))
         else:
             # os.sep == ':'? Don't know... let's try it anyway
-            goforit(getcwdu())
+            goforit(os.getcwd())
 
     def test_fs2ftp(self):
         # Tests for fs2ftp method.
@@ -153,7 +152,7 @@ class TestAbstractedFS(PyftpdlibTestCase):
             ae(fs.fs2ftp(u('/__home/userx')), u('/'))
         else:
             # os.sep == ':'? Don't know... let's try it anyway
-            goforit(getcwdu())
+            goforit(os.getcwd())
 
     def test_validpath(self):
         # Tests for validpath method.
@@ -199,7 +198,7 @@ class TestAbstractedFS(PyftpdlibTestCase):
 class TestUnixFilesystem(PyftpdlibTestCase):
 
     def test_case(self):
-        root = getcwdu()
+        root = os.getcwd()
         fs = UnixFilesystem(root, None)
         assert fs.root == root
         assert fs.cwd == root

@@ -10,7 +10,6 @@ import warnings
 
 import pytest
 
-from pyftpdlib._compat import getcwdu
 from pyftpdlib._compat import super
 from pyftpdlib._compat import unicode
 from pyftpdlib.authorizers import AuthenticationFailed
@@ -384,7 +383,7 @@ class _SharedAuthorizerTests:
     def test_override_user_homedir(self):
         auth = self.authorizer_class()
         user = self.get_current_user()
-        dir = os.path.dirname(getcwdu())
+        dir = os.path.dirname(os.getcwd())
         auth.override_user(user, homedir=dir)
         assert auth.get_home_dir(user) == dir
         # make sure other settings keep using default values

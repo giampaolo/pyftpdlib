@@ -8,7 +8,6 @@ a single code base working with both python 2.7 and 3.x.
 """
 
 import errno
-import os
 import sys
 import types
 
@@ -24,7 +23,6 @@ if PY3:
     def b(s):
         return s.encode("latin-1")
 
-    getcwdu = os.getcwd
     unicode = str
     xrange = range
     long = int
@@ -36,7 +34,6 @@ else:
     def b(s):
         return s
 
-    getcwdu = os.getcwdu
     unicode = unicode
     xrange = xrange
     long = long
