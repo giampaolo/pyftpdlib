@@ -49,6 +49,8 @@ from pyftpdlib.test import retry_on_failure
 from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import touch
 
+from . import MProcessTestFTPd
+
 
 class TestFtpAuthentication(PyftpdlibTestCase):
     """Test: USER, PASS, REIN."""
@@ -1914,7 +1916,8 @@ class TestConfigurableOptions(PyftpdlibTestCase):
 
 
 class TestCallbacks(PyftpdlibTestCase):
-    server_class = ThreadedTestFTPd
+    # using m-proc server since m-thread server produces random failures
+    server_class = MProcessTestFTPd
     client_class = ftplib.FTP
 
     def setUp(self):
