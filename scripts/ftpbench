@@ -99,7 +99,6 @@ SERVER_PROC = None
 TIMEOUT = None
 FILE_SIZE = "10M"
 SSL = False
-PY3 = sys.version_info >= (3, 0)
 
 server_memory = []
 # python >= 2.7.9

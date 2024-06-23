@@ -20,7 +20,6 @@ import sys
 
 
 PYTHON = sys.executable
-PY3 = sys.version_info[0] >= 3
 THIS_SCRIPT = os.path.realpath(__file__)
 
 
@@ -77,8 +76,7 @@ def sh(cmd):
 
 
 def open_text(path):
-    kw = {"encoding": "utf8"} if PY3 else {}
-    return open(path, **kw)
+    return open(path, encoding="utf8")
 
 
 def git_committed_files():
