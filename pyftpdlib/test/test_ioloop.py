@@ -55,7 +55,7 @@ class BaseIOLoopTestCase:
         self.addCleanup(wr.close)
         return rd, wr
 
-    def test_register(self):
+    def register(self):
         s = self.ioloop_class()
         self.addCleanup(s.close)
         rd, wr = self.make_socketpair()
@@ -67,36 +67,36 @@ class BaseIOLoopTestCase:
         return (s, rd, wr)
 
     def test_unregister(self):
-        s, rd, wr = self.test_register()
+        s, rd, wr = self.register()
         s.unregister(rd)
         s.unregister(wr)
         assert rd not in s.socket_map
         assert wr not in s.socket_map
 
     def test_unregister_twice(self):
-        s, rd, wr = self.test_register()
+        s, rd, wr = self.register()
         s.unregister(rd)
         s.unregister(rd)
         s.unregister(wr)
         s.unregister(wr)
 
     def test_modify(self):
-        s, rd, wr = self.test_register()
+        s, rd, wr = self.register()
         s.modify(rd, s.WRITE)
         s.modify(wr, s.READ)
 
     def test_loop(self):
         # no timeout
-        s, rd, wr = self.test_register()
+        s, rd, wr = self.register()
         s.call_later(0, s.close)
         s.loop()
         # with timeout
-        s, rd, wr = self.test_register()
+        s, rd, wr = self.register()
         s.call_later(0, s.close)
         s.loop(timeout=0.001)
 
     def test_close(self):
-        s, rd, wr = self.test_register()
+        s, rd, wr = self.register()
         s.close()
         assert s.socket_map == {}
 
@@ -168,14 +168,14 @@ class SelectIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
         with patch(
             'pyftpdlib.ioloop.select.select', side_effect=InterruptedError
         ) as m:
-            s, rd, wr = self.test_register()
+            s, rd, wr = self.register()
             s.poll(0)
         # ...but just that
         with patch(
             'pyftpdlib.ioloop.select.select', side_effect=OSError()
         ) as m:
             m.side_effect.errno = errno.EBADF
-            s, rd, wr = self.test_register()
+            s, rd, wr = self.register()
             with pytest.raises(OSError):
                 s.poll(0)
 
@@ -197,13 +197,13 @@ class PollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
         # EINTR is supposed to be ignored
         with patch(self.poller_mock, return_vaue=Mock()) as m:
             m.return_value.poll.side_effect = OSError(errno.EINTR, "")
-            s, rd, wr = self.test_register()
+            s, rd, wr = self.register()
             s.poll(0)
             assert m.called
         # ...but just that
         with patch(self.poller_mock, return_vaue=Mock()) as m:
             m.return_value.poll.side_effect = OSError(errno.EBADF, "")
-            s, rd, wr = self.test_register()
+            s, rd, wr = self.register()
             with pytest.raises(OSError):
                 s.poll(0)
             assert m.called
@@ -212,24 +212,24 @@ class PollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
         # EEXIST is supposed to be ignored
         with patch(self.poller_mock, return_vaue=Mock()) as m:
             m.return_value.register.side_effect = OSError(errno.EEXIST, "")
-            s, rd, wr = self.test_register()
+            s, rd, wr = self.register()
         # ...but just that
         with patch(self.poller_mock, return_vaue=Mock()) as m:
             m.return_value.register.side_effect = OSError(errno.EBADF, "")
             with pytest.raises(EnvironmentError):
-                self.test_register()
+                self.register()
 
     def test_enoent_ebadf_on_unregister(self):
         # ENOENT and EBADF are supposed to be ignored
         for errnum in (errno.EBADF, errno.ENOENT):
             with patch(self.poller_mock, return_vaue=Mock()) as m:
                 m.return_value.unregister.side_effect = OSError(errnum, "")
-                s, rd, wr = self.test_register()
+                s, rd, wr = self.register()
                 s.unregister(rd)
         # ...but just those
         with patch(self.poller_mock, return_vaue=Mock()) as m:
             m.return_value.unregister.side_effect = OSError(errno.EEXIST, "")
-            s, rd, wr = self.test_register()
+            s, rd, wr = self.register()
             with pytest.raises(EnvironmentError):
                 s.unregister(rd)
 
@@ -237,7 +237,7 @@ class PollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
         # ENOENT is supposed to be ignored
         with patch(self.poller_mock, return_vaue=Mock()) as m:
             m.return_value.modify.side_effect = OSError(errno.ENOENT, "")
-            s, rd, wr = self.test_register()
+            s, rd, wr = self.register()
             s.modify(rd, s.READ)
 
 
