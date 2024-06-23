@@ -108,15 +108,6 @@ def sh(cmd, nolog=False):
 def rm(pattern, directory=False):
     """Recursively remove a file or dir by pattern."""
 
-    def safe_remove(path):
-        try:
-            os.remove(path)
-        except OSError as err:
-            if err.errno != errno.ENOENT:
-                raise
-        else:
-            safe_print("rm %s" % path)
-
     def safe_rmtree(path):
         def onerror(fun, path, excinfo):
             exc = excinfo[1]
@@ -153,9 +144,8 @@ def rm(pattern, directory=False):
 def safe_remove(path):
     try:
         os.remove(path)
-    except OSError as err:
-        if err.errno != errno.ENOENT:
-            raise
+    except FileNotFoundError:
+        pass
     else:
         safe_print("rm %s" % path)
 

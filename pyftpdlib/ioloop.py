@@ -504,11 +504,8 @@ class _BasePollEpoll(_IOLoop):
     def register(self, fd, instance, events):
         try:
             self._poller.register(fd, events)
-        except OSError as err:
-            if err.errno == errno.EEXIST:
-                debug("call: register(); poller raised EEXIST; ignored", self)
-            else:
-                raise
+        except FileExistsError:
+            debug("call: register(); poller raised EEXIST; ignored", self)
         self.socket_map[fd] = instance
 
     def unregister(self, fd):
@@ -532,8 +529,8 @@ class _BasePollEpoll(_IOLoop):
     def modify(self, fd, events):
         try:
             self._poller.modify(fd, events)
-        except OSError as err:
-            if err.errno == errno.ENOENT and fd in self.socket_map:
+        except FileNotFoundError:
+            if fd in self.socket_map:
                 # XXX - see:
                 # https://github.com/giampaolo/pyftpdlib/issues/329
                 instance = self.socket_map[fd]

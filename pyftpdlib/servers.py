@@ -521,9 +521,8 @@ class _SpawnerBase(FTPServer):
                     # as the process hangs on kqueue.control() or
                     # select.select(). Use SIGKILL instead.
                     os.kill(t.pid, signal.SIGKILL)
-            except OSError as err:
-                if err.errno != errno.ESRCH:
-                    raise
+            except ProcessLookupError:
+                pass
 
     def _join_task(self, t):
         logger.debug("join()ing task %r" % t)
