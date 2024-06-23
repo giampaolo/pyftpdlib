@@ -101,12 +101,6 @@ FILE_SIZE = "10M"
 SSL = False
 
 server_memory = []
-# python >= 2.7.9
-SSLWantReadError = getattr(ssl, "SSLWantReadError", object())
-SSLWantWriteError = getattr(ssl, "SSLWantWriteError", object())
-# python <= 2.7.8
-SSL_ERROR_WANT_READ = getattr(ssl, "SSL_ERROR_WANT_READ", object())
-SSL_ERROR_WANT_WRITE = getattr(ssl, "SSL_ERROR_WANT_WRITE", object())
 
 
 if not sys.stdout.isatty() or os.name != 'posix':
@@ -411,15 +405,9 @@ def bench_multi(howmany):
 def handle_ssl_want_rw_errs():
     try:
         yield
-    except (SSLWantReadError, SSLWantWriteError) as err:
+    except (ssl.SSLWantReadError, ssl.SSLWantWriteError) as err:
         if DEBUG:
             print(err)
-    except ssl.SSLError as err:
-        if err.args[0] in (SSL_ERROR_WANT_READ, SSL_ERROR_WANT_WRITE):
-            if DEBUG:
-                print(err)
-        else:
-            raise
 
 
 class AsyncReader(asyncore.dispatcher):
@@ -441,7 +429,7 @@ class AsyncReader(asyncore.dispatcher):
         self.close()
 
     def handle_error(self):
-        raise
+        raise  # noqa
 
 
 class AsyncWriter(asyncore.dispatcher):
