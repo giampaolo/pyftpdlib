@@ -25,13 +25,11 @@ except ImportError:
 
 import pytest
 
-from pyftpdlib._compat import PY3
 from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.handlers import SUPPORTS_HYBRID_IPV6
 from pyftpdlib.handlers import DTPHandler
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.handlers import ThrottledDTPHandler
-from pyftpdlib.handlers import _import_sendfile
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.test import BUFSIZE
@@ -45,7 +43,6 @@ from pyftpdlib.test import PASSWD
 from pyftpdlib.test import POSIX
 from pyftpdlib.test import SUPPORTS_IPV4
 from pyftpdlib.test import SUPPORTS_IPV6
-from pyftpdlib.test import SUPPORTS_SENDFILE
 from pyftpdlib.test import USER
 from pyftpdlib.test import WINDOWS
 from pyftpdlib.test import MProcessTestFTPd
@@ -58,9 +55,6 @@ from pyftpdlib.test import mock
 from pyftpdlib.test import retry_on_failure
 from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import touch
-
-
-sendfile = _import_sendfile()
 
 
 class TestFtpAuthentication(PyftpdlibTestCase):
@@ -774,7 +768,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
         self.dummy_recvfile.close()
         self.dummy_sendfile.close()
         if self.use_sendfile is not None:
-            self.server.handler.use_sendfile = _import_sendfile() is not None
+            self.server.handler.use_sendfile = hasattr(os, "sendfile")
         super().tearDown()
 
     def test_stor(self):
@@ -1039,9 +1033,6 @@ class TestFtpStoreData(PyftpdlibTestCase):
 
 
 @pytest.mark.skipif(not POSIX, reason="POSIX only")
-@pytest.mark.skipif(
-    not PY3 and sendfile is None, reason="pysendfile not installed"
-)
 class TestFtpStoreDataNoSendfile(TestFtpStoreData):
     """Test STOR, STOU, APPE, REST, TYPE not using sendfile()."""
 
@@ -1094,7 +1085,7 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
         self.server.stop()
         self.dummyfile.close()
         if self.use_sendfile is not None:
-            self.server.handler.use_sendfile = _import_sendfile() is not None
+            self.server.handler.use_sendfile = hasattr(os, "sendfile")
         super().tearDown()
 
     def test_retr(self):
@@ -1182,9 +1173,6 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
 
 
 @pytest.mark.skipif(not POSIX, reason="POSIX only")
-@pytest.mark.skipif(
-    not PY3 and sendfile is None, reason="pysendfile not installed"
-)
 class TestFtpRetrieveDataNoSendfile(TestFtpRetrieveData):
     """Test RETR, REST, TYPE by not using sendfile()."""
 
@@ -2523,18 +2511,6 @@ class TestCornerCases(PyftpdlibTestCase):
                 repr(inst)
                 str(inst)
 
-    if hasattr(os, 'sendfile'):
-
-        def test_sendfile(self):
-            # make sure that on python >= 3.3 we're using os.sendfile
-            # rather than third party pysendfile module
-            assert sendfile is os.sendfile
-
-    if SUPPORTS_SENDFILE:
-
-        def test_sendfile_enabled(self):
-            assert FTPHandler.use_sendfile is True
-
     if hasattr(select, 'epoll') or hasattr(select, 'kqueue'):
 
         def test_ioloop_fileno(self):
@@ -2881,7 +2857,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
 
     @pytest.mark.skipif(not POSIX, reason="POSIX only")
     @pytest.mark.skipif(
-        not PY3 and sendfile is None, reason="pysendfile not installed"
+        not hasattr(os, "sendfile"), reason="os.sendfile() not available"
     )
     @retry_on_failure()
     def test_sendfile_fails(self):
@@ -2896,7 +2872,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         self.dummy_sendfile.seek(0)
         self.client.storbinary('stor ' + self.tempfile, self.dummy_sendfile)
         with mock.patch(
-            'pyftpdlib.handlers.sendfile', side_effect=OSError(errno.EINVAL)
+            'pyftpdlib.handlers.os.sendfile', side_effect=OSError(errno.EINVAL)
         ) as fun:
             self.client.retrbinary(
                 'retr ' + self.tempfile, self.dummy_recvfile.write

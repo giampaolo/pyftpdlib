@@ -69,11 +69,7 @@ def hilite(s, ok=True, bold=False):
 if sys.version_info < (2, 7):  # noqa
     sys.exit('python version not supported (< 2.7)')
 
-require_pysendfile = os.name == 'posix' and sys.version_info < (3, 3)
-
 extras_require = {'ssl': ["PyOpenSSL"]}
-if require_pysendfile:
-    extras_require.update({'sendfile': ['pysendfile']})
 
 VERSION = get_version()
 
@@ -123,26 +119,6 @@ def main():
             'Programming Language :: Python :: 3',
         ],
     )
-
-    # suggest to install pysendfile
-    if require_pysendfile:
-        try:
-            # os.sendfile() appeared in python 3.3
-            # http://bugs.python.org/issue10882
-            if not hasattr(os, 'sendfile'):
-                # fallback on using third-party pysendfile module
-                # https://github.com/giampaolo/pysendfile/
-                import sendfile
-
-                if hasattr(sendfile, 'has_sf_hdtr'):  # old 1.2.4 version
-                    raise ImportError
-        except ImportError:
-            msg = textwrap.dedent("""
-                'pysendfile' third-party module is not installed. This is not
-                essential but it considerably speeds up file transfers.
-                You can install it with 'pip install pysendfile'.
-                More at: https://github.com/giampaolo/pysendfile""")
-            print(hilite(msg, ok=False), file=sys.stderr)
 
     try:
         from OpenSSL import SSL  # NOQA

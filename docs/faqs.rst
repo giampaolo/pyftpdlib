@@ -244,10 +244,8 @@ Implementation
 sendfile()
 ----------
 
-Starting from version 0.7.0 if
-`pysendfile <https://github.com/giampaolo/pysendfile/>`__ module is installed
-sendfile(2) system call be used when uploading files (from server to client)
-via RETR command.
+Starting from version 0.7.0, sendfile(2) system call be used when uploading
+files (from server to client) via RETR command.
 Using sendfile(2) usually results in transfer rates from 2x to 3x faster
 and less CPU usage.
 Note: use of sendfile() might introduce some unexpected issues with "non

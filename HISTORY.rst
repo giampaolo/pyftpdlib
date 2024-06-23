@@ -15,6 +15,12 @@ Version: 1.6.0 - (UNRELEASED)
 * #627: PermissionError may occur on Windows when binding ports from a
   pre-configured PASV range.
 
+**Notes about backward compatibility**
+
+* #629: Python 2.7 is no longer supported.
+* #629: pysendfile module is no longer a required dependency, because we ceased
+  support for Python 2.
+
 Version: 1.5.9 - 2023-10-25
 ===========================
 

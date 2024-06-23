@@ -24,7 +24,6 @@ import psutil
 
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
-from pyftpdlib.handlers import _import_sendfile
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
 
@@ -35,9 +34,6 @@ except ImportError:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         import mock  # NOQA - requires "pip install mock"
-
-
-sendfile = _import_sendfile()
 
 
 # --- platforms
@@ -137,7 +133,6 @@ def try_address(host, port=0, family=socket.AF_INET):
 
 SUPPORTS_IPV4 = try_address('127.0.0.1')
 SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
-SUPPORTS_SENDFILE = hasattr(os, 'sendfile') or sendfile is not None
 
 
 def get_testfn(suffix="", dir=None):
@@ -408,7 +403,7 @@ def reset_server_opts():
         klass.timeout = 300
         klass.unicode_errors = "replace"
         klass.use_gmt_times = True
-        klass.use_sendfile = _import_sendfile() is not None
+        klass.use_sendfile = hasattr(os, "sendfile")
         klass.ac_in_buffer_size = 4096
         klass.ac_out_buffer_size = 4096
         if klass.__name__ == 'TLS_FTPHandler':

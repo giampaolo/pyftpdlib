@@ -36,7 +36,6 @@ ifeq ($(shell $(PYTHON) -c "import sys; print(sys.version_info[0])"), 2)
 		psutil \
 		pytest \
 		pyopenssl \
-		pysendfile \
 		setuptools
 endif
 

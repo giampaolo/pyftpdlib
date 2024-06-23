@@ -53,29 +53,6 @@ from .log import logger
 CR_BYTE = ord('\r')
 
 
-def _import_sendfile():
-    # By default attempt to use os.sendfile introduced in Python 3.3:
-    # http://bugs.python.org/issue10882
-    # ...otherwise fallback on using third-party pysendfile module:
-    # https://github.com/giampaolo/pysendfile/
-    if os.name == 'posix':
-        try:
-            return os.sendfile  # py >= 3.3
-        except AttributeError:
-            try:
-                import sendfile as sf
-
-                # dirty hack to detect whether old 1.2.4 version is installed
-                if hasattr(sf, 'has_sf_hdtr'):
-                    raise ImportError
-                return sf.sendfile
-            except ImportError:
-                pass
-    return None
-
-
-sendfile = _import_sendfile()
-
 proto_cmds = {
     'ABOR': dict(
         perm=None, auth=True, arg=False, help='Syntax: ABOR (abort transfer).'
@@ -829,7 +806,7 @@ class DTPHandler(AsyncChat):
     def initiate_sendfile(self):
         """A wrapper around sendfile."""
         try:
-            sent = sendfile(
+            sent = os.sendfile(
                 self._fileno,
                 self._filefd,
                 self._offset,
@@ -1379,7 +1356,7 @@ class FTPHandler(AsyncChat):
     masquerade_address_map = {}
     passive_ports = None
     use_gmt_times = True
-    use_sendfile = sendfile is not None
+    use_sendfile = hasattr(os, "sendfile")  # added in python 3.3
     tcp_no_delay = hasattr(socket, "TCP_NODELAY")
     unicode_errors = 'replace'
     log_prefix = '%(remote_ip)s:%(remote_port)s-[%(username)s]'
