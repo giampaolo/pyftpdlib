@@ -35,7 +35,6 @@ except ImportError:
 from . import __ver__
 from ._compat import PY3
 from ._compat import b
-from ._compat import super
 from ._compat import u
 from ._compat import unicode
 from .authorizers import AuthenticationFailed

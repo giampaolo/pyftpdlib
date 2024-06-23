@@ -12,7 +12,6 @@ import pytest
 
 import pyftpdlib.ioloop
 from pyftpdlib._compat import PY3
-from pyftpdlib._compat import super
 from pyftpdlib.ioloop import Acceptor
 from pyftpdlib.ioloop import AsyncChat
 from pyftpdlib.ioloop import IOLoop

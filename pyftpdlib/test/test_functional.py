@@ -27,7 +27,6 @@ import pytest
 
 from pyftpdlib._compat import PY3
 from pyftpdlib._compat import b
-from pyftpdlib._compat import super
 from pyftpdlib._compat import u
 from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.handlers import SUPPORTS_HYBRID_IPV6

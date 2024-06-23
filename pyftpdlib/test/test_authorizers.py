@@ -10,7 +10,6 @@ import warnings
 
 import pytest
 
-from pyftpdlib._compat import super
 from pyftpdlib._compat import unicode
 from pyftpdlib.authorizers import AuthenticationFailed
 from pyftpdlib.authorizers import AuthorizerError

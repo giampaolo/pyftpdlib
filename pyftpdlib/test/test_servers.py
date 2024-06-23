@@ -10,7 +10,6 @@ import pytest
 
 from pyftpdlib import handlers
 from pyftpdlib import servers
-from pyftpdlib._compat import super
 from pyftpdlib.test import GLOBAL_TIMEOUT
 from pyftpdlib.test import HOST
 from pyftpdlib.test import PASSWD

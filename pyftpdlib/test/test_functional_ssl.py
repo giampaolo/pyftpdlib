@@ -11,7 +11,6 @@ import ssl
 import OpenSSL  # requires "pip install pyopenssl"
 import pytest
 
-from pyftpdlib._compat import super
 from pyftpdlib.handlers import TLS_FTPHandler
 from pyftpdlib.test import CI_TESTING
 from pyftpdlib.test import GLOBAL_TIMEOUT

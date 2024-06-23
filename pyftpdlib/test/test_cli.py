@@ -17,7 +17,6 @@ import pyftpdlib
 from pyftpdlib import __ver__
 from pyftpdlib.__main__ import main
 from pyftpdlib._compat import PY3
-from pyftpdlib._compat import super
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.test import PyftpdlibTestCase
