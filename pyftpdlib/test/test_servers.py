@@ -70,6 +70,7 @@ class TestFTPServer(PyftpdlibTestCase):
             self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
             self.client.connect(ip, port)
             self.client.login(USER, PASSWD)
+            self.client.quit()
 
     def test_ctx_mgr(self):
         with servers.FTPServer((HOST, 0), handlers.FTPHandler) as server:
