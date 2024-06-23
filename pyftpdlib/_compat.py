@@ -24,7 +24,6 @@ if PY3:
         return s.encode("latin-1")
 
     unicode = str
-    xrange = range
     long = int
 else:
 
@@ -35,7 +34,6 @@ else:
         return s
 
     unicode = unicode
-    xrange = xrange
     long = long
 
 

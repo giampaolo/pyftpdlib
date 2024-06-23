@@ -39,7 +39,6 @@ from ._compat import b
 from ._compat import super
 from ._compat import u
 from ._compat import unicode
-from ._compat import xrange
 from .authorizers import AuthenticationFailed
 from .authorizers import AuthorizerError
 from .authorizers import DummyAuthorizer
@@ -1269,7 +1268,7 @@ class BufferedIteratorProducer:
         its next() method different times.
         """
         buffer = []
-        for _ in xrange(self.loops):
+        for _ in range(self.loops):
             try:
                 buffer.append(next(self.iterator))
             except StopIteration:
