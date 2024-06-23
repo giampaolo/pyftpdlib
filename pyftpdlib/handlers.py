@@ -35,7 +35,6 @@ except ImportError:
 from . import __ver__
 from ._compat import PY3
 from ._compat import b
-from ._compat import u
 from ._compat import unicode
 from .authorizers import AuthenticationFailed
 from .authorizers import AuthorizerError
@@ -1683,16 +1682,16 @@ class FTPHandler(AsyncChat):
                 return
         else:
             if (cmd == 'STAT') and not arg:
-                self.ftp_STAT(u(''))
+                self.ftp_STAT('')
                 return
 
             # for file-system related commands check whether real path
             # destination is valid
             if self.proto_cmds[cmd]['perm'] and (cmd != 'STOU'):
                 if cmd in ('CWD', 'XCWD'):
-                    arg = self.fs.ftp2fs(arg or u('/'))
+                    arg = self.fs.ftp2fs(arg or '/')
                 elif cmd in ('CDUP', 'XCUP'):
-                    arg = self.fs.ftp2fs(u('..'))
+                    arg = self.fs.ftp2fs('..')
                 elif cmd == 'LIST':
                     if arg.lower() in ('-a', '-l', '-al', '-la'):
                         arg = self.fs.ftp2fs(self.fs.cwd)

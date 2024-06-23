@@ -27,7 +27,6 @@ import pytest
 
 from pyftpdlib._compat import PY3
 from pyftpdlib._compat import b
-from pyftpdlib._compat import u
 from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.handlers import SUPPORTS_HYBRID_IPV6
 from pyftpdlib.handlers import DTPHandler
@@ -540,17 +539,17 @@ class TestFtpFsOperations(PyftpdlibTestCase):
         # cwd provided with no arguments is supposed to move us to the
         # root directory
         self.client.sendcmd('cwd')
-        assert self.client.pwd() == u('/')
+        assert self.client.pwd() == '/'
 
     def test_pwd(self):
-        assert self.client.pwd() == u('/')
+        assert self.client.pwd() == '/'
         self.client.cwd(self.tempdir)
         assert self.client.pwd() == '/' + self.tempdir
 
     def test_cdup(self):
         subfolder = self.get_testfn(dir=self.tempdir)
         os.mkdir(os.path.join(self.tempdir, subfolder))
-        assert self.client.pwd() == u('/')
+        assert self.client.pwd() == '/'
         self.client.cwd(self.tempdir)
         assert self.client.pwd() == '/%s' % self.tempdir
         self.client.cwd(subfolder)
@@ -558,11 +557,11 @@ class TestFtpFsOperations(PyftpdlibTestCase):
         self.client.sendcmd('cdup')
         assert self.client.pwd() == '/%s' % self.tempdir
         self.client.sendcmd('cdup')
-        assert self.client.pwd() == u('/')
+        assert self.client.pwd() == '/'
 
         # make sure we can't escape from root directory
         self.client.sendcmd('cdup')
-        assert self.client.pwd() == u('/')
+        assert self.client.pwd() == '/'
 
     def test_mkd(self):
         tempdir = self.get_testfn()
@@ -588,7 +587,7 @@ class TestFtpFsOperations(PyftpdlibTestCase):
         with pytest.raises(
             ftplib.error_perm, match="Can't remove root directory"
         ):
-            self.client.rmd(u('/'))
+            self.client.rmd('/')
 
     def test_dele(self):
         self.client.delete(self.tempfile)
@@ -609,7 +608,7 @@ class TestFtpFsOperations(PyftpdlibTestCase):
         with pytest.raises(ftplib.error_perm):
             self.client.rename(bogus, '/x')
         with pytest.raises(ftplib.error_perm):
-            self.client.rename(self.tempfile, u('/'))
+            self.client.rename(self.tempfile, '/')
         # rnto sent without first specifying the source
         with pytest.raises(ftplib.error_perm):
             self.client.sendcmd('rnto ' + self.tempfile)
@@ -2573,7 +2572,7 @@ class TestCornerCases(PyftpdlibTestCase):
 #             safe_mkdir(TESTFN_UNICODE)
 #             touch(TESTFN_UNICODE_2)
 #             self.utf8fs = \
-#                 unicode(TESTFN_UNICODE, 'utf8') in os.listdir(u('.'))
+#                 unicode(TESTFN_UNICODE, 'utf8') in os.listdir('.')
 #             warnings.resetwarnings()
 
 #     def tearDown(self):

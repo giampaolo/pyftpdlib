@@ -15,17 +15,11 @@ _SENTINEL = object()
 
 if PY3:
 
-    def u(s):
-        return s
-
     def b(s):
         return s.encode("latin-1")
 
     unicode = str
 else:
-
-    def u(s):
-        return unicode(s)
 
     def b(s):
         return s

@@ -19,7 +19,6 @@ except ImportError:
     pwd = grp = None
 
 from ._compat import PY3
-from ._compat import u
 from ._compat import unicode
 
 
@@ -106,7 +105,7 @@ class AbstractedFS:
         # If a different behavior is desired (e.g. initial cwd = root,
         # to reflect the real filesystem) users overriding this class
         # are responsible to set _cwd attribute as necessary.
-        self._cwd = u('/')
+        self._cwd = '/'
         self._root = root
         self.cmd_channel = cmd_channel
 
@@ -161,7 +160,7 @@ class AbstractedFS:
         # that self.cwd is not absolute, return "/" as a safety measure.
         # This is for extra protection, maybe not really necessary.
         if not os.path.isabs(p):
-            p = u("/")
+            p = "/"
         return p
 
     def ftp2fs(self, ftppath):
@@ -204,7 +203,7 @@ class AbstractedFS:
         else:
             p = os.path.normpath(os.path.join(self.root, fspath))
         if not self.validpath(p):
-            return u('/')
+            return '/'
         p = p.replace(os.sep, "/")
         p = p[len(self.root) :]
         if not p.startswith('/'):
