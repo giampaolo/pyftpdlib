@@ -28,8 +28,7 @@ import tempfile
 from urllib.request import urlopen
 
 
-APPVEYOR = bool(os.environ.get('APPVEYOR'))
-PYTHON = sys.executable if APPVEYOR else os.getenv('PYTHON', sys.executable)
+PYTHON = os.getenv('PYTHON', sys.executable)
 GET_PIP_URL = "https://bootstrap.pypa.io/get-pip.py"
 PYTEST_ARGS = "-v --tb=native -o"
 HERE = os.path.abspath(os.path.dirname(__file__))

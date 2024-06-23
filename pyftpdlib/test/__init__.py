@@ -33,10 +33,8 @@ from pyftpdlib.servers import FTPServer
 HERE = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
 ROOT_DIR = os.path.realpath(os.path.join(HERE, '..', '..'))
 PYPY = '__pypy__' in sys.builtin_module_names
-# whether we're running this test suite on a Continuous Integration service
-APPVEYOR = 'APPVEYOR' in os.environ
 GITHUB_ACTIONS = 'GITHUB_ACTIONS' in os.environ or 'CIBUILDWHEEL' in os.environ
-CI_TESTING = APPVEYOR or GITHUB_ACTIONS
+CI_TESTING = GITHUB_ACTIONS
 COVERAGE = 'COVERAGE_RUN' in os.environ
 # are we a 64 bit process?
 IS_64BIT = sys.maxsize > 2**32

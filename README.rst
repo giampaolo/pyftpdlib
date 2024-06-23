@@ -1,6 +1,6 @@
 |  |downloads| |stars| |forks| |contributors|
 |  |version| |packages| |license|
-|  |github-actions| |appveyor| |doc| |twitter|
+|  |github-actions| |doc| |twitter|
 
 .. |downloads| image:: https://img.shields.io/pypi/dm/pyftpdlib.svg
     :target: https://pepy.tech/project/pyftpdlib
@@ -21,10 +21,6 @@
 .. |github-actions| image:: https://img.shields.io/github/actions/workflow/status/giampaolo/pyftpdlib/.github/workflows/tests.yml
     :target: https://github.com/giampaolo/pyftpdlib/actions
     :alt: GH actions
-
-.. |appveyor| image:: https://img.shields.io/appveyor/build/giampaolo/pyftpdlib/master.svg?maxAge=3600&label=Windows%20(py2)
-    :target: https://ci.appveyor.com/project/giampaolo/pyftpdlib
-    :alt: Windows (Py2, Windows)
 
 .. |doc| image:: https://readthedocs.org/projects/pyftpdlib/badge/?version=latest
     :target: https://pyftpdlib.readthedocs.io/en/latest/
