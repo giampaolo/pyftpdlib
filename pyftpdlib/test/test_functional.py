@@ -118,10 +118,10 @@ class TestFtpAuthentication(PyftpdlibTestCase):
         # If authentication fails for 3 times ftpd disconnects the
         # client.  We can check if that happens by using self.client.sendcmd()
         # on the 'dead' socket object.  If socket object is really
-        # closed it should be raised a socket.error exception (Windows)
+        # closed it should be raised a OSError exception (Windows)
         # or a EOFError exception (Linux).
         self.client.sock.settimeout(0.1)
-        with pytest.raises((socket.error, EOFError)):
+        with pytest.raises((OSError, EOFError)):
             self.client.sendcmd('')
 
     def test_rein(self):
@@ -887,7 +887,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
             if os.path.exists(filename):
                 try:
                     self.client.delete(filename)
-                except (ftplib.Error, EOFError, socket.error):
+                except (ftplib.Error, EOFError, OSError):
                     safe_rmpath(filename)
 
     def test_stou_rest(self):
@@ -1012,10 +1012,10 @@ class TestFtpStoreData(PyftpdlibTestCase):
         # expect the response (transfer ok)
         assert self.client.voidresp()[:3] == '226'
         # Make sure client has been disconnected.
-        # socket.error (Windows) or EOFError (Linux) exception is supposed
+        # OSError (Windows) or EOFError (Linux) exception is supposed
         # to be raised in such a case.
         self.client.sock.settimeout(0.1)
-        with pytest.raises((socket.error, EOFError)):
+        with pytest.raises((OSError, EOFError)):
             self.client.sendcmd('noop')
 
     def test_stor_empty_file(self):
@@ -1556,7 +1556,7 @@ class TestTimeouts(PyftpdlibTestCase):
     #     data = self.client.sock.recv(BUFSIZE)
     #     self.assertEqual(data, b"421 Control connection timed out.\r\n")
     #     # ensure client has been kicked off
-    #     self.assertRaises((socket.error, EOFError), self.client.sendcmd,
+    #     self.assertRaises((OSError, EOFError), self.client.sendcmd,
     #                       'noop')
 
     def test_data_timeout(self):
@@ -1573,7 +1573,7 @@ class TestTimeouts(PyftpdlibTestCase):
             data = self.client.sock.recv(BUFSIZE)
             assert data == b"421 Data connection timed out.\r\n"
             # ensure client has been kicked off
-            with pytest.raises((socket.error, EOFError)):
+            with pytest.raises((OSError, EOFError)):
                 self.client.sendcmd('noop')
 
     def test_data_timeout_not_reached(self):
@@ -1608,7 +1608,7 @@ class TestTimeouts(PyftpdlibTestCase):
             data = self.client.sock.recv(BUFSIZE)
             assert data == b"421 Data connection timed out.\r\n"
             # ensure client has been kicked off
-            with pytest.raises((socket.error, EOFError)):
+            with pytest.raises((OSError, EOFError)):
                 self.client.sendcmd('noop')
 
     def test_idle_data_timeout2(self):
@@ -1628,7 +1628,7 @@ class TestTimeouts(PyftpdlibTestCase):
             data = self.client.sock.recv(BUFSIZE)
             assert data == b"421 Control connection timed out.\r\n"
             # ensure client has been kicked off
-            with pytest.raises((socket.error, EOFError)):
+            with pytest.raises((OSError, EOFError)):
                 self.client.sendcmd('noop')
 
     def test_pasv_timeout(self):
@@ -1766,7 +1766,7 @@ class TestConfigurableOptions(PyftpdlibTestCase):
             for c in (c1, c2, c3):
                 try:
                     c.quit()
-                except (socket.error, EOFError, ftplib.Error):
+                except (OSError, EOFError, ftplib.Error):
                     # already disconnected
                     pass
                 finally:
@@ -1793,15 +1793,15 @@ class TestConfigurableOptions(PyftpdlibTestCase):
                     self.server.port,
                 )
             # Make sure client has been disconnected.
-            # socket.error (Windows) or EOFError (Linux) exception is
+            # OSError (Windows) or EOFError (Linux) exception is
             # supposed to be raised in such a case.
-            with pytest.raises((socket.error, EOFError)):
+            with pytest.raises((OSError, EOFError)):
                 c4.sendcmd('noop')
         finally:
             for c in (c1, c2, c3, c4):
                 try:
                     c.quit()
-                except (socket.error, EOFError):  # already disconnected
+                except (OSError, EOFError):  # already disconnected
                     c.close()
 
     def test_banner(self):
@@ -1822,10 +1822,10 @@ class TestConfigurableOptions(PyftpdlibTestCase):
         self.connect()
         with pytest.raises(ftplib.error_perm):
             self.client.login('wrong', 'wrong')
-        # socket.error (Windows) or EOFError (Linux) exceptions are
+        # OSError (Windows) or EOFError (Linux) exceptions are
         # supposed to be raised when attempting to send/recv some data
         # using a disconnected socket
-        with pytest.raises((socket.error, EOFError)):
+        with pytest.raises((OSError, EOFError)):
             self.client.sendcmd('noop')
 
     def test_masquerade_address(self):
@@ -2454,7 +2454,7 @@ class TestCornerCases(PyftpdlibTestCase):
                 s.settimeout(GLOBAL_TIMEOUT)
                 try:
                     s.connect(addr)
-                except socket.error:
+                except OSError:
                     pass
 
         for _ in range(10):
@@ -2751,7 +2751,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         data = self.client.sock.recv(BUFSIZE)
         assert data == b"421 Control connection timed out.\r\n"
         # ensure client has been kicked off
-        with pytest.raises((socket.error, EOFError)):
+        with pytest.raises((OSError, EOFError)):
             self.client.sendcmd('noop')
 
     @retry_on_failure()
@@ -2792,7 +2792,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         for port in reversed(range(1, 1024)):
             try:
                 socket.getservbyport(port)
-            except socket.error:
+            except OSError:
                 # not registered port; go on
                 try:
                     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -2800,7 +2800,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
                     sock.settimeout(GLOBAL_TIMEOUT)
                     sock.bind((HOST, port))
                     break
-                except socket.error as err:
+                except OSError as err:
                     if err.errno == errno.EACCES:
                         # root privileges needed
                         if sock is not None:

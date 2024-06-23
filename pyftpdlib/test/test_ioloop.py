@@ -498,7 +498,7 @@ class TestAsyncChat(PyftpdlibTestCase):
         for errnum in pyftpdlib.ioloop._ERRNOS_RETRY:
             with patch(
                 "pyftpdlib.ioloop.socket.socket.send",
-                side_effect=socket.error(errnum, ""),
+                side_effect=OSError(errnum, ""),
             ) as m:
                 assert ac.send(b"x") == 0
                 assert m.called
@@ -508,7 +508,7 @@ class TestAsyncChat(PyftpdlibTestCase):
         for errnum in pyftpdlib.ioloop._ERRNOS_DISCONNECTED:
             with patch(
                 "pyftpdlib.ioloop.socket.socket.send",
-                side_effect=socket.error(errnum, ""),
+                side_effect=OSError(errnum, ""),
             ) as send:
                 with patch.object(ac, "handle_close") as handle_close:
                     assert ac.send(b"x") == 0
@@ -520,7 +520,7 @@ class TestAsyncChat(PyftpdlibTestCase):
         for errnum in pyftpdlib.ioloop._ERRNOS_RETRY:
             with patch(
                 "pyftpdlib.ioloop.socket.socket.recv",
-                side_effect=socket.error(errnum, ""),
+                side_effect=OSError(errnum, ""),
             ) as m:
                 with pytest.raises(RetryError):
                     ac.recv(1024)
@@ -531,7 +531,7 @@ class TestAsyncChat(PyftpdlibTestCase):
         for errnum in pyftpdlib.ioloop._ERRNOS_DISCONNECTED:
             with patch(
                 "pyftpdlib.ioloop.socket.socket.recv",
-                side_effect=socket.error(errnum, ""),
+                side_effect=OSError(errnum, ""),
             ) as send:
                 with patch.object(ac, "handle_close") as handle_close:
                     assert ac.recv(b"x") == b''
@@ -541,9 +541,9 @@ class TestAsyncChat(PyftpdlibTestCase):
     def test_connect_af_unspecified_err(self):
         ac = AsyncChat()
         with patch.object(
-            ac, "connect", side_effect=socket.error(errno.EBADF, "")
+            ac, "connect", side_effect=OSError(errno.EBADF, "")
         ) as m:
-            with pytest.raises(socket.error):
+            with pytest.raises(OSError):
                 ac.connect_af_unspecified(("localhost", 0))
             assert m.called
             assert ac.socket is None
@@ -554,9 +554,9 @@ class TestAcceptor(PyftpdlibTestCase):
     def test_bind_af_unspecified_err(self):
         ac = Acceptor()
         with patch.object(
-            ac, "bind", side_effect=socket.error(errno.EBADF, "")
+            ac, "bind", side_effect=OSError(errno.EBADF, "")
         ) as m:
-            with pytest.raises(socket.error):
+            with pytest.raises(OSError):
                 ac.bind_af_unspecified(("localhost", 0))
             assert m.called
             assert ac.socket is None
@@ -565,7 +565,7 @@ class TestAcceptor(PyftpdlibTestCase):
         # https://github.com/giampaolo/pyftpdlib/issues/105
         ac = Acceptor()
         with patch.object(
-            ac, "accept", side_effect=socket.error(errno.ECONNABORTED, "")
+            ac, "accept", side_effect=OSError(errno.ECONNABORTED, "")
         ) as m:
             ac.handle_accept()
             assert m.called

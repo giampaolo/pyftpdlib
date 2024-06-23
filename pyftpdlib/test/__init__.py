@@ -47,7 +47,7 @@ LOG_FMT += "@%(module)-12s: %(lineno)-4s] %(message)s"
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
 try:
     HOST = socket.gethostbyname('localhost')
-except socket.error:
+except OSError:
     HOST = 'localhost'
 
 USER = 'user'
@@ -109,7 +109,7 @@ def try_address(host, port=0, family=socket.AF_INET):
     try:
         with contextlib.closing(socket.socket(family)) as sock:
             sock.bind((host, port))
-    except (socket.error, socket.gaierror):
+    except (OSError, socket.gaierror):
         return False
     else:
         return True

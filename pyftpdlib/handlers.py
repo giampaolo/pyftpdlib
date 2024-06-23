@@ -361,7 +361,7 @@ def _support_hybrid_ipv6():
             return False
         with contextlib.closing(socket.socket(socket.AF_INET6)) as sock:
             return not sock.getsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY)
-    except (socket.error, AttributeError):
+    except (OSError, AttributeError):
         return False
 
 
@@ -441,7 +441,7 @@ class PassiveDTP(Acceptor):
                         "ignoring EPERM when bind()ing port %s" % port,
                         logfun=logger.debug,
                     )
-                except socket.error as err:
+                except OSError as err:
                     if err.errno == errno.EADDRINUSE:  # port already in use
                         if ports:
                             continue
@@ -506,7 +506,7 @@ class PassiveDTP(Acceptor):
             if not self.cmd_channel.permit_foreign_addresses:
                 try:
                     sock.close()
-                except socket.error:
+                except OSError:
                     pass
                 msg = (
                     '425 Rejected data connection from foreign address '
@@ -595,7 +595,7 @@ class ActiveDTP(Connector):
         # dual stack IPv4/IPv6 support
         try:
             self.connect_af_unspecified((ip, port), (source_ip, 0))
-        except (socket.gaierror, socket.error):
+        except (socket.gaierror, OSError):
             self.handle_close()
 
     def readable(self):
@@ -611,7 +611,7 @@ class ActiveDTP(Connector):
         # test_active_conn_error tests this condition
         err = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
         if err != 0:
-            raise socket.error(err)
+            raise OSError(err)
         #
         msg = 'Active data connection established.'
         self.cmd_channel.respond('200 ' + msg)
@@ -650,7 +650,7 @@ class ActiveDTP(Connector):
         """Called to handle any uncaught exceptions."""
         try:
             raise  # noqa: PLE0704
-        except (socket.gaierror, socket.error):
+        except (socket.gaierror, OSError):
             pass
         except Exception:
             self.log_exception(self)
@@ -715,7 +715,7 @@ class DTPHandler(AsyncChat):
         self._initialized = False
         try:
             AsyncChat.__init__(self, sock, ioloop=cmd_channel.ioloop)
-        except socket.error as err:
+        except OSError as err:
             # if we get an exception here we want the dispatcher
             # instance to set socket attribute before closing, see:
             # https://github.com/giampaolo/pyftpdlib/issues/188
@@ -920,7 +920,7 @@ class DTPHandler(AsyncChat):
             chunk = self.recv(self.ac_in_buffer_size)
         except RetryError:
             pass
-        except socket.error:
+        except OSError:
             self.handle_error()
         else:
             self.tot_bytes_received += len(chunk)
@@ -1388,7 +1388,7 @@ class FTPHandler(AsyncChat):
 
         try:
             AsyncChat.__init__(self, conn, ioloop=ioloop)
-        except socket.error as err:
+        except OSError as err:
             # if we get an exception here we want the dispatcher
             # instance to set socket attribute before closing, see:
             # https://github.com/giampaolo/pyftpdlib/issues/188
@@ -1405,7 +1405,7 @@ class FTPHandler(AsyncChat):
         # connection properties
         try:
             self.remote_ip, self.remote_port = self.socket.getpeername()[:2]
-        except socket.error as err:
+        except OSError as err:
             debug(
                 "call: FTPHandler.__init__, err on getpeername() %r" % err,
                 self,
@@ -1425,7 +1425,7 @@ class FTPHandler(AsyncChat):
         # try to handle urgent data inline
         try:
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_OOBINLINE, 1)
-        except socket.error as err:
+        except OSError as err:
             debug(
                 "call: FTPHandler.__init__, err on SO_OOBINLINE %r" % err, self
             )
@@ -1435,7 +1435,7 @@ class FTPHandler(AsyncChat):
         if self.tcp_no_delay:
             try:
                 self.socket.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
-            except socket.error as err:
+            except OSError as err:
                 debug(
                     "call: FTPHandler.__init__, err on TCP_NODELAY %r" % err,
                     self,
@@ -3303,7 +3303,7 @@ if SSL is not None:
             self._ssl_requested = True
             try:
                 self.socket = SSL.Connection(ssl_context, self.socket)
-            except socket.error as err:
+            except OSError as err:
                 # may happen in case the client connects/disconnects
                 # very quickly
                 debug(
@@ -3510,7 +3510,7 @@ if SSL is not None:
                 # connection has gone away
                 try:
                     os.write(self.socket.fileno(), b'')
-                except (OSError, socket.error) as err:
+                except OSError as err:
                     debug(
                         "call: _do_ssl_shutdown() -> os.write, err: %r" % err,
                         inst=self,
@@ -3585,7 +3585,7 @@ if SSL is not None:
                     pass
                 else:
                     raise
-            except socket.error as err:
+            except OSError as err:
                 debug(
                     "call: _do_ssl_shutdown() -> shutdown(), err: %r" % err,
                     inst=self,

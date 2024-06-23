@@ -149,8 +149,8 @@ avoid race conditions, dead locks etc.
 Another possibility is to
 `change the default concurrency model <tutorial.html#changing-the-concurrency-model>`__.
 
-Why do I get socket.error "Permission denied" error on ftpd starting?
----------------------------------------------------------------------
+Why do I get "Permission denied" error on startup?
+--------------------------------------------------
 
 Probably because you're on a Unix system and you're trying to start ftpd as an
 unprivileged user. FTP servers bind on port 21 by default and only super-user
