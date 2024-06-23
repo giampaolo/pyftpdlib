@@ -15,14 +15,6 @@ import socket
 import ssl
 import stat
 import time
-
-
-try:
-    from StringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
-
-
 from unittest.mock import patch
 
 import pytest
@@ -72,7 +64,7 @@ class TestFtpAuthentication(PyftpdlibTestCase):
         self.client.connect(self.server.host, self.server.port)
         self.testfn = self.get_testfn()
         self.file = open(self.testfn, 'w+b')
-        self.dummyfile = BytesIO()
+        self.dummyfile = io.BytesIO()
 
     def tearDown(self):
         close_client(self.client)
@@ -759,8 +751,8 @@ class TestFtpStoreData(PyftpdlibTestCase):
             self.dummy_recvfile = CustomIO()
             self.dummy_sendfile = CustomIO()
         else:
-            self.dummy_recvfile = BytesIO()
-            self.dummy_sendfile = BytesIO()
+            self.dummy_recvfile = io.BytesIO()
+            self.dummy_sendfile = io.BytesIO()
         self.testfn = self.get_testfn()
 
     def tearDown(self):
@@ -1079,7 +1071,7 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
         if self.use_custom_io:
             self.dummyfile = CustomIO()
         else:
-            self.dummyfile = BytesIO()
+            self.dummyfile = io.BytesIO()
 
     def tearDown(self):
         close_client(self.client)
@@ -1468,7 +1460,7 @@ class TestThrottleBandwidth(PyftpdlibTestCase):
         self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
         self.client.login(USER, PASSWD)
-        self.dummyfile = BytesIO()
+        self.dummyfile = io.BytesIO()
         self.testfn = self.get_testfn()
 
     def tearDown(self):
@@ -2028,7 +2020,7 @@ class TestCallbacks(PyftpdlibTestCase):
 
     def test_on_file_received(self):
         data = b'abcde12345' * 100000
-        dummyfile = BytesIO()
+        dummyfile = io.BytesIO()
         dummyfile.write(data)
         dummyfile.seek(0)
         self.client.login(USER, PASSWD)
@@ -2052,7 +2044,7 @@ class TestCallbacks(PyftpdlibTestCase):
     def test_on_incomplete_file_received(self):
         self.client.login(USER, PASSWD)
         data = b'abcde12345' * 1000000
-        dummyfile = BytesIO()
+        dummyfile = io.BytesIO()
         dummyfile.write(data)
         dummyfile.seek(0)
         with contextlib.closing(
@@ -2661,17 +2653,17 @@ class TestCornerCases(PyftpdlibTestCase):
 #         if self.utf8fs:
 #             data = b'abcde12345' * 500
 #             os.remove(TESTFN_UNICODE_2)
-#             dummy = BytesIO()
+#             dummy = io.BytesIO()
 #             dummy.write(data)
 #             dummy.seek(0)
 #             self.client.storbinary('stor ' + TESTFN_UNICODE_2, dummy)
-#             dummy_recv = BytesIO()
+#             dummy_recv = io.BytesIO()
 #             self.client.retrbinary('retr ' + TESTFN_UNICODE_2,
 #                                    dummy_recv.write)
 #             dummy_recv.seek(0)
 #             self.assertEqual(dummy_recv.read(), data)
 #         else:
-#             dummy = BytesIO()
+#             dummy = io.BytesIO()
 #             self.assertRaises(ftplib.error_perm, self.client.storbinary,
 #                               'stor ' + TESTFN_UNICODE_2, dummy)
 
@@ -2680,12 +2672,12 @@ class TestCornerCases(PyftpdlibTestCase):
 #             data = b'abcd1234' * 500
 #             with open(TESTFN_UNICODE_2, 'wb') as f:
 #                 f.write(data)
-#             dummy = BytesIO()
+#             dummy = io.BytesIO()
 #             self.client.retrbinary('retr ' + TESTFN_UNICODE_2, dummy.write)
 #             dummy.seek(0)
 #             self.assertEqual(dummy.read(), data)
 #         else:
-#             dummy = BytesIO()
+#             dummy = io.BytesIO()
 #             self.assertRaises(ftplib.error_perm, self.client.retrbinary,
 #                               'retr ' + TESTFN_UNICODE_2, dummy.write)
 
@@ -2703,8 +2695,8 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         self.tempdir = self.get_testfn()
         touch(self.tempfile)
         touch(self.tempdir)
-        self.dummy_recvfile = BytesIO()
-        self.dummy_sendfile = BytesIO()
+        self.dummy_recvfile = io.BytesIO()
+        self.dummy_sendfile = io.BytesIO()
 
     def tearDown(self):
         if self.client:
