@@ -7,7 +7,6 @@
 $ python setup.py install
 """
 
-from __future__ import print_function
 
 import ast
 import os

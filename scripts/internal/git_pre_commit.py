@@ -11,7 +11,6 @@ the files which were modified in the commit. Install this with "make
 install-git-hooks".
 """
 
-from __future__ import print_function
 
 import os
 import shlex

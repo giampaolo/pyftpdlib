@@ -63,9 +63,6 @@ Example usages:
 #   300 concurrent clients (STOR 10.0M file)               9.74 secs    140.9M
 #   300 concurrent clients (QUIT)                          0.00 secs
 
-from __future__ import division
-from __future__ import print_function
-
 import argparse
 import asynchat
 import asyncore
@@ -451,7 +448,7 @@ class AsyncWriter(asyncore.dispatcher):
             self.handle_close()
 
     def handle_error(self):
-        raise
+        raise  # noqa
 
 
 class AsyncQuit(asynchat.async_chat):
