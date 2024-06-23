@@ -10,7 +10,6 @@ import warnings
 
 import pytest
 
-from pyftpdlib._compat import unicode
 from pyftpdlib.authorizers import AuthenticationFailed
 from pyftpdlib.authorizers import AuthorizerError
 from pyftpdlib.authorizers import DummyAuthorizer
@@ -244,7 +243,6 @@ class _SharedAuthorizerTests:
     def test_get_home_dir(self):
         auth = self.authorizer_class()
         home = auth.get_home_dir(self.get_current_user())
-        assert isinstance(home, unicode)
         nonexistent_user = self.get_nonexistent_user()
         assert os.path.isdir(home)
         if auth.has_user('nobody'):

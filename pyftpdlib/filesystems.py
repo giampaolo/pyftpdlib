@@ -18,9 +18,6 @@ try:
 except ImportError:
     pwd = grp = None
 
-from ._compat import PY3
-from ._compat import unicode
-
 
 __all__ = ['FilesystemError', 'AbstractedFS']
 
@@ -99,7 +96,6 @@ class AbstractedFS:
         - (str) root: the user "real" home directory (e.g. '/home/user')
         - (instance) cmd_channel: the FTPHandler class instance.
         """
-        assert isinstance(root, unicode)
         # Set initial current working directory.
         # By default initial cwd is set to "/" to emulate a chroot jail.
         # If a different behavior is desired (e.g. initial cwd = root,
@@ -121,12 +117,10 @@ class AbstractedFS:
 
     @root.setter
     def root(self, path):
-        assert isinstance(path, unicode), path
         self._root = path
 
     @cwd.setter
     def cwd(self, path):
-        assert isinstance(path, unicode), path
         self._cwd = path
 
     # --- Pathname / conversion utilities
@@ -142,7 +136,6 @@ class AbstractedFS:
         Note: directory separators are system independent ("/").
         Pathname returned is always absolutized.
         """
-        assert isinstance(ftppath, unicode), ftppath
         if os.path.isabs(ftppath):
             p = os.path.normpath(ftppath)
         else:
@@ -174,7 +167,6 @@ class AbstractedFS:
 
         Note: directory separators are system dependent.
         """
-        assert isinstance(ftppath, unicode), ftppath
         # as far as I know, it should always be path traversal safe...
         if os.path.normpath(self.root) == os.sep:
             return os.path.normpath(self.ftpnorm(ftppath))
@@ -197,7 +189,6 @@ class AbstractedFS:
         On invalid pathnames escaping from user's root directory
         (e.g. "/home" when root is "/home/user") always return "/".
         """
-        assert isinstance(fspath, unicode), fspath
         if os.path.isabs(fspath):
             p = os.path.normpath(fspath)
         else:
@@ -220,7 +211,6 @@ class AbstractedFS:
         Pathnames escaping from user's root directory are considered
         not valid.
         """
-        assert isinstance(path, unicode), path
         root = self.realpath(self.root)
         path = self.realpath(path)
         if not root.endswith(os.sep):
@@ -233,7 +223,6 @@ class AbstractedFS:
 
     def open(self, filename, mode):
         """Open a file returning its handler."""
-        assert isinstance(filename, unicode), filename
         return open(filename, mode)
 
     def mkstemp(self, suffix='', prefix='', dir=None, mode='wb'):
@@ -265,44 +254,35 @@ class AbstractedFS:
         it is vital that `cwd` attribute gets set.
         """
         # note: process cwd will be reset by the caller
-        assert isinstance(path, unicode), path
         os.chdir(path)
         self.cwd = self.fs2ftp(path)
 
     def mkdir(self, path):
         """Create the specified directory."""
-        assert isinstance(path, unicode), path
         os.mkdir(path)
 
     def listdir(self, path):
         """List the content of a directory."""
-        assert isinstance(path, unicode), path
         return os.listdir(path)
 
     def listdirinfo(self, path):
         """List the content of a directory."""
-        assert isinstance(path, unicode), path
         return os.listdir(path)
 
     def rmdir(self, path):
         """Remove the specified directory."""
-        assert isinstance(path, unicode), path
         os.rmdir(path)
 
     def remove(self, path):
         """Remove the specified file."""
-        assert isinstance(path, unicode), path
         os.remove(path)
 
     def rename(self, src, dst):
         """Rename the specified src file to the dst filename."""
-        assert isinstance(src, unicode), src
-        assert isinstance(dst, unicode), dst
         os.rename(src, dst)
 
     def chmod(self, path, mode):
         """Change file/directory mode."""
-        assert isinstance(path, unicode), path
         if not hasattr(os, 'chmod'):
             raise NotImplementedError
         os.chmod(path, mode)
@@ -310,7 +290,6 @@ class AbstractedFS:
     def stat(self, path):
         """Perform a stat() system call on the given path."""
         # on python 2 we might also get bytes from os.lisdir()
-        # assert isinstance(path, unicode), path
         return os.stat(path)
 
     def utime(self, path, timeval):
@@ -324,7 +303,6 @@ class AbstractedFS:
         def lstat(self, path):
             """Like stat but does not follow symbolic links."""
             # on python 2 we might also get bytes from os.lisdir()
-            # assert isinstance(path, unicode), path
             return os.lstat(path)
 
     else:
@@ -336,35 +314,29 @@ class AbstractedFS:
             """Return a string representing the path to which a
             symbolic link points.
             """
-            assert isinstance(path, unicode), path
             return os.readlink(path)
 
     # --- Wrapper methods around os.path.* calls
 
     def isfile(self, path):
         """Return True if path is a file."""
-        assert isinstance(path, unicode), path
         return os.path.isfile(path)
 
     def islink(self, path):
         """Return True if path is a symbolic link."""
-        assert isinstance(path, unicode), path
         return os.path.islink(path)
 
     def isdir(self, path):
         """Return True if path is a directory."""
-        assert isinstance(path, unicode), path
         return os.path.isdir(path)
 
     def getsize(self, path):
         """Return the size of the specified file in bytes."""
-        assert isinstance(path, unicode), path
         return os.path.getsize(path)
 
     def getmtime(self, path):
         """Return the last modified time as a number of seconds since
         the epoch."""
-        assert isinstance(path, unicode), path
         return os.path.getmtime(path)
 
     def realpath(self, path):
@@ -372,14 +344,12 @@ class AbstractedFS:
         symbolic links encountered in the path (if they are
         supported by the operating system).
         """
-        assert isinstance(path, unicode), path
         return os.path.realpath(path)
 
     def lexists(self, path):
         """Return True if path refers to an existing path, including
         a broken or circular symbolic link.
         """
-        assert isinstance(path, unicode), path
         return os.path.lexists(path)
 
     if pwd is not None:
@@ -448,7 +418,6 @@ class AbstractedFS:
         def get_group_by_gid(gid):
             return self.get_group_by_gid(gid)
 
-        assert isinstance(basedir, unicode), basedir
         if self.cmd_channel.use_gmt_times:
             timefunc = time.gmtime
         else:
@@ -457,20 +426,7 @@ class AbstractedFS:
         readlink = getattr(self, 'readlink', None)
         now = time.time()
         for basename in listing:
-            if not PY3:
-                try:
-                    file = os.path.join(basedir, basename)
-                except UnicodeDecodeError:
-                    # (Python 2 only) might happen on filesystem not
-                    # supporting UTF8 meaning os.listdir() returned a list
-                    # of mixed bytes and unicode strings:
-                    # http://goo.gl/6DLHD
-                    # http://bugs.python.org/issue683592
-                    file = os.path.join(bytes(basedir), bytes(basename))
-                    if not isinstance(basename, unicode):
-                        basename = unicode(basename, 'utf8', 'ignore')
-            else:
-                file = os.path.join(basedir, basename)
+            file = os.path.join(basedir, basename)
             try:
                 st = self.lstat(file)
             except (OSError, FilesystemError):
@@ -554,7 +510,6 @@ class AbstractedFS:
         type=dir;size=0;perm=el;modify=20071127230206;unique=801e33; ebooks
         type=file;size=211;perm=r;modify=20071103093626;unique=192; module.py
         """
-        assert isinstance(basedir, unicode), basedir
         if self.cmd_channel.use_gmt_times:
             timefunc = time.gmtime
         else:
@@ -576,20 +531,7 @@ class AbstractedFS:
         show_unique = 'unique' in facts
         for basename in listing:
             retfacts = {}
-            if not PY3:
-                try:
-                    file = os.path.join(basedir, basename)
-                except UnicodeDecodeError:
-                    # (Python 2 only) might happen on filesystem not
-                    # supporting UTF8 meaning os.listdir() returned a list
-                    # of mixed bytes and unicode strings:
-                    # http://goo.gl/6DLHD
-                    # http://bugs.python.org/issue683592
-                    file = os.path.join(bytes(basedir), bytes(basename))
-                    if not isinstance(basename, unicode):
-                        basename = unicode(basename, 'utf8', 'ignore')
-            else:
-                file = os.path.join(basedir, basename)
+            file = os.path.join(basedir, basename)
             # in order to properly implement 'unique' fact (RFC-3659,
             # chapter 7.5.2) we are supposed to follow symlinks, hence
             # use os.stat() instead of os.lstat()

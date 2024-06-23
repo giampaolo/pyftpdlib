@@ -23,7 +23,6 @@ import os
 import warnings
 
 from ._compat import PY3
-from ._compat import unicode
 
 
 __all__ = [
@@ -109,8 +108,6 @@ class DummyAuthorizer:
         """
         if self.has_user(username):
             raise ValueError('user %r already exists' % username)
-        if not isinstance(homedir, unicode):
-            homedir = homedir.decode('utf8')
         if not os.path.isdir(homedir):
             raise ValueError('no such directory: %r' % homedir)
         homedir = os.path.realpath(homedir)
@@ -352,8 +349,6 @@ class _Base:
             raise AuthorizerError("can't assign password to anonymous user")
         if not self.has_user(username):
             raise AuthorizerError('no such user %s' % username)
-        if homedir is not None and not isinstance(homedir, unicode):
-            homedir = homedir.decode('utf8')
 
         if username in self._dummy_authorizer.user_table:
             # re-set parameters
@@ -494,8 +489,6 @@ else:
         @staticmethod
         def _get_system_users():
             """Return all users defined on the UNIX system."""
-            # there should be no need to convert usernames to unicode
-            # as UNIX does not allow chars outside of ASCII set
             return [entry.pw_name for entry in pwd.getpwall()]
 
         def get_msg_login(self, username):
@@ -778,8 +771,6 @@ else:  # pragma: no cover
                 )
             value = winreg.QueryValueEx(key, "ProfileImagePath")[0]
             home = win32api.ExpandEnvironmentStrings(value)
-            if not PY3 and not isinstance(home, unicode):
-                home = home.decode('utf8')
             return home
 
         @classmethod
@@ -948,6 +939,4 @@ else:  # pragma: no cover
                 home = overridden_home
             else:
                 home = BaseWindowsAuthorizer.get_home_dir(self, username)
-            if not PY3 and not isinstance(home, unicode):
-                home = home.decode('utf8')
             return home
