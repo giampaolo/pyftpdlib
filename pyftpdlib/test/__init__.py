@@ -28,14 +28,6 @@ from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
 
 
-try:
-    from unittest import mock  # py3
-except ImportError:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        import mock  # NOQA - requires "pip install mock"
-
-
 # --- platforms
 
 HERE = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))

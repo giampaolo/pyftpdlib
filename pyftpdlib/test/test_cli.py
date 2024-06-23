@@ -5,6 +5,7 @@
 import io
 import os
 import warnings
+from unittest.mock import patch
 
 import pytest
 
@@ -14,7 +15,6 @@ from pyftpdlib.__main__ import main
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.test import PyftpdlibTestCase
-from pyftpdlib.test import mock
 
 
 class TestCommandLineParser(PyftpdlibTestCase):
@@ -33,7 +33,7 @@ class TestCommandLineParser(PyftpdlibTestCase):
 
         self.devnull = io.BytesIO()
         self.original_ftpserver_class = FTPServer
-        self.clog = mock.patch("pyftpdlib.__main__.config_logging")
+        self.clog = patch("pyftpdlib.__main__.config_logging")
         self.clog.start()
         pyftpdlib.__main__.FTPServer = DummyFTPServer
 

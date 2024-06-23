@@ -23,6 +23,8 @@ except ImportError:
     from io import BytesIO
 
 
+from unittest.mock import patch
+
 import pytest
 
 from pyftpdlib.filesystems import AbstractedFS
@@ -51,7 +53,6 @@ from pyftpdlib.test import ThreadedTestFTPd
 from pyftpdlib.test import close_client
 from pyftpdlib.test import disable_log_warning
 from pyftpdlib.test import get_server_handler
-from pyftpdlib.test import mock
 from pyftpdlib.test import retry_on_failure
 from pyftpdlib.test import safe_rmpath
 from pyftpdlib.test import touch
@@ -2863,7 +2864,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         self.dummy_sendfile.write(data)
         self.dummy_sendfile.seek(0)
         self.client.storbinary('stor ' + self.tempfile, self.dummy_sendfile)
-        with mock.patch(
+        with patch(
             'pyftpdlib.handlers.os.sendfile', side_effect=OSError(errno.EINVAL)
         ) as fun:
             self.client.retrbinary(
