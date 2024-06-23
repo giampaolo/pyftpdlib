@@ -117,6 +117,8 @@ def try_address(host, port=0, family=socket.AF_INET):
 
 
 SUPPORTS_IPV4 = try_address('127.0.0.1')
+# If this fails on Linux do:
+# $ sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
 SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
 
 
