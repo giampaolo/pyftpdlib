@@ -4,7 +4,6 @@
 
 import contextlib
 import errno
-import select
 import socket
 import time
 from unittest.mock import Mock
@@ -172,11 +171,11 @@ class SelectIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
             s.poll(0)
         # ...but just that
         with patch(
-            'pyftpdlib.ioloop.select.select', side_effect=select.error()
+            'pyftpdlib.ioloop.select.select', side_effect=OSError()
         ) as m:
             m.side_effect.errno = errno.EBADF
             s, rd, wr = self.test_register()
-            with pytest.raises(select.error):
+            with pytest.raises(OSError):
                 s.poll(0)
 
 
@@ -204,7 +203,7 @@ class PollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
         with patch(self.poller_mock, return_vaue=Mock()) as m:
             m.return_value.poll.side_effect = OSError(errno.EBADF, "")
             s, rd, wr = self.test_register()
-            with pytest.raises(select.error):
+            with pytest.raises(OSError):
                 s.poll(0)
             assert m.called
 

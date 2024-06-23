@@ -449,7 +449,7 @@ class _SpawnerBase(FTPServer):
                         for fd in list(ioloop.socket_map.keys()):
                             try:
                                 select.select([fd], [], [], 0)
-                            except select.error:
+                            except OSError:
                                 try:
                                     logger.info(
                                         "discarding broken socket %r",
