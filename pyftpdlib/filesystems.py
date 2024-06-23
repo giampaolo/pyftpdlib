@@ -9,10 +9,6 @@ import time
 
 
 try:
-    from stat import filemode as _filemode  # PY 3.3
-except ImportError:
-    from tarfile import filemode as _filemode
-try:
     import grp
     import pwd
 except ImportError:
@@ -434,7 +430,7 @@ class AbstractedFS:
                     continue
                 raise
 
-            perms = _filemode(st.st_mode)  # permissions
+            perms = stat.filemode(st.st_mode)  # permissions
             nlinks = st.st_nlink  # number of links to inode
             if not nlinks:  # non-posix system, let's use a bogus value
                 nlinks = 1
