@@ -11,6 +11,3 @@ import sys
 
 
 PY3 = sys.version_info[0] >= 3
-_SENTINEL = object()
-
-unicode = str if PY3 else unicode  # noqa

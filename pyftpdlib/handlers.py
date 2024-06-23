@@ -12,7 +12,6 @@ import socket
 import sys
 import time
 import traceback
-import warnings
 from datetime import datetime
 
 
@@ -34,7 +33,6 @@ except ImportError:
 
 from . import __ver__
 from ._compat import PY3
-from ._compat import unicode
 from .authorizers import AuthenticationFailed
 from .authorizers import AuthorizerError
 from .authorizers import DummyAuthorizer
@@ -2370,17 +2368,8 @@ class FTPHandler(AsyncChat):
             isdir = self.fs.isdir(path)
             if isdir:
                 listing = self.run_as_current_user(self.fs.listdir, path)
-                if isinstance(listing, list):
-                    try:
-                        # RFC 959 recommends the listing to be sorted.
-                        listing.sort()
-                    except UnicodeDecodeError:
-                        # (Python 2 only) might happen on filesystem not
-                        # supporting UTF8 meaning os.listdir() returned a list
-                        # of mixed bytes and unicode strings:
-                        # http://goo.gl/6DLHD
-                        # http://bugs.python.org/issue683592
-                        pass
+                # RFC 959 recommends the listing to be sorted.
+                listing.sort()
                 iterator = self.fs.format_list(path, listing)
             else:
                 basedir, filename = os.path.split(path)
@@ -2411,20 +2400,8 @@ class FTPHandler(AsyncChat):
         else:
             data = ''
             if listing:
-                try:
-                    listing.sort()
-                except UnicodeDecodeError:
-                    # (Python 2 only) might happen on filesystem not
-                    # supporting UTF8 meaning os.listdir() returned a list
-                    # of mixed bytes and unicode strings:
-                    # http://goo.gl/6DLHD
-                    # http://bugs.python.org/issue683592
-                    ls = []
-                    for x in listing:
-                        if not isinstance(x, unicode):
-                            x = unicode(x, 'utf8')
-                        ls.append(x)
-                    listing = sorted(ls)
+                # RFC 959 recommends the listing to be sorted.
+                listing.sort()
                 data = '\r\n'.join(listing) + '\r\n'
             data = data.encode('utf8', self.unicode_errors)
             self.push_dtp_data(data, cmd="NLST")
@@ -2784,19 +2761,6 @@ class FTPHandler(AsyncChat):
         self.username = ""
 
     def handle_auth_success(self, home, password, msg_login):
-        if not isinstance(home, unicode):
-            if PY3:
-                raise TypeError('type(home) != text')
-            else:
-                warnings.warn(
-                    '%s.get_home_dir returned a non-unicode string; now '
-                    'casting to unicode'
-                    % (self.authorizer.__class__.__name__),
-                    RuntimeWarning,
-                    stacklevel=2,
-                )
-                home = home.decode('utf8')
-
         if len(msg_login) <= 75:
             self.respond('230 %s' % msg_login)
         else:
@@ -2850,7 +2814,6 @@ class FTPHandler(AsyncChat):
         # name and in case it contains embedded double-quotes
         # they must be doubled (see RFC-959, chapter 7, appendix 2).
         cwd = self.fs.cwd
-        assert isinstance(cwd, unicode), cwd
         self.respond(
             '257 "%s" is the current directory.' % cwd.replace('"', '""')
         )
@@ -2874,7 +2837,6 @@ class FTPHandler(AsyncChat):
             self.respond('550 %s.' % why)
         else:
             cwd = self.fs.cwd
-            assert isinstance(cwd, unicode), cwd
             self.respond('250 "%s" is the current directory.' % cwd)
             if os.getcwd() != init_cwd:
                 os.chdir(init_cwd)
@@ -3168,16 +3130,8 @@ class FTPHandler(AsyncChat):
                 if isdir:
                     listing = self.run_as_current_user(self.fs.listdir, path)
                     if isinstance(listing, list):
-                        try:
-                            # RFC 959 recommends the listing to be sorted.
-                            listing.sort()
-                        except UnicodeDecodeError:
-                            # (Python 2 only) might happen on filesystem not
-                            # supporting UTF8 meaning os.listdir() returned a
-                            # list of mixed bytes and unicode strings:
-                            # http://goo.gl/6DLHD
-                            # http://bugs.python.org/issue683592
-                            pass
+                        # RFC 959 recommends the listing to be sorted.
+                        listing.sort()
                     iterator = self.fs.format_list(path, listing)
                 else:
                     basedir, filename = os.path.split(path)
