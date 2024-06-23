@@ -26,11 +26,6 @@ try:
 except ImportError:
     SSL = None
 
-try:
-    from collections import OrderedDict  # python >= 2.7
-except ImportError:
-    OrderedDict = dict
-
 from . import __ver__
 from . import _asynchat as asynchat
 from .authorizers import AuthenticationFailed
@@ -1465,7 +1460,7 @@ class FTPHandler(AsyncChat):
     def get_repr_info(self, as_str=False, extra_info=None):
         if extra_info is None:
             extra_info = {}
-        info = OrderedDict()
+        info = {}
         info['id'] = id(self)
         info['addr'] = "%s:%s" % (self.remote_ip, self.remote_port)
         if _is_ssl_sock(self.socket):
