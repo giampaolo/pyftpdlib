@@ -484,7 +484,8 @@ class ThreadedTestFTPd(threading.Thread):
         assert_free_resources(self.parent_pid)
 
 
-if POSIX:
+# XXX: multiprocessing does not work on OSX on GHA
+if POSIX and not (OSX and GITHUB_ACTIONS):
 
     class MProcessTestFTPd(multiprocessing.Process):
         """Same as above but using a sub process instead."""
