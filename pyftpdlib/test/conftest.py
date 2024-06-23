@@ -17,18 +17,27 @@ tearDown(), setUpClass(), tearDownClass() methods for each test class.
 import threading
 import warnings
 
+import psutil
 import pytest
 
 
+# set it to True to raise an exception instead of warning
+FAIL = False
+this_proc = psutil.Process()
+
+
 def collect_resources():
-    # Note: files and sockets are already collected by pytest, so no
-    # need to use psutil for it.
     res = {}
     res["threads"] = set(threading.enumerate())
+    res["num_fds"] = this_proc.num_fds()
+    # res["cons"] = set(this_proc.net_connections(kind="all"))
+    # res["files"] = set(this_proc.open_files())
     return res
 
 
 def warn(msg):
+    if FAIL:
+        raise RuntimeError(msg)
     warnings.warn(msg, ResourceWarning, stacklevel=3)
 
 
