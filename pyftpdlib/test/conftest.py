@@ -20,6 +20,8 @@ import warnings
 import psutil
 import pytest
 
+from pyftpdlib.ioloop import IOLoop
+
 
 # set it to True to raise an exception instead of warning
 FAIL = False
@@ -64,6 +66,17 @@ def assert_closed_resources(setup_ctx, request):
                 warn(msg)
 
 
+def assert_closed_ioloop():
+    inst = IOLoop.instance()
+    if inst.socket_map:
+        warn(f"unclosed ioloop socket map {inst.socket_map}")
+    if inst.sched._tasks:
+        warn(f"unclosed ioloop tasks {inst.sched._tasks}")
+
+
+# ---
+
+
 def setup_method(origin):
     ctx = collect_resources()
     ctx["_origin"] = origin
@@ -72,6 +85,7 @@ def setup_method(origin):
 
 def teardown_method(setup_ctx, request):
     assert_closed_resources(setup_ctx, request)
+    assert_closed_ioloop()
 
 
 @pytest.fixture(autouse=True, scope="function")
