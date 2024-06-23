@@ -94,7 +94,6 @@ omit = [
 ]
 exclude_lines = [
     "except ImportError:",
-    "if PY3:",
     "if __name__ == .__main__.:",
     "if hasattr(select, 'devpoll'):",
     "if hasattr(select, 'epoll'):",

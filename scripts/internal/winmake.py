@@ -25,15 +25,13 @@ import ssl
 import subprocess
 import sys
 import tempfile
+from urllib.request import urlopen
 
 
 APPVEYOR = bool(os.environ.get('APPVEYOR'))
 PYTHON = sys.executable if APPVEYOR else os.getenv('PYTHON', sys.executable)
 GET_PIP_URL = "https://bootstrap.pypa.io/get-pip.py"
-PY3 = sys.version_info[0] >= 3
-PYTEST_ARGS = "-v --tb=native "
-if PY3:
-    PYTEST_ARGS += "-o "
+PYTEST_ARGS = "-v --tb=native -o"
 HERE = os.path.abspath(os.path.dirname(__file__))
 ROOT_DIR = os.path.realpath(os.path.join(HERE, "..", ".."))
 PYPY = '__pypy__' in sys.builtin_module_names
@@ -56,8 +54,6 @@ if sys.version_info[:2] == (2, 7):
     )
 
 _cmds = {}
-if PY3:
-    basestring = str
 
 GREEN = 2
 LIGHTBLUE = 3
@@ -77,7 +73,7 @@ def safe_print(text, file=sys.stdout):
     encoding errors in case of funky path names.
     Works with Python 2 and 3.
     """
-    if not isinstance(text, basestring):
+    if not isinstance(text, str):
         return print(text, file=file)
     try:
         file.write(text)
@@ -216,11 +212,11 @@ def build():
 
     cmd = [PYTHON, "setup.py", "build"]
     # Print coloured warnings in real time.
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+    )
     try:
-        for line in iter(p.stdout.readline, b''):
-            if PY3:
-                line = line.decode()
+        for line in iter(p.stdout.readline, ''):
             line = line.strip()
             if 'warning' in line:
                 win_colorprint(line, YELLOW)
@@ -259,11 +255,6 @@ def install_pip():
     try:
         sh('%s -c "import pip"' % PYTHON)
     except SystemExit:
-        if PY3:
-            from urllib.request import urlopen
-        else:
-            from urllib2 import urlopen
-
         if hasattr(ssl, '_create_unverified_context'):
             ctx = ssl._create_unverified_context()
         else:
@@ -366,8 +357,7 @@ def setup_dev_env():
 def lint():
     """Run flake8 against all py files."""
     py_files = subprocess.check_output("git ls-files")
-    if PY3:
-        py_files = py_files.decode()
+    py_files = py_files.decode()
     py_files = [x for x in py_files.split() if x.endswith('.py')]
     py_files = ' '.join(py_files)
     sh("%s -m flake8 %s" % (PYTHON, py_files), nolog=True)

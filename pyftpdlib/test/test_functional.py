@@ -2534,20 +2534,12 @@ class TestCornerCases(PyftpdlibTestCase):
 #         self.server = self.server_class()
 #         self.server.start()
 #         self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
-#         self.client.encoding = 'utf8'  # PY3 only
+#         self.client.encoding = 'utf8'
 #         self.client.connect(self.server.host, self.server.port)
 #         self.client.login(USER, PASSWD)
-#         if PY3:
-#             safe_mkdir(bytes(TESTFN_UNICODE, 'utf8'))
-#             touch(bytes(TESTFN_UNICODE_2, 'utf8'))
-#             self.utf8fs = TESTFN_UNICODE in os.listdir('.')
-#         else:
-#             warnings.filterwarnings("ignore")
-#             safe_mkdir(TESTFN_UNICODE)
-#             touch(TESTFN_UNICODE_2)
-#             self.utf8fs = \
-#                 unicode(TESTFN_UNICODE, 'utf8') in os.listdir('.')
-#             warnings.resetwarnings()
+#         safe_mkdir(bytes(TESTFN_UNICODE, 'utf8'))
+#         touch(bytes(TESTFN_UNICODE_2, 'utf8'))
+#         self.utf8fs = TESTFN_UNICODE in os.listdir('.')
 
 #     def tearDown(self):
 #         close_client(self.client)
