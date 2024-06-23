@@ -1054,10 +1054,6 @@ class DTPHandler(AsyncChat):
             self.cmd_channel._on_dtp_close()
 
 
-# dirty hack in order to turn AsyncChat into a new style class in
-# python 2.x so that we can use super()
-
-
 class ThrottledDTPHandler(DTPHandler):
     """A DTPHandler subclass which wraps sending and receiving in a data
     counter and temporarily "sleeps" the channel so that you burst to no

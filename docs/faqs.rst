@@ -84,14 +84,23 @@ If you are not new to Python you probably don't need that, otherwise follow the
 Which Python versions are compatible?
 -------------------------------------
 
-*2.7* and *3.X*.
+Python *3.X*. Anything above 3.8 should be good to go. Pypy should also work.
+
+What about Python 2.7?
+----------------------
+
+Latest pyftpdlib version supporting Python 2.7 is 1.5.10. You can install it
+with:
+
+.. code-block:: sh
+
+    python3 -m pip install pyftpdlib==1.5.10
 
 On which platforms can pyftpdlib be used?
 -----------------------------------------
 
 pyftpdlib should work on any platform where **select()**, **poll()**,
-**epoll()** or **kqueue()** system calls are available and on any Python
-implementation which refers to *cPython 2.7* or superior.
+**epoll()** or **kqueue()** system calls are available.
 The development team has mainly tested it under various *Linux*, *Windows*,
 *OSX* and *FreeBSD* systems.
 For FreeBSD is also available a

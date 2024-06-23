@@ -285,7 +285,6 @@ class AbstractedFS:
 
     def stat(self, path):
         """Perform a stat() system call on the given path."""
-        # on python 2 we might also get bytes from os.lisdir()
         return os.stat(path)
 
     def utime(self, path, timeval):
@@ -298,7 +297,6 @@ class AbstractedFS:
 
         def lstat(self, path):
             """Like stat but does not follow symbolic links."""
-            # on python 2 we might also get bytes from os.lisdir()
             return os.lstat(path)
 
     else:
