@@ -612,11 +612,9 @@ class ActiveDTP(Connector):
         err = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
         if err != 0:
             raise OSError(err)
-        #
         msg = 'Active data connection established.'
         self.cmd_channel.respond('200 ' + msg)
         self.cmd_channel.log_cmd(self._cmd, self._normalized_addr, 200, msg)
-        #
         if not self.cmd_channel.connected:
             return self.close()
         # delegate such connection to DTP handler

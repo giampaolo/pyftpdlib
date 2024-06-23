@@ -229,7 +229,6 @@ class FTPServer(Acceptor):
         """
         log = handle_exit and blocking
 
-        #
         if worker_processes != 1 and os.name == 'posix':
             if not blocking:
                 raise ValueError(
@@ -242,14 +241,12 @@ class FTPServer(Acceptor):
             if log:
                 self._log_start()
 
-        #
         proto = "FTP+SSL" if hasattr(self.handler, 'ssl_protocol') else "FTP"
         logger.info(
             ">>> starting %s server on %s:%s, pid=%i <<<"
             % (proto, self.address[0], self.address[1], os.getpid())
         )
 
-        #
         if handle_exit:
             try:
                 self.ioloop.loop(timeout, blocking)

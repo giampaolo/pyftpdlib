@@ -15,6 +15,7 @@ line-length = 79
 preview = true
 select = [
     "ALL",  # to get a list of all values: `python3 -m ruff linter`
+    "PLR2044",  # [*] Line with empty comment
 ]
 ignore = [
     "A",  # flake8-builtins
