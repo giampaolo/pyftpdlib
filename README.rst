@@ -150,8 +150,23 @@ pyftpdlib vs. vsftpd 2.3.5
 
 For more benchmarks see `here <http://pyftpdlib.readthedocs.io/en/latest/benchmarks.html>`__.
 
-Quick start
-===========
+Command line usage
+==================
+
+Start a FTP server, with an anonymous user with write permissions, on port 2121:
+
+.. code-block::
+
+    $ python3 -m pyftpdlib --write
+    RuntimeWarning: write permissions assigned to anonymous user.
+      self._check_permissions(username, perm)
+    [I 2024-06-23 13:49:35] concurrency model: async
+    [I 2024-06-23 13:49:35] masquerade (NAT) address: None
+    [I 2024-06-23 13:49:35] passive ports: None
+    [I 2024-06-23 13:49:35] >>> starting FTP server on 0.0.0.0:2121, pid=763634 <<<
+
+API usage
+=========
 
 .. code-block:: python
 
