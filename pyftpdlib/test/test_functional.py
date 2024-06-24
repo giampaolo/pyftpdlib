@@ -1149,7 +1149,9 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
         # on retr (RFC-1123)
         file_size = self.client.size(self.testfn)
         self.client.sendcmd('rest %s' % (file_size + 1))
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(
+            ftplib.error_perm, match="position .*? > file size"
+        ):
             self.client.sendcmd('retr ' + self.testfn)
         # test resume
         self.client.sendcmd('rest %s' % received_bytes)
@@ -1215,7 +1217,7 @@ class TestFtpListingCmds(PyftpdlibTestCase):
             assert ''.join(x).endswith(self.testfn)
         # non-existent path, 550 response is expected
         bogus = self.get_testfn()
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="No such file"):
             self.client.retrlines('%s ' % cmd + bogus, lambda x: x)
         # for an empty directory we excpect that the data channel is
         # opened anyway and that no data is received
