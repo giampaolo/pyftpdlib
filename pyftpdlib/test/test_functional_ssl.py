@@ -18,8 +18,8 @@ from . import OSX
 from . import PASSWD
 from . import USER
 from . import WINDOWS
+from . import FtpdThreadWrapper
 from . import PyftpdlibTestCase
-from . import ThreadedTestFTPd
 from . import close_client
 from .test_functional import TestConfigurableOptions
 from .test_functional import TestCornerCases
@@ -63,7 +63,7 @@ class FTPSClient(ftplib.FTP_TLS):
         self.prot_p()
 
 
-class FTPSServer(ThreadedTestFTPd):
+class FTPSServer(FtpdThreadWrapper):
     """A threaded FTPS server used for functional testing."""
 
     handler = TLS_FTPHandler

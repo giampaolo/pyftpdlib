@@ -17,8 +17,8 @@ from . import PASSWD
 from . import SUPPORTS_MULTIPROCESSING
 from . import USER
 from . import WINDOWS
+from . import FtpdThreadWrapper
 from . import PyftpdlibTestCase
-from . import ThreadedTestFTPd
 from . import close_client
 from .test_functional import TestCornerCases
 from .test_functional import TestFtpAbort
@@ -36,7 +36,7 @@ from .test_functional import TestIPv6Environment
 class TestFTPServer(PyftpdlibTestCase):
     """Tests for *FTPServer classes."""
 
-    server_class = ThreadedTestFTPd
+    server_class = FtpdThreadWrapper
     client_class = ftplib.FTP
 
     def setUp(self):
@@ -82,7 +82,7 @@ class TestFTPServer(PyftpdlibTestCase):
 # supposed to work no matter what the concurrency model is.
 
 
-class _TFTPd(ThreadedTestFTPd):
+class _TFTPd(FtpdThreadWrapper):
     server_class = servers.ThreadedFTPServer
 
 
@@ -156,7 +156,7 @@ class TestCornerCasesThreadMixin(ThreadFTPTestMixin, TestCornerCases):
 
 if SUPPORTS_MULTIPROCESSING:
 
-    class MultiProcFTPd(ThreadedTestFTPd):
+    class MultiProcFTPd(FtpdThreadWrapper):
         server_class = servers.MultiprocessFTPServer
 
     class MProcFTPTestMixin:

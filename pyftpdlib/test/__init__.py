@@ -411,7 +411,7 @@ def reset_server_opts():
         klass.max_cons_per_ip = 0
 
 
-class ThreadedTestFTPd(threading.Thread):
+class FtpdThreadWrapper(threading.Thread):
     """A threaded FTP server used for running tests.
     This is basically a modified version of the FTPServer class which
     wraps the polling loop into a thread.
@@ -455,7 +455,7 @@ class ThreadedTestFTPd(threading.Thread):
 
 if POSIX:
 
-    class MProcessTestFTPd(multiprocessing.Process):
+    class FtpdMultiprocWrapper(multiprocessing.Process):
         """Same as above but using a sub process instead."""
 
         handler = FTPHandler
@@ -484,7 +484,7 @@ if POSIX:
 
 else:
     # Windows
-    MProcessTestFTPd = ThreadedTestFTPd
+    FtpdMultiprocWrapper = FtpdThreadWrapper
 
 
 @atexit.register
