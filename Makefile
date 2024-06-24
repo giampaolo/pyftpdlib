@@ -12,6 +12,7 @@ PYDEPS = \
 	psutil \
 	pyopenssl \
 	pytest \
+	pytest-xdist \
 	setuptools
 # dev deps
 ifndef GITHUB_ACTIONS
