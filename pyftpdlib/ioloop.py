@@ -172,6 +172,16 @@ class _Scheduler:
         self._tasks = [x for x in self._tasks if not x.cancelled]
         heapq.heapify(self._tasks)
 
+    def close(self):
+        for x in self._tasks:
+            try:
+                if not x.cancelled:
+                    x.cancel()
+            except Exception:
+                logger.error(traceback.format_exc())
+        del self._tasks[:]
+        self._cancellations = 0
+
 
 class _CallLater:
     """Container object which instance is returned by ioloop.call_later()."""
@@ -417,13 +427,7 @@ class _IOLoop:
         self.socket_map.clear()
 
         # free scheduled functions
-        for x in self.sched._tasks:
-            try:
-                if not x.cancelled:
-                    x.cancel()
-            except Exception:
-                logger.error(traceback.format_exc())
-        del self.sched._tasks[:]
+        self.sched.close()
 
 
 # ===================================================================
