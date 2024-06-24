@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 
 
-import atexit
 import contextlib
 import functools
 import logging
@@ -195,18 +194,6 @@ def disable_log_warning(fun):
             logger.setLevel(level)
 
     return wrapper
-
-
-def cleanup():
-    """Cleanup function executed on interpreter exit."""
-    map = IOLoop.instance().socket_map
-    for x in list(map.values()):
-        try:
-            sys.stderr.write("garbage: %s\n" % repr(x))
-            x.close()
-        except Exception:  # noqa
-            pass
-    map.clear()
 
 
 class retry:
@@ -485,10 +472,3 @@ if POSIX:
 else:
     # Windows
     FtpdMultiprocWrapper = FtpdThreadWrapper
-
-
-@atexit.register
-def exit_cleanup():
-    for name in os.listdir(ROOT_DIR):
-        if name.startswith(TESTFN_PREFIX):
-            safe_rmpath(os.path.join(ROOT_DIR, name))

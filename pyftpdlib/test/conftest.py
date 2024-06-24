@@ -14,6 +14,8 @@ In unittest terms, this is equivalent to implicitly defining setUp(),
 tearDown(), setUpClass(), tearDownClass() methods for each test class.
 """
 
+import atexit
+import os
 import threading
 import warnings
 
@@ -23,6 +25,9 @@ import pytest
 from pyftpdlib.ioloop import IOLoop
 
 from . import POSIX
+from . import ROOT_DIR
+from . import TESTFN_PREFIX
+from . import safe_rmpath
 
 
 # set it to True to raise an exception instead of warning
@@ -95,3 +100,10 @@ def teardown_method(setup_ctx, request):
 def for_each_test_method(request):
     ctx = setup_method(request.node.nodeid)
     request.addfinalizer(lambda: teardown_method(ctx, request))
+
+
+@atexit.register
+def on_exit():
+    for name in os.listdir(ROOT_DIR):
+        if name.startswith(TESTFN_PREFIX):
+            safe_rmpath(os.path.join(ROOT_DIR, name))
