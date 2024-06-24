@@ -22,6 +22,8 @@ import pytest
 
 from pyftpdlib.ioloop import IOLoop
 
+from . import POSIX
+
 
 # set it to True to raise an exception instead of warning
 FAIL = False
@@ -31,7 +33,8 @@ this_proc = psutil.Process()
 def collect_resources():
     res = {}
     res["threads"] = set(threading.enumerate())
-    res["num_fds"] = this_proc.num_fds()
+    if POSIX:
+        res["num_fds"] = this_proc.num_fds()
     # res["cons"] = set(this_proc.net_connections(kind="all"))
     # res["files"] = set(this_proc.open_files())
     return res
