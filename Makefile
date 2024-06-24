@@ -111,47 +111,36 @@ setup-dev-env: ## Install GIT hooks, pip, test deps (also upgrades them).
 # ===================================================================
 
 test:  ## Run all tests. To run a specific test: do "make test ARGS=pyftpdlib.test.test_functional.TestFtpStoreData"
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS)
 
 test-parallel:  ## Run all tests in parallel.
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) -n auto --dist loadgroup $(ARGS)
 
 test-functional:  ## Run functional FTP tests.
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_functional.py
 
 test-functional-ssl:  ## Run functional FTPS tests.
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_functional_ssl.py
 
 test-servers:  ## Run tests for FTPServer and its subclasses.
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_servers.py
 
 test-authorizers:  ## Run tests for authorizers.
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_authorizers.py
 
 test-filesystems:  ## Run filesystem tests.
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_filesystems.py
 
 test-ioloop:  ## Run IOLoop tests.
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_ioloop.py
 
 test-cli:  ## Run miscellaneous tests.
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_cli.py
 
 test-lastfailed:  ## Run previously failed tests
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) --last-failed $(ARGS)
 
 test-coverage:  ## Run test coverage.
-	${MAKE} install
 	rm -rf .coverage htmlcov
 	$(TEST_PREFIX) $(PYTHON) -m coverage run -m pytest $(PYTEST_ARGS) $(ARGS)
 	$(PYTHON) -m coverage report

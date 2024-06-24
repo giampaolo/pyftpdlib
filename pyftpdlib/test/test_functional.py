@@ -2044,7 +2044,6 @@ class TestCallbacks(PyftpdlibTestCase):
 
     @retry_on_failure
     def test_on_incomplete_file_received(self):
-        assert 1 == 0
         self.client.login(USER, PASSWD)
         data = b'abcde12345' * 1000000
         dummyfile = io.BytesIO()
