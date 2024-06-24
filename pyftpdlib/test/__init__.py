@@ -321,7 +321,8 @@ def assert_free_resources(parent_pid=None):
     children = this_proc.children()
     if children:
         warnings.warn(
-            "some children didn't terminate %r" % str(children),
+            "some children didn't terminate (pid=%r) %r"
+            % (os.getpid(), str(children)),
             UserWarning,
             stacklevel=2,
         )
@@ -340,7 +341,8 @@ def assert_free_resources(parent_pid=None):
         ]
         if cons:
             warnings.warn(
-                "some connections didn't close %r" % str(cons),
+                "some connections didn't close (pid=%r) %r"
+                % (os.getpid(), str(cons)),
                 UserWarning,
                 stacklevel=2,
             )
