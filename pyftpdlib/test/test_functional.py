@@ -1914,6 +1914,7 @@ class TestConfigurableOptions(PyftpdlibTestCase):
             assert gmt3 == loc3
 
 
+@pytest.mark.xdist_group(name="serial")
 class TestCallbacks(PyftpdlibTestCase):
     server_class = FtpdThreadWrapper
     client_class = ftplib.FTP
