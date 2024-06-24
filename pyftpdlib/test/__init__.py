@@ -256,17 +256,27 @@ class retry:
         return wrapper
 
 
-def retry_on_failure(retries=NO_RETRIES):
+def retry_on_failure(fun):
     """Decorator which runs a test function and retries N times before
     actually failing.
     """
 
-    def logfun(exc):
-        print("%r, retrying" % exc, file=sys.stderr)  # NOQA
+    @functools.wraps(fun)
+    def wrapper(self, *args, **kwargs):
+        for x in range(NO_RETRIES):
+            try:
+                return fun(self, *args, **kwargs)
+            except AssertionError as exc:
+                if x + 1 >= NO_RETRIES:
+                    raise
+                msg = "%r, retrying" % exc
+                print(msg, file=sys.stderr)  # NOQA
+                if PYTEST_PARALLEL:
+                    warnings.warn(msg, ResourceWarning, stacklevel=2)
+                self.tearDown()
+                self.setUp()
 
-    return retry(
-        exception=AssertionError, timeout=None, retries=retries, logfun=logfun
-    )
+    return wrapper
 
 
 def call_until(fun, expr, timeout=GLOBAL_TIMEOUT):
