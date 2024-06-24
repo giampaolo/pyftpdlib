@@ -40,6 +40,7 @@ WINDOWS = os.name == 'nt'
 GITHUB_ACTIONS = 'GITHUB_ACTIONS' in os.environ or 'CIBUILDWHEEL' in os.environ
 CI_TESTING = GITHUB_ACTIONS
 COVERAGE = 'COVERAGE_RUN' in os.environ
+PYTEST_PARALLEL = "PYTEST_XDIST_WORKER" in os.environ  # `make test-parallel`
 LOG_FMT = "[%(levelname)1.1s t: %(threadName)-15s p: %(processName)-25s "
 LOG_FMT += "@%(module)-12s: %(lineno)-4s] %(message)s"
 
