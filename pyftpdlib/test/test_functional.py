@@ -577,7 +577,9 @@ class TestFtpFsOperations(PyftpdlibTestCase):
 
     def test_dele(self):
         self.client.delete(self.tempfile)
-        with pytest.raises(ftplib.error_perm, match="Is a directory"):
+        with pytest.raises(
+            ftplib.error_perm, match="Is a directory|Operation not permitted"
+        ):
             self.client.delete(self.tempdir)
 
     def test_rnfr_rnto(self):
