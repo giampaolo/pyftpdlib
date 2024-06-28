@@ -11,28 +11,29 @@ import OpenSSL  # requires "pip install pyopenssl"
 import pytest
 
 from pyftpdlib.handlers import TLS_FTPHandler
-from pyftpdlib.test import CI_TESTING
-from pyftpdlib.test import GLOBAL_TIMEOUT
-from pyftpdlib.test import OSX
-from pyftpdlib.test import PASSWD
-from pyftpdlib.test import USER
-from pyftpdlib.test import WINDOWS
-from pyftpdlib.test import PyftpdlibTestCase
-from pyftpdlib.test import ThreadedTestFTPd
-from pyftpdlib.test import close_client
-from pyftpdlib.test.test_functional import TestConfigurableOptions
-from pyftpdlib.test.test_functional import TestCornerCases
-from pyftpdlib.test.test_functional import TestFtpAbort
-from pyftpdlib.test.test_functional import TestFtpAuthentication
-from pyftpdlib.test.test_functional import TestFtpCmdsSemantic
-from pyftpdlib.test.test_functional import TestFtpDummyCmds
-from pyftpdlib.test.test_functional import TestFtpFsOperations
-from pyftpdlib.test.test_functional import TestFtpListingCmds
-from pyftpdlib.test.test_functional import TestFtpRetrieveData
-from pyftpdlib.test.test_functional import TestFtpStoreData
-from pyftpdlib.test.test_functional import TestIPv4Environment
-from pyftpdlib.test.test_functional import TestIPv6Environment
-from pyftpdlib.test.test_functional import TestTimeouts
+
+from . import CI_TESTING
+from . import GLOBAL_TIMEOUT
+from . import OSX
+from . import PASSWD
+from . import USER
+from . import WINDOWS
+from . import FtpdThreadWrapper
+from . import PyftpdlibTestCase
+from . import close_client
+from .test_functional import TestConfigurableOptions
+from .test_functional import TestCornerCases
+from .test_functional import TestFtpAbort
+from .test_functional import TestFtpAuthentication
+from .test_functional import TestFtpCmdsSemantic
+from .test_functional import TestFtpDummyCmds
+from .test_functional import TestFtpFsOperations
+from .test_functional import TestFtpListingCmds
+from .test_functional import TestFtpRetrieveData
+from .test_functional import TestFtpStoreData
+from .test_functional import TestIPv4Environment
+from .test_functional import TestIPv6Environment
+from .test_functional import TestTimeouts
 
 
 CERTFILE = os.path.abspath(
@@ -62,7 +63,7 @@ class FTPSClient(ftplib.FTP_TLS):
         self.prot_p()
 
 
-class FTPSServer(ThreadedTestFTPd):
+class FTPSServer(FtpdThreadWrapper):
     """A threaded FTPS server used for functional testing."""
 
     handler = TLS_FTPHandler

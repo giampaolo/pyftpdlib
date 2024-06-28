@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 
 
-import atexit
 import contextlib
 import functools
 import logging
@@ -21,29 +20,26 @@ import warnings
 
 import psutil
 
+import pyftpdlib.servers
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
 
 
-# --- platforms
-
 HERE = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
 ROOT_DIR = os.path.realpath(os.path.join(HERE, '..', '..'))
+
 PYPY = '__pypy__' in sys.builtin_module_names
-GITHUB_ACTIONS = 'GITHUB_ACTIONS' in os.environ or 'CIBUILDWHEEL' in os.environ
-CI_TESTING = GITHUB_ACTIONS
-COVERAGE = 'COVERAGE_RUN' in os.environ
-# are we a 64 bit process?
-IS_64BIT = sys.maxsize > 2**32
 OSX = sys.platform.startswith("darwin")
 POSIX = os.name == 'posix'
 BSD = "bsd" in sys.platform
 WINDOWS = os.name == 'nt'
-LOG_FMT = "[%(levelname)1.1s t: %(threadName)-15s p: %(processName)-25s "
-LOG_FMT += "@%(module)-12s: %(lineno)-4s] %(message)s"
 
+GITHUB_ACTIONS = 'GITHUB_ACTIONS' in os.environ or 'CIBUILDWHEEL' in os.environ
+CI_TESTING = GITHUB_ACTIONS
+COVERAGE = 'COVERAGE_RUN' in os.environ
+PYTEST_PARALLEL = "PYTEST_XDIST_WORKER" in os.environ  # `make test-parallel`
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
 try:
@@ -65,6 +61,12 @@ VERBOSITY = 1 if os.getenv('SILENT') else 2
 if CI_TESTING:
     GLOBAL_TIMEOUT *= 3
     NO_RETRIES *= 3
+
+SUPPORTS_IPV4 = None  # set later
+SUPPORTS_IPV6 = None  # set later
+SUPPORTS_MULTIPROCESSING = hasattr(pyftpdlib.servers, 'MultiprocessFTPServer')
+if BSD or OSX and GITHUB_ACTIONS:
+    SUPPORTS_MULTIPROCESSING = False  # XXX: it's broken!!
 
 
 class PyftpdlibTestCase(unittest.TestCase):
@@ -107,6 +109,8 @@ def close_client(session):
 def try_address(host, port=0, family=socket.AF_INET):
     """Try to bind a socket on the given host:port and return True
     if that has been possible."""
+    # Note: if IPv6 fails on Linux do:
+    # $ sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
     try:
         with contextlib.closing(socket.socket(family)) as sock:
             sock.bind((host, port))
@@ -176,16 +180,6 @@ def touch(name):
         return f.name
 
 
-def configure_logging():
-    """Set pyftpdlib logger to "WARNING" level."""
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter(fmt=LOG_FMT)
-    handler.setFormatter(formatter)
-    logger = logging.getLogger('pyftpdlib')
-    logger.setLevel(logging.WARNING)
-    logger.addHandler(handler)
-
-
 def disable_log_warning(fun):
     """Temporarily set FTP server's logging level to ERROR."""
 
@@ -200,18 +194,6 @@ def disable_log_warning(fun):
             logger.setLevel(level)
 
     return wrapper
-
-
-def cleanup():
-    """Cleanup function executed on interpreter exit."""
-    map = IOLoop.instance().socket_map
-    for x in list(map.values()):
-        try:
-            sys.stderr.write("garbage: %s\n" % repr(x))
-            x.close()
-        except Exception:  # noqa
-            pass
-    map.clear()
 
 
 class retry:
@@ -274,17 +256,27 @@ class retry:
         return wrapper
 
 
-def retry_on_failure(retries=NO_RETRIES):
+def retry_on_failure(fun):
     """Decorator which runs a test function and retries N times before
     actually failing.
     """
 
-    def logfun(exc):
-        print("%r, retrying" % exc, file=sys.stderr)  # NOQA
+    @functools.wraps(fun)
+    def wrapper(self, *args, **kwargs):
+        for x in range(NO_RETRIES):
+            try:
+                return fun(self, *args, **kwargs)
+            except AssertionError as exc:
+                if x + 1 >= NO_RETRIES:
+                    raise
+                msg = "%r, retrying" % exc
+                print(msg, file=sys.stderr)  # NOQA
+                if PYTEST_PARALLEL:
+                    warnings.warn(msg, ResourceWarning, stacklevel=2)
+                self.tearDown()
+                self.setUp()
 
-    return retry(
-        exception=AssertionError, timeout=None, retries=retries, logfun=logfun
-    )
+    return wrapper
 
 
 def call_until(fun, expr, timeout=GLOBAL_TIMEOUT):
@@ -339,7 +331,8 @@ def assert_free_resources(parent_pid=None):
     children = this_proc.children()
     if children:
         warnings.warn(
-            "some children didn't terminate %r" % str(children),
+            "some children didn't terminate (pid=%r) %r"
+            % (os.getpid(), str(children)),
             UserWarning,
             stacklevel=2,
         )
@@ -358,7 +351,8 @@ def assert_free_resources(parent_pid=None):
         ]
         if cons:
             warnings.warn(
-                "some connections didn't close %r" % str(cons),
+                "some connections didn't close (pid=%r) %r"
+                % (os.getpid(), str(cons)),
                 UserWarning,
                 stacklevel=2,
             )
@@ -416,7 +410,7 @@ def reset_server_opts():
         klass.max_cons_per_ip = 0
 
 
-class ThreadedTestFTPd(threading.Thread):
+class FtpdThreadWrapper(threading.Thread):
     """A threaded FTP server used for running tests.
     This is basically a modified version of the FTPServer class which
     wraps the polling loop into a thread.
@@ -460,7 +454,7 @@ class ThreadedTestFTPd(threading.Thread):
 
 if POSIX:
 
-    class MProcessTestFTPd(multiprocessing.Process):
+    class FtpdMultiprocWrapper(multiprocessing.Process):
         """Same as above but using a sub process instead."""
 
         handler = FTPHandler
@@ -489,11 +483,4 @@ if POSIX:
 
 else:
     # Windows
-    MProcessTestFTPd = ThreadedTestFTPd
-
-
-@atexit.register
-def exit_cleanup():
-    for name in os.listdir(ROOT_DIR):
-        if name.startswith(TESTFN_PREFIX):
-            safe_rmpath(os.path.join(ROOT_DIR, name))
+    FtpdMultiprocWrapper = FtpdThreadWrapper

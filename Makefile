@@ -12,6 +12,7 @@ PYDEPS = \
 	psutil \
 	pyopenssl \
 	pytest \
+	pytest-xdist \
 	setuptools
 # dev deps
 ifndef GITHUB_ACTIONS
@@ -32,7 +33,7 @@ endif
 # In not in a virtualenv, add --user options for install commands.
 INSTALL_OPTS = `$(PYTHON) -c "import sys; print('' if hasattr(sys, 'real_prefix') else '--user')"`
 TEST_PREFIX = PYTHONWARNINGS=always
-PYTEST_ARGS = -v --tb=native -o cache_dir=/tmp/pyftpdlib-pytest-cache
+PYTEST_ARGS = -v -s --tb=short
 NUM_WORKERS = `$(PYTHON) -c "import os; print(os.cpu_count() or 1)"`
 
 # if make is invoked with no arg, default to `make help`
@@ -111,47 +112,36 @@ setup-dev-env: ## Install GIT hooks, pip, test deps (also upgrades them).
 # ===================================================================
 
 test:  ## Run all tests. To run a specific test: do "make test ARGS=pyftpdlib.test.test_functional.TestFtpStoreData"
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS)
 
 test-parallel:  ## Run all tests in parallel.
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) -n auto --dist loadgroup $(ARGS)
 
 test-functional:  ## Run functional FTP tests.
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_functional.py
 
 test-functional-ssl:  ## Run functional FTPS tests.
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_functional_ssl.py
 
 test-servers:  ## Run tests for FTPServer and its subclasses.
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_servers.py
 
 test-authorizers:  ## Run tests for authorizers.
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_authorizers.py
 
 test-filesystems:  ## Run filesystem tests.
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_filesystems.py
 
 test-ioloop:  ## Run IOLoop tests.
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_ioloop.py
 
 test-cli:  ## Run miscellaneous tests.
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_cli.py
 
 test-lastfailed:  ## Run previously failed tests
-	${MAKE} install
 	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) --last-failed $(ARGS)
 
 test-coverage:  ## Run test coverage.
-	${MAKE} install
 	rm -rf .coverage htmlcov
 	$(TEST_PREFIX) $(PYTHON) -m coverage run -m pytest $(PYTEST_ARGS) $(ARGS)
 	$(PYTHON) -m coverage report
