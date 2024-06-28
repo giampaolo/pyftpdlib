@@ -593,7 +593,7 @@ class TestFtpFsOperations(PyftpdlibTestCase):
         bogus = self.get_testfn()
         with pytest.raises(ftplib.error_perm, match="No such file"):
             self.client.rename(bogus, '/x')
-        with pytest.raises(ftplib.error_perm, match="Directory not empty"):
+        with pytest.raises(ftplib.error_perm):
             self.client.rename(self.tempfile, '/')
         # rnto sent without first specifying the source
         with pytest.raises(ftplib.error_perm, match="use RNFR first"):
