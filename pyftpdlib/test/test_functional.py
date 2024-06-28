@@ -308,32 +308,33 @@ class TestFtpDummyCmds(PyftpdlibTestCase):
             self.client.sendcmd('help ?!?')
 
     def test_site(self):
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="needs an argument"):
             self.client.sendcmd('site')
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="not understood"):
             self.client.sendcmd('site ?!?')
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="not understood"):
             self.client.sendcmd('site foo bar')
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="not understood"):
             self.client.sendcmd('sitefoo bar')
 
     def test_site_help(self):
         self.client.sendcmd('site help')
         self.client.sendcmd('site help help')
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="Unrecognized SITE"):
             self.client.sendcmd('site help ?!?')
 
     def test_rest(self):
         # Test error conditions only; resumed data transfers are
         # tested later.
         self.client.sendcmd('type i')
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="needs an argument"):
             self.client.sendcmd('rest')
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="Invalid parameter"):
             self.client.sendcmd('rest str')
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="Invalid parameter"):
             self.client.sendcmd('rest -1')
-        with pytest.raises(ftplib.error_perm):
+
+        with pytest.raises(ftplib.error_perm, match="Invalid parameter"):
             self.client.sendcmd('rest 10.1')
         # REST is not supposed to be allowed in ASCII mode
         self.client.sendcmd('type a')
@@ -348,11 +349,13 @@ class TestFtpDummyCmds(PyftpdlibTestCase):
         assert 'TVFS' in resp
 
     def test_opts_feat(self):
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="Invalid argument"):
             self.client.sendcmd('opts mlst bad_fact')
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(
+            ftplib.error_perm, match="Invalid number of arguments"
+        ):
             self.client.sendcmd('opts mlst type ;')
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="Unsupported command"):
             self.client.sendcmd('opts not_mlst')
         # utility function which used for extracting the MLST "facts"
         # string from the FEAT response
@@ -521,7 +524,7 @@ class TestFtpFsOperations(PyftpdlibTestCase):
     def test_cwd(self):
         self.client.cwd(self.tempdir)
         assert self.client.pwd() == '/' + self.tempdir
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="No such file"):
             self.client.cwd('subtempdir')
         # cwd provided with no arguments is supposed to move us to the
         # root directory
@@ -559,16 +562,12 @@ class TestFtpFsOperations(PyftpdlibTestCase):
         # (probably not really necessary);
         # let's use a try/except statement to avoid leaving behind
         # orphaned temporary directory in the event of a test failure.
-        try:
+        with pytest.raises(ftplib.error_perm, match="File exists"):
             self.client.mkd(tempdir)
-        except ftplib.error_perm:
-            os.rmdir(tempdir)  # ok
-        else:
-            self.fail('ftplib.error_perm not raised.')
 
     def test_rmd(self):
         self.client.rmd(self.tempdir)
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="Not a directory"):
             self.client.rmd(self.tempfile)
         # make sure we can't remove the root directory
         with pytest.raises(
@@ -578,7 +577,7 @@ class TestFtpFsOperations(PyftpdlibTestCase):
 
     def test_dele(self):
         self.client.delete(self.tempfile)
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="Is a directory"):
             self.client.delete(self.tempdir)
 
     def test_rnfr_rnto(self):
@@ -592,14 +591,13 @@ class TestFtpFsOperations(PyftpdlibTestCase):
         self.client.rename(tempname, self.tempdir)
         # rnfr/rnto over non-existing paths
         bogus = self.get_testfn()
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="No such file"):
             self.client.rename(bogus, '/x')
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="Directory not empty"):
             self.client.rename(self.tempfile, '/')
         # rnto sent without first specifying the source
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="use RNFR first"):
             self.client.sendcmd('rnto ' + self.tempfile)
-
         # make sure we can't rename root directory
         with pytest.raises(
             ftplib.error_perm, match="Can't rename home directory"
@@ -609,15 +607,11 @@ class TestFtpFsOperations(PyftpdlibTestCase):
     def test_mdtm(self):
         self.client.sendcmd('mdtm ' + self.tempfile)
         bogus = self.get_testfn()
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="not retrievable"):
             self.client.sendcmd('mdtm ' + bogus)
         # make sure we can't use mdtm against directories
-        try:
+        with pytest.raises(ftplib.error_perm, match="not retrievable"):
             self.client.sendcmd('mdtm ' + self.tempdir)
-        except ftplib.error_perm as err:
-            assert "not retrievable" in str(err)
-        else:
-            self.fail('Exception not raised')
 
     def test_mfmt(self):
         # making sure MFMT is able to modify the timestamp for the file
@@ -661,17 +655,15 @@ class TestFtpFsOperations(PyftpdlibTestCase):
 
     def test_size(self):
         self.client.sendcmd('type a')
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(
+            ftplib.error_perm, match="SIZE not allowed in ASCII mode"
+        ):
             self.client.size(self.tempfile)
         self.client.sendcmd('type i')
         self.client.size(self.tempfile)
         # make sure we can't use size against directories
-        try:
+        with pytest.raises(ftplib.error_perm, match="not retrievable"):
             self.client.sendcmd('size ' + self.tempdir)
-        except ftplib.error_perm as err:
-            assert "not retrievable" in str(err)
-        else:
-            self.fail('Exception not raised')
 
     if not hasattr(os, 'chmod'):
 
@@ -683,14 +675,20 @@ class TestFtpFsOperations(PyftpdlibTestCase):
 
         def test_site_chmod(self):
             # not enough args
-            with pytest.raises(ftplib.error_perm):
+            with pytest.raises(ftplib.error_perm, match="needs two arguments"):
                 self.client.sendcmd('site chmod 777')
             # bad args
-            with pytest.raises(ftplib.error_perm):
+            with pytest.raises(
+                ftplib.error_perm, match="Invalid SITE CHMOD format"
+            ):
                 self.client.sendcmd('site chmod -177 ' + self.tempfile)
-            with pytest.raises(ftplib.error_perm):
+            with pytest.raises(
+                ftplib.error_perm, match="Invalid SITE CHMOD format"
+            ):
                 self.client.sendcmd('site chmod 778 ' + self.tempfile)
-            with pytest.raises(ftplib.error_perm):
+            with pytest.raises(
+                ftplib.error_perm, match="Invalid SITE CHMOD format"
+            ):
                 self.client.sendcmd('site chmod foo ' + self.tempfile)
 
             def getmode():
@@ -909,7 +907,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
         # login as a limited user in order to make STOU fail
         self.client.login('anonymous', '@nopasswd')
         before = os.listdir(HOME)
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="Not enough privileges"):
             self.client.sendcmd('stou ' + self.testfn)
         after = os.listdir(HOME)
         if before != after:
@@ -972,7 +970,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
         file_size = self.client.size(self.testfn)
         assert file_size == bytes_sent
         self.client.sendcmd('rest %s' % (file_size + 1))
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="> file size"):
             self.client.sendcmd('stor ' + self.testfn)
         self.client.sendcmd('rest %s' % bytes_sent)
         self.client.storbinary('stor ' + self.testfn, self.dummy_sendfile)
@@ -992,7 +990,7 @@ class TestFtpStoreData(PyftpdlibTestCase):
         # Test REST -> STOR against a non existing file.
         self.client.sendcmd('type i')
         self.client.sendcmd('rest 10')
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="No such file"):
             self.client.storbinary('stor ' + self.testfn, lambda x: x)
         # if the first STOR failed because of REST, the REST marker
         # is supposed to be resetted to 0
@@ -1094,7 +1092,7 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
 
         # attempt to retrieve a file which doesn't exist
         bogus = self.get_testfn()
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="No such file"):
             self.client.retrbinary("retr " + bogus, lambda x: x)
 
     def test_retr_ascii(self):
@@ -1217,7 +1215,9 @@ class TestFtpListingCmds(PyftpdlibTestCase):
             assert ''.join(x).endswith(self.testfn)
         # non-existent path, 550 response is expected
         bogus = self.get_testfn()
-        with pytest.raises(ftplib.error_perm, match="No such file"):
+        with pytest.raises(
+            ftplib.error_perm, match="No such (file|directory)"
+        ):
             self.client.retrlines('%s ' % cmd + bogus, lambda x: x)
         # for an empty directory we excpect that the data channel is
         # opened anyway and that no data is received
@@ -1263,7 +1263,7 @@ class TestFtpListingCmds(PyftpdlibTestCase):
         assert mlstline('mlst') == mlstline('mlst /')
         # non-existent path
         bogus = self.get_testfn()
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="No such file"):
             self.client.sendcmd('mlst ' + bogus)
         # test file/dir notations
         assert 'type=dir' in mlstline('mlst')
@@ -1323,7 +1323,7 @@ class TestFtpListingCmds(PyftpdlibTestCase):
         resp = self.client.getmultiline()
         assert resp == '550 Globbing not supported.'
         bogus = self.get_testfn()
-        with pytest.raises(ftplib.error_perm):
+        with pytest.raises(ftplib.error_perm, match="No such file"):
             self.client.sendcmd('stat ' + bogus)
 
     def test_unforeseen_time_event(self):
@@ -1760,7 +1760,9 @@ class TestConfigurableOptions(PyftpdlibTestCase):
             c1.login(USER, PASSWD)
             with contextlib.closing(c1.makeport()):
                 c2.close()
-                with pytest.raises(ftplib.error_temp):
+                with pytest.raises(
+                    ftplib.error_temp, match="Too many connections"
+                ):
                     c2.connect(
                         self.server.host,
                         self.server.port,
@@ -1790,7 +1792,10 @@ class TestConfigurableOptions(PyftpdlibTestCase):
             c1.connect(self.server.host, self.server.port)
             c2.connect(self.server.host, self.server.port)
             c3.connect(self.server.host, self.server.port)
-            with pytest.raises(ftplib.error_temp):
+            with pytest.raises(
+                ftplib.error_temp,
+                match="Too many connections from the same IP address",
+            ):
                 c4.connect(
                     self.server.host,
                     self.server.port,
@@ -1825,6 +1830,7 @@ class TestConfigurableOptions(PyftpdlibTestCase):
         self.connect()
         with pytest.raises(ftplib.error_perm):
             self.client.login('wrong', 'wrong')
+
         # OSError (Windows) or EOFError (Linux) exceptions are
         # supposed to be raised when attempting to send/recv some data
         # using a disconnected socket
@@ -2732,7 +2738,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         self.server.handler.abstracted_fs = TestFS
         self.server.start()
         self.connect_client()
-        with pytest.raises(ftplib.error_temp):
+        with pytest.raises(ftplib.error_temp, match="No usable unique file"):
             self.client.sendcmd('stou')
 
     @retry_on_failure
@@ -2766,11 +2772,10 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         handler.remote_ip = '9.9.9.9'
         # sync
         self.client.sendcmd("noop")
-        with pytest.raises(ftplib.error_perm) as cm:
-            port = self.client.sock.getsockname()[1]
-            host = self.client.sock.getsockname()[0]
-            resp = self.client.sendport(host, port)
-        assert 'foreign address' in str(cm.value)
+        port = self.client.sock.getsockname()[1]
+        host = self.client.sock.getsockname()[0]
+        with pytest.raises(ftplib.error_perm, match="foreign address"):
+            self.client.sendport(host, port)
 
     @retry_on_failure
     def test_permit_foreign_address_true(self):

@@ -33,7 +33,7 @@ endif
 # In not in a virtualenv, add --user options for install commands.
 INSTALL_OPTS = `$(PYTHON) -c "import sys; print('' if hasattr(sys, 'real_prefix') else '--user')"`
 TEST_PREFIX = PYTHONWARNINGS=always
-PYTEST_ARGS = -v -s --tb=native
+PYTEST_ARGS = -v -s --tb=short
 NUM_WORKERS = `$(PYTHON) -c "import os; print(os.cpu_count() or 1)"`
 
 # if make is invoked with no arg, default to `make help`
