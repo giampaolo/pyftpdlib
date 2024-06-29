@@ -3296,7 +3296,9 @@ if True:
             debug("securing SSL connection", self)
             self._ssl_requested = True
             try:
-                self.socket = SSL.Connection(ssl_context, self.socket)
+                self.socket = ssl_context.wrap_socket(
+                    self.socket, server_side=True
+                )
             except OSError as err:
                 # may happen in case the client connects/disconnects
                 # very quickly
@@ -3324,10 +3326,10 @@ if True:
             prev_row_pending = self._ssl_want_read or self._ssl_want_write
             try:
                 yield
-            except SSL.WantReadError:
+            except ssl.SSLWantReadError:
                 # we should never get here; it's just for extra safety
                 self._ssl_want_read = True
-            except SSL.WantWriteError:
+            except ssl.SSLWantWriteError:
                 # we should never get here; it's just for extra safety
                 self._ssl_want_write = True
 
@@ -3349,15 +3351,15 @@ if True:
             self._ssl_want_write = False
             try:
                 self.socket.do_handshake()
-            except SSL.WantReadError:
+            except ssl.SSLWantReadError:
                 self._ssl_want_read = True
                 debug("call: _do_ssl_handshake, err: ssl-want-read", inst=self)
-            except SSL.WantWriteError:
+            except ssl.SSLWantWriteError:
                 self._ssl_want_write = True
                 debug(
                     "call: _do_ssl_handshake, err: ssl-want-write", inst=self
                 )
-            except SSL.SysCallError as err:
+            except ssl.SSLSyscallError as err:
                 debug("call: _do_ssl_handshake, err: %r" % err, inst=self)
                 retval, desc = err.args
                 if (retval == -1 and desc == 'Unexpected EOF') or retval > 0:
@@ -3371,7 +3373,7 @@ if True:
                     self.close()
                 else:
                     raise
-            except SSL.Error as err:
+            except ssl.SSLError as err:
                 debug("call: _do_ssl_handshake, err: %r" % err, inst=self)
                 self.handle_failed_ssl_handshake()
             else:
@@ -3433,21 +3435,21 @@ if True:
         def send(self, data):
             try:
                 return super().send(data)
-            except SSL.WantReadError:
+            except ssl.SSLWantReadError:
                 debug("call: send(), err: ssl-want-read", inst=self)
                 self._ssl_want_read = True
                 return 0
-            except SSL.WantWriteError:
+            except ssl.SSLWantWriteError:
                 debug("call: send(), err: ssl-want-write", inst=self)
                 self._ssl_want_write = True
                 return 0
-            except SSL.ZeroReturnError:
+            except ssl.SSLZeroReturnError:
                 debug(
                     "call: send() -> shutdown(), err: zero-return", inst=self
                 )
                 super().handle_close()
                 return 0
-            except SSL.SysCallError as err:
+            except ssl.SSLSyscallError as err:
                 debug("call: send(), err: %r" % err, inst=self)
                 errnum, errstr = err.args
                 if errnum == errno.EWOULDBLOCK:
@@ -3464,21 +3466,21 @@ if True:
         def recv(self, buffer_size):
             try:
                 return super().recv(buffer_size)
-            except SSL.WantReadError:
+            except ssl.SSLWantReadError:
                 debug("call: recv(), err: ssl-want-read", inst=self)
                 self._ssl_want_read = True
                 raise RetryError
-            except SSL.WantWriteError:
+            except ssl.SSLWantWriteError:
                 debug("call: recv(), err: ssl-want-write", inst=self)
                 self._ssl_want_write = True
                 raise RetryError
-            except SSL.ZeroReturnError:
+            except ssl.SSLZeroReturnError:
                 debug(
                     "call: recv() -> shutdown(), err: zero-return", inst=self
                 )
                 super().handle_close()
                 return b''
-            except SSL.SysCallError as err:
+            except ssl.SSLSyscallError as err:
                 debug("call: recv(), err: %r" % err, inst=self)
                 errnum, errstr = err.args
                 if (
@@ -3535,24 +3537,20 @@ if True:
             # - ZeroReturnError, SysCallError[EOF], Error[] are all
             #   aliases for disconnection
             try:
-                laststate = self.socket.get_shutdown()
-                self.socket.set_shutdown(laststate | SSL.RECEIVED_SHUTDOWN)
-                done = self.socket.shutdown()
-                if not laststate & SSL.RECEIVED_SHUTDOWN:
-                    self.socket.set_shutdown(SSL.SENT_SHUTDOWN)
-            except SSL.WantReadError:
+                self.socket.shutdown(socket.SHUT_RDWR)
+            except ssl.SSLWantReadError:
                 self._ssl_want_read = True
                 debug("call: _do_ssl_shutdown, err: ssl-want-read", inst=self)
-            except SSL.WantWriteError:
+            except ssl.SSLWantWriteError:
                 self._ssl_want_write = True
                 debug("call: _do_ssl_shutdown, err: ssl-want-write", inst=self)
-            except SSL.ZeroReturnError:
+            except ssl.SSLZeroReturnError:
                 debug(
                     "call: _do_ssl_shutdown() -> shutdown(), err: zero-return",
                     inst=self,
                 )
                 super().close()
-            except SSL.SysCallError as err:
+            except ssl.SSLSyscallError as err:
                 debug(
                     "call: _do_ssl_shutdown() -> shutdown(), err: %r" % err,
                     inst=self,
@@ -3565,7 +3563,7 @@ if True:
                     super().close()
                 else:
                     raise
-            except SSL.Error as err:
+            except ssl.SSLError as err:
                 debug(
                     "call: _do_ssl_shutdown() -> shutdown(), err: %r" % err,
                     inst=self,
@@ -3587,19 +3585,13 @@ if True:
                 else:
                     raise
             else:
-                if done:
-                    debug(
-                        "call: _do_ssl_shutdown(), shutdown completed",
-                        inst=self,
-                    )
-                    self._ssl_established = False
-                    self._ssl_closing = False
-                    self.handle_ssl_shutdown()
-                else:
-                    debug(
-                        "call: _do_ssl_shutdown(), shutdown not completed yet",
-                        inst=self,
-                    )
+                debug(
+                    "call: _do_ssl_shutdown(), shutdown completed",
+                    inst=self,
+                )
+                self._ssl_established = False
+                self._ssl_closing = False
+                self.handle_ssl_shutdown()
 
         def close(self):
             if self._ssl_established and not self._error:
@@ -3753,10 +3745,9 @@ if True:
                     raise ValueError("at least certfile must be specified")
                 if not cls.keyfile:
                     cls.keyfile = cls.certfile
-
-                cls.ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-                cls.ssl_ctx.options |= cls.ssl_options
-                cls.ssl_ctx.load_cert_chain(cls.certfile, cls.keyfile)
+                cls.ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+                cls.ssl_context.options |= cls.ssl_options
+                cls.ssl_context.load_cert_chain(cls.certfile, cls.keyfile)
             return cls.ssl_context
 
         # --- overridden methods
