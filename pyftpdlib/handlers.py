@@ -9,6 +9,7 @@ import logging
 import os
 import random
 import socket
+import ssl
 import sys
 import time
 import traceback
@@ -20,11 +21,6 @@ try:
     import pwd
 except ImportError:
     pwd = grp = None
-
-try:
-    from OpenSSL import SSL  # requires "pip install pyopenssl"
-except ImportError:
-    SSL = None
 
 from . import __ver__
 from . import _asynchat as asynchat
@@ -347,7 +343,7 @@ def _strerror(err):
 
 
 def _is_ssl_sock(sock):
-    return SSL is not None and isinstance(sock, SSL.Connection)
+    return isinstance(sock, ssl.SSLSocket)
 
 
 def _support_hybrid_ipv6():
@@ -3267,7 +3263,7 @@ class FTPHandler(AsyncChat):
 # ===================================================================
 
 
-if SSL is not None:
+if True:
 
     class SSLConnection:
         """An AsyncChat subclass supporting TLS/SSL."""
@@ -3435,8 +3431,6 @@ if SSL is not None:
                 logger.critical(traceback.format_exc())
 
         def send(self, data):
-            if not isinstance(data, bytes):
-                data = bytes(data)
             try:
                 return super().send(data)
             except SSL.WantReadError:
@@ -3628,7 +3622,7 @@ if SSL is not None:
             return DTPHandler.__repr__(self)
 
         def use_sendfile(self):
-            if isinstance(self.socket, SSL.Connection):
+            if _is_ssl_sock(self.socket):
                 return False
             else:
                 return super().use_sendfile()
@@ -3695,14 +3689,17 @@ if SSL is not None:
         tls_data_required = False
         certfile = None
         keyfile = None
-        ssl_protocol = SSL.SSLv23_METHOD
         # - SSLv2 is easily broken and is considered harmful and dangerous
         # - SSLv3 has several problems and is now dangerous
         # - Disable compression to prevent CRIME attacks for OpenSSL 1.0+
         #   (see https://github.com/shazow/urllib3/pull/309)
-        ssl_options = SSL.OP_NO_SSLv2 | SSL.OP_NO_SSLv3
-        if hasattr(SSL, "OP_NO_COMPRESSION"):
-            ssl_options |= SSL.OP_NO_COMPRESSION
+        ssl_options = ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3
+        if hasattr(ssl, "OP_NO_COMPRESSION"):
+            ssl_options |= ssl.OP_NO_COMPRESSION
+        if hasattr(ssl, "OP_SINGLE_DH_USE"):
+            ssl_options |= ssl.OP_SINGLE_DH_USE
+        if hasattr(ssl, "OP_SINGLE_ECDH_USE"):
+            ssl_options |= ssl.OP_SINGLE_ECDH_USE
         ssl_context = None
 
         # overridden attributes
@@ -3754,13 +3751,12 @@ if SSL is not None:
             if cls.ssl_context is None:
                 if cls.certfile is None:
                     raise ValueError("at least certfile must be specified")
-                cls.ssl_context = SSL.Context(cls.ssl_protocol)
-                cls.ssl_context.use_certificate_chain_file(cls.certfile)
                 if not cls.keyfile:
                     cls.keyfile = cls.certfile
-                cls.ssl_context.use_privatekey_file(cls.keyfile)
-                if cls.ssl_options:
-                    cls.ssl_context.set_options(cls.ssl_options)
+
+                cls.ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+                cls.ssl_ctx.options |= cls.ssl_options
+                cls.ssl_ctx.load_cert_chain(cls.certfile, cls.keyfile)
             return cls.ssl_context
 
         # --- overridden methods
@@ -3802,7 +3798,7 @@ if SSL is not None:
         def ftp_AUTH(self, line):
             """Set up secure control channel."""
             arg = line.upper()
-            if isinstance(self.socket, SSL.Connection):
+            if _is_ssl_sock(self.socket):
                 self.respond("503 Already using TLS.")
             elif arg in ('TLS', 'TLS-C', 'SSL', 'TLS-P'):
                 # From RFC-4217: "As the SSL/TLS protocols self-negotiate
@@ -3820,7 +3816,7 @@ if SSL is not None:
             For TLS/SSL the only valid value for the parameter is '0'.
             Any other value is accepted but ignored.
             """
-            if not isinstance(self.socket, SSL.Connection):
+            if not _is_ssl_sock(self.socket):
                 self.respond(
                     "503 PBSZ not allowed on insecure control connection."
                 )
@@ -3831,7 +3827,7 @@ if SSL is not None:
         def ftp_PROT(self, line):
             """Setup un/secure data channel."""
             arg = line.upper()
-            if not isinstance(self.socket, SSL.Connection):
+            if not _is_ssl_sock(self.socket):
                 self.respond(
                     "503 PROT not allowed on insecure control connection."
                 )
