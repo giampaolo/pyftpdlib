@@ -3297,7 +3297,9 @@ if True:
             self._ssl_requested = True
             try:
                 self.socket = ssl_context.wrap_socket(
-                    self.socket, server_side=True
+                    self.socket,
+                    server_side=True,
+                    do_handshake_on_connect=False,
                 )
             except OSError as err:
                 # may happen in case the client connects/disconnects
@@ -3308,17 +3310,17 @@ if True:
                     self,
                 )
                 self.close()
-            except ValueError:
-                # may happen in case the client connects/disconnects
-                # very quickly
-                if self.socket.fileno() == -1:
-                    debug(
-                        "ValueError and fd == -1 on secure_connection()", self
-                    )
-                    return
-                raise
+            # except ValueError:
+            #     # may happen in case the client connects/disconnects
+            #     # very quickly
+            #     if self.socket.fileno() == -1:
+            #         debug(
+            #             "ValueError and fd == -1 on secure_connection()",
+            #             self
+            #         )
+            #         return
+            #     raise
             else:
-                self.socket.set_accept_state()
                 self._ssl_accepting = True
 
         @contextlib.contextmanager
