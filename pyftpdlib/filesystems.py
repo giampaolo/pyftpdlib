@@ -15,7 +15,7 @@ except ImportError:
     pwd = grp = None
 
 
-__all__ = ['FilesystemError', 'AbstractedFS']
+__all__ = ['AbstractedFS', 'FilesystemError']
 
 
 _months_map = {

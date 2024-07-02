@@ -187,15 +187,15 @@ class _CallLater:
     """Container object which instance is returned by ioloop.call_later()."""
 
     __slots__ = (
-        '_delay',
-        '_target',
         '_args',
-        '_kwargs',
+        '_delay',
         '_errback',
-        '_sched',
+        '_kwargs',
         '_repush',
-        'timeout',
+        '_sched',
+        '_target',
         'cancelled',
+        'timeout',
     )
 
     def __init__(self, seconds, target, *args, **kwargs):

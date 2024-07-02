@@ -20,6 +20,8 @@ select = [
     "PLW0602",  # Using global for `x` but no assignment is done
     "RUF010",  # [*] f-string, use explicit conversion flag
     "RUF021",  # [*] Parenthesize `a and b` expressions when chaining `and` and `or` together, to make the precedence clear
+    "RUF022",  # [*] `__all__` is not sorted
+    "RUF023",  # [*] `_CallLater.__slots__` is not sorted
 ]
 ignore = [
     "A",  # flake8-builtins
