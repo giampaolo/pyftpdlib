@@ -1489,9 +1489,9 @@ class FTPHandler(AsyncChat):
         self.on_connect()
         if not self._closed and not self._closing:
             if len(self.banner) <= 75:
-                self.respond(f"220 {str(self.banner)}")
+                self.respond(f"220 {self.banner!s}")
             else:
-                self.push(f'220-{str(self.banner)}\r\n')
+                self.push(f'220-{self.banner!s}\r\n')
                 self.respond('220 ')
 
     def handle_max_cons(self):

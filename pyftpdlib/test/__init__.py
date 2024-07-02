@@ -151,7 +151,7 @@ def safe_rmpath(path):
             except OSError as _:
                 err = _
                 warnings.warn(
-                    f"ignoring {str(err)}", UserWarning, stacklevel=2
+                    f"ignoring {err!s}", UserWarning, stacklevel=2
                 )
             time.sleep(0.01)
         raise err

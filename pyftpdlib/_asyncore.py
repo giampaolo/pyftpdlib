@@ -369,7 +369,7 @@ class dispatcher:
                     raise
 
     def log(self, message):
-        sys.stderr.write(f'log: {str(message)}\n')
+        sys.stderr.write(f'log: {message}\n')
 
     def log_info(self, message, type='info'):
         if type not in self.ignore_log_types:
@@ -469,7 +469,7 @@ class dispatcher_with_send(dispatcher):
 
     def send(self, data):
         if self.debug:
-            self.log_info(f'sending {repr(data)}')
+            self.log_info(f'sending {data!r}')
         self.out_buffer += data
         self.initiate_send()
 

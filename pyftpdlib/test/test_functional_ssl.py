@@ -204,7 +204,7 @@ class TestFTPS(PyftpdlibTestCase):
         except excClass as err:
             if str(err) == msg:
                 return
-            raise self.failureException(f"{str(err)} != {msg}")
+            raise self.failureException(f"{err!s} != {msg}")
         else:
             if hasattr(excClass, '__name__'):
                 excName = excClass.__name__
