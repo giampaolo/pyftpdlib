@@ -90,7 +90,7 @@ class TestDummyAuthorizer(PyftpdlibTestCase):
         # raise exc if user already exists
         auth.add_user(USER, PASSWD, HOME)
         auth.add_anonymous(HOME)
-        with pytest.raises(ValueError, match='user %r already exists' % USER):
+        with pytest.raises(ValueError, match=f'user {USER!r} already exists'):
             auth.add_user(USER, PASSWD, HOME)
         with pytest.raises(
             ValueError, match="user 'anonymous' already exists"
@@ -231,13 +231,13 @@ class _SharedAuthorizerTests:
         except excClass as err:
             if str(err) == msg:
                 return
-            raise self.failureException("%s != %s" % (str(err), msg))
+            raise self.failureException(f"{str(err)} != {msg}")
         else:
             if hasattr(excClass, '__name__'):
                 excName = excClass.__name__
             else:
                 excName = str(excClass)
-            raise self.failureException("%s not raised" % excName)
+            raise self.failureException(f"{excName} not raised")
 
     # --- /utils
 
@@ -350,13 +350,13 @@ class _SharedAuthorizerTests:
         )
         self.assertRaisesWithMsg(
             AuthorizerError,
-            'unknown user %s' % wrong_user,
+            f'unknown user {wrong_user}',
             self.authorizer_class,
             allowed_users=[wrong_user],
         )
         self.assertRaisesWithMsg(
             AuthorizerError,
-            'unknown user %s' % wrong_user,
+            f'unknown user {wrong_user}',
             self.authorizer_class,
             rejected_users=[wrong_user],
         )
@@ -433,7 +433,7 @@ class _SharedAuthorizerTests:
         )
         self.assertRaisesWithMsg(
             AuthorizerError,
-            'no such user %s' % nonexistent_user,
+            f'no such user {nonexistent_user}',
             auth.override_user,
             nonexistent_user,
             perm='r',
@@ -447,7 +447,7 @@ class _SharedAuthorizerTests:
         auth.override_user(this_user, perm='r')
         self.assertRaisesWithMsg(
             AuthorizerError,
-            '%s is not an allowed user' % another_user,
+            f'{another_user} is not an allowed user',
             auth.override_user,
             another_user,
             perm='r',
@@ -461,7 +461,7 @@ class _SharedAuthorizerTests:
         auth.override_user(another_user, perm='r')
         self.assertRaisesWithMsg(
             AuthorizerError,
-            '%s is not an allowed user' % this_user,
+            f'{this_user} is not an allowed user',
             auth.override_user,
             this_user,
             perm='r',
@@ -571,7 +571,7 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
         user = get_fake_shell_user()
         self.assertRaisesWithMsg(
             AuthorizerError,
-            "user %s has not a valid shell" % user,
+            f"user {user} has not a valid shell",
             UnixAuthorizer,
             allowed_users=[user],
         )
@@ -585,7 +585,7 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
         assert not auth._has_valid_shell(user)
         self.assertRaisesWithMsg(
             AuthorizerError,
-            "User %s doesn't have a valid shell." % user,
+            f"User {user} doesn't have a valid shell.",
             auth.override_user,
             user,
             perm='r',

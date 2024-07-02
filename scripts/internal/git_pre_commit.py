@@ -47,7 +47,7 @@ def hilite(s, ok=True, bold=False):
         attr.append("31")
     if bold:
         attr.append("1")
-    return "\x1b[%sm%s\x1b[0m" % (";".join(attr), s)
+    return f"\x1b[{';'.join(attr)}m{s}\x1b[0m"
 
 
 def exit(msg):
@@ -97,7 +97,7 @@ def git_committed_files():
 
 
 def ruff(files):
-    print("running ruff (%s)" % len(files))
+    print(f"running ruff ({len(files)})")
     cmd = [PYTHON, "-m", "ruff", "check", "--no-cache"] + files
     if subprocess.call(cmd) != 0:
         msg = "Python code didn't pass 'ruff' style check. "
@@ -106,17 +106,17 @@ def ruff(files):
 
 
 def rstcheck(files):
-    print("running rst linter (%s)" % len(files))
+    print(f"running rst linter ({len(files)})")
     cmd = ["rstcheck", "--config=pyproject.toml"] + files
     if subprocess.call(cmd) != 0:
         return sys.exit("RST code didn't pass style check")
 
 
 def toml_sort(files):
-    print("running toml linter (%s)" % len(files))
+    print(f"running toml linter ({len(files)})")
     cmd = ["toml-sort", "--check"] + files
     if subprocess.call(cmd) != 0:
-        return sys.exit("%s didn't pass style check" % ' '.join(files))
+        return sys.exit(f"{' '.join(files)} didn't pass style check")
 
 
 def main():

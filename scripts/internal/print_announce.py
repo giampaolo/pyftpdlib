@@ -77,7 +77,7 @@ def get_changes():
         if re.match(r"^- \d+_: ", line):
             num, _, rest = line.partition(': ')
             num = ''.join([x for x in num if x.isdigit()])
-            line = "- #%s: %s" % (num, rest)
+            line = f"- #{num}: {rest}"
 
         if line.startswith('===='):
             break

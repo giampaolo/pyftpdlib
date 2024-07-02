@@ -89,7 +89,7 @@ class LogFormatter(logging.Formatter):
         try:
             record.message = record.getMessage()
         except Exception as err:
-            record.message = "Bad message (%r): %r" % (err, record.__dict__)
+            record.message = f"Bad message ({err!r}): {record.__dict__!r}"
 
         record.asctime = time.strftime(
             TIME_FORMAT, self.converter(record.created)
@@ -134,7 +134,7 @@ class LogFormatter(logging.Formatter):
 def debug(s, inst=None):
     s = "[debug] " + s
     if inst is not None:
-        s += " (%r)" % inst
+        s += f" ({inst!r})"
     logger.debug(s)
 
 

@@ -60,9 +60,9 @@ def assert_closed_resources(setup_ctx, request):
     for key, value in before.items():
         if key.startswith("_"):
             continue
-        msg = "%r left some unclosed %r resources behind: " % (
-            setup_ctx['_origin'],
-            key,
+        msg = (
+            f"{setup_ctx['_origin']!r} left some unclosed {key!r} resources"
+            " behind: "
         )
         extra = after[key] - before[key]
         if extra:
@@ -70,7 +70,7 @@ def assert_closed_resources(setup_ctx, request):
                 msg += repr(extra)
                 warn(msg)
             elif extra > 0:  # unused, here just in case we extend it later
-                msg += "before=%r, after=%r" % (before[key], after[key])
+                msg += f"before={before[key]!r}, after={after[key]!r}"
                 warn(msg)
 
 

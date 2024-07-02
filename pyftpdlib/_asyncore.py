@@ -60,7 +60,7 @@ def _strerror(err):
     except (ValueError, OverflowError, NameError):
         if err in errorcode:
             return errorcode[err]
-        return "Unknown error %s" % err
+        return f"Unknown error {err}"
 
 
 _reraised_exceptions = (KeyboardInterrupt, SystemExit)
@@ -244,7 +244,7 @@ class dispatcher:
                 status.append('%s:%d' % self.addr)
             except TypeError:
                 status.append(repr(self.addr))
-        return '<%s at %#x>' % (' '.join(status), id(self))
+        return '<%s at %#x>' % (' '.join(status), id(self))  # noqa
 
     def add_channel(self, map=None):
         # self.log_info('adding channel %s' % self)
@@ -369,11 +369,11 @@ class dispatcher:
                     raise
 
     def log(self, message):
-        sys.stderr.write('log: %s\n' % str(message))
+        sys.stderr.write(f'log: {str(message)}\n')
 
     def log_info(self, message, type='info'):
         if type not in self.ignore_log_types:
-            print('%s: %s' % (type, message))  # noqa
+            print(f'{type}: {message}')  # noqa
 
     def handle_read_event(self):
         if self.accepting:
@@ -415,10 +415,10 @@ class dispatcher:
         try:
             self_repr = repr(self)
         except Exception:
-            self_repr = '<__repr__(self) failed for object at %0x>' % id(self)
+            self_repr = f'<__repr__(self) failed for object at {id(self):0x}>'
 
         self.log_info(
-            'uncaptured python exception, closing channel %s (%s:%s %s)'
+            'uncaptured python exception, closing channel %s (%s:%s %s)'  # noqa
             % (self_repr, t, v, tbinfo),
             'error',
         )
@@ -469,7 +469,7 @@ class dispatcher_with_send(dispatcher):
 
     def send(self, data):
         if self.debug:
-            self.log_info('sending %s' % repr(data))
+            self.log_info(f'sending {repr(data)}')
         self.out_buffer = self.out_buffer + data
         self.initiate_send()
 
@@ -498,7 +498,7 @@ def compact_traceback():
     del tb
 
     file, function, line = tbinfo[-1]
-    info = ' '.join(['[%s|%s|%s]' % x for x in tbinfo])
+    info = ' '.join(['[%s|%s|%s]' % x for x in tbinfo])  # noqa: UP031
     return (file, function, line), t, v, info
 
 
@@ -534,7 +534,7 @@ if os.name == 'posix':
         def __del__(self):
             if self.fd >= 0:
                 warnings.warn(
-                    "unclosed file %r" % self,
+                    f"unclosed file {self!r}",
                     ResourceWarning,
                     source=self,
                     stacklevel=2,

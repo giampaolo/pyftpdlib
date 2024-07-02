@@ -86,7 +86,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = PROJECT_NAME
-copyright = '2009-%s, %s' % (THIS_YEAR, AUTHOR)
+copyright = f'2009-{THIS_YEAR}, {AUTHOR}'
 author = AUTHOR
 
 # The version info for the project you're documenting, acts as replacement for
@@ -269,7 +269,7 @@ html_theme = 'sphinx_rtd_theme'
 # html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = '%s-doc' % PROJECT_NAME
+htmlhelp_basename = f'{PROJECT_NAME}-doc'
 
 # -- Options for LaTeX output ---------------------------------------------
 

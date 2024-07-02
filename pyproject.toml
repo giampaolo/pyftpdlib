@@ -15,7 +15,6 @@ line-length = 79
 preview = true
 select = [
     "ALL",  # to get a list of all values: `python3 -m ruff linter`
-    "PLR2044",  # [*] Line with empty comment
 ]
 ignore = [
     "A",  # flake8-builtins
@@ -68,7 +67,6 @@ ignore = [
     "TRY003",  # Avoid specifying long messages outside the exception class
     "TRY300",  # Consider moving this statement to an `else` block
     "TRY301",  # Abstract `raise` to an inner function
-    "UP031",  # [*] Use format specifiers instead of percent format
 ]
 
 [tool.ruff.lint.per-file-ignores]

@@ -303,7 +303,7 @@ class TestFtpDummyCmds(PyftpdlibTestCase):
     def test_help(self):
         self.client.sendcmd('help')
         cmd = random.choice(list(FTPHandler.proto_cmds.keys()))
-        self.client.sendcmd('help %s' % cmd)
+        self.client.sendcmd(f'help {cmd}')
         with pytest.raises(ftplib.error_perm, match="Unrecognized"):
             self.client.sendcmd('help ?!?')
 
@@ -541,11 +541,11 @@ class TestFtpFsOperations(PyftpdlibTestCase):
         os.mkdir(os.path.join(self.tempdir, subfolder))
         assert self.client.pwd() == '/'
         self.client.cwd(self.tempdir)
-        assert self.client.pwd() == '/%s' % self.tempdir
+        assert self.client.pwd() == f'/{self.tempdir}'
         self.client.cwd(subfolder)
-        assert self.client.pwd() == '/%s/%s' % (self.tempdir, subfolder)
+        assert self.client.pwd() == f'/{self.tempdir}/{subfolder}'
         self.client.sendcmd('cdup')
-        assert self.client.pwd() == '/%s' % self.tempdir
+        assert self.client.pwd() == f'/{self.tempdir}'
         self.client.sendcmd('cdup')
         assert self.client.pwd() == '/'
 
@@ -969,10 +969,10 @@ class TestFtpStoreData(PyftpdlibTestCase):
         # on stor
         file_size = self.client.size(self.testfn)
         assert file_size == bytes_sent
-        self.client.sendcmd('rest %s' % (file_size + 1))
+        self.client.sendcmd(f'rest {file_size + 1}')
         with pytest.raises(ftplib.error_perm, match="> file size"):
             self.client.sendcmd('stor ' + self.testfn)
-        self.client.sendcmd('rest %s' % bytes_sent)
+        self.client.sendcmd(f'rest {bytes_sent}')
         self.client.storbinary('stor ' + self.testfn, self.dummy_sendfile)
 
         self.client.retrbinary(
@@ -1146,13 +1146,13 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
         # file size stored on the server should result in an error
         # on retr (RFC-1123)
         file_size = self.client.size(self.testfn)
-        self.client.sendcmd('rest %s' % (file_size + 1))
+        self.client.sendcmd(f'rest {file_size + 1}')
         with pytest.raises(
             ftplib.error_perm, match="position .*? > file size"
         ):
             self.client.sendcmd('retr ' + self.testfn)
         # test resume
-        self.client.sendcmd('rest %s' % received_bytes)
+        self.client.sendcmd(f'rest {received_bytes}')
         self.client.retrbinary("retr " + self.testfn, self.dummyfile.write)
         self.dummyfile.seek(0)
         datafile = self.dummyfile.read()
@@ -1210,7 +1210,7 @@ class TestFtpListingCmds(PyftpdlibTestCase):
         if cmd.lower() != 'mlsd':
             # if pathname is a file one line is expected
             x = []
-            self.client.retrlines('%s ' % cmd + self.testfn, x.append)
+            self.client.retrlines(f'{cmd} ' + self.testfn, x.append)
             assert len(x) == 1
             assert ''.join(x).endswith(self.testfn)
         # non-existent path, 550 response is expected
@@ -1218,14 +1218,14 @@ class TestFtpListingCmds(PyftpdlibTestCase):
         with pytest.raises(
             ftplib.error_perm, match="No such (file|directory)"
         ):
-            self.client.retrlines('%s ' % cmd + bogus, lambda x: x)
+            self.client.retrlines(f'{cmd} ' + bogus, lambda x: x)
         # for an empty directory we excpect that the data channel is
         # opened anyway and that no data is received
         x = []
         tempdir = self.get_testfn()
         os.mkdir(tempdir)
         try:
-            self.client.retrlines('%s %s' % (cmd, tempdir), x.append)
+            self.client.retrlines(f'{cmd} {tempdir}', x.append)
             assert x == []
         finally:
             safe_rmpath(tempdir)
@@ -1943,28 +1943,28 @@ class TestCallbacks(PyftpdlibTestCase):
                 self.write("on_disconnect,")
 
             def on_login(self, username):
-                self.write("on_login:%s," % username)
+                self.write(f"on_login:{username},")
 
             def on_login_failed(self, username, password):
-                self.write("on_login_failed:%s+%s," % (username, password))
+                self.write(f"on_login_failed:{username}+{password},")
 
             def on_logout(self, username):
-                self.write("on_logout:%s," % username)
+                self.write(f"on_logout:{username},")
 
             def on_file_sent(self, file):
-                self.write("on_file_sent:%s," % os.path.basename(file))
+                self.write(f"on_file_sent:{os.path.basename(file)},")
 
             def on_file_received(self, file):
-                self.write("on_file_received:%s," % os.path.basename(file))
+                self.write(f"on_file_received:{os.path.basename(file)},")
 
             def on_incomplete_file_sent(self, file):
                 self.write(
-                    "on_incomplete_file_sent:%s," % os.path.basename(file)
+                    f"on_incomplete_file_sent:{os.path.basename(file)},"
                 )
 
             def on_incomplete_file_received(self, file):
                 self.write(
-                    "on_incomplete_file_received:%s," % os.path.basename(file)
+                    f"on_incomplete_file_received:{os.path.basename(file)},"
                 )
 
         self.testfn = testfn = self.get_testfn()
@@ -1988,24 +1988,24 @@ class TestCallbacks(PyftpdlibTestCase):
                 if data == text:
                     return
             time.sleep(0.01)
-        self.fail("data: %r; expected: %r" % (data, text))
+        self.fail(f"data: {data!r}; expected: {text!r}")
 
     def test_on_disconnect(self):
         self.client.login(USER, PASSWD)
         self.client.close()
-        self.read_file('on_connect,on_login:%s,on_disconnect,' % USER)
+        self.read_file(f'on_connect,on_login:{USER},on_disconnect,')
 
     def test_on_logout_quit(self):
         self.client.login(USER, PASSWD)
         self.client.sendcmd('quit')
         self.read_file(
-            'on_connect,on_login:%s,on_logout:%s,on_disconnect,' % (USER, USER)
+            f'on_connect,on_login:{USER},on_logout:{USER},on_disconnect,'
         )
 
     def test_on_logout_rein(self):
         self.client.login(USER, PASSWD)
         self.client.sendcmd('rein')
-        self.read_file('on_connect,on_login:%s,on_logout:%s,' % (USER, USER))
+        self.read_file(f'on_connect,on_login:{USER},on_logout:{USER},')
 
     def test_on_logout_no_pass(self):
         # make sure on_logout() is not called if USER was provided
@@ -2019,8 +2019,7 @@ class TestCallbacks(PyftpdlibTestCase):
         self.client.login(USER, PASSWD)
         self.client.login("anonymous")
         self.read_file(
-            'on_connect,on_login:%s,on_logout:%s,on_login:anonymous,'
-            % (USER, USER)
+            f'on_connect,on_login:{USER},on_logout:{USER},on_login:anonymous,'
         )
 
     def test_on_login_failed(self):
@@ -2036,8 +2035,7 @@ class TestCallbacks(PyftpdlibTestCase):
         self.client.login(USER, PASSWD)
         self.client.storbinary('stor ' + self.testfn2, dummyfile)
         self.read_file(
-            'on_connect,on_login:%s,on_file_received:%s,'
-            % (USER, self.testfn2)
+            f'on_connect,on_login:{USER},on_file_received:{self.testfn2},'
         )
 
     def test_on_file_sent(self):
@@ -2047,7 +2045,7 @@ class TestCallbacks(PyftpdlibTestCase):
             f.write(data)
         self.client.retrbinary("retr " + self.testfn2, lambda x: x)
         self.read_file(
-            'on_connect,on_login:%s,on_file_sent:%s,' % (USER, self.testfn2)
+            f'on_connect,on_login:{USER},on_file_sent:{self.testfn2},'
         )
 
     @retry_on_failure
@@ -2076,8 +2074,7 @@ class TestCallbacks(PyftpdlibTestCase):
         resp = self.client.getmultiline()
         assert resp.startswith("226")
         self.read_file(
-            'on_connect,on_login:%s,on_incomplete_file_received:%s,'
-            % (USER, self.testfn2)
+            f'on_connect,on_login:{USER},on_incomplete_file_received:{self.testfn2},'
         )
 
     @retry_on_failure
@@ -2097,8 +2094,7 @@ class TestCallbacks(PyftpdlibTestCase):
                     break
         assert self.client.getline()[:3] == "426"
         self.read_file(
-            'on_connect,on_login:%s,on_incomplete_file_sent:%s,'
-            % (USER, self.testfn2)
+            f'on_connect,on_login:{USER},on_incomplete_file_sent:{self.testfn2},'
         )
 
 
@@ -2141,7 +2137,7 @@ class _TestNetworkProtocols:
             # test wrong proto
             try:
                 self.client.sendcmd(
-                    'eprt |%s|%s|%s|'
+                    'eprt |%s|%s|%s|'  # noqa: UP031
                     % (self.other_proto, self.server.host, self.server.port)
                 )
             except ftplib.error_perm as err:
@@ -2156,17 +2152,15 @@ class _TestNetworkProtocols:
         # len('|') < 3
         assert self.cmdresp('eprt ||') == msg
         # port > 65535
-        assert (
-            self.cmdresp('eprt |%s|%s|65536|' % (self.proto, self.HOST)) == msg
-        )
+        assert self.cmdresp(f'eprt |{self.proto}|{self.HOST}|65536|') == msg
         # port < 0
-        assert self.cmdresp('eprt |%s|%s|-1|' % (self.proto, self.HOST)) == msg
+        assert self.cmdresp(f'eprt |{self.proto}|{self.HOST}|-1|') == msg
         # port < 1024
-        resp = self.cmdresp('eprt |%s|%s|222|' % (self.proto, self.HOST))
+        resp = self.cmdresp(f'eprt |{self.proto}|{self.HOST}|222|')
         assert resp[:3] == '501'
         assert 'privileged port' in resp
         # proto > 2
-        _cmd = 'eprt |3|%s|%s|' % (self.server.host, self.server.port)
+        _cmd = f'eprt |3|{self.server.host}|{self.server.port}|'
         with pytest.raises(ftplib.error_perm):
             self.client.sendcmd(_cmd)
 
@@ -2185,7 +2179,7 @@ class _TestNetworkProtocols:
             sock.listen(5)
             sock.settimeout(GLOBAL_TIMEOUT)
             ip, port = sock.getsockname()[:2]
-            self.client.sendcmd('eprt |%s|%s|%s|' % (self.proto, ip, port))
+            self.client.sendcmd(f'eprt |{self.proto}|{ip}|{port}|')
             try:
                 s = sock.accept()
                 s[0].close()
@@ -2225,7 +2219,7 @@ class _TestNetworkProtocols:
             self.client.sendport(self.HOST, 2000)
         with pytest.raises(ftplib.error_perm):
             self.client.sendcmd(
-                'eprt |%s|%s|%s|' % (self.proto, self.HOST, 2000),
+                f'eprt |{self.proto}|{self.HOST}|{2000}|',
             )
 
 
@@ -2257,7 +2251,7 @@ class TestIPv4Environment(_TestNetworkProtocols, PyftpdlibTestCase):
         ae(self.cmdresp('port 127,0,0,1,256,1'), msg)  # port > 65535
         ae(self.cmdresp('port 127,0,0,1,-1,0'), msg)  # port < 0
         # port < 1024
-        resp = self.cmdresp('port %s,1,1' % self.HOST.replace('.', ','))
+        resp = self.cmdresp(f"port {self.HOST.replace('.', ',')},1,1")
         assert resp[:3] == '501'
         assert 'privileged port' in resp
         if self.HOST != "1.2.3.4":
@@ -2374,7 +2368,7 @@ class TestIPv6MixedEnvironment(PyftpdlibTestCase):
             sock.listen(5)
             sock.settimeout(2)
             ip, port = sock.getsockname()[:2]
-            self.client.sendcmd('eprt |1|%s|%s|' % (ip, port))
+            self.client.sendcmd(f'eprt |1|{ip}|{port}|')
             try:
                 sock2, _ = sock.accept()
                 sock2.close()

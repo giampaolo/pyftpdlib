@@ -131,7 +131,7 @@ class TestCommandLineParser(PyftpdlibTestCase):
         for opt in ("-v", "--version"):
             with pytest.raises(SystemExit) as cm:
                 main([opt, "-p", "0"])
-            assert str(cm.value) == "pyftpdlib %s" % __ver__
+            assert str(cm.value) == f"pyftpdlib {__ver__}"
 
     def test_verbose_opt(self):
         for opt in ("-V", "--verbose"):

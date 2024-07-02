@@ -148,7 +148,7 @@ class _Scheduler:
         if self._cancellations > 512 and self._cancellations > (
             len(self._tasks) >> 1
         ):
-            debug("re-heapifying %s cancelled tasks" % self._cancellations)
+            debug(f"re-heapifying {self._cancellations} cancelled tasks")
             self.reheapify()
 
         try:
@@ -199,10 +199,10 @@ class _CallLater:
     )
 
     def __init__(self, seconds, target, *args, **kwargs):
-        assert callable(target), "%s is not callable" % target
-        assert sys.maxsize >= seconds >= 0, (
-            "%s is not greater than or equal to 0 seconds" % seconds
-        )
+        assert callable(target), f"{target} is not callable"
+        assert (
+            sys.maxsize >= seconds >= 0
+        ), f"{seconds} is not greater than or equal to 0 seconds"
         self._delay = seconds
         self._target = target
         self._args = args
@@ -229,13 +229,13 @@ class _CallLater:
             sig = object.__repr__(self)
         else:
             sig = repr(self._target)
-        sig += ' args=%s, kwargs=%s, cancelled=%s, secs=%s' % (
+        sig += ' args=%s, kwargs=%s, cancelled=%s, secs=%s' % (  # noqa: UP031
             self._args or '[]',
             self._kwargs or '{}',
             self.cancelled,
             self._delay,
         )
-        return '<%s>' % sig
+        return f'<{sig}>'
 
     __str__ = __repr__
 
@@ -306,10 +306,9 @@ class _IOLoop:
     def __repr__(self):
         status = [self.__class__.__module__ + "." + self.__class__.__name__]
         status.append(
-            "(fds=%s, tasks=%s)"
-            % (len(self.socket_map), len(self.sched._tasks))
+            f"(fds={len(self.socket_map)}, tasks={len(self.sched._tasks)})"
         )
-        return '<%s at %#x>' % (' '.join(status), id(self))
+        return '<%s at %#x>' % (' '.join(status), id(self))  # noqa: UP031
 
     __str__ = __repr__
 
@@ -523,8 +522,8 @@ class _BasePollEpoll(_IOLoop):
             except OSError as err:
                 if err.errno in (errno.ENOENT, errno.EBADF):
                     debug(
-                        "call: unregister(); poller returned %r; ignoring it"
-                        % err,
+                        f"call: unregister(); poller returned {err!r};"
+                        " ignoring it",
                         self,
                     )
                 else:
@@ -695,8 +694,8 @@ if hasattr(select, 'kqueue'):  # pragma: no cover
                 except OSError as err:
                     if err.errno in (errno.ENOENT, errno.EBADF):
                         debug(
-                            "call: unregister(); poller returned %r; "
-                            "ignoring it" % err,
+                            f"call: unregister(); poller returned {err!r};"
+                            " ignoring it",
                             self,
                         )
                     else:
@@ -842,8 +841,7 @@ class AsyncChat(asynchat.async_chat):
                         else:
                             ev = events
                         debug(
-                            "call: IOLoop.modify(); setting %r IO events"
-                            % (ev),
+                            f"call: IOLoop.modify(); setting {ev!r} IO events",
                             self,
                         )
                     self.ioloop.modify(self._fileno, events)
@@ -932,7 +930,7 @@ class AsyncChat(asynchat.async_chat):
         try:
             return self.socket.send(data)
         except OSError as err:
-            debug("call: send(), err: %s" % err, inst=self)
+            debug(f"call: send(), err: {err}", inst=self)
             if err.errno in _ERRNOS_RETRY:
                 return 0
             elif err.errno in _ERRNOS_DISCONNECTED:
@@ -945,7 +943,7 @@ class AsyncChat(asynchat.async_chat):
         try:
             data = self.socket.recv(buffer_size)
         except OSError as err:
-            debug("call: recv(), err: %s" % err, inst=self)
+            debug(f"call: recv(), err: {err}", inst=self)
             if err.errno in _ERRNOS_DISCONNECTED:
                 self.handle_close()
                 return b''

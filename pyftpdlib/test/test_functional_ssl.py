@@ -204,13 +204,13 @@ class TestFTPS(PyftpdlibTestCase):
         except excClass as err:
             if str(err) == msg:
                 return
-            raise self.failureException("%s != %s" % (str(err), msg))
+            raise self.failureException(f"{str(err)} != {msg}")
         else:
             if hasattr(excClass, '__name__'):
                 excName = excClass.__name__
             else:
                 excName = str(excClass)
-            raise self.failureException("%s not raised" % excName)
+            raise self.failureException(f"{excName} not raised")
 
     def test_auth(self):
         # unsecured
