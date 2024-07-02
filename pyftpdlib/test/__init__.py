@@ -65,7 +65,7 @@ if CI_TESTING:
 SUPPORTS_IPV4 = None  # set later
 SUPPORTS_IPV6 = None  # set later
 SUPPORTS_MULTIPROCESSING = hasattr(pyftpdlib.servers, 'MultiprocessFTPServer')
-if BSD or OSX and GITHUB_ACTIONS:
+if BSD or (OSX and GITHUB_ACTIONS):
     SUPPORTS_MULTIPROCESSING = False  # XXX: it's broken!!
 
 
@@ -150,9 +150,7 @@ def safe_rmpath(path):
                 pass
             except OSError as _:
                 err = _
-                warnings.warn(
-                    f"ignoring {err!s}", UserWarning, stacklevel=2
-                )
+                warnings.warn(f"ignoring {err!s}", UserWarning, stacklevel=2)
             time.sleep(0.01)
         raise err
 

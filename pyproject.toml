@@ -19,6 +19,7 @@ select = [
     "PLR6104",  # Use `+=` to perform an augmented assignment directly
     "PLW0602",  # Using global for `x` but no assignment is done
     "RUF010",  # [*] f-string, use explicit conversion flag
+    "RUF021",  # [*] Parenthesize `a and b` expressions when chaining `and` and `or` together, to make the precedence clear
 ]
 ignore = [
     "A",  # flake8-builtins

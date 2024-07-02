@@ -214,10 +214,8 @@ class DummyAuthorizer:
             if self._issubpath(path, dir):
                 if recursive:
                     return perm in operm
-                if (
-                    path == dir
-                    or os.path.dirname(path) == dir
-                    and not os.path.isdir(path)
+                if path == dir or (
+                    os.path.dirname(path) == dir and not os.path.isdir(path)
                 ):
                     return perm in operm
 

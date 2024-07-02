@@ -2073,7 +2073,7 @@ class FTPHandler(AsyncChat):
         line = '%s %s completed=%s bytes=%s seconds=%s' % (  # noqa
             cmd,
             filename,
-            completed and 1 or 0,
+            (completed and 1) or 0,
             bytes,
             elapsed,
         )
