@@ -193,20 +193,19 @@ def main():
     if not options.command:
         server = get_server()
         server.serve_forever()
-    else:
-        if options.command == 'start':
-            daemonize()
-        elif options.command == 'stop':
+    elif options.command == 'start':
+        daemonize()
+    elif options.command == 'stop':
+        stop()
+    elif options.command == 'restart':
+        try:
             stop()
-        elif options.command == 'restart':
-            try:
-                stop()
-            finally:
-                daemonize()
-        elif options.command == 'status':
-            status()
-        else:
-            sys.exit('invalid command')
+        finally:
+            daemonize()
+    elif options.command == 'status':
+        status()
+    else:
+        sys.exit('invalid command')
 
 
 if __name__ == '__main__':

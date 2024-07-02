@@ -237,9 +237,8 @@ class FTPServer(Acceptor):
             if log:
                 self._log_start(prefork=True)
             fork_processes(worker_processes)
-        else:
-            if log:
-                self._log_start()
+        elif log:
+            self._log_start()
 
         proto = "FTP+SSL" if hasattr(self.handler, 'ssl_protocol') else "FTP"
         logger.info(
@@ -309,9 +308,8 @@ class FTPServer(Acceptor):
             logger.error(traceback.format_exc())
             if handler is not None:
                 handler.close()
-            else:
-                if ip is not None and ip in self.ip_map:
-                    self.ip_map.remove(ip)
+            elif ip is not None and ip in self.ip_map:
+                self.ip_map.remove(ip)
 
     def handle_error(self):
         """Called to handle any uncaught exceptions."""

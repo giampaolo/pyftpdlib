@@ -404,7 +404,7 @@ try:
 except ImportError:
     pass
 else:
-    __all__.extend(['BaseUnixAuthorizer', 'UnixAuthorizer'])
+    __all__ += ['BaseUnixAuthorizer', 'UnixAuthorizer']
 
     # the uid/gid the server runs under
     PROCESS_UID = os.getuid()
@@ -684,7 +684,7 @@ except ImportError:
 else:  # pragma: no cover
     import winreg
 
-    __all__.extend(['BaseWindowsAuthorizer', 'WindowsAuthorizer'])
+    __all__ += ['BaseWindowsAuthorizer', 'WindowsAuthorizer']
 
     class BaseWindowsAuthorizer:
         """An authorizer compatible with Windows user account and

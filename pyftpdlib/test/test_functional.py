@@ -479,7 +479,7 @@ class TestFtpCmdsSemantic(PyftpdlibTestCase):
             ):
                 continue
             if cmd in self.arg_cmds:
-                cmd = cmd + ' arg'
+                cmd += ' arg'
             self.client.putcmd(cmd)
             resp = self.client.getmultiline()
             assert resp == expected
@@ -625,33 +625,19 @@ class TestFtpFsOperations(PyftpdlibTestCase):
         # testing MFMT with invalid timeval argument
         test_timestamp_with_chars = "B017092101341A"
         test_timestamp_invalid_length = "20170921"
-
-        try:
+        with pytest.raises(ftplib.error_perm, match="Invalid time format"):
             self.client.sendcmd(
                 'mfmt ' + test_timestamp_with_chars + ' ' + self.tempfile
             )
-        except ftplib.error_perm as err:
-            assert 'Invalid time format' in str(err)
-        else:
-            self.fail('Exception not raised')
-
-        try:
+        with pytest.raises(ftplib.error_perm, match="Invalid time format"):
             self.client.sendcmd(
                 'mfmt ' + test_timestamp_invalid_length + ' ' + self.tempfile
             )
-        except ftplib.error_perm as err:
-            assert 'Invalid time format' in str(err)
-        else:
-            self.fail('Exception not raised')
 
     def test_missing_mfmt_timeval_arg(self):
         # testing missing timeval argument
-        try:
+        with pytest.raises(ftplib.error_perm, match="Syntax error"):
             self.client.sendcmd('mfmt ' + self.tempfile)
-        except ftplib.error_perm as err:
-            assert 'Syntax error' in str(err)
-        else:
-            self.fail('Exception not raised')
 
     def test_size(self):
         self.client.sendcmd('type a')
@@ -1747,10 +1733,10 @@ class TestConfigurableOptions(PyftpdlibTestCase):
             # with passive data socket waiting for connection
             c1.login(USER, PASSWD)
             c1.sendcmd('pasv')
+            c2.close()
             with pytest.raises(
                 ftplib.error_temp, match="Too many connections"
             ):
-                c2.close()
                 c2.connect(
                     self.server.host,
                     self.server.port,
@@ -2135,15 +2121,11 @@ class _TestNetworkProtocols:
     def test_eprt(self):
         if not SUPPORTS_HYBRID_IPV6:
             # test wrong proto
-            try:
+            with pytest.raises(ftplib.error_perm, match="522"):
                 self.client.sendcmd(
                     'eprt |%s|%s|%s|'  # noqa: UP031
                     % (self.other_proto, self.server.host, self.server.port)
                 )
-            except ftplib.error_perm as err:
-                assert str(err)[0:3] == "522"
-            else:
-                self.fail("Exception not raised")
 
         # test bad args
         msg = "501 Invalid EPRT format."
@@ -2188,12 +2170,8 @@ class _TestNetworkProtocols:
 
     def test_epsv(self):
         # test wrong proto
-        try:
+        with pytest.raises(ftplib.error_perm, match="522"):
             self.client.sendcmd('epsv ' + self.other_proto)
-        except ftplib.error_perm as err:
-            assert str(err)[0:3] == "522"
-        else:
-            self.fail("Exception not raised")
 
         # proto > 2
         with pytest.raises(ftplib.error_perm):
@@ -2493,7 +2471,7 @@ class TestCornerCases(PyftpdlibTestCase):
             try:
                 resp = self.client.sendport(HOST, port)
             except ftplib.error_temp as err:
-                assert str(err)[:3] == '425'
+                assert str(err)[:3] == '425'  # noqa: PT017
             except (socket.timeout, getattr(ssl, "SSLError", object())):
                 pass
             else:

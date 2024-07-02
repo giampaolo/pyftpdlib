@@ -195,7 +195,7 @@ def loop(timeout=30.0, use_poll=False, map=None, count=None):
     else:
         while map and count > 0:
             poll_fun(timeout, map)
-            count = count - 1
+            count -= 1
 
 
 class dispatcher:
@@ -411,7 +411,7 @@ class dispatcher:
             self.handle_expt()
 
     def handle_error(self):
-        nil, t, v, tbinfo = compact_traceback()
+        _nil, t, v, tbinfo = compact_traceback()
         try:
             self_repr = repr(self)
         except Exception:
@@ -470,7 +470,7 @@ class dispatcher_with_send(dispatcher):
     def send(self, data):
         if self.debug:
             self.log_info(f'sending {repr(data)}')
-        self.out_buffer = self.out_buffer + data
+        self.out_buffer += data
         self.initiate_send()
 
 

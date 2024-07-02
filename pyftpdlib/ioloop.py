@@ -759,9 +759,8 @@ if hasattr(select, 'kqueue'):  # pragma: no cover
                         # socket buffer, so we only check for EOF on
                         # write events.
                         inst.handle_close()
-                    else:
-                        if inst.writable():
-                            _write(inst)
+                    elif inst.writable():
+                        _write(inst)
                 if kevent.flags & _ERROR:
                     inst.handle_close()
 
@@ -829,22 +828,21 @@ class AsyncChat(asynchat.async_chat):
                     inst=self,
                 )
                 self.add_channel(events=events)
-            else:
-                if events != self._current_io_events:
-                    if logdebug:
-                        if events == self.ioloop.READ:
-                            ev = "R"
-                        elif events == self.ioloop.WRITE:
-                            ev = "W"
-                        elif events == self.ioloop.READ | self.ioloop.WRITE:
-                            ev = "RW"
-                        else:
-                            ev = events
-                        debug(
-                            f"call: IOLoop.modify(); setting {ev!r} IO events",
-                            self,
-                        )
-                    self.ioloop.modify(self._fileno, events)
+            elif events != self._current_io_events:
+                if logdebug:
+                    if events == self.ioloop.READ:
+                        ev = "R"
+                    elif events == self.ioloop.WRITE:
+                        ev = "W"
+                    elif events == self.ioloop.READ | self.ioloop.WRITE:
+                        ev = "RW"
+                    else:
+                        ev = events
+                    debug(
+                        f"call: IOLoop.modify(); setting {ev!r} IO events",
+                        self,
+                    )
+                self.ioloop.modify(self._fileno, events)
             self._current_io_events = events
         else:
             debug(
@@ -888,7 +886,7 @@ class AsyncChat(asynchat.async_chat):
         )
         for res in info:
             self.socket = None
-            af, socktype, proto, canonname, sa = res
+            af, socktype, _proto, _canonname, _sa = res
             try:
                 self.create_socket(af, socktype)
                 if source_address:
@@ -1052,7 +1050,7 @@ class Acceptor(AsyncChat):
         for res in info:
             self.socket = None
             self.del_channel()
-            af, socktype, proto, canonname, sa = res
+            af, socktype, _proto, _canonname, sa = res
             try:
                 self.create_socket(af, socktype)
                 self.set_reuse_addr()

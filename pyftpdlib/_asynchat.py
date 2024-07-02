@@ -77,7 +77,7 @@ class async_chat(asyncore.dispatcher):
 
         if isinstance(data, str) and self.use_encoding:
             data = bytes(str, self.encoding)
-        self.ac_in_buffer = self.ac_in_buffer + data
+        self.ac_in_buffer += data
 
         while self.ac_in_buffer:
             lb = len(self.ac_in_buffer)
@@ -92,7 +92,7 @@ class async_chat(asyncore.dispatcher):
                 if lb < n:
                     self.collect_incoming_data(self.ac_in_buffer)
                     self.ac_in_buffer = b''
-                    self.terminator = self.terminator - lb
+                    self.terminator -= lb
                 else:
                     self.collect_incoming_data(self.ac_in_buffer[:n])
                     self.ac_in_buffer = self.ac_in_buffer[n:]

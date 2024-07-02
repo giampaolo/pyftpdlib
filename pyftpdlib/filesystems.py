@@ -210,9 +210,9 @@ class AbstractedFS:
         root = self.realpath(self.root)
         path = self.realpath(path)
         if not root.endswith(os.sep):
-            root = root + os.sep
+            root += os.sep
         if not path.endswith(os.sep):
-            path = path + os.sep
+            path += os.sep
         return path[0 : len(root)] == root
 
     # --- Wrapper methods around open() and tempfile.mkstemp
@@ -605,7 +605,7 @@ class AbstractedFS:
 # ===================================================================
 
 if os.name == 'posix':
-    __all__.append('UnixFilesystem')
+    __all__ += ['UnixFilesystem']
 
     class UnixFilesystem(AbstractedFS):
         """Represents the real UNIX filesystem.

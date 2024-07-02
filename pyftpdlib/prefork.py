@@ -67,7 +67,6 @@ def fork_processes(number, max_restarts=100):
     *fork_processes* returns None if all child processes have exited
     normally, but will otherwise only exit by throwing an exception.
     """
-    global _task_id
     assert _task_id is None
     if number is None or number <= 0:
         number = cpu_count()

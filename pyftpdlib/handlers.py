@@ -807,14 +807,13 @@ class DTPHandler(AsyncChat):
                 return
             elif err.errno in _ERRNOS_DISCONNECTED:
                 self.handle_close()
+            elif self.tot_bytes_sent == 0:
+                logger.warning(
+                    "sendfile() failed; falling back on using plain send"
+                )
+                raise _GiveUpOnSendfile
             else:
-                if self.tot_bytes_sent == 0:
-                    logger.warning(
-                        "sendfile() failed; falling back on using plain send"
-                    )
-                    raise _GiveUpOnSendfile
-                else:
-                    raise
+                raise
         else:
             if sent == 0:
                 # this signals the channel that the transfer is completed
@@ -905,7 +904,7 @@ class DTPHandler(AsyncChat):
                     return
                 data = p.more()
                 if data:
-                    self.ac_out_buffer = self.ac_out_buffer + data
+                    self.ac_out_buffer += data
                     return
                 else:
                     self.producer_fifo.pop()
@@ -1044,11 +1043,10 @@ class DTPHandler(AsyncChat):
                         self.cmd_channel.on_file_received(filename)
                     else:
                         self.cmd_channel.on_file_sent(filename)
+                elif self.receive:
+                    self.cmd_channel.on_incomplete_file_received(filename)
                 else:
-                    if self.receive:
-                        self.cmd_channel.on_incomplete_file_received(filename)
-                    else:
-                        self.cmd_channel.on_incomplete_file_sent(filename)
+                    self.cmd_channel.on_incomplete_file_sent(filename)
             self.cmd_channel._on_dtp_close()
 
 
@@ -2045,7 +2043,7 @@ class FTPHandler(AsyncChat):
         further commands.
         """
         if not self._log_debug and cmd in self.log_cmds_list:
-            line = f"{' '.join([cmd, arg]).strip()} {respcode}"
+            line = f"{cmd.strip()} {arg.strip()} {respcode}"
             if str(respcode)[0] in ('4', '5'):
                 line += f' {respstr!r}'
             self.log(line)
@@ -2224,11 +2222,10 @@ class FTPHandler(AsyncChat):
                 self.respond('522 Network protocol not supported (use 1).')
             else:
                 self._make_eport(ip, port)
+        elif self.socket.family == socket.AF_INET:
+            self.respond('501 Unknown network protocol (use 1).')
         else:
-            if self.socket.family == socket.AF_INET:
-                self.respond('501 Unknown network protocol (use 1).')
-            else:
-                self.respond('501 Unknown network protocol (use 2).')
+            self.respond('501 Unknown network protocol (use 2).')
 
     def ftp_PASV(self, line):
         """Start a passive data channel by using IPv4."""
@@ -2271,11 +2268,10 @@ class FTPHandler(AsyncChat):
             self.respond(
                 '220 Other commands other than EPSV are now disabled.'
             )
+        elif self.socket.family == socket.AF_INET:
+            self.respond('501 Unknown network protocol (use 1).')
         else:
-            if self.socket.family == socket.AF_INET:
-                self.respond('501 Unknown network protocol (use 1).')
-            else:
-                self.respond('501 Unknown network protocol (use 2).')
+            self.respond('501 Unknown network protocol (use 2).')
 
     def ftp_QUIT(self, line):
         """Quit the current session disconnecting the client."""
@@ -2538,7 +2534,7 @@ class FTPHandler(AsyncChat):
 
         if line:
             basedir, prefix = os.path.split(self.fs.ftp2fs(line))
-            prefix = prefix + '.'
+            prefix += '.'
         else:
             basedir = self.fs.ftp2fs(self.fs.cwd)
             prefix = 'ftpd.'
@@ -3044,11 +3040,10 @@ class FTPHandler(AsyncChat):
             )
             if self.authenticated:
                 s.append(f'Logged in as: {self.username}')
+            elif not self.username:
+                s.append("Waiting for username.")
             else:
-                if not self.username:
-                    s.append("Waiting for username.")
-                else:
-                    s.append("Waiting for password.")
+                s.append("Waiting for password.")
             type = 'ASCII' if self._current_type == 'a' else 'Binary'
             s.append(f"TYPE: {type}; STRUcture: File; MODE: Stream")
             if self._dtp_acceptor is not None:
@@ -3057,10 +3052,12 @@ class FTPHandler(AsyncChat):
                 bytes_sent = self.data_channel.tot_bytes_sent
                 bytes_recv = self.data_channel.tot_bytes_received
                 elapsed_time = self.data_channel.get_elapsed_time()
-                s.append('Data connection open:')
-                s.append(f'Total bytes sent: {bytes_sent}')
-                s.append(f'Total bytes received: {bytes_recv}')
-                s.append(f'Transfer elapsed time: {elapsed_time} secs')
+                s.extend((
+                    'Data connection open:',
+                    f'Total bytes sent: {bytes_sent}',
+                    f'Total bytes received: {bytes_recv}',
+                    f'Transfer elapsed time: {elapsed_time} secs',
+                ))
             else:
                 s.append('Data connection closed.')
 
@@ -3339,9 +3336,8 @@ if SSL is not None:
                 self.modify_ioloop_events(
                     self._wanted_io_events | self.ioloop.WRITE, logdebug=True
                 )
-            else:
-                if prev_row_pending:
-                    self.modify_ioloop_events(self._wanted_io_events)
+            elif prev_row_pending:
+                self.modify_ioloop_events(self._wanted_io_events)
 
         def _do_ssl_handshake(self):
             self._ssl_accepting = True
