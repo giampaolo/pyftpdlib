@@ -3094,13 +3094,11 @@ class FTPHandler(AsyncChat):
     def ftp_FEAT(self, line):
         """List all new features supported as defined in RFC-2398."""
         features = {'UTF8', 'TVFS'}
-        features.update(
-            [
-                feat
-                for feat in ('EPRT', 'EPSV', 'MDTM', 'MFMT', 'SIZE')
-                if feat in self.proto_cmds
-            ]
-        )
+        features.update([
+            feat
+            for feat in ('EPRT', 'EPSV', 'MDTM', 'MFMT', 'SIZE')
+            if feat in self.proto_cmds
+        ])
         features.update(self._extra_feats)
         if 'MLST' in self.proto_cmds or 'MLSD' in self.proto_cmds:
             facts = ''
@@ -3706,34 +3704,31 @@ if SSL is not None:
         # overridden attributes
         dtp_handler = TLS_DTPHandler
         proto_cmds = FTPHandler.proto_cmds.copy()
-        proto_cmds.update(
-            {
-                'AUTH': dict(
-                    perm=None,
-                    auth=False,
-                    arg=True,
-                    help=(
-                        'Syntax: AUTH <SP> TLS|SSL (set up secure control '
-                        'channel).'
-                    ),
+        proto_cmds.update({
+            'AUTH': dict(
+                perm=None,
+                auth=False,
+                arg=True,
+                help=(
+                    'Syntax: AUTH <SP> TLS|SSL (set up secure control '
+                    'channel).'
                 ),
-                'PBSZ': dict(
-                    perm=None,
-                    auth=False,
-                    arg=True,
-                    help='Syntax: PBSZ <SP> 0 (negotiate TLS buffer).',
+            ),
+            'PBSZ': dict(
+                perm=None,
+                auth=False,
+                arg=True,
+                help='Syntax: PBSZ <SP> 0 (negotiate TLS buffer).',
+            ),
+            'PROT': dict(
+                perm=None,
+                auth=False,
+                arg=True,
+                help=(
+                    'Syntax: PROT <SP> [C|P] (set up un/secure data channel).'
                 ),
-                'PROT': dict(
-                    perm=None,
-                    auth=False,
-                    arg=True,
-                    help=(
-                        'Syntax: PROT <SP> [C|P] (set up un/secure data'
-                        ' channel).'
-                    ),
-                ),
-            }
-        )
+            ),
+        })
 
         def __init__(self, conn, server, ioloop=None):
             super().__init__(conn, server, ioloop)
