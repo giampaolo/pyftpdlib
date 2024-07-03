@@ -2,6 +2,7 @@
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
 
+import asynchat
 import contextlib
 import errno
 import glob
@@ -27,7 +28,6 @@ except ImportError:
     SSL = None
 
 from . import __ver__
-from . import _asynchat as asynchat
 from .authorizers import AuthenticationFailed
 from .authorizers import AuthorizerError
 from .authorizers import DummyAuthorizer

@@ -56,6 +56,8 @@ server = Server('localhost', 8021)
 IOLoop.instance().loop()
 """
 
+import asynchat
+import asyncore
 import errno
 import heapq
 import os
@@ -66,8 +68,6 @@ import threading
 import time
 import traceback
 
-from . import _asynchat as asynchat
-from . import _asyncore as asyncore
 from .log import config_logging
 from .log import debug
 from .log import is_logging_configured
