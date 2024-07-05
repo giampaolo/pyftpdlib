@@ -6,6 +6,8 @@ Version: 2.0.0 - (IN DEVELOPMENT)
 **Enhancements**
 
 * #629: removed Python 2.7 support.
+* #637: remove copies of asyncore.py and asynchat.py. Use backports from PYPI
+  instead.  (patch by @penguinpee)
 
 **Notes about backward compatibility**
 

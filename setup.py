@@ -107,7 +107,7 @@ def main():
         install_requires=[
             "pyasyncore;python_version>='3.12'",
             "pyasynchat;python_version>='3.12'",
-            ],
+        ],
         extras_require=extras_require,
         classifiers=[
             'Development Status :: 5 - Production/Stable',
