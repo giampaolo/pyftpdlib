@@ -156,7 +156,7 @@ class FTPServer(Acceptor):
             config_logging(prefix=PREFIX_MPROC if prefork else PREFIX)
 
         if self.handler.passive_ports:
-            pasv_ports = "%s->%s" % (
+            pasv_ports = "%s->%s" % (  # noqa: UP031
                 self.handler.passive_ports[0],
                 self.handler.passive_ports[-1],
             )
@@ -237,9 +237,8 @@ class FTPServer(Acceptor):
             if log:
                 self._log_start(prefork=True)
             fork_processes(worker_processes)
-        else:
-            if log:
-                self._log_start()
+        elif log:
+            self._log_start()
 
         proto = "FTP+SSL" if hasattr(self.handler, 'ssl_protocol') else "FTP"
         logger.info(
@@ -309,9 +308,8 @@ class FTPServer(Acceptor):
             logger.error(traceback.format_exc())
             if handler is not None:
                 handler.close()
-            else:
-                if ip is not None and ip in self.ip_map:
-                    self.ip_map.remove(ip)
+            elif ip is not None and ip in self.ip_map:
+                self.ip_map.remove(ip)
 
     def handle_error(self):
         """Called to handle any uncaught exceptions."""
@@ -375,8 +373,8 @@ class _SpawnerBase(FTPServer):
         """
         if self._active_tasks:
             logger.debug(
-                "refreshing tasks (%s join() potentials)"
-                % len(self._active_tasks)
+                f"refreshing tasks ({len(self._active_tasks)} join()"
+                " potentials)"
             )
             with self._lock:
                 new = []
@@ -512,7 +510,7 @@ class _SpawnerBase(FTPServer):
 
     def _terminate_task(self, t):
         if hasattr(t, 'terminate'):
-            logger.debug("terminate()ing task %r" % t)
+            logger.debug(f"terminate()ing task {t!r}")
             try:
                 if not _BSD:
                     t.terminate()
@@ -525,7 +523,7 @@ class _SpawnerBase(FTPServer):
                 pass
 
     def _join_task(self, t):
-        logger.debug("join()ing task %r" % t)
+        logger.debug(f"join()ing task {t!r}")
         t.join(self.join_timeout)
         if t.is_alive():
             logger.warning(

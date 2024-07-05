@@ -87,12 +87,12 @@ def stop():
         try:
             os.kill(pid, sig)
         except ProcessLookupError:
-            print("\nstopped (pid %s)" % pid)
+            print(f"\nstopped (pid {pid})")
         i += 1
         if i == 25:
             sig = signal.SIGKILL
         elif i == 50:
-            sys.exit("\ncould not kill daemon (pid %s)" % pid)
+            sys.exit(f"\ncould not kill daemon (pid {pid})")
         time.sleep(0.1)
 
 
@@ -102,7 +102,7 @@ def status():
     if not pid or not pid_exists(pid):
         print("daemon not running")
     else:
-        print("daemon running with pid %s" % pid)
+        print(f"daemon running with pid {pid}")
     sys.exit(0)
 
 
@@ -148,12 +148,12 @@ def daemonize():
         # write pidfile
         pid = str(os.getpid())
         with open(PID_FILE, 'w') as f:
-            f.write("%s\n" % pid)
+            f.write(f"{pid}\n")
         atexit.register(lambda: os.remove(PID_FILE))
 
     pid = get_pid()
     if pid and pid_exists(pid):
-        sys.exit('daemon already running (pid %s)' % pid)
+        sys.exit(f'daemon already running (pid {pid})')
     # instance FTPd before daemonizing, so that in case of problems we
     # get an exception here and exit immediately
     server = get_server()
@@ -193,20 +193,19 @@ def main():
     if not options.command:
         server = get_server()
         server.serve_forever()
-    else:
-        if options.command == 'start':
-            daemonize()
-        elif options.command == 'stop':
+    elif options.command == 'start':
+        daemonize()
+    elif options.command == 'stop':
+        stop()
+    elif options.command == 'restart':
+        try:
             stop()
-        elif options.command == 'restart':
-            try:
-                stop()
-            finally:
-                daemonize()
-        elif options.command == 'status':
-            status()
-        else:
-            sys.exit('invalid command')
+        finally:
+            daemonize()
+    elif options.command == 'status':
+        status()
+    else:
+        sys.exit('invalid command')
 
 
 if __name__ == '__main__':

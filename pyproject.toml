@@ -4,7 +4,7 @@ line-length = 79
 skip-string-normalization = true
 # https://black.readthedocs.io/en/stable/the_black_code_style/future_style.html
 preview = true
-enable-unstable-feature = ["multiline_string_handling", "string_processing", "wrap_long_dict_values_in_parens"]
+enable-unstable-feature = ["hug_parens_with_braces_and_square_brackets", "multiline_string_handling", "string_processing", "wrap_long_dict_values_in_parens"]
 
 [tool.ruff]
 # https://beta.ruff.rs/docs/settings/
@@ -15,13 +15,19 @@ line-length = 79
 preview = true
 select = [
     "ALL",  # to get a list of all values: `python3 -m ruff linter`
-    "PLR2044",  # [*] Line with empty comment
+    "PLR5501",  # [*] Use `elif` instead of `else` then `if`, to reduce indentation
+    "PLR6104",  # Use `+=` to perform an augmented assignment directly
+    "PLW0602",  # Using global for `x` but no assignment is done
+    "RUF005",  # Consider iterable unpacking instead of concatenation
+    "RUF010",  # [*] f-string, use explicit conversion flag
+    "RUF021",  # [*] Parenthesize `a and b` expressions when chaining `and` and `or` together, to make the precedence clear
+    "RUF022",  # [*] `__all__` is not sorted
+    "RUF023",  # [*] `_CallLater.__slots__` is not sorted
 ]
 ignore = [
     "A",  # flake8-builtins
     "ANN",  # flake8-annotations
     "ARG",  # flake8-unused-arguments
-    "B007",  # Loop control variable `x` not used within loop body
     "B904",  # Use `raise from` to specify exception cause (PYTHON2.7 COMPAT)
     "BLE001",  # Do not catch blind exception: `Exception`
     "C4",  # flake8-comprehensions (PYTHON2.7 COMPAT)
@@ -33,14 +39,11 @@ ignore = [
     "E203",  # [*] Whitespace before ':' (clashes with black)
     "EM",  # flake8-errmsg
     "ERA001",  # Found commented-out code
-    "F841",  # Local variable `wr` is assigned to but never used
     "FBT",  # flake8-boolean-trap
     "FIX",  # Line contains TODO / XXX / ..., consider resolving the issue
-    "FLY",  # flynt (PYTHON2.7 COMPAT)
     "FURB101",  # `open` and `read` should be replaced by `Path(x).read_text()`
     "FURB103",  # `open` and `write` should be replaced by `Path(...).write_bytes(data)`
-    "FURB113",  # Use `s.extend(...)` instead of repeatedly calling `s.append()`
-    "INP",  # flake8-no-pep420
+    "INP",  # `docs/conf.py` is part of an implicit namespace package. Add an `__init__.py`.
     "N801",  # Class name `async_chat` should use CapWords convention (ASYNCORE COMPAT)
     "N802",  # Function name X should be lowercase.
     "N803",  # Argument name X should be lowercase.
@@ -52,9 +55,11 @@ ignore = [
     "PLC2701",  # Private name import `_winreg`
     "PLR",  # pylint
     "PLW",  # pylint
-    "PT",  # flake8-pytest-style
+    "PT003",  # `scope='function'` is implied in `@pytest.fixture()`
+    "PT004",  # Fixture `for_each_test_method` does not return anything, add leading underscore
+    "PT011",  # `pytest.raises(OSError)` is too broad, set the `match` parameter or use a more specific exception
+    "PT021",  # Use `yield` instead of `request.addfinalizer`
     "PTH",  # flake8-use-pathlib
-    "PYI",  # flake8-pyi
     "Q000",  # Single quotes found but double quotes preferred
     "RET",  # flake8-return
     "RUF",  # Ruff-specific rules
@@ -68,7 +73,6 @@ ignore = [
     "TRY003",  # Avoid specifying long messages outside the exception class
     "TRY300",  # Consider moving this statement to an `else` block
     "TRY301",  # Abstract `raise` to an inner function
-    "UP031",  # [*] Use format specifiers instead of percent format
 ]
 
 [tool.ruff.lint.per-file-ignores]

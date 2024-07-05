@@ -15,7 +15,7 @@ except ImportError:
     pwd = grp = None
 
 
-__all__ = ['FilesystemError', 'AbstractedFS']
+__all__ = ['AbstractedFS', 'FilesystemError']
 
 
 _months_map = {
@@ -210,9 +210,9 @@ class AbstractedFS:
         root = self.realpath(self.root)
         path = self.realpath(path)
         if not root.endswith(os.sep):
-            root = root + os.sep
+            root += os.sep
         if not path.endswith(os.sep):
-            path = path + os.sep
+            path += os.sep
         return path[0 : len(root)] == root
 
     # --- Wrapper methods around open() and tempfile.mkstemp
@@ -441,7 +441,7 @@ class AbstractedFS:
             # https://github.com/giampaolo/pyftpdlib/issues/187
             fmtstr = '%d  %Y' if now - st.st_mtime > SIX_MONTHS else '%d %H:%M'
             try:
-                mtimestr = "%s %s" % (
+                mtimestr = "%s %s" % (  # noqa: UP031
                     _months_map[mtime.tm_mon],
                     time.strftime(fmtstr, mtime),
                 )
@@ -450,7 +450,7 @@ class AbstractedFS:
                 # old (prior to year 1900) in which case we return
                 # the current time as last mtime.
                 mtime = timefunc()
-                mtimestr = "%s %s" % (
+                mtimestr = "%s %s" % (  # noqa: UP031
                     _months_map[mtime.tm_mon],
                     time.strftime("%d %H:%M", mtime),
                 )
@@ -590,13 +590,13 @@ class AbstractedFS:
             # platforms should use some platform-specific method (e.g.
             # on Windows NTFS filesystems MTF records could be used).
             if show_unique:
-                retfacts['unique'] = "%xg%x" % (st.st_dev, st.st_ino)
+                retfacts['unique'] = f"{st.st_dev:x}g{st.st_ino:x}"
 
             # facts can be in any order but we sort them by name
             factstring = "".join(
-                ["%s=%s;" % (x, retfacts[x]) for x in sorted(retfacts.keys())]
+                [f"{x}={retfacts[x]};" for x in sorted(retfacts.keys())]
             )
-            line = "%s %s\r\n" % (factstring, basename)
+            line = f"{factstring} {basename}\r\n"
             yield line.encode('utf8', self.cmd_channel.unicode_errors)
 
 
@@ -605,7 +605,7 @@ class AbstractedFS:
 # ===================================================================
 
 if os.name == 'posix':
-    __all__.append('UnixFilesystem')
+    __all__ += ['UnixFilesystem']
 
     class UnixFilesystem(AbstractedFS):
         """Represents the real UNIX filesystem.

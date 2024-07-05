@@ -51,7 +51,7 @@ USER = 'user'
 PASSWD = '12345'
 HOME = os.getcwd()
 # Use PID to disambiguate file name for parallel testing.
-TESTFN_PREFIX = 'pyftpd-tmp-%s-' % os.getpid()
+TESTFN_PREFIX = f'pyftpd-tmp-{os.getpid()}-'
 GLOBAL_TIMEOUT = 2
 BUFSIZE = 1024
 INTERRUPTED_TRANSF_SIZE = 32768
@@ -65,7 +65,7 @@ if CI_TESTING:
 SUPPORTS_IPV4 = None  # set later
 SUPPORTS_IPV6 = None  # set later
 SUPPORTS_MULTIPROCESSING = hasattr(pyftpdlib.servers, 'MultiprocessFTPServer')
-if BSD or OSX and GITHUB_ACTIONS:
+if BSD or (OSX and GITHUB_ACTIONS):
     SUPPORTS_MULTIPROCESSING = False  # XXX: it's broken!!
 
 
@@ -78,11 +78,7 @@ class PyftpdlibTestCase(unittest.TestCase):
         fqmod = self.__class__.__module__
         if not fqmod.startswith('pyftpdlib.'):
             fqmod = 'pyftpdlib.test.' + fqmod
-        return "%s.%s.%s" % (
-            fqmod,
-            self.__class__.__name__,
-            self._testMethodName,
-        )
+        return f"{fqmod}.{self.__class__.__name__}.{self._testMethodName}"
 
     def get_testfn(self, suffix="", dir=None):
         fname = get_testfn(suffix=suffix, dir=dir)
@@ -154,9 +150,7 @@ def safe_rmpath(path):
                 pass
             except OSError as _:
                 err = _
-                warnings.warn(
-                    "ignoring %s" % str(err), UserWarning, stacklevel=2
-                )
+                warnings.warn(f"ignoring {err!s}", UserWarning, stacklevel=2)
             time.sleep(0.01)
         raise err
 
@@ -269,7 +263,7 @@ def retry_on_failure(fun):
             except AssertionError as exc:
                 if x + 1 >= NO_RETRIES:
                     raise
-                msg = "%r, retrying" % exc
+                msg = f"{exc!r}, retrying"
                 print(msg, file=sys.stderr)  # NOQA
                 if PYTEST_PARALLEL:
                     warnings.warn(msg, ResourceWarning, stacklevel=2)
@@ -289,7 +283,7 @@ def call_until(fun, expr, timeout=GLOBAL_TIMEOUT):
         if eval(expr):  # noqa
             return ret
         time.sleep(0.001)
-    raise RuntimeError('timed out (ret=%r)' % ret)
+    raise RuntimeError(f'timed out (ret={ret!r})')
 
 
 def get_server_handler():
@@ -331,8 +325,8 @@ def assert_free_resources(parent_pid=None):
     children = this_proc.children()
     if children:
         warnings.warn(
-            "some children didn't terminate (pid=%r) %r"
-            % (os.getpid(), str(children)),
+            f"some children didn't terminate (pid={os.getpid()!r})"
+            f" {str(children)!r}",
             UserWarning,
             stacklevel=2,
         )
@@ -351,8 +345,8 @@ def assert_free_resources(parent_pid=None):
         ]
         if cons:
             warnings.warn(
-                "some connections didn't close (pid=%r) %r"
-                % (os.getpid(), str(cons)),
+                f"some connections didn't close (pid={os.getpid()!r})"
+                f" {str(cons)!r}",
                 UserWarning,
                 stacklevel=2,
             )
@@ -471,7 +465,7 @@ if POSIX:
         def run(self):
             assert not self._started
             self._started = True
-            self.name = "%s(%s)" % (self.__class__.__name__, self.pid)
+            self.name = f"{self.__class__.__name__}({self.pid})"
             self.server.serve_forever()
 
         def stop(self):

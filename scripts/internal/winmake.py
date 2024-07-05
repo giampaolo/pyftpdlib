@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2009 Giampaolo Rodola'. All rights reserved.
-# Use of this source code is governed by a BSD-style license that can be
+# Copyright (C) 2007 Giampaolo Rodola' <g.rodola@gmail.com>.
+# Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
 
 
@@ -117,7 +117,7 @@ def rm(pattern, directory=False):
         existed = os.path.isdir(path)
         shutil.rmtree(path, onerror=onerror)
         if existed:
-            safe_print("rmdir -f %s" % path)
+            safe_print(f"rmdir -f {path}")
 
     if "*" not in pattern:
         if directory:
@@ -134,10 +134,10 @@ def rm(pattern, directory=False):
         for name in found:
             path = os.path.join(root, name)
             if directory:
-                safe_print("rmdir -f %s" % path)
+                safe_print(f"rmdir -f {path}")
                 safe_rmtree(path)
             else:
-                safe_print("rm %s" % path)
+                safe_print(f"rm {path}")
                 safe_remove(path)
 
 
@@ -147,7 +147,7 @@ def safe_remove(path):
     except FileNotFoundError:
         pass
     else:
-        safe_print("rm %s" % path)
+        safe_print(f"rm {path}")
 
 
 def safe_rmtree(path):
@@ -159,7 +159,7 @@ def safe_rmtree(path):
     existed = os.path.isdir(path)
     shutil.rmtree(path, onerror=onerror)
     if existed:
-        safe_print("rmdir -f %s" % path)
+        safe_print(f"rmdir -f {path}")
 
 
 def recursive_rm(*patterns):
@@ -187,7 +187,7 @@ def build():
     """Build / compile."""
     # Make sure setuptools is installed (needed for 'develop' /
     # edit mode).
-    sh('%s -c "import setuptools"' % PYTHON)
+    sh(f'{PYTHON} -c "import setuptools"')
 
     cmd = [PYTHON, "setup.py", "build"]
     # Print coloured warnings in real time.
@@ -213,33 +213,33 @@ def build():
         p.wait()
 
     # Make sure it actually worked.
-    sh('%s -c "import pyftpdlib"' % PYTHON)
+    sh(f'{PYTHON} -c "import pyftpdlib"')
     win_colorprint("build + import successful", GREEN)
 
 
 def wheel():
     """Create wheel file."""
     build()
-    sh("%s setup.py bdist_wheel" % PYTHON)
+    sh(f"{PYTHON} setup.py bdist_wheel")
 
 
 def upload_wheels():
     """Upload wheel files on PyPI."""
     build()
-    sh("%s -m twine upload dist/*.whl" % PYTHON)
+    sh(f"{PYTHON} -m twine upload dist/*.whl")
 
 
 def install_pip():
     """Install pip."""
     try:
-        sh('%s -c "import pip"' % PYTHON)
+        sh(f'{PYTHON} -c "import pip"')
     except SystemExit:
         if hasattr(ssl, '_create_unverified_context'):
             ctx = ssl._create_unverified_context()
         else:
             ctx = None
         kw = dict(context=ctx) if ctx else {}
-        safe_print("downloading %s" % GET_PIP_URL)
+        safe_print(f"downloading {GET_PIP_URL}")
         req = urlopen(GET_PIP_URL, **kw)
         data = req.read()
 
@@ -248,7 +248,7 @@ def install_pip():
             f.write(data)
 
         try:
-            sh('%s %s --user' % (PYTHON, tfile))
+            sh(f'{PYTHON} {tfile} --user')
         finally:
             os.remove(tfile)
 
@@ -256,7 +256,7 @@ def install_pip():
 def install():
     """Install in develop / edit mode."""
     build()
-    sh("%s setup.py develop" % PYTHON)
+    sh(f"{PYTHON} setup.py develop")
 
 
 def uninstall():
@@ -272,7 +272,7 @@ def uninstall():
             except ImportError:
                 break
             else:
-                sh("%s -m pip uninstall -y pyftpdlib" % PYTHON)
+                sh(f"{PYTHON} -m pip uninstall -y pyftpdlib")
     finally:
         os.chdir(here)
 
@@ -297,7 +297,7 @@ def uninstall():
                             if 'pyftpdlib' not in line:
                                 f.write(line)
                             else:
-                                print("removed line %r from %r" % (line, path))
+                                print(f"removed line {line!r} from {path!r}")
 
 
 def clean():
@@ -330,7 +330,7 @@ def setup_dev_env():
     """Install useful deps."""
     install_pip()
     install_git_hooks()
-    sh("%s -m pip install -U %s" % (PYTHON, " ".join(DEPS)))
+    sh(f"{PYTHON} -m pip install -U {' '.join(DEPS)}")
 
 
 def lint():
@@ -339,57 +339,57 @@ def lint():
     py_files = py_files.decode()
     py_files = [x for x in py_files.split() if x.endswith('.py')]
     py_files = ' '.join(py_files)
-    sh("%s -m flake8 %s" % (PYTHON, py_files), nolog=True)
+    sh(f"{PYTHON} -m flake8 {py_files}", nolog=True)
 
 
 def test(args=""):
     """Run tests."""
     build()
-    sh("%s -m pytest %s %s" % (PYTHON, PYTEST_ARGS, args))
+    sh(f"{PYTHON} -m pytest {PYTEST_ARGS} {args}")
 
 
 def test_authorizers():
     build()
-    sh("%s pyftpdlib\\test\\test_authorizers.py" % PYTHON)
+    sh(f"{PYTHON} pyftpdlib\\test\\test_authorizers.py")
 
 
 def test_filesystems():
     build()
-    sh("%s pyftpdlib\\test\\test_filesystems.py" % PYTHON)
+    sh(f"{PYTHON} pyftpdlib\\test\\test_filesystems.py")
 
 
 def test_functional():
     build()
-    sh("%s pyftpdlib\\test\\test_functional.py" % PYTHON)
+    sh(f"{PYTHON} pyftpdlib\\test\\test_functional.py")
 
 
 def test_functional_ssl():
     build()
-    sh("%s pyftpdlib\\test\\test_functional_ssl.py" % PYTHON)
+    sh(f"{PYTHON} pyftpdlib\\test\\test_functional_ssl.py")
 
 
 def test_ioloop():
     build()
-    sh("%s pyftpdlib\\test\\test_ioloop.py" % PYTHON)
+    sh(f"{PYTHON} pyftpdlib\\test\\test_ioloop.py")
 
 
 def test_cli():
     build()
-    sh("%s pyftpdlib\\test\\test_cli.py" % PYTHON)
+    sh(f"{PYTHON} pyftpdlib\\test\\test_cli.py")
 
 
 def test_servers():
     build()
-    sh("%s pyftpdlib\\test\\test_servers.py" % PYTHON)
+    sh(f"{PYTHON} pyftpdlib\\test\\test_servers.py")
 
 
 def coverage():
     """Run coverage tests."""
     build()
-    sh("%s -m coverage run -m pytest %s" % (PYTHON, PYTEST_ARGS))
-    sh("%s -m coverage report" % PYTHON)
-    sh("%s -m coverage html" % PYTHON)
-    sh("%s -m webbrowser -t htmlcov/index.html" % PYTHON)
+    sh(f"{PYTHON} -m coverage run -m pytest {PYTEST_ARGS}")
+    sh(f"{PYTHON} -m coverage report")
+    sh(f"{PYTHON} -m coverage html")
+    sh(f"{PYTHON} -m webbrowser -t htmlcov/index.html")
 
 
 def test_by_name(name):
@@ -401,7 +401,7 @@ def test_by_name(name):
 def test_failed():
     """Re-run tests which failed on last run."""
     build()
-    sh("%s -m pytest %s --last-failed" % (PYTHON, PYTEST_ARGS))
+    sh(f"{PYTHON} -m pytest {PYTEST_ARGS} --last-failed")
 
 
 def install_git_hooks():
@@ -441,7 +441,7 @@ def get_python(path):
         '39-64',
     )
     for v in vers:
-        pypath = r'C:\\python%s\python.exe' % v
+        pypath = r'C:\\python%s\python.exe' % v  # noqa: UP031
         if path in pypath and os.path.isfile(pypath):
             return pypath
 
@@ -481,7 +481,7 @@ def main():
     PYTHON = get_python(args.python)
     if not PYTHON:
         return sys.exit(
-            "can't find any python installation matching %r" % args.python
+            f"can't find any python installation matching {args.python!r}"
         )
     os.putenv('PYTHON', PYTHON)
     win_colorprint("using " + PYTHON)

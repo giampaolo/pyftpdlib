@@ -104,9 +104,9 @@ class DummyAuthorizer:
         provide customized response strings when user log-in and quit.
         """
         if self.has_user(username):
-            raise ValueError('user %r already exists' % username)
+            raise ValueError(f'user {username!r} already exists')
         if not os.path.isdir(homedir):
-            raise ValueError('no such directory: %r' % homedir)
+            raise ValueError(f'no such directory: {homedir!r}')
         homedir = os.path.realpath(homedir)
         self._check_permissions(username, perm)
         dic = {
@@ -145,7 +145,7 @@ class DummyAuthorizer:
         """Override permissions for a given directory."""
         self._check_permissions(username, perm)
         if not os.path.isdir(directory):
-            raise ValueError('no such directory: %r' % directory)
+            raise ValueError(f'no such directory: {directory!r}')
         directory = os.path.normcase(os.path.realpath(directory))
         home = os.path.normcase(self.get_home_dir(username))
         if directory == home:
@@ -214,10 +214,8 @@ class DummyAuthorizer:
             if self._issubpath(path, dir):
                 if recursive:
                     return perm in operm
-                if (
-                    path == dir
-                    or os.path.dirname(path) == dir
-                    and not os.path.isdir(path)
+                if path == dir or (
+                    os.path.dirname(path) == dir and not os.path.isdir(path)
                 ):
                     return perm in operm
 
@@ -242,7 +240,7 @@ class DummyAuthorizer:
         warned = 0
         for p in perm:
             if p not in self.read_perms + self.write_perms:
-                raise ValueError('no such permission %r' % p)
+                raise ValueError(f'no such permission {p!r}')
             if (
                 username == 'anonymous'
                 and p in self.write_perms
@@ -305,15 +303,15 @@ class _Base:
             if user == 'anonymous':
                 raise AuthorizerError('invalid username "anonymous"')
             if user not in users:
-                raise AuthorizerError('unknown user %s' % user)
+                raise AuthorizerError(f'unknown user {user}')
 
         if self.anonymous_user is not None:
             if not self.has_user(self.anonymous_user):
-                raise AuthorizerError('no such user %s' % self.anonymous_user)
+                raise AuthorizerError(f'no such user {self.anonymous_user}')
             home = self.get_home_dir(self.anonymous_user)
             if not os.path.isdir(home):
                 raise AuthorizerError(
-                    'no valid home set for user %s' % self.anonymous_user
+                    f'no valid home set for user {self.anonymous_user}'
                 )
 
     def override_user(
@@ -339,13 +337,13 @@ class _Base:
                 "at least one keyword argument must be specified"
             )
         if self.allowed_users and username not in self.allowed_users:
-            raise AuthorizerError('%s is not an allowed user' % username)
+            raise AuthorizerError(f'{username} is not an allowed user')
         if self.rejected_users and username in self.rejected_users:
-            raise AuthorizerError('%s is not an allowed user' % username)
+            raise AuthorizerError(f'{username} is not an allowed user')
         if username == "anonymous" and password:
             raise AuthorizerError("can't assign password to anonymous user")
         if not self.has_user(username):
-            raise AuthorizerError('no such user %s' % username)
+            raise AuthorizerError(f'no such user {username}')
 
         if username in self._dummy_authorizer.user_table:
             # re-set parameters
@@ -404,7 +402,7 @@ try:
 except ImportError:
     pass
 else:
-    __all__.extend(['BaseUnixAuthorizer', 'UnixAuthorizer'])
+    __all__ += ['BaseUnixAuthorizer', 'UnixAuthorizer']
 
     # the uid/gid the server runs under
     PROCESS_UID = os.getuid()
@@ -426,7 +424,7 @@ else:
                 try:
                     pwd.getpwnam(self.anonymous_user).pw_dir  # noqa
                 except KeyError:
-                    raise AuthorizerError('no such user %s' % anonymous_user)
+                    raise AuthorizerError(f'no such user {anonymous_user}')
 
         # --- overridden / private API
 
@@ -586,7 +584,7 @@ else:
                 for username in self.allowed_users:
                     if not self._has_valid_shell(username):
                         raise AuthorizerError(
-                            "user %s has not a valid shell" % username
+                            f"user {username} has not a valid shell"
                         )
 
         def override_user(
@@ -684,7 +682,7 @@ except ImportError:
 else:  # pragma: no cover
     import winreg
 
-    __all__.extend(['BaseWindowsAuthorizer', 'WindowsAuthorizer'])
+    __all__ += ['BaseWindowsAuthorizer', 'WindowsAuthorizer']
 
     class BaseWindowsAuthorizer:
         """An authorizer compatible with Windows user account and
@@ -757,7 +755,7 @@ else:  # pragma: no cover
                 key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path)
             except OSError:
                 raise AuthorizerError(
-                    "No profile directory defined for user %s" % username
+                    f"No profile directory defined for user {username}"
                 )
             value = winreg.QueryValueEx(key, "ProfileImagePath")[0]
             home = win32api.ExpandEnvironmentStrings(value)

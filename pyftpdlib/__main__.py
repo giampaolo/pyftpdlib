@@ -111,7 +111,7 @@ def main(args=None):
 
     options = parser.parse_args(args=args)
     if options.version:
-        sys.exit("pyftpdlib %s" % __ver__)
+        sys.exit(f"pyftpdlib {__ver__}")
     if options.debug:
         config_logging(level=logging.DEBUG)
 

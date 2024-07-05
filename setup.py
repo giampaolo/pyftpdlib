@@ -62,7 +62,7 @@ def hilite(s, ok=True, bold=False):
             attr.append('31')  # red
         if bold:
             attr.append('1')
-        return '\x1b[%sm%s\x1b[0m' % (';'.join(attr), s)
+        return f"\x1b[{';'.join(attr)}m{s}\x1b[0m"
 
 
 if sys.version_info[0] < 3:
@@ -104,6 +104,10 @@ def main():
                   'rfc959', 'rfc1123', 'rfc2228', 'rfc2428', 'rfc2640',
                   'rfc3659'],
         # fmt: on
+        install_requires=[
+            "pyasyncore;python_version>='3.12'",
+            "pyasynchat;python_version>='3.12'",
+        ],
         extras_require=extras_require,
         classifiers=[
             'Development Status :: 5 - Production/Stable',

@@ -34,10 +34,10 @@ include docs/tutorial.rst
 include make.bat
 include pyftpdlib/__init__.py
 include pyftpdlib/__main__.py
-include pyftpdlib/_asynchat.py
-include pyftpdlib/_asyncore.py
 include pyftpdlib/authorizers.py
 include pyftpdlib/filesystems.py
+include pyftpdlib/handlers.py
+include pyftpdlib/handlers.py
 include pyftpdlib/handlers.py
 include pyftpdlib/ioloop.py
 include pyftpdlib/log.py

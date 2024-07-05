@@ -45,18 +45,18 @@ class TestCommandLineParser(PyftpdlibTestCase):
 
     def test_interface_opt(self):
         # no param
-        with pytest.raises(SystemExit) as cm:
+        with pytest.raises(SystemExit):
             main(["-i"])
-        with pytest.raises(SystemExit) as cm:
+        with pytest.raises(SystemExit):
             main(["--interface"])
-        ftpd = main(["--interface", "127.0.0.1", "-p", "0"])
+        main(["--interface", "127.0.0.1", "-p", "0"])
 
     def test_port_opt(self):
         # no param
-        with pytest.raises(SystemExit) as cm:
+        with pytest.raises(SystemExit):
             main(["-p"])
         # not an int
-        with pytest.raises(SystemExit) as cm:
+        with pytest.raises(SystemExit):
             main(["-p", "foo"])
         main(["-p", "0"])
         main(["--port", "0"])
@@ -131,7 +131,7 @@ class TestCommandLineParser(PyftpdlibTestCase):
         for opt in ("-v", "--version"):
             with pytest.raises(SystemExit) as cm:
                 main([opt, "-p", "0"])
-            assert str(cm.value) == "pyftpdlib %s" % __ver__
+            assert str(cm.value) == f"pyftpdlib {__ver__}"
 
     def test_verbose_opt(self):
         for opt in ("-V", "--verbose"):
@@ -141,5 +141,5 @@ class TestCommandLineParser(PyftpdlibTestCase):
         ftpd = main(["--username", "foo", "--password", "bar", "-p", "0"])
         assert ftpd.handler.authorizer.has_user("foo")
         # no --password
-        with pytest.raises(SystemExit) as cm:
+        with pytest.raises(SystemExit):
             main(["--username", "foo"])
