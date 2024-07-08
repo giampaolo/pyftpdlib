@@ -224,6 +224,13 @@ Control connection
 
     *New in version 0.7.0*
 
+  .. data:: encoding
+
+    The encoding used for client / server communication. Defaults to
+    ``'utf-8'``.
+
+    *New in version 2.0.0*
+
   .. data:: auth_failed_timeout
 
     The amount of time the server waits before sending a response in case of

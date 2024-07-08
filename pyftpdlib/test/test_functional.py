@@ -1693,6 +1693,7 @@ class TestConfigurableOptions(PyftpdlibTestCase):
             self.server.handler.passive_ports = None
             self.server.handler.use_gmt_times = True
             self.server.handler.tcp_no_delay = hasattr(socket, 'TCP_NODELAY')
+            self.server.handler.encoding = "utf8"
             self.server.stop()
         super().tearDown()
 
@@ -1906,6 +1907,16 @@ class TestConfigurableOptions(PyftpdlibTestCase):
             assert gmt1 == loc1
             assert gmt2 == loc2
             assert gmt3 == loc3
+
+    def test_encoding(self):
+        # Make sure that if encoding != UTF-8, FEAT command does not
+        # list UTF-8.
+        self.server = self.server_class()
+        self.server.handler.encoding = "latin-1"
+        self.server.start()
+        self.connect()
+        resp = self.client.sendcmd('feat')
+        assert 'UTF8' not in resp
 
 
 @pytest.mark.xdist_group(name="serial")

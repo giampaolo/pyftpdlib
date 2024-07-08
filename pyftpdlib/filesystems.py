@@ -476,7 +476,9 @@ class AbstractedFS:
                 mtimestr,
                 basename,
             )
-            yield line.encode('utf8', self.cmd_channel.unicode_errors)
+            yield line.encode(
+                self.cmd_channel.encoding, self.cmd_channel.unicode_errors
+            )
 
     def format_mlsx(self, basedir, listing, perms, facts, ignore_err=True):
         """Return an iterator object that yields the entries of a given
@@ -597,7 +599,9 @@ class AbstractedFS:
                 [f"{x}={retfacts[x]};" for x in sorted(retfacts.keys())]
             )
             line = f"{factstring} {basename}\r\n"
-            yield line.encode('utf8', self.cmd_channel.unicode_errors)
+            yield line.encode(
+                self.cmd_channel.encoding, self.cmd_channel.unicode_errors
+            )
 
 
 # ===================================================================
