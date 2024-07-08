@@ -3671,14 +3671,13 @@ if SSL is not None:
 
          - (int) ssl_protocol:
             the desired SSL protocol version to use. This defaults to
-            PROTOCOL_SSLv23 which will negotiate the highest protocol
-            that both the server and your installation of OpenSSL
-            support.
-
+            TLS_SERVER_METHOD. The actual protocol version used will be
+            negotiated to the highest version mutually supported by the
+            client and the server.
          - (int) ssl_options:
             specific OpenSSL options. These default to:
-            SSL.OP_NO_SSLv2 | SSL.OP_NO_SSLv3| SSL.OP_NO_COMPRESSION
-            which are all considered insecure features.
+            SSL.OP_NO_SSLv2 | SSL.OP_NO_SSLv3 | SSL.OP_NO_COMPRESSION
+            ...which are all considered insecure features.
             Can be set to None in order to improve compatibility with
             older (insecure) FTP clients.
 
@@ -3693,7 +3692,8 @@ if SSL is not None:
         tls_data_required = False
         certfile = None
         keyfile = None
-        ssl_protocol = SSL.SSLv23_METHOD
+        # Includes: SSLv3, TLSv1, TLSv1.1, TLSv1.2, TLSv1.3
+        ssl_protocol = SSL.TLS_SERVER_METHOD
         # - SSLv2 is easily broken and is considered harmful and dangerous
         # - SSLv3 has several problems and is now dangerous
         # - Disable compression to prevent CRIME attacks for OpenSSL 1.0+
