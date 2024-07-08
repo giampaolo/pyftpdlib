@@ -379,6 +379,7 @@ def reset_server_opts():
         klass.use_sendfile = hasattr(os, "sendfile")
         klass.ac_in_buffer_size = 4096
         klass.ac_out_buffer_size = 4096
+        klass.encoding = "utf8"
         if klass.__name__ == 'TLS_FTPHandler':
             klass.tls_control_required = False
             klass.tls_data_required = False
