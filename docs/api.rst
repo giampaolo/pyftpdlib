@@ -222,6 +222,8 @@ Control connection
     `pysendfile <https://github.com/giampaolo/pysendfile>`__ module to be
     installed separately.
 
+    *New in version 0.7.0*
+
   .. data:: encoding
 
     The encoding used for client / server communication. Defaults to
