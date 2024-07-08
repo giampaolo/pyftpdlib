@@ -3671,9 +3671,11 @@ if SSL is not None:
 
          - (int) ssl_protocol:
             the desired SSL protocol version to use. This defaults to
-            TLS_SERVER_METHOD. The actual protocol version used will be
+            TLS_SERVER_METHOD, which includes TLSv1, TLSv1.1, TLSv1.2
+            and TLSv1.3. The actual protocol version used will be
             negotiated to the highest version mutually supported by the
             client and the server.
+
          - (int) ssl_options:
             specific OpenSSL options. These default to:
             SSL.OP_NO_SSLv2 | SSL.OP_NO_SSLv3 | SSL.OP_NO_COMPRESSION
