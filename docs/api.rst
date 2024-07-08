@@ -571,18 +571,20 @@ Extended handlers
 
   .. data:: ssl_protocol
 
-     The desired SSL protocol version to use. This defaults to
-     `SSL.SSLv23_METHOD` which will negotiate the highest protocol that both
-     the server and your installation of OpenSSL support.
+    The desired SSL protocol version to use. This defaults to
+    `TLS_SERVER_METHOD`, which at the time of writing (year 2024) includes
+    TLSv1, TLSv1.1, TLSv1.2 and TLSv1.3. The actual protocol version used will
+    be negotiated to the highest version mutually supported by the client and
+    the server.
+
+     .. versionchanged:: 2.0.0 set default to `TLS_SERVER_METHOD`
 
   .. data:: ssl_options
 
-     specific OpenSSL options. These default to:
-     `SSL.OP_NO_SSLv2 | SSL.OP_NO_SSLv3 | SSL.OP_NO_COMPRESSION` disabling
-     SSLv2 and SSLv3 versions and SSL compression algorithm which are
-     considered insecure.
-     Can be set to None in order to improve compatibilty with older (insecure)
-     FTP clients.
+     specific OpenSSL options. These default to: `OP_NO_SSLv2 | OP_NO_SSLv3 |
+     OP_NO_COMPRESSION`, which are all considered unsecure settings. Can be set
+     to None in order to improve compatibilty with older (insecure) FTP
+     clients.
 
      .. versionadded:: 1.6.0
 
