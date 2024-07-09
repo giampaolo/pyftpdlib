@@ -78,7 +78,7 @@ def open_text(path):
     return open(path, encoding="utf8")
 
 
-def git_committed_files():
+def git_commit_files():
     out = sh(["git", "diff", "--cached", "--name-only"])
     py_files = [
         x for x in out.split("\n") if x.endswith(".py") and os.path.exists(x)
@@ -89,27 +89,32 @@ def git_committed_files():
     toml_files = [
         x for x in out.split("\n") if x.endswith(".toml") and os.path.exists(x)
     ]
-    # XXX: we should escape spaces and possibly other amenities here
     new_rm_mv = sh(
         ["git", "diff", "--name-only", "--diff-filter=ADR", "--cached"]
-    ).split()
+    )
+    # XXX: we should escape spaces and possibly other amenities here
+    new_rm_mv = new_rm_mv.split()
     return (py_files, rst_files, toml_files, new_rm_mv)
+
+
+def black(files):
+    print(f"running black ({len(files)})")
+    cmd = [PYTHON, "-m", "black", "--check", "--safe", *files]
+    if subprocess.call(cmd) != 0:
+        return exit(
+            "Python code didn't pass 'ruff' style check."
+            "Try running 'make fix-ruff'."
+        )
 
 
 def ruff(files):
     print(f"running ruff ({len(files)})")
     cmd = [PYTHON, "-m", "ruff", "check", "--no-cache", *files]
     if subprocess.call(cmd) != 0:
-        msg = "Python code didn't pass 'ruff' style check. "
-        msg += "Try running 'make fix-ruff'."
-        return exit(msg)
-
-
-def rstcheck(files):
-    print(f"running rst linter ({len(files)})")
-    cmd = ["rstcheck", "--config=pyproject.toml", *files]
-    if subprocess.call(cmd) != 0:
-        return sys.exit("RST code didn't pass style check")
+        return exit(
+            "Python code didn't pass 'ruff' style check."
+            "Try running 'make fix-ruff'."
+        )
 
 
 def toml_sort(files):
@@ -119,9 +124,17 @@ def toml_sort(files):
         return sys.exit(f"{' '.join(files)} didn't pass style check")
 
 
+def rstcheck(files):
+    print(f"running rst linter ({len(files)})")
+    cmd = ["rstcheck", "--config=pyproject.toml", *files]
+    if subprocess.call(cmd) != 0:
+        return sys.exit("RST code didn't pass style check")
+
+
 def main():
-    py_files, rst_files, toml_files, new_rm_mv = git_committed_files()
+    py_files, rst_files, toml_files, new_rm_mv = git_commit_files()
     if py_files:
+        black(py_files)
         ruff(py_files)
     if rst_files:
         rstcheck(rst_files)
