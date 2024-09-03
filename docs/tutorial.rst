@@ -538,7 +538,7 @@ Command line usage
 Starting from version 0.6.0 pyftpdlib can be run as a simple stand-alone server
 via Python's -m option, which is particularly useful when you want to quickly
 share a directory. Some examples.
-Anonymous FTPd sharing current directory:
+Anonymous server, listening on port 2121, sharing the current directory:
 
 .. code-block:: sh
 
@@ -549,7 +549,7 @@ Anonymous FTPd sharing current directory:
     [I 13-04-09 17:55:18] passive ports: None
     [I 13-04-09 17:55:18] use sendfile(2): True
 
-Anonymous FTPd with write permission:
+Anonymous server with write permission:
 
 .. code-block:: sh
 
@@ -559,6 +559,6 @@ Set a different address/port and home directory:
 
 .. code-block:: sh
 
-    $ python3 -m pyftpdlib -i localhost -p 8021 -d /home/someone
+    $ python3 -m pyftpdlib -i localhost -p 8021 -d /home/bob
 
 See ``python3 -m pyftpdlib -h`` for a complete list of options.
