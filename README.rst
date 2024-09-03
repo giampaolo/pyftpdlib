@@ -190,34 +190,6 @@ API usage
 
 `other code samples <http://pyftpdlib.readthedocs.io/en/latest/tutorial.html>`__
 
-Command line usage
-==================
-
-Anonymous server, listening on port 2121, sharing the current directory:
-
-.. code-block:: sh
-
-    $ python3 -m pyftpdlib
-    [I 13-04-2024 17:55:18] >>> starting FTP server on 0.0.0.0:2121, pid=6412 <<<
-
-Anonymous server with write permissions:
-
-.. code-block:: sh
-
-    $ python3 -m pyftpdlib -w
-
-Specify a user with write permission:
-
-.. code-block:: sh
-
-    $ python3 -m pyftpdlib -w -u alice -P password
-
-Listen on localhost, port 21 (requires root) and share a given directory:
-
-.. code-block:: sh
-
-    $ sudo python3 -m pyftpdlib -i localhost -p 21 -d /home/bob
-
 Donate
 ======
 
