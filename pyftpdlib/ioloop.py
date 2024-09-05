@@ -52,7 +52,7 @@ class Server(Acceptor):
     def handle_accepted(self, sock, addr):
         Handler(sock)
 
-server = Server('localhost', 8021)
+server = Server('localhost', 2121)
 IOLoop.instance().loop()
 """
 

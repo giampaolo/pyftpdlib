@@ -16,61 +16,22 @@ servers with `Python <http://www.python.org/>`__.
 I'm not a python programmer. Can I use it anyway?
 -------------------------------------------------
 
-Yes. pyftpdlib is a fully working FTP server implementation that can be run
-"as is". For example you could run an anonymous ftp server from cmd-line by
-running:
+Yes. Pyftpdlib is a fully working FTP server implementation that can be run
+"as is". For example, you could run an anonymous FTP server with write access
+from command line by running:
 
 .. code-block:: sh
 
-    $ sudo python3 -m pyftpdlib
-    [I 13-02-20 14:16:36] >>> starting FTP server on 0.0.0.0:8021 <<<
+    $ python3 -m pyftpdlib -w
+    RuntimeWarning: write permissions assigned to anonymous user.
+    [I 13-02-20 14:16:36] >>> starting FTP server on 0.0.0.0:2121 <<<
     [I 13-02-20 14:16:36] poller: <class 'pyftpdlib.ioloop.Epoll'>
     [I 13-02-20 14:16:36] masquerade (NAT) address: None
     [I 13-02-20 14:16:36] passive ports: None
     [I 13-02-20 14:16:36] use sendfile(2): True
 
 This is useful in case you want a quick and dirty way to share a directory
-without, say, installing and configuring samba. Starting from version 0.6.0
-options can be passed to the command line (see ``python3 -m pyftpdlib --help``
-to see all available options). Examples:
-
-Anonymous FTP server with write access:
-
-.. code-block:: sh
-
-    $ sudo python3 -m pyftpdlib -w
-    ~pyftpdlib-1.3.1-py2.7.egg/pyftpdlib/authorizers.py:265: RuntimeWarning: write permissions assigned to anonymous user.
-    [I 13-02-20 14:16:36] >>> starting FTP server on 0.0.0.0:8021 <<<
-    [I 13-02-20 14:16:36] poller: <class 'pyftpdlib.ioloop.Epoll'>
-    [I 13-02-20 14:16:36] masquerade (NAT) address: None
-    [I 13-02-20 14:16:36] passive ports: None
-    [I 13-02-20 14:16:36] use sendfile(2): True
-
-Listen on a different ip/port:
-
-.. code-block:: sh
-
-    $ python3 -m pyftpdlib -i 127.0.0.1 -p 8021
-    [I 13-02-20 14:16:36] >>> starting FTP server on 0.0.0.0:8021 <<<
-    [I 13-02-20 14:16:36] poller: <class 'pyftpdlib.ioloop.Epoll'>
-    [I 13-02-20 14:16:36] masquerade (NAT) address: None
-    [I 13-02-20 14:16:36] passive ports: None
-    [I 13-02-20 14:16:36] use sendfile(2): True
-
-
-Customizing ftpd for basic tasks like adding users or deciding where log file
-should be placed is mostly simply editing variables. This is basically like
-learning how to edit a common unix ftpd.conf file and doesn't really require
-Python knowledge. Customizing ftpd more deeply requires a python script which
-imports pyftpdlib to be written separately. An example about how this could be
-done are the scripts contained in the
-`demo directory <https://github.com/giampaolo/pyftpdlib/tree/master/demo>`__.
-
-Getting help
-------------
-
-There's a mailing list available at:
-http://groups.google.com/group/pyftpdlib/topics
+without, say, installing and configuring Samba.
 
 Installing and compatibility
 ============================
@@ -78,8 +39,11 @@ Installing and compatibility
 How do I install pyftpdlib?
 ---------------------------
 
-If you are not new to Python you probably don't need that, otherwise follow the
-`install instructions <install.html>`__.
+.. code-block:: sh
+
+    $ python3 -m pip install pyftpdlib
+
+Also see  `install instructions <install.html>`__.
 
 Which Python versions are compatible?
 -------------------------------------
@@ -94,25 +58,14 @@ with:
 
 .. code-block:: sh
 
-    python3 -m pip install pyftpdlib==1.5.10
+    python2 -m pip install pyftpdlib==1.5.10
 
 On which platforms can pyftpdlib be used?
 -----------------------------------------
 
 pyftpdlib should work on any platform where **select()**, **poll()**,
-**epoll()** or **kqueue()** system calls are available.
-The development team has mainly tested it under various *Linux*, *Windows*,
-*OSX* and *FreeBSD* systems.
-For FreeBSD is also available a
-`pre-compiled package <http://www.freshports.org/ftp/py-pyftpdlib/>`__
-maintained by Li-Wen Hsu (lwhsu@freebsd.org).
-Other Python implementation like
-`PythonCE <http://pythonce.sourceforge.net/>`__ are known to work with
-pyftpdlib and every new version is usually tested against it.
-pyftpdlib currently does not work on `Jython <http://www.jython.org/>`__
-since the latest Jython release refers to CPython 2.2.x serie. The best way
-to know whether pyftpdlib works on your platform is installing it and running
-its test suite.
+**epoll()** or **kqueue()** system calls are available, namely UNIX and
+Windows.
 
 Usage
 =====
@@ -121,13 +74,11 @@ How can I run long-running tasks without blocking the server?
 -------------------------------------------------------------
 
 pyftpdlib is an *asynchronous* FTP server. That means that if you need to run a
-time consuming task you have to use a separate Python process or thread for the
-actual processing work otherwise the entire asynchronous loop will be blocked.
+time consuming task you have to use a separate Python process or thread,
+otherwise the entire asynchronous loop will be blocked.
 
 Let's suppose you want to implement a long-running task every time the server
-receives a file. The code snippet below shows the correct way to do it by using
-a thread.
-
+receives a file. The code snippet below shows how.
 With ``self.del_channel()`` we temporarily "sleep" the connection handler which
 will be removed from the async IO poller loop and won't be able to send or
 receive any more data. It won't be closed (disconnected) as long as we don't
@@ -152,20 +103,15 @@ Another possibility is to
 Why do I get "Permission denied" error on startup?
 --------------------------------------------------
 
-Probably because you're on a Unix system and you're trying to start ftpd as an
-unprivileged user. FTP servers bind on port 21 by default and only super-user
-account  (e.g. root) can bind sockets on such ports. If you want to bind
-ftpd as non-privileged user you should set a port higher than 1024.
+Probably because you're on a UNIX system and you're trying to start the FTP
+server as an unprivileged user. FTP servers bind on port 21 by default, and
+only the root user can bind sockets on such ports. If you want to bind the
+socket as non-privileged user you should set a port higher than 1024.
 
-How can I prevent the server version from being displayed?
-----------------------------------------------------------
+Can I control upload/download ratios?
+-------------------------------------
 
-Just modify `FTPHandler.banner <api.html#pyftpdlib.handlers.FTPHandler.banner>`__.
-
-Can control upload/download ratios?
------------------------------------
-
-Yes. Starting from version 0.5.2 pyftpdlib provides a new class called
+Yes. Pyftpdlib provides a new class called
 `ThrottledDTPHandler <api.html#pyftpdlib.handlers.ThrottledDTPHandler>`__.
 You can set speed limits by modifying
 `read_limit <api.html#pyftpdlib.handlers.ThrottledDTPHandler.read_limit>`__
@@ -178,71 +124,50 @@ demo script.
 Are there ways to limit connections?
 ------------------------------------
 
-`FTPServer <api.html#pyftpdlib.servers.FTPServer>`__. class comes with two
-overridable attributes defaulting to zero
-(no limit): `max_cons <api.html#pyftpdlib.servers.FTPServer.max_cons>`__,
-which sets a limit for maximum simultaneous
-connection to handle by ftpd and
+The `FTPServer <api.html#pyftpdlib.servers.FTPServer>`__. class comes with two
+overridable attributes defaulting to zero (no limit):
+`max_cons <api.html#pyftpdlib.servers.FTPServer.max_cons>`__,
+which sets a limit for maximum simultaneous connection to handle, and
 `max_cons_per_ip <api.html#pyftpdlib.servers.FTPServer.max_cons_per_ip>`__
-which set a limit for connections from the same IP address. Overriding these
-variables is always recommended to avoid DoS attacks.
+which sets a limit for the connections from the same IP address.
 
 I'm behind a NAT / gateway
 --------------------------
 
-When behind a NAT a ftp server needs to replace the IP local address displayed
-in PASV replies and instead use the public address of the NAT to allow client
-to connect.  By overriding
+The FTP protocol uses 2 TCP connections: a "control" connection to exchange
+protocol messages (LIST, RETR, etc.), and a "data" connection for transfering
+data (files).
+In order to open the data connection the FTP server must communicate its
+**public** IP address in the PASV response. If you're behind a NAT, this
+address must be explicitly configured by setting the
 `masquerade_address <api.html#pyftpdlib.handlers.FTPHandler.masquerade_address>`__
-attribute of `FTPHandler <api.html#pyftpdlib.handlers.FTPHandler.masquerade_address>`__
-class you will force pyftpdlib to do such replacement. However, one problem
-still exists.  The passive FTP connections will use ports from 1024 and up,
-which means that you must forward all ports 1024-65535 from the NAT to the FTP
-server!  And you have to allow many (possibly) dangerous ports in your
-firewalling rules!  To resolve this, simply override
-`passive_ports <api.html#pyftpdlib.handlers.FTPHandler.passive_ports>`__
-attribute of `FTPHandler <api.html#pyftpdlib.handlers.FTPHandler.masquerade_address>`__
-class to control what ports pyftpdlib will use for its passive data transfers.
-Value expected by `passive_ports <api.html#pyftpdlib.handlers.FTPHandler.passive_ports>`__
-attribute is a list of integers (e.g. range(60000, 65535)) indicating which
-ports will be used for initializing the passive data channel. In case you run a
-FTP server with multiple private IP addresses behind a NAT firewall with
-multiple public IP addresses you can use
-`passive_ports <api.html#pyftpdlib.handlers.FTPHandler.passive_ports>`__ option
-which allows you to define multiple 1 to 1 mappings (**New in 0.6.0**).
+attribute.
 
-What is FXP?
-------------
+You can get your public IP address by using services like
+https://www.whatismyip.com/.
 
-FXP is part of the name of a popular Windows FTP client:
-`http://www.flashfxp.com <http://www.flashfxp.com>`__. This client has made the
-name "FXP" commonly used as a synonym for site-to-site FTP transfers, for
-transferring a file between two remote FTP servers without the transfer going
-through the client's host.  Sometimes "FXP" is referred to as a protocol; in
-fact, it is not. The site-to-site transfer capability was deliberately designed
-into `RFC-959 <http://www.faqs.org/rfcs/rfc959.html>`__. More info can be found
-here: `http://www.proftpd.org/docs/howto/FXP.html
-<http://www.proftpd.org/docs/howto/FXP.html>`__.
+In addition, you also probably want to configure a given range of TCP ports
+for such incoming "data" connections, otherwise a random TCP port will be
+picked up every time.
+You can do so by using the `passive_ports <api.html#pyftpdlib.handlers.FTPHandler.passive_ports>`__
+attribute.
+The value expected by `passive_ports <api.html#pyftpdlib.handlers.FTPHandler.passive_ports>`__
+attribute is a list of integers (e.g. ``range(60000, 65535)``).
 
-Does pyftpdlib support FXP?
----------------------------
-
-Yes. It is disabled by default for security reasons (see
-`RFC-2257 <http://tools.ietf.org/html/rfc2577>`__ and
-`FTP bounce attack description <http://www.cert.org/advisories/CA-1997-27.html>`__)
-but in case you want to enable it just set to True the
-`permit_foreign_addresses <api.html#pyftpdlib.handlers.FTPHandler.permit_foreign_addresses>`__
-attribute of `FTPHandler <api.html#pyftpdlib.handlers.FTPHandler.masquerade_address>`__ class.
+This also means that you must configure your router so the it will forward
+the incoming connections to such TCP ports from the router to your FTP server
+behind the NAT.
 
 Why timestamps shown by MDTM and ls commands (LIST, MLSD, MLST) are wrong?
 --------------------------------------------------------------------------
 
 If by "wrong" you mean "different from the timestamp of that file on my client
 machine", then that is the expected behavior.
-Starting from version 0.6.0 pyftpdlib uses
-`GMT times <http://en.wikipedia.org/wiki/Greenwich*Mean*Time>`__ as recommended
-in `RFC-3659 <http://tools.ietf.org/html/rfc3659>`__.
-In case you want such commands to report local times instead just set the
+pyftpdlib uses `GMT times <http://en.wikipedia.org/wiki/Greenwich*Mean*Time>`__
+as recommended in `RFC-3659 <http://tools.ietf.org/html/rfc3659>`__.
+Any client complying with RFC-3659 should be able to convert the GMT time to
+your local time and show the correct timestamp.
+In case you want LIST, MLSD, MLST commands to report local times instead, just set the
 `use_gmt_times <api.html#pyftpdlib.handlers.FTPHandler.use_gmt_times>`__ attribute to ``False``.
 For further information you might want to take a look at
 `this <http://www.proftpd.org/docs/howto/Timestamps.html>`__
@@ -253,16 +178,16 @@ Implementation
 sendfile()
 ----------
 
-Starting from version 0.7.0, sendfile(2) system call be used when uploading
-files (from server to client) via RETR command.
-Using sendfile(2) usually results in transfer rates from 2x to 3x faster
-and less CPU usage.
-Note: use of sendfile() might introduce some unexpected issues with "non
-regular filesystems" such as NFS, SMBFS/Samba, CIFS and network mounts in
-general, see: http://www.proftpd.org/docs/howto/Sendfile.html. If you bump into
-one this problems the fix consists in disabling sendfile() usage via
-`FTPHandler.use_sendfile <api.html#pyftpdlib.handlers.FTPHandler.use_sendfile>`__
-option:
+On Linux, and only when doing transfer in clear text (aka no FTPS), the
+``sendfile(2)`` system call be used when uploading files (from server to
+client) via RETR command. Using ``sendfile(2)`` is more efficient, and usually
+results in transfer rates that are from 2x to 3x faster.
+
+In the past some cases were reported that using ``sendfile(2)`` with "non
+regular" filesystems such as NFS, SMBFS/Samba, CIFS or network mounts in
+general may cause some issues, see http://www.proftpd.org/docs/howto/Sendfile.html.
+If you bump into one these issues you can set
+`FTPHandler.use_sendfile <api.html#pyftpdlib.handlers.FTPHandler.use_sendfile>`__ to ``False``:
 
 .. code-block:: python
 
@@ -274,38 +199,38 @@ option:
 Globbing / STAT command implementation
 --------------------------------------
 
-Globbing is a common Unix shell mechanism for expanding wildcard patterns to
+Globbing is a common UNIX shell mechanism for expanding wildcard patterns to
 match multiple filenames. When an argument is provided to the *STAT* command,
-ftpd should return directory listing over the command channel.
+the FTP server should return a directory listing over the command channel.
 `RFC-959 <http://tools.ietf.org/html/rfc959>`__ does not explicitly mention
 globbing; this means that FTP servers are not required to support globbing in
 order to be compliant.  However, many FTP servers do support globbing as a
 measure of convenience for FTP clients and users. In order to search for and
 match the given globbing expression, the code has to search (possibly) many
 directories, examine each contained filename, and build a list of matching
-files in memory. Since this operation can be quite intensive, both CPU- and
-memory-wise, pyftpdlib *does not* support globbing.
+files in memory. Since this operation can be quite intensive (and slow)
+pyftpdlib *does not* support globbing.
 
 ASCII transfers / SIZE command implementation
 ---------------------------------------------
 
 Properly handling the SIZE command when TYPE ASCII is used would require to
 scan the entire file to perform the ASCII translation logic
-(file.read().replace(os.linesep, '\r\n')) and then calculating the len of such
+(file.read().replace(os.linesep, '\r\n')), and then calculating the length of such
 data which may be different than the actual size of the file on the server.
-Considering that calculating such result could be very resource-intensive it
-could be easy for a malicious client to try a DoS attack, thus pyftpdlib
-rejects SIZE when the current TYPE is ASCII. However, clients in general should
-not be resuming downloads in ASCII mode.  Resuming downloads in binary mode is
-the recommended way as specified in
+Considering that calculating such a result could be resource-intensive, it
+could be easy for a malicious client to use this as a DoS attack. As such thus
+pyftpdlib rejects SIZE when the current TYPE is ASCII. However, clients in
+general should not be resuming downloads in ASCII mode.  Resuming downloads in
+binary mode is the recommended way as specified in
 `RFC-3659 <http://tools.ietf.org/html/rfc3659>`__.
 
 IPv6 support
 ------------
 
-Starting from version 0.4.0 pyftpdlib *supports* IPv6
-(`RFC-2428 <http://tools.ietf.org/html/rfc2428>`__). If you use IPv6 and want
-your FTP daemon to do so just pass a valid IPv6 address to the
+Pyftpdlib does support IPv6
+(`RFC-2428 <http://tools.ietf.org/html/rfc2428>`__). If you want your FTP server
+to explicitly use IPv6 you can do so by passing a valid IPv6 address to the
 `FTPServer <api.html#pyftpdlib.servers.FTPServer>`__ class constructor.
 Example:
 
@@ -317,39 +242,32 @@ Example:
     >>> ftpd.serve_forever()
     Serving FTP on ::1:21
 
-If your OS (for example: all recent UNIX systems) have an hybrid dual-stack
-IPv6/IPv4 implementation the code above will listen on both IPv4 and IPv6 by
-using a single IPv6 socket (**New in 0.6.0**).
-
-How do I install IPv6 support on my system?
--------------------------------------------
-
-If you want to install IPv6 support on Linux run "modprobe ipv6", then
-"ifconfig". This should display the loopback adapter, with the address "::1".
-You should then be able to listen the server on that address, and connect to
-it.
-On Windows (XP SP2 and higher) run "netsh int ipv6 install". Again, you should
-be able to use IPv6 loopback afterwards.
+If the OS supports an hybrid dual-stack IPv6/IPv4 implementation (e.g. Linux),
+the code above will automatically listen on both IPv4 and IPv6 by using the
+same TCP socket.
 
 Can pyftpdlib be integrated with "real" users existing on the system?
 ---------------------------------------------------------------------
 
-Yes. Starting from version 0.6.0 pyftpdlib provides the new `UnixAuthorizer <api.html#pyftpdlib.authorizers.UnixAuthorizer>`__
-and `WindowsAuthorizer <api.html#pyftpdlib.authorizers.WindowsAuthorizer>`__ classes. By using them pyftpdlib can look into the
-system account database to authenticate users. They also assume the id of real
-users every time the FTP server is going to access the filesystem (e.g. for
+Yes. See `UnixAuthorizer <api.html#pyftpdlib.authorizers.UnixAuthorizer>`__
+and `WindowsAuthorizer <api.html#pyftpdlib.authorizers.WindowsAuthorizer>`__ classes.
+By using them you can authenticate to the FTP server by using the credentials
+of the users defined on the operating system
+
+Furthermore: every time the FTP server accesses the filesystem (e.g. for
 creating or renaming a file) the authorizer will temporarily impersonate the
 currently logged on user, execute the filesystem call and then switch back to
-the user who originally started the server. Example UNIX and Windows FTP
-servers contained in the
-`demo directory <https://github.com/giampaolo/pyftpdlib/tree/master/demo>`__
-shows how to use `UnixAuthorizer <api.html#pyftpdlib.authorizers.UnixAuthorizer>`__ and `WindowsAuthorizer <api.html#pyftpdlib.authorizers.WindowsAuthorizer>`__ classes.
+the user who originally started the server. It will do so by setting the
+effective user or group ID of the current process. That means that you
+probably want to run the FTP as root. See:
+
+* https://github.com/giampaolo/pyftpdlib/blob/master/demo/unix_ftpd.py
+* https://github.com/giampaolo/pyftpdlib/blob/master/demo/winnt_ftpd.py
 
 Does pyftpdlib support FTP over TLS/SSL (FTPS)?
 -----------------------------------------------
 
-Yes, starting from version 0.6.0, see:
-`Does pyftpdlib support FTP over TLS/SSL (FTPS)?`_
+Yes. Checkout `TLS_FTPHandler <api.html#pyftpdlib.handlers.TLS_FTPHandler>`__.
 
 What about SITE commands?
 -------------------------
