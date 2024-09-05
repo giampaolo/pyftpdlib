@@ -271,6 +271,8 @@ installed.
     if __name__ == "__main__":
         main()
 
+.. _changing-the-concurrency-model:
+
 Changing the concurrency model
 ==============================
 
@@ -340,6 +342,8 @@ It must be noted that the multi-thread approach should NOT be used with
 creating or renaming a file) the authorizer will temporarily impersonate the
 currently logged on user by changing effective user or group ID of the current
 process.
+
+.. _pre-fork-model:
 
 Pre fork model
 ^^^^^^^^^^^^^^

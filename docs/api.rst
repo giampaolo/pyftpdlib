@@ -347,7 +347,7 @@ Server (acceptor)
 .. class:: pyftpdlib.servers.FTPServer(address_or_socket, handler, ioloop=None, backlog=100)
 
   Creates a socket listening on *address* (an ``(host, port)`` tuple) or a
-  pre- existing socket object, dispatching the requests to *handler* (typically
+  pre-existing socket object, dispatching the requests to *handler* (typically
   :class:`pyftpdlib.handlers.FTPHandler` class). Also, starts the asynchronous
   IO loop. *backlog* is the maximum number of queued connections passed to
   `socket.listen() <http://docs.python.org/library/socket.html#socket.socket.listen>`_.
