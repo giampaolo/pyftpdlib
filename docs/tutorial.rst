@@ -384,6 +384,8 @@ would be a good start.
     if __name__ == "__main__":
         main()
 
+.. _ftps-server:
+
 FTPS (FTP over TLS/SSL) server
 ==============================
 
