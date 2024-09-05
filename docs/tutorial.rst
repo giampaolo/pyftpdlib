@@ -344,8 +344,8 @@ Multiple processes
     if __name__ == "__main__":
         main()
 
-Pre fork
-^^^^^^^^
+Pre fork model
+^^^^^^^^^^^^^^
 
 There also exists a third option (UNIX only): the pre-fork model.
 Pre-fork means that a certain number of worker processes are ``spawn()``-ed
