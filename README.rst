@@ -71,7 +71,7 @@ Features
   `why <https://github.com/giampaolo/pyftpdlib/issues/203>`__ and
   `benchmarks <http://pyftpdlib.readthedocs.io/en/latest/benchmarks.html>`__).
 - Uses **sendfile(2)** (see `pysendfile <https://github.com/giampaolo/pysendfile>`__)
-  system call for uploads.
+  system call for uploads (Linux only).
 - Uses epoll() / kqueue() / select() to handle concurrency asynchronously.
 - ...But can optionally skip to a
   `multiple thread / process <http://pyftpdlib.readthedocs.io/en/latest/tutorial.html#changing-the-concurrency-model>`__

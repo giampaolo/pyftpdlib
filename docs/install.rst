@@ -5,7 +5,7 @@ By using pip:
 
 .. code-block:: sh
 
-    $ pip install pyftpdlib
+    $ pip3 install pyftpdlib
 
 From sources:
 
@@ -31,4 +31,12 @@ Additional dependencies
 
 .. code-block:: sh
 
-    $ pip install PyOpenSSL
+    $ pip3 install PyOpenSSL
+
+`pywin32 <http://starship.python.net/crew/mhammond/win32/>`__ if you want to
+use `WindowsAuthorizer <api.html#pyftpdlib.authorizers.UnixAuthorizer>`__ on
+Windows:
+
+.. code-block:: sh
+
+    $ pip3 install pypiwin32

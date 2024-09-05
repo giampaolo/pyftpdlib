@@ -1277,11 +1277,7 @@ class FTPHandler(AsyncChat):
 
      - (bool) use_sendfile: when True uses sendfile() system call to
         send a file resulting in faster uploads (from server to client).
-        Works on UNIX only and requires pysendfile module to be
-        installed separately:
-        https://github.com/giampaolo/pysendfile/
-        Automatically defaults to True if pysendfile module is
-        installed.
+        Linux only.
 
      - (bool) tcp_no_delay: controls the use of the TCP_NODELAY socket
         option which disables the Nagle algorithm resulting in

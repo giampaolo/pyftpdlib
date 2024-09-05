@@ -218,9 +218,7 @@ Control connection
   .. data:: use_sendfile
 
     When ``True`` uses sendfile(2) system call to send a file resulting in
-    faster uploads (from server to client). Works on UNIX only and requires
-    `pysendfile <https://github.com/giampaolo/pysendfile>`__ module to be
-    installed separately.
+    faster uploads (from server to client). Works on Linux only.
 
     *New in version 0.7.0*
 
