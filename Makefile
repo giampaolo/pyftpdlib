@@ -240,5 +240,12 @@ generate-manifest:  ## Generates MANIFEST.in file.
 print-announce:  ## Print announce of new release.
 	@$(PYTHON) scripts/internal/print_announce.py
 
+# ===================================================================
+# Misc
+# ===================================================================
+
+check-broken-links:  ## Look for broken links in source files.
+	git ls-files | xargs $(PYTHON) -Wa scripts/internal/check_broken_links.py
+
 help: ## Display callable targets.
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

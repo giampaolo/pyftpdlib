@@ -65,7 +65,7 @@ def hilite(s, ok=True, bold=False):
         return f"\x1b[{';'.join(attr)}m{s}\x1b[0m"
 
 
-if sys.version_info[0] < 3:
+if sys.version_info[0] < 3:  # noqa: UP036
     sys.exit(
         'Python 2 is no longer supported. Latest version is 1.5.10; use:\n'
         'python3 -m pip install pyftpdlib==1.5.10'
