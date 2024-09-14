@@ -337,12 +337,12 @@ Data connection
   .. data:: read_limit
 
     The maximum number of bytes to read (receive) in one second. Defaults to
-    ``0``, aka no limit.
+    ``0``, meaning no limit.
 
   .. data:: write_limit
 
     The maximum number of bytes to write (send) in one second. Defaults to
-    ``0``, aka no limit.
+    ``0``, meaning no limit.
 
 Server (acceptor)
 =================
@@ -384,7 +384,7 @@ Server (acceptor)
   .. data:: max_cons_per_ip
 
     Then number of maximum connections accepted for the same IP address.
-    Default: ``0``, aka no limit.
+    Default: ``0``, meaning no limit.
 
   .. method:: serve_forever(timeout=None, blocking=True, handle_exit=True, worker_processes=1)
 
@@ -494,12 +494,10 @@ Filesystem
     ``"/foo"``.
 
   .. method:: validpath(path)
-
     Check whether the path belongs to the user's home directory. Expected
     argument is a "real" filesystem path. If path is a symbolic link it is
     resolved to check its real destination. Resolved symlinks which escape the
     user's root directory are considered not valid (return ``False``).
-
   .. method:: open(filename, mode)
 
     Wrapper around
@@ -542,7 +540,6 @@ Filesystem
 
     .. versionchanged:: 1.6.0 can also return a generator.
 
-
 Extended classes
 ================
 
@@ -565,12 +562,15 @@ Extended handlers
 
     The path to a file which contains a certificate to be used to identify the
     local side of the connection. This must always be specified, unless
-    a :ref`:`ssl_context` is provided instead. Defaults: ``None``.
+    a :ref`:`ssl_context` is provided instead. See :ref:`ftps-server` on how to
+    generate SSL certificates. Default: ``None``.
 
   .. data:: keyfile
 
     The path of the file containing the private RSA key. It can be omittetted
-    if the :ref`:`certfile` already contains the private key. Defaults: ``None``.
+    if the :ref`:`certfile` already contains the private key.
+    See :ref:`ftps-server` on how to generate SSL certificates.
+    Default: ``None``.
 
   .. data:: ssl_protocol
 
@@ -593,7 +593,7 @@ Extended handlers
 
   .. data:: ssl_context
 
-      A `SSL.Context <http://pyopenssl.sourceforge.net/pyOpenSSL.html/openssl-context.html>`__
+      A `SSL.Context <https://www.pyopenssl.org/en/latest/api/ssl.html#context-objects>`__
       instance which was previously configured.
       When specified, :data:`ssl_protocol` and :data:`ssl_options` parameters
       are ignored.

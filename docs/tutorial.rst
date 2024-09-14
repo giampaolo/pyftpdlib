@@ -425,8 +425,8 @@ use the one in the demo directory which include both and is available
         authorizer.add_user('user', '12345', '.', perm='elradfmwMT')
         authorizer.add_anonymous('.')
         handler = TLS_FTPHandler
-        handler.certfile = '/path/to/ftpd.crt'
-        handler.keyfile = '/path/to/ftpd.key'
+        handler.certfile = '/path/to/ftpd.crt'  # <--
+        handler.keyfile = '/path/to/ftpd.key'  # <--
         handler.authorizer = authorizer
         # optionally require SSL for both control and data channel
         #handler.tls_control_required = True
