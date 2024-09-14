@@ -164,7 +164,7 @@ Why timestamps shown by MDTM and ls commands (LIST, MLSD, MLST) are wrong?
 If by "wrong" you mean "different from the timestamp of that file on my client
 machine", then that is the expected behavior.
 pyftpdlib uses `GMT times <http://en.wikipedia.org/wiki/Greenwich*Mean*Time>`__
-as recommended in `RFC-3659 <http://tools.ietf.org/html/rfc3659>`__.
+as recommended in `RFC-3659 <https://datatracker.ietf.org/doc/html/rfc3659>`__.
 Any client complying with RFC-3659 should be able to convert the GMT time to
 your local time and show the correct timestamp.
 In case you want LIST, MLSD, MLST commands to report local times instead, just set the
@@ -202,7 +202,7 @@ Globbing / STAT command implementation
 Globbing is a common UNIX shell mechanism for expanding wildcard patterns to
 match multiple filenames. When an argument is provided to the *STAT* command,
 the FTP server should return a directory listing over the command channel.
-`RFC-959 <http://tools.ietf.org/html/rfc959>`__ does not explicitly mention
+`RFC-959 <https://datatracker.ietf.org/doc/html/rfc959>`__ does not explicitly mention
 globbing; this means that FTP servers are not required to support globbing in
 order to be compliant.  However, many FTP servers do support globbing as a
 measure of convenience for FTP clients and users. In order to search for and
@@ -223,13 +223,13 @@ could be easy for a malicious client to use this as a DoS attack. As such thus
 pyftpdlib rejects SIZE when the current TYPE is ASCII. However, clients in
 general should not be resuming downloads in ASCII mode.  Resuming downloads in
 binary mode is the recommended way as specified in
-`RFC-3659 <http://tools.ietf.org/html/rfc3659>`__.
+`RFC-3659 <https://datatracker.ietf.org/doc/html/rfc3659>`__.
 
 IPv6 support
 ------------
 
 Pyftpdlib does support IPv6
-(`RFC-2428 <http://tools.ietf.org/html/rfc2428>`__). If you want your FTP server
+(`RFC-2428 <https://datatracker.ietf.org/doc/html/rfc2428>`__). If you want your FTP server
 to explicitly use IPv6 you can do so by passing a valid IPv6 address to the
 `FTPServer <api.html#pyftpdlib.servers.FTPServer>`__ class constructor.
 Example:

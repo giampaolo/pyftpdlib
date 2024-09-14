@@ -5,7 +5,7 @@ API reference
 .. contents:: Table of Contents
 
 pyftpdlib implements the server side of the FTP protocol as defined in
-`RFC-959 <http://www.faqs.org/rfcs/rfc959.html>`_. This document is intended to
+`RFC-959 <https://datatracker.ietf.org/doc/html/rfc959.html>`_. This document is intended to
 serve as a simple API reference of most important classes and functions.
 Also see the `tutorial <tutorial.html>`_ document.
 
@@ -120,7 +120,7 @@ Control connection
 .. class:: pyftpdlib.handlers.FTPHandler(conn, server)
 
   This class implements the "FTP server Protocol Interpreter" as defined in
-  `RFC-959 <http://www.faqs.org/rfcs/rfc959.html>`_, commonly known as
+  `RFC-959 <https://datatracker.ietf.org/doc/html/rfc959.html>`_, commonly known as
   the FTP "control connection".
   It handles the commands received from the client.
   E.g. if command "MKD pathname" is received, ``ftp_MKD()`` method is called
@@ -300,7 +300,7 @@ Data connection
 .. class:: pyftpdlib.handlers.DTPHandler(sock_obj, cmd_channel)
 
   This class handles the server-data-transfer-process (server-DTP) as defined
-  in `RFC-959 <http://www.faqs.org/rfcs/rfc959.html>`_, commonly known as
+  in `RFC-959 <https://datatracker.ietf.org/doc/html/rfc959.html>`_, commonly known as
   "data connection".
   It manages all the transfer operations like sending or receiving files and
   also transmitting the directory listing.
@@ -552,7 +552,7 @@ Extended handlers
 .. class:: pyftpdlib.handlers.TLS_FTPHandler(conn, server)
 
   A :class:`pyftpdlib.handlers.FTPHandler` subclass implementing FTPS (FTP over
-  SSL/TLS) as described in `RFC-4217 <http://www.faqs.org/rfcs/rfc4217.html>`_.
+  SSL/TLS) as described in `RFC-4217 <https://datatracker.ietf.org/doc/html/rfc4217.html>`_.
   Implements AUTH, PBSZ and PROT commands.
   `PyOpenSSL <http://pypi.python.org/pypi/pyOpenSSL>`_ module is required to be
   installed. See :ref:`ftps-server` tutorial.

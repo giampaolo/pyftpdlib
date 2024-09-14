@@ -49,10 +49,9 @@ Quick links
 ===========
 
 - `Home <https://github.com/giampaolo/pyftpdlib>`__
-- `Documentation <http://pyftpdlib.readthedocs.io>`__
+- `Documentation <https://pyftpdlib.readthedocs.io>`__
 - `Download <https://pypi.python.org/pypi/pyftpdlib/>`__
-- `Blog <http://grodola.blogspot.com/search/label/pyftpdlib>`__
-- `Mailing list <http://groups.google.com/group/pyftpdlib/topics>`__
+- `Mailing list <https://groups.google.com/group/pyftpdlib/topics>`__
 - `What's new <https://github.com/giampaolo/pyftpdlib/blob/master/HISTORY.rst>`__
 
 About
@@ -60,8 +59,8 @@ About
 
 Python FTP server library provides a high-level portable interface to easily
 write very efficient, scalable and asynchronous FTP servers with Python. It is
-the most complete `RFC-959 <http://www.faqs.org/rfcs/rfc959.html>`__ FTP server
-implementation available for `Python <http://www.python.org/>`__ programming
+the most complete `RFC-959 <https://datatracker.ietf.org/doc/html/rfc959.html>`__ FTP server
+implementation available for `Python <https://www.python.org/>`__ programming
 language.
 
 Features
@@ -69,7 +68,7 @@ Features
 
 - Extremely **lightweight**, **fast** and **scalable** (see
   `why <https://github.com/giampaolo/pyftpdlib/issues/203>`__ and
-  `benchmarks <http://pyftpdlib.readthedocs.io/en/latest/benchmarks.html>`__).
+  `benchmarks <https://pyftpdlib.readthedocs.io/en/latest/benchmarks.html>`__).
 - Uses **sendfile(2)** (see `pysendfile <https://github.com/giampaolo/pysendfile>`__)
   system call for uploads (Linux only).
 - Uses epoll() / kqueue() / select() to handle concurrency asynchronously.
@@ -77,9 +76,9 @@ Features
   `multiple thread / process <http://pyftpdlib.readthedocs.io/en/latest/tutorial.html#changing-the-concurrency-model>`__
   model (as in: you'll be free to block or use slow filesystems).
 - Portable: entirely written in pure Python.
-- Supports **FTPS** (`RFC-4217 <http://tools.ietf.org/html/rfc4217>`__),
+- Supports **FTPS** (`RFC-4217 <https://datatracker.ietf.org/doc/html/rfc4217>`__),
   **IPv6** (`RFC-2428 <ftp://ftp.rfc-editor.org/in-notes/rfc2428.txt>`__),
-  **Unicode** file names (`RFC-2640 <http://tools.ietf.org/html/rfc2640>`__),
+  **Unicode** file names (`RFC-2640 <https://datatracker.ietf.org/doc/html/rfc2640>`__),
   **MLSD/MLST** commands (`RFC-3659 <ftp://ftp.rfc-editor.org/in-notes/rfc3659.txt>`__).
 - Support for virtual users and virtual filesystem.
 - Flexible system of "authorizers" able to manage both "virtual" and

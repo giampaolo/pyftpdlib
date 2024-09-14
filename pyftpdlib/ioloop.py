@@ -901,7 +901,7 @@ class AsyncChat(asynchat.async_chat):
                         # looks like this ::ffff:151.12.5.65, see:
                         # http://en.wikipedia.org/wiki/IPv6\
                         #     IPv4-mapped_addresses
-                        # http://tools.ietf.org/html/rfc3493.html#section-3.7
+                        # https://datatracker.ietf.org/doc/html/rfc3493.html#section-3.7
                         # We truncate the first bytes to make it look like a
                         # common IPv4 address.
                         source_address = (

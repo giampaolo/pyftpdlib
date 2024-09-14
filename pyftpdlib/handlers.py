@@ -473,7 +473,7 @@ class PassiveDTP(Acceptor):
                 # represented as an IPv4-mapped IPv6 address which
                 # looks like this ::ffff:151.12.5.65, see:
                 # http://en.wikipedia.org/wiki/IPv6#IPv4-mapped_addresses
-                # http://tools.ietf.org/html/rfc3493.html#section-3.7
+                # https://datatracker.ietf.org/doc/html/rfc3493.html#section-3.7
                 # We truncate the first bytes to make it look like a
                 # common IPv4 address.
                 ip = ip[7:]
@@ -2094,7 +2094,7 @@ class FTPHandler(AsyncChat):
             # represented as an IPv4-mapped IPv6 address which
             # looks like this ::ffff:151.12.5.65, see:
             # http://en.wikipedia.org/wiki/IPv6#IPv4-mapped_addresses
-            # http://tools.ietf.org/html/rfc3493.html#section-3.7
+            # https://datatracker.ietf.org/doc/html/rfc3493.html#section-3.7
             # We truncate the first bytes to make it look like a
             # common IPv4 address.
             remote_ip = remote_ip[7:]
