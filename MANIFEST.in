@@ -34,8 +34,6 @@ include docs/tutorial.rst
 include make.bat
 include pyftpdlib/__init__.py
 include pyftpdlib/__main__.py
-include pyftpdlib/_asynchat.py
-include pyftpdlib/_asyncore.py
 include pyftpdlib/authorizers.py
 include pyftpdlib/filesystems.py
 include pyftpdlib/handlers.py
@@ -56,6 +54,7 @@ include pyftpdlib/test/test_ioloop.py
 include pyftpdlib/test/test_servers.py
 include pyproject.toml
 include scripts/ftpbench
+include scripts/internal/check_broken_links.py
 include scripts/internal/generate_manifest.py
 include scripts/internal/git_pre_commit.py
 include scripts/internal/print_announce.py
