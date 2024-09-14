@@ -899,7 +899,7 @@ class AsyncChat(asynchat.async_chat):
                         # the remote client is using IPv4 and its address is
                         # represented as an IPv4-mapped IPv6 address which
                         # looks like this ::ffff:151.12.5.65, see:
-                        # http://en.wikipedia.org/wiki/IPv6\
+                        # https://en.wikipedia.org/wiki/IPv6\
                         #     IPv4-mapped_addresses
                         # https://datatracker.ietf.org/doc/html/rfc3493.html#section-3.7
                         # We truncate the first bytes to make it look like a
@@ -924,7 +924,7 @@ class AsyncChat(asynchat.async_chat):
         return af
 
     # send() and recv() overridden as a fix around various bugs:
-    # - http://bugs.python.org/issue1736101
+    # - https://bugs.python.org/issue1736101
     # - https://github.com/giampaolo/pyftpdlib/issues/104
     # - https://github.com/giampaolo/pyftpdlib/issues/109
 

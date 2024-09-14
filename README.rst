@@ -50,7 +50,7 @@ Quick links
 
 - `Home <https://github.com/giampaolo/pyftpdlib>`__
 - `Documentation <https://pyftpdlib.readthedocs.io>`__
-- `Download <https://pypi.python.org/pypi/pyftpdlib/>`__
+- `Download <https://pypi.org/project/pyftpdlib/>`__
 - `Mailing list <https://groups.google.com/group/pyftpdlib/topics>`__
 - `What's new <https://github.com/giampaolo/pyftpdlib/blob/master/HISTORY.rst>`__
 
@@ -73,7 +73,7 @@ Features
   system call for uploads (Linux only).
 - Uses epoll() / kqueue() / select() to handle concurrency asynchronously.
 - ...But can optionally skip to a
-  `multiple thread / process <http://pyftpdlib.readthedocs.io/en/latest/tutorial.html#changing-the-concurrency-model>`__
+  `multiple thread / process <https://pyftpdlib.readthedocs.io/en/latest/tutorial.html#changing-the-concurrency-model>`__
   model (as in: you'll be free to block or use slow filesystems).
 - Portable: entirely written in pure Python.
 - Supports **FTPS** (`RFC-4217 <https://datatracker.ietf.org/doc/html/rfc4217>`__),
@@ -83,9 +83,9 @@ Features
 - Support for virtual users and virtual filesystem.
 - Flexible system of "authorizers" able to manage both "virtual" and
   "real" users on on both
-  `UNIX <http://pyftpdlib.readthedocs.io/en/latest/tutorial.html#unix-ftp-server>`__
+  `UNIX <https://pyftpdlib.readthedocs.io/en/latest/tutorial.html#unix-ftp-server>`__
   and
-  `Windows <http://pyftpdlib.readthedocs.io/en/latest/tutorial.html#windows-ftp-server>`__.
+  `Windows <https://pyftpdlib.readthedocs.io/en/latest/tutorial.html#windows-ftp-server>`__.
 
 Performances
 ============
@@ -142,7 +142,7 @@ pyftpdlib vs. vsftpd 2.3.5
 | 300 concurrent clients (QUIT)           |    0.03 secs   | 0.01 secs      | +0.14x      |
 +-----------------------------------------+----------------+----------------+-------------+
 
-For more benchmarks see `here <http://pyftpdlib.readthedocs.io/en/latest/benchmarks.html>`__.
+For more benchmarks see `here <https://pyftpdlib.readthedocs.io/en/latest/benchmarks.html>`__.
 
 Command line usage
 ==================
@@ -187,7 +187,7 @@ API usage
     [I 13-02-19 10:56:27] 127.0.0.1:34179-[user] RETR /home/giampaolo/.vimrc completed=1 bytes=1700 seconds=0.001
     [I 13-02-19 10:56:39] 127.0.0.1:34179-[user] FTP session closed (disconnect).
 
-`other code samples <http://pyftpdlib.readthedocs.io/en/latest/tutorial.html>`__
+`other code samples <https://pyftpdlib.readthedocs.io/en/latest/tutorial.html>`__
 
 Donate
 ======

@@ -5,7 +5,7 @@
 # found in the LICENSE file.
 
 """A basic unix daemon using the python-daemon library:
-http://pypi.python.org/pypi/python-daemon.
+https://pypi.org/project/python-daemon.
 
 Example usages:
 

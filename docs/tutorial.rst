@@ -64,7 +64,7 @@ Logging management
 ==================
 
 pyftpdlib uses the stdlib
-`logging <http://docs.python.org/library/logging.html logging>`__
+`logging <https://docs.python.org/3/library/logging.html>`__
 module to handle logs. If you don't configure logging pyftpdlib will do it for
 you.
 In order to configure logging you should do it *before* calling
@@ -246,7 +246,7 @@ Windows FTP server
 ==================
 
 Same as above, but for Windows. This code requires
-`pywin32 <http://starship.python.net/crew/mhammond/win32/>`__ extension to be
+`pywin32 <https://pypi.org/project/pywin32/>`__ extension to be
 installed.
 
 `source code <https://github.com/giampaolo/pyftpdlib/blob/master/demo/winnt_ftpd.py>`__
@@ -390,8 +390,8 @@ FTPS (FTP over TLS/SSL) server
 ==============================
 
 pyftpdlib implements FTP over TLS, also known as FTPS  as defined in
-`RFC-4217 <http://www.ietf.org/rfc/rfc4217.txt>`__. This requires installing
-`PyOpenSSL <http://pypi.python.org/pypi/pyOpenSSL>`__ third party module.
+`RFC-4217 <https://www.ietf.org/rfc/rfc4217.txt>`__. This requires installing
+`PyOpenSSL <https://pypi.org/project/pyOpenSSL>`__ third party module.
 `TLS_FTPHandler <api.html#pyftpdlib.handlers.TLS_FTPHandler>`__
 class a ``certfile`` and a ``keyfile``. You can generate self-signed SSL
 certificates like this (also see `Apache FAQs <https://httpd.apache.org/docs/2.4/ssl/ssl_faq.html#selfcert>`__):
@@ -413,7 +413,7 @@ use the one in the demo directory which include both and is available
 
     """
     An RFC-4217 asynchronous FTPS server supporting both SSL and TLS.
-    Requires PyOpenSSL module (http://pypi.python.org/pypi/pyOpenSSL).
+    Requires PyOpenSSL module (https://pypi.org/project/pyOpenSSL).
     """
 
     from pyftpdlib.servers import FTPServer

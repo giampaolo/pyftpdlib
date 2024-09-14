@@ -353,7 +353,7 @@ Server (acceptor)
   pre-existing socket object, dispatching the requests to ``handler`` (typically
   a :class:`pyftpdlib.handlers.FTPHandler` class). Also, it starts the main asynchronous
   IO loop. ``backlog`` is the maximum number of queued connections passed to
-  `socket.listen() <http://docs.python.org/library/socket.html#socket.socket.listen>`_.
+  `socket.listen() <https://docs.python.org/library/socket.html#socket.socket.listen>`_.
 
   *Changed in version 1.0.0: added ioloop argument.*
 
@@ -501,7 +501,7 @@ Filesystem
   .. method:: open(filename, mode)
 
     Wrapper around
-    `open() <http://docs.python.org/library/functions.html#open>`_ builtin.
+    `open() <https://docs.python.org/library/functions.html#open>`_ builtin.
 
   .. method:: mkdir(path)
   .. method:: chdir(path)
@@ -514,7 +514,7 @@ Filesystem
   .. method:: readlink(path)
 
     Wrappers around the corresponding
-    `os <http://docs.python.org/library/os.html>`_ module functions.
+    `os <https://docs.python.org/library/os.html>`_ module functions.
 
   .. method:: isfile(path)
   .. method:: islink(path)
@@ -525,17 +525,17 @@ Filesystem
   .. method:: lexists(path)
 
     Wrappers around the corresponding
-    `os.path <http://docs.python.org/library/os.path.html>`_ module functions.
+    `os.path <https://docs.python.org/library/os.path.html>`_ module functions.
 
   .. method:: mkstemp(suffix='', prefix='', dir=None, mode='wb')
 
     Wrapper around
-    `tempfile.mkstemp <http://docs.python.org/library/tempfile.html#tempfile.mkstemp>`_.
+    `tempfile.mkstemp <https://docs.python.org/library/tempfile.html#tempfile.mkstemp>`_.
 
   .. method:: listdir(path)
 
     Wrapper around
-    `os.listdir <http://docs.python.org/library/os.html#os.listdir>`_.
+    `os.listdir <https://docs.python.org/library/os.html#os.listdir>`_.
     It is expected to return a list of strings or a generator yielding strings.
 
     .. versionchanged:: 1.6.0 can also return a generator.
@@ -554,7 +554,7 @@ Extended handlers
   A :class:`pyftpdlib.handlers.FTPHandler` subclass implementing FTPS (FTP over
   SSL/TLS) as described in `RFC-4217 <https://datatracker.ietf.org/doc/html/rfc4217.html>`_.
   Implements AUTH, PBSZ and PROT commands.
-  `PyOpenSSL <http://pypi.python.org/pypi/pyOpenSSL>`_ module is required to be
+  `PyOpenSSL <https://pypi.org/project/pyOpenSSL>`_ module is required to be
   installed. See :ref:`ftps-server` tutorial.
   Configurable attributes:
 

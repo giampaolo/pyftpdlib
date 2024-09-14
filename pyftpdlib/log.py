@@ -4,7 +4,7 @@
 
 """
 Logging support for pyftpdlib, inspired from Tornado's
-(http://www.tornadoweb.org/).
+(https://www.tornadoweb.org/).
 
 This is not supposed to be imported/used directly.
 Instead you should use logging.basicConfig before serve_forever().

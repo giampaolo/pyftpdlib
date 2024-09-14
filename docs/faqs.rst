@@ -11,7 +11,7 @@ What is pyftpdlib?
 ------------------
 
 pyftpdlib is a high-level library to easily write asynchronous portable FTP
-servers with `Python <http://www.python.org/>`__.
+servers with `Python <https://www.python.org/>`__.
 
 I'm not a python programmer. Can I use it anyway?
 -------------------------------------------------
@@ -163,14 +163,14 @@ Why timestamps shown by MDTM and ls commands (LIST, MLSD, MLST) are wrong?
 
 If by "wrong" you mean "different from the timestamp of that file on my client
 machine", then that is the expected behavior.
-pyftpdlib uses `GMT times <http://en.wikipedia.org/wiki/Greenwich*Mean*Time>`__
+pyftpdlib uses `GMT times <https://en.wikipedia.org/wiki/Greenwich_Mean_Time>`__
 as recommended in `RFC-3659 <https://datatracker.ietf.org/doc/html/rfc3659>`__.
 Any client complying with RFC-3659 should be able to convert the GMT time to
 your local time and show the correct timestamp.
 In case you want LIST, MLSD, MLST commands to report local times instead, just set the
 `use_gmt_times <api.html#pyftpdlib.handlers.FTPHandler.use_gmt_times>`__ attribute to ``False``.
 For further information you might want to take a look at
-`this <http://www.proftpd.org/docs/howto/Timestamps.html>`__
+`this <https://www.proftpd.org/docs/howto/Timestamps.html>`__
 
 Implementation
 ==============
@@ -185,7 +185,7 @@ results in transfer rates that are from 2x to 3x faster.
 
 In the past some cases were reported that using ``sendfile(2)`` with "non
 regular" filesystems such as NFS, SMBFS/Samba, CIFS or network mounts in
-general may cause some issues, see http://www.proftpd.org/docs/howto/Sendfile.html.
+general may cause some issues, see https://www.proftpd.org/docs/howto/Sendfile.html.
 If you bump into one these issues you can set
 `FTPHandler.use_sendfile <api.html#pyftpdlib.handlers.FTPHandler.use_sendfile>`__ to ``False``:
 
