@@ -4,8 +4,9 @@ Adoptions
 
 .. contents:: Table of Contents
 
-Here comes a list of softwares and systems using pyftpdlib.
-In case you want to add your software to such list add a comment below.
+Here comes a (mostly out dated) list of softwares and systems using pyftpdlib.
+In case you want to add your software to such list make a PR or create a
+ticket on the bug tracker.
 Please help us in keeping such list updated.
 
 Packages
@@ -13,152 +14,135 @@ Packages
 
 Following lists the packages of pyftpdlib from various platforms.
 
-Debian
-------
+Various Linux Distros
+---------------------
 
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/debian.png
+pyftpdlib has been packaged for different Linux distros, see `repology.org <https://repology.org/project/python:pyftpdlib/versions>`__.
 
-A `.deb packaged version of pyftpdlib <http://packages.debian.org/sid/python-pyftpdlib>`__
-is available.
-
-Fedora
-------
-
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/fedora.png
-
-A `RPM packaged version <https://admin.fedoraproject.org/pkgdb/packages/name/pyftpdlib>`__
-is available.
+.. image:: https://repology.org/badge/vertical-allrepos/python:pyftpdlib.svg
 
 FreeBSD
 -------
 
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/freebsd.gif
+.. image:: https://github.com/giampaolo/pyftpdlib/blob/master/docs/images/freebsd.gif?raw=true
 
 A `freshport <http://www.freshports.org/ftp/py-pyftpdlib>`__
 is available.
-
-GNU Darwin
-----------
-
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/gnudarwin.png
-
-`GNU Darwin <http://www.gnu-darwin.org>`__ is a Unix distribution which focuses
-on the porting of free software to Darwin and Mac OS X. pyftpdlib has been
-recently included in the official repositories to make users can easily install
-and use it on GNU Darwin systems.
 
 Softwares
 =========
 
 Following lists the softwares adopting pyftpdlib.
 
-Google Chrome
--------------
+Google Chromium
+---------------
 
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/chrome.jpg
+.. image:: https://github.com/giampaolo/pyftpdlib/blob/master/docs/images/chrome.jpg?raw=true
 
-`Google Chrome <http://www.google.com/chrome>`__ is the new free and open
-source web browser developed by Google.
-`Google Chromium <http://code.google.com/intl/it-IT/chromium/>`__, the open
-source project behind Google Chrome, included pyftpdlib in the code base to
-develop Google Chrome's FTP client unit tests.
+`Google Chromium <https://www.chromium.org/chromium-projects/>`__, the open
+source project behind Google Chrome, uses pyftpdlib for unit tests of the
+FTP client included in the browser.
 
 Smartfile
 ---------
 
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/smartfile.jpg
+.. image:: https://github.com/giampaolo/pyftpdlib/blob/master/docs/images/smartfile.png?raw=true
 
-`Smartfile <http://www.smartfile.com>`__ is a market leader in FTP and online
+`Smartfile <https://www.smartfile.com/>`__ is a market leader in FTP and online
 file storage that has a robust and easy-to-use web interface. We utilize
 pyftpdlib as the underpinnings of our FTP service. Pyftpdlib gives us the
 flexibility we require to integrate FTP with the rest of our application.
 
+Pyfilesystem
+------------
+
+.. image:: https://github.com/giampaolo/pyftpdlib/blob/master/docs/images/images/pyfilesystem.svg?raw=true
+
+`Pyfilesystem <https://www.pyfilesystem.org/>`__ is a Python module
+that provides a common interface to many types of filesystem, and provides some
+powerful features such as exposing filesystems over an internet connection, or
+to the native filesystem. It uses pyftpdlib as a backend for testing its FTP
+component.
+
 Bazaar
 ------
 
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/bazaar.jpg
+.. image:: https://github.com/giampaolo/pyftpdlib/blob/master/docs/images/bazaar.jpg?raw=true
 
-`Bazaar <http://bazaar-vcs.org/>`__ is a distributed version control system
-similar to Subversion which supports different protocols among which FTP.
-As for `Google Chrome <http://www.google.com/chrome>`__, Bazaar recently
-adopted pyftpdlib as base FTP server to implement internal FTP unit tests.
+`Bazaar <https://code.launchpad.net/bzr>`__ is a distributed version control
+system similar to GIT which supports different protocols among which FTP. Same
+as Google Chromium, Bazaar uses pyftpdlib as the base FTP server to implement
+internal FTP unit tests.
 
 Python for OpenVMS
 ------------------
 
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/pyopenvms.png
+.. image:: https://github.com/giampaolo/pyftpdlib/blob/master/docs/images/openvms.png?raw=true
 
-`OpenVMS <http://h71000.www7.hp.com/index.html?jumpid==/go/openvms>`__ is an
+`OpenVMS <https://vmssoftware.com/>`__ is an
 operating system that runs on the `VAX <http://en.wikipedia.org/wiki/VAX>`__
-and `Alpha <http://en.wikipedia.org/wiki/DEC*Alpha>`__ families of computers,
+and `Alpha <http://en.wikipedia.org/wiki/DEC*Alpha>`__ computer families,
 now owned by Hewlett-Packard.
 `vmspython <http://www.vmspython.org/>`__ is a porting of the original cPython
 interpreter that runs on OpenVMS platforms.
-pyftpdlib recently became a standard library module installed by default on
+pyftpdlib became a standard library module installed by default on
 every new vmspython installation.
-
-http://www.vmspython.org/DownloadAndInstallationPython
 
 OpenERP
 -------
 
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/openerp.jpg
+.. image:: https://github.com/giampaolo/pyftpdlib/blob/master/docs/images/openerp.jpg?raw=true
 
 `OpenERP <http://openerp.com>`__ is an Open Source enterprise management
 software.  It covers and integrates most enterprise needs and processes:
 accounting, hr, sales, crm, purchase, stock, production, services management,
-project management, marketing campaign, management by affairs. OpenERP recently
+project management, marketing campaign, management by affairs. OpenERP
 included pyftpdlib as plug in to serve documents via FTP.
 
 Plumi
 -----
 
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/plumi.jpg
-
-`Plumi <http://plumi.org/wiki>`__ is a video sharing Content Management System
-based on `Plone <http://plone.org>`__ that enables you to create your own
+`Plumi <https://engagemedia.org/projects/plumi/>`__ is a video sharing Content Management System
+based on `Plone <https://plone.org/>`__ that enables you to create your own
 sophisticated video sharing site.
 pyftpdlib has been included in Plumi to allow resumable large video file uploads
-into `Zope <http://www.zope.org/>`__.
+into `Zope <https://www.zope.dev/>`__.
 
 put.io FTP connector
 --------------------
 
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/putio.png
+.. image:: https://github.com/giampaolo/pyftpdlib/blob/master/docs/images/putio.png?raw=true
 
-A proof of concept FTP server that proxies FTP clients requests to
-`putio <http://put.io/>`__ via HTTP, or in other words an FTP interface to
-put.io Put.io is a storage service that fetches media files remotely and lets
-you stream them immediately. More info can be found
-`here <http://mashable.com/2010/08/25/putio/>`__. See
-https://github.com/ybrs/putio-ftp-connector
-`blog entry <http://ybrs.in/2011/01/27/putio-ftp-connector/>`__
+`put.io <https://put.io/>`__ is a storage service that fetches media files
+remotely and lets you stream them immediately. They wrote a PoC based on
+pyftplidb that proxies FTP clients requests to put.io via HTTP. More info can
+be found `here <http://mashable.com/2010/08/25/putio/>`__. See
+https://github.com/ybrs/putio-ftp-connector.
 
 Rackspace Cloud's FTP
 ---------------------
 
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/rackspace-cloud-hosting.jpg
+.. image:: https://github.com/giampaolo/pyftpdlib/blob/master/docs/images/rackspace-cloud-hosting.jpg?raw=true
 
-`ftp-cloudfs <http://github.com/chmouel/ftp-cloudfs>`__ is a ftp server acting
-as a proxy to Rackspace `Cloud Files <http://www.rackspacecloud.com>`__. It
+`ftp-cloudfs <http://github.com/chmouel/ftp-cloudfs>`__ is a FTP server acting
+as a proxy to `Rackspace Cloud <https://www.rackspace.com/cloud>`__. It
 allows you to connect via any FTP client to do upload/download or create
 containers.
 
 Far Manager
 -----------
 
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/farmanager.png
+.. image:: https://github.com/giampaolo/pyftpdlib/blob/master/docs/images/farmanager.png?raw=true
 
 `Far Manager <http://farmanager.com/>`__ is a program for managing files and
-archives in Windows operating systems.
-Far Manager recently included pyftpdlib as a plug-in for making the current
-directory accessible through FTP. Convenient for exchanging files with virtual
-machines.
+archives on Windows. Far Manager included pyftpdlib as a plug-in for making the
+current directory accessible through FTP, which is convenient for exchanging
+files with virtual machines.
 
 Google Pages FTPd
 -----------------
 
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/google-pages.gif
+.. image:: https://github.com/giampaolo/pyftpdlib/blob/master/docs/images/google-pages.gif?raw=true
 
 `gpftpd <http://arkadiusz-wahlig.blogspot.com/2008/04/hosting-files-on-google.html>`__
 is a pyftpdlib based FTP server you can connect to using your Google e-mail
@@ -170,7 +154,7 @@ download them and upload new ones.
 Peerscape
 ---------
 
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/peerscape.gif
+.. image:: https://github.com/giampaolo/pyftpdlib/blob/master/docs/images/peerscape.gif?raw=true
 
 `Peerscape <http://www.peerscape.org/>`__ is an experimental peer-to-peer social
 network implemented as an extension to the Firefox web browser. It implements a
@@ -191,16 +175,9 @@ performances.
 Symbian Python FTP server
 -------------------------
 
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/symbianftp.png
+.. image:: https://github.com/giampaolo/pyftpdlib/blob/master/docs/images/symbianftp.png?raw=true
 
 An FTP server for Symbian OS: http://code.google.com/p/sypftp/
-
-ftp-cloudfs
------------
-
-An FTP server acting as a proxy to Rackspace Cloud Files or to OpenStack Swift.
-It allow you to connect via any FTP client to do upload/download or create
-containers: https://github.com/chmouel/ftp-cloudfs
 
 Sierramobilepos
 ---------------
@@ -219,23 +196,10 @@ Faetus
 server that translates FTP commands into Amazon S3 API calls providing an FTP
 interface on top of Amazon S3 storage.
 
-
-
-Pyfilesystem
-------------
-
-`Pyfilesystem <http://code.google.com/p/pyfilesystem/>`__ is a Python module
-that provides a common interface to many types of filesystem, and provides some
-powerful features such as exposing filesystems over an internet connection, or
-to the native filesystem. It uses pyftpdlib as a backend for testing its FTP
-component.
-
-
-
 Manent
 ------
 
-`Manent <http://trac.manent-backup.com/>`__ is an algorithmically strong
+`Manent <https://openhub.net/p/manent>`__ is an algorithmically strong
 backup and archival program which can offer remote backup via a
 pyftpdlib-based S/FTP server.
 
@@ -246,8 +210,6 @@ Aksy
 control S5000/S6000, Z4/Z8 and MPC4000 Akai sampler models with System
 Exclusive over USB.  Aksy introduced the possibility to mount samplers as web
 folders and manage files on the sampler via FTP.
-
-
 
 Imgserve
 --------
@@ -321,14 +283,14 @@ Web sites using pyftpdlib
 www.bitsontherun.com
 --------------------
 
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/bitsontherun.png
+.. image:: https://github.com/giampaolo/pyftpdlib/blob/master/docs/images/bitsontherun.png?raw=true
 
 http://www.bitsontherun.com
 
 www.adcast.tv
 -------------
 
-.. image:: http://pyftpdlib.googlecode.com/svn-history/wiki/images/adcast.png
+.. image:: https://github.com/giampaolo/pyftpdlib/blob/master/docs/images/adcast.png?raw=true
 
 http://www.adcast.tv http://www.adcast.tv
 

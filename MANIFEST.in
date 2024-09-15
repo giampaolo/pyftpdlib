@@ -25,6 +25,8 @@ include docs/benchmarks.rst
 include docs/conf.py
 include docs/faqs.rst
 include docs/images/freebsd.gif
+include docs/images/google-pages.gif
+include docs/images/peerscape.gif
 include docs/index.rst
 include docs/install.rst
 include docs/make.bat
