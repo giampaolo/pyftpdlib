@@ -27,7 +27,7 @@ Additional dependencies
 -----------------------
 
 `PyOpenSSL <https://pypi.org/project/pyOpenSSL>`__, to support
-`FTPS <https://pyftpdlib.readthedocs.io/tutorial.html#ftps-ftp-over-tls-ssl-server>`__:
+`FTPS <https://pyftpdlib.readthedocs.io/en/latest/tutorial.html#ftps-ftp-over-tls-ssl-server>`__:
 
 .. code-block:: sh
 

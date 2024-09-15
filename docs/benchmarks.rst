@@ -135,11 +135,11 @@ Memory usage
 Interpreting the results
 ------------------------
 
-pyftpdlib and `proftpd <https://www.proftpd.org/>`__ / `vsftpd <https://security.appspot.com/vsftpd.html>`__
+pyftpdlib and `proftpd <http://www.proftpd.org/>`__ / `vsftpd <https://security.appspot.com/vsftpd.html>`__
 look pretty much equally fast. The huge difference is noticeable in scalability
 though, because of the concurrency model adopted.
 Both proftpd and vsftpd spawn a new process for every connected client, where
-pyftpdlib doesn't (see `the C10k problem <https://www.kegel.com/c10k.html>`__).
+pyftpdlib doesn't (see `the C10k problem <http://www.kegel.com/c10k.html>`__).
 The outcome is well noticeable on connect/login benchmarks and memory
 benchmarks.
 

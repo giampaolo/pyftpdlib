@@ -77,9 +77,9 @@ Features
   model (as in: you'll be free to block or use slow filesystems).
 - Portable: entirely written in pure Python.
 - Supports **FTPS** (`RFC-4217 <https://datatracker.ietf.org/doc/html/rfc4217>`__),
-  **IPv6** (`RFC-2428 <ftp://ftp.rfc-editor.org/in-notes/rfc2428.txt>`__),
+  **IPv6** (`RFC-2428 <https://datatracker.ietf.org/doc/html/rfc2428>`__),
   **Unicode** file names (`RFC-2640 <https://datatracker.ietf.org/doc/html/rfc2640>`__),
-  **MLSD/MLST** commands (`RFC-3659 <ftp://ftp.rfc-editor.org/in-notes/rfc3659.txt>`__).
+  **MLSD/MLST** commands (`RFC-3659 <https://datatracker.ietf.org/doc/html/rfc3659>`__).
 - Support for virtual users and virtual filesystem.
 - Flexible system of "authorizers" able to manage both "virtual" and
   "real" users on on both
