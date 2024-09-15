@@ -9,11 +9,20 @@ Introduction
 
 This page lists current standard Internet RFCs that define the FTP protocol.
 
-pyftpdlib conforms to the FTP protocol standard as defined in `RFC-959`_ and `RFC-1123`_ implementing all the fundamental commands and features described in them. It also implements some more recent features such as OPTS and FEAT commands (`RFC-2398`_), EPRT and EPSV commands covering the IPv6 support (`RFC-2428`_) and MDTM, MLSD, MLST and SIZE commands defined in `RFC-3659`_.
+pyftpdlib conforms to the FTP protocol standard as defined in `RFC-959`_ and
+`RFC-1123`_ implementing all the fundamental commands and features described in
+them. It also implements some more recent features such as OPTS and FEAT
+commands (`RFC-2398`_), EPRT and EPSV commands covering the IPv6 support
+(`RFC-2428`_) and MDTM, MLSD, MLST and SIZE commands defined in `RFC-3659`_.
 
-Future plans for pyftpdlib include the gradual implementation of other standards track RFCs.
+Future plans for pyftpdlib include the gradual implementation of other
+standards track RFCs.
 
-Some of the features like ACCT or SMNT commands will never be implemented deliberately. Other features described in more recent RFCs like the TLS/SSL support for securing FTP (`RFC-4217`_) are now implemented as a `demo script`_, waiting to reach the proper level of stability to be then included in the standard code base.
+Some of the features like ACCT or SMNT commands will never be implemented
+deliberately. Other features described in more recent RFCs like the TLS/SSL
+support for securing FTP (`RFC-4217`_) are now implemented as a `demo script`_,
+waiting to reach the proper level of stability to be then included in the
+standard code base.
 
 RFC-959 - File Transfer Protocol
 ================================
@@ -99,7 +108,8 @@ The base specification of the current File Transfer Protocol.
 RFC-1123 - Requirements for Internet Hosts
 ==========================================
 
-Extends and clarifies some aspects of `RFC-959`_. Introduces new response codes 554 and 555.
+Extends and clarifies some aspects of `RFC-959`_. Introduces new response codes
+554 and 555.
 
 - `RFC-1123`_
 - Issued: October 1989
@@ -130,7 +140,10 @@ Extends and clarifies some aspects of `RFC-959`_. Introduces new response codes 
 RFC-2228 - FTP Security Extensions
 ==================================
 
-Specifies several security extensions to the base FTP protocol defined in `RFC-959`_. New commands: AUTH, ADAT, PROT, PBSZ, CCC, MIC, CONF, and ENC. New response codes: 232, 234, 235, 334, 335, 336, 431, 533, 534, 535, 536, 537, 631, 632, and 633.
+Specifies several security extensions to the base FTP protocol defined in
+`RFC-959`_. New commands: AUTH, ADAT, PROT, PBSZ, CCC, MIC, CONF, and ENC. New
+response codes: 232, 234, 235, 334, 335, 336, 431, 533, 534, 535, 536, 537,
+631, 632, and 633.
 
 - `RFC-2228`_
 - Issued: October 1997
@@ -175,7 +188,8 @@ Introduces the new FEAT and OPTS commands.
 RFC-2428 - FTP Extensions for IPv6 and NATs
 ===========================================
 
-Introduces the new commands EPRT and EPSV extending FTP to enable its use over various network protocols, and the new response codes 522 and 229.
+Introduces the new commands EPRT and EPSV extending FTP to enable its use over
+various network protocols, and the new response codes 522 and 229.
 
 - `RFC-2428`_
 - Issued: September 1998
@@ -192,7 +206,9 @@ Introduces the new commands EPRT and EPSV extending FTP to enable its use over v
 RFC-2577 - FTP Security Considerations
 ======================================
 
-Provides several configuration and implementation suggestions to mitigate some security concerns, including limiting failed password attempts and third-party "proxy FTP" transfers, which can be used in "bounce attacks".
+Provides several configuration and implementation suggestions to mitigate some
+security concerns, including limiting failed password attempts and third-party
+"proxy FTP" transfers, which can be used in "bounce attacks".
 
 - `RFC-2577`_
 - Issued: May 1999
@@ -219,7 +235,8 @@ Provides several configuration and implementation suggestions to mitigate some s
 RFC-2640 - Internationalization of the File Transfer Protocol
 =============================================================
 
-Extends the FTP protocol to support multiple character sets, in addition to the original 7-bit ASCII. Introduces the new LANG command.
+Extends the FTP protocol to support multiple character sets, in addition to the
+original 7-bit ASCII. Introduces the new LANG command.
 
 - `RFC-2640`_
 - Issued: July 1999
@@ -237,7 +254,8 @@ Extends the FTP protocol to support multiple character sets, in addition to the 
 RFC-3659 - Extensions to FTP
 ============================
 
-Four new commands are added: "SIZE", "MDTM", "MLST", and "MLSD".  The existing command "REST" is modified.
+Four new commands are added: "SIZE", "MDTM", "MLST", and "MLSD".  The existing
+command "REST" is modified.
 
 - `RFC-3659`_
 - Issued: March 2007
@@ -265,7 +283,8 @@ Four new commands are added: "SIZE", "MDTM", "MLST", and "MLSD".  The existing c
 RFC-4217 - Securing FTP with TLS
 ================================
 
-Provides a description on how to implement TLS as a security mechanism to secure FTP clients and/or servers.
+Provides a description on how to implement TLS as a security mechanism to
+secure FTP clients and/or servers.
 
 - `RFC-4217`_
 - Issued: October 2005
@@ -287,7 +306,8 @@ Provides a description on how to implement TLS as a security mechanism to secure
 Unofficial commands
 ===================
 
-These are commands not officialy included in any RFC but many FTP servers implement them.
+These are commands not officialy included in any RFC but many FTP servers
+implement them.
 
 +------------+---------------+-------------+-------------------+---------+
 | *Command*  | *Implemented* | *Milestone* | *Description*     | *Notes* |
