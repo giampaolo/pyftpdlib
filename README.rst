@@ -149,7 +149,7 @@ Command line usage
 
 Start a FTP server, with an anonymous user with write permissions, on port 2121:
 
-.. code-block::
+.. code-block:: sh
 
     $ python3 -m pyftpdlib --write
     RuntimeWarning: write permissions assigned to anonymous user.

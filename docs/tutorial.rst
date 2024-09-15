@@ -5,21 +5,17 @@ Tutorial
 .. contents:: Table of Contents
 
 Below is a set of example scripts showing some of the possible customizations
-that can be done with pyftpdlib.  Some of them are included in
-`demo <https://github.com/giampaolo/pyftpdlib/blob/master/demo/>`__
-directory of pyftpdlib source distribution.
+that can be done with pyftpdlib.  Some of them are included in `demo
+<https://github.com/giampaolo/pyftpdlib/blob/master/demo/>`__ directory of
+pyftpdlib source distribution.
 
 A Base FTP server
 =================
 
-This is probably the best starting point to understand how things work.
-We use the base
-`DummyAuthorizer <api.html#pyftpdlib.authorizers.DummyAuthorizer>`__
-for adding a bunch of virtual users, we set a limit for
-`incoming connections <api.html#pyftpdlib.servers.FTPServer.max_cons>`__
-and a range of `passive ports <api.html#pyftpdlib.handlers.FTPHandler.passive_ports>`__.
-
-See `demo/basic_ftpd.py <https://github.com/giampaolo/pyftpdlib/blob/master/demo/basic_ftpd.py>`__
+This is probably the best starting point to understand how things work. We use
+the base `DummyAuthorizer`_ for adding a bunch of virtual users, we set a limit
+for `incoming connections`_ and a range of `passive ports`_. See
+`demo/basic_ftpd.py`_.
 
 .. code-block:: python
 
@@ -63,13 +59,10 @@ See `demo/basic_ftpd.py <https://github.com/giampaolo/pyftpdlib/blob/master/demo
 Logging management
 ==================
 
-pyftpdlib uses the stdlib
-`logging <https://docs.python.org/3/library/logging.html>`__
-module to handle logs. If you don't configure logging pyftpdlib will do it for
-you.
-In order to configure logging you should do it *before* calling
-`serve_forever() <api.html#pyftpdlib.servers.FTPServer.serve_forever>`__.
-Example which logs to a file:
+pyftpdlib uses the stdlib `logging`_ module to handle logs. If you don't
+configure logging pyftpdlib will do it for you. In order to configure logging
+you should do it *before* calling `FTPServer.serve_forever`_. Example which
+logs to a file:
 
 .. code-block:: python
 
@@ -94,8 +87,8 @@ DEBUG logging
 
 You may want to enable DEBUG logging to observe commands and responses
 exchanged by client and server. DEBUG logging will also log internal errors
-which may occur on socket related calls such as ``send()`` and ``recv()``.
-To enable DEBUG logging from code use:
+which may occur on socket related calls such as ``send()`` and ``recv()``. To
+enable DEBUG logging from code use:
 
 .. code-block:: python
 
@@ -165,17 +158,14 @@ Logs will now look like this:
 Storing passwords as hash digests
 =================================
 
-By using the default
-`DummyAuthorizer <api.html#pyftpdlib.authorizers.DummyAuthorizer>`__ you
-typically store passwords in clear-text. An end-user ftpd using the default
-dummy authorizer would typically require a configuration file for
-authenticating users and their passwords but storing clear-text passwords is of
-course undesirable. The most common way to do things in such case would be
-first creating new users and then storing their usernames + passwords as hash
-digests into a file or wherever you find it convenient. The example below shows
-how to store passwords as one-way hashes by using md5 algorithm.
-
-`source code <https://github.com/giampaolo/pyftpdlib/blob/master/demo/md5_ftpd.py>`__
+By using the default `DummyAuthorizer`_ you typically store passwords in
+clear-text. An end-user ftpd using the default dummy authorizer would typically
+require a configuration file for authenticating users and their passwords but
+storing clear-text passwords is of course undesirable. The most common way to
+do things in such case would be first creating new users and then storing their
+usernames + passwords as hash digests into a file or wherever you find it
+convenient. The example below shows how to store passwords as one-way hashes by
+using md5 algorithm. See `demo/md5_ftpd.py`_.
 
 .. code-block:: python
 
@@ -217,12 +207,9 @@ how to store passwords as one-way hashes by using md5 algorithm.
 Unix FTP server
 ===============
 
-If you're on UNIX you may want to configure your FTP server
-to include support for "real" users existing on the system, and navigate the
-real filesystem. The example below uses
-`UnixAuthorizer <api.html#pyftpdlib.authorizers.UnixAuthorizer>`__ and
-`UnixFilesystem <api.html#pyftpdlib.filesystems.UnixFilesystem>`__
-classes to do so.
+If you're on UNIX you may want to configure your FTP server to include support
+for "real" users existing on the system, and navigate the real filesystem. The
+example below uses `UnixAuthorizer`_ and `UnixFilesystem`_ classes to do so.
 
 .. code-block:: python
 
@@ -245,11 +232,8 @@ classes to do so.
 Windows FTP server
 ==================
 
-Same as above, but for Windows. This code requires
-`pywin32 <https://pypi.org/project/pywin32/>`__ extension to be
-installed.
-
-`source code <https://github.com/giampaolo/pyftpdlib/blob/master/demo/winnt_ftpd.py>`__
+Same as above, but for Windows. This code requires `pywin32`_ extension to be
+installed. See `demo/winnt_ftpd.py`_.
 
 .. code-block:: python
 
@@ -276,23 +260,19 @@ installed.
 Changing the concurrency model
 ==============================
 
-By nature pyftpdlib is asynchronous. That means that it uses a single process/thread
-to handle multiple client connections and file transfers. This is why it is so
-fast, lightweight and scalable (see `benchmarks <benchmarks.html>`__). The
-async model has one big drawback though: the code cannot contain instructions
-that blocks for a long period of time, otherwise the whole FTP server will
-hang.
-As such the user should avoid calls such as ``time.sleep(3)``, heavy db
-queries, etc. at all costs.  There are cases where the async model is not
-appropriate, e.g. if you're dealing with a particularly slow
-disk or a network filesystem. If the calls that interact with the filesystem
-are slow (e.g., ``open(file, 'r').read(8192)`` takes 2 seconds to complete)
-then you are stuck.
-In such cases you can change the concurrency model from async multi processes
-or multi threads.
-In practice this means that every time a client connects a
-separate thread or process is spawned, and internally it will run its own IO
-loop.
+By nature pyftpdlib is asynchronous. That means that it uses a single
+process/thread to handle multiple client connections and file transfers. This
+is why it is so fast, lightweight and scalable (see `benchmarks`_). The async
+model has one big drawback though: the code cannot contain instructions that
+blocks for a long period of time, otherwise the whole FTP server will hang. As
+such the user should avoid calls such as ``time.sleep(3)``, heavy db queries,
+etc. at all costs.  There are cases where the async model is not appropriate,
+e.g. if you're dealing with a particularly slow disk or a network filesystem.
+If the calls that interact with the filesystem are slow (e.g., ``open(file,
+'r').read(8192)`` takes 2 seconds to complete) then you are stuck. In such
+cases you can change the concurrency model from async multi processes or multi
+threads. In practice this means that every time a client connects a separate
+thread or process is spawned, and internally it will run its own IO loop.
 
 Multiple threads
 ^^^^^^^^^^^^^^^^
@@ -336,34 +316,29 @@ Multiple processes
         main()
 
 It must be noted that the multi-thread approach should NOT be used with
-`UnixAuthorizer <api.html#pyftpdlib.authorizers.UnixAuthorizer>`__ or
-`WindowsAuthorizer <api.html#pyftpdlib.authorizers.WindowsAuthorizer>`__
-. Reason: every time the FTP server accesses the filesystem (e.g. for
-creating or renaming a file) the authorizer will temporarily impersonate the
-currently logged on user by changing effective user or group ID of the current
-process.
+`UnixAuthorizer`_ or `WindowsAuthorizer`_ . Reason: every time the FTP server
+accesses the filesystem (e.g. for creating or renaming a file) the authorizer
+will temporarily impersonate the currently logged on user by changing effective
+user or group ID of the current process.
 
 .. _pre-fork-model:
 
 Pre fork model
 ^^^^^^^^^^^^^^
 
-There is also a third option (UNIX only): the pre-fork model.
-Pre-fork means that a certain number of worker processes are ``spawn()``-ed
-before starting the server.
-Each worker process will keep using a 1-thread, async concurrency model,
-handling multiple concurrent connections, but the workload is split.
+There is also a third option (UNIX only): the pre-fork model. Pre-fork means
+that a certain number of worker processes are ``spawn()``-ed before starting
+the server. Each worker process will keep using a 1-thread, async concurrency
+model, handling multiple concurrent connections, but the workload is split.
 This way the delay introduced by a blocking function call is amortized and
 divided by the number of workers, and thus also the disk I/O latency is
-minimized.
-Every time a new connection comes in, the parent process will automatically
-delegate the connection to one of the worker processes, so from the app standpoint
-this is completely transparent.
-As a general rule, it is always a good idea to use this model in production.
-The optimal value depends on many factors including (but not limited to) the
-number of CPU cores, the number of hard disk drives that store data, and load
-pattern. When one is in doubt, setting it to the number of available CPU cores
-would be a good start.
+minimized. Every time a new connection comes in, the parent process will
+automatically delegate the connection to one of the worker processes, so from
+the app standpoint this is completely transparent. As a general rule, it is
+always a good idea to use this model in production. The optimal value depends
+on many factors including (but not limited to) the number of CPU cores, the
+number of hard disk drives that store data, and load pattern. When one is in
+doubt, setting it to the number of available CPU cores would be a good start.
 
 .. code-block:: python
 
@@ -390,13 +365,11 @@ FTPS (FTP over TLS/SSL) server
 ==============================
 
 pyftpdlib implements FTP over TLS, also known as FTPS  as defined in
-`RFC-4217 <https://www.ietf.org/rfc/rfc4217.txt>`__. This requires installing
-`PyOpenSSL <https://pypi.org/project/pyOpenSSL>`__ third party module.
-`TLS_FTPHandler <api.html#pyftpdlib.handlers.TLS_FTPHandler>`__
-class a ``certfile`` and a ``keyfile``. You can generate self-signed SSL
-certificates like this (also see `Apache FAQs <https://httpd.apache.org/docs/2.4/ssl/ssl_faq.html#selfcert>`__):
+`RFC-4217`_. This requires installing `PyOpenSSL`_ third party module.
+`TLS_FTPHandler`_ class a ``certfile`` and a ``keyfile``. You can generate
+self-signed SSL certificates like this (also see `Apache FAQs`_):
 
-.. code-block::
+.. code-block:: sh
 
     $ openssl req -x509 -newkey rsa:2048 -keyout ftpd.key -out ftpd.crt -nodes
     $ ls
@@ -405,9 +378,7 @@ certificates like this (also see `Apache FAQs <https://httpd.apache.org/docs/2.4
 If you don't care about having your personal self-signed certificates you can
 use the one in the demo directory which include both and is available
 `here <https://github.com/giampaolo/pyftpdlib/blob/master/demo/keycert.pem>`__
-(not recommended).
-
-`source code <https://github.com/giampaolo/pyftpdlib/blob/master/demo/tls_ftpd.py>`__
+(not recommended). See `demo/tls_ftpd.py`_.
 
 .. code-block:: python
 
@@ -440,8 +411,8 @@ use the one in the demo directory which include both and is available
 Event callbacks
 ===============
 
-Here's an example which shows how to use callback methods via
-`FTPHandler <api.html#pyftpdlib.handlers.FTPHandler>`__ subclassing:
+Here's an example which shows how to use callback methods via `FTPHandler`_
+subclassing:
 
 .. code-block:: python
 
@@ -502,10 +473,9 @@ Throttle bandwidth
 ==================
 
 If desired, you can limit the transfer speed for downloads and uploads by using
-the `ThrottledDTPHandler <api.html#pyftpdlib.handlers.ThrottledDTPHandler>`__ class.
-The basic idea behind ``ThrottledDTPHandler`` is to wrap sending and receiving
-in a data counter, and temporary "sleep" the data channel so that you burst to
-no more than X Kb/sec on average.
+the `ThrottledDTPHandler`_ class. The basic idea behind ``ThrottledDTPHandler``
+is to wrap sending and receiving in a data counter, and temporary "sleep" the
+data channel so that you burst to no more than X Kb/sec on average.
 
 .. code-block:: python
 
@@ -570,3 +540,24 @@ Set a different address/port and home directory:
     $ python3 -m pyftpdlib -i localhost -p 2121 -d /home/bob
 
 See ``python3 -m pyftpdlib -h`` for a complete list of options.
+
+.. _`Apache FAQs`: https://httpd.apache.org/docs/2.4/ssl/ssl_faq.html#selfcert
+.. _`benchmarks`: benchmarks.html
+.. _`demo/basic_ftpd.py`: https://github.com/giampaolo/pyftpdlib/blob/master/demo/basic_ftpd.py
+.. _`demo/md5_ftpd.py`: https://github.com/giampaolo/pyftpdlib/blob/master/demo/md5_ftpd.py
+.. _`demo/tls_ftpd.py`: https://github.com/giampaolo/pyftpdlib/blob/master/demo/tls_ftpd.py
+.. _`demo/winnt_ftpd.py`: https://github.com/giampaolo/pyftpdlib/blob/master/demo/winnt_ftpd.py
+.. _`DummyAuthorizer`: api.html#pyftpdlib.authorizers.DummyAuthorizer
+.. _`FTPHandler`: api.html#pyftpdlib.handlers.FTPHandler
+.. _`FTPServer.serve_forever`: api.html#pyftpdlib.servers.FTPServer.serve_forever
+.. _`incoming connections`: api.html#pyftpdlib.servers.FTPServer.max_cons
+.. _`logging`: https://docs.python.org/3/library/logging.html
+.. _`passive ports`: api.html#pyftpdlib.handlers.FTPHandler.passive_ports
+.. _`PyOpenSSL`: https://pypi.org/project/pyOpenSSL
+.. _`pywin32`: https://pypi.org/project/pywin32/
+.. _`RFC-4217`: https://www.ietf.org/rfc/rfc4217.txt
+.. _`ThrottledDTPHandler`: api.html#pyftpdlib.handlers.ThrottledDTPHandler
+.. _`TLS_FTPHandler`: api.html#pyftpdlib.handlers.TLS_FTPHandler
+.. _`UnixAuthorizer`: api.html#pyftpdlib.authorizers.UnixAuthorizer
+.. _`UnixFilesystem`: api.html#pyftpdlib.filesystems.UnixFilesystem
+.. _`WindowsAuthorizer`: api.html#pyftpdlib.authorizers.WindowsAuthorizer
