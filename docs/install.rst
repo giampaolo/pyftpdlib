@@ -26,17 +26,19 @@ You might want to run tests to make sure pyftpdlib works:
 Additional dependencies
 -----------------------
 
-`PyOpenSSL <https://pypi.org/project/pyOpenSSL>`__, to support
-`FTPS <https://pyftpdlib.readthedocs.io/en/latest/tutorial.html#ftps-ftp-over-tls-ssl-server>`__:
+`PyOpenSSL`_, to support `FTPS`_:
 
 .. code-block:: sh
 
     $ pip3 install PyOpenSSL
 
-`pywin32 <https://pypi.org/project/pywin32/>`__ if you want to
-use `WindowsAuthorizer <api.html#pyftpdlib.authorizers.UnixAuthorizer>`__ on
-Windows:
+`pywin32`_ if you want to use `WindowsAuthorizer`_ on Windows:
 
 .. code-block:: sh
 
     $ pip3 install pypiwin32
+
+.. _`FTPS`: https://pyftpdlib.readthedocs.io/en/latest/tutorial.html#ftps-ftp-over-tls-ssl-server
+.. _`PyOpenSSL`: https://pypi.org/project/pyOpenSSL
+.. _`WindowsAuthorizer`: api.html#pyftpdlib.authorizers.UnixAuthorizer
+.. _`pywin32`: https://pypi.org/project/pywin32/
