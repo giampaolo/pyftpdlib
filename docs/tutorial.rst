@@ -232,7 +232,7 @@ Windows FTP server
 ==================
 
 Same as above, but for Windows. This code requires `pywin32`_ extension to be
-installed. See `demo/winnt_ftpd.py`_.
+installed. See `demo/win_ftpd.py`_.
 
 .. code-block:: python
 
@@ -548,8 +548,8 @@ See ``python3 -m pyftpdlib -h`` for a complete list of options.
 .. _`demo/basic_ftpd.py`: https://github.com/giampaolo/pyftpdlib/blob/master/demo/basic_ftpd.py
 .. _`demo/md5_ftpd.py`: https://github.com/giampaolo/pyftpdlib/blob/master/demo/md5_ftpd.py
 .. _`demo/tls_ftpd.py`: https://github.com/giampaolo/pyftpdlib/blob/master/demo/tls_ftpd.py
-.. _`demo/unix_ftpd.py`: https://github.com/giampaolo/pyftpdlib/blob/master/demo/winnt_ftpd.py
-.. _`demo/winnt_ftpd.py`: https://github.com/giampaolo/pyftpdlib/blob/master/demo/winnt_ftpd.py
+.. _`demo/unix_ftpd.py`: https://github.com/giampaolo/pyftpdlib/blob/master/demo/unix_ftpd.py
+.. _`demo/win_ftpd.py`: https://github.com/giampaolo/pyftpdlib/blob/master/demo/win_ftpd.py
 .. _`DummyAuthorizer`: api.html#pyftpdlib.authorizers.DummyAuthorizer
 .. _`FTPHandler`: api.html#pyftpdlib.handlers.FTPHandler
 .. _`FTPServer.serve_forever`: api.html#pyftpdlib.servers.FTPServer.serve_forever

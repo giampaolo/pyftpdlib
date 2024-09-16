@@ -15,7 +15,7 @@ include demo/throttled_ftpd.py
 include demo/tls_ftpd.py
 include demo/unix_daemon.py
 include demo/unix_ftpd.py
-include demo/winnt_ftpd.py
+include demo/win_ftpd.py
 include docs/.readthedocs.yaml
 include docs/Makefile
 include docs/README

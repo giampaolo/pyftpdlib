@@ -243,7 +243,7 @@ effective user or group ID of the current process. That means that you probably
 want to run the FTP as root. See:
 
 * https://github.com/giampaolo/pyftpdlib/blob/master/demo/unix_ftpd.py
-* https://github.com/giampaolo/pyftpdlib/blob/master/demo/winnt_ftpd.py
+* https://github.com/giampaolo/pyftpdlib/blob/master/demo/win_ftpd.py
 
 Does pyftpdlib support FTP over TLS/SSL (FTPS)?
 -----------------------------------------------
