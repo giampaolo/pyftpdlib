@@ -139,6 +139,9 @@ disable = [
 [tool.rstcheck]
 ignore_messages = [
     "Unexpected possible title overline or transition",
+    'Hyperlink target "changing-the-concurrency-model" is not referenced.',
+    'Hyperlink target "ftps-server" is not referenced.',
+    'Hyperlink target "pre-fork-model" is not referenced.',
 ]
 
 [tool.tomlsort]

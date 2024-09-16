@@ -6,7 +6,7 @@
 
 """
 An RFC-4217 asynchronous FTPS server supporting both SSL and TLS.
-Requires PyOpenSSL module (http://pypi.python.org/pypi/pyOpenSSL).
+Requires PyOpenSSL module (https://pypi.org/project/pyOpenSSL).
 """
 
 import os

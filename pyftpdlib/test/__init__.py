@@ -296,7 +296,7 @@ def get_server_handler():
     raise RuntimeError("can't find any FTPHandler instance")
 
 
-# commented out as per bug http://bugs.python.org/issue10354
+# commented out as per bug https://bugs.python.org/issue10354
 # tempfile.template = 'tmp-pyftpdlib'
 
 

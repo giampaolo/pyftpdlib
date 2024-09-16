@@ -106,7 +106,7 @@ if not sys.stdout.isatty() or os.name != 'posix':
         return s
 
 else:
-    # http://goo.gl/6V8Rm
+    # https://goo.gl/6V8Rm
     def hilite(string, ok=True, bold=False):
         """Return an highlighted version of 'string'."""
         attr = []
@@ -132,7 +132,7 @@ def print_bench(what, value, unit=""):
     print(s.strip())
 
 
-# http://goo.gl/zeJZl
+# https://goo.gl/zeJZl
 def bytes2human(n, format="%(value).1f%(symbol)s"):
     """
     >>> bytes2human(10000)
@@ -151,7 +151,7 @@ def bytes2human(n, format="%(value).1f%(symbol)s"):
     return format % dict(symbol=symbols[0], value=n)
 
 
-# http://goo.gl/zeJZl
+# https://goo.gl/zeJZl
 def human2bytes(s):
     """
     >>> human2bytes('1M')

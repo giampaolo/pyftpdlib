@@ -355,7 +355,7 @@ def _support_hybrid_ipv6():
     on this platform.
     """
     # Note: IPPROTO_IPV6 constant is broken on Windows, see:
-    # http://bugs.python.org/issue6926
+    # https://bugs.python.org/issue6926
     try:
         if not socket.has_ipv6:
             return False
@@ -472,8 +472,8 @@ class PassiveDTP(Acceptor):
                 # the remote client is using IPv4 and its address is
                 # represented as an IPv4-mapped IPv6 address which
                 # looks like this ::ffff:151.12.5.65, see:
-                # http://en.wikipedia.org/wiki/IPv6#IPv4-mapped_addresses
-                # http://tools.ietf.org/html/rfc3493.html#section-3.7
+                # https://en.wikipedia.org/wiki/IPv6#IPv4-mapped_addresses
+                # https://datatracker.ietf.org/doc/html/rfc3493.html#section-3.7
                 # We truncate the first bytes to make it look like a
                 # common IPv4 address.
                 ip = ip[7:]
@@ -883,7 +883,7 @@ class DTPHandler(AsyncChat):
         return result
 
     def refill_buffer(self):  # pragma: no cover
-        """Overridden as a fix around http://bugs.python.org/issue1740572
+        """Overridden as a fix around https://bugs.python.org/issue1740572
         (when the producer is consumed, close() was called instead of
         handle_close()).
         """
@@ -1277,11 +1277,7 @@ class FTPHandler(AsyncChat):
 
      - (bool) use_sendfile: when True uses sendfile() system call to
         send a file resulting in faster uploads (from server to client).
-        Works on UNIX only and requires pysendfile module to be
-        installed separately:
-        https://github.com/giampaolo/pysendfile/
-        Automatically defaults to True if pysendfile module is
-        installed.
+        Linux only.
 
      - (bool) tcp_no_delay: controls the use of the TCP_NODELAY socket
         option which disables the Nagle algorithm resulting in
@@ -1293,7 +1289,7 @@ class FTPHandler(AsyncChat):
 
      - (str) unicode_errors:
        the error handler passed to ''.encode() and ''.decode():
-       http://docs.python.org/library/stdtypes.html#str.decode
+       https://docs.python.org/library/stdtypes.html#str.decode
        (detaults to 'replace').
 
      - (str) log_prefix:
@@ -2097,8 +2093,8 @@ class FTPHandler(AsyncChat):
             # the remote client is using IPv4 and its address is
             # represented as an IPv4-mapped IPv6 address which
             # looks like this ::ffff:151.12.5.65, see:
-            # http://en.wikipedia.org/wiki/IPv6#IPv4-mapped_addresses
-            # http://tools.ietf.org/html/rfc3493.html#section-3.7
+            # https://en.wikipedia.org/wiki/IPv6#IPv4-mapped_addresses
+            # https://datatracker.ietf.org/doc/html/rfc3493.html#section-3.7
             # We truncate the first bytes to make it look like a
             # common IPv4 address.
             remote_ip = remote_ip[7:]

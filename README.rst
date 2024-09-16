@@ -48,54 +48,50 @@
 Quick links
 ===========
 
-- `Home <https://github.com/giampaolo/pyftpdlib>`__
-- `Documentation <http://pyftpdlib.readthedocs.io>`__
-- `Download <https://pypi.python.org/pypi/pyftpdlib/>`__
-- `Blog <http://grodola.blogspot.com/search/label/pyftpdlib>`__
-- `Mailing list <http://groups.google.com/group/pyftpdlib/topics>`__
-- `What's new <https://github.com/giampaolo/pyftpdlib/blob/master/HISTORY.rst>`__
+- `Home`_
+- `Documentation`_
+- `Download`_
+- `Mailing list`_
+- `What's new`_
 
 About
 =====
 
 Python FTP server library provides a high-level portable interface to easily
 write very efficient, scalable and asynchronous FTP servers with Python. It is
-the most complete `RFC-959 <http://www.faqs.org/rfcs/rfc959.html>`__ FTP server
-implementation available for `Python <http://www.python.org/>`__ programming
-language.
+the most complete `RFC-959`_ FTP server implementation available for `Python`_
+programming language.
 
 Features
 ========
 
 - Extremely **lightweight**, **fast** and **scalable** (see
   `why <https://github.com/giampaolo/pyftpdlib/issues/203>`__ and
-  `benchmarks <http://pyftpdlib.readthedocs.io/en/latest/benchmarks.html>`__).
+  `benchmarks`__).
 - Uses **sendfile(2)** (see `pysendfile <https://github.com/giampaolo/pysendfile>`__)
-  system call for uploads.
-- Uses epoll() / kqueue() / select() to handle concurrency asynchronously.
-- ...But can optionally skip to a
-  `multiple thread / process <http://pyftpdlib.readthedocs.io/en/latest/tutorial.html#changing-the-concurrency-model>`__
-  model (as in: you'll be free to block or use slow filesystems).
+  system call for uploads (Linux only).
+- Uses ``epoll()`` / ``kqueue()`` / ``select()`` to handle concurrency
+  asynchronously.
+- ...But can optionally skip to a `multiple thread / process`_ model (as in:
+  you'll be free to block or use slow filesystems).
 - Portable: entirely written in pure Python.
-- Supports **FTPS** (`RFC-4217 <http://tools.ietf.org/html/rfc4217>`__),
-  **IPv6** (`RFC-2428 <ftp://ftp.rfc-editor.org/in-notes/rfc2428.txt>`__),
-  **Unicode** file names (`RFC-2640 <http://tools.ietf.org/html/rfc2640>`__),
-  **MLSD/MLST** commands (`RFC-3659 <ftp://ftp.rfc-editor.org/in-notes/rfc3659.txt>`__).
+- Supports **FTPS** (`RFC-4217`_), **IPv6** (`RFC-2428`_), **Unicode** file
+  names (`RFC-2640`_), **MLSD/MLST** commands (`RFC-3659`_).
 - Support for virtual users and virtual filesystem.
 - Flexible system of "authorizers" able to manage both "virtual" and
   "real" users on on both
-  `UNIX <http://pyftpdlib.readthedocs.io/en/latest/tutorial.html#unix-ftp-server>`__
+  `UNIX <https://pyftpdlib.readthedocs.io/en/latest/tutorial.html#unix-ftp-server>`__
   and
-  `Windows <http://pyftpdlib.readthedocs.io/en/latest/tutorial.html#windows-ftp-server>`__.
+  `Windows <https://pyftpdlib.readthedocs.io/en/latest/tutorial.html#windows-ftp-server>`__.
 
 Performances
 ============
 
 Despite being written in an interpreted language, pyftpdlib has transfer rates
-comparable or superior to common UNIX FTP servers written in C. It usually tends
-to scale better (see `benchmarks <https://pyftpdlib.readthedocs.io/en/latest/benchmarks.html>`__)
-because whereas vsftpd and proftpd use multiple processes to
-achieve concurrency, pyftpdlib only uses one (see `the C10K problem <http://www.kegel.com/c10k.html>`__).
+comparable or superior to common UNIX FTP servers written in C. It usually
+tends to scale better (see `benchmarks`_) because whereas vsftpd and proftpd
+use multiple processes to achieve concurrency, pyftpdlib only uses one (see
+`the C10K problem`_).
 
 pyftpdlib vs. proftpd 1.3.4
 ---------------------------
@@ -143,14 +139,14 @@ pyftpdlib vs. vsftpd 2.3.5
 | 300 concurrent clients (QUIT)           |    0.03 secs   | 0.01 secs      | +0.14x      |
 +-----------------------------------------+----------------+----------------+-------------+
 
-For more benchmarks see `here <http://pyftpdlib.readthedocs.io/en/latest/benchmarks.html>`__.
+For more benchmarks see `here <https://pyftpdlib.readthedocs.io/en/latest/benchmarks.html>`__.
 
 Command line usage
 ==================
 
 Start a FTP server, with an anonymous user with write permissions, on port 2121:
 
-.. code-block::
+.. code-block:: sh
 
     $ python3 -m pyftpdlib --write
     RuntimeWarning: write permissions assigned to anonymous user.
@@ -188,11 +184,27 @@ API usage
     [I 13-02-19 10:56:27] 127.0.0.1:34179-[user] RETR /home/giampaolo/.vimrc completed=1 bytes=1700 seconds=0.001
     [I 13-02-19 10:56:39] 127.0.0.1:34179-[user] FTP session closed (disconnect).
 
-`other code samples <http://pyftpdlib.readthedocs.io/en/latest/tutorial.html>`__
+For other code samples read the `tutorial <https://pyftpdlib.readthedocs.io/en/latest/tutorial.html>`__
 
 Donate
 ======
 
 A lot of time and effort went into making pyftpdlib as it is right now.
 If you feel pyftpdlib is useful to you or your business and want to support its
-future development please consider `donating <https://gmpy.dev/donate>`__ me some money.
+future development please consider `donating`_ me some money.
+
+.. _`benchmarks`: https://pyftpdlib.readthedocs.io/en/latest/benchmarks.html
+.. _`Documentation`: https://pyftpdlib.readthedocs.io
+.. _`donating`: https://gmpy.dev/donate
+.. _`Download`: https://pypi.org/project/pyftpdlib/
+.. _`Home`: https://github.com/giampaolo/pyftpdlib
+.. _`Mailing list`: https://groups.google.com/group/pyftpdlib/topics
+.. _`multiple thread / process`: https://pyftpdlib.readthedocs.io/en/latest/tutorial.html#changing-the-concurrency-model
+.. _`Python`: https://www.python.org/
+.. _`RFC-2428`: https://datatracker.ietf.org/doc/html/rfc2428
+.. _`RFC-2640`: https://datatracker.ietf.org/doc/html/rfc2640
+.. _`RFC-3659`: https://datatracker.ietf.org/doc/html/rfc3659
+.. _`RFC-4217`: https://datatracker.ietf.org/doc/html/rfc4217
+.. _`RFC-959`: https://datatracker.ietf.org/doc/html/rfc959.html
+.. _`the C10K problem`: http://www.kegel.com/c10k.html
+.. _`What's new`: https://github.com/giampaolo/pyftpdlib/blob/master/HISTORY.rst

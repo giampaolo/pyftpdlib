@@ -7,7 +7,7 @@
 Welcome to pyftpdlib's documentation
 ====================================
 
-If you're in a hurry just skip to the `Tutorial <tutorial.html>`__.
+If you're in a hurry just read the `Tutorial <tutorial.html>`__.
 
 .. toctree::
     :maxdepth: 2

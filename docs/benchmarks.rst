@@ -135,37 +135,29 @@ Memory usage
 Interpreting the results
 ------------------------
 
-pyftpdlib and `proftpd <http://www.proftpd.org/>`__ / `vsftpd <https://security.appspot.com/vsftpd.html>`__
-look pretty much equally fast. The huge difference is noticeable in scalability
-though, because of the concurrency model adopted.
-Both proftpd and vsftpd spawn a new process for every connected client, where
-pyftpdlib doesn't (see `the C10k problem <http://www.kegel.com/c10k.html>`__).
-The outcome is well noticeable on connect/login benchmarks and memory
-benchmarks.
+pyftpdlib, `proftpd`_ and `vsftpd`_ look pretty much equally fast. The huge
+difference is noticeable in scalability though, because of the concurrency
+model adopted. Proftpd and vsftpd spawn a new process for every connected
+client, whereas pyftpdlib doesn't (see `the C10k problem`_). The difference
+can be noticed on connect/login benchmarks and memory benchmarks.
 
-The huge differences between
-`0.7.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-0.7.0.tar.gz>`__ and
-`1.0.0 <https://pypi.python.org/packages/source/p/pyftpdlib/pyftpdlib-1.0.0.tar.gz>`__
-versions of pyftpdlib are due to fix of issue 203.
-On Linux we now use `epoll() <http://linux.die.net/man/4/epoll>`__ which scales
-considerably better than `select() <http://linux.die.net/man/2/select>`__.
-The fact that we're downloading a file with 300 idle clients doesn't make any
-difference for *epoll()*. We might as well had 5000 idle clients and the result
-would have been the same.
-On Windows, where we still use select(), 1.0.0 still wins hands down as the
-asyncore loop was reimplemented from scratch in order to support fd
-un/registration and modification
-(see `issue 203 <https://github.com/giampaolo/pyftpdlib/issues/203>`__).
-All the benchmarks were conducted on a Linux Ubuntu 12.04  Intel core duo - 3.1
-Ghz box.
+The huge differences between 0.7.0 and 1.0.0 versions of pyftpdlib are due to
+fix of `issue 203`_ . On Linux we now use `epoll()`_ which scales considerably
+better than `select()`_. The fact that we're downloading a file with 300 idle
+clients doesn't make any difference for `epoll()`. We might as well had 5000
+idle clients and the result would have been the same. On Windows, where we
+still use select(), 1.0.0 still wins hands down as the asyncore loop was
+reimplemented from scratch in order to support fd un/registration and
+modification. Benchmarks were conducted on Linux Ubuntu 12.04, Intel core duo -
+3.1 Ghz box.
 
 Setup
 -----
 
 The following setup was used before running every benchmark:
 
-proftpd
-^^^^^^^
+proftpd config
+^^^^^^^^^^^^^^
 
 ::
 
@@ -181,8 +173,8 @@ proftpd
     $ sudo service proftpd restart
 
 
-vsftpd
-^^^^^^
+vsftpd config
+^^^^^^^^^^^^^
 
 ::
 
@@ -259,8 +251,7 @@ The following patch was applied first:
     $ sudo python3 demo/unix_daemon.py
 
 
-The `benchmark script <https://github.com/giampaolo/pyftpdlib/blob/master/scripts/ftpbench>`__
-was run as:
+The `benchmark script`_ was run as:
 
 ::
 
@@ -272,3 +263,11 @@ was run as:
 ::
 
     python3 scripts/ftpbench -u USERNAME -p PASSWORD -b all -n 300 -k FTP_SERVER_PID
+
+.. _`benchmark script`: https://github.com/giampaolo/pyftpdlib/blob/master/scripts/ftpbench
+.. _`epoll()`: https://linux.die.net/man/4/epoll
+.. _`issue 203`: https://github.com/giampaolo/pyftpdlib/issues/203
+.. _`proftpd`: http://www.proftpd.org/
+.. _`select()`: https://linux.die.net/man/2/select
+.. _`the C10k problem`: http://www.kegel.com/c10k.html
+.. _`vsftpd`: https://security.appspot.com/vsftpd.html

@@ -1,30 +1,32 @@
-========================
-pyftpdlib RFC compliance
-========================
+==============
+RFC compliance
+==============
 
 .. contents:: Table of Contents
 
 Introduction
 ============
 
-This page lists current standard Internet RFCs that define the FTP protocol.
-
-pyftpdlib conforms to the FTP protocol standard as defined in `RFC-959 <http://www.ietf.org/rfc/rfc959.txt>`__ and `RFC-1123 <http://www.ietf.org/rfc/rfc1123.txt>`__ implementing all the fundamental commands and features described in them. It also implements some more recent features such as OPTS and FEAT commands (`RFC-2398 <http://www.ietf.org/rfc/rfc2389.txt>`__), EPRT and EPSV commands covering the IPv6 support (`RFC-2428 <ftp://ftp.rfc-editor.org/in-notes/rfc2428.txt>`__) and MDTM, MLSD, MLST and SIZE commands defined in `RFC-3659 <http://www.ietf.org/rfc/rfc3659.txt>`__.
-
-Future plans for pyftpdlib include the gradual implementation of other standards track RFCs.
-
-Some of the features like ACCT or SMNT commands will never be implemented deliberately. Other features described in more recent RFCs like the TLS/SSL support for securing FTP (`RFC-4217 <http://www.ietf.org/rfc/rfc4217.txt>`__) are now implemented as a `demo script <https://github.com/giampaolo/pyftpdlib/blob/master/demo/tls_ftpd.py>`__, waiting to reach the proper level of stability to be then included in the standard code base.
+This page lists the standard Internet RFCs that define the FTP protocol.
+pyftpdlib conforms to the FTP protocol standard as defined in `RFC-959`_ and
+`RFC-1123`_, implementing all the fundamental commands and features described
+in them. It also implements some more (relatively) recent features such as OPTS
+and FEAT commands (`RFC-2398`_), EPRT and EPSV commands to implement IPv6
+support (`RFC-2428`_) and MDTM, MLSD, MLST and SIZE commands defined in
+`RFC-3659`_ that standardize directory listing. TLS/SSL support (FTPS) as
+defined in `RFC-4217`_ is also implemented. Some features like ACCT or SMNT
+commands are deliberately not implemented.
 
 RFC-959 - File Transfer Protocol
 ================================
 
 The base specification of the current File Transfer Protocol.
 
+- `RFC-959`_
 - Issued: October 1985
 - Status: STANDARD
-- Obsoletes: `RFC-765 <http://www.ietf.org/rfc/rfc765.txt>`__
-- Updated by: `RFC-1123 <http://www.ietf.org/rfc/rfc1123.txt>`__, `RFC-2228 <http://www.ietf.org/rfc/rfc2228.txt>`__, `RFC-2640 <http://www.ietf.org/rfc/rfc2640.txt>`__, `RFC-2773 <http://www.ietf.org/rfc/rfc2773.txt>`__
-- `Link <http://www.ietf.org/rfc/rfc959.txt>`__
+- Obsoletes: `RFC-765`_
+- Updated by: `RFC-1123`_, `RFC-2228`_, `RFC-2640`_, `RFC-2773`_
 
 +-----------+---------------+-------------+--------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | *Command* | *Implemented* | *Milestone* | *Description*                                    | *Notes*                                                                                                                                                                                                        |
@@ -99,11 +101,12 @@ The base specification of the current File Transfer Protocol.
 RFC-1123 - Requirements for Internet Hosts
 ==========================================
 
-Extends and clarifies some aspects of `RFC-959 <http://www.ietf.org/rfc/rfc959.txt>`__. Introduces new response codes 554 and 555.
+Extends and clarifies some aspects of `RFC-959`_. Introduces new response codes
+554 and 555.
 
+- `RFC-1123`_
 - Issued: October 1989
 - Status: STANDARD
-- `Link <http://www.ietf.org/rfc/rfc1123.txt>`__
 
 +--------------------------------------+---------------+-------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------+
 | *Feature*                            | *Implemented* | *Milestone* | *Description*                                                                                                                                                                                                                                      | *Notes*                                                                               |
@@ -116,7 +119,7 @@ Extends and clarifies some aspects of `RFC-959 <http://www.ietf.org/rfc/rfc959.t
 +--------------------------------------+---------------+-------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------+
 | STOU format output                   | YES           | 0.2.0       | Defined the exact format output which STOU response must respect ("125/150 FILE filename").                                                                                                                                                        |                                                                                       |
 +--------------------------------------+---------------+-------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------+
-| Avoid 250 response type on STOU      | YES           | 0.2.0       | The 250 positive response indicated in `RFC-959 <http://www.ietf.org/rfc/rfc959.txt>`__ has been declared incorrect in `RFC-1123 <http://www.ietf.org/rfc/rfc1123.txt>`__ which requires 125/150 instead.                                          |                                                                                       |
+| Avoid 250 response type on STOU      | YES           | 0.2.0       | The 250 positive response indicated in `RFC-959`_ has been declared incorrect in `RFC-1123`_ which requires 125/150 instead.                                                                                                                       |                                                                                       |
 +--------------------------------------+---------------+-------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------+
 | Handle "Experimental" directory cmds | YES           | 0.1.0       | The server should support XCUP, XCWD, XMKD, XPWD and XRMD obsoleted commands and treat them as synonyms for CDUP, CWD, MKD, LIST and RMD commands.                                                                                                 |                                                                                       |
 +--------------------------------------+---------------+-------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------+
@@ -130,29 +133,32 @@ Extends and clarifies some aspects of `RFC-959 <http://www.ietf.org/rfc/rfc959.t
 RFC-2228 - FTP Security Extensions
 ==================================
 
-Specifies several security extensions to the base FTP protocol defined in `RFC-959 <http://www.ietf.org/rfc/rfc959.txt>`__. New commands: AUTH, ADAT, PROT, PBSZ, CCC, MIC, CONF, and ENC. New response codes: 232, 234, 235, 334, 335, 336, 431, 533, 534, 535, 536, 537, 631, 632, and 633.
+Specifies several security extensions to the base FTP protocol defined in
+`RFC-959`_. New commands: AUTH, ADAT, PROT, PBSZ, CCC, MIC, CONF, and ENC. New
+response codes: 232, 234, 235, 334, 335, 336, 431, 533, 534, 535, 536, 537,
+631, 632, and 633.
 
+- `RFC-2228`_
 - Issued: October 1997
 - Status: PROPOSED STANDARD
-- Updates: `RFC-959 <http://www.ietf.org/rfc/rfc959.txt>`__
-- `Link <http://www.ietf.org/rfc/rfc2228.txt>`__
+- Updates: `RFC-959`_
 
 +-----------+---------------+-------------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | *Command* | *Implemented* | *Milestone* | *Description*                      | *Notes*                                                                                                                                                                                                                            |
 +===========+===============+=============+====================================+====================================================================================================================================================================================================================================+
-| AUTH      | NO            | ---         | Authentication/Security Mechanism. | Implemented as `demo script <https://github.com/giampaolo/pyftpdlib/blob/master/demo/tls_ftpd.py>`__ by following the `RFC=4217 <http://www.ietf.org/rfc/rfc4217.txt>`__ guide line.                                               |
+| AUTH      | YES           | 1.5.2       | Secure Control Connection          |                                                                                                                                                                                                                                    |
 +-----------+---------------+-------------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| CCC       | NO            | ---         | Clear Command Channel.             |                                                                                                                                                                                                                                    |
+| CCC       | NO            | ---         | Unsecure Control Connection        |                                                                                                                                                                                                                                    |
 +-----------+---------------+-------------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| CONF      | NO            | ---         | Confidentiality Protected Command. | Somewhat obsoleted by `RFC-4217 <http://www.ietf.org/rfc/rfc4217.txt>`__.                                                                                                                                                          |
+| CONF      | NO            | ---         | Confidentiality Protected Command. | Somewhat obsoleted by `RFC-4217`_.                                                                                                                                                                                                 |
 +-----------+---------------+-------------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| EENC      | NO            | ---         | Privacy Protected Command.         | Somewhat obsoleted by `RFC-4217 <http://www.ietf.org/rfc/rfc4217.txt>`__.                                                                                                                                                          |
+| EENC      | NO            | ---         | Privacy Protected Command.         | Somewhat obsoleted by `RFC-4217`_.                                                                                                                                                                                                 |
 +-----------+---------------+-------------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| MIC       | NO            | ---         | Integrity Protected Command.       | Somewhat obsoleted by `RFC-4217 <http://www.ietf.org/rfc/rfc4217.txt>`__.                                                                                                                                                          |
+| MIC       | NO            | ---         | Integrity Protected Command.       | Somewhat obsoleted by `RFC-4217`_.                                                                                                                                                                                                 |
 +-----------+---------------+-------------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| PBSZ      | NO            | ---         | Protection Buffer Size.            | Implemented as `demo script <https://github.com/giampaolo/pyftpdlib/blob/master/demo/tls_ftpd.py>`__ by following the `RFC-4217 <http://www.ietf.org/rfc/rfc4217.txt>`__ guide line as a no-op command.                            |
+| PBSZ      | YES           | 1.5.2       | Protection Buffer Size.            | As per `RFC-4217`_ recommendation, basically a no-op command.                                                                                                                                                                      |
 +-----------+---------------+-------------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| PROT      | NO            | ---         | Data Channel Protection Level.     | Implemented as `demo script <https://github.com/giampaolo/pyftpdlib/blob/master/demo/tls_ftpd.py>`__ by following the `RFC-4217 <http://www.ietf.org/rfc/rfc4217.txt>`__ guide line supporting only "P" and "C" protection levels. |
+| PROT      | YES           | 1.5.2       | Data Channel Protection Level.     | As per `RFC-4217`_ guide recommendation, only supports "P" and "C" protection levels.                                                                                                                                              |
 +-----------+---------------+-------------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 RFC-2389 - Feature negotiation mechanism for the File Transfer Protocol
@@ -160,14 +166,14 @@ RFC-2389 - Feature negotiation mechanism for the File Transfer Protocol
 
 Introduces the new FEAT and OPTS commands.
 
+- `RFC-2389`_
 - Issued: August 1998
 - Status: PROPOSED STANDARD
-- `Link <http://www.ietf.org/rfc/rfc2389.txt>`__
 
 +-----------+---------------+-------------+-----------------------------------------------------------------------------------------+---------------------------------------------------------+
 | *Command* | *Implemented* | *Milestone* | *Description*                                                                           | *Notes*                                                 |
 +===========+===============+=============+=========================================================================================+=========================================================+
-| FEAT      | YES           | 0.3.0       | List new supported commands subsequent `RFC-959 <http://www.ietf.org/rfc/rfc959.txt>`__ |                                                         |
+| FEAT      | YES           | 0.3.0       | List new supported commands subsequent `RFC-959`_                                       |                                                         |
 +-----------+---------------+-------------+-----------------------------------------------------------------------------------------+---------------------------------------------------------+
 | OPTS      | YES           | 0.3.0       | Set options for certain commands.                                                       | MLST is the only command which could be used with OPTS. |
 +-----------+---------------+-------------+-----------------------------------------------------------------------------------------+---------------------------------------------------------+
@@ -175,11 +181,12 @@ Introduces the new FEAT and OPTS commands.
 RFC-2428 - FTP Extensions for IPv6 and NATs
 ===========================================
 
-Introduces the new commands EPRT and EPSV extending FTP to enable its use over various network protocols, and the new response codes 522 and 229.
+Introduces the new commands EPRT and EPSV extending FTP to enable its use over
+various network protocols, and the new response codes 522 and 229.
 
+- `RFC-2428`_
 - Issued: September 1998
 - Status: PROPOSED STANDARD
-- `Link <http://www.ietf.org/rfc/rfc2428.txt>`__
 
 +-----------+---------------+-------------+-----------------------------------------------+---------+
 | *Command* | *Implemented* | *Milestone* | *Description*                                 | *Notes* |
@@ -192,11 +199,13 @@ Introduces the new commands EPRT and EPSV extending FTP to enable its use over v
 RFC-2577 - FTP Security Considerations
 ======================================
 
-Provides several configuration and implementation suggestions to mitigate some security concerns, including limiting failed password attempts and third-party "proxy FTP" transfers, which can be used in "bounce attacks".
+Provides several configuration and implementation suggestions to mitigate some
+security concerns, including limiting failed password attempts and third-party
+"proxy FTP" transfers, which can be used in "bounce attacks".
 
+- `RFC-2577`_
 - Issued: May 1999
 - Status: INFORMATIONAL
-- `Link <http://www.ietf.org/rfc/rfc2577.txt>`__
 
 +--------------------------------------------+---------------+-------------+-------------------------------------------------------------------------------------------------------------------------------------------+---------------+
 | *Feature*                                  | *Implemented* | *Milestone* | *Description*                                                                                                                             | *Notes*       |
@@ -219,12 +228,13 @@ Provides several configuration and implementation suggestions to mitigate some s
 RFC-2640 - Internationalization of the File Transfer Protocol
 =============================================================
 
-Extends the FTP protocol to support multiple character sets, in addition to the original 7-bit ASCII. Introduces the new LANG command.
+Extends the FTP protocol to support multiple character sets, in addition to the
+original 7-bit ASCII. Introduces the new LANG command.
 
+- `RFC-2640`_
 - Issued: July 1999
 - Status: PROPOSED STANDARD
-- Updates: `RFC-959 <http://www.ietf.org/rfc/rfc959.txt>`__
-- `Link <http://www.ietf.org/rfc/rfc2640.txt>`__
+- Updates: `RFC-959`_
 
 +----------------------+---------------+-------------+-------------------------------------------------------------------------------------------------------------------------------+---------+
 | *Feature*            | *Implemented* | *Milestone* | *Description*                                                                                                                 | *Notes* |
@@ -237,12 +247,13 @@ Extends the FTP protocol to support multiple character sets, in addition to the 
 RFC-3659 - Extensions to FTP
 ============================
 
-Four new commands are added: "SIZE", "MDTM", "MLST", and "MLSD".  The existing command "REST" is modified.
+Four new commands are added: "SIZE", "MDTM", "MLST", and "MLSD".  The existing
+command "REST" is modified.
 
+- `RFC-3659`_
 - Issued: March 2007
 - Status: PROPOSED STANDARD
-- Updates: `RFC-959 <http://www.ietf.org/rfc/rfc959.txt>`__
-- `Link <http://www.ietf.org/rfc/rfc3659.txt>`__
+- Updates: `RFC-959`_
 
 +------------------------------------+---------------+-------------+------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
 | *Feature*                          | *Implemented* | *Milestone* | *Description*                                                                                                                            | *Notes*                                                                                                             |
@@ -265,32 +276,57 @@ Four new commands are added: "SIZE", "MDTM", "MLST", and "MLSD".  The existing c
 RFC-4217 - Securing FTP with TLS
 ================================
 
-Provides a description on how to implement TLS as a security mechanism to secure FTP clients and/or servers.
+Provides a description on how to implement TLS as a security mechanism to
+secure FTP clients and/or servers.
 
+- `RFC-4217`_
 - Issued: October 2005
 - Status: STANDARD
-- Updates: `RFC-959 <http://www.ietf.org/rfc/rfc959.txt>`__, `RFC-2246 <http://www.ietf.org/rfc/rfc2246.txt>`__, `RFC-2228 <http://www.ietf.org/rfc/rfc2228.txt>`__
-- `Link <http://www.ietf.org/rfc/rfc4217.txt>`__
+- Updates: `RFC-959`_, `RFC-2246`_, `RFC-2228`_
 
 +-----------+---------------+-------------+------------------------------------+---------------------------------------------+
 | *Command* | *Implemented* | *Milestone* | *Description*                      | *Notes*                                     |
 +===========+===============+=============+====================================+=============================================+
-| AUTH      | YES           | ---         | Authentication/Security Mechanism. |                                             |
+| AUTH      | YES           | ---         | Secure control connection          |                                             |
 +-----------+---------------+-------------+------------------------------------+---------------------------------------------+
-| CCC       | NO            | ---         | Clear Command Channel.             |                                             |
+| CCC       | NO            | ---         | Unsecure control connection        |                                             |
 +-----------+---------------+-------------+------------------------------------+---------------------------------------------+
 | PBSZ      | YES           | ---         | Protection Buffer Size.            | Implemented as as a no-op as recommended.   |
 +-----------+---------------+-------------+------------------------------------+---------------------------------------------+
 | PROT      | YES           | ---         | Data Channel Protection Level.     | Support only "P" and "C" protection levels. |
 +-----------+---------------+-------------+------------------------------------+---------------------------------------------+
 
+RFC-8996 - Deprecate TLS 1.0 and 1.1
+====================================
+
+- `RFC-8996`_
+- Issued: March 2021
+- Status: STANDARD
+- Implemented by pyftpdlib: NO (not by default).
+
 Unofficial commands
 ===================
 
-These are commands not officialy included in any RFC but many FTP servers implement them.
+These are commands not officialy included in any RFC but many FTP servers
+implement them.
 
 +------------+---------------+-------------+-------------------+---------+
 | *Command*  | *Implemented* | *Milestone* | *Description*     | *Notes* |
 +============+===============+=============+===================+=========+
 | SITE CHMOD | YES           | 0.7.0       | Change file mode. |         |
 +------------+---------------+-------------+-------------------+---------+
+
+.. _`RFC-1123`: https://datatracker.ietf.org/doc/html/rfc1123
+.. _`RFC-2228`: https://datatracker.ietf.org/doc/html/rfc2228
+.. _`RFC-2246`: https://datatracker.ietf.org/doc/html/rfc2246
+.. _`RFC-2389`: https://datatracker.ietf.org/doc/html/rfc2389
+.. _`RFC-2398`: https://datatracker.ietf.org/doc/html/rfc2389
+.. _`RFC-2428`: https://datatracker.ietf.org/doc/html/rfc2428
+.. _`RFC-2577`: https://datatracker.ietf.org/doc/html/rfc2577
+.. _`RFC-2640`: https://datatracker.ietf.org/doc/html/rfc2640
+.. _`RFC-2773`: https://datatracker.ietf.org/doc/html/rfc2773
+.. _`RFC-3659`: https://datatracker.ietf.org/doc/html/rfc3659
+.. _`RFC-4217`: https://datatracker.ietf.org/doc/html/rfc4217
+.. _`RFC-765`: https://datatracker.ietf.org/doc/html/rfc765
+.. _`RFC-8996`: https://datatracker.ietf.org/doc/html/rfc8996
+.. _`RFC-959`: https://datatracker.ietf.org/doc/html/rfc959

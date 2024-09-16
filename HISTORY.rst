@@ -21,7 +21,7 @@ Version: 2.0.0 - 2024-09-04
 * #629: Python 2.7 is no longer supported.
 * #629: pysendfile module is no longer a required dependency, because we ceased
   support for Python 2.
-* #639: (FTPS)SSLv2 and SSLv3 connections are no longer accepted when client
+* #639: (FTPS) SSLv2 and SSLv3 connections are no longer accepted when client
   connects.
 
 Version: 1.5.10 - 2024-06-23
@@ -126,7 +126,7 @@ Version: 1.5.3 - 2017-11-04
 - #201: implemented SITE MFMT command which changes file modification time.
   (patch by Tahir Ijaz)
 - #327: add username and password command line options
-- #433: documentation moved to readthedocs: http://pyftpdlib.readthedocs.io
+- #433: documentation moved to readthedocs: https://pyftpdlib.readthedocs.io
 
 **Bug fixes**
 
@@ -258,7 +258,7 @@ Version: 1.3.0 - Date: 2013-11-07
   Juan J. Martinez)
 - #265: FTPServer class cannot be used with Circus.
 - #272: pyftpdlib fails when imported on OpenBSD because of Python bug
-  http://bugs.python.org/issue3770
+  https://bugs.python.org/issue3770
 - #273: IOLoop.fileno() on BSD systems raises AttributeError.  (patch by
   Michael Ross)
 
@@ -450,7 +450,7 @@ namespaces has been moved here:
   (see issue 213)
 - ftpserver.py's log(), logline() and logerror() functions are deprecated.
   logging module is now used instead. See:
-  http://code.google.com/p/billiejoex/wiki/Tutorial#4.2_-_Logging_management
+  https://pyftpdlib.readthedocs.io/en/latest/tutorial.html#logging-management
 - Unicode is now used instead of bytes pretty much everywhere.
 - FTPHandler.__init__() and TLS_FTPHandler.__init__() signatures have changed:
   from __init__(conn, server)
@@ -729,7 +729,7 @@ Version: 0.5.1 - Date: 2009-01-21
 - #98: added preliminary support for SITE command.
 - #99: a new script implementing FTPS (FTP over TLS/SSL) has been added to the
   demo directory. See:
-  http://code.google.com/p/pyftpdlib/source/browse/trunk/demo/tls_ftpd.py
+  https://code.google.com/p/pyftpdlib/source/browse/trunk/demo/tls_ftpd.py
 
 **Bug fixes**
 
