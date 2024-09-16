@@ -6,10 +6,9 @@ Tutorial
 
 Below is a set of example scripts showing some of the possible customizations
 that can be done with pyftpdlib.  Some of them are included in `demo
-<https://github.com/giampaolo/pyftpdlib/blob/master/demo/>`__ directory of
-pyftpdlib source distribution.
+<https://github.com/giampaolo/pyftpdlib/blob/master/demo/>`__ directory.
 
-A Base FTP server
+A base FTP server
 =================
 
 This is probably the best starting point to understand how things work. We use
@@ -38,14 +37,14 @@ for `incoming connections`_ and a range of `passive ports`_. See
     handler.authorizer = authorizer
 
     # Define a customized banner (string returned when client connects)
-    handler.banner = "pyftpdlib based ftpd ready."
+    handler.banner = "pyftpdlib based FTP server ready."
 
     # Specify a masquerade address and the range of ports to use for
     # passive connections.  Decomment in case you're behind a NAT.
     #handler.masquerade_address = '151.25.42.11'
     #handler.passive_ports = range(60000, 65535)
 
-    # Instantiate FTP server class and listen on 0.0.0.0:2121
+    # Instantiate FTP server class and listen on all interfaces, port 2121
     address = ('', 2121)
     server = FTPServer(address, handler)
 
@@ -159,13 +158,12 @@ Storing passwords as hash digests
 =================================
 
 By using the default `DummyAuthorizer`_ you typically store passwords in
-clear-text. An end-user ftpd using the default dummy authorizer would typically
-require a configuration file for authenticating users and their passwords but
-storing clear-text passwords is of course undesirable. The most common way to
-do things in such case would be first creating new users and then storing their
-usernames + passwords as hash digests into a file or wherever you find it
-convenient. The example below shows how to store passwords as one-way hashes by
-using md5 algorithm. See `demo/md5_ftpd.py`_.
+clear-text. A FTP server using the default dummy authorizer would typically
+require a configuration file for authenticating users and their passwords, but
+storing clear-text passwords is undesirable. You may want to store passwords as
+hash digests into a file or wherever you find it convenient. The example below
+shows how to store passwords as one-way hashes by using md5 algorithm. See
+`demo/md5_ftpd.py`_.
 
 .. code-block:: python
 
@@ -210,6 +208,7 @@ Unix FTP server
 If you're on UNIX you may want to configure your FTP server to include support
 for "real" users existing on the system, and navigate the real filesystem. The
 example below uses `UnixAuthorizer`_ and `UnixFilesystem`_ classes to do so.
+See `demo/unix_ftpd.py`_.
 
 .. code-block:: python
 
@@ -264,15 +263,16 @@ By nature pyftpdlib is asynchronous. That means that it uses a single
 process/thread to handle multiple client connections and file transfers. This
 is why it is so fast, lightweight and scalable (see `benchmarks`_). The async
 model has one big drawback though: the code cannot contain instructions that
-blocks for a long period of time, otherwise the whole FTP server will hang. As
-such the user should avoid calls such as ``time.sleep(3)``, heavy db queries,
+block for a long period of time, otherwise the whole FTP server will hang. As
+such, the user should avoid calls such as ``time.sleep(3)``, heavy DB queries,
 etc. at all costs.  There are cases where the async model is not appropriate,
 e.g. if you're dealing with a particularly slow disk or a network filesystem.
 If the calls that interact with the filesystem are slow (e.g., ``open(file,
 'r').read(8192)`` takes 2 seconds to complete) then you are stuck. In such
-cases you can change the concurrency model from async multi processes or multi
-threads. In practice this means that every time a client connects a separate
-thread or process is spawned, and internally it will run its own IO loop.
+cases you can change the concurrency model from async to multi processes or
+multi threads. In practice this means that every time a client connects, a
+separate thread or process is spawned, and internally it will run its own IO
+loop.
 
 Multiple threads
 ^^^^^^^^^^^^^^^^
@@ -364,10 +364,10 @@ doubt, setting it to the number of available CPU cores would be a good start.
 FTPS (FTP over TLS/SSL) server
 ==============================
 
-pyftpdlib implements FTP over TLS, also known as FTPS  as defined in
+pyftpdlib implements FTP over TLS, also known as FTPS, as defined in
 `RFC-4217`_. This requires installing `PyOpenSSL`_ third party module.
-`TLS_FTPHandler`_ class a ``certfile`` and a ``keyfile``. You can generate
-self-signed SSL certificates like this (also see `Apache FAQs`_):
+`TLS_FTPHandler`_ class requires a ``certfile`` and a ``keyfile``. You can
+generate self-signed SSL certificates like this (see also `Apache FAQs`_):
 
 .. code-block:: sh
 
@@ -509,7 +509,9 @@ Command line usage
 ==================
 
 Pyftpdlib can also be run as a simple stand-alone server from command line.
-This is useful when you want to quickly share a directory. Some examples.
+This is useful when you want to quickly share a directory. Here's some
+examples.
+
 Anonymous server, listening on port 2121, sharing the current directory:
 
 .. code-block:: sh
@@ -546,6 +548,7 @@ See ``python3 -m pyftpdlib -h`` for a complete list of options.
 .. _`demo/basic_ftpd.py`: https://github.com/giampaolo/pyftpdlib/blob/master/demo/basic_ftpd.py
 .. _`demo/md5_ftpd.py`: https://github.com/giampaolo/pyftpdlib/blob/master/demo/md5_ftpd.py
 .. _`demo/tls_ftpd.py`: https://github.com/giampaolo/pyftpdlib/blob/master/demo/tls_ftpd.py
+.. _`demo/unix_ftpd.py`: https://github.com/giampaolo/pyftpdlib/blob/master/demo/winnt_ftpd.py
 .. _`demo/winnt_ftpd.py`: https://github.com/giampaolo/pyftpdlib/blob/master/demo/winnt_ftpd.py
 .. _`DummyAuthorizer`: api.html#pyftpdlib.authorizers.DummyAuthorizer
 .. _`FTPHandler`: api.html#pyftpdlib.handlers.FTPHandler

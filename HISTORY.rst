@@ -21,7 +21,7 @@ Version: 2.0.0 - 2024-09-04
 * #629: Python 2.7 is no longer supported.
 * #629: pysendfile module is no longer a required dependency, because we ceased
   support for Python 2.
-* #639: (FTPS)SSLv2 and SSLv3 connections are no longer accepted when client
+* #639: (FTPS) SSLv2 and SSLv3 connections are no longer accepted when client
   connects.
 
 Version: 1.5.10 - 2024-06-23

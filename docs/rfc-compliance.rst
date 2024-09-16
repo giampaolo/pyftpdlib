@@ -1,28 +1,21 @@
-========================
-pyftpdlib RFC compliance
-========================
+==============
+RFC compliance
+==============
 
 .. contents:: Table of Contents
 
 Introduction
 ============
 
-This page lists current standard Internet RFCs that define the FTP protocol.
-
+This page lists the standard Internet RFCs that define the FTP protocol.
 pyftpdlib conforms to the FTP protocol standard as defined in `RFC-959`_ and
-`RFC-1123`_ implementing all the fundamental commands and features described in
-them. It also implements some more recent features such as OPTS and FEAT
-commands (`RFC-2398`_), EPRT and EPSV commands covering the IPv6 support
-(`RFC-2428`_) and MDTM, MLSD, MLST and SIZE commands defined in `RFC-3659`_.
-
-Future plans for pyftpdlib include the gradual implementation of other
-standards track RFCs.
-
-Some of the features like ACCT or SMNT commands will never be implemented
-deliberately. Other features described in more recent RFCs like the TLS/SSL
-support for securing FTP (`RFC-4217`_) are now implemented as a `demo script`_,
-waiting to reach the proper level of stability to be then included in the
-standard code base.
+`RFC-1123`_, implementing all the fundamental commands and features described
+in them. It also implements some more (relatively) recent features such as OPTS
+and FEAT commands (`RFC-2398`_), EPRT and EPSV commands to implement IPv6
+support (`RFC-2428`_) and MDTM, MLSD, MLST and SIZE commands defined in
+`RFC-3659`_ that standardize directory listing. TLS/SSL support (FTPS) as
+defined in `RFC-4217`_ is also implemented. Some features like ACCT or SMNT
+commands are deliberately not implemented.
 
 RFC-959 - File Transfer Protocol
 ================================
@@ -153,9 +146,9 @@ response codes: 232, 234, 235, 334, 335, 336, 431, 533, 534, 535, 536, 537,
 +-----------+---------------+-------------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | *Command* | *Implemented* | *Milestone* | *Description*                      | *Notes*                                                                                                                                                                                                                            |
 +===========+===============+=============+====================================+====================================================================================================================================================================================================================================+
-| AUTH      | NO            | ---         | Authentication/Security Mechanism. | Implemented as `demo script`_ by following the `RFC-4217`_ guide line.                                                                                                                                                             |
+| AUTH      | YES           | 1.5.2       | Secure Control Connection          |                                                                                                                                                                                                                                    |
 +-----------+---------------+-------------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| CCC       | NO            | ---         | Clear Command Channel.             |                                                                                                                                                                                                                                    |
+| CCC       | NO            | ---         | Unsecure Control Connection        |                                                                                                                                                                                                                                    |
 +-----------+---------------+-------------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | CONF      | NO            | ---         | Confidentiality Protected Command. | Somewhat obsoleted by `RFC-4217`_.                                                                                                                                                                                                 |
 +-----------+---------------+-------------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -163,9 +156,9 @@ response codes: 232, 234, 235, 334, 335, 336, 431, 533, 534, 535, 536, 537,
 +-----------+---------------+-------------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | MIC       | NO            | ---         | Integrity Protected Command.       | Somewhat obsoleted by `RFC-4217`_.                                                                                                                                                                                                 |
 +-----------+---------------+-------------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| PBSZ      | NO            | ---         | Protection Buffer Size.            | Implemented as `demo script`_ by following the `RFC-4217`_ guide line as a no-op command.                                                                                                                                          |
+| PBSZ      | YES           | 1.5.2       | Protection Buffer Size.            | As per `RFC-4217`_ recommendation, basically a no-op command.                                                                                                                                                                      |
 +-----------+---------------+-------------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| PROT      | NO            | ---         | Data Channel Protection Level.     | Implemented as `demo script`_ by following the `RFC-4217`_ guide line supporting only "P" and "C" protection levels.                                                                                                               |
+| PROT      | YES           | 1.5.2       | Data Channel Protection Level.     | As per `RFC-4217`_ guide recommendation, only supports "P" and "C" protection levels.                                                                                                                                              |
 +-----------+---------------+-------------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 RFC-2389 - Feature negotiation mechanism for the File Transfer Protocol
@@ -294,14 +287,22 @@ secure FTP clients and/or servers.
 +-----------+---------------+-------------+------------------------------------+---------------------------------------------+
 | *Command* | *Implemented* | *Milestone* | *Description*                      | *Notes*                                     |
 +===========+===============+=============+====================================+=============================================+
-| AUTH      | YES           | ---         | Authentication/Security Mechanism. |                                             |
+| AUTH      | YES           | ---         | Secure control connection          |                                             |
 +-----------+---------------+-------------+------------------------------------+---------------------------------------------+
-| CCC       | NO            | ---         | Clear Command Channel.             |                                             |
+| CCC       | NO            | ---         | Unsecure control connection        |                                             |
 +-----------+---------------+-------------+------------------------------------+---------------------------------------------+
 | PBSZ      | YES           | ---         | Protection Buffer Size.            | Implemented as as a no-op as recommended.   |
 +-----------+---------------+-------------+------------------------------------+---------------------------------------------+
 | PROT      | YES           | ---         | Data Channel Protection Level.     | Support only "P" and "C" protection levels. |
 +-----------+---------------+-------------+------------------------------------+---------------------------------------------+
+
+RFC-8996 - Deprecate TLS 1.0 and 1.1
+====================================
+
+- `RFC-8996`_
+- Issued: March 2021
+- Status: STANDARD
+- Implemented by pyftpdlib: NO (not by default).
 
 Unofficial commands
 ===================
@@ -315,7 +316,6 @@ implement them.
 | SITE CHMOD | YES           | 0.7.0       | Change file mode. |         |
 +------------+---------------+-------------+-------------------+---------+
 
-.. _`demo script`: https://github.com/giampaolo/pyftpdlib/blob/master/demo/tls_ftpd.py
 .. _`RFC-1123`: https://datatracker.ietf.org/doc/html/rfc1123
 .. _`RFC-2228`: https://datatracker.ietf.org/doc/html/rfc2228
 .. _`RFC-2246`: https://datatracker.ietf.org/doc/html/rfc2246
@@ -328,4 +328,5 @@ implement them.
 .. _`RFC-3659`: https://datatracker.ietf.org/doc/html/rfc3659
 .. _`RFC-4217`: https://datatracker.ietf.org/doc/html/rfc4217
 .. _`RFC-765`: https://datatracker.ietf.org/doc/html/rfc765
+.. _`RFC-8996`: https://datatracker.ietf.org/doc/html/rfc8996
 .. _`RFC-959`: https://datatracker.ietf.org/doc/html/rfc959

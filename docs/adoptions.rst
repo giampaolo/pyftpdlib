@@ -4,8 +4,8 @@ Adoptions
 
 .. contents:: Table of Contents
 
-Here comes a (mostly out dated) list of softwares and systems using pyftpdlib.
-In case you want to add your software to such list make a PR or create a
+Here comes a (mostly outdated) list of softwares and systems using pyftpdlib.
+In case you want to add your software to such list, make a PR or create a
 ticket on the bug tracker.
 Please help us in keeping such list updated.
 
