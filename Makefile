@@ -4,30 +4,9 @@
 # To run a specific test:
 # 	$ make test ARGS="-v -s pyftpdlib/test/test_functional.py::TestIPv6MixedEnvironment::test_port_v4"
 
+# Configurable
 PYTHON = python3
 ARGS =
-
-# mandatory deps for running tests
-PYDEPS = \
-	psutil \
-	pyopenssl \
-	pytest \
-	pytest-xdist \
-	setuptools
-# dev deps
-ifndef GITHUB_ACTIONS
-	PYDEPS += \
-		black \
-		check-manifest \
-		coverage \
-		pylint \
-		pytest-cov \
-		pytest-xdist \
-		rstcheck \
-		ruff \
-		toml-sort \
-		twine
-endif
 
 # In not in a virtualenv, add --user options for install commands.
 SETUP_INSTALL_ARGS = `$(PYTHON) -c \
