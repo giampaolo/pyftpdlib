@@ -38,7 +38,7 @@ DEPS = [
     "psutil",
     "pytest",
     "pyopenssl",
-    "pypiwin32",
+    "pywin32",
     "setuptools",
     "wmi",
 ]
