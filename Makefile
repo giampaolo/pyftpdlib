@@ -83,24 +83,7 @@ uninstall:  ## Uninstall this package.
 	$(PYTHON) scripts/internal/purge_installation.py
 
 install-pip:  ## Install pip (no-op if already installed).
-	@$(PYTHON) -c \
-		"import sys, ssl, os, pkgutil, tempfile, atexit; \
-		from urllib.request import urlopen; \
-		sys.exit(0) if pkgutil.find_loader('pip') else None; \
-		exec(pyexc); \
-		ctx = ssl._create_unverified_context() if hasattr(ssl, '_create_unverified_context') else None; \
-		url = 'https://bootstrap.pypa.io/get-pip.py'; \
-		kw = dict(context=ctx) if ctx else {}; \
-		req = urlopen(url, **kw); \
-		data = req.read(); \
-		f = tempfile.NamedTemporaryFile(suffix='.py'); \
-		atexit.register(f.close); \
-		f.write(data); \
-		f.flush(); \
-		print('downloaded %s' % f.name); \
-		code = os.system('%s %s --user --upgrade' % (sys.executable, f.name)); \
-		f.close(); \
-		sys.exit(code);"
+	$(PYTHON) scripts/internal/install_pip.py
 
 install-pydeps-test:  ## Install python deps necessary to run unit tests.
 	${MAKE} install-pip
