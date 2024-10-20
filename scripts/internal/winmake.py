@@ -20,28 +20,25 @@ import fnmatch
 import os
 import shutil
 import site
-import ssl
 import subprocess
 import sys
-import tempfile
-from urllib.request import urlopen
 
 
 PYTHON = os.getenv('PYTHON', sys.executable)
-GET_PIP_URL = "https://bootstrap.pypa.io/get-pip.py"
-PYTEST_ARGS = "-v --tb=native -o"
+PY3 = sys.version_info[0] >= 3
+PYTEST_ARGS = "-v -s --tb=short"
 HERE = os.path.abspath(os.path.dirname(__file__))
 ROOT_DIR = os.path.realpath(os.path.join(HERE, "..", ".."))
 PYPY = '__pypy__' in sys.builtin_module_names
-DEPS = [
-    "pip",
-    "psutil",
-    "pytest",
-    "pyopenssl",
-    "pypiwin32",
-    "setuptools",
-    "wmi",
-]
+WINDOWS = os.name == "nt"
+
+
+sys.path.insert(0, ROOT_DIR)  # so that we can import setup.py
+
+import setup  # NOQA
+
+TEST_DEPS = setup.TEST_DEPS
+DEV_DEPS = setup.DEV_DEPS
 
 _cmds = {}
 
@@ -86,6 +83,8 @@ def stderr_handle():
 
 
 def win_colorprint(s, color=LIGHTBLUE):
+    if not WINDOWS:
+        return print(s)
     color += 8  # bold
     handle = stderr_handle()
     SetConsoleTextAttribute = ctypes.windll.Kernel32.SetConsoleTextAttribute
@@ -99,7 +98,9 @@ def win_colorprint(s, color=LIGHTBLUE):
 def sh(cmd, nolog=False):
     if not nolog:
         safe_print("cmd: " + cmd)
-    p = subprocess.Popen(cmd, shell=True, env=os.environ, cwd=os.getcwd())
+    p = subprocess.Popen(  # noqa S602
+        cmd, shell=True, env=os.environ, cwd=os.getcwd()
+    )
     p.communicate()
     if p.returncode != 0:
         sys.exit(p.returncode)
@@ -107,6 +108,15 @@ def sh(cmd, nolog=False):
 
 def rm(pattern, directory=False):
     """Recursively remove a file or dir by pattern."""
+
+    def safe_remove(path):
+        try:
+            os.remove(path)
+        except OSError as err:
+            if err.errno != errno.ENOENT:
+                raise
+        else:
+            safe_print("rm %s" % path)
 
     def safe_rmtree(path):
         def onerror(fun, path, excinfo):
@@ -126,11 +136,11 @@ def rm(pattern, directory=False):
             safe_remove(pattern)
         return
 
-    for root, subdirs, subfiles in os.walk('.'):
+    for root, dirs, files in os.walk('.'):
         root = os.path.normpath(root)
         if root.startswith('.git/'):
             continue
-        found = fnmatch.filter(subdirs if directory else subfiles, pattern)
+        found = fnmatch.filter(dirs if directory else files, pattern)
         for name in found:
             path = os.path.join(root, name)
             if directory:
@@ -164,15 +174,15 @@ def safe_rmtree(path):
 
 def recursive_rm(*patterns):
     """Recursively remove a file or matching a list of patterns."""
-    for root, subdirs, subfiles in os.walk('.'):
+    for root, dirs, files in os.walk('.'):
         root = os.path.normpath(root)
         if root.startswith('.git/'):
             continue
-        for file in subfiles:
+        for file in files:
             for pattern in patterns:
                 if fnmatch.fnmatch(file, pattern):
                     safe_remove(os.path.join(root, file))
-        for dir in subdirs:
+        for dir in dirs:
             for pattern in patterns:
                 if fnmatch.fnmatch(dir, pattern):
                     safe_rmtree(os.path.join(root, dir))
@@ -231,26 +241,7 @@ def upload_wheels():
 
 def install_pip():
     """Install pip."""
-    try:
-        sh(f'{PYTHON} -c "import pip"')
-    except SystemExit:
-        if hasattr(ssl, '_create_unverified_context'):
-            ctx = ssl._create_unverified_context()
-        else:
-            ctx = None
-        kw = dict(context=ctx) if ctx else {}
-        safe_print(f"downloading {GET_PIP_URL}")
-        req = urlopen(GET_PIP_URL, **kw)
-        data = req.read()
-
-        tfile = os.path.join(tempfile.gettempdir(), 'get-pip.py')
-        with open(tfile, 'wb') as f:
-            f.write(data)
-
-        try:
-            sh(f'{PYTHON} {tfile} --user')
-        finally:
-            os.remove(tfile)
+    sh('%s %s' % (PYTHON, os.path.join(HERE, "install_pip.py")))
 
 
 def install():
@@ -326,20 +317,18 @@ def clean():
     safe_rmtree("tmp")
 
 
-def setup_dev_env():
+def install_pydeps_test():
     """Install useful deps."""
     install_pip()
     install_git_hooks()
-    sh(f"{PYTHON} -m pip install -U {' '.join(DEPS)}")
+    sh("%s -m pip install --user -U %s" % (PYTHON, " ".join(TEST_DEPS)))
 
 
-def lint():
-    """Run flake8 against all py files."""
-    py_files = subprocess.check_output("git ls-files")
-    py_files = py_files.decode()
-    py_files = [x for x in py_files.split() if x.endswith('.py')]
-    py_files = ' '.join(py_files)
-    sh(f"{PYTHON} -m flake8 {py_files}", nolog=True)
+def install_pydeps_dev():
+    """Install useful deps."""
+    install_pip()
+    install_git_hooks()
+    sh("%s -m pip install --user -U %s" % (PYTHON, " ".join(DEV_DEPS)))
 
 
 def test(args=""):
@@ -398,7 +387,7 @@ def test_by_name(name):
     test(name)
 
 
-def test_failed():
+def test_last_failed():
     """Re-run tests which failed on last run."""
     build()
     sh(f"{PYTHON} -m pytest {PYTEST_ARGS} --last-failed")
@@ -446,8 +435,7 @@ def get_python(path):
             return pypath
 
 
-def main():
-    global PYTHON
+def parse_args():
     parser = argparse.ArgumentParser()
     # option shared by all commands
     parser.add_argument('-p', '--python', help="use python executable path")
@@ -459,6 +447,8 @@ def main():
     sp.add_parser('install', help="build + install in develop/edit mode")
     sp.add_parser('install-git-hooks', help="install GIT pre-commit hook")
     sp.add_parser('install-pip', help="install pip")
+    sp.add_parser('install-pydeps-dev', help="install dev python deps")
+    sp.add_parser('install-pydeps-test', help="install python test deps")
     sp.add_parser('test', help="run tests")
     sp.add_parser('test-authorizers')
     sp.add_parser('test-filesystems')
@@ -468,27 +458,33 @@ def main():
     sp.add_parser('test-misc')
     sp.add_parser('test-servers')
     sp.add_parser('lint', help="run flake8 against all py files")
-    sp.add_parser('setup-dev-env', help="install deps")
     test = sp.add_parser('test', help="[ARG] run tests")
     test_by_name = sp.add_parser('test-by-name', help="<ARG> run test by name")
     sp.add_parser('uninstall', help="uninstall")
 
     for p in (test, test_by_name):
         p.add_argument('arg', type=str, nargs='?', default="", help="arg")
-    args = parser.parse_args()
 
-    # set python exe
-    PYTHON = get_python(args.python)
-    if not PYTHON:
-        return sys.exit(
-            f"can't find any python installation matching {args.python!r}"
-        )
-    os.putenv('PYTHON', PYTHON)
-    win_colorprint("using " + PYTHON)
+    args = parser.parse_args()
 
     if not args.command or args.command == 'help':
         parser.print_help(sys.stderr)
         sys.exit(1)
+
+    return args
+
+
+def main():
+    global PYTHON
+    args = parse_args()
+    # set python exe
+    PYTHON = get_python(args.python)
+    if not PYTHON:
+        return sys.exit(
+            "can't find any python installation matching %r" % args.python
+        )
+    os.putenv('PYTHON', PYTHON)
+    win_colorprint("using " + PYTHON)
 
     fname = args.command.replace('-', '_')
     fun = getattr(sys.modules[__name__], fname)  # err if fun not defined

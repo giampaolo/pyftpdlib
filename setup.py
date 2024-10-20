@@ -7,7 +7,6 @@
 $ python setup.py install
 """
 
-
 import ast
 import os
 import sys
@@ -15,9 +14,41 @@ import textwrap
 
 
 try:
+    import setuptools
     from setuptools import setup
 except ImportError:
+    setuptools = None
     from distutils.core import setup
+
+
+WINDOWS = os.name == "nt"
+
+# Test deps, installable via `pip install .[test]`.
+TEST_DEPS = [
+    "psutil",
+    "pyopenssl",
+    "pytest",
+    "pytest-xdist",
+    "setuptools",
+]
+if WINDOWS:
+    TEST_DEPS.append("pywin32")
+
+# Development deps, installable via `pip install .[dev]`.
+DEV_DEPS = [
+    "black",
+    "check-manifest",
+    "coverage",
+    "pylint",
+    "pytest-cov",
+    "pytest-xdist",
+    "rstcheck",
+    "ruff",
+    "toml-sort",
+    "twine",
+]
+if WINDOWS:
+    DEV_DEPS.extend(["pyreadline", "pdbpp"])
 
 
 def get_version():
@@ -65,22 +96,12 @@ def hilite(s, ok=True, bold=False):
         return f"\x1b[{';'.join(attr)}m{s}\x1b[0m"
 
 
-if sys.version_info[0] < 3:  # noqa: UP036
-    sys.exit(
-        'Python 2 is no longer supported. Latest version is 1.5.10; use:\n'
-        'python3 -m pip install pyftpdlib==1.5.10'
-    )
-
-extras_require = {'ssl': ["PyOpenSSL"]}
-
-VERSION = get_version()
-
 with open('README.rst') as f:
     long_description = f.read()
 
 
 def main():
-    setup(
+    kwargs = dict(
         name='pyftpdlib',
         version=get_version(),
         description='Very fast asynchronous FTP server library',
@@ -108,7 +129,6 @@ def main():
             "pyasyncore;python_version>='3.12'",
             "pyasynchat;python_version>='3.12'",
         ],
-        extras_require=extras_require,
         classifiers=[
             'Development Status :: 5 - Production/Stable',
             'Environment :: Console',
@@ -125,6 +145,22 @@ def main():
         ],
     )
 
+    if setuptools is not None:
+        extras_require = {
+            "dev": DEV_DEPS,
+            "test": TEST_DEPS,
+            "ssl": "PyOpenSSL",
+        }
+        kwargs.update(
+            python_requires=(
+                ">2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
+            ),
+            extras_require=extras_require,
+            zip_safe=False,
+        )
+
+    setup(**kwargs)
+
     try:
         from OpenSSL import SSL  # NOQA
     except ImportError:
@@ -134,6 +170,12 @@ def main():
             'pip install pyopenssl'.""")
         print(hilite(msg, ok=False), file=sys.stderr)
 
+
+if sys.version_info[0] < 3:  # noqa: UP036
+    sys.exit(
+        'Python 2 is no longer supported. Latest version is 1.5.10; use:\n'
+        'python3 -m pip install pyftpdlib==1.5.10'
+    )
 
 if __name__ == '__main__':
     main()
