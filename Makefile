@@ -25,7 +25,6 @@ ifndef GITHUB_ACTIONS
 		pytest-xdist \
 		rstcheck \
 		ruff \
-		teyit \
 		toml-sort \
 		twine
 endif
@@ -157,7 +156,7 @@ black:  ## Python files linting (via black)
 	@git ls-files '*.py' | xargs $(PYTHON) -m black --check --safe
 
 ruff:  ## Run ruff linter.
-	@git ls-files '*.py' | xargs $(PYTHON) -m ruff check --no-cache --output-format=concise
+	@git ls-files '*.py' | xargs $(PYTHON) -m ruff check --output-format=concise
 
 _pylint:  ## Python pylint (not mandatory, just run it from time to time)
 	@git ls-files '*.py' | xargs $(PYTHON) -m pylint --rcfile=pyproject.toml --jobs=${NUM_WORKERS}
@@ -182,19 +181,15 @@ fix-black:
 	git ls-files '*.py' | xargs $(PYTHON) -m black
 
 fix-ruff:
-	@git ls-files '*.py' | xargs $(PYTHON) -m ruff check --no-cache --fix $(ARGS)
+	@git ls-files '*.py' | xargs $(PYTHON) -m ruff check --fix --output-format=concise $(ARGS)
 
 fix-toml:  ## Fix pyproject.toml
 	@git ls-files '*.toml' | xargs toml-sort
-
-fix-unittests:  ## Fix unittest idioms.
-	@git ls-files '*test_*.py' | xargs $(PYTHON) -m teyit --show-stats
 
 fix-all:  ## Run all code fixers.
 	${MAKE} fix-black
 	${MAKE} fix-ruff
 	${MAKE} fix-toml
-	${MAKE} fix-unittests
 
 # ===================================================================
 # Distribution
