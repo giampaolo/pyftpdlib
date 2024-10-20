@@ -1,5 +1,16 @@
 Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 
+
+Version: 2.1.0 - (IN DEVELOPMENT)
+=================================
+
+**Enhancements**
+
+* #651: Add ``make install-pydeps-test`` and ``make install-pydeps-dev``
+  targets. They can be used to install dependencies meant for running tests and
+  for local development. They can also be installed via ``pip install .[test]``
+  and ``pip install .[dev]``.
+
 Version: 2.0.0 - 2024-09-04
 ===========================
 
