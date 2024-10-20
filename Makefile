@@ -19,6 +19,9 @@ PIP_INSTALL_ARGS = --trusted-host files.pythonhosted.org --trusted-host pypi.org
 # if make is invoked with no arg, default to `make help`
 .DEFAULT_GOAL := help
 
+# install git hook
+_ := $(shell mkdir -p .git/hooks/ && ln -sf ../../scripts/internal/git_pre_commit.py .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit)
+
 # ===================================================================
 # Install
 # ===================================================================
