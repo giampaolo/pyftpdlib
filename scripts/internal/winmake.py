@@ -24,8 +24,7 @@ import subprocess
 import sys
 
 
-APPVEYOR = bool(os.environ.get('APPVEYOR'))
-PYTHON = sys.executable if APPVEYOR else os.getenv('PYTHON', sys.executable)
+PYTHON = os.getenv('PYTHON', sys.executable)
 PY3 = sys.version_info[0] >= 3
 PYTEST_ARGS = "-v -s --tb=short"
 HERE = os.path.abspath(os.path.dirname(__file__))
