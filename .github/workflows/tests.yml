@@ -33,7 +33,7 @@ jobs:
       - name: Install pydeps ${{ matrix.os }}
         if: matrix.os != 'windows-latest'
         run: |
-          make setup-dev-env
+          make install-pydeps-test
 
       - name: Tests
         run: |
