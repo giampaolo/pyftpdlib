@@ -69,13 +69,13 @@ install-pip:  ## Install pip (no-op if already installed).
 
 install-pydeps-test:  ## Install python deps necessary to run unit tests.
 	${MAKE} install-pip
-	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip  # upgrade pip to latest version
+	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip setuptools
 	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) `$(PYTHON) -c "import setup; print(' '.join(setup.TEST_DEPS))"`
 
 install-pydeps-dev:  ## Install python deps meant for local development.
 	${MAKE} install-git-hooks
 	${MAKE} install-pip
-	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip  # upgrade pip to latest version
+	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip setuptools
 	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) `$(PYTHON) -c "import setup; print(' '.join(setup.TEST_DEPS + setup.DEV_DEPS))"`
 
 # ===================================================================
