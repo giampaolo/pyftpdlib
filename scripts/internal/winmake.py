@@ -449,7 +449,6 @@ def parse_args():
     sp.add_parser('install-pip', help="install pip")
     sp.add_parser('install-pydeps-dev', help="install dev python deps")
     sp.add_parser('install-pydeps-test', help="install python test deps")
-    sp.add_parser('test', help="run tests")
     sp.add_parser('test-authorizers')
     sp.add_parser('test-filesystems')
     sp.add_parser('test-functional')

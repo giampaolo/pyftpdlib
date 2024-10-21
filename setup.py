@@ -52,7 +52,7 @@ DEV_DEPS = [
     "twine",
 ]
 if WINDOWS:
-    DEV_DEPS.extend(["pyreadline", "pdbpp"])
+    DEV_DEPS.extend(["pyreadline3", "pdbpp"])
 
 
 def get_version():
