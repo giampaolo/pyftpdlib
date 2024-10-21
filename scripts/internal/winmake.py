@@ -339,37 +339,46 @@ def test(args=""):
 
 def test_authorizers():
     build()
-    sh(f"{PYTHON} pyftpdlib\\test\\test_authorizers.py")
+    sh(
+        f"{PYTHON} -m pytest"
+        f" {PYTEST_ARGS} pyftpdlib\\test\\test_authorizers.py"
+    )
 
 
 def test_filesystems():
     build()
-    sh(f"{PYTHON} pyftpdlib\\test\\test_filesystems.py")
+    print(
+        f"{PYTHON} -m pytest"
+        f" {PYTEST_ARGS} pyftpdlib\\test\\test_filesystems.py"
+    )
 
 
 def test_functional():
     build()
-    sh(f"{PYTHON} pyftpdlib\\test\\test_functional.py")
+    sh(f"{PYTHON} -m pytest {PYTEST_ARGS} pyftpdlib\\test\\test_functional.py")
 
 
 def test_functional_ssl():
     build()
-    sh(f"{PYTHON} pyftpdlib\\test\\test_functional_ssl.py")
+    sh(
+        f"{PYTHON} -m pytest"
+        f" {PYTEST_ARGS} pyftpdlib\\test\\test_functional_ssl.py"
+    )
 
 
 def test_ioloop():
     build()
-    sh(f"{PYTHON} pyftpdlib\\test\\test_ioloop.py")
+    sh(f"{PYTHON} -m pytest {PYTEST_ARGS} pyftpdlib\\test\\test_ioloop.py")
 
 
 def test_cli():
     build()
-    sh(f"{PYTHON} pyftpdlib\\test\\test_cli.py")
+    sh(f"{PYTHON} -m pytest {PYTEST_ARGS} pyftpdlib\\test\\test_cli.py")
 
 
 def test_servers():
     build()
-    sh(f"{PYTHON} pyftpdlib\\test\\test_servers.py")
+    sh(f"{PYTHON} -m pytest {PYTEST_ARGS} pyftpdlib\\test\\test_servers.py")
 
 
 def coverage():
