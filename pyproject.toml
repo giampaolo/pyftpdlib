@@ -46,6 +46,7 @@ ignore = [
     "FIX",  # Line contains TODO / XXX / ..., consider resolving the issue
     "FURB101",  # `open` and `read` should be replaced by `Path(x).read_text()`
     "FURB103",  # `open` and `write` should be replaced by `Path(...).write_bytes(data)`
+    "FURB113",  # Use `x.extend(("foo", "bar"))` instead of repeatedly calling `x.append()`
     "INP",  # `docs/conf.py` is part of an implicit namespace package. Add an `__init__.py`.
     "N801",  # Class name `async_chat` should use CapWords convention (ASYNCORE COMPAT)
     "N802",  # Function name X should be lowercase.

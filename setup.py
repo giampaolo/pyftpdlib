@@ -31,6 +31,10 @@ TEST_DEPS = [
     "pytest-xdist",
     "setuptools",
 ]
+if sys.version_info[:2] >= (3, 12):
+    TEST_DEPS.append("pyasyncore")
+    TEST_DEPS.append("pyasynchat")
+
 if WINDOWS:
     TEST_DEPS.append("pywin32")
 
