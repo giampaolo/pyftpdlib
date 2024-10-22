@@ -11,6 +11,10 @@ Version: 2.1.0 - (IN DEVELOPMENT)
   for local development. They can also be installed via ``pip install .[test]``
   and ``pip install .[dev]``.
 
+**Bug fixes**
+
+* #650: file operations on Windows with Python 3.13 give "Permission denied".
+
 Version: 2.0.0 - 2024-09-04
 ===========================
 
