@@ -121,6 +121,16 @@ class AbstractedFS:
 
     # --- Pathname / conversion utilities
 
+    @staticmethod
+    def _isabs(path, _windows=os.name == "nt"):
+        # Windows + Python 3.13: isabs() changed so that a path
+        # starting with "/" is no longer considered absolute.
+        # https://github.com/python/cpython/issues/44626
+        # https://github.com/python/cpython/pull/113829/
+        if _windows and path.startswith("/"):
+            return True
+        return os.path.isabs(path)
+
     def ftpnorm(self, ftppath):
         """Normalize a "virtual" ftp pathname (typically the raw string
         coming from client) depending on the current working directory.
@@ -132,7 +142,7 @@ class AbstractedFS:
         Note: directory separators are system independent ("/").
         Pathname returned is always absolutized.
         """
-        if os.path.isabs(ftppath):
+        if self._isabs(ftppath):
             p = os.path.normpath(ftppath)
         else:
             p = os.path.normpath(os.path.join(self.cwd, ftppath))
@@ -148,7 +158,7 @@ class AbstractedFS:
         # Anti path traversal: don't trust user input, in the event
         # that self.cwd is not absolute, return "/" as a safety measure.
         # This is for extra protection, maybe not really necessary.
-        if not os.path.isabs(p):
+        if not self._isabs(p):
             p = "/"
         return p
 
@@ -185,7 +195,7 @@ class AbstractedFS:
         On invalid pathnames escaping from user's root directory
         (e.g. "/home" when root is "/home/user") always return "/".
         """
-        if os.path.isabs(fspath):
+        if self._isabs(fspath):
             p = os.path.normpath(fspath)
         else:
             p = os.path.normpath(os.path.join(self.root, fspath))
