@@ -10,4 +10,4 @@ if "%PYTHON%" == "" (
     set PYTHON=python
 )
 
-%PYTHON% scripts\internal\winmake.py %1 %2 %3 %4 %5 %6
+"%PYTHON%" scripts\internal\winmake.py %1 %2 %3 %4 %5 %6

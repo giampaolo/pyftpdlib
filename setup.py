@@ -13,14 +13,6 @@ import sys
 import textwrap
 
 
-try:
-    import setuptools
-    from setuptools import setup
-except ImportError:
-    setuptools = None
-    from distutils.core import setup
-
-
 WINDOWS = os.name == "nt"
 
 # Test deps, installable via `pip install .[test]`.
@@ -105,6 +97,13 @@ with open('README.rst') as f:
 
 
 def main():
+    try:
+        import setuptools  # noqa
+        from setuptools import setup  # noqa
+    except ImportError:
+        setuptools = None
+        from distutils.core import setup  # noqa
+
     kwargs = dict(
         name='pyftpdlib',
         version=get_version(),

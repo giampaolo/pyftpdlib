@@ -4,18 +4,17 @@
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
 
-
 """Shortcuts for various tasks, emulating UNIX "make" on Windows.
 This is supposed to be invoked by "make.bat" and not used directly.
 This was originally written as a bat file but they suck so much
 that they should be deemed illegal!
 """
 
-
 import argparse
 import errno
 import fnmatch
 import os
+import shlex
 import shutil
 import site
 import subprocess
@@ -23,7 +22,7 @@ import sys
 
 
 PYTHON = os.getenv('PYTHON', sys.executable)
-PYTEST_ARGS = "-v -s --tb=short"
+PYTEST_ARGS = ["-v", "-s", "--tb=short"]
 HERE = os.path.abspath(os.path.dirname(__file__))
 ROOT_DIR = os.path.realpath(os.path.join(HERE, "..", ".."))
 WINDOWS = os.name == "nt"
@@ -62,11 +61,10 @@ def safe_print(text, file=sys.stdout):
 
 
 def sh(cmd, nolog=False):
+    assert isinstance(cmd, list), repr(cmd)
     if not nolog:
-        safe_print("cmd: " + cmd)
-    p = subprocess.Popen(  # noqa S602
-        cmd, shell=True, env=os.environ, cwd=os.getcwd()
-    )
+        safe_print("cmd: " + " ".join(cmd))
+    p = subprocess.Popen(cmd, env=os.environ, cwd=os.getcwd())  # noqa S602
     p.communicate()
     if p.returncode != 0:
         sys.exit(p.returncode)
@@ -161,12 +159,12 @@ def recursive_rm(*patterns):
 
 def install_pip():
     """Install pip."""
-    sh('%s %s' % (PYTHON, os.path.join(HERE, "install_pip.py")))
+    sh([PYTHON, os.path.join(HERE, "install_pip.py")])
 
 
 def install():
     """Install in develop / edit mode."""
-    sh(f"{PYTHON} setup.py develop")
+    sh([PYTHON, "setup.py", "develop"])
 
 
 def uninstall():
@@ -182,7 +180,7 @@ def uninstall():
             except ImportError:
                 break
             else:
-                sh(f"{PYTHON} -m pip uninstall -y pyftpdlib")
+                sh([PYTHON, "-m", "pip", "uninstall", "-y", "pyftpdlib"])
     finally:
         os.chdir(here)
 
@@ -240,58 +238,91 @@ def install_pydeps_test():
     """Install useful deps."""
     install_pip()
     install_git_hooks()
-    sh("%s -m pip install --user -U %s" % (PYTHON, " ".join(TEST_DEPS)))
+    cmd = [PYTHON, "-m", "pip", "install", "--user", "-U", *TEST_DEPS]
+    sh(cmd)
 
 
 def install_pydeps_dev():
     """Install useful deps."""
     install_pip()
     install_git_hooks()
-    sh("%s -m pip install --user -U %s" % (PYTHON, " ".join(DEV_DEPS)))
+    cmd = [PYTHON, "-m", "pip", "install", "--user", "-U", *DEV_DEPS]
+    sh(cmd)
 
 
-def test(args=""):
+def test(args=None):
     """Run tests."""
-    sh(f"{PYTHON} -m pytest {PYTEST_ARGS} {args}")
+    if args is None:
+        args = []
+    elif isinstance(args, str):
+        args = shlex.split(args)
+    sh([PYTHON, '-m', 'pytest', *PYTEST_ARGS, *args])
 
 
 def test_authorizers():
-    sh(f"{PYTHON} -m pytest {PYTEST_ARGS} pyftpdlib/test/test_authorizers.py")
+    sh([
+        PYTHON,
+        "-m",
+        "pytest",
+        *PYTEST_ARGS,
+        "pyftpdlib/test/test_authorizers.py",
+    ])
 
 
 def test_filesystems():
-    sh(f"{PYTHON} -m pytest {PYTEST_ARGS} pyftpdlib/test/test_filesystems.py")
+    sh([
+        PYTHON,
+        "-m",
+        "pytest",
+        *PYTEST_ARGS,
+        "pyftpdlib/test/test_filesystems.py",
+    ])
 
 
 def test_functional():
-    sh(f"{PYTHON} -m pytest {PYTEST_ARGS} pyftpdlib/test/test_functional.py")
+    sh([
+        PYTHON,
+        "-m",
+        "pytest",
+        *PYTEST_ARGS,
+        "pyftpdlib/test/test_functional.py",
+    ])
 
 
 def test_functional_ssl():
-    sh(
-        f"{PYTHON} -m pytest"
-        f" {PYTEST_ARGS} pyftpdlib/test/test_functional_ssl.py"
-    )
+    sh([
+        PYTHON,
+        "-m",
+        "pytest",
+        *PYTEST_ARGS,
+        "pyftpdlib/test/test_functional_ssl.py",
+    ])
 
 
 def test_ioloop():
-    sh(f"{PYTHON} -m pytest {PYTEST_ARGS} pyftpdlib/test/test_ioloop.py")
+    sh([PYTHON, "-m", "pytest", *PYTEST_ARGS, "pyftpdlib/test/test_ioloop.py"])
 
 
 def test_cli():
-    sh(f"{PYTHON} -m pytest {PYTEST_ARGS} pyftpdlib/test/test_cli.py")
+    sh([PYTHON, "-m", "pytest", *PYTEST_ARGS, "pyftpdlib/test/test_cli.py"])
 
 
 def test_servers():
-    sh(f"{PYTHON} -m pytest {PYTEST_ARGS} pyftpdlib/test/test_servers.py")
+    sh([
+        PYTHON,
+        "-m",
+        "pytest",
+        *PYTEST_ARGS,
+        "pyftpdlib/test/test_servers.py",
+    ])
 
 
 def coverage():
     """Run coverage tests."""
-    sh(f"{PYTHON} -m coverage run -m pytest {PYTEST_ARGS}")
-    sh(f"{PYTHON} -m coverage report")
-    sh(f"{PYTHON} -m coverage html")
-    sh(f"{PYTHON} -m webbrowser -t htmlcov/index.html")
+    sh([PYTHON, "-m", "coverage", "run", "-m", "pytest", *PYTEST_ARGS])
+    sh([PYTHON, "-m", "coverage", "report"])
+    sh([PYTHON, "-m", "coverage", "html"])
+    sh([PYTHON, "-m", "webbrowser", "-t", "htmlcov/index.html"])
 
 
 def test_by_name(name):
@@ -301,7 +332,7 @@ def test_by_name(name):
 
 def test_last_failed():
     """Re-run tests which failed on last run."""
-    sh(f"{PYTHON} -m pytest {PYTEST_ARGS} --last-failed")
+    sh([PYTHON, "-m", "pytest", *PYTEST_ARGS, "--last-failed"])
 
 
 def install_git_hooks():
