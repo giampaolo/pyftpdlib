@@ -11,7 +11,7 @@ ARGS =
 # In not in a virtualenv, add --user options for install commands.
 SETUP_INSTALL_ARGS = `$(PYTHON) -c \
 	"import sys; print('' if hasattr(sys, 'real_prefix') or hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix else '--user')"`
-TEST_PREFIX = PYTHONWARNINGS=always
+PYTHON_ENV_VARS = PYTHONWARNINGS=always PYTHONUNBUFFERED=1
 PYTEST_ARGS = -v -s --tb=short
 NUM_WORKERS = `$(PYTHON) -c "import os; print(os.cpu_count() or 1)"`
 PIP_INSTALL_ARGS = --trusted-host files.pythonhosted.org --trusted-host pypi.org --upgrade
@@ -78,43 +78,47 @@ install-pydeps-dev:  ## Install python deps meant for local development.
 	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip setuptools
 	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) `$(PYTHON) -c "import setup; print(' '.join(setup.TEST_DEPS + setup.DEV_DEPS))"`
 
+install-git-hooks:  ## Install GIT pre-commit hook.
+	ln -sf ../../scripts/internal/git_pre_commit.py .git/hooks/pre-commit
+	chmod +x .git/hooks/pre-commit
+
 # ===================================================================
 # Tests
 # ===================================================================
 
 test:  ## Run all tests. To run a specific test: do "make test ARGS=pyftpdlib.test.test_functional.TestFtpStoreData"
-	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS)
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS)
 
 test-parallel:  ## Run all tests in parallel.
-	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) -n auto --dist loadgroup $(ARGS)
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) -n auto --dist loadgroup $(ARGS)
 
 test-functional:  ## Run functional FTP tests.
-	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_functional.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_functional.py
 
 test-functional-ssl:  ## Run functional FTPS tests.
-	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_functional_ssl.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_functional_ssl.py
 
 test-servers:  ## Run tests for FTPServer and its subclasses.
-	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_servers.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_servers.py
 
 test-authorizers:  ## Run tests for authorizers.
-	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_authorizers.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_authorizers.py
 
 test-filesystems:  ## Run filesystem tests.
-	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_filesystems.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_filesystems.py
 
 test-ioloop:  ## Run IOLoop tests.
-	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_ioloop.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_ioloop.py
 
 test-cli:  ## Run miscellaneous tests.
-	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_cli.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_cli.py
 
 test-lastfailed:  ## Run previously failed tests
-	$(TEST_PREFIX) $(PYTHON) -m pytest $(PYTEST_ARGS) --last-failed $(ARGS)
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) --last-failed $(ARGS)
 
 test-coverage:  ## Run test coverage.
 	rm -rf .coverage htmlcov
-	$(TEST_PREFIX) $(PYTHON) -m coverage run -m pytest $(PYTEST_ARGS) $(ARGS)
+	$(PYTHON_ENV_VARS) $(PYTHON) -m coverage run -m pytest $(PYTEST_ARGS) $(ARGS)
 	$(PYTHON) -m coverage report
 	@echo "writing results to htmlcov/index.html"
 	$(PYTHON) -m coverage html
@@ -167,26 +171,18 @@ fix-all:  ## Run all code fixers.
 # Distribution
 # ===================================================================
 
-check-manifest:  ## Inspect MANIFEST.in file.
-	$(PYTHON) -m check_manifest -v $(ARGS)
-
-upload-src:  ## Upload source on PYPI.
-	${MAKE} clean
-	$(PYTHON) setup.py sdist upload
-
-git-tag-release:  ## Git-tag a new release.
-	git tag -a release-`python3 -c "import setup; print(setup.VERSION)"` -m `git rev-list HEAD --count`:`git rev-parse --short HEAD`
-	git push --follow-tags
-
-install-git-hooks:  ## Install GIT pre-commit hook.
-	ln -sf ../../scripts/internal/git_pre_commit.py .git/hooks/pre-commit
-	chmod +x .git/hooks/pre-commit
-
-grep-todos:  ## Look for TODOs in source files.
-	git grep -EIn "TODO|FIXME|XXX"
+sdist:  ## Create tar.gz source distribution.
+	${MAKE} generate-manifest
+	$(PYTHON_ENV_VARS) $(PYTHON) setup.py sdist
+	# Check sanity of source distribution.
+	$(PYTHON_ENV_VARS) $(PYTHON) -m virtualenv --clear --no-wheel --quiet build/venv
+	$(PYTHON_ENV_VARS) build/venv/bin/python -m pip install -v --isolated --quiet dist/*.tar.gz
+	$(PYTHON_ENV_VARS) build/venv/bin/python -c "import os; os.chdir('build/venv'); import pyftpdlib"
+	$(PYTHON) -m twine check --strict dist/*.tar.gz
 
 pre-release:  ## All the necessary steps before making a release.
 	${MAKE} clean
+	${MAKE} sdist
 	$(PYTHON) -c \
 		"from pyftpdlib import __ver__ as ver; \
 		doc = open('docs/index.rst').read(); \
@@ -194,15 +190,18 @@ pre-release:  ## All the necessary steps before making a release.
 		assert ver in history, '%r not in HISTORY.rst' % ver; \
 		assert 'XXXX' not in history; \
 		"
-	$(PYTHON) setup.py sdist
 
 release:  ## Creates a release (tar.gz + upload + git tag release).
 	${MAKE} pre-release
-	$(PYTHON) -m twine upload --verbose dist/*  # upload tar on PYPI
+	$(PYTHON) -m twine upload dist/*.tar.gz  # upload tar on PYPI
 	${MAKE} git-tag-release
 
 generate-manifest:  ## Generates MANIFEST.in file.
 	$(PYTHON) scripts/internal/generate_manifest.py > MANIFEST.in
+
+git-tag-release:  ## Git-tag a new release.
+	git tag -a release-`python3 -c "import setup; print(setup.VERSION)"` -m `git rev-list HEAD --count`:`git rev-parse --short HEAD`
+	git push --follow-tags
 
 print-announce:  ## Print announce of new release.
 	@$(PYTHON) scripts/internal/print_announce.py
@@ -210,6 +209,12 @@ print-announce:  ## Print announce of new release.
 # ===================================================================
 # Misc
 # ===================================================================
+
+grep-todos:  ## Look for TODOs in source files.
+	git grep -EIn "TODO|FIXME|XXX"
+
+check-manifest:  ## Inspect MANIFEST.in file.
+	$(PYTHON) -m check_manifest -v $(ARGS)
 
 check-broken-links:  ## Look for broken links in source files.
 	git ls-files | xargs $(PYTHON) -Wa scripts/internal/check_broken_links.py

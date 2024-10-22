@@ -67,7 +67,7 @@ Features
 
 - Extremely **lightweight**, **fast** and **scalable** (see
   `why <https://github.com/giampaolo/pyftpdlib/issues/203>`__ and
-  `benchmarks`__).
+  `benchmarks`_).
 - Uses **sendfile(2)** (see `pysendfile <https://github.com/giampaolo/pysendfile>`__)
   system call for uploads (Linux only).
 - Uses ``epoll()`` / ``kqueue()`` / ``select()`` to handle concurrency

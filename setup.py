@@ -109,6 +109,7 @@ def main():
         version=get_version(),
         description='Very fast asynchronous FTP server library',
         long_description=long_description,
+        long_description_content_type="text/x-rst",
         license='MIT',
         platforms='Platform Independent',
         author="Giampaolo Rodola'",
