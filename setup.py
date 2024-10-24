@@ -178,7 +178,7 @@ def main():
 if sys.version_info[0] < 3:  # noqa: UP036
     sys.exit(
         'Python 2 is no longer supported. Latest version is 1.5.10; use:\n'
-        'python3 -m pip install pyftpdlib==1.5.10'
+        'python2 -m pip install pyftpdlib==1.5.10'
     )
 
 if __name__ == '__main__':
