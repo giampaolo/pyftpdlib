@@ -1,5 +1,13 @@
 Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 
+Version: 2.0.2 - IN DEVELOPMENT
+===============================
+
+**Bug fixes**
+
+* #656: Python 3.14 changed the default multiprocessing method for POSIX (sans
+  macOS) from fork to forkserver, breaking ``MultiprocessFTPServer`` class.
+  (patch by Miro Hrončok)
 
 Version: 2.0.1 - 2024-10-22
 ===========================
