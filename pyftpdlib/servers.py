@@ -579,6 +579,13 @@ if os.name == 'posix':
 
             _lock = multiprocessing.Lock()
             _exit = multiprocessing.Event()
+            # Python 3.14 changed the non-macOS POSIX default to forkserver
+            # but the code in this module does not work with it
+            # See https://github.com/python/cpython/issues/125714
+            if multiprocessing.get_start_method() == 'forkserver':
+                _mp_context = multiprocessing.get_context(method='fork')
+            else:
+                _mp_context = multiprocessing.get_context()
 
             def _start_task(self, *args, **kwargs):
-                return multiprocessing.Process(*args, **kwargs)
+                return self._mp_context.Process(*args, **kwargs)
