@@ -329,37 +329,32 @@ class _SharedAuthorizerTests:
 
     def test_error_options(self):
         wrong_user = self.get_nonexistent_user()
-        self.assertRaisesWithMsg(
+        with pytest.raises(
             AuthorizerError,
-            "rejected_users and allowed_users options are mutually exclusive",
-            self.authorizer_class,
-            allowed_users=['foo'],
-            rejected_users=['bar'],
-        )
-        self.assertRaisesWithMsg(
-            AuthorizerError,
-            'invalid username "anonymous"',
-            self.authorizer_class,
-            allowed_users=['anonymous'],
-        )
-        self.assertRaisesWithMsg(
-            AuthorizerError,
-            'invalid username "anonymous"',
-            self.authorizer_class,
-            rejected_users=['anonymous'],
-        )
-        self.assertRaisesWithMsg(
-            AuthorizerError,
-            f'unknown user {wrong_user}',
-            self.authorizer_class,
-            allowed_users=[wrong_user],
-        )
-        self.assertRaisesWithMsg(
-            AuthorizerError,
-            f'unknown user {wrong_user}',
-            self.authorizer_class,
-            rejected_users=[wrong_user],
-        )
+            match=(
+                "rejected_users and allowed_users options are mutually"
+                " exclusive"
+            ),
+        ):
+            self.authorizer_class(
+                allowed_users=['foo'], rejected_users=['bar']
+            )
+        with pytest.raises(
+            AuthorizerError, match='invalid username "anonymous"'
+        ):
+            self.authorizer_class(allowed_users=['anonymous'])
+        with pytest.raises(
+            AuthorizerError, match='invalid username "anonymous"'
+        ):
+            self.authorizer_class(rejected_users=['anonymous'])
+        with pytest.raises(
+            AuthorizerError, match=f'unknown user {wrong_user}'
+        ):
+            self.authorizer_class(allowed_users=[wrong_user])
+        with pytest.raises(
+            AuthorizerError, match=f'unknown user {wrong_user}'
+        ):
+            self.authorizer_class(rejected_users=[wrong_user])
 
     def test_override_user_password(self):
         auth = self.authorizer_class()
@@ -425,19 +420,15 @@ class _SharedAuthorizerTests:
                 another_user = x
                 break
         nonexistent_user = self.get_nonexistent_user()
-        self.assertRaisesWithMsg(
+        with pytest.raises(
             AuthorizerError,
-            "at least one keyword argument must be specified",
-            auth.override_user,
-            this_user,
-        )
-        self.assertRaisesWithMsg(
-            AuthorizerError,
-            f'no such user {nonexistent_user}',
-            auth.override_user,
-            nonexistent_user,
-            perm='r',
-        )
+            match="at least one keyword argument must be specified",
+        ):
+            auth.override_user(this_user)
+        with pytest.raises(
+            AuthorizerError, match=f'no such user {nonexistent_user}'
+        ):
+            auth.override_user(nonexistent_user, perm='r')
         if self.authorizer_class.__name__ == 'UnixAuthorizer':
             auth = self.authorizer_class(
                 allowed_users=[this_user], require_valid_shell=False
@@ -445,13 +436,10 @@ class _SharedAuthorizerTests:
         else:
             auth = self.authorizer_class(allowed_users=[this_user])
         auth.override_user(this_user, perm='r')
-        self.assertRaisesWithMsg(
-            AuthorizerError,
-            f'{another_user} is not an allowed user',
-            auth.override_user,
-            another_user,
-            perm='r',
-        )
+        with pytest.raises(
+            AuthorizerError, match=f'{another_user} is not an allowed user'
+        ):
+            auth.override_user(another_user, perm='r')
         if self.authorizer_class.__name__ == 'UnixAuthorizer':
             auth = self.authorizer_class(
                 rejected_users=[this_user], require_valid_shell=False
@@ -459,20 +447,17 @@ class _SharedAuthorizerTests:
         else:
             auth = self.authorizer_class(rejected_users=[this_user])
         auth.override_user(another_user, perm='r')
-        self.assertRaisesWithMsg(
-            AuthorizerError,
-            f'{this_user} is not an allowed user',
-            auth.override_user,
-            this_user,
-            perm='r',
-        )
-        self.assertRaisesWithMsg(
-            AuthorizerError,
-            "can't assign password to anonymous user",
-            auth.override_user,
-            "anonymous",
-            password='foo',
-        )
+        with pytest.raises(
+            AuthorizerError, match=f'{this_user} is not an allowed user'
+        ):
+            auth.override_user(this_user, perm='r')
+        with pytest.raises(
+            AuthorizerError, match="can't assign password to anonymous user"
+        ):
+            auth.override_user(
+                "anonymous",
+                password='foo',
+            )
 
 
 # =====================================================================
@@ -569,38 +554,32 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
             self.fail("no user found")
 
         user = get_fake_shell_user()
-        self.assertRaisesWithMsg(
-            AuthorizerError,
-            f"user {user} has not a valid shell",
-            UnixAuthorizer,
-            allowed_users=[user],
-        )
+        with pytest.raises(
+            AuthorizerError, match=f"user {user} has not a valid shell"
+        ):
+            UnixAuthorizer(allowed_users=[user])
         # commented as it first fails for invalid home
-        # self.assertRaisesWithMsg(
-        #     ValueError,
-        #     "user %s has not a valid shell" % user,
-        #     UnixAuthorizer, anonymous_user=user)
+        # with pytest.raises(
+        #       ValueError, match="user %s has not a valid shell" % user
+        # ):
+        #     UnixAuthorizer(anonymous_user=user)
         auth = UnixAuthorizer()
         assert auth._has_valid_shell(self.get_current_user())
         assert not auth._has_valid_shell(user)
-        self.assertRaisesWithMsg(
-            AuthorizerError,
-            f"User {user} doesn't have a valid shell.",
-            auth.override_user,
-            user,
-            perm='r',
-        )
+        with pytest.raises(
+            AuthorizerError, match=f"User {user} doesn't have a valid shell."
+        ):
+            auth.override_user(user, perm='r')
 
     def test_not_root(self):
         # UnixAuthorizer is supposed to work only as super user
         auth = self.authorizer_class()
         try:
             auth.impersonate_user('nobody', '')
-            self.assertRaisesWithMsg(
-                AuthorizerError,
-                "super user privileges are required",
-                UnixAuthorizer,
-            )
+            with pytest.raises(
+                AuthorizerError, match="super user privileges are required"
+            ):
+                UnixAuthorizer()
         finally:
             auth.terminate_impersonation('nobody')
 

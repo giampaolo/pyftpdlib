@@ -250,7 +250,7 @@ def install_pydeps_dev():
     sh(cmd)
 
 
-def test(args=None):
+def test(args=None):  # noqa: PT028
     """Run tests."""
     if args is None:
         args = []
