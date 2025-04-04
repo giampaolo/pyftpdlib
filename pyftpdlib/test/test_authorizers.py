@@ -380,8 +380,7 @@ class _SharedAuthorizerTests:
         auth.override_user(user, homedir=dir)
         assert auth.get_home_dir(user) == dir
         # make sure other settings keep using default values
-        # self.assertEqual(auth.get_home_dir(user),
-        #                  self.get_current_user_homedir())
+        # assert auth.get_home_dir(user) == self.get_current_user_homedir())
         assert auth.get_perms(user) == "elradfmwMT"
         assert auth.get_msg_login(user) == "Login successful."
         assert auth.get_msg_quit(user) == "Goodbye."
@@ -393,7 +392,7 @@ class _SharedAuthorizerTests:
         assert auth.get_perms(user) == "elr"
         # make sure other settings keep using default values
         assert auth.get_home_dir(user) == self.get_current_user_homedir()
-        # self.assertEqual(auth.get_perms(user), "elradfmwMT")
+        # assert auth.get_perms(user) == "elradfmwMT"
         assert auth.get_msg_login(user) == "Login successful."
         assert auth.get_msg_quit(user) == "Goodbye."
 
@@ -406,8 +405,8 @@ class _SharedAuthorizerTests:
         # make sure other settings keep using default values
         assert auth.get_home_dir(user) == self.get_current_user_homedir()
         assert auth.get_perms(user) == "elradfmwMT"
-        # self.assertEqual(auth.get_msg_login(user), "Login successful.")
-        # self.assertEqual(auth.get_msg_quit(user), "Goodbye.")
+        # assert auth.get_msg_login(user) == "Login successful."
+        # assert auth.get_msg_quit(user) == "Goodbye."
 
     def test_override_user_errors(self):
         if self.authorizer_class.__name__ == 'UnixAuthorizer':

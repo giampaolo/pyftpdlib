@@ -1543,7 +1543,7 @@ class TestTimeouts(PyftpdlibTestCase):
     #     # fail if no msg is received within 1 second
     #     self.client.sock.settimeout(1)
     #     data = self.client.sock.recv(BUFSIZE)
-    #     self.assertEqual(data, b"421 Control connection timed out.\r\n")
+    #     assert data == b"421 Control connection timed out.\r\n"
     #     # ensure client has been kicked off
     #     self.assertRaises((OSError, EOFError), self.client.sendcmd,
     #                       'noop')
@@ -2230,15 +2230,14 @@ class TestIPv4Environment(_TestNetworkProtocols, PyftpdlibTestCase):
         with contextlib.closing(self.client.makeport()):
             self.client.sendcmd('abor')
         # test bad arguments
-        ae = self.assertEqual
         msg = "501 Invalid PORT format."
-        ae(self.cmdresp('port 127,0,0,1,1.1'), msg)  # sep != ','
-        ae(self.cmdresp('port X,0,0,1,1,1'), msg)  # value != int
-        ae(self.cmdresp('port 127,0,0,1,1,1,1'), msg)  # len(args) > 6
-        ae(self.cmdresp('port 127,0,0,1'), msg)  # len(args) < 6
-        ae(self.cmdresp('port 256,0,0,1,1,1'), msg)  # oct > 255
-        ae(self.cmdresp('port 127,0,0,1,256,1'), msg)  # port > 65535
-        ae(self.cmdresp('port 127,0,0,1,-1,0'), msg)  # port < 0
+        assert self.cmdresp('port 127,0,0,1,1.1') == msg  # sep != ','
+        assert self.cmdresp('port X,0,0,1,1,1') == msg  # value != int
+        assert self.cmdresp('port 127,0,0,1,1,1,1') == msg  # len(args) > 6
+        assert self.cmdresp('port 127,0,0,1') == msg  # len(args) < 6
+        assert self.cmdresp('port 256,0,0,1,1,1') == msg  # oct > 255
+        assert self.cmdresp('port 127,0,0,1,256,1') == msg  # port > 65535
+        assert self.cmdresp('port 127,0,0,1,-1,0') == msg  # port < 0
         # port < 1024
         resp = self.cmdresp(f"port {self.HOST.replace('.', ',')},1,1")
         assert resp[:3] == '501'
@@ -2544,7 +2543,7 @@ class TestCornerCases(PyftpdlibTestCase):
 #         if self.utf8fs:
 #             os.rmdir(TESTFN_UNICODE)
 #             dirname = self.client.mkd(TESTFN_UNICODE)
-#             self.assertEqual(dirname, '/' + TESTFN_UNICODE)
+#             assert dirname == '/' + TESTFN_UNICODE
 #             self.assertTrue(os.path.isdir(TESTFN_UNICODE))
 #         else:
 #             self.assertRaises(ftplib.error_perm, self.client.mkd,
@@ -2652,7 +2651,7 @@ class TestCornerCases(PyftpdlibTestCase):
 #             self.client.retrbinary('retr ' + TESTFN_UNICODE_2,
 #                                    dummy_recv.write)
 #             dummy_recv.seek(0)
-#             self.assertEqual(dummy_recv.read(), data)
+#             assert dummy_recv.read() == data
 #         else:
 #             dummy = io.BytesIO()
 #             self.assertRaises(ftplib.error_perm, self.client.storbinary,
@@ -2666,7 +2665,7 @@ class TestCornerCases(PyftpdlibTestCase):
 #             dummy = io.BytesIO()
 #             self.client.retrbinary('retr ' + TESTFN_UNICODE_2, dummy.write)
 #             dummy.seek(0)
-#             self.assertEqual(dummy.read(), data)
+#             assert dummy.read() == data
 #         else:
 #             dummy = io.BytesIO()
 #             self.assertRaises(ftplib.error_perm, self.client.retrbinary,
