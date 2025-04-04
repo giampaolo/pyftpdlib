@@ -2534,7 +2534,7 @@ class TestCornerCases(PyftpdlibTestCase):
 #     def test_cwd(self):
 #         if self.utf8fs:
 #             resp = self.client.cwd(TESTFN_UNICODE)
-#             self.assertTrue(TESTFN_UNICODE in resp)
+#             assert TESTFN_UNICODE in resp
 #         else:
 #             with pytest.raises(ftplib.error_perm):
 #                 self.client.cwd(TESTFN_UNICODE)
@@ -2544,7 +2544,7 @@ class TestCornerCases(PyftpdlibTestCase):
 #             os.rmdir(TESTFN_UNICODE)
 #             dirname = self.client.mkd(TESTFN_UNICODE)
 #             assert dirname == '/' + TESTFN_UNICODE
-#             self.assertTrue(os.path.isdir(TESTFN_UNICODE))
+#             assert os.path.isdir(TESTFN_UNICODE)
 #         else:
 #             with pytest.raises(ftplib.error_perm):
 #                 self.client.mkd(TESTFN_UNICODE)
@@ -2581,7 +2581,7 @@ class TestCornerCases(PyftpdlibTestCase):
 #     def test_stou(self):
 #         if self.utf8fs:
 #             resp = self.client.sendcmd('stou ' + TESTFN_UNICODE)
-#             self.assertTrue(TESTFN_UNICODE in resp)
+#             assert TESTFN_UNICODE in resp
 #         else:
 #             with pytest.raises(ftplib.error_perm):
 #                 self.client.sendcmd('stou ' + TESTFN_UNICODE)
@@ -2601,14 +2601,14 @@ class TestCornerCases(PyftpdlibTestCase):
 #         self.client.retrlines(cmd, ls.append)
 #         ls = '\n'.join(ls)
 #         if self.utf8fs:
-#             self.assertTrue(TESTFN_UNICODE in ls)
+#             assert TESTFN_UNICODE in ls
 #         else:
 #             # Part of the filename which are not encodable are supposed
 #             # to have been replaced. The file should be something like
 #             # 'tmp-pyftpdlib-unicode-????'. In any case it is not
 #             # referenceable (e.g. DELE 'tmp-pyftpdlib-unicode-????'
 #             # won't work).
-#             self.assertTrue('tmp-pyftpdlib-unicode' in ls)
+#             assert 'tmp-pyftpdlib-unicode' in ls
 
 #     def test_list(self):
 #         self._test_listing_cmds('list')
@@ -2625,14 +2625,12 @@ class TestCornerCases(PyftpdlibTestCase):
 #             return self.client.voidcmd(cmd).split('\n')[1]
 
 #         if self.utf8fs:
-#             self.assertTrue('type=dir' in
-#                             mlstline('mlst ' + TESTFN_UNICODE))
-#             self.assertTrue('/' + TESTFN_UNICODE in
-#                             mlstline('mlst ' + TESTFN_UNICODE))
-#             self.assertTrue('type=file' in
-#                             mlstline('mlst ' + TESTFN_UNICODE_2))
-#             self.assertTrue('/' + TESTFN_UNICODE_2 in
-#                             mlstline('mlst ' + TESTFN_UNICODE_2))
+#             assert 'type=dir' in mlstline('mlst ' + TESTFN_UNICODE))
+#             assert '/' + TESTFN_UNICODE in mlstline(
+#                  'mlst ' + TESTFN_UNICODE))
+#             assert 'type=file' in mlstline('mlst ' + TESTFN_UNICODE_2))
+#             assert '/' + TESTFN_UNICODE_2 in mlstline(
+#                 'mlst ' + TESTFN_UNICODE_2))
 #         else:
 #             with pytest.raises(ftplib.error_perm):
 #                 mlstline('mlst ' + TESTFN_UNICODE)
