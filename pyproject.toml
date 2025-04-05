@@ -152,7 +152,7 @@ addopts = '''
     -p instafail
     -p xdist
     '''
-testpaths = ["psutil/tests/"]
+testpaths = ["pyftpdlib/test/"]
 
 [tool.rstcheck]
 ignore_messages = [
