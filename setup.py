@@ -20,6 +20,7 @@ TEST_DEPS = [
     "psutil",
     "pyopenssl",
     "pytest",
+    "pytest-instafail",
     "pytest-xdist",
     "setuptools",
 ]

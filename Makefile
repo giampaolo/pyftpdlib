@@ -11,8 +11,7 @@ ARGS =
 # In not in a virtualenv, add --user options for install commands.
 SETUP_INSTALL_ARGS = `$(PYTHON) -c \
 	"import sys; print('' if hasattr(sys, 'real_prefix') or hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix else '--user')"`
-PYTHON_ENV_VARS = PYTHONWARNINGS=always PYTHONUNBUFFERED=1
-PYTEST_ARGS = -v -s --tb=short
+PYTHON_ENV_VARS = PYTHONWARNINGS=always PYTHONUNBUFFERED=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1
 NUM_WORKERS = `$(PYTHON) -c "import os; print(os.cpu_count() or 1)"`
 PIP_INSTALL_ARGS = --trusted-host files.pythonhosted.org --trusted-host pypi.org --upgrade
 
@@ -87,38 +86,38 @@ install-git-hooks:  ## Install GIT pre-commit hook.
 # ===================================================================
 
 test:  ## Run all tests. To run a specific test: do "make test ARGS=pyftpdlib.test.test_functional.TestFtpStoreData"
-	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS)
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS)
 
 test-parallel:  ## Run all tests in parallel.
-	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) -n auto --dist loadgroup $(ARGS)
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest -n auto --dist loadgroup $(ARGS)
 
 test-functional:  ## Run functional FTP tests.
-	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_functional.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) pyftpdlib/test/test_functional.py
 
 test-functional-ssl:  ## Run functional FTPS tests.
-	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_functional_ssl.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) pyftpdlib/test/test_functional_ssl.py
 
 test-servers:  ## Run tests for FTPServer and its subclasses.
-	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_servers.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) pyftpdlib/test/test_servers.py
 
 test-authorizers:  ## Run tests for authorizers.
-	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_authorizers.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) pyftpdlib/test/test_authorizers.py
 
 test-filesystems:  ## Run filesystem tests.
-	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_filesystems.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) pyftpdlib/test/test_filesystems.py
 
 test-ioloop:  ## Run IOLoop tests.
-	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_ioloop.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) pyftpdlib/test/test_ioloop.py
 
 test-cli:  ## Run miscellaneous tests.
-	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) $(ARGS) pyftpdlib/test/test_cli.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) pyftpdlib/test/test_cli.py
 
 test-lastfailed:  ## Run previously failed tests
-	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(PYTEST_ARGS) --last-failed $(ARGS)
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest --last-failed $(ARGS)
 
 test-coverage:  ## Run test coverage.
 	rm -rf .coverage htmlcov
-	$(PYTHON_ENV_VARS) $(PYTHON) -m coverage run -m pytest $(PYTEST_ARGS) $(ARGS)
+	$(PYTHON_ENV_VARS) $(PYTHON) -m coverage run -m pytest $(ARGS)
 	$(PYTHON) -m coverage report
 	@echo "writing results to htmlcov/index.html"
 	$(PYTHON) -m coverage html

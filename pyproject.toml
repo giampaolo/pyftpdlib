@@ -137,6 +137,24 @@ disable = [
     "useless-object-inheritance",
 ]
 
+[tool.pytest.ini_options]
+addopts = '''
+    --verbose
+    --capture=no
+    --no-header
+    --tb=short
+    --strict-config
+    --strict-markers
+    --instafail
+    -p no:junitxml
+    -p no:doctest
+    -p no:nose
+    -p no:pastebin
+    -p instafail
+    -p xdist
+    '''
+testpaths = ["psutil/tests/"]
+
 [tool.rstcheck]
 ignore_messages = [
     "Unexpected possible title overline or transition",
