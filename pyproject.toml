@@ -60,7 +60,6 @@ ignore = [
     "PLR",  # pylint
     "PLW",  # pylint
     "PT003",  # `scope='function'` is implied in `@pytest.fixture()`
-    "PT004",  # Fixture `for_each_test_method` does not return anything, add leading underscore
     "PT011",  # `pytest.raises(OSError)` is too broad, set the `match` parameter or use a more specific exception
     "PT021",  # Use `yield` instead of `request.addfinalizer`
     "PTH",  # flake8-use-pathlib
