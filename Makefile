@@ -12,7 +12,6 @@ ARGS =
 SETUP_INSTALL_ARGS = `$(PYTHON) -c \
 	"import sys; print('' if hasattr(sys, 'real_prefix') or hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix else '--user')"`
 PYTHON_ENV_VARS = PYTHONWARNINGS=always PYTHONUNBUFFERED=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1
-NUM_WORKERS = `$(PYTHON) -c "import os; print(os.cpu_count() or 1)"`
 PIP_INSTALL_ARGS = --trusted-host files.pythonhosted.org --trusted-host pypi.org --upgrade
 
 # if make is invoked with no arg, default to `make help`
@@ -24,8 +23,6 @@ _ := $(shell mkdir -p .git/hooks/ && ln -sf ../../scripts/internal/git_pre_commi
 # ===================================================================
 # Install
 # ===================================================================
-
-all: test
 
 clean:  ## Remove all build files.
 	@rm -rfv `find . \
@@ -134,7 +131,7 @@ ruff:  ## Run ruff linter.
 	@git ls-files '*.py' | xargs $(PYTHON) -m ruff check --output-format=concise
 
 _pylint:  ## Python pylint (not mandatory, just run it from time to time)
-	@git ls-files '*.py' | xargs $(PYTHON) -m pylint --rcfile=pyproject.toml --jobs=${NUM_WORKERS}
+	@git ls-files '*.py' | xargs $(PYTHON) -m pylint --rcfile=pyproject.toml --jobs=0 $(ARGS)
 
 lint-rst:  ## Run RsT linter.
 	@git ls-files '*.rst' | xargs rstcheck --config=pyproject.toml
