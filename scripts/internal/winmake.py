@@ -22,7 +22,6 @@ import sys
 
 
 PYTHON = os.getenv('PYTHON', sys.executable)
-PYTEST_ARGS = ["-v", "-s", "--tb=short"]
 HERE = os.path.abspath(os.path.dirname(__file__))
 ROOT_DIR = os.path.realpath(os.path.join(HERE, "..", ".."))
 WINDOWS = os.name == "nt"
@@ -256,7 +255,7 @@ def test(args=None):  # noqa: PT028
         args = []
     elif isinstance(args, str):
         args = shlex.split(args)
-    sh([PYTHON, '-m', 'pytest', *PYTEST_ARGS, *args])
+    sh([PYTHON, '-m', 'pytest', *args])
 
 
 def test_authorizers():
@@ -264,7 +263,6 @@ def test_authorizers():
         PYTHON,
         "-m",
         "pytest",
-        *PYTEST_ARGS,
         "pyftpdlib/test/test_authorizers.py",
     ])
 
@@ -274,7 +272,6 @@ def test_filesystems():
         PYTHON,
         "-m",
         "pytest",
-        *PYTEST_ARGS,
         "pyftpdlib/test/test_filesystems.py",
     ])
 
@@ -284,7 +281,6 @@ def test_functional():
         PYTHON,
         "-m",
         "pytest",
-        *PYTEST_ARGS,
         "pyftpdlib/test/test_functional.py",
     ])
 
@@ -294,17 +290,16 @@ def test_functional_ssl():
         PYTHON,
         "-m",
         "pytest",
-        *PYTEST_ARGS,
         "pyftpdlib/test/test_functional_ssl.py",
     ])
 
 
 def test_ioloop():
-    sh([PYTHON, "-m", "pytest", *PYTEST_ARGS, "pyftpdlib/test/test_ioloop.py"])
+    sh([PYTHON, "-m", "pytest", "pyftpdlib/test/test_ioloop.py"])
 
 
 def test_cli():
-    sh([PYTHON, "-m", "pytest", *PYTEST_ARGS, "pyftpdlib/test/test_cli.py"])
+    sh([PYTHON, "-m", "pytest", "pyftpdlib/test/test_cli.py"])
 
 
 def test_servers():
@@ -312,14 +307,13 @@ def test_servers():
         PYTHON,
         "-m",
         "pytest",
-        *PYTEST_ARGS,
         "pyftpdlib/test/test_servers.py",
     ])
 
 
 def coverage():
     """Run coverage tests."""
-    sh([PYTHON, "-m", "coverage", "run", "-m", "pytest", *PYTEST_ARGS])
+    sh([PYTHON, "-m", "coverage", "run", "-m", "pytest"])
     sh([PYTHON, "-m", "coverage", "report"])
     sh([PYTHON, "-m", "coverage", "html"])
     sh([PYTHON, "-m", "webbrowser", "-t", "htmlcov/index.html"])
@@ -332,7 +326,7 @@ def test_by_name(name):
 
 def test_last_failed():
     """Re-run tests which failed on last run."""
-    sh([PYTHON, "-m", "pytest", *PYTEST_ARGS, "--last-failed"])
+    sh([PYTHON, "-m", "pytest", "--last-failed"])
 
 
 def install_git_hooks():
