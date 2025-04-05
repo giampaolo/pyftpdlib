@@ -20,6 +20,7 @@ TEST_DEPS = [
     "psutil",
     "pyopenssl",
     "pytest",
+    "pytest-instafail",
     "pytest-xdist",
     "setuptools",
 ]
@@ -32,7 +33,7 @@ if WINDOWS:
 
 # Development deps, installable via `pip install .[dev]`.
 DEV_DEPS = [
-    "black",
+    "black==24.10.0",
     "check-manifest",
     "coverage",
     "pylint",

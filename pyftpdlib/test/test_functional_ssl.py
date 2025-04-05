@@ -222,18 +222,16 @@ class TestFTPS(PyftpdlibTestCase):
         assert isinstance(self.client.sock, ssl.SSLSocket)
         # AUTH issued twice
         msg = '503 Already using TLS.'
-        self.assertRaisesWithMsg(
-            ftplib.error_perm, msg, self.client.sendcmd, 'auth tls'
-        )
+        with pytest.raises(ftplib.error_perm, match=msg):
+            self.client.sendcmd('auth tls')
 
     def test_pbsz(self):
         # unsecured
         self._setup()
         self.client.login(secure=False)
         msg = "503 PBSZ not allowed on insecure control connection."
-        self.assertRaisesWithMsg(
-            ftplib.error_perm, msg, self.client.sendcmd, 'pbsz 0'
-        )
+        with pytest.raises(ftplib.error_perm, match=msg):
+            self.client.sendcmd('pbsz 0')
         # secured
         self.client.login(secure=True)
         resp = self.client.sendcmd('pbsz 0')
@@ -243,9 +241,8 @@ class TestFTPS(PyftpdlibTestCase):
         self._setup()
         self.client.login(secure=False)
         msg = "503 PROT not allowed on insecure control connection."
-        self.assertRaisesWithMsg(
-            ftplib.error_perm, msg, self.client.sendcmd, 'prot p'
-        )
+        with pytest.raises(ftplib.error_perm, match=msg):
+            self.client.sendcmd('prot p')
         self.client.login(secure=True)
         # secured
         self.client.prot_p()
@@ -294,21 +291,18 @@ class TestFTPS(PyftpdlibTestCase):
     def test_tls_control_required(self):
         self._setup(tls_control_required=True)
         msg = "550 SSL/TLS required on the control channel."
-        self.assertRaisesWithMsg(
-            ftplib.error_perm, msg, self.client.sendcmd, "user " + USER
-        )
-        self.assertRaisesWithMsg(
-            ftplib.error_perm, msg, self.client.sendcmd, "pass " + PASSWD
-        )
+        with pytest.raises(ftplib.error_perm, match=msg):
+            self.client.sendcmd("user " + USER)
+        with pytest.raises(ftplib.error_perm, match=msg):
+            self.client.sendcmd("pass " + PASSWD)
         self.client.login(secure=True)
 
     def test_tls_data_required(self):
         self._setup(tls_data_required=True)
         self.client.login(secure=True)
         msg = "550 SSL/TLS required on the data channel."
-        self.assertRaisesWithMsg(
-            ftplib.error_perm, msg, self.client.retrlines, 'list', lambda x: x
-        )
+        with pytest.raises(ftplib.error_perm, match=msg):
+            self.client.retrlines('list', lambda x: x)
         self.client.prot_p()
         self.client.retrlines('list', lambda x: x)
 

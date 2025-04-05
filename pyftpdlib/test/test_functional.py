@@ -1543,10 +1543,10 @@ class TestTimeouts(PyftpdlibTestCase):
     #     # fail if no msg is received within 1 second
     #     self.client.sock.settimeout(1)
     #     data = self.client.sock.recv(BUFSIZE)
-    #     self.assertEqual(data, b"421 Control connection timed out.\r\n")
+    #     assert data == b"421 Control connection timed out.\r\n"
     #     # ensure client has been kicked off
-    #     self.assertRaises((OSError, EOFError), self.client.sendcmd,
-    #                       'noop')
+    #     with pytest.raises((OSError, EOFError)):
+    #         self.client.sendcmd('noop')
 
     def test_data_timeout(self):
         # Test data channel timeout.  The client which does not send
@@ -2230,15 +2230,14 @@ class TestIPv4Environment(_TestNetworkProtocols, PyftpdlibTestCase):
         with contextlib.closing(self.client.makeport()):
             self.client.sendcmd('abor')
         # test bad arguments
-        ae = self.assertEqual
         msg = "501 Invalid PORT format."
-        ae(self.cmdresp('port 127,0,0,1,1.1'), msg)  # sep != ','
-        ae(self.cmdresp('port X,0,0,1,1,1'), msg)  # value != int
-        ae(self.cmdresp('port 127,0,0,1,1,1,1'), msg)  # len(args) > 6
-        ae(self.cmdresp('port 127,0,0,1'), msg)  # len(args) < 6
-        ae(self.cmdresp('port 256,0,0,1,1,1'), msg)  # oct > 255
-        ae(self.cmdresp('port 127,0,0,1,256,1'), msg)  # port > 65535
-        ae(self.cmdresp('port 127,0,0,1,-1,0'), msg)  # port < 0
+        assert self.cmdresp('port 127,0,0,1,1.1') == msg  # sep != ','
+        assert self.cmdresp('port X,0,0,1,1,1') == msg  # value != int
+        assert self.cmdresp('port 127,0,0,1,1,1,1') == msg  # len(args) > 6
+        assert self.cmdresp('port 127,0,0,1') == msg  # len(args) < 6
+        assert self.cmdresp('port 256,0,0,1,1,1') == msg  # oct > 255
+        assert self.cmdresp('port 127,0,0,1,256,1') == msg  # port > 65535
+        assert self.cmdresp('port 127,0,0,1,-1,0') == msg  # port < 0
         # port < 1024
         resp = self.cmdresp(f"port {self.HOST.replace('.', ',')},1,1")
         assert resp[:3] == '501'
@@ -2535,65 +2534,65 @@ class TestCornerCases(PyftpdlibTestCase):
 #     def test_cwd(self):
 #         if self.utf8fs:
 #             resp = self.client.cwd(TESTFN_UNICODE)
-#             self.assertTrue(TESTFN_UNICODE in resp)
+#             assert TESTFN_UNICODE in resp
 #         else:
-#             self.assertRaises(ftplib.error_perm, self.client.cwd,
-#                               TESTFN_UNICODE)
+#             with pytest.raises(ftplib.error_perm):
+#                 self.client.cwd(TESTFN_UNICODE)
 
 #     def test_mkd(self):
 #         if self.utf8fs:
 #             os.rmdir(TESTFN_UNICODE)
 #             dirname = self.client.mkd(TESTFN_UNICODE)
-#             self.assertEqual(dirname, '/' + TESTFN_UNICODE)
-#             self.assertTrue(os.path.isdir(TESTFN_UNICODE))
+#             assert dirname == '/' + TESTFN_UNICODE
+#             assert os.path.isdir(TESTFN_UNICODE)
 #         else:
-#             self.assertRaises(ftplib.error_perm, self.client.mkd,
-#                               TESTFN_UNICODE)
+#             with pytest.raises(ftplib.error_perm):
+#                 self.client.mkd(TESTFN_UNICODE)
 
 #     def test_rmdir(self):
 #         if self.utf8fs:
 #             self.client.rmd(TESTFN_UNICODE)
 #         else:
-#             self.assertRaises(ftplib.error_perm, self.client.rmd,
-#                               TESTFN_UNICODE)
+#             with pytest.raises(ftplib.error_perm):
+#                 self.client.rmd(TESTFN_UNICODE)
 
 #     def test_rnfr_rnto(self):
 #         if self.utf8fs:
 #             self.client.rename(TESTFN_UNICODE, TESTFN)
 #         else:
-#             self.assertRaises(ftplib.error_perm, self.client.rename,
-#                               TESTFN_UNICODE, TESTFN)
+#             with pytest.raises(ftplib.error_perm):
+#                 self.client.rename(TESTFN_UNICODE, TESTFN)
 
 #     def test_size(self):
 #         self.client.sendcmd('type i')
 #         if self.utf8fs:
 #             self.client.sendcmd('size ' + TESTFN_UNICODE_2)
 #         else:
-#             self.assertRaises(ftplib.error_perm, self.client.sendcmd,
-#                               'size ' + TESTFN_UNICODE_2)
+#             with pytest.raises(ftplib.error_perm):
+#                 self.client.sendcmd('size ' + TESTFN_UNICODE_2)
 
 #     def test_mdtm(self):
 #         if self.utf8fs:
 #             self.client.sendcmd('mdtm ' + TESTFN_UNICODE_2)
 #         else:
-#             self.assertRaises(ftplib.error_perm, self.client.sendcmd,
-#                               'mdtm ' + TESTFN_UNICODE_2)
+#             with pytest.raises(ftplib.error_perm):
+#                 self.client.sendcmd('mdtm ' + TESTFN_UNICODE_2)
 
 #     def test_stou(self):
 #         if self.utf8fs:
 #             resp = self.client.sendcmd('stou ' + TESTFN_UNICODE)
-#             self.assertTrue(TESTFN_UNICODE in resp)
+#             assert TESTFN_UNICODE in resp
 #         else:
-#             self.assertRaises(ftplib.error_perm, self.client.sendcmd,
-#                               'stou ' + TESTFN_UNICODE)
+#             with pytest.raises(ftplib.error_perm):
+#                 self.client.sendcmd('stou ' + TESTFN_UNICODE)
 
 #     if hasattr(os, 'chmod'):
 #         def test_site_chmod(self):
 #             if self.utf8fs:
 #                 self.client.sendcmd('site chmod 777 ' + TESTFN_UNICODE)
 #             else:
-#                 self.assertRaises(ftplib.error_perm, self.client.sendcmd,
-#                                   'site chmod 777 ' + TESTFN_UNICODE)
+#                 with pytest.raises(ftplib.error_perm):
+#                     self.client.sendcmd('site chmod 777 ' + TESTFN_UNICODE)
 
 #     # --- listing cmds
 
@@ -2602,14 +2601,14 @@ class TestCornerCases(PyftpdlibTestCase):
 #         self.client.retrlines(cmd, ls.append)
 #         ls = '\n'.join(ls)
 #         if self.utf8fs:
-#             self.assertTrue(TESTFN_UNICODE in ls)
+#             assert TESTFN_UNICODE in ls
 #         else:
 #             # Part of the filename which are not encodable are supposed
 #             # to have been replaced. The file should be something like
 #             # 'tmp-pyftpdlib-unicode-????'. In any case it is not
 #             # referenceable (e.g. DELE 'tmp-pyftpdlib-unicode-????'
 #             # won't work).
-#             self.assertTrue('tmp-pyftpdlib-unicode' in ls)
+#             assert 'tmp-pyftpdlib-unicode' in ls
 
 #     def test_list(self):
 #         self._test_listing_cmds('list')
@@ -2626,17 +2625,15 @@ class TestCornerCases(PyftpdlibTestCase):
 #             return self.client.voidcmd(cmd).split('\n')[1]
 
 #         if self.utf8fs:
-#             self.assertTrue('type=dir' in
-#                             mlstline('mlst ' + TESTFN_UNICODE))
-#             self.assertTrue('/' + TESTFN_UNICODE in
-#                             mlstline('mlst ' + TESTFN_UNICODE))
-#             self.assertTrue('type=file' in
-#                             mlstline('mlst ' + TESTFN_UNICODE_2))
-#             self.assertTrue('/' + TESTFN_UNICODE_2 in
-#                             mlstline('mlst ' + TESTFN_UNICODE_2))
+#             assert 'type=dir' in mlstline('mlst ' + TESTFN_UNICODE))
+#             assert '/' + TESTFN_UNICODE in mlstline(
+#                  'mlst ' + TESTFN_UNICODE))
+#             assert 'type=file' in mlstline('mlst ' + TESTFN_UNICODE_2))
+#             assert '/' + TESTFN_UNICODE_2 in mlstline(
+#                 'mlst ' + TESTFN_UNICODE_2))
 #         else:
-#             self.assertRaises(ftplib.error_perm,
-#                               mlstline, 'mlst ' + TESTFN_UNICODE)
+#             with pytest.raises(ftplib.error_perm):
+#                 mlstline('mlst ' + TESTFN_UNICODE)
 
 #     # --- file transfer
 
@@ -2652,11 +2649,11 @@ class TestCornerCases(PyftpdlibTestCase):
 #             self.client.retrbinary('retr ' + TESTFN_UNICODE_2,
 #                                    dummy_recv.write)
 #             dummy_recv.seek(0)
-#             self.assertEqual(dummy_recv.read(), data)
+#             assert dummy_recv.read() == data
 #         else:
 #             dummy = io.BytesIO()
-#             self.assertRaises(ftplib.error_perm, self.client.storbinary,
-#                               'stor ' + TESTFN_UNICODE_2, dummy)
+#             with pytest.raises(ftplib.error_perm):
+#                 self.client.storbinary('stor ' + TESTFN_UNICODE_2, dummy)
 
 #     def test_retr(self):
 #         if self.utf8fs:
@@ -2666,11 +2663,13 @@ class TestCornerCases(PyftpdlibTestCase):
 #             dummy = io.BytesIO()
 #             self.client.retrbinary('retr ' + TESTFN_UNICODE_2, dummy.write)
 #             dummy.seek(0)
-#             self.assertEqual(dummy.read(), data)
+#             assert dummy.read() == data
 #         else:
 #             dummy = io.BytesIO()
-#             self.assertRaises(ftplib.error_perm, self.client.retrbinary,
-#                               'retr ' + TESTFN_UNICODE_2, dummy.write)
+#             with pytest.raises(ftplib.error_perm):
+#                 self.client.retrbinary(
+#                     'retr ' + TESTFN_UNICODE_2, dummy.write
+#                 )
 
 
 class ThreadedFTPTests(PyftpdlibTestCase):

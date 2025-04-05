@@ -25,73 +25,73 @@ class TestAbstractedFS(PyftpdlibTestCase):
 
     def test_ftpnorm(self):
         # Tests for ftpnorm method.
-        ae = self.assertEqual
         fs = AbstractedFS('/', None)
 
         fs._cwd = '/'
-        ae(fs.ftpnorm(''), '/')
-        ae(fs.ftpnorm('/'), '/')
-        ae(fs.ftpnorm('.'), '/')
-        ae(fs.ftpnorm('..'), '/')
-        ae(fs.ftpnorm('a'), '/a')
-        ae(fs.ftpnorm('/a'), '/a')
-        ae(fs.ftpnorm('/a/'), '/a')
-        ae(fs.ftpnorm('a/..'), '/')
-        ae(fs.ftpnorm('a/b'), '/a/b')
-        ae(fs.ftpnorm('a/b/..'), '/a')
-        ae(fs.ftpnorm('a/b/../..'), '/')
+        assert fs.ftpnorm('') == '/'
+        assert fs.ftpnorm('/') == '/'
+        assert fs.ftpnorm('.') == '/'
+        assert fs.ftpnorm('..') == '/'
+        assert fs.ftpnorm('a') == '/a'
+        assert fs.ftpnorm('/a') == '/a'
+        assert fs.ftpnorm('/a/') == '/a'
+        assert fs.ftpnorm('a/..') == '/'
+        assert fs.ftpnorm('a/b') == '/a/b'
+        assert fs.ftpnorm('a/b/..') == '/a'
+        assert fs.ftpnorm('a/b/../..') == '/'
+
         fs._cwd = '/sub'
-        ae(fs.ftpnorm(''), '/sub')
-        ae(fs.ftpnorm('/'), '/')
-        ae(fs.ftpnorm('.'), '/sub')
-        ae(fs.ftpnorm('..'), '/')
-        ae(fs.ftpnorm('a'), '/sub/a')
-        ae(fs.ftpnorm('a/'), '/sub/a')
-        ae(fs.ftpnorm('a/..'), '/sub')
-        ae(fs.ftpnorm('a/b'), '/sub/a/b')
-        ae(fs.ftpnorm('a/b/'), '/sub/a/b')
-        ae(fs.ftpnorm('a/b/..'), '/sub/a')
-        ae(fs.ftpnorm('a/b/../..'), '/sub')
-        ae(fs.ftpnorm('a/b/../../..'), '/')
-        ae(fs.ftpnorm('//'), '/')  # UNC paths must be collapsed
+        assert fs.ftpnorm('') == '/sub'
+        assert fs.ftpnorm('/') == '/'
+        assert fs.ftpnorm('.') == '/sub'
+        assert fs.ftpnorm('..') == '/'
+        assert fs.ftpnorm('a') == '/sub/a'
+        assert fs.ftpnorm('a/') == '/sub/a'
+        assert fs.ftpnorm('a/..') == '/sub'
+        assert fs.ftpnorm('a/b') == '/sub/a/b'
+        assert fs.ftpnorm('a/b/') == '/sub/a/b'
+        assert fs.ftpnorm('a/b/..') == '/sub/a'
+        assert fs.ftpnorm('a/b/../..') == '/sub'
+        assert fs.ftpnorm('a/b/../../..') == '/'
+        assert fs.ftpnorm('//') == '/'  # UNC paths must be collapsed
 
     def test_ftp2fs(self):
         # Tests for ftp2fs method.
         def join(x, y):
             return os.path.join(x, y.replace('/', os.sep))
 
-        ae = self.assertEqual
         fs = AbstractedFS('/', None)
 
         def goforit(root):
             fs._root = root
             fs._cwd = '/'
-            ae(fs.ftp2fs(''), root)
-            ae(fs.ftp2fs('/'), root)
-            ae(fs.ftp2fs('.'), root)
-            ae(fs.ftp2fs('..'), root)
-            ae(fs.ftp2fs('a'), join(root, 'a'))
-            ae(fs.ftp2fs('/a'), join(root, 'a'))
-            ae(fs.ftp2fs('/a/'), join(root, 'a'))
-            ae(fs.ftp2fs('a/..'), root)
-            ae(fs.ftp2fs('a/b'), join(root, r'a/b'))
-            ae(fs.ftp2fs('/a/b'), join(root, r'a/b'))
-            ae(fs.ftp2fs('/a/b/..'), join(root, 'a'))
-            ae(fs.ftp2fs('/a/b/../..'), root)
+            assert fs.ftp2fs('') == root
+            assert fs.ftp2fs('/') == root
+            assert fs.ftp2fs('.') == root
+            assert fs.ftp2fs('..') == root
+            assert fs.ftp2fs('a') == join(root, 'a')
+            assert fs.ftp2fs('/a') == join(root, 'a')
+            assert fs.ftp2fs('/a/') == join(root, 'a')
+            assert fs.ftp2fs('a/..') == root
+            assert fs.ftp2fs('a/b') == join(root, r'a/b')
+            assert fs.ftp2fs('/a/b') == join(root, r'a/b')
+            assert fs.ftp2fs('/a/b/..') == join(root, 'a')
+            assert fs.ftp2fs('/a/b/../..') == root
+
             fs._cwd = '/sub'
-            ae(fs.ftp2fs(''), join(root, 'sub'))
-            ae(fs.ftp2fs('/'), root)
-            ae(fs.ftp2fs('.'), join(root, 'sub'))
-            ae(fs.ftp2fs('..'), root)
-            ae(fs.ftp2fs('a'), join(root, 'sub/a'))
-            ae(fs.ftp2fs('a/'), join(root, 'sub/a'))
-            ae(fs.ftp2fs('a/..'), join(root, 'sub'))
-            ae(fs.ftp2fs('a/b'), join(root, 'sub/a/b'))
-            ae(fs.ftp2fs('a/b/..'), join(root, 'sub/a'))
-            ae(fs.ftp2fs('a/b/../..'), join(root, 'sub'))
-            ae(fs.ftp2fs('a/b/../../..'), root)
+            assert fs.ftp2fs('') == join(root, 'sub')
+            assert fs.ftp2fs('/') == root
+            assert fs.ftp2fs('.') == join(root, 'sub')
+            assert fs.ftp2fs('..') == root
+            assert fs.ftp2fs('a') == join(root, 'sub/a')
+            assert fs.ftp2fs('a/') == join(root, 'sub/a')
+            assert fs.ftp2fs('a/..') == join(root, 'sub')
+            assert fs.ftp2fs('a/b') == join(root, 'sub/a/b')
+            assert fs.ftp2fs('a/b/..') == join(root, 'sub/a')
+            assert fs.ftp2fs('a/b/../..') == join(root, 'sub')
+            assert fs.ftp2fs('a/b/../../..') == root
             # UNC paths must be collapsed
-            ae(fs.ftp2fs('//a'), join(root, 'a'))
+            assert fs.ftp2fs('//a'), join(root, 'a')
 
         if os.sep == '\\':
             goforit(r'C:\dir')
@@ -111,25 +111,24 @@ class TestAbstractedFS(PyftpdlibTestCase):
         def join(x, y):
             return os.path.join(x, y.replace('/', os.sep))
 
-        ae = self.assertEqual
         fs = AbstractedFS('/', None)
 
         def goforit(root):
             fs._root = root
-            ae(fs.fs2ftp(root), '/')
-            ae(fs.fs2ftp(join(root, '/')), '/')
-            ae(fs.fs2ftp(join(root, '.')), '/')
+            assert fs.fs2ftp(root) == '/'
+            assert fs.fs2ftp(join(root, '/')) == '/'
+            assert fs.fs2ftp(join(root, '.')) == '/'
             # can't escape from root
-            ae(fs.fs2ftp(join(root, '..')), '/')
-            ae(fs.fs2ftp(join(root, 'a')), '/a')
-            ae(fs.fs2ftp(join(root, 'a/')), '/a')
-            ae(fs.fs2ftp(join(root, 'a/..')), '/')
-            ae(fs.fs2ftp(join(root, 'a/b')), '/a/b')
-            ae(fs.fs2ftp(join(root, 'a/b')), '/a/b')
-            ae(fs.fs2ftp(join(root, 'a/b/..')), '/a')
-            ae(fs.fs2ftp(join(root, '/a/b/../..')), '/')
+            assert fs.fs2ftp(join(root, '..')) == '/'
+            assert fs.fs2ftp(join(root, 'a')) == '/a'
+            assert fs.fs2ftp(join(root, 'a/')) == '/a'
+            assert fs.fs2ftp(join(root, 'a/..')) == '/'
+            assert fs.fs2ftp(join(root, 'a/b')) == '/a/b'
+            assert fs.fs2ftp(join(root, 'a/b')) == '/a/b'
+            assert fs.fs2ftp(join(root, 'a/b/..')) == '/a'
+            assert fs.fs2ftp(join(root, '/a/b/../..')) == '/'
             fs._cwd = '/sub'
-            ae(fs.fs2ftp(join(root, 'a/')), '/a')
+            assert fs.fs2ftp(join(root, 'a/')) == '/a'
 
         if os.sep == '\\':
             goforit(r'C:\dir')
@@ -138,18 +137,18 @@ class TestAbstractedFS(PyftpdlibTestCase):
             # as specifying the current drive directory (e.g. 'C:\\')
             goforit('\\')
             fs._root = r'C:\dir'
-            ae(fs.fs2ftp('C:\\'), '/')
-            ae(fs.fs2ftp('D:\\'), '/')
-            ae(fs.fs2ftp('D:\\dir'), '/')
+            assert fs.fs2ftp('C:\\') == '/'
+            assert fs.fs2ftp('D:\\') == '/'
+            assert fs.fs2ftp('D:\\dir') == '/'
         elif os.sep == '/':
             goforit('/')
             if os.path.realpath('/__home/user') != '/__home/user':
                 self.fail('Test skipped (symlinks not allowed).')
             goforit('/__home/user')
             fs._root = '/__home/user'
-            ae(fs.fs2ftp('/__home'), '/')
-            ae(fs.fs2ftp('/'), '/')
-            ae(fs.fs2ftp('/__home/userx'), '/')
+            assert fs.fs2ftp('/__home') == '/'
+            assert fs.fs2ftp('/') == '/'
+            assert fs.fs2ftp('/__home/userx') == '/'
         else:
             # os.sep == ':'? Don't know... let's try it anyway
             goforit(os.getcwd())
