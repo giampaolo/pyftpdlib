@@ -10,14 +10,12 @@ import sys
 import time
 from binascii import hexlify
 
-
 try:
     import multiprocessing
 except ImportError:
     multiprocessing = None
 
 from .log import logger
-
 
 _task_id = None
 

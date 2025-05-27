@@ -7,7 +7,6 @@ import stat
 import tempfile
 import time
 
-
 try:
     import grp
     import pwd

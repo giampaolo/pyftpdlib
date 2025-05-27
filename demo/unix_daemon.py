@@ -42,7 +42,6 @@ from pyftpdlib.filesystems import UnixFilesystem
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer
 
-
 # overridable options
 HOST = ""
 PORT = 21

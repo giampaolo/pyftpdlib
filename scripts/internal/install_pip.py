@@ -6,7 +6,6 @@
 
 import sys
 
-
 try:
     import pip  # noqa: F401
 except ImportError:
@@ -18,7 +17,6 @@ else:
 import os
 import ssl
 import tempfile
-
 
 PY3 = sys.version_info[0] >= 3
 if PY3:

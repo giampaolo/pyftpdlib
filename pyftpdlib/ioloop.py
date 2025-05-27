@@ -72,7 +72,6 @@ from .log import debug
 from .log import is_logging_configured
 from .log import logger
 
-
 with warnings.catch_warnings():
     warnings.simplefilter('ignore', DeprecationWarning)
     import asynchat

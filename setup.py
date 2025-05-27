@@ -12,7 +12,6 @@ import os
 import sys
 import textwrap
 
-
 WINDOWS = os.name == "nt"
 
 # Test deps, installable via `pip install .[test]`.
@@ -33,7 +32,7 @@ if WINDOWS:
 
 # Development deps, installable via `pip install .[dev]`.
 DEV_DEPS = [
-    "black==24.10.0",
+    "black",
     "check-manifest",
     "coverage",
     "pylint",

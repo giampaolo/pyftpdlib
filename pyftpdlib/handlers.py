@@ -15,7 +15,6 @@ import time
 import traceback
 from datetime import datetime
 
-
 try:
     import grp
     import pwd
@@ -42,7 +41,6 @@ from .ioloop import RetryError
 from .ioloop import timer
 from .log import debug
 from .log import logger
-
 
 CR_BYTE = ord('\r')
 

@@ -21,7 +21,6 @@ interact with UNIX and Windows password database.
 import os
 import warnings
 
-
 __all__ = [
     'DummyAuthorizer',
     # 'BaseUnixAuthorizer', 'UnixAuthorizer',

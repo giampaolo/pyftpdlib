@@ -13,7 +13,6 @@ import re
 
 from pyftpdlib import __ver__ as PRJ_VERSION
 
-
 HERE = os.path.abspath(os.path.dirname(__file__))
 HISTORY = os.path.abspath(os.path.join(HERE, '../../HISTORY.rst'))
 

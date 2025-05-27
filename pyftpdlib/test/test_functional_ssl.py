@@ -35,7 +35,6 @@ from .test_functional import TestIPv4Environment
 from .test_functional import TestIPv6Environment
 from .test_functional import TestTimeouts
 
-
 CERTFILE = os.path.abspath(
     os.path.join(os.path.dirname(__file__), 'keycert.pem')
 )

@@ -29,7 +29,6 @@ from . import ROOT_DIR
 from . import TESTFN_PREFIX
 from . import safe_rmpath
 
-
 # set it to True to raise an exception instead of warning
 FAIL = False
 this_proc = psutil.Process()

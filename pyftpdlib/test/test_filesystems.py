@@ -15,7 +15,6 @@ from . import PyftpdlibTestCase
 from . import safe_rmpath
 from . import touch
 
-
 if POSIX:
     from pyftpdlib.filesystems import UnixFilesystem
 

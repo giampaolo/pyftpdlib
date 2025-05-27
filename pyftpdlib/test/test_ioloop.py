@@ -20,7 +20,6 @@ from pyftpdlib.ioloop import RetryError
 from . import POSIX
 from . import PyftpdlibTestCase
 
-
 if hasattr(socket, 'socketpair'):
     socketpair = socket.socketpair
 else:

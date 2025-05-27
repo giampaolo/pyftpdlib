@@ -26,7 +26,6 @@ from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
 
-
 HERE = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
 ROOT_DIR = os.path.realpath(os.path.join(HERE, '..', '..'))
 

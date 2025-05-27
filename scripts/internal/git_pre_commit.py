@@ -17,7 +17,6 @@ import shlex
 import subprocess
 import sys
 
-
 PYTHON = sys.executable
 THIS_SCRIPT = os.path.realpath(__file__)
 

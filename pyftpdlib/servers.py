@@ -51,7 +51,6 @@ from .log import is_logging_configured
 from .log import logger
 from .prefork import fork_processes
 
-
 __all__ = ['FTPServer', 'ThreadedFTPServer']
 _BSD = 'bsd' in sys.platform
 

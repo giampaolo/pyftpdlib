@@ -22,7 +22,6 @@ from . import WINDOWS
 from . import PyftpdlibTestCase
 from . import touch
 
-
 if POSIX:
     import pwd
 
