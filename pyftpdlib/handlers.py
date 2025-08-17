@@ -1805,6 +1805,12 @@ class FTPHandler(AsyncChat):
         """Called every time a file has been successfully received.
         "file" is the absolute name of the file just being received.
         """
+        # Ensure data buffers are flushed and connection closed cleanly
+        try:
+            if hasattr(self, 'data_channel'):
+                self.data_channel.flush()
+        except Exception:
+            self.log("Error during data flush in on_file_received")
 
     def on_incomplete_file_sent(self, file):
         """Called every time a file has not been entirely sent.
@@ -3474,8 +3480,16 @@ if SSL is not None:
                 debug(
                     "call: recv() -> shutdown(), err: zero-return", inst=self
                 )
-                super().handle_close()
-                return b''
+                # During file transfer, don't immediately close the connection
+                # This fixes issue #576 where SSL shutdown during transfer caused corrupted files
+                if hasattr(self, 'file_obj') and self.file_obj is not None:
+                    # File transfer in progress, wait for it to complete
+                    debug("SSL shutdown during file transfer, waiting for completion", inst=self)
+                    return b''
+                else:
+                    # No file transfer, safe to close
+                    super().handle_close()
+                    return b''
             except SSL.SysCallError as err:
                 debug(f"call: recv(), err: {err!r}", inst=self)
                 errnum, errstr = err.args
@@ -3633,6 +3647,18 @@ if SSL is not None:
             self.cmd_channel.respond("522 SSL handshake failed.")
             self.cmd_channel.log_cmd("PROT", "P", 522, "SSL handshake failed.")
             self.close()
+
+        def close(self):
+            """Override close method to ensure proper SSL shutdown."""
+            # For SSL connections, ensure the connection is properly closed
+            # This fixes issue #576 where SSL connections weren't properly handled
+            # leading to corrupted files during Unix curl FTP uploads
+            if hasattr(self, '_ssl_established') and self._ssl_established:
+                # Let the SSLConnection close method handle SSL shutdown
+                super().close()
+            else:
+                # No SSL established, use regular close
+                DTPHandler.close(self)
 
     class TLS_FTPHandler(SSLConnection, FTPHandler):
         """A FTPHandler subclass supporting TLS/SSL.
