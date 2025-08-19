@@ -101,6 +101,11 @@ class FTPServer(Acceptor):
            the queue is full the client may raise ECONNRESET.
            Defaults to 5.
         """
+        # We overwrite the class attributes with our own. This way the
+        # attributes are set up for the command and the passive listners.
+        Acceptor.proxy_proto_enabled = self.proxy_proto_enabled
+        Acceptor.proxy_proto_trusted_nets = self.proxy_proto_trusted_nets
+        Acceptor.proxy_proto_allow_untrusted = self.proxy_proto_allow_untrusted
         Acceptor.__init__(self, ioloop=ioloop)
         self.handler = handler
         self.backlog = backlog
@@ -183,6 +188,10 @@ class FTPServer(Acceptor):
         logger.debug("authorizer: %r", get_fqname(self.handler.authorizer))
         if os.name == 'posix':
             logger.debug("use sendfile(2): %s", self.handler.use_sendfile)
+        if self.proxy_proto_enabled:
+            logger.debug("PROXY protocol enabled")
+            logger.debug("proxy: trusted proxies IP: %s", self.proxy_proto_trusted_nets)
+            logger.debug("proxy: allow untrusted: %s", self.proxy_proto_allow_untrusted)
         logger.debug("handler: %r", get_fqname(self.handler))
         logger.debug("max connections: %s", self.max_cons or "unlimited")
         logger.debug(

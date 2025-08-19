@@ -1353,6 +1353,7 @@ class FTPHandler(AsyncChat):
         self.remote_ip = ""
         self.remote_port = ""
         self.started = time.time()
+        self.proxy_proto_obj = self.server.proxy_proto_obj
 
         # private session attributes
         self._last_response = ""
@@ -1416,6 +1417,15 @@ class FTPHandler(AsyncChat):
                 self.handle_error()
             return
         else:
+            if self.server.proxy_proto_enabled and self.proxy_proto_obj and \
+                    (self.proxy_proto_obj.trusted or self.server.proxy_proto_allow_untrusted):
+                # Override the socket values if PROXY protocol data is
+                # available and comes from a trusted proxy
+                if self.proxy_proto_obj.remote_ip:
+                    self.remote_ip = self.proxy_proto_obj.remote_ip
+                if self.proxy_proto_obj.remote_port:
+                    self.remote_port = self.proxy_proto_obj.remote_port
+
             self.log("FTP session opened (connect)")
 
         # try to handle urgent data inline
