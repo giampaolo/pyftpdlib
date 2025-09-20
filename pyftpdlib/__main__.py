@@ -175,7 +175,7 @@ def parse_args(args=None):
         ),
     )
     group2.add_argument(
-        "--permit-privileged_ports",
+        "--permit-privileged-ports",
         default=FTPHandler.permit_privileged_ports,
         action="store_true",
         help="allow data connections (PORT) over privileged TCP ports",
@@ -185,6 +185,15 @@ def parse_args(args=None):
         type=parse_encoding,
         default="utf-8",
         help="the encoding used for client / server communication",
+    )
+    group2.add_argument(
+        "--use-localtime",
+        default=False,
+        action="store_true",
+        help=(
+            "display directory listings with the time in your local time zone"
+            " (default is GMT)"
+        ),
     )
 
     return parser.parse_args(args)
@@ -230,6 +239,7 @@ def main(args=None):
     handler.permit_foreign_addresses = opts.permit_foreign_addresses
     handler.permit_privileged_ports = opts.permit_privileged_ports
     handler.encoding = opts.encoding
+    handler.use_gmt_times = not opts.use_localtime
 
     ftpd = FTPServer((opts.interface, opts.port), FTPHandler)
     # On Windows specify a timeout for the underlying select() so
