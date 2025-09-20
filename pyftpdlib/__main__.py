@@ -60,8 +60,8 @@ def parse_server_type(value):
             )
         return servers.MultiprocessFTPServer
     raise argparse.ArgumentTypeError(
-        "invalid --concurrency value; choose between 'async', 'multi-thread'"
-        " or 'multi-proc'"
+        f"invalid concurrency {value!r}; choose between 'async',"
+        " 'multi-thread' or 'multi-proc'"
     )
 
 
@@ -101,7 +101,7 @@ def parse_args(args=None):
         '-d',
         '--directory',
         default=os.getcwd(),
-        metavar="FOLDER",
+        metavar="PATH",
         help="specify the directory to share (default: current directory)",
     )
     group1.add_argument(
@@ -153,8 +153,8 @@ def parse_args(args=None):
         type=parse_server_type,
         default="async",
         help=(
-            "the concurrency model to use, either 'async' (default),"
-            " 'multi-thread' or 'multi-proc'"
+            "the FTP server concurrency model to use, either 'async'"
+            " (default), 'multi-thread' or 'multi-proc'"
         ),
     )
 
@@ -174,15 +174,6 @@ def parse_args(args=None):
         help=(
             "the message sent when client connects (default:"
             f" {FTPHandler.banner!r})"
-        ),
-    )
-    group2.add_argument(
-        '--max-login-attempts',
-        type=int,
-        default=FTPHandler.max_login_attempts,
-        help=(
-            "max number of failed authentications before disconnect (default:"
-            f" {FTPHandler.max_login_attempts})"
         ),
     )
     group2.add_argument(
@@ -241,6 +232,15 @@ def parse_args(args=None):
         help=(
             "maximum number connections from the same IP address (default:"
             " unlimited)"
+        ),
+    )
+    group2.add_argument(
+        '--max-login-attempts',
+        type=int,
+        default=FTPHandler.max_login_attempts,
+        help=(
+            "max number of failed authentications before disconnect (default:"
+            f" {FTPHandler.max_login_attempts})"
         ),
     )
 
