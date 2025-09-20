@@ -9,6 +9,7 @@ $ python3 -m pyftpdlib
 """
 
 import argparse
+import codecs
 import logging
 import os
 import sys
@@ -18,6 +19,14 @@ from .authorizers import DummyAuthorizer
 from .handlers import FTPHandler
 from .log import config_logging
 from .servers import FTPServer
+
+
+def parse_encoding(value):
+    try:
+        codecs.lookup(value)
+    except LookupError:
+        raise argparse.ArgumentTypeError(f"unknown encoding: {value!r}")
+    return value
 
 
 def parse_args(args=None):
@@ -151,6 +160,12 @@ def parse_args(args=None):
         action="store_true",
         help="allow data connections (PORT) over privileged TCP ports",
     )
+    group2.add_argument(
+        "--encoding",
+        type=parse_encoding,
+        default="utf-8",
+        help="the encoding used for client / server communication",
+    )
 
     return parser, parser.parse_args(args)
 
@@ -203,6 +218,7 @@ def main(args=None):
     handler.max_login_attempts = opts.max_login_attempts
     handler.permit_foreign_addresses = opts.permit_foreign_addresses
     handler.permit_privileged_ports = opts.permit_privileged_ports
+    handler.encoding = opts.encoding
 
     ftpd = FTPServer((opts.interface, opts.port), FTPHandler)
     # On Windows specify a timeout for the underlying select() so
