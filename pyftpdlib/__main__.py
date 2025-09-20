@@ -124,6 +124,18 @@ def parse_args(args=None):
         default=FTPHandler.timeout,
         help="connection timeout",
     )
+    group2.add_argument(
+        '--banner',
+        type=str,
+        default=FTPHandler.banner,
+        help="the message sent when client connects",
+    )
+    group2.add_argument(
+        '--max-login-attempts',
+        type=int,
+        default=FTPHandler.max_login_attempts,
+        help="max number of failed authentications before disconnect",
+    )
 
     return parser, parser.parse_args(args)
 
@@ -172,6 +184,8 @@ def main(args=None):
     handler.authorizer = authorizer
     handler.masquerade_address = opts.nat_address
     handler.passive_ports = passive_ports
+    handler.banner = opts.banner
+    handler.max_login_attempts = opts.max_login_attempts
 
     ftpd = FTPServer((opts.interface, opts.port), FTPHandler)
     # On Windows specify a timeout for the underlying select() so

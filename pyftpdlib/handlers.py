@@ -1231,7 +1231,7 @@ class FTPHandler(AsyncChat):
        between FTP commands. If the timeout triggers, the remote client
        will be kicked off.  Defaults to 300 seconds.
 
-     - (str) banner: the string sent when client connects.
+     - (str) banner: the message sent when client connects.
 
      - (int) max_login_attempts:
         the maximum number of wrong authentications before disconnecting
