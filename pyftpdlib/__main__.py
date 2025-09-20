@@ -13,10 +13,10 @@ import codecs
 import logging
 import os
 
+from . import servers
 from .authorizers import DummyAuthorizer
 from .handlers import FTPHandler
 from .log import config_logging
-from .servers import FTPServer
 
 DEFAULT_PORT = 2121
 
@@ -46,6 +46,23 @@ def parse_port_range(value):
             f"start port must be <= stop port (got {start}-{stop})"
         )
     return list(range(start, stop + 1))
+
+
+def parse_server_type(value):
+    if value == "async":
+        return servers.FTPServer
+    if value == "multi-thread":
+        return servers.ThreadedFTPServer
+    if value == "multi-proc":
+        if not hasattr(servers, "MultiprocessFTPServer"):
+            raise argparse.ArgumentTypeError(
+                "multi process server is not supported on this platform"
+            )
+        return servers.MultiprocessFTPServer
+    raise argparse.ArgumentTypeError(
+        "invalid --concurrency value; choose between 'async', 'multi-thread'"
+        " or 'multi-proc'"
+    )
 
 
 def parse_args(args=None):
@@ -131,6 +148,15 @@ def parse_args(args=None):
             "specify a password to login with (username required to be useful)"
         ),
     )
+    group1.add_argument(
+        '--concurrency',
+        type=parse_server_type,
+        default="async",
+        help=(
+            "the concurrency model to use, either 'async' (default),"
+            " 'multi-thread' or 'multi-proc'"
+        ),
+    )
 
     # --- less important opts
 
@@ -202,16 +228,16 @@ def parse_args(args=None):
     group2.add_argument(
         '--max-cons',
         type=int,
-        default=FTPServer.max_cons,
+        default=servers.FTPServer.max_cons,
         help=(
             "max number of simultaneous connections (default:"
-            f" {FTPServer.max_cons})"
+            f" {servers.FTPServer.max_cons})"
         ),
     )
     group2.add_argument(
         '--max-cons-per-ip',
         type=int,
-        default=FTPServer.max_cons,
+        default=servers.FTPServer.max_cons,
         help=(
             "maximum number connections from the same IP address (default:"
             " unlimited)"
@@ -261,7 +287,7 @@ def main(args=None):
     handler.use_gmt_times = not opts.use_localtime
     handler.use_sendfile = not opts.disable_sendfile
 
-    server = FTPServer((opts.interface, opts.port), FTPHandler)
+    server = opts.concurrency((opts.interface, opts.port), handler)
     server.max_cons = opts.max_cons
     server.max_cons_per_ip = opts.max_cons_per_ip
 
