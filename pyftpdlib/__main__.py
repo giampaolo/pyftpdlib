@@ -20,8 +20,7 @@ from .log import config_logging
 from .servers import FTPServer
 
 
-def main(args=None):
-    """Start a stand alone anonymous FTP server."""
+def parse_args(args=None):
     usage = "python3 -m pyftpdlib [options]"
     parser = argparse.ArgumentParser(
         usage=usage,
@@ -112,9 +111,23 @@ def main(args=None):
         ),
     )
 
-    # --- all other opts
+    # --- less important opts
 
-    args = parser.parse_args(args=args)
+    misc = parser.add_argument_group("Less important options")
+    misc.add_argument(
+        '--timeout',
+        type=int,
+        default=FTPHandler.timeout,
+        help="connection timeout",
+    )
+
+    return parser, parser.parse_args(args)
+
+
+def main(args=None):
+    """Start a stand alone anonymous FTP server."""
+    parser, args = parse_args(args=args)
+
     if args.version:
         sys.exit(f"pyftpdlib {__ver__}")
     if args.debug:
