@@ -184,7 +184,10 @@ def parse_args(args=None):
         "--encoding",
         type=parse_encoding,
         default="utf-8",
-        help="the encoding used for client / server communication",
+        help=(
+            "the encoding used for client / server communication (default:"
+            f" {FTPHandler.encoding})"
+        ),
     )
     group2.add_argument(
         "--use-localtime",
@@ -192,7 +195,7 @@ def parse_args(args=None):
         action="store_true",
         help=(
             "display directory listings with the time in your local time zone"
-            " (default is GMT)"
+            " (default: use GMT)"
         ),
     )
     if hasattr(os, "sendfile"):
@@ -200,8 +203,26 @@ def parse_args(args=None):
             "--disable-sendfile",
             default=False,
             action="store_true",
-            help="disable sendfile() syscall for faster file transfers",
+            help="disable sendfile() syscall, used for faster file transfers",
         )
+    group2.add_argument(
+        '--max-cons',
+        type=int,
+        default=FTPServer.max_cons,
+        help=(
+            "max number of simultaneous connections (default"
+            f" {FTPServer.max_cons})"
+        ),
+    )
+    group2.add_argument(
+        '--max-cons-per-ip',
+        type=int,
+        default=FTPServer.max_cons,
+        help=(
+            "maximum number connections from the same IP address (default:"
+            " unlimited)"
+        ),
+    )
 
     return parser.parse_args(args)
 
@@ -250,6 +271,9 @@ def main(args=None):
     handler.use_sendfile = not opts.disable_sendfile
 
     ftpd = FTPServer((opts.interface, opts.port), FTPHandler)
+    ftpd.max_cons = opts.max_cons
+    ftpd.max_cons_per_ip = opts.max_cons_per_ip
+
     # On Windows specify a timeout for the underlying select() so
     # that the server can be interrupted with CTRL + C.
     try:
