@@ -136,6 +136,21 @@ def parse_args(args=None):
         default=FTPHandler.max_login_attempts,
         help="max number of failed authentications before disconnect",
     )
+    group2.add_argument(
+        "--permit-foreign-addresses",
+        default=FTPHandler.permit_foreign_addresses,
+        action="store_true",
+        help=(
+            "allow data connections from an IP address different than the"
+            " control connection"
+        ),
+    )
+    group2.add_argument(
+        "--permit-privileged_ports",
+        default=FTPHandler.permit_privileged_ports,
+        action="store_true",
+        help="allow data connections (PORT) over privileged TCP ports",
+    )
 
     return parser, parser.parse_args(args)
 
@@ -186,6 +201,8 @@ def main(args=None):
     handler.passive_ports = passive_ports
     handler.banner = opts.banner
     handler.max_login_attempts = opts.max_login_attempts
+    handler.permit_foreign_addresses = opts.permit_foreign_addresses
+    handler.permit_privileged_ports = opts.permit_privileged_ports
 
     ftpd = FTPServer((opts.interface, opts.port), FTPHandler)
     # On Windows specify a timeout for the underlying select() so

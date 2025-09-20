@@ -1244,11 +1244,11 @@ class FTPHandler(AsyncChat):
         recommended for security reasons as described in RFC-2577).
         Having this attribute set to False means that all data
         connections from/to remote IP addresses which do not match the
-        client's IP address will be dropped (defualt False).
+        client's IP address will be dropped (default False).
 
      - (bool) permit_privileged_ports:
         set to True if you want to permit active data connections (PORT)
-        over privileged ports (not recommended, defaulting to False).
+        over privileged TCP ports (not recommended, defaulting to False).
 
      - (str) masquerade_address:
         the "masqueraded" IP address to provide along PASV reply when
