@@ -29,6 +29,25 @@ def parse_encoding(value):
     return value
 
 
+def parse_port_range(value):
+    try:
+        start, stop = value.split('-')
+        start, stop = int(start), int(stop)
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"invalid port range: {value!r} (expected FROM-TO)"
+        )
+    if not (0 <= start <= 65535 and 0 <= stop <= 65535):
+        raise argparse.ArgumentTypeError(
+            "port numbers must be between 0 and 65535"
+        )
+    if start >= stop:
+        raise argparse.ArgumentTypeError(
+            f"start port must be <= stop port (got {start}-{stop})"
+        )
+    return list(range(start, stop + 1))
+
+
 def parse_args(args=None):
     usage = "python3 -m pyftpdlib [options]"
     parser = argparse.ArgumentParser(
@@ -78,6 +97,7 @@ def parse_args(args=None):
     group1.add_argument(
         '-r',
         '--range',
+        type=parse_port_range,
         default=None,
         metavar="FROM-TO",
         help=(
@@ -180,17 +200,6 @@ def main(args=None):
     if opts.debug:
         config_logging(level=logging.DEBUG)
 
-    passive_ports = None
-    if opts.range:
-        try:
-            start, stop = opts.range.split('-')
-            start = int(start)
-            stop = int(stop)
-        except ValueError:
-            raise parser.error('invalid argument passed to -r option')
-        else:
-            passive_ports = list(range(start, stop + 1))
-
     # On recent Windows versions, if address is not specified and IPv6
     # is installed the socket will listen on IPv6 by default; in this
     # case we force IPv4 instead.
@@ -213,7 +222,7 @@ def main(args=None):
     handler = FTPHandler
     handler.authorizer = authorizer
     handler.masquerade_address = opts.nat_address
-    handler.passive_ports = passive_ports
+    handler.passive_ports = opts.range
     handler.banner = opts.banner
     handler.max_login_attempts = opts.max_login_attempts
     handler.permit_foreign_addresses = opts.permit_foreign_addresses
