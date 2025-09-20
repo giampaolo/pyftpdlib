@@ -195,6 +195,13 @@ def parse_args(args=None):
             " (default is GMT)"
         ),
     )
+    if hasattr(os, "sendfile"):
+        group2.add_argument(
+            "--disable-sendfile",
+            default=False,
+            action="store_true",
+            help="disable sendfile() syscall for faster file transfers",
+        )
 
     return parser.parse_args(args)
 
@@ -240,6 +247,7 @@ def main(args=None):
     handler.permit_privileged_ports = opts.permit_privileged_ports
     handler.encoding = opts.encoding
     handler.use_gmt_times = not opts.use_localtime
+    handler.use_sendfile = not opts.disable_sendfile
 
     ftpd = FTPServer((opts.interface, opts.port), FTPHandler)
     # On Windows specify a timeout for the underlying select() so
