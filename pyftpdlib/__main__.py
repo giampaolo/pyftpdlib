@@ -20,6 +20,8 @@ from .handlers import FTPHandler
 from .log import config_logging
 from .servers import FTPServer
 
+DEFAULT_PORT = 2121
+
 
 def parse_encoding(value):
     try:
@@ -63,29 +65,29 @@ def parse_args(args=None):
         '--interface',
         default=None,
         metavar="ADDRESS",
-        help="specify the interface to run on (default all interfaces)",
+        help="specify the interface to run on (default: all interfaces)",
     )
     group1.add_argument(
         '-p',
         '--port',
         type=int,
-        default=2121,
+        default=DEFAULT_PORT,
         metavar="PORT",
-        help="specify port number to run on (default 2121)",
+        help=f"specify port number to run on (default: {DEFAULT_PORT})",
     )
     group1.add_argument(
         '-w',
         '--write',
         action="store_true",
         default=False,
-        help="grants write access for logged in user (default read-only)",
+        help="grants write access for logged in user (default: read-only)",
     )
     group1.add_argument(
         '-d',
         '--directory',
         default=os.getcwd(),
         metavar="FOLDER",
-        help="specify the directory to share (default current directory)",
+        help="specify the directory to share (default: current directory)",
     )
     group1.add_argument(
         '-n',
@@ -151,19 +153,25 @@ def parse_args(args=None):
         '--timeout',
         type=int,
         default=FTPHandler.timeout,
-        help="connection timeout",
+        help=f"connection timeout (default: {FTPHandler.timeout} seconds)",
     )
     group2.add_argument(
         '--banner',
         type=str,
         default=FTPHandler.banner,
-        help="the message sent when client connects",
+        help=(
+            "the message sent when client connects (default:"
+            f" {FTPHandler.banner!r})"
+        ),
     )
     group2.add_argument(
         '--max-login-attempts',
         type=int,
         default=FTPHandler.max_login_attempts,
-        help="max number of failed authentications before disconnect",
+        help=(
+            "max number of failed authentications before disconnect (default:"
+            f" {FTPHandler.max_login_attempts})"
+        ),
     )
     group2.add_argument(
         "--permit-foreign-addresses",
@@ -210,7 +218,7 @@ def parse_args(args=None):
         type=int,
         default=FTPServer.max_cons,
         help=(
-            "max number of simultaneous connections (default"
+            "max number of simultaneous connections (default:"
             f" {FTPServer.max_cons})"
         ),
     )
