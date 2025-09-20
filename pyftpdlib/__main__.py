@@ -29,14 +29,15 @@ def parse_args(args=None):
 
     # --- most important opts
 
-    parser.add_argument(
+    group1 = parser.add_argument_group("Main options")
+    group1.add_argument(
         '-i',
         '--interface',
         default=None,
         metavar="ADDRESS",
         help="specify the interface to run on (default all interfaces)",
     )
-    parser.add_argument(
+    group1.add_argument(
         '-p',
         '--port',
         type=int,
@@ -44,28 +45,28 @@ def parse_args(args=None):
         metavar="PORT",
         help="specify port number to run on (default 2121)",
     )
-    parser.add_argument(
+    group1.add_argument(
         '-w',
         '--write',
         action="store_true",
         default=False,
         help="grants write access for logged in user (default read-only)",
     )
-    parser.add_argument(
+    group1.add_argument(
         '-d',
         '--directory',
         default=os.getcwd(),
         metavar="FOLDER",
         help="specify the directory to share (default current directory)",
     )
-    parser.add_argument(
+    group1.add_argument(
         '-n',
         '--nat-address',
         default=None,
         metavar="ADDRESS",
         help="the NAT address to use for passive connections",
     )
-    parser.add_argument(
+    group1.add_argument(
         '-r',
         '--range',
         default=None,
@@ -75,22 +76,25 @@ def parse_args(args=None):
             "connections (e.g. -r 8000-9000)"
         ),
     )
-    parser.add_argument(
-        '-D', '--debug', action='store_true', help="enable DEBUG logging level"
+    group1.add_argument(
+        '-D',
+        '--debug',
+        action='store_true',
+        help="enable DEBUG logging level",
     )
-    parser.add_argument(
+    group1.add_argument(
         '-v',
         '--version',
         action='store_true',
         help="print pyftpdlib version and exit",
     )
-    parser.add_argument(
+    group1.add_argument(
         '-V',
         '--verbose',
         action='store_true',
         help="activate a more verbose logging",
     )
-    parser.add_argument(
+    group1.add_argument(
         '-u',
         '--username',
         type=str,
@@ -101,7 +105,7 @@ def parse_args(args=None):
             "if supplied)"
         ),
     )
-    parser.add_argument(
+    group1.add_argument(
         '-P',
         '--password',
         type=str,
@@ -113,8 +117,8 @@ def parse_args(args=None):
 
     # --- less important opts
 
-    misc = parser.add_argument_group("Less important options")
-    misc.add_argument(
+    group2 = parser.add_argument_group("Other options")
+    group2.add_argument(
         '--timeout',
         type=int,
         default=FTPHandler.timeout,
@@ -126,48 +130,50 @@ def parse_args(args=None):
 
 def main(args=None):
     """Start a stand alone anonymous FTP server."""
-    parser, args = parse_args(args=args)
+    parser, opts = parse_args(args=args)
 
-    if args.version:
-        sys.exit(f"pyftpdlib {__ver__}")
-    if args.debug:
+    if opts.version:
+        return sys.exit(f"pyftpdlib {__ver__}")
+
+    if opts.debug:
         config_logging(level=logging.DEBUG)
 
     passive_ports = None
-    if args.range:
+    if opts.range:
         try:
-            start, stop = args.range.split('-')
+            start, stop = opts.range.split('-')
             start = int(start)
             stop = int(stop)
         except ValueError:
-            parser.error('invalid argument passed to -r option')
+            raise parser.error('invalid argument passed to -r option')
         else:
             passive_ports = list(range(start, stop + 1))
+
     # On recent Windows versions, if address is not specified and IPv6
     # is installed the socket will listen on IPv6 by default; in this
     # case we force IPv4 instead.
-    if os.name in ('nt', 'ce') and not args.interface:
-        args.interface = '0.0.0.0'
+    if os.name in ('nt', 'ce') and not opts.interface:
+        opts.interface = '0.0.0.0'
 
     authorizer = DummyAuthorizer()
-    perm = "elradfmwMT" if args.write else "elr"
-    if args.username:
-        if not args.password:
+    perm = "elradfmwMT" if opts.write else "elr"
+    if opts.username:
+        if not opts.password:
             parser.error(
                 "if username (-u) is supplied, password ('-P') is required"
             )
         authorizer.add_user(
-            args.username, args.password, args.directory, perm=perm
+            opts.username, opts.password, opts.directory, perm=perm
         )
     else:
-        authorizer.add_anonymous(args.directory, perm=perm)
+        authorizer.add_anonymous(opts.directory, perm=perm)
 
     handler = FTPHandler
     handler.authorizer = authorizer
-    handler.masquerade_address = args.nat_address
+    handler.masquerade_address = opts.nat_address
     handler.passive_ports = passive_ports
 
-    ftpd = FTPServer((args.interface, args.port), FTPHandler)
+    ftpd = FTPServer((opts.interface, opts.port), FTPHandler)
     # On Windows specify a timeout for the underlying select() so
     # that the server can be interrupted with CTRL + C.
     try:
