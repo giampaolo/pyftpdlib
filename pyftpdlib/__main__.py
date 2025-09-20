@@ -187,12 +187,12 @@ def parse_args(args=None):
         help="the encoding used for client / server communication",
     )
 
-    return parser, parser.parse_args(args)
+    return parser.parse_args(args)
 
 
 def main(args=None):
     """Start a stand alone anonymous FTP server."""
-    parser, opts = parse_args(args=args)
+    opts = parse_args(args=args)
 
     if opts.version:
         return sys.exit(f"pyftpdlib {__ver__}")
@@ -210,7 +210,7 @@ def main(args=None):
     perm = "elradfmwMT" if opts.write else "elr"
     if opts.username:
         if not opts.password:
-            parser.error(
+            raise argparse.ArgumentTypeError(
                 "if username (-u) is supplied, password ('-P') is required"
             )
         authorizer.add_user(
