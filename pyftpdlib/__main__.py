@@ -27,6 +27,9 @@ def main(args=None):
         usage=usage,
         description=main.__doc__,
     )
+
+    # --- most important opts
+
     parser.add_argument(
         '-i',
         '--interface',
@@ -109,16 +112,18 @@ def main(args=None):
         ),
     )
 
-    options = parser.parse_args(args=args)
-    if options.version:
+    # --- all other opts
+
+    args = parser.parse_args(args=args)
+    if args.version:
         sys.exit(f"pyftpdlib {__ver__}")
-    if options.debug:
+    if args.debug:
         config_logging(level=logging.DEBUG)
 
     passive_ports = None
-    if options.range:
+    if args.range:
         try:
-            start, stop = options.range.split('-')
+            start, stop = args.range.split('-')
             start = int(start)
             stop = int(stop)
         except ValueError:
@@ -128,28 +133,28 @@ def main(args=None):
     # On recent Windows versions, if address is not specified and IPv6
     # is installed the socket will listen on IPv6 by default; in this
     # case we force IPv4 instead.
-    if os.name in ('nt', 'ce') and not options.interface:
-        options.interface = '0.0.0.0'
+    if os.name in ('nt', 'ce') and not args.interface:
+        args.interface = '0.0.0.0'
 
     authorizer = DummyAuthorizer()
-    perm = "elradfmwMT" if options.write else "elr"
-    if options.username:
-        if not options.password:
+    perm = "elradfmwMT" if args.write else "elr"
+    if args.username:
+        if not args.password:
             parser.error(
                 "if username (-u) is supplied, password ('-P') is required"
             )
         authorizer.add_user(
-            options.username, options.password, options.directory, perm=perm
+            args.username, args.password, args.directory, perm=perm
         )
     else:
-        authorizer.add_anonymous(options.directory, perm=perm)
+        authorizer.add_anonymous(args.directory, perm=perm)
 
     handler = FTPHandler
     handler.authorizer = authorizer
-    handler.masquerade_address = options.nat_address
+    handler.masquerade_address = args.nat_address
     handler.passive_ports = passive_ports
 
-    ftpd = FTPServer((options.interface, options.port), FTPHandler)
+    ftpd = FTPServer((args.interface, args.port), FTPHandler)
     # On Windows specify a timeout for the underlying select() so
     # that the server can be interrupted with CTRL + C.
     try:
