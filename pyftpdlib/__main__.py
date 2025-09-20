@@ -239,7 +239,7 @@ def main(args=None):
     if opts.username:
         if not opts.password:
             raise argparse.ArgumentTypeError(
-                "if username (-u) is supplied, password ('-P') is required"
+                "if username (-u) is supplied, password (-P) is required"
             )
         authorizer.add_user(
             opts.username, opts.password, opts.directory, perm=perm
@@ -261,18 +261,18 @@ def main(args=None):
     handler.use_gmt_times = not opts.use_localtime
     handler.use_sendfile = not opts.disable_sendfile
 
-    ftpd = FTPServer((opts.interface, opts.port), FTPHandler)
-    ftpd.max_cons = opts.max_cons
-    ftpd.max_cons_per_ip = opts.max_cons_per_ip
+    server = FTPServer((opts.interface, opts.port), FTPHandler)
+    server.max_cons = opts.max_cons
+    server.max_cons_per_ip = opts.max_cons_per_ip
 
     # On Windows specify a timeout for the underlying select() so
     # that the server can be interrupted with CTRL + C.
     try:
-        ftpd.serve_forever(timeout=2 if os.name == 'nt' else None)
+        server.serve_forever(timeout=2 if os.name == 'nt' else None)
     finally:
-        ftpd.close_all()
+        server.close_all()
     if args:  # only used in unit tests
-        return ftpd
+        return server
 
 
 if __name__ == '__main__':
