@@ -589,7 +589,7 @@ Version: 0.6.0 - Date: 2011-01-24
   recommended in RFC-3659.  A FTPHandler.use_gmt_times attributed has
   been added and can be set to False in case local times are desired
   instead.
-- #124: pyftpdlib now accepts command line options to configure a stand alone
+- #124: pyftpdlib now accepts command line options to configure a standalone
   anonymous FTP server when running pyftpdlib with python's -m option.
 - #125: logs are now provided in a standardized format parsable by log
   analyzers. FTPHandler class provides two new methods to standardize

@@ -248,7 +248,7 @@ def parse_args(args=None):
 
 
 def main(args=None):
-    """Start a stand alone anonymous FTP server."""
+    """Start a standalone anonymous FTP server."""
     opts = parse_args(args=args)
 
     if opts.debug:
