@@ -12,9 +12,7 @@ import argparse
 import codecs
 import logging
 import os
-import sys
 
-from . import __ver__
 from .authorizers import DummyAuthorizer
 from .handlers import FTPHandler
 from .log import config_logging
@@ -112,18 +110,6 @@ def parse_args(args=None):
         '--debug',
         action='store_true',
         help="enable DEBUG logging level",
-    )
-    group1.add_argument(
-        '-v',
-        '--version',
-        action='store_true',
-        help="print pyftpdlib version and exit",
-    )
-    group1.add_argument(
-        '-V',
-        '--verbose',
-        action='store_true',
-        help="activate a more verbose logging",
     )
     group1.add_argument(
         '-u',
@@ -238,9 +224,6 @@ def parse_args(args=None):
 def main(args=None):
     """Start a stand alone anonymous FTP server."""
     opts = parse_args(args=args)
-
-    if opts.version:
-        return sys.exit(f"pyftpdlib {__ver__}")
 
     if opts.debug:
         config_logging(level=logging.DEBUG)
