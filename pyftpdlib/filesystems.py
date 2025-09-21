@@ -7,6 +7,8 @@ import stat
 import tempfile
 import time
 
+from .utils import memoize
+
 try:
     import grp
     import pwd
@@ -31,23 +33,6 @@ _months_map = {
     11: 'Nov',
     12: 'Dec',
 }
-
-
-def _memoize(fun):
-    """A simple memoize decorator for functions supporting (hashable)
-    positional arguments.
-    """
-
-    def wrapper(*args, **kwargs):
-        key = (args, frozenset(sorted(kwargs.items())))
-        try:
-            return cache[key]
-        except KeyError:
-            ret = cache[key] = fun(*args, **kwargs)
-            return ret
-
-    cache = {}
-    return wrapper
 
 
 # ===================================================================
@@ -413,11 +398,11 @@ class AbstractedFS:
         -rw-rw-rw-   1 owner   group        380 Sep 02  3:40 module.py
         """
 
-        @_memoize
+        @memoize
         def get_user_by_uid(uid):
             return self.get_user_by_uid(uid)
 
-        @_memoize
+        @memoize
         def get_group_by_gid(gid):
             return self.get_group_by_gid(gid)
 

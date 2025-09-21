@@ -43,13 +43,14 @@ Author: Himanshu Shekhar <https://github.com/himanshub16> (2017)
 
 import argparse
 import concurrent.futures
-import functools
 import os
 import re
 import sys
 import traceback
 
 import requests
+
+from pyftpdlib.utils import memoize
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 REGEX = re.compile(
@@ -61,22 +62,6 @@ REQUEST_TIMEOUT = 15
 # Like 503 by Microsoft, and 401 by Apple
 # They need to be sent GET request
 RETRY_STATUSES = [503, 401, 403]
-
-
-def memoize(fun):
-    """A memoize decorator."""
-
-    @functools.wraps(fun)
-    def wrapper(*args, **kwargs):
-        key = (args, frozenset(sorted(kwargs.items())))
-        try:
-            return cache[key]
-        except KeyError:
-            ret = cache[key] = fun(*args, **kwargs)
-            return ret
-
-    cache = {}
-    return wrapper
 
 
 def sanitize_url(url):
