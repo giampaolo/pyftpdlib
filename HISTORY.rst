@@ -3,6 +3,13 @@ Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 Version: 2.1.0 - IN DEVELOPMENT
 ===============================
 
+**Enhancements**
+
+* #666: add tons of new CLI options (when pyftpdlib is invoked from cmdline as
+  ``pytrhon3 -m pyftpdlib``).
+* #667: colorized output when using pyftpdlib from CLI (invoked via ``pytrhon3
+  -m pyftpdlib``).
+
 **Bug fixes**
 
 * #656: Python 3.14 changed the default multiprocessing method for POSIX (sans

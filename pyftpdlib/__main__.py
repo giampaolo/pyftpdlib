@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 """
-Start a stand alone anonymous FTP server from the command line as in:
+Start a standalone anonymous FTP server from the command line:
 
 $ python3 -m pyftpdlib
 """
@@ -17,8 +17,34 @@ from . import servers
 from .authorizers import DummyAuthorizer
 from .handlers import FTPHandler
 from .log import config_logging
+from .utils import hilite
+from .utils import term_supports_colors
 
 DEFAULT_PORT = 2121
+
+
+class ColorHelpFormatter(argparse.HelpFormatter):
+    def start_section(self, heading):  # titles / groups
+        heading = f"{hilite(heading.capitalize(), 'orange')}"
+        super().start_section(heading)
+
+    def _format_action_invocation(self, action):
+        # colorize the flag part (e.g. "-i, --interface")
+        if not action.option_strings:
+            default = self._metavar_formatter(action, action.dest)(1)[0]
+            return f"{hilite(default, 'white')}"
+
+        parts = []
+        for option in action.option_strings:
+            parts.append(f"{hilite(option, 'lightblue')}")
+
+        if action.nargs != 0:
+            metavar = self._format_args(
+                action, self._get_default_metavar_for_optional(action)
+            )
+            parts[-1] += " " + f"{hilite(metavar, 'green')}"
+
+        return ", ".join(parts)
 
 
 def parse_encoding(value):
@@ -70,6 +96,11 @@ def parse_args(args=None):
     parser = argparse.ArgumentParser(
         usage=usage,
         description=main.__doc__,
+        formatter_class=(
+            ColorHelpFormatter
+            if term_supports_colors()
+            else argparse.HelpFormatter
+        ),
     )
 
     # --- most important opts

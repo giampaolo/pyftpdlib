@@ -12,7 +12,6 @@ Instead you should use logging.basicConfig before serve_forever().
 
 import logging
 import re
-import sys
 import time
 
 try:
@@ -20,28 +19,17 @@ try:
 except ImportError:
     curses = None
 
+from .utils import term_supports_colors
 
 # default logger
 logger = logging.getLogger('pyftpdlib')
-
-
-def _stderr_supports_color():
-    color = False
-    if curses is not None and sys.stderr.isatty():
-        try:
-            curses.setupterm()
-            if curses.tigetnum("colors") > 0:
-                color = True
-        except Exception:  # noqa
-            pass
-    return color
 
 
 # configurable options
 LEVEL = logging.INFO
 PREFIX = '[%(levelname)1.1s %(asctime)s]'
 PREFIX_MPROC = '[%(levelname)1.1s %(asctime)s %(process)s]'
-COLOURED = _stderr_supports_color()
+COLOURED = term_supports_colors()
 TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
@@ -59,7 +47,7 @@ class LogFormatter(logging.Formatter):
 
     def __init__(self, *args, **kwargs):
         logging.Formatter.__init__(self, *args, **kwargs)
-        self._coloured = COLOURED and _stderr_supports_color()
+        self._coloured = COLOURED and term_supports_colors()
         if self._coloured:
             curses.setupterm()
             # The curses module has some str/bytes confusion in
