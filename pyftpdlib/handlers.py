@@ -511,6 +511,13 @@ class PassiveDTP(Acceptor):
                     f'{addr[0]}:{addr[1]}.'
                 )
                 self.cmd_channel.respond_w_warning(msg)
+
+                if sys.stdout.isatty():
+                    self.cmd_channel.log(
+                        "you can use --permit-foreign-addresses CLI opt to"
+                        " allow this connection"
+                    )
+
                 # do not close listening socket: it couldn't be client's blame
                 return
             else:
