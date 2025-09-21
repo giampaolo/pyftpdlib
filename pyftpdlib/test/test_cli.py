@@ -147,4 +147,16 @@ class TestCommandLineParser(PyftpdlibTestCase):
 
     def test_concurrency(self):
         ftpd = main(["--concurrency", "multi-thread"])
-        assert isinstance(ftpd, ThreadedFTPServer)
+        assert isinstance(ftpd, DummyThreadedFTPServer)
+
+    def test_timeout(self):
+        ftpd = main(["--timeout", "10"])
+        assert ftpd.handler.timeout == 10
+
+    def test_banner(self):
+        ftpd = main(["--banner", "hello there"])
+        assert ftpd.handler.banner == "hello there"
+
+    def test_permit_foreign_address(self):
+        ftpd = main(["--permit-foreign-addresses"])
+        assert ftpd.handler.permit_foreign_addresses is True
