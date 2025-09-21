@@ -173,6 +173,9 @@ class TestCommandLineParser(PyftpdlibTestCase):
         ftpd = main(["--use-localtime"])
         assert ftpd.handler.use_gmt_times is False
 
+    @pytest.mark.skipif(
+        not hasattr(os, "sendfile"), reason="sendfile() not supported"
+    )
     def test_disable_sendfile(self):
         ftpd = main(["--disable-sendfile"])
         assert ftpd.handler.use_sendfile is False
