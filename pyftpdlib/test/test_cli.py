@@ -164,3 +164,11 @@ class TestCommandLineParser(PyftpdlibTestCase):
     def test_permit_privileged_ports(self):
         ftpd = main(["--permit-privileged-ports"])
         assert ftpd.handler.permit_privileged_ports is True
+
+    def test_encoding(self):
+        ftpd = main(["--encoding", "ascii"])
+        assert ftpd.handler.encoding == "ascii"
+
+    def test_use_localtime(self):
+        ftpd = main(["--use-localtime"])
+        assert ftpd.handler.use_gmt_times is False
