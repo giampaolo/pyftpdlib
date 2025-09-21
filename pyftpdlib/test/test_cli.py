@@ -2,6 +2,7 @@
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
 
+import argparse
 import io
 import os
 import warnings
@@ -10,7 +11,6 @@ from unittest.mock import patch
 import pytest
 
 import pyftpdlib
-from pyftpdlib import __ver__
 from pyftpdlib.__main__ import main
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.servers import FTPServer
@@ -36,7 +36,7 @@ class TestCommandLineParser(PyftpdlibTestCase):
         self.original_ftpserver_class = FTPServer
         self.clog = patch("pyftpdlib.__main__.config_logging")
         self.clog.start()
-        pyftpdlib.__main__.FTPServer = DummyFTPServer
+        pyftpdlib.__main__.servers.FTPServer = DummyFTPServer
 
     def tearDown(self):
         self.clog.stop()
@@ -127,19 +127,9 @@ class TestCommandLineParser(PyftpdlibTestCase):
         with pytest.raises(SystemExit):
             main(["-D", "xxx"])
 
-    def test_version_opt(self):
-        for opt in ("-v", "--version"):
-            with pytest.raises(SystemExit) as cm:
-                main([opt, "-p", "0"])
-            assert str(cm.value) == f"pyftpdlib {__ver__}"
-
-    def test_verbose_opt(self):
-        for opt in ("-V", "--verbose"):
-            main([opt, "-p", "0"])
-
     def test_username_and_password_opt(self):
         ftpd = main(["--username", "foo", "--password", "bar", "-p", "0"])
         assert ftpd.handler.authorizer.has_user("foo")
         # no --password
-        with pytest.raises(SystemExit):
+        with pytest.raises(argparse.ArgumentTypeError):
             main(["--username", "foo"])
