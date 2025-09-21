@@ -285,7 +285,8 @@ def main(args=None):
     handler.permit_privileged_ports = opts.permit_privileged_ports
     handler.encoding = opts.encoding
     handler.use_gmt_times = not opts.use_localtime
-    handler.use_sendfile = not opts.disable_sendfile
+    if hasattr(os, "sendfile"):
+        handler.use_sendfile = not opts.disable_sendfile
 
     server = opts.concurrency((opts.interface, opts.port), handler)
     server.max_cons = opts.max_cons
