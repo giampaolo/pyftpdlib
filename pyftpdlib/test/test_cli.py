@@ -172,3 +172,19 @@ class TestCommandLineParser(PyftpdlibTestCase):
     def test_use_localtime(self):
         ftpd = main(["--use-localtime"])
         assert ftpd.handler.use_gmt_times is False
+
+    def test_disable_sendfile(self):
+        ftpd = main(["--disable-sendfile"])
+        assert ftpd.handler.use_sendfile is False
+
+    def test_max_cons(self):
+        ftpd = main(["--max-cons", "10"])
+        assert ftpd.max_cons == 10
+
+    def test_max_cons_per_ip(self):
+        ftpd = main(["--max-cons-per-ip", "10"])
+        assert ftpd.max_cons_per_ip == 10
+
+    def test_max_login_attempts(self):
+        ftpd = main(["--max-login-attempts", "10"])
+        assert ftpd.handler.max_login_attempts == 10
