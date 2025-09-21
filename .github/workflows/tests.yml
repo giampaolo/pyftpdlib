@@ -37,7 +37,6 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - uses: actions/setup-python@v5
-    - name: 'Run linters'
       run: |
         python3 -m pip install --upgrade black ruff rstcheck toml-sort sphinx-rtd-theme
         python3 -m pip freeze
