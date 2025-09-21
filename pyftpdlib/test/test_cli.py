@@ -14,8 +14,22 @@ import pyftpdlib
 from pyftpdlib.__main__ import main
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.servers import FTPServer
+from pyftpdlib.servers import ThreadedFTPServer
 
 from . import PyftpdlibTestCase
+
+
+class DummyFTPServer(FTPServer):
+    """An overridden version of FTPServer class which forces
+    serve_forever() to return immediately.
+    """
+
+    def serve_forever(self, *args, **kwargs):
+        self.close_all()
+
+
+class DummyThreadedFTPServer(DummyFTPServer):
+    pass
 
 
 class TestCommandLineParser(PyftpdlibTestCase):
@@ -24,23 +38,20 @@ class TestCommandLineParser(PyftpdlibTestCase):
     def setUp(self):
         super().setUp()
 
-        class DummyFTPServer(FTPServer):
-            """An overridden version of FTPServer class which forces
-            serve_forever() to return immediately.
-            """
-
-            def serve_forever(self, *args, **kwargs):
-                self.close_all()
-
         self.devnull = io.BytesIO()
         self.original_ftpserver_class = FTPServer
+        self.original_threaded_ftpserver_class = ThreadedFTPServer
         self.clog = patch("pyftpdlib.__main__.config_logging")
         self.clog.start()
         pyftpdlib.__main__.servers.FTPServer = DummyFTPServer
+        pyftpdlib.__main__.servers.ThreadedFTPServer = DummyThreadedFTPServer
 
     def tearDown(self):
         self.clog.stop()
         pyftpdlib.servers.FTPServer = self.original_ftpserver_class
+        pyftpdlib.servers.ThreadedFTPServer = (
+            self.original_threaded_ftpserver_class
+        )
         super().tearDown()
 
     def test_interface_opt(self):
@@ -133,3 +144,7 @@ class TestCommandLineParser(PyftpdlibTestCase):
         # no --password
         with pytest.raises(argparse.ArgumentTypeError):
             main(["--username", "foo"])
+
+    def test_concurrency(self):
+        ftpd = main(["--concurrency", "multi-thread"])
+        assert isinstance(ftpd, ThreadedFTPServer)
