@@ -156,6 +156,9 @@ Start a FTP server, with an anonymous user with write permissions, on port 2121:
     [I 2024-06-23 13:49:35] passive ports: None
     [I 2024-06-23 13:49:35] >>> starting FTP server on 0.0.0.0:2121, pid=763634 <<<
 
+Also `see doc <https://pyftpdlib.readthedocs.io/en/latest/tutorial.html#command-line-usage>`__
+for more cmdline usage examples.
+
 API usage
 =========
 
