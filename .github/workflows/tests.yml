@@ -9,6 +9,8 @@ concurrency:
 jobs:
   # Run unit tests
   tests:
+    # avoid duplicate tests run in PRs
+    if: github.event_name != 'push' || github.event.pull_request == null
     name: "py-${{ matrix.python-version }}, ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
