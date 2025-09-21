@@ -157,6 +157,10 @@ class TestCommandLineParser(PyftpdlibTestCase):
         ftpd = main(["--banner", "hello there"])
         assert ftpd.handler.banner == "hello there"
 
-    def test_permit_foreign_address(self):
+    def test_permit_foreign_addresses(self):
         ftpd = main(["--permit-foreign-addresses"])
         assert ftpd.handler.permit_foreign_addresses is True
+
+    def test_permit_privileged_ports(self):
+        ftpd = main(["--permit-privileged-ports"])
+        assert ftpd.handler.permit_privileged_ports is True
