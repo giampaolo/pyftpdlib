@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 """
-Start a stand alone anonymous FTP server from the command line as in:
+Start a standalone anonymous FTP server from the command line:
 
 $ python3 -m pyftpdlib
 """
@@ -12,6 +12,7 @@ import argparse
 import codecs
 import logging
 import os
+import sys
 
 from . import servers
 from .authorizers import DummyAuthorizer
@@ -19,6 +20,74 @@ from .handlers import FTPHandler
 from .log import config_logging
 
 DEFAULT_PORT = 2121
+
+
+def term_supports_colors(file=sys.stdout):
+    if os.name == 'nt':
+        return False
+    try:
+        import curses  # noqa: PLC0415
+
+        assert file.isatty()
+        curses.setupterm()
+        assert curses.tigetnum("colors") > 0
+    except Exception:  # noqa: BLE001
+        return False
+    else:
+        return True
+
+
+def hilite(s, color=None, bold=False):  # pragma: no cover
+    """Return an highlighted version of 'string'."""
+    if not term_supports_colors():
+        return s
+    attr = []
+    colors = dict(
+        blue="34",
+        brown="33",
+        darkgrey="30",
+        green="32",
+        grey="37",
+        lightblue="38;5;66",
+        red="91",
+        violet="35",
+        yellow="93",
+        orange="38;5;208",
+    )
+    colors[None] = "29"
+    try:
+        color = colors[color]
+    except KeyError:
+        msg = f"invalid color {color!r}; choose amongst {list(colors.keys())}"
+        raise ValueError(msg) from None
+    attr.append(color)
+    if bold:
+        attr.append("1")
+    return f"\x1b[{';'.join(attr)}m{s}\x1b[0m"
+
+
+class ColorHelpFormatter(argparse.HelpFormatter):
+    def start_section(self, heading):  # titles / groups
+        heading = f"{hilite(heading.capitalize(), 'orange')}"
+        super().start_section(heading)
+
+    def _format_action_invocation(self, action):
+        # colorize the flag part (e.g. "-i, --interface")
+        if not action.option_strings:
+            default = self._metavar_formatter(action, action.dest)(1)[0]
+            return f"{hilite(default, 'white')}"
+
+        parts = []
+        for option in action.option_strings:
+            parts.append(f"{hilite(option, 'lightblue')}")
+
+        if action.nargs != 0:
+            metavar = self._format_args(
+                action, self._get_default_metavar_for_optional(action)
+            )
+            parts[-1] += " " + f"{hilite(metavar, 'green')}"
+
+        return ", ".join(parts)
 
 
 def parse_encoding(value):
@@ -70,6 +139,11 @@ def parse_args(args=None):
     parser = argparse.ArgumentParser(
         usage=usage,
         description=main.__doc__,
+        formatter_class=(
+            ColorHelpFormatter
+            if term_supports_colors()
+            else argparse.HelpFormatter
+        ),
     )
 
     # --- most important opts
