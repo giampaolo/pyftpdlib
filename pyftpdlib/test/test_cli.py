@@ -2,6 +2,7 @@
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
 
+import argparse
 import io
 import os
 import warnings
@@ -10,12 +11,25 @@ from unittest.mock import patch
 import pytest
 
 import pyftpdlib
-from pyftpdlib import __ver__
 from pyftpdlib.__main__ import main
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.servers import FTPServer
+from pyftpdlib.servers import ThreadedFTPServer
 
 from . import PyftpdlibTestCase
+
+
+class DummyFTPServer(FTPServer):
+    """An overridden version of FTPServer class which forces
+    serve_forever() to return immediately.
+    """
+
+    def serve_forever(self, *args, **kwargs):
+        self.close_all()
+
+
+class DummyThreadedFTPServer(DummyFTPServer):
+    pass
 
 
 class TestCommandLineParser(PyftpdlibTestCase):
@@ -24,23 +38,20 @@ class TestCommandLineParser(PyftpdlibTestCase):
     def setUp(self):
         super().setUp()
 
-        class DummyFTPServer(FTPServer):
-            """An overridden version of FTPServer class which forces
-            serve_forever() to return immediately.
-            """
-
-            def serve_forever(self, *args, **kwargs):
-                self.close_all()
-
         self.devnull = io.BytesIO()
         self.original_ftpserver_class = FTPServer
+        self.original_threaded_ftpserver_class = ThreadedFTPServer
         self.clog = patch("pyftpdlib.__main__.config_logging")
         self.clog.start()
-        pyftpdlib.__main__.FTPServer = DummyFTPServer
+        pyftpdlib.__main__.servers.FTPServer = DummyFTPServer
+        pyftpdlib.__main__.servers.ThreadedFTPServer = DummyThreadedFTPServer
 
     def tearDown(self):
         self.clog.stop()
         pyftpdlib.servers.FTPServer = self.original_ftpserver_class
+        pyftpdlib.servers.ThreadedFTPServer = (
+            self.original_threaded_ftpserver_class
+        )
         super().tearDown()
 
     def test_interface_opt(self):
@@ -127,19 +138,56 @@ class TestCommandLineParser(PyftpdlibTestCase):
         with pytest.raises(SystemExit):
             main(["-D", "xxx"])
 
-    def test_version_opt(self):
-        for opt in ("-v", "--version"):
-            with pytest.raises(SystemExit) as cm:
-                main([opt, "-p", "0"])
-            assert str(cm.value) == f"pyftpdlib {__ver__}"
-
-    def test_verbose_opt(self):
-        for opt in ("-V", "--verbose"):
-            main([opt, "-p", "0"])
-
     def test_username_and_password_opt(self):
         ftpd = main(["--username", "foo", "--password", "bar", "-p", "0"])
         assert ftpd.handler.authorizer.has_user("foo")
         # no --password
-        with pytest.raises(SystemExit):
+        with pytest.raises(argparse.ArgumentTypeError):
             main(["--username", "foo"])
+
+    def test_concurrency(self):
+        ftpd = main(["--concurrency", "multi-thread"])
+        assert isinstance(ftpd, DummyThreadedFTPServer)
+
+    def test_timeout(self):
+        ftpd = main(["--timeout", "10"])
+        assert ftpd.handler.timeout == 10
+
+    def test_banner(self):
+        ftpd = main(["--banner", "hello there"])
+        assert ftpd.handler.banner == "hello there"
+
+    def test_permit_foreign_addresses(self):
+        ftpd = main(["--permit-foreign-addresses"])
+        assert ftpd.handler.permit_foreign_addresses is True
+
+    def test_permit_privileged_ports(self):
+        ftpd = main(["--permit-privileged-ports"])
+        assert ftpd.handler.permit_privileged_ports is True
+
+    def test_encoding(self):
+        ftpd = main(["--encoding", "ascii"])
+        assert ftpd.handler.encoding == "ascii"
+
+    def test_use_localtime(self):
+        ftpd = main(["--use-localtime"])
+        assert ftpd.handler.use_gmt_times is False
+
+    @pytest.mark.skipif(
+        not hasattr(os, "sendfile"), reason="sendfile() not supported"
+    )
+    def test_disable_sendfile(self):
+        ftpd = main(["--disable-sendfile"])
+        assert ftpd.handler.use_sendfile is False
+
+    def test_max_cons(self):
+        ftpd = main(["--max-cons", "10"])
+        assert ftpd.max_cons == 10
+
+    def test_max_cons_per_ip(self):
+        ftpd = main(["--max-cons-per-ip", "10"])
+        assert ftpd.max_cons_per_ip == 10
+
+    def test_max_login_attempts(self):
+        ftpd = main(["--max-login-attempts", "10"])
+        assert ftpd.handler.max_login_attempts == 10

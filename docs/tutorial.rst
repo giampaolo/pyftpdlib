@@ -514,7 +514,7 @@ examples.
 
 Anonymous server, listening on port 2121, sharing the current directory:
 
-.. code-block:: sh
+.. code-block::
 
     $ python3 -m pyftpdlib
     [I 13-04-09 17:55:18] >>> starting FTP server on 0.0.0.0:2121, pid=6412 <<<
@@ -525,23 +525,70 @@ Anonymous server, listening on port 2121, sharing the current directory:
 
 Anonymous server with write permission:
 
-.. code-block:: sh
+.. code-block::
 
     $ python3 -m pyftpdlib -w
 
 Specify a user with write permissions:
 
-.. code-block:: sh
+.. code-block::
 
     $ python3 -m pyftpdlib -u bob -P mypassword
 
 Set a different address/port and home directory:
 
-.. code-block:: sh
+.. code-block::
 
     $ python3 -m pyftpdlib -i localhost -p 2121 -d /home/bob
 
-See ``python3 -m pyftpdlib -h`` for a complete list of options.
+
+See ``python3 -m pyftpdlib -h`` for a complete list of options:
+
+.. code-block::
+
+    $ python3 -m pyftpdlib  -h
+    usage: python3 -m pyftpdlib [options]
+
+    Start a standalone anonymous FTP server.
+
+    options:
+      -h, --help            show this help message and exit
+
+    Main options:
+      -i ADDRESS, --interface ADDRESS
+                            specify the interface to run on (default: all interfaces)
+      -p PORT, --port PORT  specify port number to run on (default: 2121)
+      -w, --write           grants write access for logged in user (default: read-only)
+      -d PATH, --directory PATH
+                            specify the directory to share (default: current directory)
+      -n ADDRESS, --nat-address ADDRESS
+                            the NAT address to use for passive connections
+      -r FROM-TO, --range FROM-TO
+                            the range of TCP ports to use for passive connections (e.g. -r 8000-9000)
+      -D, --debug           enable DEBUG logging level
+      -u USERNAME, --username USERNAME
+                            specify username to login with (anonymous login will be disabled and password required if supplied)
+      -P PASSWORD, --password PASSWORD
+                            specify a password to login with (username required to be useful)
+      --concurrency CONCURRENCY
+                            the FTP server concurrency model to use, either 'async' (default), 'multi-thread' or 'multi-proc'
+
+    Other options:
+      --timeout TIMEOUT     connection timeout (default: 300 seconds)
+      --banner BANNER       the message sent when client connects (default: 'pyftpdlib 2.1.0 ready.')
+      --permit-foreign-addresses
+                            allow data connections from an IP address different than the control connection
+      --permit-privileged-ports
+                            allow data connections (PORT) over privileged TCP ports
+      --encoding ENCODING   the encoding used for client / server communication (default: utf8)
+      --use-localtime       display directory listings with the time in your local time zone (default: use GMT)
+      --disable-sendfile    disable sendfile() syscall, used for faster file transfers
+      --max-cons MAX_CONS   max number of simultaneous connections (default: 512)
+      --max-cons-per-ip MAX_CONS_PER_IP
+                            maximum number connections from the same IP address (default: unlimited)
+      --max-login-attempts MAX_LOGIN_ATTEMPTS
+                            max number of failed authentications before disconnect (default: 3)
+
 
 .. _`Apache FAQs`: https://httpd.apache.org/docs/2.4/ssl/ssl_faq.html#selfcert
 .. _`benchmarks`: benchmarks.html

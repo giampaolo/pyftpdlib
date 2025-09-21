@@ -511,6 +511,13 @@ class PassiveDTP(Acceptor):
                     f'{addr[0]}:{addr[1]}.'
                 )
                 self.cmd_channel.respond_w_warning(msg)
+
+                if sys.stdout.isatty():
+                    self.cmd_channel.log(
+                        "you can use --permit-foreign-addresses CLI opt to"
+                        " allow this connection"
+                    )
+
                 # do not close listening socket: it couldn't be client's blame
                 return
             else:
@@ -1231,7 +1238,7 @@ class FTPHandler(AsyncChat):
        between FTP commands. If the timeout triggers, the remote client
        will be kicked off.  Defaults to 300 seconds.
 
-     - (str) banner: the string sent when client connects.
+     - (str) banner: the message sent when client connects.
 
      - (int) max_login_attempts:
         the maximum number of wrong authentications before disconnecting
@@ -1244,11 +1251,11 @@ class FTPHandler(AsyncChat):
         recommended for security reasons as described in RFC-2577).
         Having this attribute set to False means that all data
         connections from/to remote IP addresses which do not match the
-        client's IP address will be dropped (defualt False).
+        client's IP address will be dropped (default False).
 
      - (bool) permit_privileged_ports:
         set to True if you want to permit active data connections (PORT)
-        over privileged ports (not recommended, defaulting to False).
+        over privileged TCP ports (not recommended, defaulting to False).
 
      - (str) masquerade_address:
         the "masqueraded" IP address to provide along PASV reply when

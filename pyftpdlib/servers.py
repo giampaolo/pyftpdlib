@@ -182,7 +182,7 @@ class FTPServer(Acceptor):
         logger.debug("poller: %r", get_fqname(self.ioloop))
         logger.debug("authorizer: %r", get_fqname(self.handler.authorizer))
         if os.name == 'posix':
-            logger.debug("use sendfile(2): %s", self.handler.use_sendfile)
+            logger.debug("use sendfile(): %s", self.handler.use_sendfile)
         logger.debug("handler: %r", get_fqname(self.handler))
         logger.debug("max connections: %s", self.max_cons or "unlimited")
         logger.debug(
@@ -253,10 +253,10 @@ class FTPServer(Acceptor):
             if blocking:
                 if log:
                     logger.info(
-                        ">>> shutting down FTP server, %s socket(s), pid=%i "
-                        "<<<",
-                        self._map_len(),
+                        ">>> shutting down FTP server, pid=%i, %s open"
+                        " socket(s) <<<",
                         os.getpid(),
+                        self._map_len(),
                     )
                 self.close_all()
         else:
