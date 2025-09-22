@@ -93,8 +93,8 @@ force-single-line = true  # one import per line
 [tool.coverage.report]
 omit = [
     "pyftpdlib/_compat.py",
-    "pyftpdlib/test/*",
     "setup.py",
+    "tests/*",
 ]
 exclude_lines = [
     "except ImportError:",
@@ -151,7 +151,7 @@ addopts = '''
     -p instafail
     -p xdist
     '''
-testpaths = ["pyftpdlib/test/"]
+testpaths = ["tests/"]
 
 [tool.rstcheck]
 ignore_messages = [

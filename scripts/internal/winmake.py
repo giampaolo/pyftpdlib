@@ -262,7 +262,7 @@ def test_authorizers():
         PYTHON,
         "-m",
         "pytest",
-        "pyftpdlib/test/test_authorizers.py",
+        "tests/test_authorizers.py",
     ])
 
 
@@ -271,7 +271,7 @@ def test_filesystems():
         PYTHON,
         "-m",
         "pytest",
-        "pyftpdlib/test/test_filesystems.py",
+        "tests/test_filesystems.py",
     ])
 
 
@@ -280,7 +280,7 @@ def test_functional():
         PYTHON,
         "-m",
         "pytest",
-        "pyftpdlib/test/test_functional.py",
+        "tests/test_functional.py",
     ])
 
 
@@ -289,16 +289,16 @@ def test_functional_ssl():
         PYTHON,
         "-m",
         "pytest",
-        "pyftpdlib/test/test_functional_ssl.py",
+        "tests/test_functional_ssl.py",
     ])
 
 
 def test_ioloop():
-    sh([PYTHON, "-m", "pytest", "pyftpdlib/test/test_ioloop.py"])
+    sh([PYTHON, "-m", "pytest", "tests/test_ioloop.py"])
 
 
 def test_cli():
-    sh([PYTHON, "-m", "pytest", "pyftpdlib/test/test_cli.py"])
+    sh([PYTHON, "-m", "pytest", "tests/test_cli.py"])
 
 
 def test_servers():
@@ -306,7 +306,7 @@ def test_servers():
         PYTHON,
         "-m",
         "pytest",
-        "pyftpdlib/test/test_servers.py",
+        "tests/test_servers.py",
     ])
 
 
