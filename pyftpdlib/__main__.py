@@ -17,6 +17,7 @@ from . import servers
 from .authorizers import DummyAuthorizer
 from .handlers import FTPHandler
 from .log import config_logging
+from .prefork import cpu_count
 from .utils import hilite
 from .utils import term_supports_colors
 
@@ -80,21 +81,21 @@ def parse_port_range(value):
     return list(range(start, stop + 1))
 
 
-def parse_server_type(value):
-    if value == "async":
-        return servers.FTPServer
-    if value == "multi-thread":
-        return servers.ThreadedFTPServer
-    if value == "multi-proc":
-        if not hasattr(servers, "MultiprocessFTPServer"):
-            raise argparse.ArgumentTypeError(
-                "multi process server is not supported on this platform"
-            )
-        return servers.MultiprocessFTPServer
-    raise argparse.ArgumentTypeError(
-        f"invalid concurrency {value!r}; choose between 'async',"
-        " 'multi-thread' or 'multi-proc'"
-    )
+def parse_concurrency(value):
+    mapping = {
+        "async": (servers.FTPServer, 1),
+        "multi-thread": (servers.ThreadedFTPServer, 1),
+        "multi-proc": (servers.MultiprocessFTPServer, 1),
+    }
+    if os.name == "posix":
+        mapping["pre-fork"] = (servers.FTPServer, cpu_count())
+    if value not in mapping:
+        raise argparse.ArgumentTypeError(
+            f"invalid concurrency {value!r}; choose between: "
+            f"{', '.join([repr(x) for x in mapping])}"
+        )
+    server_class, ncpus = mapping[value]
+    return (server_class, ncpus)
 
 
 def parse_file_path(value):
@@ -193,7 +194,7 @@ def parse_args(args=None):
     )
     group_main.add_argument(
         '--concurrency',
-        type=parse_server_type,
+        type=parse_concurrency,
         default="async",
         help=(
             "the FTP server concurrency model to use, either 'async'"
@@ -391,16 +392,20 @@ def main(args=None):
         handler.use_sendfile = not opts.disable_sendfile
 
     # Configure server / acceptor.
-    server = opts.concurrency((opts.interface, opts.port), handler)
+    server_class, ncpus = opts.concurrency
+    server = server_class((opts.interface, opts.port), handler)
     server.max_cons = opts.max_cons
     server.max_cons_per_ip = opts.max_cons_per_ip
 
     # On Windows specify a timeout for the underlying select() so
     # that the server can be interrupted with CTRL + C.
+    timeout = 2 if os.name == 'nt' else None
+
     try:
-        server.serve_forever(timeout=2 if os.name == 'nt' else None)
+        server.serve_forever(timeout=timeout, worker_processes=ncpus)
     finally:
         server.close_all()
+
     if args:  # only used in unit tests
         return server
 
