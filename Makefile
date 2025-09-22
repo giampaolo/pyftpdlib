@@ -2,7 +2,7 @@
 # To use a specific Python version run:
 # 	$ make install PYTHON=python3.7
 # To run a specific test:
-# 	$ make test ARGS="-v -s pyftpdlib/test/test_functional.py::TestIPv6MixedEnvironment::test_port_v4"
+# 	$ make test ARGS="-v -s tests/test_functional.py::TestIPv6MixedEnvironment::test_port_v4"
 
 # Configurable
 PYTHON = python3
@@ -89,25 +89,25 @@ test-parallel:  ## Run all tests in parallel.
 	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest -n auto --dist loadgroup $(ARGS)
 
 test-functional:  ## Run functional FTP tests.
-	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) pyftpdlib/test/test_functional.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) tests/test_functional.py
 
 test-functional-ssl:  ## Run functional FTPS tests.
-	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) pyftpdlib/test/test_functional_ssl.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) tests/test_functional_ssl.py
 
 test-servers:  ## Run tests for FTPServer and its subclasses.
-	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) pyftpdlib/test/test_servers.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) tests/test_servers.py
 
 test-authorizers:  ## Run tests for authorizers.
-	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) pyftpdlib/test/test_authorizers.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) tests/test_authorizers.py
 
 test-filesystems:  ## Run filesystem tests.
-	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) pyftpdlib/test/test_filesystems.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) tests/test_filesystems.py
 
 test-ioloop:  ## Run IOLoop tests.
-	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) pyftpdlib/test/test_ioloop.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) tests/test_ioloop.py
 
 test-cli:  ## Run miscellaneous tests.
-	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) pyftpdlib/test/test_cli.py
+	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) tests/test_cli.py
 
 test-lastfailed:  ## Run previously failed tests
 	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest --last-failed $(ARGS)
