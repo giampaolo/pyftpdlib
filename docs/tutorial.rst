@@ -541,6 +541,13 @@ Set a different address/port and home directory:
 
     $ python3 -m pyftpdlib -i localhost -p 2121 -d /home/bob
 
+Start a FTPS server (FTP over SSL):
+
+.. code-block::
+
+    $ openssl req -x509 -newkey rsa:2048 -keyout ftpd.key -out ftpd.crt -nodes
+    $ python3 -m pyftpdlib --tls --keyfile=ftpd.key --certfile=ftpd.crt
+
 See ``python3 -m pyftpdlib -h`` for a complete list of options:
 
 .. code-block::
@@ -550,39 +557,60 @@ See ``python3 -m pyftpdlib -h`` for a complete list of options:
 
     Start a standalone anonymous FTP server.
 
-    options:
-      -h, --help            show this help message and exit
+    Options:
+      -h, --help
+                            show this help message and exit
 
     Main options:
-      -i ADDRESS, --interface ADDRESS
+      -i, --interface ADDRESS
                             specify the interface to run on (default: all interfaces)
-      -p PORT, --port PORT  specify port number to run on (default: 2121)
-      -w, --write           grants write access for logged in user (default: read-only)
-      -d PATH, --directory PATH
+      -p, --port PORT
+                            specify port number to run on (default: 2121)
+      -w, --write
+                            grants write access for logged in user (default: read-only)
+      -d, --directory PATH
                             specify the directory to share (default: current directory)
-      -n ADDRESS, --nat-address ADDRESS
+      -n, --nat-address ADDRESS
                             the NAT address to use for passive connections
-      -r FROM-TO, --range FROM-TO
+      -r, --range FROM-TO
                             the range of TCP ports to use for passive connections (e.g. -r 8000-9000)
-      -D, --debug           enable DEBUG logging level
-      -u USERNAME, --username USERNAME
+      -D, --debug
+                            enable DEBUG logging level
+      -u, --username USERNAME
                             specify username to login with (anonymous login will be disabled and password required if supplied)
-      -P PASSWORD, --password PASSWORD
+      -P, --password PASSWORD
                             specify a password to login with (username required to be useful)
       --concurrency CONCURRENCY
                             the FTP server concurrency model to use, either 'async' (default), 'multi-thread' or 'multi-proc'
 
+    Tls options:
+      --tls   whether to enable FTPS (FTP over SSL); requires --keyfile and --certfile args
+      --keyfile PATH
+                            the SSL keyfile
+      --certfile PATH
+                            the SSL keyfile
+      --tls-control-required
+                            requires a secure connection for the control connection (before login)
+      --tls-data-required
+                            requires a secure connection for data connection
+
     Other options:
-      --timeout TIMEOUT     connection timeout (default: 300 seconds)
-      --banner BANNER       the message sent when client connects (default: 'pyftpdlib 2.1.0 ready.')
+      --timeout TIMEOUT
+                            connection timeout (default: 300 seconds)
+      --banner BANNER
+                            the message sent when client connects (default: 'pyftpdlib 2.1.0 ready.')
       --permit-foreign-addresses
                             allow data connections from an IP address different than the control connection
       --permit-privileged-ports
                             allow data connections (PORT) over privileged TCP ports
-      --encoding ENCODING   the encoding used for client / server communication (default: utf8)
-      --use-localtime       display directory listings with the time in your local time zone (default: use GMT)
-      --disable-sendfile    disable sendfile() syscall, used for faster file transfers
-      --max-cons MAX_CONS   max number of simultaneous connections (default: 512)
+      --encoding ENCODING
+                            the encoding used for client / server communication (default: utf8)
+      --use-localtime
+                            display directory listings with the time in your local time zone (default: use GMT)
+      --disable-sendfile
+                            disable sendfile() syscall, used for faster file transfers
+      --max-cons MAX_CONS
+                            max number of simultaneous connections (default: 512)
       --max-cons-per-ip MAX_CONS_PER_IP
                             maximum number connections from the same IP address (default: unlimited)
       --max-login-attempts MAX_LOGIN_ATTEMPTS
