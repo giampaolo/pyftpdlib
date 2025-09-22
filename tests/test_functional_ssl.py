@@ -4,7 +4,6 @@
 
 import contextlib
 import ftplib
-import os
 import ssl
 
 import OpenSSL  # requires "pip install pyopenssl"
@@ -12,6 +11,7 @@ import pytest
 
 from pyftpdlib.handlers import TLS_FTPHandler
 
+from . import CERTFILE
 from . import CI_TESTING
 from . import GLOBAL_TIMEOUT
 from . import OSX
@@ -34,10 +34,6 @@ from .test_functional import TestFtpStoreData
 from .test_functional import TestIPv4Environment
 from .test_functional import TestIPv6Environment
 from .test_functional import TestTimeouts
-
-CERTFILE = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), 'keycert.pem')
-)
 
 del OpenSSL
 
