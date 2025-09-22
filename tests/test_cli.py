@@ -191,3 +191,10 @@ class TestCommandLineParser(PyftpdlibTestCase):
     def test_max_login_attempts(self):
         ftpd = main(["--max-login-attempts", "10"])
         assert ftpd.handler.max_login_attempts == 10
+
+    def test_tls(self):
+        with pytest.raises(argparse.ArgumentTypeError) as cm:
+            main(["--tls"])
+        assert cm.match("requires")
+        assert cm.match("--keyfile")
+        assert cm.match("--certfile")
