@@ -203,31 +203,31 @@ def parse_args(args=None):
         default=False,
         action="store_true",
         help=(
-            "whether to enable FTPS (FTP over SSL); requires --keyfile and"
+            "whether to enable FTPS (FTP over TLS); requires --keyfile and"
             " --certfile args"
         ),
     )
     group_tls.add_argument(
         '--keyfile',
         metavar="PATH",
-        help="the SSL keyfile",
+        help="the TLS key file",
     )
     group_tls.add_argument(
         '--certfile',
         metavar="PATH",
-        help="the SSL keyfile",
+        help="the TLS certificate file",
     )
     group_tls.add_argument(
         "--tls-control-required",
         default=False,
         action="store_true",
-        help="impose SSL for the control connection (before login)",
+        help="impose TLS for the control connection (before login)",
     )
     group_tls.add_argument(
         "--tls-data-required",
         default=False,
         action="store_true",
-        help="impose SSL for data connection",
+        help="impose TLS for data connection",
     )
 
     # --- less important opts
@@ -348,7 +348,7 @@ def main(args=None):
     # FTP or FTPS?
     if opts.tls:
         if TLS_FTPHandler is None:
-            raise argparse.ArgumentTypeError("PyOpenSSL not installed")
+            raise argparse.ArgumentTypeError("PyOpenTLS not installed")
         if not opts.certfile or not opts.keyfile:
             raise argparse.ArgumentTypeError(
                 "--tls requires --keyfile and --certfile args"
