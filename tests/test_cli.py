@@ -13,9 +13,11 @@ import pytest
 import pyftpdlib
 from pyftpdlib.__main__ import main
 from pyftpdlib.authorizers import DummyAuthorizer
+from pyftpdlib.handlers import TLS_FTPHandler
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.servers import ThreadedFTPServer
 
+from . import CERTFILE
 from . import PyftpdlibTestCase
 
 
@@ -198,3 +200,8 @@ class TestCommandLineParser(PyftpdlibTestCase):
         assert cm.match("requires")
         assert cm.match("--keyfile")
         assert cm.match("--certfile")
+
+        ftpd = main(["--tls", "--keyfile", CERTFILE, "--certfile", CERTFILE])
+        assert issubclass(ftpd.handler, TLS_FTPHandler)
+        assert ftpd.handler.keyfile == CERTFILE
+        assert ftpd.handler.certfile == CERTFILE
