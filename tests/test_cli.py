@@ -19,6 +19,7 @@ from pyftpdlib.servers import ThreadedFTPServer
 
 from . import CERTFILE
 from . import PyftpdlibTestCase
+from . import reset_server_opts
 
 
 class DummyFTPServer(FTPServer):
@@ -205,3 +206,32 @@ class TestCommandLineParser(PyftpdlibTestCase):
         assert issubclass(ftpd.handler, TLS_FTPHandler)
         assert ftpd.handler.keyfile == CERTFILE
         assert ftpd.handler.certfile == CERTFILE
+
+    def test_tls_required(self):
+        ftpd = main(["--tls", "--keyfile", CERTFILE, "--certfile", CERTFILE])
+        assert ftpd.handler.tls_control_required is False
+        assert ftpd.handler.tls_data_required is False
+
+        ftpd = main([
+            "--tls",
+            "--keyfile",
+            CERTFILE,
+            "--certfile",
+            CERTFILE,
+            "--tls-control-required",
+        ])
+        assert ftpd.handler.tls_control_required is True
+        assert ftpd.handler.tls_data_required is False
+
+        reset_server_opts()
+
+        ftpd = main([
+            "--tls",
+            "--keyfile",
+            CERTFILE,
+            "--certfile",
+            CERTFILE,
+            "--tls-data-required",
+        ])
+        assert ftpd.handler.tls_control_required is False
+        assert ftpd.handler.tls_data_required is True
