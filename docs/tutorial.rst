@@ -541,7 +541,7 @@ Set a different address/port and home directory:
 
     $ python3 -m pyftpdlib -i localhost -p 2121 -d /home/bob
 
-Start a FTPS server (FTP over SSL):
+Start a FTPS (FTP over SSL) server:
 
 .. code-block::
 

@@ -221,16 +221,13 @@ def parse_args(args=None):
         "--tls-control-required",
         default=False,
         action="store_true",
-        help=(
-            "requires a secure connection for the control connection (before"
-            " login)"
-        ),
+        help="impose SSL for the control connection (before login)",
     )
     group_tls.add_argument(
         "--tls-data-required",
         default=False,
         action="store_true",
-        help="requires a secure connection for data connection",
+        help="impose SSL for data connection",
     )
 
     # --- less important opts
