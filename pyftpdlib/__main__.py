@@ -356,7 +356,7 @@ def main(args=None):
     # FTP or FTPS?
     if opts.tls:
         if TLS_FTPHandler is None:
-            raise argparse.ArgumentTypeError("PyOpenTLS not installed")
+            raise argparse.ArgumentTypeError("PyOpenSSL not installed")
         if not opts.certfile or not opts.keyfile:
             raise argparse.ArgumentTypeError(
                 "--tls requires --keyfile and --certfile args"

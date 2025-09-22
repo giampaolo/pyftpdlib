@@ -5,8 +5,24 @@ Version: 2.1.0 - IN DEVELOPMENT
 
 **Enhancements**
 
-* #666: add tons of new CLI options (when pyftpdlib is invoked from cmdline as
-  ``pytrhon3 -m pyftpdlib``).
+* #647: add CLI options to use FTPS:
+  * ``--tls``
+  * ``--certfile``
+  * ``--keyfile``,
+  * ``--tls-control-required``
+  * ``--tls-data-required``
+* #666: add new CLI options:
+  * ``--banner``
+  * ``--concurrency``
+  * ``--disable-sendfile``
+  * ``--encoding``
+  * ``--max-cons``
+  * ``--max-cons-per-ip``
+  * ``--max-login-attempts``
+  * ``--permit-foreign-addresses``
+  * ``--permit-privileged-ports``
+  * ``--timeout``
+  * ``--use-localtime``
 * #667: colorized output when using pyftpdlib from CLI (invoked via ``pytrhon3
   -m pyftpdlib``).
 * #670: exclude unit tests from installation.
