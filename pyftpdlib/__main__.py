@@ -20,6 +20,12 @@ from .log import config_logging
 from .utils import hilite
 from .utils import term_supports_colors
 
+try:
+    from .handlers import TLS_FTPHandler
+except ImportError:
+    TLS_FTPHandler = None  # requires PyOpenSSL
+
+
 DEFAULT_PORT = 2121
 
 
@@ -189,16 +195,24 @@ def parse_args(args=None):
         ),
     )
 
+    group2 = parser.add_argument_group("TLS options")
+    group2.add_argument(
+        "--tls",
+        default=False,
+        action="store_true",
+        help="whether to enable FTPS",
+    )
+
     # --- less important opts
 
-    group2 = parser.add_argument_group("Other options")
-    group2.add_argument(
+    group3 = parser.add_argument_group("Other options")
+    group3.add_argument(
         '--timeout',
         type=int,
         default=FTPHandler.timeout,
         help=f"connection timeout (default: {FTPHandler.timeout} seconds)",
     )
-    group2.add_argument(
+    group3.add_argument(
         '--banner',
         type=str,
         default=FTPHandler.banner,
@@ -207,7 +221,7 @@ def parse_args(args=None):
             f" {FTPHandler.banner!r})"
         ),
     )
-    group2.add_argument(
+    group3.add_argument(
         "--permit-foreign-addresses",
         default=FTPHandler.permit_foreign_addresses,
         action="store_true",
@@ -216,13 +230,13 @@ def parse_args(args=None):
             " control connection"
         ),
     )
-    group2.add_argument(
+    group3.add_argument(
         "--permit-privileged-ports",
         default=FTPHandler.permit_privileged_ports,
         action="store_true",
         help="allow data connections (PORT) over privileged TCP ports",
     )
-    group2.add_argument(
+    group3.add_argument(
         "--encoding",
         type=parse_encoding,
         default="utf-8",
@@ -231,7 +245,7 @@ def parse_args(args=None):
             f" {FTPHandler.encoding})"
         ),
     )
-    group2.add_argument(
+    group3.add_argument(
         "--use-localtime",
         default=False,
         action="store_true",
@@ -241,13 +255,13 @@ def parse_args(args=None):
         ),
     )
     if hasattr(os, "sendfile"):
-        group2.add_argument(
+        group3.add_argument(
             "--disable-sendfile",
             default=False,
             action="store_true",
             help="disable sendfile() syscall, used for faster file transfers",
         )
-    group2.add_argument(
+    group3.add_argument(
         '--max-cons',
         type=int,
         default=servers.FTPServer.max_cons,
@@ -256,7 +270,7 @@ def parse_args(args=None):
             f" {servers.FTPServer.max_cons})"
         ),
     )
-    group2.add_argument(
+    group3.add_argument(
         '--max-cons-per-ip',
         type=int,
         default=servers.FTPServer.max_cons,
@@ -265,7 +279,7 @@ def parse_args(args=None):
             " unlimited)"
         ),
     )
-    group2.add_argument(
+    group3.add_argument(
         '--max-login-attempts',
         type=int,
         default=FTPHandler.max_login_attempts,
@@ -304,7 +318,13 @@ def main(args=None):
     else:
         authorizer.add_anonymous(opts.directory, perm=perm)
 
-    handler = FTPHandler
+    if opts.tls:
+        if TLS_FTPHandler is None:
+            raise argparse.ArgumentTypeError("PyOpenSSL not installed")
+        handler = TLS_FTPHandler
+    else:
+        handler = FTPHandler
+
     handler.authorizer = authorizer
     handler.masquerade_address = opts.nat_address
     handler.passive_ports = opts.range
