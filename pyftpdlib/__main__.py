@@ -97,6 +97,12 @@ def parse_server_type(value):
     )
 
 
+def parse_file_path(value):
+    if not os.path.isfile(value):
+        raise argparse.ArgumentTypeError(f"file {value!r} does not exist")
+    return value
+
+
 def parse_args(args=None):
     usage = "python3 -m pyftpdlib [options]"
     parser = argparse.ArgumentParser(
@@ -209,11 +215,13 @@ def parse_args(args=None):
     )
     group_tls.add_argument(
         '--keyfile',
+        type=parse_file_path,
         metavar="PATH",
         help="the TLS key file",
     )
     group_tls.add_argument(
         '--certfile',
+        type=parse_file_path,
         metavar="PATH",
         help="the TLS certificate file",
     )
