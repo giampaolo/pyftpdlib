@@ -217,6 +217,21 @@ def parse_args(args=None):
         metavar="PATH",
         help="the SSL keyfile",
     )
+    group_tls.add_argument(
+        "--tls-control-required",
+        default=False,
+        action="store_true",
+        help=(
+            "requires a secure connection for the control connection (before"
+            " login)"
+        ),
+    )
+    group_tls.add_argument(
+        "--tls-data-required",
+        default=False,
+        action="store_true",
+        help="requires a secure connection for data connection",
+    )
 
     # --- less important opts
 
@@ -344,6 +359,10 @@ def main(args=None):
         handler = TLS_FTPHandler
         handler.certfile = opts.certfile
         handler.keyfile = opts.keyfile
+        if opts.tls_control_required:
+            handler.tls_control_required = True
+        if opts.tls_data_required:
+            handler.tls_data_required = True
     else:
         if opts.certfile or opts.keyfile:
             raise argparse.ArgumentTypeError(

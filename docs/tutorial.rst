@@ -541,7 +541,6 @@ Set a different address/port and home directory:
 
     $ python3 -m pyftpdlib -i localhost -p 2121 -d /home/bob
 
-
 See ``python3 -m pyftpdlib -h`` for a complete list of options:
 
 .. code-block::
