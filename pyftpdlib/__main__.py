@@ -202,7 +202,20 @@ def parse_args(args=None):
         "--tls",
         default=False,
         action="store_true",
-        help="whether to enable FTPS (FTP over SSL)",
+        help=(
+            "whether to enable FTPS (FTP over SSL); requires --keyfile and"
+            " --certfile args"
+        ),
+    )
+    group_tls.add_argument(
+        '--keyfile',
+        metavar="PATH",
+        help="the SSL keyfile",
+    )
+    group_tls.add_argument(
+        '--certfile',
+        metavar="PATH",
+        help="the SSL keyfile",
     )
 
     # --- less important opts
@@ -320,11 +333,20 @@ def main(args=None):
     else:
         authorizer.add_anonymous(opts.directory, perm=perm)
 
+    # FTP or FTPS?
     if opts.tls:
         if TLS_FTPHandler is None:
             raise argparse.ArgumentTypeError("PyOpenSSL not installed")
+        if not opts.certfile or not opts.keyfile:
+            raise argparse.ArgumentTypeError(
+                "--tls requires --keyfile and --certfile args"
+            )
         handler = TLS_FTPHandler
     else:
+        if opts.certfile or opts.keyfile:
+            raise argparse.ArgumentTypeError(
+                "--keyfile and --certfile args requires --tls arg"
+            )
         handler = FTPHandler
 
     handler.authorizer = authorizer
