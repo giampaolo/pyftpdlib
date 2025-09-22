@@ -34,6 +34,8 @@ OSX = sys.platform.startswith("darwin")
 POSIX = os.name == 'posix'
 BSD = "bsd" in sys.platform
 WINDOWS = os.name == 'nt'
+CERTFILE = os.path.join(HERE, 'keycert.pem')
+
 
 GITHUB_ACTIONS = 'GITHUB_ACTIONS' in os.environ or 'CIBUILDWHEEL' in os.environ
 CI_TESTING = GITHUB_ACTIONS
