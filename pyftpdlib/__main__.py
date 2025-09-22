@@ -342,6 +342,8 @@ def main(args=None):
                 "--tls requires --keyfile and --certfile args"
             )
         handler = TLS_FTPHandler
+        handler.certfile = opts.certfile
+        handler.keyfile = opts.keyfile
     else:
         if opts.certfile or opts.keyfile:
             raise argparse.ArgumentTypeError(
@@ -349,6 +351,7 @@ def main(args=None):
             )
         handler = FTPHandler
 
+    # Configure handler.
     handler.authorizer = authorizer
     handler.masquerade_address = opts.nat_address
     handler.passive_ports = opts.range
@@ -363,6 +366,7 @@ def main(args=None):
     if hasattr(os, "sendfile"):
         handler.use_sendfile = not opts.disable_sendfile
 
+    # Configure server / acceptor.
     server = opts.concurrency((opts.interface, opts.port), handler)
     server.max_cons = opts.max_cons
     server.max_cons_per_ip = opts.max_cons_per_ip
