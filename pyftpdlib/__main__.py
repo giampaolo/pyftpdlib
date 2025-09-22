@@ -111,15 +111,15 @@ def parse_args(args=None):
 
     # --- most important opts
 
-    group1 = parser.add_argument_group("Main options")
-    group1.add_argument(
+    group_main = parser.add_argument_group("Main options")
+    group_main.add_argument(
         '-i',
         '--interface',
         default=None,
         metavar="ADDRESS",
         help="specify the interface to run on (default: all interfaces)",
     )
-    group1.add_argument(
+    group_main.add_argument(
         '-p',
         '--port',
         type=int,
@@ -127,28 +127,28 @@ def parse_args(args=None):
         metavar="PORT",
         help=f"specify port number to run on (default: {DEFAULT_PORT})",
     )
-    group1.add_argument(
+    group_main.add_argument(
         '-w',
         '--write',
         action="store_true",
         default=False,
         help="grants write access for logged in user (default: read-only)",
     )
-    group1.add_argument(
+    group_main.add_argument(
         '-d',
         '--directory',
         default=os.getcwd(),
         metavar="PATH",
         help="specify the directory to share (default: current directory)",
     )
-    group1.add_argument(
+    group_main.add_argument(
         '-n',
         '--nat-address',
         default=None,
         metavar="ADDRESS",
         help="the NAT address to use for passive connections",
     )
-    group1.add_argument(
+    group_main.add_argument(
         '-r',
         '--range',
         type=parse_port_range,
@@ -159,13 +159,13 @@ def parse_args(args=None):
             "connections (e.g. -r 8000-9000)"
         ),
     )
-    group1.add_argument(
+    group_main.add_argument(
         '-D',
         '--debug',
         action='store_true',
         help="enable DEBUG logging level",
     )
-    group1.add_argument(
+    group_main.add_argument(
         '-u',
         '--username',
         type=str,
@@ -176,7 +176,7 @@ def parse_args(args=None):
             "if supplied)"
         ),
     )
-    group1.add_argument(
+    group_main.add_argument(
         '-P',
         '--password',
         type=str,
@@ -185,7 +185,7 @@ def parse_args(args=None):
             "specify a password to login with (username required to be useful)"
         ),
     )
-    group1.add_argument(
+    group_main.add_argument(
         '--concurrency',
         type=parse_server_type,
         default="async",
@@ -195,24 +195,26 @@ def parse_args(args=None):
         ),
     )
 
-    group2 = parser.add_argument_group("TLS options")
-    group2.add_argument(
+    # --- TLS opts
+
+    group_tls = parser.add_argument_group("TLS options")
+    group_tls.add_argument(
         "--tls",
         default=False,
         action="store_true",
-        help="whether to enable FTPS",
+        help="whether to enable FTPS (FTP over SSL)",
     )
 
     # --- less important opts
 
-    group3 = parser.add_argument_group("Other options")
-    group3.add_argument(
+    group_misc = parser.add_argument_group("Other options")
+    group_misc.add_argument(
         '--timeout',
         type=int,
         default=FTPHandler.timeout,
         help=f"connection timeout (default: {FTPHandler.timeout} seconds)",
     )
-    group3.add_argument(
+    group_misc.add_argument(
         '--banner',
         type=str,
         default=FTPHandler.banner,
@@ -221,7 +223,7 @@ def parse_args(args=None):
             f" {FTPHandler.banner!r})"
         ),
     )
-    group3.add_argument(
+    group_misc.add_argument(
         "--permit-foreign-addresses",
         default=FTPHandler.permit_foreign_addresses,
         action="store_true",
@@ -230,13 +232,13 @@ def parse_args(args=None):
             " control connection"
         ),
     )
-    group3.add_argument(
+    group_misc.add_argument(
         "--permit-privileged-ports",
         default=FTPHandler.permit_privileged_ports,
         action="store_true",
         help="allow data connections (PORT) over privileged TCP ports",
     )
-    group3.add_argument(
+    group_misc.add_argument(
         "--encoding",
         type=parse_encoding,
         default="utf-8",
@@ -245,7 +247,7 @@ def parse_args(args=None):
             f" {FTPHandler.encoding})"
         ),
     )
-    group3.add_argument(
+    group_misc.add_argument(
         "--use-localtime",
         default=False,
         action="store_true",
@@ -255,13 +257,13 @@ def parse_args(args=None):
         ),
     )
     if hasattr(os, "sendfile"):
-        group3.add_argument(
+        group_misc.add_argument(
             "--disable-sendfile",
             default=False,
             action="store_true",
             help="disable sendfile() syscall, used for faster file transfers",
         )
-    group3.add_argument(
+    group_misc.add_argument(
         '--max-cons',
         type=int,
         default=servers.FTPServer.max_cons,
@@ -270,7 +272,7 @@ def parse_args(args=None):
             f" {servers.FTPServer.max_cons})"
         ),
     )
-    group3.add_argument(
+    group_misc.add_argument(
         '--max-cons-per-ip',
         type=int,
         default=servers.FTPServer.max_cons,
@@ -279,7 +281,7 @@ def parse_args(args=None):
             " unlimited)"
         ),
     )
-    group3.add_argument(
+    group_misc.add_argument(
         '--max-login-attempts',
         type=int,
         default=FTPHandler.max_login_attempts,
