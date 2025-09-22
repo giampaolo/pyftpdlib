@@ -3752,13 +3752,22 @@ if SSL is not None:
             if cls.ssl_context is None:
                 if cls.certfile is None:
                     raise ValueError("at least certfile must be specified")
+
                 cls.ssl_context = SSL.Context(cls.ssl_protocol)
-                cls.ssl_context.use_certificate_chain_file(cls.certfile)
+
                 if not cls.keyfile:
                     cls.keyfile = cls.certfile
+                for file in (cls.certfile, cls.keyfile):
+                    if not os.path.isfile(cls.certfile):
+                        msg = f"{file!r} does not exist"
+                        raise FileNotFoundError(msg)
+
+                cls.ssl_context.use_certificate_chain_file(cls.certfile)
                 cls.ssl_context.use_privatekey_file(cls.keyfile)
+
                 if cls.ssl_options:
                     cls.ssl_context.set_options(cls.ssl_options)
+
             return cls.ssl_context
 
         # --- overridden methods
