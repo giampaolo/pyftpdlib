@@ -9,6 +9,7 @@ Version: 2.1.0 - IN DEVELOPMENT
   ``pytrhon3 -m pyftpdlib``).
 * #667: colorized output when using pyftpdlib from CLI (invoked via ``pytrhon3
   -m pyftpdlib``).
+* #670: exclude unit tests from installation.
 
 **Bug fixes**
 
