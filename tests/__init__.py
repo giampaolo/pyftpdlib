@@ -73,6 +73,10 @@ if BSD or (OSX and GITHUB_ACTIONS):
 class PyftpdlibTestCase(unittest.TestCase):
     """All test classes inherit from this one."""
 
+    def setUp(self):
+        super().setUp()
+        reset_server_opts()
+
     def __str__(self):
         # Print a full path representation of the single unit tests
         # being run.
