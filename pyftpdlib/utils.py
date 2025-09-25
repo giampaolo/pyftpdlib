@@ -24,13 +24,14 @@ def memoize(fun):
 
 
 @memoize
-def term_supports_colors(file=sys.stdout):
+def term_supports_colors():
     if os.name == 'nt':
         return False
     try:
         import curses  # noqa: PLC0415
 
-        assert file.isatty()
+        assert sys.stdout.isatty()
+        assert sys.stderr.isatty()
         curses.setupterm()
         assert curses.tigetnum("colors") > 0
     except Exception:  # noqa: BLE001
