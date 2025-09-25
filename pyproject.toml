@@ -28,7 +28,7 @@ ignore = [
     "ANN",  # flake8-annotations
     "ARG",  # flake8-unused-arguments
     "BLE001",  # Do not catch blind exception: `Exception`
-    "C4",  # flake8-comprehensions (PYTHON2.7 COMPAT)
+    "C4",  # flake8-comprehensions
     # "C408",  # Unnecessary `dict` call (rewrite as a literal)
     "C90",  # mccabe (function `X` is too complex)
     "COM812",  # Trailing comma missing
@@ -37,14 +37,12 @@ ignore = [
     "DOC402",  # `yield` is not documented in docstring
     "DOC501",  # Raised exception `X` missing from docstring
     "DTZ",  # flake8-datetimez
-    "E203",  # [*] Whitespace before ':' (clashes with black)
     "EM",  # flake8-errmsg
     "ERA001",  # Found commented-out code
     "FBT",  # flake8-boolean-trap
     "FIX",  # Line contains TODO / XXX / ..., consider resolving the issue
     "FURB101",  # `open` and `read` should be replaced by `Path(x).read_text()`
     "FURB103",  # `open` and `write` should be replaced by `Path(...).write_bytes(data)`
-    "FURB113",  # Use `x.extend(("foo", "bar"))` instead of repeatedly calling `x.append()`
     "INP",  # `docs/conf.py` is part of an implicit namespace package. Add an `__init__.py`.
     "N801",  # Class name `async_chat` should use CapWords convention (ASYNCORE COMPAT)
     "N802",  # Function name X should be lowercase.

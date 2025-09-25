@@ -24,8 +24,7 @@ TEST_DEPS = [
     "setuptools",
 ]
 if sys.version_info[:2] >= (3, 12):
-    TEST_DEPS.append("pyasyncore")
-    TEST_DEPS.append("pyasynchat")
+    TEST_DEPS.extend(["pyasyncore", "pyasynchat"])
 
 if WINDOWS:
     TEST_DEPS.append("pywin32")
