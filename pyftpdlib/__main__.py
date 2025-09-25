@@ -88,8 +88,10 @@ def parse_concurrency(value):
     mapping = {
         "async": (servers.FTPServer, 1),
         "multi-thread": (servers.ThreadedFTPServer, 1),
-        "multi-proc": (servers.MultiprocessFTPServer, 1),
     }
+
+    if hasattr(servers, "MultiprocessFTPServer"):
+        mapping["multi-proc"] = (servers.MultiprocessFTPServer, 1)
 
     if os.name == "posix":
         mapping["pre-fork"] = (servers.FTPServer, cpu_count())
