@@ -97,7 +97,7 @@ def close_client(session):
         if session.sock is not None:
             try:
                 resp = session.quit()
-            except Exception:  # noqa
+            except Exception:
                 pass
             else:
                 # ...just to make sure the server isn't replying to some
@@ -269,7 +269,7 @@ def retry_on_failure(fun):
                 if x + 1 >= NO_RETRIES:
                     raise
                 msg = f"{exc!r}, retrying"
-                print(msg, file=sys.stderr)  # NOQA
+                print(msg, file=sys.stderr)  # noqa: T201
                 if PYTEST_PARALLEL:
                     warnings.warn(msg, ResourceWarning, stacklevel=2)
                 self.tearDown()
@@ -285,7 +285,7 @@ def call_until(fun, expr, timeout=GLOBAL_TIMEOUT):
     stop_at = time.time() + timeout
     while time.time() < stop_at:
         ret = fun()
-        if eval(expr):  # noqa
+        if eval(expr):
             return ret
         time.sleep(0.001)
     raise RuntimeError(f"timed out (ret={ret!r})")

@@ -421,7 +421,7 @@ else:
 
             if self.anonymous_user is not None:
                 try:
-                    pwd.getpwnam(self.anonymous_user).pw_dir  # noqa
+                    pwd.getpwnam(self.anonymous_user).pw_dir  # noqa: B018
                 except KeyError as err:
                     raise AuthorizerError(
                         f"no such user {anonymous_user}"

@@ -51,7 +51,6 @@ ignore = [
     "N812",  # Lowercase `error` imported as non-lowercase `FooBarError`
     "N818",  # Exception name `FooBar` should be named with an Error suffix
     "PERF",  # Perflint
-    "PGH004",  # Use specific rule codes when using `noqa`
     "PLC2701",  # Private name import `_winreg`
     "PLR",  # pylint
     "PLW",  # pylint

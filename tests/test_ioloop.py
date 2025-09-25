@@ -106,7 +106,7 @@ class BaseIOLoopTestCase:
         class Handler(AsyncChat):
 
             def close(self):
-                1 / 0  # noqa
+                1 / 0  # noqa: B018
 
             def real_close(self):
                 super().close()

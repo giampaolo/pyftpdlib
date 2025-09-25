@@ -97,11 +97,11 @@ with open("README.rst") as f:
 
 def main():
     try:
-        import setuptools  # noqa
-        from setuptools import setup  # noqa
+        import setuptools  # noqa: I001, PLC0415
+        from setuptools import setup  # noqa: I001, PLC0415
     except ImportError:
         setuptools = None
-        from distutils.core import setup  # noqa
+        from distutils.core import setup  # noqa: I001, PLC0415
 
     kwargs = dict(
         name="pyftpdlib",
@@ -158,7 +158,7 @@ def main():
     setup(**kwargs)
 
     try:
-        from OpenSSL import SSL  # NOQA
+        from OpenSSL import SSL  # noqa: I001, PLC0415, F401
     except ImportError:
         msg = textwrap.dedent("""
             'pyopenssl' third-party module is not installed. This means

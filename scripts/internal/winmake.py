@@ -28,7 +28,7 @@ WINDOWS = os.name == "nt"
 
 sys.path.insert(0, ROOT_DIR)  # so that we can import setup.py
 
-import setup  # NOQA
+import setup  # noqa: E402
 
 TEST_DEPS = setup.TEST_DEPS
 DEV_DEPS = setup.DEV_DEPS
@@ -62,7 +62,7 @@ def sh(cmd, nolog=False):
     assert isinstance(cmd, list), repr(cmd)
     if not nolog:
         safe_print("cmd: " + " ".join(cmd))
-    p = subprocess.Popen(cmd, env=os.environ, cwd=os.getcwd())  # noqa S602
+    p = subprocess.Popen(cmd, env=os.environ, cwd=os.getcwd())
     p.communicate()
     if p.returncode != 0:
         sys.exit(p.returncode)
@@ -174,7 +174,7 @@ def uninstall():
         os.chdir("C:\\")
         while True:
             try:
-                import pyftpdlib  # NOQA
+                import pyftpdlib  # noqa: I001, PLC0415, F401
             except ImportError:
                 break
             else:

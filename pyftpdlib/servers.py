@@ -569,7 +569,7 @@ if os.name == "posix":
         import multiprocessing
 
         multiprocessing.Lock()
-    except Exception:  # noqa
+    except Exception:
         # see https://github.com/giampaolo/pyftpdlib/issues/496
         pass
     else:

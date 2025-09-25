@@ -1609,12 +1609,12 @@ class FTPHandler(AsyncChat):
                     self.log_cmd(cmd, arg, 500, msg)
                 return
 
-        if not arg and self.proto_cmds[cmd]["arg"] is True:  # NOQA
+        if not arg and self.proto_cmds[cmd]["arg"] is True:
             msg = "Syntax error: command needs an argument."
             self.respond("501 " + msg)
             self.log_cmd(cmd, "", 501, msg)
             return
-        if arg and self.proto_cmds[cmd]["arg"] is False:  # NOQA
+        if arg and self.proto_cmds[cmd]["arg"] is False:
             msg = "Syntax error: command does not accept arguments."
             self.respond("501 " + msg)
             self.log_cmd(cmd, arg, 501, msg)
@@ -2075,7 +2075,7 @@ class FTPHandler(AsyncChat):
         - (int) bytes:
            number of bytes transmitted.
         """
-        line = "%s %s completed=%s bytes=%s seconds=%s" % (  # noqa
+        line = "%s %s completed=%s bytes=%s seconds=%s" % (
             cmd,
             filename,
             (completed and 1) or 0,
@@ -2758,8 +2758,7 @@ class FTPHandler(AsyncChat):
         # they must be doubled (see RFC-959, chapter 7, appendix 2).
         cwd = self.fs.cwd
         self.respond(
-            '257 "%s" is the current directory.'  # noqa: UP031
-            % cwd.replace('"', '""')  # noqa
+            '257 "%s" is the current directory.' % cwd.replace('"', '""')
         )
 
     def ftp_CWD(self, path):
@@ -2914,7 +2913,7 @@ class FTPHandler(AsyncChat):
             # name and in case it contains embedded double-quotes
             # they must be doubled (see RFC-959, chapter 7, appendix 2).
             self.respond(
-                '257 "%s" directory created.' % line.replace('"', '""')  # noqa
+                '257 "%s" directory created.' % line.replace('"', '""')
             )
             return path
 
@@ -3040,9 +3039,7 @@ class FTPHandler(AsyncChat):
         # return STATus information about ftpd
         if not path:
             s = []
-            s.append(
-                "Connected to: %s:%s" % self.socket.getsockname()[:2]  # noqa
-            )
+            s.append("Connected to: %s:%s" % self.socket.getsockname()[:2])
             if self.authenticated:
                 s.append(f"Logged in as: {self.username}")
             elif not self.username:
