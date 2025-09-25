@@ -58,7 +58,6 @@ ignore = [
     "PT011",  # `pytest.raises(OSError)` is too broad, set the `match` parameter or use a more specific exception
     "PT021",  # Use `yield` instead of `request.addfinalizer`
     "PTH",  # flake8-use-pathlib
-    "Q000",  # Single quotes found but double quotes preferred
     "RET",  # flake8-return
     "RUF",  # Ruff-specific rules
     "S",  # flake8-bandit

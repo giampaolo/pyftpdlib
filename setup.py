@@ -117,10 +117,10 @@ def main():
         packages=["pyftpdlib"],
         scripts=["scripts/ftpbench"],
         # fmt: off
-        keywords=['ftp', 'ftps', 'server', 'ftpd', 'daemon', 'python', 'ssl',
-                  'sendfile', 'asynchronous', 'nonblocking', 'eventdriven',
-                  'rfc959', 'rfc1123', 'rfc2228', 'rfc2428', 'rfc2640',
-                  'rfc3659'],
+        keywords=["ftp", "ftps", "server", "ftpd", "daemon", "python", "ssl",
+                  "sendfile", "asynchronous", "nonblocking", "eventdriven",
+                  "rfc959", "rfc1123", "rfc2228", "rfc2428", "rfc2640",
+                  "rfc3659"],
         # fmt: on
         install_requires=[
             "pyasyncore;python_version>='3.12'",
