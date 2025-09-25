@@ -949,7 +949,7 @@ class AsyncChat(asynchat.async_chat):
                 self.handle_close()
                 return b""
             elif err.errno in _ERRNOS_RETRY:
-                raise RetryError
+                raise RetryError from err
             else:
                 raise
         else:

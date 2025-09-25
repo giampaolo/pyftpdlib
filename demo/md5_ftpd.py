@@ -25,7 +25,7 @@ class DummyMD5Authorizer(DummyAuthorizer):
             if self.user_table[username]["pwd"] != hash_:
                 raise KeyError
         except KeyError:
-            raise AuthenticationFailed
+            raise AuthenticationFailed from None
 
 
 def main():

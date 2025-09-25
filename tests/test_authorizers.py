@@ -230,7 +230,7 @@ class _SharedAuthorizerTests:
         except excClass as err:
             if str(err) == msg:
                 return
-            raise self.failureException(f"{err!s} != {msg}")
+            raise self.failureException(f"{err!s} != {msg}") from err
         else:
             if hasattr(excClass, "__name__"):
                 excName = excClass.__name__

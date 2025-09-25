@@ -816,7 +816,7 @@ class DTPHandler(AsyncChat):
                 logger.warning(
                     "sendfile() failed; falling back on using plain send"
                 )
-                raise _GiveUpOnSendfile
+                raise _GiveUpOnSendfile from err
             else:
                 raise
         else:
@@ -935,7 +935,7 @@ class DTPHandler(AsyncChat):
             try:
                 self.file_obj.write(chunk)
             except OSError as err:
-                raise _FileReadWriteError(err)
+                raise _FileReadWriteError(err) from err
 
     handle_read_event = handle_read  # small speedup
 
@@ -1192,7 +1192,7 @@ class FileProducer:
         try:
             data = self.file.read(self.buffer_size)
         except OSError as err:
-            raise _FileReadWriteError(err)
+            raise _FileReadWriteError(err) from err
         else:
             if self._data_wrapper is not None:
                 data = self._data_wrapper(data)
@@ -3469,14 +3469,14 @@ if SSL is not None:
         def recv(self, buffer_size):
             try:
                 return super().recv(buffer_size)
-            except SSL.WantReadError:
+            except SSL.WantReadError as err:
                 debug("call: recv(), err: ssl-want-read", inst=self)
                 self._ssl_want_read = True
-                raise RetryError
-            except SSL.WantWriteError:
+                raise RetryError from err
+            except SSL.WantWriteError as err:
                 debug("call: recv(), err: ssl-want-write", inst=self)
                 self._ssl_want_write = True
-                raise RetryError
+                raise RetryError from err
             except SSL.ZeroReturnError:
                 debug(
                     "call: recv() -> shutdown(), err: zero-return", inst=self

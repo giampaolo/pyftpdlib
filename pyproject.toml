@@ -27,7 +27,6 @@ ignore = [
     "A",  # flake8-builtins
     "ANN",  # flake8-annotations
     "ARG",  # flake8-unused-arguments
-    "B904",  # Use `raise from` to specify exception cause (PYTHON2.7 COMPAT)
     "BLE001",  # Do not catch blind exception: `Exception`
     "C4",  # flake8-comprehensions (PYTHON2.7 COMPAT)
     # "C408",  # Unnecessary `dict` call (rewrite as a literal)

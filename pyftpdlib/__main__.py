@@ -59,7 +59,9 @@ def parse_encoding(value):
     try:
         codecs.lookup(value)
     except LookupError:
-        raise argparse.ArgumentTypeError(f"unknown encoding: {value!r}")
+        raise argparse.ArgumentTypeError(
+            f"unknown encoding: {value!r}"
+        ) from None
     return value
 
 
@@ -70,7 +72,7 @@ def parse_port_range(value):
     except ValueError:
         raise argparse.ArgumentTypeError(
             f"invalid port range: {value!r} (expected FROM-TO)"
-        )
+        ) from None
     if not (1 <= start <= 65535 and 1 <= stop <= 65535):
         raise argparse.ArgumentTypeError(
             "port numbers must be between 1 and 65535"

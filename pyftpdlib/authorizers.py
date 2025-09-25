@@ -422,8 +422,10 @@ else:
             if self.anonymous_user is not None:
                 try:
                     pwd.getpwnam(self.anonymous_user).pw_dir  # noqa
-                except KeyError:
-                    raise AuthorizerError(f"no such user {anonymous_user}")
+                except KeyError as err:
+                    raise AuthorizerError(
+                        f"no such user {anonymous_user}"
+                    ) from err
 
         # --- overridden / private API
 
@@ -438,8 +440,8 @@ else:
                 try:
                     pw1 = spwd.getspnam(username).sp_pwd
                     pw2 = crypt.crypt(password, pw1)
-                except KeyError:  # no such username
-                    raise AuthenticationFailed(self.msg_no_such_user)
+                except KeyError as err:  # no such username
+                    raise AuthenticationFailed(self.msg_no_such_user) from err
                 else:
                     if pw1 != pw2:
                         raise AuthenticationFailed(self.msg_wrong_password)
@@ -451,8 +453,8 @@ else:
             """
             try:
                 pwdstruct = pwd.getpwnam(username)
-            except KeyError:
-                raise AuthorizerError(self.msg_no_such_user)
+            except KeyError as err:
+                raise AuthorizerError(self.msg_no_such_user) from err
             else:
                 os.setegid(pwdstruct.pw_gid)
                 os.seteuid(pwdstruct.pw_uid)
@@ -475,8 +477,8 @@ else:
             """Return user home directory."""
             try:
                 return pwd.getpwnam(username).pw_dir
-            except KeyError:
-                raise AuthorizerError(self.msg_no_such_user)
+            except KeyError as err:
+                raise AuthorizerError(self.msg_no_such_user) from err
 
         @staticmethod
         def _get_system_users():
@@ -713,8 +715,8 @@ else:  # pragma: no cover
                     win32con.LOGON32_LOGON_INTERACTIVE,
                     win32con.LOGON32_PROVIDER_DEFAULT,
                 )
-            except pywintypes.error:
-                raise AuthenticationFailed(self.msg_wrong_password)
+            except pywintypes.error as err:
+                raise AuthenticationFailed(self.msg_wrong_password) from err
 
         @replace_anonymous
         def impersonate_user(self, username, password):
@@ -747,15 +749,15 @@ else:  # pragma: no cover
                     win32security.LookupAccountName(None, username)[0]
                 )
             except pywintypes.error as err:
-                raise AuthorizerError(err)
+                raise AuthorizerError(err) from err
             path = r"SOFTWARE\Microsoft\Windows NT"
             path += r"\CurrentVersion\ProfileList" + "\\" + sid
             try:
                 key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path)
-            except OSError:
+            except OSError as err:
                 raise AuthorizerError(
                     f"No profile directory defined for user {username}"
-                )
+                ) from err
             value = winreg.QueryValueEx(key, "ProfileImagePath")[0]
             home = win32api.ExpandEnvironmentStrings(value)
             return home
