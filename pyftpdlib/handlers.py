@@ -742,9 +742,9 @@ class DTPHandler(AsyncChat):
             )
 
     def __repr__(self):
-        return "<%s(%s)>" % (  # noqa: UP031
+        return "<%s(%s)>" % (
             self.__class__.__name__,
-            self.cmd_channel.get_repr_info(as_str=True),  # noqa: UP031
+            self.cmd_channel.get_repr_info(as_str=True),
         )
 
     __str__ = __repr__

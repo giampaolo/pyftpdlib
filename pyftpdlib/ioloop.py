@@ -232,7 +232,7 @@ class _CallLater:
             sig = object.__repr__(self)
         else:
             sig = repr(self._target)
-        sig += " args=%s, kwargs=%s, cancelled=%s, secs=%s" % (  # noqa: UP031
+        sig += " args=%s, kwargs=%s, cancelled=%s, secs=%s" % (
             self._args or "[]",
             self._kwargs or "{}",
             self.cancelled,
@@ -311,7 +311,7 @@ class _IOLoop:
         status.append(
             f"(fds={len(self.socket_map)}, tasks={len(self.sched._tasks)})"
         )
-        return "<%s at %#x>" % (" ".join(status), id(self))  # noqa: UP031
+        return "<%s at %#x>" % (" ".join(status), id(self))
 
     __str__ = __repr__
 

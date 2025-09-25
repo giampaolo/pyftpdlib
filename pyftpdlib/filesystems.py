@@ -435,7 +435,7 @@ class AbstractedFS:
             # https://github.com/giampaolo/pyftpdlib/issues/187
             fmtstr = "%d  %Y" if now - st.st_mtime > SIX_MONTHS else "%d %H:%M"
             try:
-                mtimestr = "%s %s" % (  # noqa: UP031
+                mtimestr = "%s %s" % (
                     _months_map[mtime.tm_mon],
                     time.strftime(fmtstr, mtime),
                 )
@@ -444,7 +444,7 @@ class AbstractedFS:
                 # old (prior to year 1900) in which case we return
                 # the current time as last mtime.
                 mtime = timefunc()
-                mtimestr = "%s %s" % (  # noqa: UP031
+                mtimestr = "%s %s" % (
                     _months_map[mtime.tm_mon],
                     time.strftime("%d %H:%M", mtime),
                 )

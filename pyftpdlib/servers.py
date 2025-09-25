@@ -155,7 +155,7 @@ class FTPServer(Acceptor):
             config_logging(prefix=PREFIX_MPROC if prefork else PREFIX)
 
         if self.handler.passive_ports:
-            pasv_ports = "%s->%s" % (  # noqa: UP031
+            pasv_ports = "%s->%s" % (
                 self.handler.passive_ports[0],
                 self.handler.passive_ports[-1],
             )

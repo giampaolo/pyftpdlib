@@ -247,7 +247,7 @@ class retry:
                         cls.setUp()
                     continue
 
-            raise exc  # noqa: PLE0704
+            raise exc
 
         # This way the user of the decorated function can change config
         # parameters.

@@ -34,7 +34,7 @@ def term_supports_colors():
         assert sys.stderr.isatty()
         curses.setupterm()
         assert curses.tigetnum("colors") > 0
-    except Exception:  # noqa: BLE001
+    except Exception:
         return False
     else:
         return True

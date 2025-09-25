@@ -174,7 +174,7 @@ def uninstall():
         os.chdir("C:\\")
         while True:
             try:
-                import pyftpdlib  # noqa: I001, PLC0415, F401
+                import pyftpdlib  # noqa: PLC0415, F401
             except ImportError:
                 break
             else:
@@ -356,7 +356,7 @@ def get_python(path):
         "39-64",
     )
     for v in vers:
-        pypath = r"C:\\python%s\python.exe" % v  # noqa: UP031
+        pypath = r"C:\\python%s\python.exe" % v
         if path in pypath and os.path.isfile(pypath):
             return pypath
 

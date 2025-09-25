@@ -17,11 +17,6 @@ select = [
     "PLR5501",  # [*] Use `elif` instead of `else` then `if`, to reduce indentation
     "PLR6104",  # Use `+=` to perform an augmented assignment directly
     "PLW0602",  # Using global for `x` but no assignment is done
-    "RUF005",  # Consider iterable unpacking instead of concatenation
-    "RUF010",  # [*] f-string, use explicit conversion flag
-    "RUF021",  # [*] Parenthesize `a and b` expressions when chaining `and` and `or` together, to make the precedence clear
-    "RUF022",  # [*] `__all__` is not sorted
-    "RUF023",  # [*] `_CallLater.__slots__` is not sorted
 ]
 ignore = [
     "A",  # flake8-builtins
@@ -59,7 +54,11 @@ ignore = [
     "PT021",  # Use `yield` instead of `request.addfinalizer`
     "PTH",  # flake8-use-pathlib
     "RET",  # flake8-return
-    "RUF",  # Ruff-specific rules
+    "RUF005",  # Consider iterable unpacking instead of concatenation
+    "RUF012",  # Mutable class attributes should be annotated with `typing.ClassVar`
+    "RUF028",  # This suppression comment is invalid
+    "RUF031",  # [*] Avoid parentheses for tuples in subscripts
+    "RUF043",  # Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
     "S",  # flake8-bandit
     "SIM102",  # Use a single `if` statement instead of nested `if` statements
     "SIM105",  # Use `contextlib.suppress(OSError)` instead of `try`-`except`-`pass`

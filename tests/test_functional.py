@@ -1321,7 +1321,7 @@ class TestFtpListingCmds(PyftpdlibTestCase):
         # returns a negative value referring to a year prior to 1900.
         # It causes time.localtime/gmtime to raise a ValueError exception
         # which is supposed to be handled by server.
-        _getmtime = AbstractedFS.getmtime
+        getmtime = AbstractedFS.getmtime
         try:
             AbstractedFS.getmtime = lambda x, y: -9000000000
             self.client.sendcmd("stat /")  # test AbstractedFS.format_list()
@@ -1329,7 +1329,7 @@ class TestFtpListingCmds(PyftpdlibTestCase):
             # make sure client hasn't been disconnected
             self.client.sendcmd("noop")
         finally:
-            AbstractedFS.getmtime = _getmtime
+            AbstractedFS.getmtime = getmtime
 
 
 class TestFtpAbort(PyftpdlibTestCase):
@@ -1847,14 +1847,14 @@ class TestConfigurableOptions(PyftpdlibTestCase):
     def test_passive_ports(self):
         # Test FTPHandler.passive_ports attribute
         self.server = self.server_class()
-        _range = list(range(40000, 60000, 200))
-        self.server.handler.passive_ports = _range
+        range_ = list(range(40000, 60000, 200))
+        self.server.handler.passive_ports = range_
         self.server.start()
         self.connect()
-        assert self.client.makepasv()[1] in _range
-        assert self.client.makepasv()[1] in _range
-        assert self.client.makepasv()[1] in _range
-        assert self.client.makepasv()[1] in _range
+        assert self.client.makepasv()[1] in range_
+        assert self.client.makepasv()[1] in range_
+        assert self.client.makepasv()[1] in range_
+        assert self.client.makepasv()[1] in range_
 
     @disable_log_warning
     def test_passive_ports_busy(self):
@@ -2134,7 +2134,7 @@ class _TestNetworkProtocols:
             # test wrong proto
             with pytest.raises(ftplib.error_perm, match="522"):
                 self.client.sendcmd(
-                    "eprt |%s|%s|%s|"  # noqa: UP031
+                    "eprt |%s|%s|%s|"
                     % (self.other_proto, self.server.host, self.server.port)
                 )
 
@@ -2153,9 +2153,9 @@ class _TestNetworkProtocols:
         assert resp[:3] == "501"
         assert "privileged port" in resp
         # proto > 2
-        _cmd = f"eprt |3|{self.server.host}|{self.server.port}|"
+        cmd_ = f"eprt |3|{self.server.host}|{self.server.port}|"
         with pytest.raises(ftplib.error_perm):
-            self.client.sendcmd(_cmd)
+            self.client.sendcmd(cmd_)
 
         if self.proto == "1":
             # len(ip.octs) > 4
