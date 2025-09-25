@@ -132,7 +132,6 @@ def main():
             "Environment :: Console",
             "Intended Audience :: Developers",
             "Intended Audience :: System Administrators",
-            "License :: OSI Approved :: MIT License",
             "Operating System :: OS Independent",
             "Programming Language :: Python",
             "Topic :: Internet :: File Transfer Protocol (FTP)",
