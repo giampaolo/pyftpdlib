@@ -67,3 +67,9 @@ def hilite(s, color=None, bold=False):  # pragma: no cover
     if bold:
         attr.append("1")
     return f"\x1b[{';'.join(attr)}m{s}\x1b[0m"
+
+
+def strerror(err):
+    if isinstance(err, OSError):
+        return os.strerror(err.errno)
+    return str(err)

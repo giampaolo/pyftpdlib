@@ -41,6 +41,7 @@ from .ioloop import RetryError
 from .ioloop import timer
 from .log import debug
 from .log import logger
+from .utils import strerror
 
 CR_BYTE = ord("\r")
 
@@ -329,19 +330,6 @@ proto_cmds = {
 
 if not hasattr(os, "chmod"):
     del proto_cmds["SITE CHMOD"]
-
-
-def _strerror(err):
-    if isinstance(err, EnvironmentError):
-        try:
-            return os.strerror(err.errno)
-        except AttributeError:
-            # not available on PythonCE
-            if not hasattr(os, "strerror"):
-                return err.strerror
-            raise
-    else:
-        return str(err)
 
 
 def _is_ssl_sock(sock):
@@ -975,7 +963,7 @@ class DTPHandler(AsyncChat):
         # an error could occur in case we fail reading / writing
         # from / to file (e.g. file system gets full)
         except _FileReadWriteError as err:
-            error = _strerror(err.errno)
+            error = strerror(err.errno)
         except Exception:
             # some other exception occurred;  we don't want to provide
             # confidential error messages
@@ -2325,7 +2313,7 @@ class FTPHandler(AsyncChat):
                 self.fs.lstat(path)  # raise exc in case of problems
                 iterator = self.fs.format_list(basedir, [filename])
         except (OSError, FilesystemError) as err:
-            why = _strerror(err)
+            why = strerror(err)
             self.respond(f"550 {why}.")
         else:
             producer = BufferedIteratorProducer(iterator)
@@ -2345,7 +2333,7 @@ class FTPHandler(AsyncChat):
                 self.fs.lstat(path)  # raise exc in case of problems
                 listing = [os.path.basename(path)]
         except (OSError, FilesystemError) as err:
-            self.respond(f"550 {_strerror(err)}.")
+            self.respond(f"550 {strerror(err)}.")
         else:
             data = ""
             if listing:
@@ -2382,7 +2370,7 @@ class FTPHandler(AsyncChat):
             )
             data = b"".join(iterator)
         except (OSError, FilesystemError) as err:
-            self.respond(f"550 {_strerror(err)}.")
+            self.respond(f"550 {strerror(err)}.")
         else:
             data = data.decode(self.encoding, self.unicode_errors)
             # since TVFS is supported (see RFC-3659 chapter 6), a fully
@@ -2407,7 +2395,7 @@ class FTPHandler(AsyncChat):
         try:
             listing = self.run_as_current_user(self.fs.listdir, path)
         except (OSError, FilesystemError) as err:
-            why = _strerror(err)
+            why = strerror(err)
             self.respond(f"550 {why}.")
         else:
             perms = self.authorizer.get_perms(self.username)
@@ -2427,7 +2415,7 @@ class FTPHandler(AsyncChat):
         try:
             fd = self.run_as_current_user(self.fs.open, file, "rb")
         except (OSError, FilesystemError) as err:
-            why = _strerror(err)
+            why = strerror(err)
             self.respond(f"550 {why}.")
             return
 
@@ -2448,7 +2436,7 @@ class FTPHandler(AsyncChat):
                 except ValueError:
                     why = f"REST position ({rest_pos}) > file size ({fsize})"
                 except (OSError, FilesystemError) as err:
-                    why = _strerror(err)
+                    why = strerror(err)
                 if not ok:
                     fd.close()
                     self.respond(f"554 {why}")
@@ -2477,7 +2465,7 @@ class FTPHandler(AsyncChat):
         try:
             fd = self.run_as_current_user(self.fs.open, file, mode + "b")
         except (OSError, FilesystemError) as err:
-            why = _strerror(err)
+            why = strerror(err)
             self.respond(f"550 {why}.")
             return
 
@@ -2498,7 +2486,7 @@ class FTPHandler(AsyncChat):
                 except ValueError:
                     why = f"REST position ({rest_pos}) > file size ({fsize})"
                 except (OSError, FilesystemError) as err:
-                    why = _strerror(err)
+                    why = strerror(err)
                 if not ok:
                     fd.close()
                     self.respond(f"554 {why}")
@@ -2554,7 +2542,7 @@ class FTPHandler(AsyncChat):
                 why = "No usable unique file name found"
             # something else happened
             else:
-                why = _strerror(err)
+                why = strerror(err)
             self.respond(f"450 {why}.")
             return
 
@@ -2776,7 +2764,7 @@ class FTPHandler(AsyncChat):
         try:
             self.run_as_current_user(self.fs.chdir, path)
         except (OSError, FilesystemError) as err:
-            why = _strerror(err)
+            why = strerror(err)
             self.respond(f"550 {why}.")
         else:
             cwd = self.fs.cwd
@@ -2821,7 +2809,7 @@ class FTPHandler(AsyncChat):
         try:
             size = self.run_as_current_user(self.fs.getsize, path)
         except (OSError, FilesystemError) as err:
-            why = _strerror(err)
+            why = strerror(err)
             self.respond(f"550 {why}.")
         else:
             self.respond(f"213 {size}")
@@ -2845,7 +2833,7 @@ class FTPHandler(AsyncChat):
                 # happens to be too old (prior to year 1900)
                 why = "Can't determine file's last modification time"
             else:
-                why = _strerror(err)
+                why = strerror(err)
             self.respond(f"550 {why}.")
         else:
             self.respond(f"213 {lmt}")
@@ -2892,7 +2880,7 @@ class FTPHandler(AsyncChat):
                 # happens to be too old (prior to year 1900)
                 why = "Can't determine file's last modification time"
             else:
-                why = _strerror(err)
+                why = strerror(err)
             self.respond(f"550 {why}.")
         else:
             self.respond(f"213 Modify={lmt}; {line}.")
@@ -2906,7 +2894,7 @@ class FTPHandler(AsyncChat):
         try:
             self.run_as_current_user(self.fs.mkdir, path)
         except (OSError, FilesystemError) as err:
-            why = _strerror(err)
+            why = strerror(err)
             self.respond(f"550 {why}.")
         else:
             # The 257 response is supposed to include the directory
@@ -2928,7 +2916,7 @@ class FTPHandler(AsyncChat):
         try:
             self.run_as_current_user(self.fs.rmdir, path)
         except (OSError, FilesystemError) as err:
-            why = _strerror(err)
+            why = strerror(err)
             self.respond(f"550 {why}.")
         else:
             self.respond("250 Directory removed.")
@@ -2940,7 +2928,7 @@ class FTPHandler(AsyncChat):
         try:
             self.run_as_current_user(self.fs.remove, path)
         except (OSError, FilesystemError) as err:
-            why = _strerror(err)
+            why = strerror(err)
             self.respond(f"550 {why}.")
         else:
             self.respond("250 File removed.")
@@ -2970,7 +2958,7 @@ class FTPHandler(AsyncChat):
         try:
             self.run_as_current_user(self.fs.rename, src, path)
         except (OSError, FilesystemError) as err:
-            why = _strerror(err)
+            why = strerror(err)
             self.respond(f"550 {why}.")
         else:
             self.respond("250 Renaming ok.")
@@ -3082,7 +3070,7 @@ class FTPHandler(AsyncChat):
                     self.fs.lstat(path)  # raise exc in case of problems
                     iterator = self.fs.format_list(basedir, [filename])
             except (OSError, FilesystemError) as err:
-                why = _strerror(err)
+                why = strerror(err)
                 self.respond(f"550 {why}.")
             else:
                 self.push(f'213-Status of "{line}":\r\n')
@@ -3206,7 +3194,7 @@ class FTPHandler(AsyncChat):
             try:
                 self.run_as_current_user(self.fs.chmod, path, mode)
             except (OSError, FilesystemError) as err:
-                why = _strerror(err)
+                why = strerror(err)
                 self.respond(f"550 {why}.")
             else:
                 self.respond("200 SITE CHMOD successful.")
