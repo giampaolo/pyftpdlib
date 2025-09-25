@@ -249,7 +249,7 @@ def parse_args(args=None):
         "--tls-data-required",
         default=False,
         action="store_true",
-        help="impose TLS for data connection",
+        help="impose TLS for the data connection",
     )
 
     # --- less important opts
