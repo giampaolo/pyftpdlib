@@ -32,7 +32,7 @@ class AntiFloodHandler(FTPHandler):
     def on_connect(self):
         # called when client connects.
         if self.remote_ip in self.banned_ips:
-            self.respond('550 You are banned.')
+            self.respond("550 You are banned.")
             self.close_when_done()
 
     def check_processed_cmds(self):
@@ -51,8 +51,8 @@ class AntiFloodHandler(FTPHandler):
     def ban(self, ip):
         # ban ip and schedule next un-ban
         if ip not in self.banned_ips:
-            self.log(f'banned IP {ip} for command flooding')
-        self.respond(f'550 You are banned for {self.ban_for} seconds.')
+            self.log(f"banned IP {ip} for command flooding")
+        self.respond(f"550 You are banned for {self.ban_for} seconds.")
         self.close()
         self.banned_ips.append(ip)
 
@@ -63,7 +63,7 @@ class AntiFloodHandler(FTPHandler):
         except ValueError:
             pass
         else:
-            self.log(f'unbanning IP {ip}')
+            self.log(f"unbanning IP {ip}")
 
     def close(self):
         FTPHandler.close(self)
@@ -73,13 +73,13 @@ class AntiFloodHandler(FTPHandler):
 
 def main():
     authorizer = DummyAuthorizer()
-    authorizer.add_user('user', '12345', '.', perm='elradfmwMT')
-    authorizer.add_anonymous('.')
+    authorizer.add_user("user", "12345", ".", perm="elradfmwMT")
+    authorizer.add_anonymous(".")
     handler = AntiFloodHandler
     handler.authorizer = authorizer
-    server = FTPServer(('', 2121), handler)
+    server = FTPServer(("", 2121), handler)
     server.serve_forever(timeout=1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -23,7 +23,7 @@ Version: 2.1.0 - IN DEVELOPMENT
   * ``--permit-privileged-ports``
   * ``--timeout``
   * ``--use-localtime``
-* #667: colorized output when using pyftpdlib from CLI (invoked via ``pytrhon3
+* #667: colorized output when using pyftpdlib from CLI (invoked via ``python3
   -m pyftpdlib``).
 * #670: exclude unit tests from installation.
 

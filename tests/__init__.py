@@ -27,37 +27,37 @@ from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
 
 HERE = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
-ROOT_DIR = os.path.realpath(os.path.join(HERE, '..', '..'))
+ROOT_DIR = os.path.realpath(os.path.join(HERE, "..", ".."))
 
-PYPY = '__pypy__' in sys.builtin_module_names
+PYPY = "__pypy__" in sys.builtin_module_names
 OSX = sys.platform.startswith("darwin")
-POSIX = os.name == 'posix'
+POSIX = os.name == "posix"
 BSD = "bsd" in sys.platform
-WINDOWS = os.name == 'nt'
-CERTFILE = os.path.join(HERE, 'keycert.pem')
+WINDOWS = os.name == "nt"
+CERTFILE = os.path.join(HERE, "keycert.pem")
 
 
-GITHUB_ACTIONS = 'GITHUB_ACTIONS' in os.environ or 'CIBUILDWHEEL' in os.environ
+GITHUB_ACTIONS = "GITHUB_ACTIONS" in os.environ or "CIBUILDWHEEL" in os.environ
 CI_TESTING = GITHUB_ACTIONS
-COVERAGE = 'COVERAGE_RUN' in os.environ
+COVERAGE = "COVERAGE_RUN" in os.environ
 PYTEST_PARALLEL = "PYTEST_XDIST_WORKER" in os.environ  # `make test-parallel`
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
 try:
-    HOST = socket.gethostbyname('localhost')
+    HOST = socket.gethostbyname("localhost")
 except OSError:
-    HOST = 'localhost'
+    HOST = "localhost"
 
-USER = 'user'
-PASSWD = '12345'
+USER = "user"
+PASSWD = "12345"
 HOME = os.getcwd()
 # Use PID to disambiguate file name for parallel testing.
-TESTFN_PREFIX = f'pyftpd-tmp-{os.getpid()}-'
+TESTFN_PREFIX = f"pyftpd-tmp-{os.getpid()}-"
 GLOBAL_TIMEOUT = 2
 BUFSIZE = 1024
 INTERRUPTED_TRANSF_SIZE = 32768
 NO_RETRIES = 5
-VERBOSITY = 1 if os.getenv('SILENT') else 2
+VERBOSITY = 1 if os.getenv("SILENT") else 2
 
 if CI_TESTING:
     GLOBAL_TIMEOUT *= 3
@@ -65,7 +65,7 @@ if CI_TESTING:
 
 SUPPORTS_IPV4 = None  # set later
 SUPPORTS_IPV6 = None  # set later
-SUPPORTS_MULTIPROCESSING = hasattr(pyftpdlib.servers, 'MultiprocessFTPServer')
+SUPPORTS_MULTIPROCESSING = hasattr(pyftpdlib.servers, "MultiprocessFTPServer")
 if BSD or (OSX and GITHUB_ACTIONS):
     SUPPORTS_MULTIPROCESSING = False  # XXX: it's broken!!
 
@@ -81,8 +81,8 @@ class PyftpdlibTestCase(unittest.TestCase):
         # Print a full path representation of the single unit tests
         # being run.
         fqmod = self.__class__.__module__
-        if not fqmod.startswith('pyftpdlib.'):
-            fqmod = 'pyftpdlib.test.' + fqmod
+        if not fqmod.startswith("pyftpdlib."):
+            fqmod = "pyftpdlib.test." + fqmod
         return f"{fqmod}.{self.__class__.__name__}.{self._testMethodName}"
 
     def get_testfn(self, suffix="", dir=None):
@@ -102,7 +102,7 @@ def close_client(session):
             else:
                 # ...just to make sure the server isn't replying to some
                 # pending command.
-                assert resp.startswith('221'), resp
+                assert resp.startswith("221"), resp
     finally:
         session.close()
 
@@ -121,8 +121,8 @@ def try_address(host, port=0, family=socket.AF_INET):
         return True
 
 
-SUPPORTS_IPV4 = try_address('127.0.0.1')
-SUPPORTS_IPV6 = socket.has_ipv6 and try_address('::1', family=socket.AF_INET6)
+SUPPORTS_IPV4 = try_address("127.0.0.1")
+SUPPORTS_IPV6 = socket.has_ipv6 and try_address("::1", family=socket.AF_INET6)
 
 
 def get_testfn(suffix="", dir=None):
@@ -175,7 +175,7 @@ def safe_rmpath(path):
 
 def touch(name):
     """Create a file and return its name."""
-    with open(name, 'w') as f:
+    with open(name, "w") as f:
         return f.name
 
 
@@ -184,7 +184,7 @@ def disable_log_warning(fun):
 
     @functools.wraps(fun)
     def wrapper(self, *args, **kwargs):
-        logger = logging.getLogger('pyftpdlib')
+        logger = logging.getLogger("pyftpdlib")
         level = logger.getEffectiveLevel()
         logger.setLevel(logging.ERROR)
         try:
@@ -288,7 +288,7 @@ def call_until(fun, expr, timeout=GLOBAL_TIMEOUT):
         if eval(expr):  # noqa
             return ret
         time.sleep(0.001)
-    raise RuntimeError(f'timed out (ret={ret!r})')
+    raise RuntimeError(f"timed out (ret={ret!r})")
 
 
 def get_server_handler():
@@ -309,7 +309,7 @@ def setup_server(handler, server_class, addr=None):
     addr = (HOST, 0) if addr is None else addr
     authorizer = DummyAuthorizer()
     # full perms
-    authorizer.add_user(USER, PASSWD, HOME, perm='elradfmwMT')
+    authorizer.add_user(USER, PASSWD, HOME, perm="elradfmwMT")
     authorizer.add_anonymous(HOME)
     handler.authorizer = authorizer
     handler.auth_failed_timeout = 0.001
@@ -345,7 +345,7 @@ def assert_free_resources(parent_pid=None):
     if POSIX:
         cons = [
             x
-            for x in this_proc.net_connections('tcp')
+            for x in this_proc.net_connections("tcp")
             if x.status != psutil.CONN_CLOSE_WAIT
         ]
         if cons:
@@ -377,7 +377,7 @@ def reset_server_opts():
         klass.passive_ports = None
         klass.permit_foreign_addresses = False
         klass.permit_privileged_ports = False
-        klass.tcp_no_delay = hasattr(socket, 'TCP_NODELAY')
+        klass.tcp_no_delay = hasattr(socket, "TCP_NODELAY")
         klass.timeout = 300
         klass.unicode_errors = "replace"
         klass.use_gmt_times = True
@@ -385,7 +385,7 @@ def reset_server_opts():
         klass.ac_in_buffer_size = 4096
         klass.ac_out_buffer_size = 4096
         klass.encoding = "utf8"
-        if klass.__name__ == 'TLS_FTPHandler':
+        if klass.__name__ == "TLS_FTPHandler":
             klass.tls_control_required = False
             klass.tls_data_required = False
 
@@ -425,7 +425,7 @@ class FtpdThreadWrapper(threading.Thread):
 
     def __init__(self, addr=None):
         self.parent_pid = os.getpid()
-        super().__init__(name='test-ftpd')
+        super().__init__(name="test-ftpd")
         self.server = setup_server(self.handler, self.server_class, addr=addr)
         self.host, self.port = self.server.socket.getsockname()[:2]
 

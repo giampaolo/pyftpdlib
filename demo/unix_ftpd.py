@@ -23,7 +23,7 @@ def main():
     handler = FTPHandler
     handler.authorizer = authorizer
     handler.abstracted_fs = UnixFilesystem
-    server = FTPServer(('', 21), handler)
+    server = FTPServer(("", 21), handler)
     server.serve_forever()
 
 

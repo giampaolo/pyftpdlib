@@ -11,9 +11,9 @@ Generate MANIFEST.in file.
 import os
 import subprocess
 
-SKIP_EXTS = ('.png', '.jpg', '.jpeg', '.svg')
+SKIP_EXTS = (".png", ".jpg", ".jpeg", ".svg")
 SKIP_FILES = tuple()
-SKIP_PREFIXES = ('.ci/', '.github/')
+SKIP_PREFIXES = (".ci/", ".github/")
 
 
 def sh(cmd):
@@ -21,7 +21,7 @@ def sh(cmd):
 
 
 def main():
-    files = sh(["git", "ls-files"]).split('\n')
+    files = sh(["git", "ls-files"]).split("\n")
     for file in files:
         if (
             file.startswith(SKIP_PREFIXES)
@@ -32,5 +32,5 @@ def main():
         print("include " + file)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

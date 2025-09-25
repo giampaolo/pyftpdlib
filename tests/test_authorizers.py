@@ -72,36 +72,36 @@ class TestDummyAuthorizer(PyftpdlibTestCase):
         # check credentials
         auth.validate_authentication(USER, PASSWD, None)
         with pytest.raises(AuthenticationFailed):
-            auth.validate_authentication(USER, 'wrongpwd', None)
-        auth.validate_authentication('anonymous', 'foo', None)
-        auth.validate_authentication('anonymous', '', None)  # empty passwd
+            auth.validate_authentication(USER, "wrongpwd", None)
+        auth.validate_authentication("anonymous", "foo", None)
+        auth.validate_authentication("anonymous", "", None)  # empty passwd
         # remove them
         auth.remove_user(USER)
-        auth.remove_user('anonymous')
+        auth.remove_user("anonymous")
         # raise exc if user does not exists
         with pytest.raises(KeyError):
             auth.remove_user(USER)
         # raise exc if path does not exist
-        with pytest.raises(ValueError, match='no such directory'):
-            auth.add_user(USER, PASSWD, '?:\\')
-        with pytest.raises(ValueError, match='no such directory'):
-            auth.add_anonymous('?:\\')
+        with pytest.raises(ValueError, match="no such directory"):
+            auth.add_user(USER, PASSWD, "?:\\")
+        with pytest.raises(ValueError, match="no such directory"):
+            auth.add_anonymous("?:\\")
         # raise exc if user already exists
         auth.add_user(USER, PASSWD, HOME)
         auth.add_anonymous(HOME)
-        with pytest.raises(ValueError, match=f'user {USER!r} already exists'):
+        with pytest.raises(ValueError, match=f"user {USER!r} already exists"):
             auth.add_user(USER, PASSWD, HOME)
         with pytest.raises(
             ValueError, match="user 'anonymous' already exists"
         ):
             auth.add_anonymous(HOME)
         auth.remove_user(USER)
-        auth.remove_user('anonymous')
+        auth.remove_user("anonymous")
         # raise on wrong permission
         with pytest.raises(ValueError, match="no such permission"):
-            auth.add_user(USER, PASSWD, HOME, perm='?')
+            auth.add_user(USER, PASSWD, HOME, perm="?")
         with pytest.raises(ValueError, match="no such permission"):
-            auth.add_anonymous(HOME, perm='?')
+            auth.add_anonymous(HOME, perm="?")
         # expect warning on write permissions assigned to anonymous user
         for x in "adfmw":
             with pytest.raises(
@@ -112,18 +112,18 @@ class TestDummyAuthorizer(PyftpdlibTestCase):
 
     def test_override_perm_interface(self):
         auth = DummyAuthorizer()
-        auth.add_user(USER, PASSWD, HOME, perm='elr')
+        auth.add_user(USER, PASSWD, HOME, perm="elr")
         # raise exc if user does not exists
         with pytest.raises(KeyError):
-            auth.override_perm(USER + 'w', HOME, 'elr')
+            auth.override_perm(USER + "w", HOME, "elr")
         # raise exc if path does not exist or it's not a directory
-        with pytest.raises(ValueError, match='no such directory'):
-            auth.override_perm(USER, '?:\\', 'elr')
-        with pytest.raises(ValueError, match='no such directory'):
-            auth.override_perm(USER, self.tempfile, 'elr')
+        with pytest.raises(ValueError, match="no such directory"):
+            auth.override_perm(USER, "?:\\", "elr")
+        with pytest.raises(ValueError, match="no such directory"):
+            auth.override_perm(USER, self.tempfile, "elr")
         # raise on wrong permission
         with pytest.raises(ValueError, match="no such permission"):
-            auth.override_perm(USER, HOME, perm='?')
+            auth.override_perm(USER, HOME, perm="?")
         # expect warning on write permissions assigned to anonymous user
         auth.add_anonymous(HOME)
         for p in "adfmw":
@@ -131,63 +131,63 @@ class TestDummyAuthorizer(PyftpdlibTestCase):
                 RuntimeWarning,
                 match="write permissions assigned to anonymous user.",
             ):
-                auth.override_perm('anonymous', HOME, p)
+                auth.override_perm("anonymous", HOME, p)
         # raise on attempt to override home directory permissions
         with pytest.raises(
             ValueError, match="can't override home directory permissions"
         ):
-            auth.override_perm(USER, HOME, perm='w')
+            auth.override_perm(USER, HOME, perm="w")
         # raise on attempt to override a path escaping home directory
         if os.path.dirname(HOME) != HOME:
             with pytest.raises(
                 ValueError, match="path escapes user home directory"
             ):
-                auth.override_perm(USER, os.path.dirname(HOME), perm='w')
+                auth.override_perm(USER, os.path.dirname(HOME), perm="w")
         # try to re-set an overridden permission
-        auth.override_perm(USER, self.tempdir, perm='w')
-        auth.override_perm(USER, self.tempdir, perm='wr')
+        auth.override_perm(USER, self.tempdir, perm="w")
+        auth.override_perm(USER, self.tempdir, perm="wr")
 
     def test_override_perm_recursive_paths(self):
         auth = DummyAuthorizer()
-        auth.add_user(USER, PASSWD, HOME, perm='elr')
-        assert not auth.has_perm(USER, 'w', self.tempdir)
-        auth.override_perm(USER, self.tempdir, perm='w', recursive=True)
-        assert not auth.has_perm(USER, 'w', HOME)
-        assert auth.has_perm(USER, 'w', self.tempdir)
-        assert auth.has_perm(USER, 'w', self.tempfile)
-        assert auth.has_perm(USER, 'w', self.subtempdir)
-        assert auth.has_perm(USER, 'w', self.subtempfile)
+        auth.add_user(USER, PASSWD, HOME, perm="elr")
+        assert not auth.has_perm(USER, "w", self.tempdir)
+        auth.override_perm(USER, self.tempdir, perm="w", recursive=True)
+        assert not auth.has_perm(USER, "w", HOME)
+        assert auth.has_perm(USER, "w", self.tempdir)
+        assert auth.has_perm(USER, "w", self.tempfile)
+        assert auth.has_perm(USER, "w", self.subtempdir)
+        assert auth.has_perm(USER, "w", self.subtempfile)
 
-        assert not auth.has_perm(USER, 'w', HOME + '@')
-        assert not auth.has_perm(USER, 'w', self.tempdir + '@')
+        assert not auth.has_perm(USER, "w", HOME + "@")
+        assert not auth.has_perm(USER, "w", self.tempdir + "@")
         path = os.path.join(
-            self.tempdir + '@', os.path.basename(self.tempfile)
+            self.tempdir + "@", os.path.basename(self.tempfile)
         )
-        assert not auth.has_perm(USER, 'w', path)
+        assert not auth.has_perm(USER, "w", path)
         # test case-sensitiveness
-        if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
-            assert auth.has_perm(USER, 'w', self.tempdir.upper())
+        if (os.name in ("nt", "ce")) or (sys.platform == "cygwin"):
+            assert auth.has_perm(USER, "w", self.tempdir.upper())
 
     def test_override_perm_not_recursive_paths(self):
         auth = DummyAuthorizer()
-        auth.add_user(USER, PASSWD, HOME, perm='elr')
-        assert not auth.has_perm(USER, 'w', self.tempdir)
-        auth.override_perm(USER, self.tempdir, perm='w')
-        assert not auth.has_perm(USER, 'w', HOME)
-        assert auth.has_perm(USER, 'w', self.tempdir)
-        assert auth.has_perm(USER, 'w', self.tempfile)
-        assert not auth.has_perm(USER, 'w', self.subtempdir)
-        assert not auth.has_perm(USER, 'w', self.subtempfile)
+        auth.add_user(USER, PASSWD, HOME, perm="elr")
+        assert not auth.has_perm(USER, "w", self.tempdir)
+        auth.override_perm(USER, self.tempdir, perm="w")
+        assert not auth.has_perm(USER, "w", HOME)
+        assert auth.has_perm(USER, "w", self.tempdir)
+        assert auth.has_perm(USER, "w", self.tempfile)
+        assert not auth.has_perm(USER, "w", self.subtempdir)
+        assert not auth.has_perm(USER, "w", self.subtempfile)
 
-        assert not auth.has_perm(USER, 'w', HOME + '@')
-        assert not auth.has_perm(USER, 'w', self.tempdir + '@')
+        assert not auth.has_perm(USER, "w", HOME + "@")
+        assert not auth.has_perm(USER, "w", self.tempdir + "@")
         path = os.path.join(
-            self.tempdir + '@', os.path.basename(self.tempfile)
+            self.tempdir + "@", os.path.basename(self.tempfile)
         )
-        assert not auth.has_perm(USER, 'w', path)
+        assert not auth.has_perm(USER, "w", path)
         # test case-sensitiveness
-        if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
-            assert auth.has_perm(USER, 'w', self.tempdir.upper())
+        if (os.name in ("nt", "ce")) or (sys.platform == "cygwin"):
+            assert auth.has_perm(USER, "w", self.tempdir.upper())
 
 
 class _SharedAuthorizerTests:
@@ -206,21 +206,21 @@ class _SharedAuthorizerTests:
         if POSIX:
             return pwd.getpwuid(os.getuid()).pw_name
         else:
-            return os.environ['USERNAME']
+            return os.environ["USERNAME"]
 
     @staticmethod
     def get_current_user_homedir():
         if POSIX:
             return pwd.getpwuid(os.getuid()).pw_dir
         else:
-            return os.environ['USERPROFILE']
+            return os.environ["USERPROFILE"]
 
     def get_nonexistent_user(self):
         # return a user which does not exist on the system
         users = self.get_users()
         letters = string.ascii_lowercase
         while True:
-            user = ''.join([random.choice(letters) for i in range(10)])
+            user = "".join([random.choice(letters) for i in range(10)])
             if user not in users:
                 return user
 
@@ -232,7 +232,7 @@ class _SharedAuthorizerTests:
                 return
             raise self.failureException(f"{err!s} != {msg}")
         else:
-            if hasattr(excClass, '__name__'):
+            if hasattr(excClass, "__name__"):
                 excName = excClass.__name__
             else:
                 excName = str(excClass)
@@ -245,8 +245,8 @@ class _SharedAuthorizerTests:
         home = auth.get_home_dir(self.get_current_user())
         nonexistent_user = self.get_nonexistent_user()
         assert os.path.isdir(home)
-        if auth.has_user('nobody'):
-            home = auth.get_home_dir('nobody')
+        if auth.has_user("nobody"):
+            home = auth.get_home_dir("nobody")
         with pytest.raises(AuthorizerError):
             auth.get_home_dir(nonexistent_user)
 
@@ -262,7 +262,7 @@ class _SharedAuthorizerTests:
     def test_validate_authentication(self):
         # can't test for actual success in case of valid authentication
         # here as we don't have the user password
-        if self.authorizer_class.__name__ == 'UnixAuthorizer':
+        if self.authorizer_class.__name__ == "UnixAuthorizer":
             auth = self.authorizer_class(require_valid_shell=False)
         else:
             auth = self.authorizer_class()
@@ -271,13 +271,13 @@ class _SharedAuthorizerTests:
         with pytest.raises(AuthenticationFailed):
             auth.validate_authentication(
                 current_user,
-                'wrongpasswd',
+                "wrongpasswd",
                 None,
             )
         with pytest.raises(AuthenticationFailed):
             auth.validate_authentication(
                 nonexistent_user,
-                'bar',
+                "bar",
                 None,
             )
 
@@ -285,41 +285,41 @@ class _SharedAuthorizerTests:
         auth = self.authorizer_class()
         nonexistent_user = self.get_nonexistent_user()
         try:
-            if self.authorizer_class.__name__ == 'UnixAuthorizer':
-                auth.impersonate_user(self.get_current_user(), '')
+            if self.authorizer_class.__name__ == "UnixAuthorizer":
+                auth.impersonate_user(self.get_current_user(), "")
                 with pytest.raises(AuthorizerError):
                     auth.impersonate_user(
                         nonexistent_user,
-                        'pwd',
+                        "pwd",
                     )
             else:
                 with pytest.raises(Win32ExtError):
                     auth.impersonate_user(
                         nonexistent_user,
-                        'pwd',
+                        "pwd",
                     )
                 with pytest.raises(Win32ExtError):
                     auth.impersonate_user(
                         self.get_current_user(),
-                        '',
+                        "",
                     )
         finally:
-            auth.terminate_impersonation('')
+            auth.terminate_impersonation("")
 
     def test_terminate_impersonation(self):
         auth = self.authorizer_class()
-        auth.terminate_impersonation('')
-        auth.terminate_impersonation('')
+        auth.terminate_impersonation("")
+        auth.terminate_impersonation("")
 
     def test_get_perms(self):
-        auth = self.authorizer_class(global_perm='elr')
-        assert 'r' in auth.get_perms(self.get_current_user())
-        assert 'w' not in auth.get_perms(self.get_current_user())
+        auth = self.authorizer_class(global_perm="elr")
+        assert "r" in auth.get_perms(self.get_current_user())
+        assert "w" not in auth.get_perms(self.get_current_user())
 
     def test_has_perm(self):
-        auth = self.authorizer_class(global_perm='elr')
-        assert auth.has_perm(self.get_current_user(), 'r')
-        assert not auth.has_perm(self.get_current_user(), 'w')
+        auth = self.authorizer_class(global_perm="elr")
+        assert auth.has_perm(self.get_current_user(), "r")
+        assert not auth.has_perm(self.get_current_user(), "w")
 
     def test_messages(self):
         auth = self.authorizer_class(msg_login="login", msg_quit="quit")
@@ -336,34 +336,34 @@ class _SharedAuthorizerTests:
             ),
         ):
             self.authorizer_class(
-                allowed_users=['foo'], rejected_users=['bar']
+                allowed_users=["foo"], rejected_users=["bar"]
             )
         with pytest.raises(
             AuthorizerError, match='invalid username "anonymous"'
         ):
-            self.authorizer_class(allowed_users=['anonymous'])
+            self.authorizer_class(allowed_users=["anonymous"])
         with pytest.raises(
             AuthorizerError, match='invalid username "anonymous"'
         ):
-            self.authorizer_class(rejected_users=['anonymous'])
+            self.authorizer_class(rejected_users=["anonymous"])
         with pytest.raises(
-            AuthorizerError, match=f'unknown user {wrong_user}'
+            AuthorizerError, match=f"unknown user {wrong_user}"
         ):
             self.authorizer_class(allowed_users=[wrong_user])
         with pytest.raises(
-            AuthorizerError, match=f'unknown user {wrong_user}'
+            AuthorizerError, match=f"unknown user {wrong_user}"
         ):
             self.authorizer_class(rejected_users=[wrong_user])
 
     def test_override_user_password(self):
         auth = self.authorizer_class()
         user = self.get_current_user()
-        auth.override_user(user, password='foo')
-        auth.validate_authentication(user, 'foo', None)
+        auth.override_user(user, password="foo")
+        auth.validate_authentication(user, "foo", None)
         with pytest.raises(AuthenticationFailed):
             auth.validate_authentication(
                 user,
-                'bar',
+                "bar",
                 None,
             )
         # make sure other settings keep using default values
@@ -408,7 +408,7 @@ class _SharedAuthorizerTests:
         # assert auth.get_msg_quit(user) == "Goodbye."
 
     def test_override_user_errors(self):
-        if self.authorizer_class.__name__ == 'UnixAuthorizer':
+        if self.authorizer_class.__name__ == "UnixAuthorizer":
             auth = self.authorizer_class(require_valid_shell=False)
         else:
             auth = self.authorizer_class()
@@ -424,37 +424,37 @@ class _SharedAuthorizerTests:
         ):
             auth.override_user(this_user)
         with pytest.raises(
-            AuthorizerError, match=f'no such user {nonexistent_user}'
+            AuthorizerError, match=f"no such user {nonexistent_user}"
         ):
-            auth.override_user(nonexistent_user, perm='r')
-        if self.authorizer_class.__name__ == 'UnixAuthorizer':
+            auth.override_user(nonexistent_user, perm="r")
+        if self.authorizer_class.__name__ == "UnixAuthorizer":
             auth = self.authorizer_class(
                 allowed_users=[this_user], require_valid_shell=False
             )
         else:
             auth = self.authorizer_class(allowed_users=[this_user])
-        auth.override_user(this_user, perm='r')
+        auth.override_user(this_user, perm="r")
         with pytest.raises(
-            AuthorizerError, match=f'{another_user} is not an allowed user'
+            AuthorizerError, match=f"{another_user} is not an allowed user"
         ):
-            auth.override_user(another_user, perm='r')
-        if self.authorizer_class.__name__ == 'UnixAuthorizer':
+            auth.override_user(another_user, perm="r")
+        if self.authorizer_class.__name__ == "UnixAuthorizer":
             auth = self.authorizer_class(
                 rejected_users=[this_user], require_valid_shell=False
             )
         else:
             auth = self.authorizer_class(rejected_users=[this_user])
-        auth.override_user(another_user, perm='r')
+        auth.override_user(another_user, perm="r")
         with pytest.raises(
-            AuthorizerError, match=f'{this_user} is not an allowed user'
+            AuthorizerError, match=f"{this_user} is not an allowed user"
         ):
-            auth.override_user(this_user, perm='r')
+            auth.override_user(this_user, perm="r")
         with pytest.raises(
             AuthorizerError, match="can't assign password to anonymous user"
         ):
             auth.override_user(
                 "anonymous",
-                password='foo',
+                password="foo",
             )
 
 
@@ -481,42 +481,42 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
 
     def test_get_perms_anonymous(self):
         auth = UnixAuthorizer(
-            global_perm='elr', anonymous_user=self.get_current_user()
+            global_perm="elr", anonymous_user=self.get_current_user()
         )
-        assert 'e' in auth.get_perms('anonymous')
-        assert 'w' not in auth.get_perms('anonymous')
+        assert "e" in auth.get_perms("anonymous")
+        assert "w" not in auth.get_perms("anonymous")
         warnings.filterwarnings("ignore")
-        auth.override_user('anonymous', perm='w')
+        auth.override_user("anonymous", perm="w")
         warnings.resetwarnings()
-        assert 'w' in auth.get_perms('anonymous')
+        assert "w" in auth.get_perms("anonymous")
 
     def test_has_perm_anonymous(self):
         auth = UnixAuthorizer(
-            global_perm='elr', anonymous_user=self.get_current_user()
+            global_perm="elr", anonymous_user=self.get_current_user()
         )
-        assert auth.has_perm(self.get_current_user(), 'r')
-        assert not auth.has_perm(self.get_current_user(), 'w')
-        assert auth.has_perm('anonymous', 'e')
-        assert not auth.has_perm('anonymous', 'w')
+        assert auth.has_perm(self.get_current_user(), "r")
+        assert not auth.has_perm(self.get_current_user(), "w")
+        assert auth.has_perm("anonymous", "e")
+        assert not auth.has_perm("anonymous", "w")
         warnings.filterwarnings("ignore")
-        auth.override_user('anonymous', perm='w')
+        auth.override_user("anonymous", perm="w")
         warnings.resetwarnings()
-        assert auth.has_perm('anonymous', 'w')
+        assert auth.has_perm("anonymous", "w")
 
     def test_validate_authentication(self):
         # we can only test for invalid credentials
         auth = UnixAuthorizer(require_valid_shell=False)
         with pytest.raises(AuthenticationFailed):
             auth.validate_authentication(
-                '?!foo',
-                '?!foo',
+                "?!foo",
+                "?!foo",
                 None,
             )
         auth = UnixAuthorizer(require_valid_shell=True)
         with pytest.raises(AuthenticationFailed):
             auth.validate_authentication(
-                '?!foo',
-                '?!foo',
+                "?!foo",
+                "?!foo",
                 None,
             )
 
@@ -527,17 +527,17 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
         )
         with pytest.raises(AuthenticationFailed):
             auth.validate_authentication(
-                'foo',
-                'passwd',
+                "foo",
+                "passwd",
                 None,
             )
         with pytest.raises(AuthenticationFailed):
             auth.validate_authentication(
                 current_user,
-                'passwd',
+                "passwd",
                 None,
             )
-        auth.validate_authentication('anonymous', 'passwd', None)
+        auth.validate_authentication("anonymous", "passwd", None)
 
     def test_require_valid_shell(self):
 
@@ -547,7 +547,7 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
                 # On linux fake shell is usually /bin/false, on
                 # freebsd /usr/sbin/nologin;  in case of other
                 # UNIX variants test needs to be adjusted.
-                if '/false' in shell or '/nologin' in shell:
+                if "/false" in shell or "/nologin" in shell:
                     return user
             self.fail("no user found")
 
@@ -567,19 +567,19 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
         with pytest.raises(
             AuthorizerError, match=f"User {user} doesn't have a valid shell."
         ):
-            auth.override_user(user, perm='r')
+            auth.override_user(user, perm="r")
 
     def test_not_root(self):
         # UnixAuthorizer is supposed to work only as super user
         auth = self.authorizer_class()
         try:
-            auth.impersonate_user('nobody', '')
+            auth.impersonate_user("nobody", "")
             with pytest.raises(
                 AuthorizerError, match="super user privileges are required"
             ):
                 UnixAuthorizer()
         finally:
-            auth.terminate_impersonation('nobody')
+            auth.terminate_impersonation("nobody")
 
 
 # =====================================================================
@@ -597,5 +597,5 @@ class TestWindowsAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
         user = self.get_current_user()
         with pytest.raises(Win32ExtError):
             self.authorizer_class(
-                anonymous_user=user, anonymous_password='$|1wrongpasswd'
+                anonymous_user=user, anonymous_password="$|1wrongpasswd"
             )

@@ -16,22 +16,22 @@ except ImportError:
     pwd = grp = None
 
 
-__all__ = ['AbstractedFS', 'FilesystemError']
+__all__ = ["AbstractedFS", "FilesystemError"]
 
 
 _months_map = {
-    1: 'Jan',
-    2: 'Feb',
-    3: 'Mar',
-    4: 'Apr',
-    5: 'May',
-    6: 'Jun',
-    7: 'Jul',
-    8: 'Aug',
-    9: 'Sep',
-    10: 'Oct',
-    11: 'Nov',
-    12: 'Dec',
+    1: "Jan",
+    2: "Feb",
+    3: "Mar",
+    4: "Apr",
+    5: "May",
+    6: "Jun",
+    7: "Jul",
+    8: "Aug",
+    9: "Sep",
+    10: "Oct",
+    11: "Nov",
+    12: "Dec",
 }
 
 
@@ -81,7 +81,7 @@ class AbstractedFS:
         # If a different behavior is desired (e.g. initial cwd = root,
         # to reflect the real filesystem) users overriding this class
         # are responsible to set _cwd attribute as necessary.
-        self._cwd = '/'
+        self._cwd = "/"
         self._root = root
         self.cmd_channel = cmd_channel
 
@@ -137,7 +137,7 @@ class AbstractedFS:
         # os.path.normpath supports UNC paths (e.g. "//a/b/c") but we
         # don't need them.  In case we get an UNC path we collapse
         # redundant separators appearing at the beginning of the string
-        while p[:2] == '//':
+        while p[:2] == "//":
             p = p[1:]
         # Anti path traversal: don't trust user input, in the event
         # that self.cwd is not absolute, return "/" as a safety measure.
@@ -184,11 +184,11 @@ class AbstractedFS:
         else:
             p = os.path.normpath(os.path.join(self.root, fspath))
         if not self.validpath(p):
-            return '/'
+            return "/"
         p = p.replace(os.sep, "/")
         p = p[len(self.root) :]
-        if not p.startswith('/'):
-            p = '/' + p
+        if not p.startswith("/"):
+            p = "/" + p
         return p
 
     def validpath(self, path):
@@ -215,7 +215,7 @@ class AbstractedFS:
         """Open a file returning its handler."""
         return open(filename, mode)
 
-    def mkstemp(self, suffix='', prefix='', dir=None, mode='wb'):
+    def mkstemp(self, suffix="", prefix="", dir=None, mode="wb"):
         """A wrap around tempfile.mkstemp creating a file with a unique
         name.  Unlike mkstemp it returns an object with a file-like
         interface.
@@ -230,7 +230,7 @@ class AbstractedFS:
             def __getattr__(self, attr):
                 return getattr(self.file, attr)
 
-        text = 'b' not in mode
+        text = "b" not in mode
         # max number of tries to find out a unique file name
         tempfile.TMP_MAX = 50
         fd, name = tempfile.mkstemp(suffix, prefix, dir, text=text)
@@ -273,7 +273,7 @@ class AbstractedFS:
 
     def chmod(self, path, mode):
         """Change file/directory mode."""
-        if not hasattr(os, 'chmod'):
+        if not hasattr(os, "chmod"):
             raise NotImplementedError
         os.chmod(path, mode)
 
@@ -287,7 +287,7 @@ class AbstractedFS:
         # thus, setting both access and modify time to timeval
         return os.utime(path, (timeval, timeval))
 
-    if hasattr(os, 'lstat'):
+    if hasattr(os, "lstat"):
 
         def lstat(self, path):
             """Like stat but does not follow symbolic links."""
@@ -296,7 +296,7 @@ class AbstractedFS:
     else:
         lstat = stat
 
-    if hasattr(os, 'readlink'):
+    if hasattr(os, "readlink"):
 
         def readlink(self, path):
             """Return a string representing the path to which a
@@ -411,7 +411,7 @@ class AbstractedFS:
         else:
             timefunc = time.localtime
         SIX_MONTHS = 180 * 24 * 60 * 60
-        readlink = getattr(self, 'readlink', None)
+        readlink = getattr(self, "readlink", None)
         now = time.time()
         for basename in listing:
             file = os.path.join(basedir, basename)
@@ -433,7 +433,7 @@ class AbstractedFS:
             # if modification time > 6 months shows "month year"
             # else "month hh:mm";  this matches proftpd format, see:
             # https://github.com/giampaolo/pyftpdlib/issues/187
-            fmtstr = '%d  %Y' if now - st.st_mtime > SIX_MONTHS else '%d %H:%M'
+            fmtstr = "%d  %Y" if now - st.st_mtime > SIX_MONTHS else "%d %H:%M"
             try:
                 mtimestr = "%s %s" % (  # noqa: UP031
                     _months_map[mtime.tm_mon],
@@ -504,21 +504,21 @@ class AbstractedFS:
             timefunc = time.gmtime
         else:
             timefunc = time.localtime
-        permdir = ''.join([x for x in perms if x not in 'arw'])
-        permfile = ''.join([x for x in perms if x not in 'celmp'])
-        if ('w' in perms) or ('a' in perms) or ('f' in perms):
-            permdir += 'c'
-        if 'd' in perms:
-            permdir += 'p'
-        show_type = 'type' in facts
-        show_perm = 'perm' in facts
-        show_size = 'size' in facts
-        show_modify = 'modify' in facts
-        show_create = 'create' in facts
-        show_mode = 'unix.mode' in facts
-        show_uid = 'unix.uid' in facts
-        show_gid = 'unix.gid' in facts
-        show_unique = 'unique' in facts
+        permdir = "".join([x for x in perms if x not in "arw"])
+        permfile = "".join([x for x in perms if x not in "celmp"])
+        if ("w" in perms) or ("a" in perms) or ("f" in perms):
+            permdir += "c"
+        if "d" in perms:
+            permdir += "p"
+        show_type = "type" in facts
+        show_perm = "perm" in facts
+        show_size = "size" in facts
+        show_modify = "modify" in facts
+        show_create = "create" in facts
+        show_mode = "unix.mode" in facts
+        show_uid = "unix.uid" in facts
+        show_gid = "unix.gid" in facts
+        show_unique = "unique" in facts
         for basename in listing:
             retfacts = {}
             file = os.path.join(basedir, basename)
@@ -536,25 +536,25 @@ class AbstractedFS:
             isdir = (st.st_mode & 61440) == stat.S_IFDIR
             if isdir:
                 if show_type:
-                    if basename == '.':
-                        retfacts['type'] = 'cdir'
-                    elif basename == '..':
-                        retfacts['type'] = 'pdir'
+                    if basename == ".":
+                        retfacts["type"] = "cdir"
+                    elif basename == "..":
+                        retfacts["type"] = "pdir"
                     else:
-                        retfacts['type'] = 'dir'
+                        retfacts["type"] = "dir"
                 if show_perm:
-                    retfacts['perm'] = permdir
+                    retfacts["perm"] = permdir
             else:
                 if show_type:
-                    retfacts['type'] = 'file'
+                    retfacts["type"] = "file"
                 if show_perm:
-                    retfacts['perm'] = permfile
+                    retfacts["perm"] = permfile
             if show_size:
-                retfacts['size'] = st.st_size  # file size
+                retfacts["size"] = st.st_size  # file size
             # last modification time
             if show_modify:
                 try:
-                    retfacts['modify'] = time.strftime(
+                    retfacts["modify"] = time.strftime(
                         "%Y%m%d%H%M%S", timefunc(st.st_mtime)
                     )
                 # it could be raised if last mtime happens to be too old
@@ -564,18 +564,18 @@ class AbstractedFS:
             if show_create:
                 # on Windows we can provide also the creation time
                 try:
-                    retfacts['create'] = time.strftime(
+                    retfacts["create"] = time.strftime(
                         "%Y%m%d%H%M%S", timefunc(st.st_ctime)
                     )
                 except ValueError:
                     pass
             # UNIX only
             if show_mode:
-                retfacts['unix.mode'] = oct(st.st_mode & 511)
+                retfacts["unix.mode"] = oct(st.st_mode & 511)
             if show_uid:
-                retfacts['unix.uid'] = st.st_uid
+                retfacts["unix.uid"] = st.st_uid
             if show_gid:
-                retfacts['unix.gid'] = st.st_gid
+                retfacts["unix.gid"] = st.st_gid
 
             # We provide unique fact (see RFC-3659, chapter 7.5.2) on
             # posix platforms only; we get it by mixing st_dev and
@@ -586,7 +586,7 @@ class AbstractedFS:
             # platforms should use some platform-specific method (e.g.
             # on Windows NTFS filesystems MTF records could be used).
             if show_unique:
-                retfacts['unique'] = f"{st.st_dev:x}g{st.st_ino:x}"
+                retfacts["unique"] = f"{st.st_dev:x}g{st.st_ino:x}"
 
             # facts can be in any order but we sort them by name
             factstring = "".join(
@@ -602,8 +602,8 @@ class AbstractedFS:
 # --- platform specific implementation
 # ===================================================================
 
-if os.name == 'posix':
-    __all__ += ['UnixFilesystem']
+if os.name == "posix":
+    __all__ += ["UnixFilesystem"]
 
     class UnixFilesystem(AbstractedFS):
         """Represents the real UNIX filesystem.

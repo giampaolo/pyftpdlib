@@ -73,11 +73,11 @@ from .log import is_logging_configured
 from .log import logger
 
 with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
+    warnings.simplefilter("ignore", DeprecationWarning)
     import asynchat
     import asyncore
 
-timer = getattr(time, 'monotonic', time.time)
+timer = getattr(time, "monotonic", time.time)
 _read = asyncore.read
 _write = asyncore.write
 
@@ -190,15 +190,15 @@ class _CallLater:
     """Container object which instance is returned by ioloop.call_later()."""
 
     __slots__ = (
-        '_args',
-        '_delay',
-        '_errback',
-        '_kwargs',
-        '_repush',
-        '_sched',
-        '_target',
-        'cancelled',
-        'timeout',
+        "_args",
+        "_delay",
+        "_errback",
+        "_kwargs",
+        "_repush",
+        "_sched",
+        "_target",
+        "cancelled",
+        "timeout",
     )
 
     def __init__(self, seconds, target, *args, **kwargs):
@@ -210,8 +210,8 @@ class _CallLater:
         self._target = target
         self._args = args
         self._kwargs = kwargs
-        self._errback = kwargs.pop('_errback', None)
-        self._sched = kwargs.pop('_scheduler')
+        self._errback = kwargs.pop("_errback", None)
+        self._sched = kwargs.pop("_scheduler")
         self._repush = False
         # seconds from the epoch at which to call the function
         if not seconds:
@@ -232,13 +232,13 @@ class _CallLater:
             sig = object.__repr__(self)
         else:
             sig = repr(self._target)
-        sig += ' args=%s, kwargs=%s, cancelled=%s, secs=%s' % (  # noqa: UP031
-            self._args or '[]',
-            self._kwargs or '{}',
+        sig += " args=%s, kwargs=%s, cancelled=%s, secs=%s" % (  # noqa: UP031
+            self._args or "[]",
+            self._kwargs or "{}",
             self.cancelled,
             self._delay,
         )
-        return f'<{sig}>'
+        return f"<{sig}>"
 
     __str__ = __repr__
 
@@ -311,7 +311,7 @@ class _IOLoop:
         status.append(
             f"(fds={len(self.socket_map)}, tasks={len(self.sched._tasks)})"
         )
-        return '<%s at %#x>' % (' '.join(status), id(self))  # noqa: UP031
+        return "<%s at %#x>" % (" ".join(status), id(self))  # noqa: UP031
 
     __str__ = __repr__
 
@@ -331,22 +331,22 @@ class _IOLoop:
 
     def register(self, fd, instance, events):
         """Register a fd, handled by instance for the given events."""
-        raise NotImplementedError('must be implemented in subclass')
+        raise NotImplementedError("must be implemented in subclass")
 
     def unregister(self, fd):
         """Register fd."""
-        raise NotImplementedError('must be implemented in subclass')
+        raise NotImplementedError("must be implemented in subclass")
 
     def modify(self, fd, events):
         """Changes the events assigned for fd."""
-        raise NotImplementedError('must be implemented in subclass')
+        raise NotImplementedError("must be implemented in subclass")
 
     def poll(self, timeout):
         """Poll once.  The subclass overriding this method is supposed
         to poll over the registered handlers and the scheduled functions
         and then return.
         """
-        raise NotImplementedError('must be implemented in subclass')
+        raise NotImplementedError("must be implemented in subclass")
 
     def loop(self, timeout=None, blocking=True):
         """Start the asynchronous IO loop.
@@ -403,12 +403,12 @@ class _IOLoop:
            '_errback' parameter can be passed: it is a callable
            called in case target function raises an exception.
         """
-        kwargs['_scheduler'] = self.sched
+        kwargs["_scheduler"] = self.sched
         return _CallLater(seconds, target, *args, **kwargs)
 
     def call_every(self, seconds, target, *args, **kwargs):
         """Schedules the given callback to be called periodically."""
-        kwargs['_scheduler'] = self.sched
+        kwargs["_scheduler"] = self.sched
         return _CallEvery(seconds, target, *args, **kwargs)
 
     def close(self):
@@ -570,7 +570,7 @@ class _BasePollEpoll(_IOLoop):
 # --- poll() - POSIX
 # ===================================================================
 
-if hasattr(select, 'poll'):
+if hasattr(select, "poll"):
 
     class Poll(_BasePollEpoll):
         """poll() based poller."""
@@ -596,7 +596,7 @@ if hasattr(select, 'poll'):
 # --- /dev/poll - Solaris (introduced in python 3.3)
 # ===================================================================
 
-if hasattr(select, 'devpoll'):  # pragma: no cover
+if hasattr(select, "devpoll"):  # pragma: no cover
 
     class DevPoll(_BasePollEpoll):
         """/dev/poll based poller (introduced in python 3.3)."""
@@ -607,7 +607,7 @@ if hasattr(select, 'devpoll'):  # pragma: no cover
         _poller = select.devpoll
 
         # introduced in python 3.4
-        if hasattr(select.devpoll, 'fileno'):
+        if hasattr(select.devpoll, "fileno"):
 
             def fileno(self):
                 """Return devpoll() fd."""
@@ -625,7 +625,7 @@ if hasattr(select, 'devpoll'):  # pragma: no cover
             _BasePollEpoll.poll(self, timeout)
 
         # introduced in python 3.4
-        if hasattr(select.devpoll, 'close'):
+        if hasattr(select.devpoll, "close"):
 
             def close(self):
                 _IOLoop.close(self)
@@ -636,7 +636,7 @@ if hasattr(select, 'devpoll'):  # pragma: no cover
 # --- epoll() - Linux
 # ===================================================================
 
-if hasattr(select, 'epoll'):
+if hasattr(select, "epoll"):
 
     class Epoll(_BasePollEpoll):
         """epoll() based poller."""
@@ -659,7 +659,7 @@ if hasattr(select, 'epoll'):
 # --- kqueue() - BSD / OSX
 # ===================================================================
 
-if hasattr(select, 'kqueue'):  # pragma: no cover
+if hasattr(select, "kqueue"):  # pragma: no cover
 
     class Kqueue(_IOLoop):
         """kqueue() based poller."""
@@ -772,13 +772,13 @@ if hasattr(select, 'kqueue'):  # pragma: no cover
 # --- choose the better poller for this platform
 # ===================================================================
 
-if hasattr(select, 'epoll'):  # epoll() - Linux
+if hasattr(select, "epoll"):  # epoll() - Linux
     IOLoop = Epoll
-elif hasattr(select, 'kqueue'):  # kqueue() - BSD / OSX
+elif hasattr(select, "kqueue"):  # kqueue() - BSD / OSX
     IOLoop = Kqueue
-elif hasattr(select, 'devpoll'):  # /dev/poll - Solaris
+elif hasattr(select, "devpoll"):  # /dev/poll - Solaris
     IOLoop = DevPoll
-elif hasattr(select, 'poll'):  # poll() - POSIX
+elif hasattr(select, "poll"):  # poll() - POSIX
     IOLoop = Poll
 else:  # select() - POSIX and Windows
     IOLoop = Select
@@ -860,8 +860,8 @@ class AsyncChat(asynchat.async_chat):
         """Same as self.ioloop.call_later but also cancel()s the
         scheduled function on close().
         """
-        if '_errback' not in kwargs and hasattr(self, 'handle_error'):
-            kwargs['_errback'] = self.handle_error
+        if "_errback" not in kwargs and hasattr(self, "handle_error"):
+            kwargs["_errback"] = self.handle_error
         callback = self.ioloop.call_later(seconds, target, *args, **kwargs)
         self._tasks.append(callback)
         return callback
@@ -893,7 +893,7 @@ class AsyncChat(asynchat.async_chat):
             try:
                 self.create_socket(af, socktype)
                 if source_address:
-                    if source_address[0].startswith('::ffff:'):
+                    if source_address[0].startswith("::ffff:"):
                         # In this scenario, the server has an IPv6 socket, but
                         # the remote client is using IPv4 and its address is
                         # represented as an IPv4-mapped IPv6 address which
@@ -947,7 +947,7 @@ class AsyncChat(asynchat.async_chat):
             debug(f"call: recv(), err: {err}", inst=self)
             if err.errno in _ERRNOS_DISCONNECTED:
                 self.handle_close()
-                return b''
+                return b""
             elif err.errno in _ERRNOS_RETRY:
                 raise RetryError
             else:
@@ -957,7 +957,7 @@ class AsyncChat(asynchat.async_chat):
                 # a closed connection is indicated by signaling
                 # a read condition, and having recv() return 0.
                 self.handle_close()
-                return b''
+                return b""
             else:
                 return data
 
@@ -1106,10 +1106,10 @@ class Acceptor(AsyncChat):
 
     def handle_accepted(self, sock, addr):
         sock.close()
-        self.log_info('unhandled accepted event', 'warning')
+        self.log_info("unhandled accepted event", "warning")
 
     # overridden for convenience; avoid to reuse address on Windows
-    if (os.name in ('nt', 'ce')) or (sys.platform == 'cygwin'):
+    if (os.name in ("nt", "ce")) or (sys.platform == "cygwin"):
 
         def set_reuse_addr(self):
             pass

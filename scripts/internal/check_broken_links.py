@@ -54,8 +54,8 @@ from pyftpdlib.utils import memoize
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 REGEX = re.compile(
-    r'(?:http|ftp|https)?://'
-    r'(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+    r"(?:http|ftp|https)?://"
+    r"(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
 )
 REQUEST_TIMEOUT = 15
 # There are some status codes sent by websites on HEAD request.
@@ -65,14 +65,14 @@ RETRY_STATUSES = [503, 401, 403]
 
 
 def sanitize_url(url):
-    url = url.rstrip(',')
-    url = url.rstrip('.')
-    url = url.lstrip('(')
-    url = url.rstrip(')')
-    url = url.lstrip('[')
-    url = url.rstrip(']')
-    url = url.lstrip('<')
-    url = url.rstrip('>')
+    url = url.rstrip(",")
+    url = url.rstrip(".")
+    url = url.lstrip("(")
+    url = url.rstrip(")")
+    url = url.lstrip("[")
+    url = url.rstrip("]")
+    url = url.lstrip("<")
+    url = url.rstrip(">")
     return url
 
 
@@ -87,11 +87,11 @@ def parse_rst(fname):
         text = f.read()
     urls = find_urls(text)
     # HISTORY file has a lot of dead links.
-    if fname == 'HISTORY.rst' and urls:
+    if fname == "HISTORY.rst" and urls:
         urls = [
             x
             for x in urls
-            if not x.startswith('https://github.com/giampaolo/psutil/issues')
+            if not x.startswith("https://github.com/giampaolo/psutil/issues")
         ]
     return urls
 
@@ -104,11 +104,11 @@ def parse_py(fname):
     for i, line in enumerate(lines):
         for url in find_urls(line):
             # comment block
-            if line.lstrip().startswith('# '):
+            if line.lstrip().startswith("# "):
                 subidx = i + 1
                 while True:
                     nextline = lines[subidx].strip()
-                    if re.match('^#     .+', nextline):
+                    if re.match("^#     .+", nextline):
                         url += nextline[1:].strip()
                     else:
                         break
@@ -118,20 +118,20 @@ def parse_py(fname):
 
 
 def parse_generic(fname):
-    with open(fname, errors='ignore') as f:
+    with open(fname, errors="ignore") as f:
         text = f.read()
     return find_urls(text)
 
 
 def get_urls(fname):
     """Extracts all URLs in fname and return them as a list."""
-    if fname.endswith('.rst'):
+    if fname.endswith(".rst"):
         return parse_rst(fname)
-    elif fname.endswith('.py'):
+    elif fname.endswith(".py"):
         return parse_py(fname)
     else:
-        with open(fname, errors='ignore') as f:
-            if f.readline().strip().startswith('#!/usr/bin/env python3'):
+        with open(fname, errors="ignore") as f:
+            if f.readline().strip().startswith("#!/usr/bin/env python3"):
                 return parse_py(fname)
         return parse_generic(fname)
 
@@ -187,7 +187,7 @@ def main():
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter
     )
-    parser.add_argument('files', nargs="+")
+    parser.add_argument("files", nargs="+")
     parser.parse_args()
     args = parser.parse_args()
 
@@ -206,12 +206,12 @@ def main():
         for fail in fails:
             fname, url = fail
             print("%-30s: %s " % (fname, url))
-        print('-' * 20)
+        print("-" * 20)
         print("total: %s fails!" % len(fails))
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         main()
     except (KeyboardInterrupt, SystemExit):

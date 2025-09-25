@@ -22,7 +22,7 @@ import os
 import warnings
 
 __all__ = [
-    'DummyAuthorizer',
+    "DummyAuthorizer",
     # 'BaseUnixAuthorizer', 'UnixAuthorizer',
     # 'BaseWindowsAuthorizer', 'WindowsAuthorizer',
 ]
@@ -73,7 +73,7 @@ class DummyAuthorizer:
         username,
         password,
         homedir,
-        perm='elr',
+        perm="elr",
         msg_login="Login successful.",
         msg_quit="Goodbye.",
     ):
@@ -103,18 +103,18 @@ class DummyAuthorizer:
         provide customized response strings when user log-in and quit.
         """
         if self.has_user(username):
-            raise ValueError(f'user {username!r} already exists')
+            raise ValueError(f"user {username!r} already exists")
         if not os.path.isdir(homedir):
-            raise ValueError(f'no such directory: {homedir!r}')
+            raise ValueError(f"no such directory: {homedir!r}")
         homedir = os.path.realpath(homedir)
         self._check_permissions(username, perm)
         dic = {
-            'pwd': str(password),
-            'home': homedir,
-            'perm': perm,
-            'operms': {},
-            'msg_login': str(msg_login),
-            'msg_quit': str(msg_quit),
+            "pwd": str(password),
+            "home": homedir,
+            "perm": perm,
+            "operms": {},
+            "msg_login": str(msg_login),
+            "msg_quit": str(msg_quit),
         }
         self.user_table[username] = dic
 
@@ -134,7 +134,7 @@ class DummyAuthorizer:
         Using write permission values ("adfmwM") results in a
         RuntimeWarning.
         """
-        DummyAuthorizer.add_user(self, 'anonymous', '', homedir, **kwargs)
+        DummyAuthorizer.add_user(self, "anonymous", "", homedir, **kwargs)
 
     def remove_user(self, username):
         """Remove a user from the virtual users table."""
@@ -144,14 +144,14 @@ class DummyAuthorizer:
         """Override permissions for a given directory."""
         self._check_permissions(username, perm)
         if not os.path.isdir(directory):
-            raise ValueError(f'no such directory: {directory!r}')
+            raise ValueError(f"no such directory: {directory!r}")
         directory = os.path.normcase(os.path.realpath(directory))
         home = os.path.normcase(self.get_home_dir(username))
         if directory == home:
             raise ValueError("can't override home directory permissions")
         if not self._issubpath(directory, home):
             raise ValueError("path escapes user home directory")
-        self.user_table[username]['operms'][directory] = perm, recursive
+        self.user_table[username]["operms"][directory] = perm, recursive
 
     def validate_authentication(self, username, password, handler):
         """Raises AuthenticationFailed if supplied username and
@@ -160,11 +160,11 @@ class DummyAuthorizer:
         """
         msg = "Authentication failed."
         if not self.has_user(username):
-            if username == 'anonymous':
+            if username == "anonymous":
                 msg = "Anonymous access not allowed."
             raise AuthenticationFailed(msg)
-        if username != 'anonymous':
-            if self.user_table[username]['pwd'] != password:
+        if username != "anonymous":
+            if self.user_table[username]["pwd"] != password:
                 raise AuthenticationFailed(msg)
 
     def get_home_dir(self, username):
@@ -173,7 +173,7 @@ class DummyAuthorizer:
         AuthenticationFailed can be freely raised by subclasses in case
         the provided username no longer exists.
         """
-        return self.user_table[username]['home']
+        return self.user_table[username]["home"]
 
     def impersonate_user(self, username, password):
         """Impersonate another user (noop).
@@ -205,11 +205,11 @@ class DummyAuthorizer:
         "elradfmwMT".
         """
         if path is None:
-            return perm in self.user_table[username]['perm']
+            return perm in self.user_table[username]["perm"]
 
         path = os.path.normcase(path)
-        for dir in self.user_table[username]['operms']:
-            operm, recursive = self.user_table[username]['operms'][dir]
+        for dir in self.user_table[username]["operms"]:
+            operm, recursive = self.user_table[username]["operms"][dir]
             if self._issubpath(path, dir):
                 if recursive:
                     return perm in operm
@@ -218,20 +218,20 @@ class DummyAuthorizer:
                 ):
                     return perm in operm
 
-        return perm in self.user_table[username]['perm']
+        return perm in self.user_table[username]["perm"]
 
     def get_perms(self, username):
         """Return current user permissions."""
-        return self.user_table[username]['perm']
+        return self.user_table[username]["perm"]
 
     def get_msg_login(self, username):
         """Return the user's login message."""
-        return self.user_table[username]['msg_login']
+        return self.user_table[username]["msg_login"]
 
     def get_msg_quit(self, username):
         """Return the user's quitting message."""
         try:
-            return self.user_table[username]['msg_quit']
+            return self.user_table[username]["msg_quit"]
         except KeyError:
             return "Goodbye."
 
@@ -239,9 +239,9 @@ class DummyAuthorizer:
         warned = 0
         for p in perm:
             if p not in self.read_perms + self.write_perms:
-                raise ValueError(f'no such permission {p!r}')
+                raise ValueError(f"no such permission {p!r}")
             if (
-                username == 'anonymous'
+                username == "anonymous"
                 and p in self.write_perms
                 and not warned
             ):
@@ -266,7 +266,7 @@ def replace_anonymous(callable):
     """
 
     def wrapper(self, username, *args, **kwargs):
-        if username == 'anonymous':
+        if username == "anonymous":
             username = self.anonymous_user or username
         return callable(self, username, *args, **kwargs)
 
@@ -299,18 +299,18 @@ class _Base:
 
         users = self._get_system_users()
         for user in self.allowed_users or self.rejected_users:
-            if user == 'anonymous':
+            if user == "anonymous":
                 raise AuthorizerError('invalid username "anonymous"')
             if user not in users:
-                raise AuthorizerError(f'unknown user {user}')
+                raise AuthorizerError(f"unknown user {user}")
 
         if self.anonymous_user is not None:
             if not self.has_user(self.anonymous_user):
-                raise AuthorizerError(f'no such user {self.anonymous_user}')
+                raise AuthorizerError(f"no such user {self.anonymous_user}")
             home = self.get_home_dir(self.anonymous_user)
             if not os.path.isdir(home):
                 raise AuthorizerError(
-                    f'no valid home set for user {self.anonymous_user}'
+                    f"no valid home set for user {self.anonymous_user}"
                 )
 
     def override_user(
@@ -336,13 +336,13 @@ class _Base:
                 "at least one keyword argument must be specified"
             )
         if self.allowed_users and username not in self.allowed_users:
-            raise AuthorizerError(f'{username} is not an allowed user')
+            raise AuthorizerError(f"{username} is not an allowed user")
         if self.rejected_users and username in self.rejected_users:
-            raise AuthorizerError(f'{username} is not an allowed user')
+            raise AuthorizerError(f"{username} is not an allowed user")
         if username == "anonymous" and password:
             raise AuthorizerError("can't assign password to anonymous user")
         if not self.has_user(username):
-            raise AuthorizerError(f'no such user {username}')
+            raise AuthorizerError(f"no such user {username}")
 
         if username in self._dummy_authorizer.user_table:
             # re-set parameters
@@ -356,20 +356,20 @@ class _Base:
             msg_quit or "",
         )
         if homedir is None:
-            self._dummy_authorizer.user_table[username]['home'] = ""
+            self._dummy_authorizer.user_table[username]["home"] = ""
 
     def get_msg_login(self, username):
-        return self._get_key(username, 'msg_login') or self.msg_login
+        return self._get_key(username, "msg_login") or self.msg_login
 
     def get_msg_quit(self, username):
-        return self._get_key(username, 'msg_quit') or self.msg_quit
+        return self._get_key(username, "msg_quit") or self.msg_quit
 
     def get_perms(self, username):
-        overridden_perms = self._get_key(username, 'perm')
+        overridden_perms = self._get_key(username, "perm")
         if overridden_perms:
             return overridden_perms
-        if username == 'anonymous':
-            return 'elr'
+        if username == "anonymous":
+            return "elr"
         return self.global_perm
 
     def has_perm(self, username, perm, path=None):
@@ -401,7 +401,7 @@ try:
 except ImportError:
     pass
 else:
-    __all__ += ['BaseUnixAuthorizer', 'UnixAuthorizer']
+    __all__ += ["BaseUnixAuthorizer", "UnixAuthorizer"]
 
     # the uid/gid the server runs under
     PROCESS_UID = os.getuid()
@@ -423,7 +423,7 @@ else:
                 try:
                     pwd.getpwnam(self.anonymous_user).pw_dir  # noqa
                 except KeyError:
-                    raise AuthorizerError(f'no such user {anonymous_user}')
+                    raise AuthorizerError(f"no such user {anonymous_user}")
 
         # --- overridden / private API
 
@@ -577,7 +577,7 @@ else:
             self.msg_quit = msg_quit
 
             self._dummy_authorizer = DummyAuthorizer()
-            self._dummy_authorizer._check_permissions('', global_perm)
+            self._dummy_authorizer._check_permissions("", global_perm)
             _Base.__init__(self)
             if require_valid_shell:
                 for username in self.allowed_users:
@@ -598,7 +598,7 @@ else:
             """Overrides the options specified in the class constructor
             for a specific user.
             """
-            if self.require_valid_shell and username != 'anonymous':
+            if self.require_valid_shell and username != "anonymous":
                 if not self._has_valid_shell(username):
                     raise AuthorizerError(self.msg_invalid_shell % username)
             _Base.override_user(
@@ -614,7 +614,7 @@ else:
                 return
             if self._is_rejected_user(username):
                 raise AuthenticationFailed(self.msg_rejected_user % username)
-            overridden_password = self._get_key(username, 'pwd')
+            overridden_password = self._get_key(username, "pwd")
             if overridden_password:
                 if overridden_password != password:
                     raise AuthenticationFailed(self.msg_wrong_password)
@@ -622,7 +622,7 @@ else:
                 BaseUnixAuthorizer.validate_authentication(
                     self, username, password, handler
                 )
-            if self.require_valid_shell and username != 'anonymous':
+            if self.require_valid_shell and username != "anonymous":
                 if not self._has_valid_shell(username):
                     raise AuthenticationFailed(
                         self.msg_invalid_shell % username
@@ -636,7 +636,7 @@ else:
 
         @replace_anonymous
         def get_home_dir(self, username):
-            overridden_home = self._get_key(username, 'home')
+            overridden_home = self._get_key(username, "home")
             if overridden_home:
                 return overridden_home
             return BaseUnixAuthorizer.get_home_dir(self, username)
@@ -647,7 +647,7 @@ else:
             in /etc/shells. If /etc/shells can't be found return True.
             """
             try:
-                file = open('/etc/shells')
+                file = open("/etc/shells")
             except FileNotFoundError:
                 return True
             else:
@@ -657,7 +657,7 @@ else:
                     except KeyError:  # invalid user
                         return False
                     for line in file:
-                        if line.startswith('#'):
+                        if line.startswith("#"):
                             continue
                         line = line.strip()
                         if line == shell:
@@ -681,7 +681,7 @@ except ImportError:
 else:  # pragma: no cover
     import winreg
 
-    __all__ += ['BaseWindowsAuthorizer', 'WindowsAuthorizer']
+    __all__ += ["BaseWindowsAuthorizer", "WindowsAuthorizer"]
 
     class BaseWindowsAuthorizer:
         """An authorizer compatible with Windows user account and
@@ -766,7 +766,7 @@ else:  # pragma: no cover
             # XXX - Does Windows allow usernames with chars outside of
             # ASCII set? In that case we need to convert this to unicode.
             return [
-                entry['name'] for entry in win32net.NetUserEnum(None, 0)[0]
+                entry["name"] for entry in win32net.NetUserEnum(None, 0)[0]
             ]
 
         def get_msg_login(self, username):
@@ -857,7 +857,7 @@ else:  # pragma: no cover
             self.msg_login = msg_login
             self.msg_quit = msg_quit
             self._dummy_authorizer = DummyAuthorizer()
-            self._dummy_authorizer._check_permissions('', global_perm)
+            self._dummy_authorizer._check_permissions("", global_perm)
             _Base.__init__(self)
             # actually try to impersonate the user
             if self.anonymous_user is not None:
@@ -897,7 +897,7 @@ else:  # pragma: no cover
             if self.rejected_users and username in self.rejected_users:
                 raise AuthenticationFailed(self.msg_rejected_user % username)
 
-            overridden_password = self._get_key(username, 'pwd')
+            overridden_password = self._get_key(username, "pwd")
             if overridden_password:
                 if overridden_password != password:
                     raise AuthenticationFailed(self.msg_wrong_password)
@@ -921,7 +921,7 @@ else:  # pragma: no cover
 
         @replace_anonymous
         def get_home_dir(self, username):
-            overridden_home = self._get_key(username, 'home')
+            overridden_home = self._get_key(username, "home")
             if overridden_home:
                 home = overridden_home
             else:

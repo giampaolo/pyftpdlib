@@ -20,9 +20,9 @@ from pyftpdlib.servers import FTPServer
 class DummyMD5Authorizer(DummyAuthorizer):
 
     def validate_authentication(self, username, password, handler):
-        hash_ = hashlib.md5(password.encode('latin1')).hexdigest()
+        hash_ = hashlib.md5(password.encode("latin1")).hexdigest()
         try:
-            if self.user_table[username]['pwd'] != hash_:
+            if self.user_table[username]["pwd"] != hash_:
                 raise KeyError
         except KeyError:
             raise AuthenticationFailed
@@ -30,14 +30,14 @@ class DummyMD5Authorizer(DummyAuthorizer):
 
 def main():
     # get a hash digest from a clear-text password
-    password = '12345'
-    hash_ = hashlib.md5(password.encode('latin1')).hexdigest()
+    password = "12345"
+    hash_ = hashlib.md5(password.encode("latin1")).hexdigest()
     authorizer = DummyMD5Authorizer()
-    authorizer.add_user('user', hash_, os.getcwd(), perm='elradfmwMT')
+    authorizer.add_user("user", hash_, os.getcwd(), perm="elradfmwMT")
     authorizer.add_anonymous(os.getcwd())
     handler = FTPHandler
     handler.authorizer = authorizer
-    server = FTPServer(('', 2121), handler)
+    server = FTPServer(("", 2121), handler)
     server.serve_forever()
 
 

@@ -81,7 +81,7 @@ def stop():
     sig = signal.SIGTERM
     i = 0
     while True:
-        sys.stdout.write('.')
+        sys.stdout.write(".")
         sys.stdout.flush()
         try:
             os.kill(pid, sig)
@@ -138,21 +138,21 @@ def daemonize():
         sys.stdout.flush()
         sys.stderr.flush()
         si = open(LOG_FILE)
-        so = open(LOG_FILE, 'a+')
-        se = open(LOG_FILE, 'a+', 0)
+        so = open(LOG_FILE, "a+")
+        se = open(LOG_FILE, "a+", 0)
         os.dup2(si.fileno(), sys.stdin.fileno())
         os.dup2(so.fileno(), sys.stdout.fileno())
         os.dup2(se.fileno(), sys.stderr.fileno())
 
         # write pidfile
         pid = str(os.getpid())
-        with open(PID_FILE, 'w') as f:
+        with open(PID_FILE, "w") as f:
             f.write(f"{pid}\n")
         atexit.register(lambda: os.remove(PID_FILE))
 
     pid = get_pid()
     if pid and pid_exists(pid):
-        sys.exit(f'daemon already running (pid {pid})')
+        sys.exit(f"daemon already running (pid {pid})")
     # instance FTPd before daemonizing, so that in case of problems we
     # get an exception here and exit immediately
     server = get_server()
@@ -167,19 +167,19 @@ def main():
 
     parser = argparse.ArgumentParser(usage=USAGE)
     parser.add_argument(
-        '-l', '--logfile', dest='logfile', help='the log file location'
+        "-l", "--logfile", dest="logfile", help="the log file location"
     )
     parser.add_argument(
-        '-p',
-        '--pidfile',
-        dest='pidfile',
+        "-p",
+        "--pidfile",
+        dest="pidfile",
         default=PID_FILE,
-        help='file to store/retrieve daemon pid',
+        help="file to store/retrieve daemon pid",
     )
     parser.add_argument(
-        'command',
-        nargs='?',
-        help='command to execute: start, stop, restart, status',
+        "command",
+        nargs="?",
+        help="command to execute: start, stop, restart, status",
     )
 
     options = parser.parse_args()
@@ -192,20 +192,20 @@ def main():
     if not options.command:
         server = get_server()
         server.serve_forever()
-    elif options.command == 'start':
+    elif options.command == "start":
         daemonize()
-    elif options.command == 'stop':
+    elif options.command == "stop":
         stop()
-    elif options.command == 'restart':
+    elif options.command == "restart":
         try:
             stop()
         finally:
             daemonize()
-    elif options.command == 'status':
+    elif options.command == "status":
         status()
     else:
-        sys.exit('invalid command')
+        sys.exit("invalid command")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

@@ -25,7 +25,7 @@ def main():
     #                                anonymous_password="")
     handler = FTPHandler
     handler.authorizer = authorizer
-    ftpd = FTPServer(('', 21), handler)
+    ftpd = FTPServer(("", 21), handler)
     ftpd.serve_forever()
 
 

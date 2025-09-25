@@ -20,7 +20,7 @@ from pyftpdlib.ioloop import RetryError
 from . import POSIX
 from . import PyftpdlibTestCase
 
-if hasattr(socket, 'socketpair'):
+if hasattr(socket, "socketpair"):
     socketpair = socket.socketpair
 else:
 
@@ -120,7 +120,7 @@ class BaseIOLoopTestCase:
             with patch("pyftpdlib.ioloop.logger.error") as m:
                 s.close()
                 assert m.called
-                assert 'ZeroDivisionError' in m.call_args[0][0]
+                assert "ZeroDivisionError" in m.call_args[0][0]
         finally:
             handler.real_close()
 
@@ -160,7 +160,7 @@ class BaseIOLoopTestCase:
                 s.close()
                 assert cancel.called
                 assert logerr.called
-                assert 'ZeroDivisionError' in logerr.call_args[0][0]
+                assert "ZeroDivisionError" in logerr.call_args[0][0]
 
 
 class DefaultIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
@@ -178,13 +178,13 @@ class SelectIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
     def test_select_eintr(self):
         # EINTR is supposed to be ignored
         with patch(
-            'pyftpdlib.ioloop.select.select', side_effect=InterruptedError
+            "pyftpdlib.ioloop.select.select", side_effect=InterruptedError
         ) as m:
             s, _rd, _wr = self.register()
             s.poll(0)
         # ...but just that
         with patch(
-            'pyftpdlib.ioloop.select.select', side_effect=OSError()
+            "pyftpdlib.ioloop.select.select", side_effect=OSError()
         ) as m:
             m.side_effect.errno = errno.EBADF
             s, _rd, _wr = self.register()
@@ -198,7 +198,7 @@ class SelectIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
 
 
 @pytest.mark.skipif(
-    not hasattr(pyftpdlib.ioloop, 'Poll'),
+    not hasattr(pyftpdlib.ioloop, "Poll"),
     reason="poll() not available on this platform",
 )
 class PollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
@@ -259,7 +259,7 @@ class PollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
 
 
 @pytest.mark.skipif(
-    not hasattr(pyftpdlib.ioloop, 'Epoll'),
+    not hasattr(pyftpdlib.ioloop, "Epoll"),
     reason="epoll() not available on this platform (Linux only)",
 )
 class EpollIOLoopTestCase(PollIOLoopTestCase):
@@ -273,7 +273,7 @@ class EpollIOLoopTestCase(PollIOLoopTestCase):
 
 
 @pytest.mark.skipif(
-    not hasattr(pyftpdlib.ioloop, 'DevPoll'),
+    not hasattr(pyftpdlib.ioloop, "DevPoll"),
     reason="/dev/poll not available on this platform (Solaris only)",
 )
 class DevPollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
@@ -286,7 +286,7 @@ class DevPollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
 
 
 @pytest.mark.skipif(
-    not hasattr(pyftpdlib.ioloop, 'Kqueue'),
+    not hasattr(pyftpdlib.ioloop, "Kqueue"),
     reason="/dev/poll not available on this platform (BSD only)",
 )
 class KqueueIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
@@ -341,7 +341,7 @@ class TestCallLater(PyftpdlibTestCase):
 
     # The test is reliable only on those systems where time.time()
     # provides time with a better precision than 1 second.
-    if not str(time.time()).endswith('.0'):
+    if not str(time.time()).endswith(".0"):
 
         def test_reset(self):
             def fun(x):
@@ -544,7 +544,7 @@ class TestAsyncChat(PyftpdlibTestCase):
                 side_effect=OSError(errnum, ""),
             ) as send:
                 with patch.object(ac, "handle_close") as handle_close:
-                    assert ac.recv(b"x") == b''
+                    assert ac.recv(b"x") == b""
                     assert send.called
                     assert handle_close.called
 

@@ -19,10 +19,10 @@ from pyftpdlib.servers import MultiprocessFTPServer
 
 def main():
     authorizer = DummyAuthorizer()
-    authorizer.add_user('user', '12345', '.')
+    authorizer.add_user("user", "12345", ".")
     handler = FTPHandler
     handler.authorizer = authorizer
-    server = MultiprocessFTPServer(('', 2121), handler)
+    server = MultiprocessFTPServer(("", 2121), handler)
     server.serve_forever()
 
 

@@ -14,14 +14,14 @@ import re
 from pyftpdlib import __ver__ as PRJ_VERSION
 
 HERE = os.path.abspath(os.path.dirname(__file__))
-HISTORY = os.path.abspath(os.path.join(HERE, '../../HISTORY.rst'))
+HISTORY = os.path.abspath(os.path.join(HERE, "../../HISTORY.rst"))
 
-PRJ_NAME = 'pyftpdlib'
-PRJ_URL_HOME = 'https://github.com/giampaolo/pyftpdlib'
-PRJ_URL_DOC = 'https://pyftpdlib.readthedocs.io'
-PRJ_URL_DOWNLOAD = 'https://pypi.org/project/pyftpdlib'
+PRJ_NAME = "pyftpdlib"
+PRJ_URL_HOME = "https://github.com/giampaolo/pyftpdlib"
+PRJ_URL_DOC = "https://pyftpdlib.readthedocs.io"
+PRJ_URL_DOWNLOAD = "https://pypi.org/project/pyftpdlib"
 PRJ_URL_WHATSNEW = (
-    'https://github.com/giampaolo/pyftpdlib/blob/master/HISTORY.rst'
+    "https://github.com/giampaolo/pyftpdlib/blob/master/HISTORY.rst"
 )
 
 template = """\
@@ -66,7 +66,7 @@ def get_changes():
     # eliminate the part preceding the first block
     for line in enumerate(lines):
         line = lines.pop(0)
-        if line.startswith('===='):
+        if line.startswith("===="):
             break
     lines.pop(0)
 
@@ -74,11 +74,11 @@ def get_changes():
         line = lines.pop(0)
         line = line.rstrip()
         if re.match(r"^- \d+_: ", line):
-            num, _, rest = line.partition(': ')
-            num = ''.join([x for x in num if x.isdigit()])
+            num, _, rest = line.partition(": ")
+            num = "".join([x for x in num if x.isdigit()])
             line = f"- #{num}: {rest}"
 
-        if line.startswith('===='):
+        if line.startswith("===="):
             break
         block.append(line)
 
@@ -105,5 +105,5 @@ def main():
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

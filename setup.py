@@ -49,14 +49,14 @@ if WINDOWS:
 
 def get_version():
     INIT = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), 'pyftpdlib', '__init__.py')
+        os.path.join(os.path.dirname(__file__), "pyftpdlib", "__init__.py")
     )
     with open(INIT) as f:
         for line in f:
-            if line.startswith('__ver__'):
-                ret = ast.literal_eval(line.strip().split(' = ')[1])
-                assert ret.count('.') == 2, ret
-                for num in ret.split('.'):
+            if line.startswith("__ver__"):
+                ret = ast.literal_eval(line.strip().split(" = ")[1])
+                assert ret.count(".") == 2, ret
+                for num in ret.split("."):
                     assert num.isdigit(), ret
                 return ret
         raise ValueError("couldn't find version string")
@@ -84,15 +84,15 @@ def hilite(s, ok=True, bold=False):
         if ok is None:  # no color
             pass
         elif ok:
-            attr.append('32')  # green
+            attr.append("32")  # green
         else:
-            attr.append('31')  # red
+            attr.append("31")  # red
         if bold:
-            attr.append('1')
+            attr.append("1")
         return f"\x1b[{';'.join(attr)}m{s}\x1b[0m"
 
 
-with open('README.rst') as f:
+with open("README.rst") as f:
     long_description = f.read()
 
 
@@ -105,18 +105,18 @@ def main():
         from distutils.core import setup  # noqa
 
     kwargs = dict(
-        name='pyftpdlib',
+        name="pyftpdlib",
         version=get_version(),
-        description='Very fast asynchronous FTP server library',
+        description="Very fast asynchronous FTP server library",
         long_description=long_description,
         long_description_content_type="text/x-rst",
-        license='MIT',
-        platforms='Platform Independent',
+        license="MIT",
+        platforms="Platform Independent",
         author="Giampaolo Rodola'",
-        author_email='g.rodola@gmail.com',
-        url='https://github.com/giampaolo/pyftpdlib/',
-        packages=['pyftpdlib'],
-        scripts=['scripts/ftpbench'],
+        author_email="g.rodola@gmail.com",
+        url="https://github.com/giampaolo/pyftpdlib/",
+        packages=["pyftpdlib"],
+        scripts=["scripts/ftpbench"],
         # fmt: off
         keywords=['ftp', 'ftps', 'server', 'ftpd', 'daemon', 'python', 'ssl',
                   'sendfile', 'asynchronous', 'nonblocking', 'eventdriven',
@@ -128,18 +128,18 @@ def main():
             "pyasynchat;python_version>='3.12'",
         ],
         classifiers=[
-            'Development Status :: 5 - Production/Stable',
-            'Environment :: Console',
-            'Intended Audience :: Developers',
-            'Intended Audience :: System Administrators',
-            'License :: OSI Approved :: MIT License',
-            'Operating System :: OS Independent',
-            'Programming Language :: Python',
-            'Topic :: Internet :: File Transfer Protocol (FTP)',
-            'Topic :: Software Development :: Libraries :: Python Modules',
-            'Topic :: System :: Filesystems',
-            'Programming Language :: Python',
-            'Programming Language :: Python :: 3',
+            "Development Status :: 5 - Production/Stable",
+            "Environment :: Console",
+            "Intended Audience :: Developers",
+            "Intended Audience :: System Administrators",
+            "License :: OSI Approved :: MIT License",
+            "Operating System :: OS Independent",
+            "Programming Language :: Python",
+            "Topic :: Internet :: File Transfer Protocol (FTP)",
+            "Topic :: Software Development :: Libraries :: Python Modules",
+            "Topic :: System :: Filesystems",
+            "Programming Language :: Python",
+            "Programming Language :: Python :: 3",
         ],
     )
 
@@ -171,9 +171,9 @@ def main():
 
 if sys.version_info[0] < 3:  # noqa: UP036
     sys.exit(
-        'Python 2 is no longer supported. Latest version is 1.5.10; use:\n'
-        'python2 -m pip install pyftpdlib==1.5.10'
+        "Python 2 is no longer supported. Latest version is 1.5.10; use:\n"
+        "python2 -m pip install pyftpdlib==1.5.10"
     )
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -22,17 +22,17 @@ CERTFILE = os.path.abspath(
 
 def main():
     authorizer = DummyAuthorizer()
-    authorizer.add_user('user', '12345', '.', perm='elradfmwMT')
-    authorizer.add_anonymous('.')
+    authorizer.add_user("user", "12345", ".", perm="elradfmwMT")
+    authorizer.add_anonymous(".")
     handler = TLS_FTPHandler
     handler.certfile = CERTFILE
     handler.authorizer = authorizer
     # requires SSL for both control and data channel
     # handler.tls_control_required = True
     # handler.tls_data_required = True
-    server = FTPServer(('', 2121), handler)
+    server = FTPServer(("", 2121), handler)
     server.serve_forever()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

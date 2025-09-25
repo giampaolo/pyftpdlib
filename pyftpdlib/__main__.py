@@ -65,7 +65,7 @@ def parse_encoding(value):
 
 def parse_port_range(value):
     try:
-        start, stop = value.split('-')
+        start, stop = value.split("-")
         start, stop = int(start), int(stop)
     except ValueError:
         raise argparse.ArgumentTypeError(
@@ -129,44 +129,44 @@ def parse_args(args=None):
 
     group_main = parser.add_argument_group("Main options")
     group_main.add_argument(
-        '-i',
-        '--interface',
+        "-i",
+        "--interface",
         default=None,
         metavar="ADDRESS",
         help="specify the interface to run on (default: all interfaces)",
     )
     group_main.add_argument(
-        '-p',
-        '--port',
+        "-p",
+        "--port",
         type=int,
         default=DEFAULT_PORT,
         metavar="PORT",
         help=f"specify port number to run on (default: {DEFAULT_PORT})",
     )
     group_main.add_argument(
-        '-w',
-        '--write',
+        "-w",
+        "--write",
         action="store_true",
         default=False,
         help="grants write access for logged in user (default: read-only)",
     )
     group_main.add_argument(
-        '-d',
-        '--directory',
+        "-d",
+        "--directory",
         default=os.getcwd(),
         metavar="PATH",
         help="specify the directory to share (default: current directory)",
     )
     group_main.add_argument(
-        '-n',
-        '--nat-address',
+        "-n",
+        "--nat-address",
         default=None,
         metavar="ADDRESS",
         help="the NAT address to use for passive connections",
     )
     group_main.add_argument(
-        '-r',
-        '--range',
+        "-r",
+        "--range",
         type=parse_port_range,
         default=None,
         metavar="FROM-TO",
@@ -176,14 +176,14 @@ def parse_args(args=None):
         ),
     )
     group_main.add_argument(
-        '-D',
-        '--debug',
-        action='store_true',
+        "-D",
+        "--debug",
+        action="store_true",
         help="enable DEBUG logging level",
     )
     group_main.add_argument(
-        '-u',
-        '--username',
+        "-u",
+        "--username",
         type=str,
         default=None,
         help=(
@@ -193,8 +193,8 @@ def parse_args(args=None):
         ),
     )
     group_main.add_argument(
-        '-P',
-        '--password',
+        "-P",
+        "--password",
         type=str,
         default=None,
         help=(
@@ -202,7 +202,7 @@ def parse_args(args=None):
         ),
     )
     group_main.add_argument(
-        '--concurrency',
+        "--concurrency",
         type=parse_concurrency,
         default="async",
         help=(
@@ -224,13 +224,13 @@ def parse_args(args=None):
         ),
     )
     group_tls.add_argument(
-        '--keyfile',
+        "--keyfile",
         type=parse_file_path,
         metavar="PATH",
         help="the TLS key file",
     )
     group_tls.add_argument(
-        '--certfile',
+        "--certfile",
         type=parse_file_path,
         metavar="PATH",
         help="the TLS certificate file",
@@ -252,13 +252,13 @@ def parse_args(args=None):
 
     group_misc = parser.add_argument_group("Other options")
     group_misc.add_argument(
-        '--timeout',
+        "--timeout",
         type=int,
         default=FTPHandler.timeout,
         help=f"connection timeout (default: {FTPHandler.timeout} seconds)",
     )
     group_misc.add_argument(
-        '--banner',
+        "--banner",
         type=str,
         default=FTPHandler.banner,
         help=(
@@ -307,7 +307,7 @@ def parse_args(args=None):
             help="disable sendfile() syscall, used for faster file transfers",
         )
     group_misc.add_argument(
-        '--max-cons',
+        "--max-cons",
         type=int,
         default=servers.FTPServer.max_cons,
         help=(
@@ -316,7 +316,7 @@ def parse_args(args=None):
         ),
     )
     group_misc.add_argument(
-        '--max-cons-per-ip',
+        "--max-cons-per-ip",
         type=int,
         default=servers.FTPServer.max_cons,
         help=(
@@ -325,7 +325,7 @@ def parse_args(args=None):
         ),
     )
     group_misc.add_argument(
-        '--max-login-attempts',
+        "--max-login-attempts",
         type=int,
         default=FTPHandler.max_login_attempts,
         help=(
@@ -347,8 +347,8 @@ def main(args=None):
     # On recent Windows versions, if address is not specified and IPv6
     # is installed the socket will listen on IPv6 by default; in this
     # case we force IPv4 instead.
-    if os.name in ('nt', 'ce') and not opts.interface:
-        opts.interface = '0.0.0.0'
+    if os.name in ("nt", "ce") and not opts.interface:
+        opts.interface = "0.0.0.0"
 
     authorizer = DummyAuthorizer()
     perm = "elradfmwMT" if opts.write else "elr"
@@ -408,7 +408,7 @@ def main(args=None):
 
     # On Windows specify a timeout for the underlying select() so
     # that the server can be interrupted with CTRL + C.
-    timeout = 2 if os.name == 'nt' else None
+    timeout = 2 if os.name == "nt" else None
 
     try:
         server.serve_forever(timeout=timeout, worker_processes=ncpus)
@@ -419,5 +419,5 @@ def main(args=None):
         return server
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

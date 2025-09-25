@@ -25,7 +25,7 @@ def memoize(fun):
 
 @memoize
 def term_supports_colors():
-    if os.name == 'nt':
+    if os.name == "nt":
         return False
     try:
         import curses  # noqa: PLC0415

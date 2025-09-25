@@ -201,7 +201,7 @@ class TestFTPS(PyftpdlibTestCase):
                 return
             raise self.failureException(f"{err!s} != {msg}")
         else:
-            if hasattr(excClass, '__name__'):
+            if hasattr(excClass, "__name__"):
                 excName = excClass.__name__
             else:
                 excName = str(excClass)
@@ -216,9 +216,9 @@ class TestFTPS(PyftpdlibTestCase):
         self.client.login()
         assert isinstance(self.client.sock, ssl.SSLSocket)
         # AUTH issued twice
-        msg = '503 Already using TLS.'
+        msg = "503 Already using TLS."
         with pytest.raises(ftplib.error_perm, match=msg):
-            self.client.sendcmd('auth tls')
+            self.client.sendcmd("auth tls")
 
     def test_pbsz(self):
         # unsecured
@@ -226,10 +226,10 @@ class TestFTPS(PyftpdlibTestCase):
         self.client.login(secure=False)
         msg = "503 PBSZ not allowed on insecure control connection."
         with pytest.raises(ftplib.error_perm, match=msg):
-            self.client.sendcmd('pbsz 0')
+            self.client.sendcmd("pbsz 0")
         # secured
         self.client.login(secure=True)
-        resp = self.client.sendcmd('pbsz 0')
+        resp = self.client.sendcmd("pbsz 0")
         assert resp == "200 PBSZ=0 successful."
 
     def test_prot(self):
@@ -237,11 +237,11 @@ class TestFTPS(PyftpdlibTestCase):
         self.client.login(secure=False)
         msg = "503 PROT not allowed on insecure control connection."
         with pytest.raises(ftplib.error_perm, match=msg):
-            self.client.sendcmd('prot p')
+            self.client.sendcmd("prot p")
         self.client.login(secure=True)
         # secured
         self.client.prot_p()
-        sock = self.client.transfercmd('list')
+        sock = self.client.transfercmd("list")
         with contextlib.closing(sock):
             while True:
                 if not sock.recv(1024):
@@ -250,7 +250,7 @@ class TestFTPS(PyftpdlibTestCase):
             assert isinstance(sock, ssl.SSLSocket)
             # unsecured
             self.client.prot_c()
-        sock = self.client.transfercmd('list')
+        sock = self.client.transfercmd("list")
         with contextlib.closing(sock):
             while True:
                 if not sock.recv(1024):
@@ -260,8 +260,8 @@ class TestFTPS(PyftpdlibTestCase):
 
     def test_feat(self):
         self._setup()
-        feat = self.client.sendcmd('feat')
-        cmds = ['AUTH TLS', 'AUTH SSL', 'PBSZ', 'PROT']
+        feat = self.client.sendcmd("feat")
+        cmds = ["AUTH TLS", "AUTH SSL", "PBSZ", "PROT"]
         for cmd in cmds:
             assert cmd in feat
 
@@ -275,7 +275,7 @@ class TestFTPS(PyftpdlibTestCase):
                 return
             raise
         sock.settimeout(GLOBAL_TIMEOUT)
-        sock.sendall(b'noop')
+        sock.sendall(b"noop")
         try:
             chunk = sock.recv(1024)
         except OSError:
@@ -297,9 +297,9 @@ class TestFTPS(PyftpdlibTestCase):
         self.client.login(secure=True)
         msg = "550 SSL/TLS required on the data channel."
         with pytest.raises(ftplib.error_perm, match=msg):
-            self.client.retrlines('list', lambda x: x)
+            self.client.retrlines("list", lambda x: x)
         self.client.prot_p()
-        self.client.retrlines('list', lambda x: x)
+        self.client.retrlines("list", lambda x: x)
 
     def try_protocol_combo(self, server_protocol, client_protocol):
         self._setup(ssl_protocol=server_protocol)
