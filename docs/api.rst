@@ -494,6 +494,7 @@ Filesystem
     ``"/foo"``.
 
   .. method:: validpath(path)
+
     Check whether the path belongs to the user's home directory. Expected
     argument is a "real" filesystem path. If path is a symbolic link it is
     resolved to check its real destination. Resolved symlinks which escape the

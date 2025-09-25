@@ -22,6 +22,7 @@ include docs/README
 include docs/adoptions.rst
 include docs/api.rst
 include docs/benchmarks.rst
+include docs/cli.rst
 include docs/conf.py
 include docs/faqs.rst
 include docs/images/freebsd.gif

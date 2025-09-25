@@ -14,6 +14,7 @@ If you're in a hurry just read the `Tutorial <tutorial.html>`__.
 
     install
     tutorial
+    cli
     api
     faqs
     benchmarks

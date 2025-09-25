@@ -165,7 +165,7 @@ sendfile()
 ----------
 
 On Linux, and only when doing transfer in clear text (aka no FTPS), the
-``sendfile(2)`` system call be used when uploading files (from server to
+``sendfile(2)`` system call will be used when uploading files (from server to
 client) via RETR command. Using ``sendfile(2)`` is more efficient, and usually
 results in transfer rates that are from 2x to 3x faster.
 
