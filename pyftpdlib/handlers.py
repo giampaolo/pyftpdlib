@@ -15,6 +15,8 @@ import time
 import traceback
 from datetime import datetime
 
+from .utils import has_dualstack_ipv6
+
 try:
     import grp
     import pwd
@@ -334,24 +336,6 @@ if not hasattr(os, "chmod"):
 
 def _is_ssl_sock(sock):
     return SSL is not None and isinstance(sock, SSL.Connection)
-
-
-def _support_hybrid_ipv6():
-    """Return True if it is possible to use hybrid IPv6/IPv4 sockets
-    on this platform.
-    """
-    # Note: IPPROTO_IPV6 constant is broken on Windows, see:
-    # https://bugs.python.org/issue6926
-    try:
-        if not socket.has_ipv6:
-            return False
-        with contextlib.closing(socket.socket(socket.AF_INET6)) as sock:
-            return not sock.getsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY)
-    except (OSError, AttributeError):
-        return False
-
-
-SUPPORTS_HYBRID_IPV6 = _support_hybrid_ipv6()
 
 
 class _FileReadWriteError(OSError):
@@ -2195,7 +2179,7 @@ class FTPHandler(AsyncChat):
             # test if AF_INET6 and IPV6_V6ONLY
             if (
                 self.socket.family == socket.AF_INET6
-                and not SUPPORTS_HYBRID_IPV6
+                and not has_dualstack_ipv6()
             ):
                 self.respond("522 Network protocol not supported (use 2).")
             else:
