@@ -34,6 +34,7 @@ from . import __ver__
 from .authorizers import DummyAuthorizer
 from .exceptions import AuthenticationFailed
 from .exceptions import AuthorizerError
+from .exceptions import RetryError
 from .exceptions import _FileReadWriteError
 from .exceptions import _GiveUpOnSendfile
 from .filesystems import AbstractedFS
@@ -43,7 +44,6 @@ from .handlers2.ftp.dispatchers import PassiveDTP
 from .ioloop import _ERRNOS_DISCONNECTED
 from .ioloop import _ERRNOS_RETRY
 from .ioloop import AsyncChat
-from .ioloop import RetryError
 from .ioloop import timer
 from .log import debug
 from .log import logger

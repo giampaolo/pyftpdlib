@@ -12,10 +12,10 @@ from unittest.mock import patch
 import pytest
 
 import pyftpdlib.ioloop
+from pyftpdlib.exceptions import RetryError
 from pyftpdlib.ioloop import Acceptor
 from pyftpdlib.ioloop import AsyncChat
 from pyftpdlib.ioloop import IOLoop
-from pyftpdlib.ioloop import RetryError
 
 from . import POSIX
 from . import PyftpdlibTestCase

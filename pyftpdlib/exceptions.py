@@ -20,6 +20,12 @@ class FilesystemError(Exception):
     """
 
 
+class RetryError(Exception):
+    """Raised when a socket operation would block, and hence it should
+    be retried at a later time.
+    """
+
+
 class _FileReadWriteError(OSError):
     """Exception raised when reading or writing a file during a transfer."""
 

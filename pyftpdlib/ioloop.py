@@ -67,6 +67,7 @@ import time
 import traceback
 import warnings
 
+from .exceptions import RetryError
 from .log import config_logging
 from .log import debug
 from .log import is_logging_configured
@@ -101,10 +102,6 @@ if hasattr(errno, "WSAECONNABORTED"):
 _ERRNOS_RETRY = {errno.EAGAIN, errno.EWOULDBLOCK}
 if hasattr(errno, "WSAEWOULDBLOCK"):
     _ERRNOS_RETRY.add(errno.WSAEWOULDBLOCK)
-
-
-class RetryError(Exception):
-    pass
 
 
 # ===================================================================
