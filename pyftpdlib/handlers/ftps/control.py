@@ -11,6 +11,8 @@ from pyftpdlib.handlers.ftp.control import FTPHandler
 from .data import TLS_DTPHandler
 from .ssl import SSLConnectionMixin
 
+__all__ = ["TLS_FTPHandler"]
+
 
 class TLS_FTPHandler(SSLConnectionMixin, FTPHandler):
     """A FTPHandler subclass supporting TLS/SSL.

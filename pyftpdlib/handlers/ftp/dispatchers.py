@@ -13,6 +13,8 @@ from pyftpdlib.ioloop import Connector
 from pyftpdlib.log import debug
 from pyftpdlib.log import logger
 
+__all__ = ["ActiveDTP", "PassiveDTP"]
+
 
 class PassiveDTP(Acceptor):
     """Creates a socket listening on a local port, dispatching the

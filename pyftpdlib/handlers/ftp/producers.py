@@ -8,6 +8,8 @@ from pyftpdlib.exceptions import _FileReadWriteError
 
 CR_BYTE = ord("\r")
 
+__all__ = ["BufferedIteratorProducer", "FileProducer"]
+
 
 class FileProducer:
     """Producer wrapper for file[-like] objects."""

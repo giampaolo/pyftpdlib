@@ -34,10 +34,7 @@ from .dispatchers import PassiveDTP
 from .producers import BufferedIteratorProducer
 from .producers import FileProducer
 
-try:
-    from OpenSSL import SSL  # requires "pip install pyopenssl"
-except ImportError:
-    SSL = None
+__all__ = ["FTPHandler"]
 
 proto_cmds = {
     "ABOR": dict(

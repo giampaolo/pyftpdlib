@@ -14,6 +14,8 @@ from pyftpdlib.ioloop import _ERRNOS_DISCONNECTED
 from pyftpdlib.log import debug
 from pyftpdlib.log import logger
 
+__all__ = ["SSLConnectionMixin"]
+
 
 class SSLConnectionMixin:
     """An AsyncChat subclass supporting TLS/SSL."""

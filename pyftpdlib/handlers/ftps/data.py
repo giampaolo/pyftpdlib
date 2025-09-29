@@ -8,6 +8,8 @@ from pyftpdlib.utils import is_ssl_sock
 
 from .ssl import SSLConnectionMixin
 
+__all__ = ["TLS_DTPHandler"]
+
 
 class TLS_DTPHandler(SSLConnectionMixin, DTPHandler):
     """A DTPHandler subclass supporting TLS/SSL."""
