@@ -40,6 +40,7 @@ include pyftpdlib/__main__.py
 include pyftpdlib/authorizers.py
 include pyftpdlib/exceptions.py
 include pyftpdlib/filesystems.py
+include pyftpdlib/handlers/__init__.py
 include pyftpdlib/handlers/ftp/__init__.py
 include pyftpdlib/handlers/ftp/control.py
 include pyftpdlib/handlers/ftp/data.py
