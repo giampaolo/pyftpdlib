@@ -30,6 +30,7 @@ from pyftpdlib.ioloop import AsyncChat
 from pyftpdlib.log import debug
 from pyftpdlib.log import logger
 from pyftpdlib.utils import has_dualstack_ipv6
+from pyftpdlib.utils import is_ssl_sock
 from pyftpdlib.utils import strerror
 
 try:
@@ -323,10 +324,6 @@ if not hasattr(os, "chmod"):
     del proto_cmds["SITE CHMOD"]
 
 
-def _is_ssl_sock(sock):
-    return SSL is not None and isinstance(sock, SSL.Connection)
-
-
 class FTPHandler(AsyncChat):
     """Implements the FTP server Protocol Interpreter (see RFC-959),
     handling commands received from the client on the control channel.
@@ -562,14 +559,14 @@ class FTPHandler(AsyncChat):
         info = {}
         info["id"] = id(self)
         info["addr"] = f"{self.remote_ip}:{self.remote_port}"
-        if _is_ssl_sock(self.socket):
+        if is_ssl_sock(self.socket):
             info["ssl"] = True
         if self.username:
             info["user"] = self.username
         # If threads are involved sometimes "self" may be None (?!?).
         dc = getattr(self, "data_channel", None)
         if dc is not None:
-            if _is_ssl_sock(dc.socket):
+            if is_ssl_sock(dc.socket):
                 info["ssl-data"] = True
             if dc.file_obj:
                 if self.data_channel.receive:

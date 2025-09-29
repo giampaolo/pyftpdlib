@@ -7,6 +7,20 @@ import os
 import socket
 import sys
 
+try:
+    from OpenSSL import SSL  # requires "pip install pyopenssl"
+except ImportError:
+    SSL = None
+
+__all__ = [
+    "has_dualstack_ipv6",
+    "hilite",
+    "is_ssl_sock",
+    "memoize",
+    "strerror",
+    "term_supports_colors",
+]
+
 
 def memoize(fun):
     """A simple memoize decorator for functions supporting (hashable)
@@ -97,3 +111,7 @@ def has_dualstack_ipv6():
             return True
     except OSError:
         return False
+
+
+def is_ssl_sock(sock):
+    return SSL is not None and isinstance(sock, SSL.Connection)
