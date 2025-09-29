@@ -10,6 +10,8 @@ Version: 2.2.0 - XXXX-XX-XX
   ``pyftpdlib.exceptions.AuthenticationFailed``. Old alias is still available.
 * ``pyftpdlib.authorizers.AuthorizerError`` moved into
   ``pyftpdlib.exceptions.AuthorizerError``. Old alias is still available.
+* ``pyftpdlib.filesystems.FilesystemError`` moved into
+  ``pyftpdlib.exceptions.FilesystemError``. Old alias is still available.
 
 
 

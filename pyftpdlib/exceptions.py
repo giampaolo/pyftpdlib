@@ -2,6 +2,8 @@
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
 
+__all__ = ["AuthenticationFailed", "AuthorizerError", "FilesystemError"]
+
 
 class AuthorizerError(Exception):
     """Base class for authorizer exceptions."""
@@ -9,6 +11,13 @@ class AuthorizerError(Exception):
 
 class AuthenticationFailed(Exception):
     """Exception raised when authentication fails for any reason."""
+
+
+class FilesystemError(Exception):
+    """Custom class for filesystem-related exceptions.
+    You can raise this from an AbstractedFS subclass in order to
+    send a customized error string to the client.
+    """
 
 
 class _FileReadWriteError(OSError):

@@ -7,6 +7,7 @@ import stat
 import tempfile
 import time
 
+from .exceptions import FilesystemError
 from .utils import memoize
 
 try:
@@ -16,7 +17,7 @@ except ImportError:
     pwd = grp = None
 
 
-__all__ = ["AbstractedFS", "FilesystemError"]
+__all__ = ["AbstractedFS"]
 
 
 _months_map = {
@@ -33,18 +34,6 @@ _months_map = {
     11: "Nov",
     12: "Dec",
 }
-
-
-# ===================================================================
-# --- custom exceptions
-# ===================================================================
-
-
-class FilesystemError(Exception):
-    """Custom class for filesystem-related exceptions.
-    You can raise this from an AbstractedFS subclass in order to
-    send a customized error string to the client.
-    """
 
 
 # ===================================================================
