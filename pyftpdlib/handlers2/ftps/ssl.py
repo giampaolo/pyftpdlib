@@ -20,7 +20,7 @@ except ImportError:
 
 if SSL is not None:
 
-    class SSLConnection:
+    class SSLConnectionMixin:
         """An AsyncChat subclass supporting TLS/SSL."""
 
         _ssl_accepting = False

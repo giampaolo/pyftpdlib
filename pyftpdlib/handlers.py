@@ -29,9 +29,9 @@ except ImportError:
 
 
 if SSL is not None:
-    from .handlers2.ftps.ssl import SSLConnection
+    from .handlers2.ftps.ssl import SSLConnectionMixin
 
-    class TLS_DTPHandler(SSLConnection, DTPHandler):
+    class TLS_DTPHandler(SSLConnectionMixin, DTPHandler):
         """A DTPHandler subclass supporting TLS/SSL."""
 
         def __init__(self, sock, cmd_channel):
@@ -57,7 +57,7 @@ if SSL is not None:
             self.cmd_channel.log_cmd("PROT", "P", 522, "SSL handshake failed.")
             self.close()
 
-    class TLS_FTPHandler(SSLConnection, FTPHandler):
+    class TLS_FTPHandler(SSLConnectionMixin, FTPHandler):
         """A FTPHandler subclass supporting TLS/SSL.
         Implements AUTH, PBSZ and PROT commands (RFC-2228 and RFC-4217).
 
@@ -209,7 +209,7 @@ if SSL is not None:
             FTPHandler.process_command(self, cmd, *args, **kwargs)
 
         def close(self):
-            SSLConnection.close(self)
+            SSLConnectionMixin.close(self)
             FTPHandler.close(self)
 
         # --- new methods
