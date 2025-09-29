@@ -6,7 +6,7 @@ import os
 
 from OpenSSL import SSL
 
-from pyftpdlib.handlers2.ftp.control import FTPHandler
+from pyftpdlib.handlers.ftp.control import FTPHandler
 
 try:
     from .ssl import SSLConnectionMixin

@@ -7,7 +7,7 @@ try:
 except ImportError:
     SSLConnectionMixin = None
 
-from pyftpdlib.handlers2.ftp.data import DTPHandler
+from pyftpdlib.handlers.ftp.data import DTPHandler
 from pyftpdlib.utils import is_ssl_sock
 
 if SSLConnectionMixin is not None:

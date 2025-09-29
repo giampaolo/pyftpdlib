@@ -21,17 +21,18 @@ from pyftpdlib.exceptions import AuthenticationFailed
 from pyftpdlib.exceptions import AuthorizerError
 from pyftpdlib.exceptions import FilesystemError
 from pyftpdlib.filesystems import AbstractedFS
-from pyftpdlib.handlers2.ftp.data import DTPHandler
-from pyftpdlib.handlers2.ftp.dispatchers import ActiveDTP
-from pyftpdlib.handlers2.ftp.dispatchers import PassiveDTP
-from pyftpdlib.handlers2.ftp.producers import BufferedIteratorProducer
-from pyftpdlib.handlers2.ftp.producers import FileProducer
 from pyftpdlib.ioloop import AsyncChat
 from pyftpdlib.log import debug
 from pyftpdlib.log import logger
 from pyftpdlib.utils import has_dualstack_ipv6
 from pyftpdlib.utils import is_ssl_sock
 from pyftpdlib.utils import strerror
+
+from .data import DTPHandler
+from .dispatchers import ActiveDTP
+from .dispatchers import PassiveDTP
+from .producers import BufferedIteratorProducer
+from .producers import FileProducer
 
 try:
     from OpenSSL import SSL  # requires "pip install pyopenssl"
