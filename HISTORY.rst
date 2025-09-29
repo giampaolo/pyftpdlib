@@ -1,5 +1,18 @@
 Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 
+Version: 2.2.0 - XXXX-XX-XX
+===========================
+
+
+**Compatibility notes**
+
+* ``pyftpdlib.authorizers.AuthenticationFailed`` moved into
+  ``pyftpdlib.exceptions.AuthenticationFailed``. Old alias is still available.
+* ``pyftpdlib.authorizers.AuthorizerError`` moved into
+  ``pyftpdlib.exceptions.AuthorizerError``. Old alias is still available.
+
+
+
 Version: 2.1.0 - 2025-09-25
 ===========================
 

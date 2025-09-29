@@ -38,6 +38,7 @@ include make.bat
 include pyftpdlib/__init__.py
 include pyftpdlib/__main__.py
 include pyftpdlib/authorizers.py
+include pyftpdlib/exceptions.py
 include pyftpdlib/filesystems.py
 include pyftpdlib/handlers.py
 include pyftpdlib/handlers2/ftp/__init__.py

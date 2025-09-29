@@ -29,9 +29,9 @@ except ImportError:
     SSL = None
 
 from . import __ver__
-from .authorizers import AuthenticationFailed
-from .authorizers import AuthorizerError
 from .authorizers import DummyAuthorizer
+from .exceptions import AuthenticationFailed
+from .exceptions import AuthorizerError
 from .filesystems import AbstractedFS
 from .filesystems import FilesystemError
 from .handlers2.ftp.control import proto_cmds

@@ -17,28 +17,17 @@ UnixAuthorizer and WindowsAuthorizer are platform specific and
 interact with UNIX and Windows password database.
 """
 
-
 import os
 import warnings
+
+from .exceptions import AuthenticationFailed
+from .exceptions import AuthorizerError
 
 __all__ = [
     "DummyAuthorizer",
     # 'BaseUnixAuthorizer', 'UnixAuthorizer',
     # 'BaseWindowsAuthorizer', 'WindowsAuthorizer',
 ]
-
-
-# ===================================================================
-# --- exceptions
-# ===================================================================
-
-
-class AuthorizerError(Exception):
-    """Base class for authorizer exceptions."""
-
-
-class AuthenticationFailed(Exception):
-    """Exception raised when authentication fails for any reason."""
 
 
 # ===================================================================
