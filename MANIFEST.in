@@ -44,6 +44,7 @@ include pyftpdlib/handlers.py
 include pyftpdlib/handlers2/ftp/__init__.py
 include pyftpdlib/handlers2/ftp/control.py
 include pyftpdlib/handlers2/ftp/dispatchers.py
+include pyftpdlib/handlers2/ftp/producers.py
 include pyftpdlib/handlers2/ftps/__init__.py
 include pyftpdlib/ioloop.py
 include pyftpdlib/log.py
