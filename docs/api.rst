@@ -143,7 +143,7 @@ Control connection
     commands. If the timeout triggers, the remote client will be kicked off.
     Default: ``300`` seconds.
 
-    *New in version 5.0*
+    *New in version 0.5.0*
 
   .. data:: banner
 
@@ -176,7 +176,8 @@ Control connection
     The "masqueraded" IP address to provide along PASV reply when pyftpdlib is
     running behind a NAT or other types of gateways. When configured pyftpdlib
     will hide its local address and instead use the public address of your NAT.
-    Use this if you're behing a NAT. Default: ``None``.
+    Typically you want to use this when you're behind a router. Default:
+    ``None``.
 
   .. data:: masquerade_address_map
 
@@ -208,7 +209,7 @@ Control connection
 
     Controls the use of the TCP_NODELAY socket option, which disables the Nagle
     algorithm. It usually result in significantly better performances.
-    Default ``True`` on all platforms where it is supported.
+    Default ``True`` on all platforms where it is supported (e.g. Linux).
 
     *New in version 0.6.0*
 
@@ -247,7 +248,7 @@ Control connection
 
   .. method:: on_disconnect()
 
-    Called when connection is closed.
+  Called when client connection is closed.
 
     *New in version 1.0.0*
 
@@ -675,7 +676,7 @@ Extended filesystems
   Represents the real UNIX filesystem. Differently from
   :class:`pyftpdlib.filesystems.AbstractedFS` the client will login into
   /home/<username> and will be able to escape its home directory and navigate
-  the real filesystem. Use it in conjuction with
+  the real filesystem. Use it in conjunction with
   :class:`pyftpdlib.authorizers.UnixAuthorizer` to implement a "real" UNIX FTP
   server (see
   `demo/unix_ftpd.py <https://github.com/giampaolo/pyftpdlib/blob/master/demo/unix_ftpd.py>`__).
@@ -689,8 +690,8 @@ Extended servers
 
   A modified version of base :class:`pyftpdlib.servers.FTPServer` class which
   spawns a thread every time a new connection is established. Differently from
-  base FTPServer class, the handler will be free to block without hanging the
-  whole IO loop. See :ref:`changing-the-concurrency-model`.
+  the base FTPServer class, the handler will be free to block without hanging
+  the whole IO loop. See :ref:`changing-the-concurrency-model`.
 
   *New in version 1.0.0*
 

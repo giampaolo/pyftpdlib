@@ -59,8 +59,8 @@ About
 
 Python FTP server library provides a high-level portable interface to easily
 write very efficient, scalable and asynchronous FTP servers with Python. It is
-the most complete `RFC-959`_ FTP server implementation available for `Python`_
-programming language.
+the most complete `RFC-959`_ FTP server implementation available for the
+`Python`_ programming language.
 
 Features
 ========

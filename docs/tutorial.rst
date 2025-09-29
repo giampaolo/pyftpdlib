@@ -5,7 +5,7 @@ Tutorial
 .. contents:: Table of Contents
 
 Below is a set of example scripts showing some of the possible customizations
-that can be done with pyftpdlib.  Some of them are included in `demo
+that can be done with pyftpdlib.  Some of them are included in the `demo
 <https://github.com/giampaolo/pyftpdlib/blob/master/demo/>`__ directory.
 
 A base FTP server
@@ -58,10 +58,9 @@ for `incoming connections`_ and a range of `passive ports`_. See
 Logging management
 ==================
 
-pyftpdlib uses the stdlib `logging`_ module to handle logs. If you don't
-configure logging pyftpdlib will do it for you. In order to configure logging
-you should do it *before* calling `FTPServer.serve_forever`_. Example which
-logs to a file:
+pyftpdlib uses the stdlib `logging`_ module. If you don't configure logging
+pyftpdlib will do it for you. In order to configure logging you should do it
+*before* calling `FTPServer.serve_forever`_. Example which logs to a file:
 
 .. code-block:: python
 
@@ -151,7 +150,7 @@ Logs will now look like this:
 ::
 
     [I 13-02-01 19:12:26] XXX []@127.0.0.1 FTP session opened (connect)
-    [I 13-02-01 19:12:26] XXX [user]@127.0.0.1 USER 'user' logged in.
+    [I 13-02-01 19:12:26] XXX [john]@127.0.0.1 USER 'john' logged in.
 
 
 Storing passwords as hash digests
@@ -161,9 +160,8 @@ By using the default `DummyAuthorizer`_ you typically store passwords in
 clear-text. A FTP server using the default dummy authorizer would typically
 require a configuration file for authenticating users and their passwords, but
 storing clear-text passwords is undesirable. You may want to store passwords as
-hash digests into a file or wherever you find it convenient. The example below
-shows how to store passwords as one-way hashes by using md5 algorithm. See
-`demo/md5_ftpd.py`_.
+hash digests into a file or a DB instead. The example below shows how to store
+passwords as one-way hashes by using md5 algorithm. See `demo/md5_ftpd.py`_.
 
 .. code-block:: python
 
@@ -202,7 +200,7 @@ shows how to store passwords as one-way hashes by using md5 algorithm. See
     if __name__ == "__main__":
         main()
 
-Unix FTP server
+UNIX FTP server
 ===============
 
 If you're on UNIX you may want to configure your FTP server to include support
@@ -264,15 +262,15 @@ process/thread to handle multiple client connections and file transfers. This
 is why it is so fast, lightweight and scalable (see `benchmarks`_). The async
 model has one big drawback though: the code cannot contain instructions that
 block for a long period of time, otherwise the whole FTP server will hang. As
-such, the user should avoid calls such as ``time.sleep(3)``, heavy DB queries,
-etc. at all costs.  There are cases where the async model is not appropriate,
-e.g. if you're dealing with a particularly slow disk or a network filesystem.
-If the calls that interact with the filesystem are slow (e.g., ``open(file,
+such, the user should avoid calls such as ``time.sleep(3)`` or heavy DB queries
+at all costs.  There are cases where the async model is not appropriate, e.g.
+if you're dealing with a particularly slow disk or a network filesystem. If the
+calls that interact with the filesystem are slow (e.g., ``open(file,
 'r').read(8192)`` takes 2 seconds to complete) then you are stuck. In such
 cases you can change the concurrency model from async to multi processes or
 multi threads. In practice this means that every time a client connects, a
-separate thread or process is spawned, and internally it will run its own IO
-loop.
+separate thread or process is spawned, and internally it will run its own async
+IO loop, which is free the block without affecting others.
 
 Multiple threads
 ^^^^^^^^^^^^^^^^
@@ -316,7 +314,7 @@ Multiple processes
         main()
 
 It must be noted that the multi-thread approach should NOT be used with
-`UnixAuthorizer`_ or `WindowsAuthorizer`_ . Reason: every time the FTP server
+`UnixAuthorizer`_ and `WindowsAuthorizer`_ . Reason: every time the FTP server
 accesses the filesystem (e.g. for creating or renaming a file) the authorizer
 will temporarily impersonate the currently logged on user by changing effective
 user or group ID of the current process.
