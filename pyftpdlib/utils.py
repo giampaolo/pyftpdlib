@@ -113,5 +113,9 @@ def has_dualstack_ipv6():
         return False
 
 
+def has_ssl():
+    return SSL is not None
+
+
 def is_ssl_sock(sock):
     return SSL is not None and isinstance(sock, SSL.Connection)
