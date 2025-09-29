@@ -9,7 +9,7 @@ import traceback
 
 from OpenSSL import SSL
 
-from pyftpdlib.exceptions import RetryError
+from pyftpdlib.exceptions import _RetryError
 from pyftpdlib.ioloop import _ERRNOS_DISCONNECTED
 from pyftpdlib.log import debug
 from pyftpdlib.log import logger
@@ -207,11 +207,11 @@ class SSLConnectionMixin:
         except SSL.WantReadError as err:
             debug("call: recv(), err: ssl-want-read", inst=self)
             self._ssl_want_read = True
-            raise RetryError from err
+            raise _RetryError from err
         except SSL.WantWriteError as err:
             debug("call: recv(), err: ssl-want-write", inst=self)
             self._ssl_want_write = True
-            raise RetryError from err
+            raise _RetryError from err
         except SSL.ZeroReturnError:
             debug("call: recv() -> shutdown(), err: zero-return", inst=self)
             super().handle_close()

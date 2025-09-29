@@ -20,7 +20,7 @@ class FilesystemError(Exception):
     """
 
 
-class RetryError(Exception):
+class _RetryError(Exception):
     """Raised when a socket operation would block, and hence it should
     be retried at a later time.
     """

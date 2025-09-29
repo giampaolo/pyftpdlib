@@ -9,9 +9,9 @@ import os
 import socket
 import traceback
 
-from pyftpdlib.exceptions import RetryError
 from pyftpdlib.exceptions import _FileReadWriteError
 from pyftpdlib.exceptions import _GiveUpOnSendfile
+from pyftpdlib.exceptions import _RetryError
 from pyftpdlib.ioloop import _ERRNOS_DISCONNECTED
 from pyftpdlib.ioloop import _ERRNOS_RETRY
 from pyftpdlib.ioloop import AsyncChat
@@ -273,7 +273,7 @@ class DTPHandler(AsyncChat):
         """Called when there is data waiting to be read."""
         try:
             chunk = self.recv(self.ac_in_buffer_size)
-        except RetryError:
+        except _RetryError:
             pass
         except OSError:
             self.handle_error()
