@@ -11,14 +11,10 @@ from pyftpdlib.exceptions import RetryError
 from pyftpdlib.ioloop import _ERRNOS_DISCONNECTED
 from pyftpdlib.log import debug
 from pyftpdlib.log import logger
+from pyftpdlib.utils import has_ssl
 
-try:
-    from OpenSSL import SSL  # requires "pip install pyopenssl"
-except ImportError:
-    SSL = None
-
-
-if SSL is not None:
+if has_ssl():
+    from OpenSSL import SSL
 
     class SSLConnectionMixin:
         """An AsyncChat subclass supporting TLS/SSL."""

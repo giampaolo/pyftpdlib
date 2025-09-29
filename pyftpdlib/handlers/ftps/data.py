@@ -2,15 +2,13 @@
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
 
-try:
-    from .ssl import SSLConnectionMixin
-except ImportError:
-    SSLConnectionMixin = None
 
 from pyftpdlib.handlers.ftp.data import DTPHandler
+from pyftpdlib.utils import has_ssl
 from pyftpdlib.utils import is_ssl_sock
 
-if SSLConnectionMixin is not None:
+if has_ssl():
+    from .ssl import SSLConnectionMixin
 
     class TLS_DTPHandler(SSLConnectionMixin, DTPHandler):
         """A DTPHandler subclass supporting TLS/SSL."""

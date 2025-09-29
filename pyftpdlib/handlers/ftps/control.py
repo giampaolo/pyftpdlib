@@ -4,17 +4,14 @@
 
 import os
 
-from OpenSSL import SSL
-
 from pyftpdlib.handlers.ftp.control import FTPHandler
+from pyftpdlib.utils import has_ssl
 
-try:
-    from .ssl import SSLConnectionMixin
-except ImportError:
-    SSLConnectionMixin = None
+if has_ssl():
+    from OpenSSL import SSL
 
-if SSLConnectionMixin is not None:
     from .data import TLS_DTPHandler
+    from .ssl import SSLConnectionMixin
 
     class TLS_FTPHandler(SSLConnectionMixin, FTPHandler):
         """A FTPHandler subclass supporting TLS/SSL.
