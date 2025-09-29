@@ -20,6 +20,8 @@ from pyftpdlib.log import debug
 from pyftpdlib.log import logger
 from pyftpdlib.utils import strerror
 
+__all__ = ["DTPHandler", "ThrottledDTPHandler"]
+
 
 class DTPHandler(AsyncChat):
     """Class handling server-data-transfer-process (server-DTP, see
@@ -404,3 +406,93 @@ class DTPHandler(AsyncChat):
                 else:
                     self.cmd_channel.on_incomplete_file_sent(filename)
             self.cmd_channel._on_dtp_close()
+
+
+class ThrottledDTPHandler(DTPHandler):
+    """A DTPHandler subclass which wraps sending and receiving in a data
+    counter and temporarily "sleeps" the channel so that you burst to no
+    more than x Kb/sec average.
+
+     - (int) read_limit: the maximum number of bytes to read (receive)
+       in one second (defaults to 0 == no limit).
+
+     - (int) write_limit: the maximum number of bytes to write (send)
+       in one second (defaults to 0 == no limit).
+
+     - (bool) auto_sized_buffers: this option only applies when read
+       and/or write limits are specified. When enabled it bumps down
+       the data buffer sizes so that they are never greater than read
+       and write limits which results in a less bursty and smoother
+       throughput (default: True).
+    """
+
+    read_limit = 0
+    write_limit = 0
+    auto_sized_buffers = True
+
+    def __init__(self, sock, cmd_channel):
+        super().__init__(sock, cmd_channel)
+        self._timenext = 0
+        self._datacount = 0
+        self.sleeping = False
+        self._throttler = None
+        if self.auto_sized_buffers:
+            if self.read_limit:
+                while self.ac_in_buffer_size > self.read_limit:
+                    self.ac_in_buffer_size /= 2
+            if self.write_limit:
+                while self.ac_out_buffer_size > self.write_limit:
+                    self.ac_out_buffer_size /= 2
+        self.ac_in_buffer_size = int(self.ac_in_buffer_size)
+        self.ac_out_buffer_size = int(self.ac_out_buffer_size)
+
+    def __repr__(self):
+        return DTPHandler.__repr__(self)
+
+    def use_sendfile(self):
+        return False
+
+    def recv(self, buffer_size):
+        chunk = super().recv(buffer_size)
+        if self.read_limit:
+            self._throttle_bandwidth(len(chunk), self.read_limit)
+        return chunk
+
+    def send(self, data):
+        num_sent = super().send(data)
+        if self.write_limit:
+            self._throttle_bandwidth(num_sent, self.write_limit)
+        return num_sent
+
+    def _cancel_throttler(self):
+        if self._throttler is not None and not self._throttler.cancelled:
+            self._throttler.cancel()
+
+    def _throttle_bandwidth(self, len_chunk, max_speed):
+        """A method which counts data transmitted so that you burst to
+        no more than x Kb/sec average.
+        """
+        self._datacount += len_chunk
+        if self._datacount >= max_speed:
+            self._datacount = 0
+            now = timer()
+            sleepfor = (self._timenext - now) * 2
+            if sleepfor > 0:
+                # we've passed bandwidth limits
+                def unsleep():
+                    if self.receive:
+                        event = self.ioloop.READ
+                    else:
+                        event = self.ioloop.WRITE
+                    self.add_channel(events=event)
+
+                self.del_channel()
+                self._cancel_throttler()
+                self._throttler = self.ioloop.call_later(
+                    sleepfor, unsleep, _errback=self.handle_error
+                )
+            self._timenext = now + 1
+
+    def close(self):
+        self._cancel_throttler()
+        super().close()
