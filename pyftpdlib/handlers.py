@@ -5,8 +5,9 @@
 import os
 
 from .handlers2.ftp.control import FTPHandler
-from .handlers2.ftp.data import DTPHandler
+from .handlers2.ftp.data import DTPHandler  # noqa: F401
 from .handlers2.ftp.data import ThrottledDTPHandler  # noqa: F401
+from .handlers2.ftps.ssl import SSLConnectionMixin
 
 try:
     import grp
@@ -29,33 +30,7 @@ except ImportError:
 
 
 if SSL is not None:
-    from .handlers2.ftps.ssl import SSLConnectionMixin
-
-    class TLS_DTPHandler(SSLConnectionMixin, DTPHandler):
-        """A DTPHandler subclass supporting TLS/SSL."""
-
-        def __init__(self, sock, cmd_channel):
-            super().__init__(sock, cmd_channel)
-            if self.cmd_channel._prot:
-                self.secure_connection(self.cmd_channel.ssl_context)
-
-        def __repr__(self):
-            return DTPHandler.__repr__(self)
-
-        def use_sendfile(self):
-            if isinstance(self.socket, SSL.Connection):
-                return False
-            else:
-                return super().use_sendfile()
-
-        def handle_failed_ssl_handshake(self):
-            # TLS/SSL handshake failure, probably client's fault which
-            # used a SSL version different from server's.
-            # RFC-4217, chapter 10.2 expects us to return 522 over the
-            # command channel.
-            self.cmd_channel.respond("522 SSL handshake failed.")
-            self.cmd_channel.log_cmd("PROT", "P", 522, "SSL handshake failed.")
-            self.close()
+    from .handlers2.ftps.data import TLS_DTPHandler
 
     class TLS_FTPHandler(SSLConnectionMixin, FTPHandler):
         """A FTPHandler subclass supporting TLS/SSL.
