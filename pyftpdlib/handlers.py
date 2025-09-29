@@ -32,6 +32,8 @@ from . import __ver__
 from .authorizers import DummyAuthorizer
 from .exceptions import AuthenticationFailed
 from .exceptions import AuthorizerError
+from .exceptions import _FileReadWriteError
+from .exceptions import _GiveUpOnSendfile
 from .filesystems import AbstractedFS
 from .filesystems import FilesystemError
 from .handlers2.ftp.control import proto_cmds
@@ -50,16 +52,6 @@ CR_BYTE = ord("\r")
 
 def _is_ssl_sock(sock):
     return SSL is not None and isinstance(sock, SSL.Connection)
-
-
-class _FileReadWriteError(OSError):
-    """Exception raised when reading or writing a file during a transfer."""
-
-
-class _GiveUpOnSendfile(Exception):
-    """Exception raised in case use of sendfile() fails on first try,
-    in which case send() will be used.
-    """
 
 
 # --- DTP classes
