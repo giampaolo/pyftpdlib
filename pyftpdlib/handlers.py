@@ -8,4 +8,5 @@ from .handlers2.ftp.data import ThrottledDTPHandler  # noqa: F401
 from .utils import has_ssl
 
 if has_ssl():
-    pass
+    from .handlers2.ftps.control import TLS_FTPHandler  # noqa: F401
+    from .handlers2.ftps.data import TLS_DTPHandler  # noqa: F401
