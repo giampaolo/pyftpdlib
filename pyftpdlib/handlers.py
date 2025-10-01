@@ -581,6 +581,7 @@ class ActiveDTP(Connector):
     def handle_connect(self):
         """Called when connection is established."""
         self.del_channel()
+        self._fileno = None
         if self._idler is not None and not self._idler.cancelled:
             self._idler.cancel()
         if not self.cmd_channel.connected:
