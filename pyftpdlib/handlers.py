@@ -378,8 +378,11 @@ class PassiveDTP(Acceptor):
         Acceptor.__init__(self, ioloop=cmd_channel.ioloop)
 
         local_ip = self.cmd_channel.socket.getsockname()[0]
+        client_ip = self.cmd_channel.remote_ip
         if local_ip in self.cmd_channel.masquerade_address_map:
             masqueraded_ip = self.cmd_channel.masquerade_address_map[local_ip]
+        elif client_ip in self.cmd_channel.masquerade_address_map:
+            masqueraded_ip = self.cmd_channel.masquerade_address_map[client_ip]
         elif self.cmd_channel.masquerade_address:
             masqueraded_ip = self.cmd_channel.masquerade_address
         else:
