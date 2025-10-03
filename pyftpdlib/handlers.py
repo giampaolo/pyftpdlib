@@ -2737,14 +2737,11 @@ class FTPHandler(AsyncChat):
         """Change the current working directory.
         On success return the new directory path, else None.
         """
-        # Temporarily join the specified directory to see if we have
-        # permissions to do so, then get back to original process's
-        # current working directory.
+        # Check permissions for the specified directory and set it as cwd.
         # Note that if for some reason os.getcwd() gets removed after
         # the process is started we'll get into troubles (os.getcwd()
         # will fail with ENOENT) but we can't do anything about that
         # except logging an error.
-        init_cwd = os.getcwd()
         try:
             self.run_as_current_user(self.fs.chdir, path)
         except (OSError, FilesystemError) as err:
@@ -2753,8 +2750,6 @@ class FTPHandler(AsyncChat):
         else:
             cwd = self.fs.cwd
             self.respond(f'250 "{cwd}" is the current directory.')
-            if os.getcwd() != init_cwd:
-                os.chdir(init_cwd)
             return path
 
     def ftp_CDUP(self, path):

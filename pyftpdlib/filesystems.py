@@ -2,6 +2,7 @@
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
 
+import errno
 import os
 import stat
 import tempfile
@@ -243,8 +244,10 @@ class AbstractedFS:
         """Change the current directory. If this method is overridden
         it is vital that `cwd` attribute gets set.
         """
-        # note: process cwd will be reset by the caller
-        os.chdir(path)
+        is_dir = stat.S_ISDIR(os.stat(path).st_mode)
+        if not is_dir or not os.access(path, os.R_OK | os.X_OK):
+            code = errno.EACCES if is_dir else errno.ENOTDIR
+            raise OSError(code, os.strerror(code), path)
         self.cwd = self.fs2ftp(path)
 
     def mkdir(self, path):
