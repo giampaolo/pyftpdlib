@@ -377,7 +377,8 @@ class PassiveDTP(Acceptor):
         self.log_exception = cmd_channel.log_exception
         Acceptor.__init__(self, ioloop=cmd_channel.ioloop)
 
-        local_ip = self.cmd_channel.socket.getsockname()[0]
+        sockname = list(self.cmd_channel.socket.getsockname())
+        local_ip = sockname[0]
         if local_ip in self.cmd_channel.masquerade_address_map:
             masqueraded_ip = self.cmd_channel.masquerade_address_map[local_ip]
         elif self.cmd_channel.masquerade_address:
@@ -385,7 +386,10 @@ class PassiveDTP(Acceptor):
         else:
             masqueraded_ip = None
 
-        if self.cmd_channel.server.socket.family != socket.AF_INET:
+        if local_ip.startswith('fe') and local_ip[2:3] in "89ab":
+            # IPv6 link-local
+            af = socket.AF_INET6
+        elif self.cmd_channel.server.socket.family != socket.AF_INET:
             # dual stack IPv4/IPv6 support
             af = self.bind_af_unspecified((local_ip, 0))
             self.socket.close()
@@ -398,14 +402,16 @@ class PassiveDTP(Acceptor):
         if self.cmd_channel.passive_ports is None:
             # By using 0 as port number value we let kernel choose a
             # free unprivileged random port.
-            self.bind((local_ip, 0))
+            sockname[1] = 0
+            self.bind(tuple(sockname))
         else:
             ports = list(self.cmd_channel.passive_ports)
             while ports:
                 port = ports.pop(random.randint(0, len(ports) - 1))
                 self.set_reuse_addr()
+                sockname[1] = port
                 try:
-                    self.bind((local_ip, port))
+                    self.bind(tuple(sockname))
                 except PermissionError:
                     self.cmd_channel.log(
                         f"ignoring EPERM when bind()ing port {port}",
@@ -421,7 +427,8 @@ class PassiveDTP(Acceptor):
                         # By using 0 as port number value we let kernel
                         # choose a free unprivileged random port.
                         else:
-                            self.bind((local_ip, 0))
+                            sockname[1] = 0
+                            self.bind(tuple(sockname))
                             self.cmd_channel.log(
                                 "Can't find a valid passive port in the "
                                 "configured range. A random kernel-assigned "
