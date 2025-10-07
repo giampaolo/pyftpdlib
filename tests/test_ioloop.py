@@ -12,10 +12,10 @@ from unittest.mock import patch
 import pytest
 
 import pyftpdlib.ioloop
+from pyftpdlib.exceptions import _RetryError
 from pyftpdlib.ioloop import Acceptor
 from pyftpdlib.ioloop import AsyncChat
 from pyftpdlib.ioloop import IOLoop
-from pyftpdlib.ioloop import RetryError
 
 from . import POSIX
 from . import PyftpdlibTestCase
@@ -532,7 +532,7 @@ class TestAsyncChat(PyftpdlibTestCase):
                 "pyftpdlib.ioloop.socket.socket.recv",
                 side_effect=OSError(errnum, ""),
             ) as m:
-                with pytest.raises(RetryError):
+                with pytest.raises(_RetryError):
                     ac.recv(1024)
                 assert m.called
 

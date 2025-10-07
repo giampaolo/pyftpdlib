@@ -2846,7 +2846,8 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         self.dummy_sendfile.seek(0)
         self.client.storbinary("stor " + self.tempfile, self.dummy_sendfile)
         with patch(
-            "pyftpdlib.handlers.os.sendfile", side_effect=OSError(errno.EINVAL)
+            "pyftpdlib.handlers.ftp.control.os.sendfile",
+            side_effect=OSError(errno.EINVAL),
         ) as fun:
             self.client.retrbinary(
                 "retr " + self.tempfile, self.dummy_recvfile.write

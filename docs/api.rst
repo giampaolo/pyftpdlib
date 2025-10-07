@@ -14,25 +14,26 @@ Modules and classes hierarchy
 
 ::
 
-  pyftpdlib.authorizers.AuthenticationFailed
   pyftpdlib.authorizers.DummyAuthorizer
   pyftpdlib.authorizers.UnixAuthorizer
   pyftpdlib.authorizers.WindowsAuthorizer
-  pyftpdlib.handlers.FTPHandler
-  pyftpdlib.handlers.TLS_FTPHandler
-  pyftpdlib.handlers.DTPHandler
-  pyftpdlib.handlers.TLS_DTPHandler
-  pyftpdlib.handlers.ThrottledDTPHandler
-  pyftpdlib.filesystems.FilesystemError
+  pyftpdlib.exceptions.AuthenticationFailed
+  pyftpdlib.exceptions.AuthorizerError
+  pyftpdlib.exceptions.FilesystemError
   pyftpdlib.filesystems.AbstractedFS
   pyftpdlib.filesystems.UnixFilesystem
-  pyftpdlib.servers.FTPServer
-  pyftpdlib.servers.ThreadedFTPServer
-  pyftpdlib.servers.MultiprocessFTPServer
-  pyftpdlib.ioloop.IOLoop
-  pyftpdlib.ioloop.Connector
+  pyftpdlib.handlers.DTPHandler
+  pyftpdlib.handlers.FTPHandler
+  pyftpdlib.handlers.ThrottledDTPHandler
+  pyftpdlib.handlers.TLS_DTPHandler
+  pyftpdlib.handlers.TLS_FTPHandler
   pyftpdlib.ioloop.Acceptor
   pyftpdlib.ioloop.AsyncChat
+  pyftpdlib.ioloop.Connector
+  pyftpdlib.ioloop.IOLoop
+  pyftpdlib.servers.FTPServer
+  pyftpdlib.servers.MultiprocessFTPServer
+  pyftpdlib.servers.ThreadedFTPServer
 
 Users
 =====
@@ -91,7 +92,7 @@ Users
 
   .. method:: validate_authentication(username, password, handler)
 
-    Raises :class:`pyftpdlib.authorizers.AuthenticationFailed` if the supplied
+    Raises :class:`pyftpdlib.exceptions.AuthenticationFailed` if the supplied
     username and password don't match the stored credentials.
 
     *Changed in 1.0.0: new handler parameter.*

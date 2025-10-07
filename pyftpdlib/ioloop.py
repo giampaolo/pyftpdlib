@@ -67,6 +67,7 @@ import time
 import traceback
 import warnings
 
+from .exceptions import _RetryError
 from .log import config_logging
 from .log import debug
 from .log import is_logging_configured
@@ -101,10 +102,6 @@ if hasattr(errno, "WSAECONNABORTED"):
 _ERRNOS_RETRY = {errno.EAGAIN, errno.EWOULDBLOCK}
 if hasattr(errno, "WSAEWOULDBLOCK"):
     _ERRNOS_RETRY.add(errno.WSAEWOULDBLOCK)
-
-
-class RetryError(Exception):
-    pass
 
 
 # ===================================================================
@@ -949,7 +946,7 @@ class AsyncChat(asynchat.async_chat):
                 self.handle_close()
                 return b""
             elif err.errno in _ERRNOS_RETRY:
-                raise RetryError from err
+                raise _RetryError from err
             else:
                 raise
         else:
@@ -964,7 +961,7 @@ class AsyncChat(asynchat.async_chat):
     def handle_read(self):
         try:
             asynchat.async_chat.handle_read(self)
-        except RetryError:
+        except _RetryError:
             # This can be raised by (the overridden) recv().
             pass
 
