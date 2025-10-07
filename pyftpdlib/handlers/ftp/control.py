@@ -5,15 +5,19 @@
 import asynchat
 import errno
 import glob
-import grp
 import logging
 import os
-import pwd
 import socket
 import sys
 import time
 import traceback
 from datetime import datetime
+
+try:
+    import grp
+    import pwd
+except ImportError:
+    pwd = grp = None
 
 from pyftpdlib import __ver__
 from pyftpdlib.authorizers import DummyAuthorizer
