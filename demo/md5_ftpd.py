@@ -11,8 +11,8 @@ A basic ftpd storing passwords as hash digests (platform independent).
 import hashlib
 import os
 
-from pyftpdlib.authorizers import AuthenticationFailed
 from pyftpdlib.authorizers import DummyAuthorizer
+from pyftpdlib.exceptions import AuthenticationFailed
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer
 

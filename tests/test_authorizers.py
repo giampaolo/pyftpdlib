@@ -10,9 +10,9 @@ import warnings
 
 import pytest
 
-from pyftpdlib.authorizers import AuthenticationFailed
 from pyftpdlib.authorizers import AuthorizerError
 from pyftpdlib.authorizers import DummyAuthorizer
+from pyftpdlib.exceptions import AuthenticationFailed
 
 from . import HOME
 from . import PASSWD
