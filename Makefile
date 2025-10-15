@@ -167,6 +167,9 @@ fix-all:  ## Run all code fixers.
 # Distribution
 # ===================================================================
 
+check-manifest:  ## Inspect MANIFEST.in file.
+	$(PYTHON) -m check_manifest -v $(ARGS)
+
 sdist:  ## Create tar.gz source distribution.
 	${MAKE} generate-manifest
 	$(PYTHON_ENV_VARS) $(PYTHON) setup.py sdist
@@ -178,6 +181,7 @@ sdist:  ## Create tar.gz source distribution.
 
 pre-release:  ## All the necessary steps before making a release.
 	${MAKE} clean
+	${MAKE} check-manifest
 	${MAKE} sdist
 	$(PYTHON) -c \
 		"from pyftpdlib import __ver__ as ver; \
@@ -208,9 +212,6 @@ print-announce:  ## Print announce of new release.
 
 grep-todos:  ## Look for TODOs in source files.
 	git grep -EIn "TODO|FIXME|XXX"
-
-check-manifest:  ## Inspect MANIFEST.in file.
-	$(PYTHON) -m check_manifest -v $(ARGS)
 
 check-broken-links:  ## Look for broken links in source files.
 	git ls-files | xargs $(PYTHON) -Wa scripts/internal/check_broken_links.py

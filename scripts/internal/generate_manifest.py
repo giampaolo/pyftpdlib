@@ -31,6 +31,8 @@ def main():
             continue
         print("include " + file)
 
+    print("recursive-exclude docs/images *")
+
 
 if __name__ == "__main__":
     main()
