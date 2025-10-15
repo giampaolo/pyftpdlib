@@ -258,6 +258,7 @@ def parse_args(args=None):
     group_misc.add_argument(
         "--timeout",
         type=int,
+        metavar="SECONDS",
         default=FTPHandler.timeout,
         help=f"connection timeout (default: {FTPHandler.timeout} seconds)",
     )
