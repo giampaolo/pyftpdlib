@@ -144,7 +144,17 @@ For more benchmarks see `here <https://pyftpdlib.readthedocs.io/en/latest/benchm
 Command line usage
 ==================
 
-Start a FTP server, with an anonymous user with write permissions, on port 2121:
+Start an anonymous FTP server on port 2121:
+
+.. code-block:: sh
+
+    $ python3 -m pyftpdlib
+    [I 2024-06-23 13:49:35] concurrency model: async
+    [I 2024-06-23 13:49:35] masquerade (NAT) address: None
+    [I 2024-06-23 13:49:35] passive ports: None
+    [I 2024-06-23 13:49:35] >>> starting FTP server on 0.0.0.0:2121, pid=763634 <<<
+
+Same but with write permissions (useful to setup a quick and dirty file sharing server):
 
 .. code-block:: sh
 
@@ -154,10 +164,10 @@ Start a FTP server, with an anonymous user with write permissions, on port 2121:
     [I 2024-06-23 13:49:35] concurrency model: async
     [I 2024-06-23 13:49:35] masquerade (NAT) address: None
     [I 2024-06-23 13:49:35] passive ports: None
-    [I 2024-06-23 13:49:35] >>> starting FTP server on 0.0.0.0:2121, pid=763634 <<<
+    [I 2024-06-23 13:49:35] >>> starting FTP server on 0.0.0.0:2121, pid=763641 <<<
 
 Also see `CLI doc <https://pyftpdlib.readthedocs.io/en/latest/cli.html>`__
-for more examples.
+for more command line examples.
 
 API usage
 =========

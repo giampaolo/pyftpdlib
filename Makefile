@@ -167,17 +167,21 @@ fix-all:  ## Run all code fixers.
 # Distribution
 # ===================================================================
 
-check-manifest:  ## Inspect MANIFEST.in file.
-	$(PYTHON) -m check_manifest -v $(ARGS)
+check-manifest:  ## Check sanity of MANIFEST.in file.
+	$(PYTHON) -m check_manifest -v
 
-sdist:  ## Create tar.gz source distribution.
-	${MAKE} generate-manifest
-	$(PYTHON_ENV_VARS) $(PYTHON) setup.py sdist
-	# Check sanity of source distribution.
+check-sdist:  ## Check sanity of source distribution (must be created first).
 	$(PYTHON_ENV_VARS) $(PYTHON) -m virtualenv --clear --no-wheel --quiet build/venv
 	$(PYTHON_ENV_VARS) build/venv/bin/python -m pip install -v --isolated --quiet dist/*.tar.gz
 	$(PYTHON_ENV_VARS) build/venv/bin/python -c "import os; os.chdir('build/venv'); import pyftpdlib"
 	$(PYTHON) -m twine check --strict dist/*.tar.gz
+
+generate-manifest:  ## Generates MANIFEST.in file.
+	$(PYTHON) scripts/internal/generate_manifest.py > MANIFEST.in
+
+sdist:  ## Create tar.gz source distribution.
+	${MAKE} generate-manifest
+	$(PYTHON_ENV_VARS) $(PYTHON) setup.py sdist
 
 pre-release:  ## All the necessary steps before making a release.
 	${MAKE} clean
@@ -195,9 +199,6 @@ release:  ## Creates a release (tar.gz + upload + git tag release).
 	${MAKE} pre-release
 	$(PYTHON) -m twine upload dist/*.tar.gz  # upload tar on PYPI
 	${MAKE} git-tag-release
-
-generate-manifest:  ## Generates MANIFEST.in file.
-	$(PYTHON) scripts/internal/generate_manifest.py > MANIFEST.in
 
 git-tag-release:  ## Git-tag a new release.
 	git tag -a release-`$(PYTHON) -c "import pyftpdlib; print(pyftpdlib.__ver__)"` -m `git rev-list HEAD --count`:`git rev-parse --short HEAD`
