@@ -149,9 +149,6 @@ Start an anonymous FTP server on port 2121:
 .. code-block:: sh
 
     $ python3 -m pyftpdlib
-    [I 2024-06-23 13:49:35] concurrency model: async
-    [I 2024-06-23 13:49:35] masquerade (NAT) address: None
-    [I 2024-06-23 13:49:35] passive ports: None
     [I 2024-06-23 13:49:35] >>> starting FTP server on 0.0.0.0:2121, pid=763634 <<<
 
 Same but with write permissions (useful to setup a quick and dirty file sharing server):
@@ -159,11 +156,6 @@ Same but with write permissions (useful to setup a quick and dirty file sharing 
 .. code-block:: sh
 
     $ python3 -m pyftpdlib --write
-    RuntimeWarning: write permissions assigned to anonymous user.
-      self._check_permissions(username, perm)
-    [I 2024-06-23 13:49:35] concurrency model: async
-    [I 2024-06-23 13:49:35] masquerade (NAT) address: None
-    [I 2024-06-23 13:49:35] passive ports: None
     [I 2024-06-23 13:49:35] >>> starting FTP server on 0.0.0.0:2121, pid=763641 <<<
 
 Also see `CLI doc <https://pyftpdlib.readthedocs.io/en/latest/cli.html>`__

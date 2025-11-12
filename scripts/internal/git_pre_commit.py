@@ -11,7 +11,6 @@ the files which were modified in the commit. Install this with "make
 install-git-hooks".
 """
 
-
 import os
 import shlex
 import subprocess
