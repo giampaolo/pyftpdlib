@@ -2226,9 +2226,9 @@ class FTPHandler(AsyncChat):
                 cmd, arg = line.split(" ")
             else:
                 cmd, arg = line, ""
+            # the only commands able to accept options are MLST and UTF8
             if cmd.upper() in ("UTF8", "UTF-8"):
                 self.respond('200 Always in UTF8 mode.')
-            # actually the only command able to accept options is MLST
             elif cmd.upper() == "MLST" and "MLST" in self.proto_cmds:
                 if arg and ';' not in arg:
                     raise ValueError('Invalid argument')
