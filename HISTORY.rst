@@ -3,6 +3,10 @@ Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 Version: 2.2.0 - XXXX-XX-XX
 ===========================
 
+**Bug fixes**
+
+* #676: Always return 200 for the ``OPTS UTF8`` and ``OPTS UTF-8 ON`` commands
+  to ensure correct FTP client compatibility when UTF-8 is supported.
 
 **Compatibility notes**
 
