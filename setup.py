@@ -114,7 +114,7 @@ def main():
         author="Giampaolo Rodola'",
         author_email="g.rodola@gmail.com",
         url="https://github.com/giampaolo/pyftpdlib/",
-        packages=["pyftpdlib"],
+        packages=["pyftpdlib", "pyftpdlib.handlers", "pyftpdlib.handlers.ftp", "pyftpdlib.handlers.ftps"],
         scripts=["scripts/ftpbench"],
         # fmt: off
         keywords=["ftp", "ftps", "server", "ftpd", "daemon", "python", "ssl",
