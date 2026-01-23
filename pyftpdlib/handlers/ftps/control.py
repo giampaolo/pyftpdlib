@@ -160,6 +160,15 @@ class TLS_FTPHandler(SSLConnectionMixin, FTPHandler):
                 return
         FTPHandler.process_command(self, cmd, *args, **kwargs)
 
+    def handle_timeout(self):
+        """Called when client does not send any command within the time
+        specified in <timeout> attribute."""
+        if self._ssl_accepting:
+            # SSL handshake not complete - can't send response, just close
+            self.close()
+        else:
+            super().handle_timeout()
+
     def close(self):
         SSLConnectionMixin.close(self)
         FTPHandler.close(self)

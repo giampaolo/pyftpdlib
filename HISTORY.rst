@@ -7,6 +7,7 @@ Version: 2.2.0 - XXXX-XX-XX
 
 * #676: Always return 200 for the ``OPTS UTF8`` and ``OPTS UTF-8 ON`` commands
   to ensure correct FTP client compatibility when UTF-8 is supported.
+* #683: Fix 100% CPU spin in TLS connections after timeout
 
 **Compatibility notes**
 
