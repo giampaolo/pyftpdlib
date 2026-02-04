@@ -3,6 +3,9 @@ Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 Version: 2.2.0 - XXXX-XX-XX
 ===========================
 
+**Enhancements**
+
+* #684: remove setup.py and move installation logic into pyproject.toml.
 
 **Compatibility notes**
 
@@ -12,8 +15,6 @@ Version: 2.2.0 - XXXX-XX-XX
   ``pyftpdlib.exceptions.AuthorizerError``. Old alias is still available.
 * ``pyftpdlib.filesystems.FilesystemError`` moved into
   ``pyftpdlib.exceptions.FilesystemError``. Old alias is still available.
-
-
 
 Version: 2.1.0 - 2025-09-25
 ===========================

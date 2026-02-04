@@ -41,7 +41,6 @@ keywords = [
     "server",
     "ssl",
 ]
-license = "MIT"
 name = "pyftpdlib"
 readme = "README.rst"
 requires-python = ">=3.6"
