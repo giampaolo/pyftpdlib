@@ -65,16 +65,14 @@ install-pydeps-test:  ## Install python deps necessary to run unit tests.
 	${MAKE} install-pip
 	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip setuptools
 	$(PYTHON) -c \
-		"import tomllib; c = tomllib.load(open('pyproject.toml', 'rb')); print('\n'.join(c['project']['optional-dependencies']['test']))" \
-		| $(PYTHON) -m pip install $(PIP_INSTALL_ARGS) -r /dev/stdin
+		"import tomllib, subprocess, sys; c = tomllib.load(open('pyproject.toml', 'rb')); d = c['project']['optional-dependencies']; subprocess.check_call([sys.executable, '-m', 'pip', 'install'] + '$(PIP_INSTALL_ARGS)'.split() + d['test'])"
 
 install-pydeps-dev:  ## Install python deps meant for local development.
 	${MAKE} install-git-hooks
 	${MAKE} install-pip
 	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip setuptools
 	$(PYTHON) -c \
-		"import tomllib; c = tomllib.load(open('pyproject.toml', 'rb')); d = c['project']['optional-dependencies']; print('\n'.join(d['test'] + d['dev']))" \
-		| $(PYTHON) -m pip install $(PIP_INSTALL_ARGS) -r /dev/stdin
+		"import tomllib, subprocess, sys; c = tomllib.load(open('pyproject.toml', 'rb')); d = c['project']['optional-dependencies']; subprocess.check_call([sys.executable, '-m', 'pip', 'install'] + '$(PIP_INSTALL_ARGS)'.split() + d['test'] + d['dev'])"
 
 install-git-hooks:  ## Install GIT pre-commit hook.
 	ln -sf ../../scripts/internal/git_pre_commit.py .git/hooks/pre-commit
