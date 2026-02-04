@@ -26,12 +26,16 @@ ROOT_DIR = os.path.realpath(os.path.join(HERE, "..", ".."))
 WINDOWS = os.name == "nt"
 
 
-sys.path.insert(0, ROOT_DIR)  # so that we can import setup.py
+try:
+    import tomllib  # noqa: PLC0415
+except ImportError:
+    import tomli as tomllib  # noqa: PLC0415
 
-import setup  # noqa: E402
-
-TEST_DEPS = setup.TEST_DEPS
-DEV_DEPS = setup.DEV_DEPS
+with open(os.path.join(ROOT_DIR, "pyproject.toml"), "rb") as f:
+    _pyproject = tomllib.load(f)
+_optional_deps = _pyproject["project"]["optional-dependencies"]
+TEST_DEPS = _optional_deps["test"]
+DEV_DEPS = _optional_deps["dev"]
 
 
 # ===================================================================
@@ -162,7 +166,7 @@ def install_pip():
 
 def install():
     """Install in develop / edit mode."""
-    sh([PYTHON, "setup.py", "develop"])
+    sh([PYTHON, "-m", "pip", "install", "-e", "."])
 
 
 def uninstall():

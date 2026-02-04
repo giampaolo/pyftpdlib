@@ -52,9 +52,7 @@ clean:  ## Remove all build files.
 		tmp/
 
 install:  ## Install this package.
-	# make sure setuptools is installed (needed for 'develop' / edit mode)
-	$(PYTHON) -c "import setuptools"
-	$(PYTHON) setup.py develop $(SETUP_INSTALL_ARGS)
+	$(PYTHON) -m pip install -e . $(SETUP_INSTALL_ARGS)
 
 uninstall:  ## Uninstall this package.
 	cd ..; $(PYTHON) -m pip uninstall -y -v pyftpdlib || true
@@ -66,13 +64,17 @@ install-pip:  ## Install pip (no-op if already installed).
 install-pydeps-test:  ## Install python deps necessary to run unit tests.
 	${MAKE} install-pip
 	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip setuptools
-	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) `$(PYTHON) -c "import setup; print(' '.join(setup.TEST_DEPS))"`
+	$(PYTHON) -c \
+		"import tomllib; c = tomllib.load(open('pyproject.toml', 'rb')); print('\n'.join(c['project']['optional-dependencies']['test']))" \
+		| $(PYTHON) -m pip install $(PIP_INSTALL_ARGS) -r /dev/stdin
 
 install-pydeps-dev:  ## Install python deps meant for local development.
 	${MAKE} install-git-hooks
 	${MAKE} install-pip
 	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip setuptools
-	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) `$(PYTHON) -c "import setup; print(' '.join(setup.TEST_DEPS + setup.DEV_DEPS))"`
+	$(PYTHON) -c \
+		"import tomllib; c = tomllib.load(open('pyproject.toml', 'rb')); d = c['project']['optional-dependencies']; print('\n'.join(d['test'] + d['dev']))" \
+		| $(PYTHON) -m pip install $(PIP_INSTALL_ARGS) -r /dev/stdin
 
 install-git-hooks:  ## Install GIT pre-commit hook.
 	ln -sf ../../scripts/internal/git_pre_commit.py .git/hooks/pre-commit
@@ -181,7 +183,7 @@ generate-manifest:  ## Generates MANIFEST.in file.
 
 sdist:  ## Create tar.gz source distribution.
 	${MAKE} generate-manifest
-	$(PYTHON_ENV_VARS) $(PYTHON) setup.py sdist
+	$(PYTHON_ENV_VARS) $(PYTHON) -m build --sdist
 
 pre-release:  ## All the necessary steps before making a release.
 	${MAKE} clean

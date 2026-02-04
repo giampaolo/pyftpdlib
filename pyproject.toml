@@ -1,9 +1,98 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools"]
+
+[project]
+authors = [{name = "Giampaolo Rodola'", email = "g.rodola@gmail.com"}]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python",
+    "Topic :: Internet :: File Transfer Protocol (FTP)",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Filesystems",
+]
+dependencies = [
+    "pyasynchat; python_version >= '3.12'",
+    "pyasyncore; python_version >= '3.12'",
+]
+description = "Very fast asynchronous FTP server library"
+dynamic = ["version"]
+keywords = [
+    "asynchronous",
+    "daemon",
+    "eventdriven",
+    "ftp",
+    "ftpd",
+    "ftps",
+    "nonblocking",
+    "python",
+    "rfc1123",
+    "rfc2228",
+    "rfc2428",
+    "rfc2640",
+    "rfc3659",
+    "rfc959",
+    "sendfile",
+    "server",
+    "ssl",
+]
+license = "MIT"
+name = "pyftpdlib"
+readme = "README.rst"
+requires-python = ">=3.6"
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "build",
+    "check-manifest",
+    "coverage",
+    "pdbpp; os_name == 'nt'",
+    "pylint",
+    "pyreadline3; os_name == 'nt'",
+    "pytest-cov",
+    "pytest-xdist",
+    "rstcheck",
+    "ruff",
+    "toml-sort",
+    "twine",
+]
+ssl = ["PyOpenSSL"]
+test = [
+    "psutil",
+    "pyasynchat; python_version >= '3.12'",
+    "pyasyncore; python_version >= '3.12'",
+    "pyopenssl",
+    "pytest",
+    "pytest-instafail",
+    "pytest-xdist",
+    "pywin32; os_name == 'nt'",
+    "setuptools",
+]
+
+[project.urls]
+Homepage = "https://github.com/giampaolo/pyftpdlib/"
+
+[tool.setuptools]
+script-files = ["scripts/ftpbench"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pyftpdlib.__ver__"}
+
+[tool.setuptools.packages.find]
+include = ["pyftpdlib*"]
+
 [tool.black]
 target-version = ["py37"]
 line-length = 79
 # https://black.readthedocs.io/en/stable/the_black_code_style/future_style.html
 preview = true
-enable-unstable-feature = ["hug_parens_with_braces_and_square_brackets", "multiline_string_handling", "string_processing", "wrap_long_dict_values_in_parens"]
+enable-unstable-feature = ["hug_parens_with_braces_and_square_brackets", "string_processing", "wrap_long_dict_values_in_parens"]
 
 [tool.ruff]
 # https://beta.ruff.rs/docs/settings/
@@ -77,7 +166,6 @@ ignore = [
 "demo/*" = ["T201"]
 "doc/*" = ["T201"]
 "scripts/*" = ["T201"]
-"setup.py" = ["T201"]
 
 [tool.ruff.lint.isort]
 # https://beta.ruff.rs/docs/settings/#isort
@@ -86,7 +174,6 @@ force-single-line = true  # one import per line
 [tool.coverage.report]
 omit = [
     "pyftpdlib/_compat.py",
-    "setup.py",
     "tests/*",
 ]
 exclude_lines = [
