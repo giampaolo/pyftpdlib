@@ -52,9 +52,7 @@ clean:  ## Remove all build files.
 		tmp/
 
 install:  ## Install this package.
-	# make sure setuptools is installed (needed for 'develop' / edit mode)
-	$(PYTHON) -c "import setuptools"
-	$(PYTHON) setup.py develop $(SETUP_INSTALL_ARGS)
+	$(PYTHON) -m pip install -e . $(SETUP_INSTALL_ARGS)
 
 uninstall:  ## Uninstall this package.
 	cd ..; $(PYTHON) -m pip uninstall -y -v pyftpdlib || true
@@ -66,13 +64,15 @@ install-pip:  ## Install pip (no-op if already installed).
 install-pydeps-test:  ## Install python deps necessary to run unit tests.
 	${MAKE} install-pip
 	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip setuptools
-	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) `$(PYTHON) -c "import setup; print(' '.join(setup.TEST_DEPS))"`
+	$(PYTHON) -c \
+		"import tomllib, subprocess, sys; c = tomllib.load(open('pyproject.toml', 'rb')); d = c['project']['optional-dependencies']; subprocess.check_call([sys.executable, '-m', 'pip', 'install'] + '$(PIP_INSTALL_ARGS)'.split() + d['test'])"
 
 install-pydeps-dev:  ## Install python deps meant for local development.
 	${MAKE} install-git-hooks
 	${MAKE} install-pip
 	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip setuptools
-	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) `$(PYTHON) -c "import setup; print(' '.join(setup.TEST_DEPS + setup.DEV_DEPS))"`
+	$(PYTHON) -c \
+		"import tomllib, subprocess, sys; c = tomllib.load(open('pyproject.toml', 'rb')); d = c['project']['optional-dependencies']; subprocess.check_call([sys.executable, '-m', 'pip', 'install'] + '$(PIP_INSTALL_ARGS)'.split() + d['test'] + d['dev'])"
 
 install-git-hooks:  ## Install GIT pre-commit hook.
 	ln -sf ../../scripts/internal/git_pre_commit.py .git/hooks/pre-commit
@@ -170,18 +170,26 @@ fix-all:  ## Run all code fixers.
 check-manifest:  ## Check sanity of MANIFEST.in file.
 	$(PYTHON) -m check_manifest -v
 
-check-sdist:  ## Check sanity of source distribution (must be created first).
+check-pyproject:  ## Check sanity of pyproject.toml file.
+	$(PYTHON) -m validate_pyproject -v pyproject.toml
+
+check-sdist:  ## Check sanity of source distribution.
 	$(PYTHON_ENV_VARS) $(PYTHON) -m virtualenv --clear --no-wheel --quiet build/venv
 	$(PYTHON_ENV_VARS) build/venv/bin/python -m pip install -v --isolated --quiet dist/*.tar.gz
 	$(PYTHON_ENV_VARS) build/venv/bin/python -c "import os; os.chdir('build/venv'); import pyftpdlib"
 	$(PYTHON) -m twine check --strict dist/*.tar.gz
+
+check-dist:  ## Run all sanity checks re. to the package distribution.
+	$(MAKE) check-manifest
+	$(MAKE) check-pyproject
+	$(MAKE) check-sdist
 
 generate-manifest:  ## Generates MANIFEST.in file.
 	$(PYTHON) scripts/internal/generate_manifest.py > MANIFEST.in
 
 sdist:  ## Create tar.gz source distribution.
 	${MAKE} generate-manifest
-	$(PYTHON_ENV_VARS) $(PYTHON) setup.py sdist
+	$(PYTHON_ENV_VARS) $(PYTHON) -m build --sdist
 
 pre-release:  ## All the necessary steps before making a release.
 	${MAKE} clean

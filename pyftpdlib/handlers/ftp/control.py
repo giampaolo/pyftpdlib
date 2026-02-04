@@ -2228,10 +2228,10 @@ class FTPHandler(AsyncChat):
                 cmd, arg = line, ""
             # the only commands able to accept options are MLST and UTF8
             if cmd.upper() in ("UTF8", "UTF-8"):
-                self.respond('200 Always in UTF8 mode.')
+                self.respond("200 Always in UTF8 mode.")
             elif cmd.upper() == "MLST" and "MLST" in self.proto_cmds:
-                if arg and ';' not in arg:
-                    raise ValueError('Invalid argument')
+                if arg and ";" not in arg:
+                    raise ValueError("Invalid argument")
                 facts = [x.lower() for x in arg.split(";")]
                 self._current_facts = [
                     x for x in facts if x in self._available_facts

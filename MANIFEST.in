@@ -30,11 +30,9 @@ include docs/images/google-pages.gif
 include docs/images/peerscape.gif
 include docs/index.rst
 include docs/install.rst
-include docs/make.bat
 include docs/requirements.txt
 include docs/rfc-compliance.rst
 include docs/tutorial.rst
-include make.bat
 include pyftpdlib/__init__.py
 include pyftpdlib/__main__.py
 include pyftpdlib/authorizers.py
@@ -63,8 +61,6 @@ include scripts/internal/git_pre_commit.py
 include scripts/internal/install_pip.py
 include scripts/internal/print_announce.py
 include scripts/internal/purge_installation.py
-include scripts/internal/winmake.py
-include setup.py
 include tests/README
 include tests/__init__.py
 include tests/conftest.py
