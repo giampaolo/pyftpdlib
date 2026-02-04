@@ -170,9 +170,19 @@ fix-all:  ## Run all code fixers.
 check-manifest:  ## Check sanity of MANIFEST.in file.
 	$(PYTHON) -m check_manifest -v
 
-check-sdist:  ## Check sanity of source distribution.
+check-pyproject:  ## Check sanity of pyproject.toml file.
 	$(PYTHON) -m validate_pyproject -v pyproject.toml
+
+check-sdist:  ## Check sanity of source distribution.
+	$(PYTHON_ENV_VARS) $(PYTHON) -m virtualenv --clear --no-wheel --quiet build/venv
+	$(PYTHON_ENV_VARS) build/venv/bin/python -m pip install -v --isolated --quiet dist/*.tar.gz
+	$(PYTHON_ENV_VARS) build/venv/bin/python -c "import os; os.chdir('build/venv'); import pyftpdlib"
 	$(PYTHON) -m twine check --strict dist/*.tar.gz
+
+check-dist:  ## Run all sanity checks re. to the package distribution.
+	$(MAKE) check-manifest
+	$(MAKE) check-pyproject
+	$(MAKE) check-sdist
 
 generate-manifest:  ## Generates MANIFEST.in file.
 	$(PYTHON) scripts/internal/generate_manifest.py > MANIFEST.in
