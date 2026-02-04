@@ -7,6 +7,11 @@ Version: 2.2.0 - XXXX-XX-XX
 
 * #684: remove setup.py and move installation logic into pyproject.toml.
 
+**Bug fixes**
+
+* #676: Always return 200 for the ``OPTS UTF8`` and ``OPTS UTF-8 ON`` commands
+  to ensure correct FTP client compatibility when UTF-8 is supported.
+
 **Compatibility notes**
 
 * ``pyftpdlib.authorizers.AuthenticationFailed`` moved into
