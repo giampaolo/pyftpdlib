@@ -2296,6 +2296,9 @@ class TestIPv6Environment(_TestNetworkProtocols, PyftpdlibTestCase):
 @pytest.mark.skipif(
     not has_dualstack_ipv6(), reason="IPv4/6 dual stack not supported"
 )
+@pytest.mark.skipif(
+    WINDOWS, reason="IPv4/6 dual stack not supported on Windows"
+)
 class TestIPv6MixedEnvironment(PyftpdlibTestCase):
     """By running the server by specifying "::" as IP address the
     server is supposed to listen on all interfaces, supporting both
