@@ -7,6 +7,7 @@ import os
 from OpenSSL import SSL
 
 from pyftpdlib.handlers.ftp.control import FTPHandler
+from pyftpdlib.log import logger
 
 from .data import TLS_DTPHandler
 from .ssl import SSLConnectionMixin
@@ -164,6 +165,7 @@ class TLS_FTPHandler(SSLConnectionMixin, FTPHandler):
         """Called when client does not send any command within the time
         specified in <timeout> attribute."""
         if self._ssl_accepting:
+            logger.info("SSL handshake timeout")
             # SSL handshake not complete - can't send response, just close
             self.close()
         else:
