@@ -56,6 +56,6 @@ jobs:
           python-version: 3.x
       - name: Check source distribution
         run: |
-          python -m pip install --upgrade setuptools virtualenv twine check-manifest validate-pyproject[all]
-          make sdist
+          python -m pip install -U setuptools virtualenv twine check-manifest validate-pyproject[all] abi3audit
+          make create-dist
           make check-dist

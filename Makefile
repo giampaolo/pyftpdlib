@@ -167,46 +167,71 @@ fix-all:  ## Run all code fixers.
 # Distribution
 # ===================================================================
 
+# --- create
+
+generate-manifest:  ## Generates MANIFEST.in file.
+	$(PYTHON) scripts/internal/generate_manifest.py > MANIFEST.in
+
+create-sdist:  ## Create tar.gz source distribution.
+	$(MAKE) generate-manifest
+	$(PYTHON_ENV_VARS) $(PYTHON) -m build . --sdist
+
+create-wheels:  ## Create .whl distribution.
+	$(MAKE) generate-manifest
+	$(PYTHON_ENV_VARS) $(PYTHON) -m build . --wheel
+
+create-dist:  ## Create .tar.gz + .whl distribution.
+	$(MAKE) create-sdist
+	$(MAKE) create-wheels
+
+# --- check
+
 check-manifest:  ## Check sanity of MANIFEST.in file.
 	$(PYTHON) -m check_manifest -v
 
 check-pyproject:  ## Check sanity of pyproject.toml file.
 	$(PYTHON) -m validate_pyproject -v pyproject.toml
 
-check-distribution:  ## Check sanity of distribution files.
+check-sdist:  ## Check sanity of source distribution.
 	$(PYTHON_ENV_VARS) $(PYTHON) -m virtualenv --clear --no-wheel --quiet build/venv
 	$(PYTHON_ENV_VARS) build/venv/bin/python -m pip install -v --isolated --quiet dist/*.tar.gz
 	$(PYTHON_ENV_VARS) build/venv/bin/python -c "import os; os.chdir('build/venv'); import pyftpdlib"
-	$(PYTHON) -m twine check --strict dist/*.tar.gz dist/*.whl
+	$(PYTHON) -m twine check --strict dist/*.tar.gz
+
+check-wheels:  ## Check sanity of wheels.
+	$(PYTHON) -m abi3audit --verbose --strict dist/*-abi3-*.whl
+	$(PYTHON) -m twine check --strict dist/*.whl
 
 check-dist:  ## Run all sanity checks re. to the package distribution.
 	$(MAKE) check-manifest
 	$(MAKE) check-pyproject
-	$(MAKE) check-distribution
+	$(MAKE) check-sdist
+	$(MAKE) check-wheels
 
-generate-manifest:  ## Generates MANIFEST.in file.
-	$(PYTHON) scripts/internal/generate_manifest.py > MANIFEST.in
+# --- release
 
-distribution:  ## Create wheel and source distribution files.
-	${MAKE} generate-manifest
-	$(PYTHON_ENV_VARS) $(PYTHON) -m build
-
-pre-release:  ## All the necessary steps before making a release.
-	${MAKE} clean
-	${MAKE} check-manifest
-	${MAKE} distribution
-	$(PYTHON) -c \
+pre-release:  ## Check if we're ready to produce a new release.
+	$(MAKE) clean
+	$(MAKE) create-dist
+	$(MAKE) check-dist
+	$(MAKE) install
+	@$(PYTHON) -c \
+		"import requests, sys; \
+		from packaging.version import parse; \
+		from pyftpdlib import __ver__; \
+		res = requests.get('https://pypi.org/pypi/pyftpdlib/json', timeout=5); \
+		versions = sorted(res.json()['releases'], key=parse, reverse=True); \
+		sys.exit('version %r already exists on PYPI' % __ver__) if __ver__ in versions else 0"
+	@$(PYTHON) -c \
 		"from pyftpdlib import __ver__ as ver; \
-		doc = open('docs/index.rst').read(); \
 		history = open('HISTORY.rst').read(); \
-		assert ver in history, '%r not in HISTORY.rst' % ver; \
-		assert 'XXXX' not in history; \
-		"
+		assert ver in history, '%r not found in HISTORY.rst' % ver; \
+		assert 'IN DEVELOPMENT' not in history, 'IN DEVELOPMENT found in HISTORY.rst';"
 
-release:  ## Creates a release (sdist + wheel + upload + git tag release).
-	${MAKE} pre-release
-	$(PYTHON) -m twine upload dist/*.tar.gz dist/*.whl
-	${MAKE} git-tag-release
+release:  ## Upload a new release.
+	$(PYTHON) -m twine upload dist/*.tar.gz
+	$(PYTHON) -m twine upload dist/*.whl
+	$(MAKE) git-tag-release
 
 git-tag-release:  ## Git-tag a new release.
 	git tag -a release-`$(PYTHON) -c "import pyftpdlib; print(pyftpdlib.__ver__)"` -m `git rev-list HEAD --count`:`git rev-parse --short HEAD`

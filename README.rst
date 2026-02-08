@@ -37,11 +37,11 @@
     :target: https://repology.org/metapackage/python:pyftpdlib/versions
     :alt: Binary packages
 
-.. |license| image:: https://img.shields.io/pypi/l/pyftpdlib.svg
+.. |license| image:: https://img.shields.io/github/license/giampaolo/pyftpdlib
     :target: https://github.com/giampaolo/pyftpdlib/blob/master/LICENSE
     :alt: License
 
-.. |twitter| image:: https://img.shields.io/twitter/follow/grodola.svg?label=follow&style=flat&logo=twitter&logoColor=4FADFF
+.. |twitter| image:: https://img.shields.io/twitter/follow/grodola?style=flat
     :target: https://twitter.com/grodola
     :alt: Twitter Follow
 
@@ -84,8 +84,8 @@ Features
   and
   `Windows <https://pyftpdlib.readthedocs.io/en/latest/tutorial.html#windows-ftp-server>`__.
 
-Performances
-============
+Performance
+===========
 
 Despite being written in an interpreted language, pyftpdlib has transfer rates
 comparable or superior to common UNIX FTP servers written in C. It usually

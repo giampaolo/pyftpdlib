@@ -1,5 +1,12 @@
 Bug tracker at https://github.com/giampaolo/pyftpdlib/issues
 
+Version: 2.2.1 - (IN DEVELOPMENT)
+=================================
+
+**Enhancements**
+
+* 686: distribute wheel binaries, not only .tar.gz.
+
 Version: 2.2.0 - 2026-02-08
 ===========================
 
