@@ -173,28 +173,28 @@ check-manifest:  ## Check sanity of MANIFEST.in file.
 check-pyproject:  ## Check sanity of pyproject.toml file.
 	$(PYTHON) -m validate_pyproject -v pyproject.toml
 
-check-sdist:  ## Check sanity of source distribution.
+check-distribution:  ## Check sanity of distribution files.
 	$(PYTHON_ENV_VARS) $(PYTHON) -m virtualenv --clear --no-wheel --quiet build/venv
 	$(PYTHON_ENV_VARS) build/venv/bin/python -m pip install -v --isolated --quiet dist/*.tar.gz
 	$(PYTHON_ENV_VARS) build/venv/bin/python -c "import os; os.chdir('build/venv'); import pyftpdlib"
-	$(PYTHON) -m twine check --strict dist/*.tar.gz
+	$(PYTHON) -m twine check --strict dist/*.tar.gz dist/*.whl
 
 check-dist:  ## Run all sanity checks re. to the package distribution.
 	$(MAKE) check-manifest
 	$(MAKE) check-pyproject
-	$(MAKE) check-sdist
+	$(MAKE) check-distribution
 
 generate-manifest:  ## Generates MANIFEST.in file.
 	$(PYTHON) scripts/internal/generate_manifest.py > MANIFEST.in
 
-sdist:  ## Create tar.gz source distribution.
+distribution:  ## Create wheel and source distribution files.
 	${MAKE} generate-manifest
-	$(PYTHON_ENV_VARS) $(PYTHON) -m build --sdist
+	$(PYTHON_ENV_VARS) $(PYTHON) -m build
 
 pre-release:  ## All the necessary steps before making a release.
 	${MAKE} clean
 	${MAKE} check-manifest
-	${MAKE} sdist
+	${MAKE} distribution
 	$(PYTHON) -c \
 		"from pyftpdlib import __ver__ as ver; \
 		doc = open('docs/index.rst').read(); \
@@ -203,9 +203,9 @@ pre-release:  ## All the necessary steps before making a release.
 		assert 'XXXX' not in history; \
 		"
 
-release:  ## Creates a release (tar.gz + upload + git tag release).
+release:  ## Creates a release (sdist + wheel + upload + git tag release).
 	${MAKE} pre-release
-	$(PYTHON) -m twine upload dist/*.tar.gz  # upload tar on PYPI
+	$(PYTHON) -m twine upload dist/*.tar.gz dist/*.whl
 	${MAKE} git-tag-release
 
 git-tag-release:  ## Git-tag a new release.
