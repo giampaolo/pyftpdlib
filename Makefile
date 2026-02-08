@@ -167,6 +167,25 @@ fix-all:  ## Run all code fixers.
 # Distribution
 # ===================================================================
 
+# --- create
+
+generate-manifest:  ## Generates MANIFEST.in file.
+	$(PYTHON) scripts/internal/generate_manifest.py > MANIFEST.in
+
+create-sdist:  ## Create tar.gz source distribution.
+	$(MAKE) generate-manifest
+	$(PYTHON_ENV_VARS) $(PYTHON) -m build . --sdist
+
+create-wheels:  ## Create .whl distribution.
+	$(MAKE) generate-manifest
+	$(PYTHON_ENV_VARS) $(PYTHON) -m build . --wheel
+
+create-dist:  ## Create .tar.gz + .whl distribution.
+	$(MAKE) create-sdist
+	$(MAKE) create-wheels
+
+# --- check
+
 check-manifest:  ## Check sanity of MANIFEST.in file.
 	$(PYTHON) -m check_manifest -v
 
@@ -189,20 +208,12 @@ check-dist:  ## Run all sanity checks re. to the package distribution.
 	$(MAKE) check-sdist
 	$(MAKE) check-wheels
 
-generate-manifest:  ## Generates MANIFEST.in file.
-	$(PYTHON) scripts/internal/generate_manifest.py > MANIFEST.in
-
-sdist:  ## Create tar.gz source distribution.
-	$(MAKE) generate-manifest
-	$(PYTHON_ENV_VARS) $(PYTHON) -m build . --sdist
-
-create-wheels:  ## Create .whl files
-	$(MAKE) generate-manifest
-	$(PYTHON_ENV_VARS) $(PYTHON) -m build . --wheel
+# --- release
 
 pre-release:  ## Check if we're ready to produce a new release.
 	$(MAKE) clean
-	$(MAKE) sdist
+	$(MAKE) create-dist
+	$(MAKE) check-dist
 	$(MAKE) install
 	@$(PYTHON) -c \
 		"import requests, sys; \
@@ -216,8 +227,6 @@ pre-release:  ## Check if we're ready to produce a new release.
 		history = open('HISTORY.rst').read(); \
 		assert ver in history, '%r not found in HISTORY.rst' % ver; \
 		assert 'IN DEVELOPMENT' not in history, 'IN DEVELOPMENT found in HISTORY.rst';"
-	$(MAKE) create-wheels
-	$(MAKE) check-dist
 
 release:  ## Upload a new release.
 	$(PYTHON) -m twine upload dist/*.tar.gz
