@@ -329,6 +329,40 @@ class FTPServer(Acceptor):
         return self.ioloop.close()
 
 
+class FTPServerContext():
+    """
+    use the FTPServerContext
+
+        with FTPServerContext(FTPServer):
+            do_something
+        # auto close the FTPServer
+    """
+
+    def __init__(self, server):
+        self.server = server
+        self.thread = None
+
+    def __enter__(self):
+        logger.debug("you are in FTPServerContext now!")
+        self.start_thread()
+        return
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        logger.debug("you are existing FTPServerContext")
+        self.server.close_all()
+        self.thread.join()
+        return
+
+    def start_thread(self):
+        logger.debug("the FTPServer is running")
+        self.thread = threading.Thread(
+            group=None,
+            target=self.server.serve_forever,
+        )
+        self.thread.start()
+        return
+
+
 # ===================================================================
 # --- extra implementations
 # ===================================================================
