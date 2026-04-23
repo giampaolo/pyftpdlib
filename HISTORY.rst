@@ -6,6 +6,7 @@ Version: 2.2.1 - (IN DEVELOPMENT)
 **Enhancements**
 
 * 686: distribute wheel binaries, not only .tar.gz.
+* 689: Fix file existence check for certificate files
 
 Version: 2.2.0 - 2026-02-08
 ===========================
