@@ -8,6 +8,10 @@ Version: 2.2.1 - (IN DEVELOPMENT)
 * 686: distribute wheel binaries, not only .tar.gz.
 * 689: Fix file existence check for certificate files
 
+**Bug fixes**
+
+* #688: Warn about a single CPU only when pre-fork concurrency is selected.
+
 Version: 2.2.0 - 2026-02-08
 ===========================
 
