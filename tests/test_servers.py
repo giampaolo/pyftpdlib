@@ -5,6 +5,8 @@
 import contextlib
 import ftplib
 import socket
+import threading
+import time
 
 import pytest
 
@@ -86,8 +88,133 @@ class _TFTPd(FtpdThreadWrapper):
     server_class = servers.ThreadedFTPServer
 
 
+class _DelayedThreadedFTPServer(servers.ThreadedFTPServer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.worker_started = threading.Event()
+        self.worker_release = threading.Event()
+
+    def _start_task(self, *args, **kwargs):
+        target = kwargs["target"]
+        task_args = kwargs["args"]
+
+        def delayed_target():
+            self.worker_started.set()
+            self.worker_release.wait()
+            target(*task_args)
+
+        return threading.Thread(target=delayed_target, name=kwargs.get("name"))
+
+
+class _DelayedTFTPd(FtpdThreadWrapper):
+    server_class = _DelayedThreadedFTPServer
+
+
 class ThreadFTPTestMixin:
     server_class = _TFTPd
+
+
+class WorkerTimeoutTestMixin:
+    def setUp(self):
+        super().setUp()
+        self.server = None
+        self.client = None
+
+    def tearDown(self):
+        if self.client is not None:
+            self.client.close()
+        if self.server is not None:
+            self.server.stop()
+        super().tearDown()
+
+    def _test_control_timeout(self, authenticate):
+        self.server = self.server_class()
+        self.server.server.handler.timeout = 0.1
+        self.server.start()
+        self.client = ftplib.FTP(timeout=GLOBAL_TIMEOUT)
+        self.client.connect(self.server.host, self.server.port)
+        if authenticate:
+            self.client.login(USER, PASSWD)
+        with pytest.raises(
+            ftplib.error_temp, match=r"421 Control connection timed out\."
+        ):
+            self.client.getresp()
+
+    def test_control_timeout_before_data_channel(self):
+        self._test_control_timeout(authenticate=False)
+
+    def test_authenticated_control_timeout_before_data_channel(self):
+        self._test_control_timeout(authenticate=True)
+
+    def test_disabled_control_timeout(self):
+        self.server = self.server_class()
+        self.server.server.handler.timeout = 0
+        self.server.start()
+        self.client = ftplib.FTP(timeout=GLOBAL_TIMEOUT)
+        self.client.connect(self.server.host, self.server.port)
+        time.sleep(0.2)
+        assert (
+            self.client.sendcmd("NOOP") == "200 I successfully did nothing'."
+        )
+
+    def test_control_timeout_resets_after_command(self):
+        self.server = self.server_class()
+        self.server.server.handler.timeout = 2.0
+        self.server.start()
+        self.client = ftplib.FTP(timeout=GLOBAL_TIMEOUT)
+        self.client.connect(self.server.host, self.server.port)
+        time.sleep(1.0)
+        assert (
+            self.client.sendcmd("NOOP") == "200 I successfully did nothing'."
+        )
+        time.sleep(1.25)
+        assert (
+            self.client.sendcmd("NOOP") == "200 I successfully did nothing'."
+        )
+        time.sleep(1.0)
+        with pytest.raises(
+            ftplib.error_temp, match=r"421 Control connection timed out\."
+        ):
+            self.client.getresp()
+
+
+class TestWorkerTimeoutThread(WorkerTimeoutTestMixin, PyftpdlibTestCase):
+    server_class = _TFTPd
+
+
+class TestWorkerTimeoutHandoff(PyftpdlibTestCase):
+    def setUp(self):
+        super().setUp()
+        self.server = None
+        self.client = None
+
+    def tearDown(self):
+        if self.client is not None:
+            self.client.close()
+        if self.server is not None:
+            self.server.server.worker_release.set()
+            self.server.stop()
+        super().tearDown()
+
+    def test_parent_timer_detached_before_worker_start(self):
+        self.server = _DelayedTFTPd()
+        self.server.server.handler.timeout = 2.0
+        self.server.start()
+        self.client = ftplib.FTP(timeout=GLOBAL_TIMEOUT)
+        self.client.connect(self.server.host, self.server.port)
+        assert self.server.server.worker_started.wait(GLOBAL_TIMEOUT)
+
+        time.sleep(2.25)
+        self.client.sock.settimeout(0.75)
+        with pytest.raises(socket.timeout):
+            self.client.sock.recv(1024)
+
+        self.client.sock.settimeout(1.0)
+        self.server.server.worker_release.set()
+        with pytest.raises(
+            ftplib.error_temp, match=r"421 Control connection timed out\."
+        ):
+            self.client.getresp()
 
 
 class TestFtpAuthenticationThreadMixin(
@@ -167,6 +294,12 @@ else:
     @pytest.mark.skip(reason="multiprocessing module not installed")
     class MProcFTPTestMixin:
         pass
+
+
+if SUPPORTS_MULTIPROCESSING:
+
+    class TestWorkerTimeoutMProc(WorkerTimeoutTestMixin, PyftpdlibTestCase):
+        server_class = MultiProcFTPd
 
 
 class TestFtpAuthenticationMProcMixin(

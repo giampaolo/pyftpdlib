@@ -43,6 +43,7 @@ import time
 import traceback
 
 from .ioloop import Acceptor
+from .ioloop import timer
 from .log import PREFIX
 from .log import PREFIX_MPROC
 from .log import config_logging
@@ -389,10 +390,16 @@ class _SpawnerBase(FTPServer):
 
                 self._active_tasks = new
 
-    def _loop(self, handler):
+    def _loop(self, handler, idler_timeout=None):
         """Serve handler's IO loop in a separate thread or process."""
         with self.ioloop.factory() as ioloop:
             handler.ioloop = ioloop
+            if idler_timeout is not None:
+                handler._idler = ioloop.call_later(
+                    max(0, idler_timeout - timer()),
+                    handler.handle_timeout,
+                    _errback=handler.handle_error,
+                )
             try:
                 handler.add_channel()
             except OSError as err:
@@ -411,6 +418,12 @@ class _SpawnerBase(FTPServer):
             sched_poll = ioloop.sched.poll
             poll_timeout = getattr(self, "poll_timeout", None)
             soonest_timeout = poll_timeout
+            if ioloop.sched._tasks:
+                soonest_timeout = sched_poll()
+                if poll_timeout is not None and (
+                    soonest_timeout is None or soonest_timeout > poll_timeout
+                ):
+                    soonest_timeout = poll_timeout
 
             while (
                 ioloop.socket_map or ioloop.sched._tasks
@@ -474,8 +487,16 @@ class _SpawnerBase(FTPServer):
             # main thread to accept connections
             self.ioloop.unregister(handler._fileno)
 
+            idler = getattr(handler, "_idler", None)
+            idler_timeout = None
+            if idler is not None and not idler.cancelled:
+                idler_timeout = idler.timeout
+                idler.cancel()
+
             t = self._start_task(
-                target=self._loop, args=(handler,), name="ftpd"
+                target=self._loop,
+                args=(handler, idler_timeout),
+                name="ftpd",
             )
             t.name = repr(addr)
             t.start()
