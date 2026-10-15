@@ -8,6 +8,11 @@ Version: 2.2.1 - (IN DEVELOPMENT)
 * 686: distribute wheel binaries, not only .tar.gz.
 * 689: Fix file existence check for certificate files
 
+**Bug fixes**
+
+* #658: Fix control connection timeouts with multi-threaded and
+  multi-process servers when no data channel is opened.
+
 Version: 2.2.0 - 2026-02-08
 ===========================
 
