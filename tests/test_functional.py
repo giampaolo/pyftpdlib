@@ -2754,6 +2754,27 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         with pytest.raises(ftplib.error_temp, match="No usable unique file"):
             self.client.sendcmd("stou")
 
+    def test_data_conn_closed_before_transfer_cmd(self):
+        # The data connection gets closed before the client sends a
+        # transfer command. The server replied "226 Transfer complete"
+        # anyway, so the next command got the wrong reply.
+        self.server = self.server_class()
+        self.server.start()
+        self.connect_client()
+        host, port = self.client.makepasv()
+        sock = socket.create_connection((host, port), GLOBAL_TIMEOUT)
+        with contextlib.closing(sock):
+            stop_at = time.monotonic() + GLOBAL_TIMEOUT
+            while True:
+                with self.server.lock:
+                    handler = get_server_handler(self.server.server)
+                    if handler.data_channel is not None:
+                        handler.data_channel.handle_close()
+                        break
+                assert time.monotonic() < stop_at
+                time.sleep(0.001)
+        assert self.client.voidcmd("noop").startswith("200")
+
     def test_permit_foreign_address_false(self):
         self.server = self.server_class()
         self.server.handler.permit_foreign_addresses = False
