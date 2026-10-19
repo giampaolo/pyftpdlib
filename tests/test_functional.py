@@ -1592,11 +1592,12 @@ class TestTimeouts(PyftpdlibTestCase):
         # Impose a timeout for the data channel, then keep sending data for a
         # time which is longer than that to make sure that the code checking
         # whether the transfer stalled for with no progress is executed.
-        self._setUp(data_timeout=0.5 if CI_TESTING else 0.1)
+        timeout = 0.5 if CI_TESTING else 0.1
+        self._setUp(data_timeout=timeout)
         with contextlib.closing(
             self.client.transfercmd("stor " + self.testfn)
         ) as sock:
-            stop_at = time.time() + 0.2
+            stop_at = time.time() + timeout * 3
             while time.time() < stop_at:
                 sock.send(b"x" * 1024)
             if isinstance(sock, ssl.SSLSocket):
