@@ -18,6 +18,9 @@ Version: 2.2.1 - (IN DEVELOPMENT)
   Multiprocess servers accepted ``max_cons + 1`` clients.
 * #695: [MultiprocessFTPServer] idle clients were never disconnected
   (``FTPHandler.timeout``).
+* [MultiprocessFTPServer] did not work on macOS, where the default
+  multiprocessing start method is "spawn" since Python 3.8: every new
+  connection failed with "cannot pickle 'select.kqueue' object".
 * [ThreadedFTPServer, MultiprocessFTPServer] a worker was started for
   clients that disconnected right after connecting, possibly using a
   file descriptor that belonged to something else.

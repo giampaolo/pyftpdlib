@@ -625,15 +625,14 @@ if os.name == "posix":
             process every time a new connection is established.
             """
 
-            _lock = multiprocessing.Lock()
-            _exit = multiprocessing.Event()
-            # Python 3.14 changed the non-macOS POSIX default to forkserver
-            # but the code in this module does not work with it
-            # See https://github.com/python/cpython/issues/125714
-            if multiprocessing.get_start_method() == "forkserver":
-                _mp_context = multiprocessing.get_context(method="fork")
-            else:
-                _mp_context = multiprocessing.get_context()
+            # Child processes inherit the IOLoop and the handler, which
+            # can't be pickled, so we need "fork". The default is
+            # "spawn" on macOS since Python 3.8 and "forkserver" on
+            # other POSIX systems since 3.14. See:
+            # https://github.com/python/cpython/issues/125714
+            _mp_context = multiprocessing.get_context(method="fork")
+            _lock = _mp_context.Lock()
+            _exit = _mp_context.Event()
 
             def _start_task(self, *args, **kwargs):
                 return self._mp_context.Process(*args, **kwargs)
