@@ -7,9 +7,11 @@ import ftplib
 import socket
 import ssl
 import time
+from unittest import mock
 
 import OpenSSL  # requires "pip install pyopenssl"
 import pytest
+from OpenSSL import SSL
 
 from pyftpdlib.handlers import TLS_FTPHandler
 
@@ -248,6 +250,35 @@ class TestFTPS(PyftpdlibTestCase):
                     if dtp is not None and dtp._ssl_established:
                         assert dtp.send(b"") == 0
                         assert not dtp._closed
+                        break
+                assert time.monotonic() < stop_at
+                time.sleep(0.001)
+
+    def test_ssl_shutdown_error(self):
+        # On Windows SSL_shutdown() fails with SSL.Error if the client
+        # reset the connection. The data channel was never closed, and
+        # the client got no response.
+        self._setup()
+        self.client.login()
+        self.client.prot_p()
+        host, port = self.client.makepasv()
+        sock = socket.create_connection((host, port), GLOBAL_TIMEOUT)
+        conn = self.client.context.wrap_socket(
+            sock, server_hostname=self.client.host
+        )
+        with contextlib.closing(conn):
+            stop_at = time.monotonic() + GLOBAL_TIMEOUT
+            while True:
+                with self.server.lock:
+                    handler = get_server_handler(self.server.server)
+                    dtp = handler.data_channel
+                    if dtp is not None and dtp._ssl_established:
+                        err = SSL.Error([("SSL routines", "", "")])
+                        with mock.patch.object(
+                            dtp.socket, "shutdown", side_effect=err
+                        ):
+                            dtp.close()
+                        assert dtp._closed
                         break
                 assert time.monotonic() < stop_at
                 time.sleep(0.001)

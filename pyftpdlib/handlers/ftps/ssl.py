@@ -311,7 +311,10 @@ class SSLConnectionMixin:
             # https://github.com/giampaolo/pyftpdlib/issues/171
             # https://bugs.launchpad.net/pyopenssl/+bug/785985
             if err.args and not getattr(err, "errno", None):
-                pass
+                # Fatal, e.g. the peer reset the connection. Retrying
+                # SSL_shutdown() fails forever, so just close. See:
+                # https://docs.openssl.org/3.0/man3/SSL_get_error/
+                super().close()
             else:
                 raise
         except OSError as err:
