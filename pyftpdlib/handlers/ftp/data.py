@@ -349,6 +349,10 @@ class DTPHandler(AsyncChat):
         # In both cases handle_close() is automatically called by the
         # underlying asynchat module.
         if not self._closed:
+            if not self._initialized:
+                # No transfer command yet, so no reply is expected.
+                self.close()
+                return
             if self.receive:
                 self.transfer_finished = True
             else:

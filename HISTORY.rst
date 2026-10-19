@@ -35,6 +35,9 @@ Version: 2.2.1 - (IN DEVELOPMENT)
 * [TLS_FTPHandler] if the client closed the data connection during the TLS
   handshake, the server never replied to the transfer command, and the
   client waited forever.
+* [FTPHandler] if a data connection was closed (e.g. reset by the client)
+  before a transfer command was sent, the server replied "226 Transfer
+  complete." anyway, so the next command got the wrong reply.
 * [FTPServer] ``serve_forever(blocking=False)`` logged the server start
   (">>> starting FTP server <<<") on every call.
 * [ThreadedFTPServer, MultiprocessFTPServer] the server start
