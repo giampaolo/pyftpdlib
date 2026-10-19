@@ -16,6 +16,8 @@ Version: 2.2.1 - (IN DEVELOPMENT)
 * #506: [MultiprocessFTPServer] crash with "can only test a child process"
   on PASV / PORT once ``max_cons`` was reached. Also, Threaded and
   Multiprocess servers accepted ``max_cons + 1`` clients.
+* #695: [MultiprocessFTPServer] idle clients were never disconnected
+  (``FTPHandler.timeout``).
 
 **Compatibility notes**
 

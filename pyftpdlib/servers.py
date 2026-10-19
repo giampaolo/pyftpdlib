@@ -408,6 +408,16 @@ class _SpawnerBase(FTPServer):
         """Serve handler's IO loop in a separate thread or process."""
         with self.ioloop.factory() as ioloop:
             handler.ioloop = ioloop
+            # The idle timer was scheduled on the main IOLoop when the
+            # handler was created. Move it to this one, else it never
+            # fires in a child process.
+            if handler._idler is not None and not handler._idler.cancelled:
+                handler._idler.cancel()
+                handler._idler = ioloop.call_later(
+                    handler.timeout,
+                    handler.handle_timeout,
+                    _errback=handler.handle_error,
+                )
             try:
                 handler.add_channel()
             except OSError as err:
