@@ -34,6 +34,7 @@ from . import GLOBAL_TIMEOUT
 from . import HOME
 from . import HOST
 from . import INTERRUPTED_TRANSF_SIZE
+from . import OSX
 from . import PASSWD
 from . import POSIX
 from . import SUPPORTS_IPV4
@@ -2208,6 +2209,15 @@ class _TestNetworkProtocols:
                 s[0].close()
             except socket.timeout:
                 self.fail("Server didn't connect to passive socket")
+
+    @pytest.mark.skipif(OSX, reason="no reply on macOS")
+    def test_eprt_connect_refused(self):
+        # Bound but not listening, so the server's connect() is refused.
+        with contextlib.closing(socket.socket(self.client.af)) as sock:
+            sock.bind((self.HOST, 0))
+            port = sock.getsockname()[1]
+            resp = self.cmdresp(f"eprt |{self.proto}|{self.HOST}|{port}|")
+        assert resp == "425 Can't connect to specified address."
 
     def test_epsv(self):
         # test wrong proto

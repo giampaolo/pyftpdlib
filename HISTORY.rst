@@ -43,6 +43,9 @@ Version: 2.2.1 - (IN DEVELOPMENT)
   could connect. The poller (kqueue, /dev/poll) is not inherited by, or
   is shared with, the worker processes. On Linux the workers shared the
   same epoll instance, so one worker could get the events of another.
+* [FTPHandler] (Windows) PORT / EPRT to an address refusing the connection
+  got no reply for 30 seconds, then "421 Active data channel timed out"
+  instead of "425 Can't connect to specified address".
 * [FTPServer] ``serve_forever(blocking=False)`` logged the server start
   (">>> starting FTP server <<<") on every call.
 * [ThreadedFTPServer, MultiprocessFTPServer] the server start

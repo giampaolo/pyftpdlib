@@ -81,6 +81,7 @@ with warnings.catch_warnings():
 timer = getattr(time, "monotonic", time.time)
 _read = asyncore.read
 _write = asyncore.write
+_exception = asyncore._exception
 
 # These errnos indicate that a connection has been abruptly terminated.
 _ERRNOS_DISCONNECTED = {
@@ -473,8 +474,12 @@ class Select(_IOLoop):
             debug("call: modify(); fd was no longer in socket_map", self)
 
     def poll(self, timeout):
+        # On Windows a failed connect() is only reported in the
+        # exceptional fds. See:
+        # https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-select
+        x = self._w if os.name == "nt" else []
         try:
-            r, w, _ = select.select(self._r, self._w, [], timeout)
+            r, w, x = select.select(self._r, self._w, x, timeout)
         except InterruptedError:
             return
 
@@ -489,6 +494,11 @@ class Select(_IOLoop):
             if obj is None or not obj.writable():
                 continue
             _write(obj)
+        for fd in x:
+            obj = smap_get(fd)
+            if obj is None:
+                continue
+            _exception(obj)
 
 
 # ===================================================================
