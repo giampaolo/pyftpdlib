@@ -21,7 +21,7 @@ from . import WINDOWS
 from . import FtpdThreadWrapper
 from . import PyftpdlibTestCase
 from . import close_client
-from . import test_functional
+from . import test_functional as tf
 
 del OpenSSL
 
@@ -58,31 +58,23 @@ class TLSTestMixin:
     client_class = FTPSClient
 
 
-class TestFtpAuthenticationTLSMixin(
-    TLSTestMixin, test_functional.TestFtpAuthentication
-):
+class TestFtpAuthenticationTLSMixin(TLSTestMixin, tf.TestFtpAuthentication):
     pass
 
 
-class TestTFtpDummyCmdsTLSMixin(
-    TLSTestMixin, test_functional.TestFtpDummyCmds
-):
+class TestTFtpDummyCmdsTLSMixin(TLSTestMixin, tf.TestFtpDummyCmds):
     pass
 
 
-class TestFtpCmdsSemanticTLSMixin(
-    TLSTestMixin, test_functional.TestFtpCmdsSemantic
-):
+class TestFtpCmdsSemanticTLSMixin(TLSTestMixin, tf.TestFtpCmdsSemantic):
     pass
 
 
-class TestFtpFsOperationsTLSMixin(
-    TLSTestMixin, test_functional.TestFtpFsOperations
-):
+class TestFtpFsOperationsTLSMixin(TLSTestMixin, tf.TestFtpFsOperations):
     pass
 
 
-class TestFtpStoreDataTLSMixin(TLSTestMixin, test_functional.TestFtpStoreData):
+class TestFtpStoreDataTLSMixin(TLSTestMixin, tf.TestFtpStoreData):
 
     @pytest.mark.skip(reason="fails with SSL")
     def test_stou(self):
@@ -100,18 +92,14 @@ class TestFtpStoreDataTLSMixin(TLSTestMixin, test_functional.TestFtpStoreData):
 #         super().test_fallback()
 
 
-class TestFtpRetrieveDataTLSMixin(
-    TLSTestMixin, test_functional.TestFtpRetrieveData
-):
+class TestFtpRetrieveDataTLSMixin(TLSTestMixin, tf.TestFtpRetrieveData):
 
     @pytest.mark.skipif(WINDOWS, reason="may fail on windows")
     def test_restore_on_retr(self):
         super().test_restore_on_retr()
 
 
-class TestFtpListingCmdsTLSMixin(
-    TLSTestMixin, test_functional.TestFtpListingCmds
-):
+class TestFtpListingCmdsTLSMixin(TLSTestMixin, tf.TestFtpListingCmds):
 
     # TODO: see https://travis-ci.org/giampaolo/pyftpdlib/jobs/87318445
     # Fails with:
@@ -125,14 +113,14 @@ class TestFtpListingCmdsTLSMixin(
         super().test_nlst()
 
 
-class TestFtpAbortTLSMixin(TLSTestMixin, test_functional.TestFtpAbort):
+class TestFtpAbortTLSMixin(TLSTestMixin, tf.TestFtpAbort):
 
     @pytest.mark.skip(reason="fails with SSL")
     def test_oob_abor(self):
         pass
 
 
-class TestTimeoutsTLSMixin(TLSTestMixin, test_functional.TestTimeouts):
+class TestTimeoutsTLSMixin(TLSTestMixin, tf.TestTimeouts):
 
     @pytest.mark.skip(reason="fails with SSL")
     def test_data_timeout_not_reached(self):
@@ -140,24 +128,20 @@ class TestTimeoutsTLSMixin(TLSTestMixin, test_functional.TestTimeouts):
 
 
 class TestConfigurableOptionsTLSMixin(
-    TLSTestMixin, test_functional.TestConfigurableOptions
+    TLSTestMixin, tf.TestConfigurableOptions
 ):
     pass
 
 
-class TestIPv4EnvironmentTLSMixin(
-    TLSTestMixin, test_functional.TestIPv4Environment
-):
+class TestIPv4EnvironmentTLSMixin(TLSTestMixin, tf.TestIPv4Environment):
     pass
 
 
-class TestIPv6EnvironmentTLSMixin(
-    TLSTestMixin, test_functional.TestIPv6Environment
-):
+class TestIPv6EnvironmentTLSMixin(TLSTestMixin, tf.TestIPv6Environment):
     pass
 
 
-class TestCornerCasesTLSMixin(TLSTestMixin, test_functional.TestCornerCases):
+class TestCornerCasesTLSMixin(TLSTestMixin, tf.TestCornerCases):
     pass
 
 
