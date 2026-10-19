@@ -9,11 +9,8 @@ PYTHON = python3
 ARGS =
 FILES =
 
-# In not in a virtualenv, add --user options for install commands.
-SETUP_INSTALL_ARGS = `$(PYTHON) -c \
-	"import sys; print('' if hasattr(sys, 'real_prefix') or hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix else '--user')"`
 PYTHON_ENV_VARS = PYTHONWARNINGS=always PYTHONUNBUFFERED=1 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1
-PIP_INSTALL_ARGS = --trusted-host files.pythonhosted.org --trusted-host pypi.org --upgrade
+INSTALL_PYDEPS = PYTHON=$(PYTHON) ./scripts/internal/install-pydeps.sh
 
 # if make is invoked with no arg, default to `make help`
 .DEFAULT_GOAL := help
@@ -53,35 +50,27 @@ clean:  ## Remove all build files.
 		tmp/
 
 install:  ## Install this package.
-	$(PYTHON) -m pip install -e . $(SETUP_INSTALL_ARGS)
+	$(INSTALL_PYDEPS) --editable .
 
 uninstall:  ## Uninstall this package.
 	cd ..; $(PYTHON) -m pip uninstall -y -v pyftpdlib || true
 	$(PYTHON) scripts/internal/purge_installation.py
 
-install-pip:  ## Install pip (no-op if already installed).
+install-pip:  ## Install pip, or upgrade it if it's too old.
 	$(PYTHON) scripts/internal/install_pip.py
 
 install-pydeps-test:  ## Install python deps necessary to run unit tests.
-	${MAKE} install-pip
-	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip setuptools
-	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) --group test
+	$(INSTALL_PYDEPS) --group test
 
 install-pydeps-lint:  ## Install python deps necessary to run linters.
-	${MAKE} install-pip
-	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip
-	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) --group lint
+	$(INSTALL_PYDEPS) --group lint
 
 install-pydeps-docs:  ## Install python deps necessary to build the doc.
-	${MAKE} install-pip
-	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip
-	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) --group docs
+	$(INSTALL_PYDEPS) --group docs
 
 install-pydeps-dev:  ## Install python deps meant for local development.
 	${MAKE} install-git-hooks
-	${MAKE} install-pip
-	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip setuptools
-	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) --group dev
+	$(INSTALL_PYDEPS) --group dev
 
 install-git-hooks:  ## Install GIT pre-commit hook.
 	ln -sf ../../scripts/internal/git_pre_commit.py .git/hooks/pre-commit

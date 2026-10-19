@@ -42,6 +42,7 @@ include scripts/ftpbench
 include scripts/internal/check_broken_links.py
 include scripts/internal/generate_manifest.py
 include scripts/internal/git_pre_commit.py
+include scripts/internal/install-pydeps.sh
 include scripts/internal/install_pip.py
 include scripts/internal/print_announce.py
 include scripts/internal/purge_installation.py
