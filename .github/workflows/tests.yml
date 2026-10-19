@@ -26,13 +26,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install pydeps ${{ matrix.os }}
-        run: |
-          make install-pydeps-test
-
       - name: Tests
-        run: |
-          make test
+        run: make ci-test
 
   # Run linters
   linters:
@@ -41,10 +36,7 @@ jobs:
     - uses: actions/checkout@v5
     - uses: actions/setup-python@v6
     - name: 'Run linters'
-      run: |
-        python3 -m pip install --upgrade black ruff sphinx-lint toml-sort sphinx-rtd-theme
-        python3 -m pip freeze
-        make lint-all
+      run: make ci-lint
 
   # Check source distribution
   check-sdist:
@@ -55,7 +47,4 @@ jobs:
         with:
           python-version: 3.x
       - name: Check source distribution
-        run: |
-          python -m pip install -U setuptools virtualenv twine check-manifest validate-pyproject[all]
-          make create-dist
-          make check-dist
+        run: make ci-check-dist

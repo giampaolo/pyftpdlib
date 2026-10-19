@@ -168,6 +168,23 @@ fix-all:  ## Run all code fixers.
 	$(MAKE) fix-toml
 
 # ===================================================================
+# CI jobs
+# ===================================================================
+
+ci-lint:  ## Run all linters on GitHub CI.
+	$(MAKE) install-pydeps-lint
+	$(MAKE) lint-all
+
+ci-test:  ## Run tests on GitHub CI.
+	$(MAKE) install-pydeps-test
+	$(MAKE) test
+
+ci-check-dist:  ## Run all sanity checks re. to the package distribution.
+	$(INSTALL_PYDEPS) build setuptools virtualenv twine check-manifest validate-pyproject[all]
+	$(MAKE) create-dist
+	$(MAKE) check-dist
+
+# ===================================================================
 # Distribution
 # ===================================================================
 
