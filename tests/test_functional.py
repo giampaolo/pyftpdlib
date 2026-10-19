@@ -809,6 +809,8 @@ class TestFtpStoreData(PyftpdlibTestCase):
                     if not buf:
                         break
                     conn.sendall(buf)
+                if isinstance(conn, ssl.SSLSocket):
+                    conn.unwrap()
             return self.client.voidresp()
 
         old_buffer = DTPHandler.ac_in_buffer_size
