@@ -120,14 +120,18 @@ class TestFtpAbortThreadMixin(ThreadFTPTestMixin, tf.TestFtpAbort):
     pass
 
 
-# class TestTimeoutsThreadMixin(ThreadFTPTestMixin, TestTimeouts):
-#     def test_data_timeout_not_reached(self): pass
-# class TestConfOptsThreadMixin(ThreadFTPTestMixin, TestConfigurableOptions):
-#     pass
+class TestTimeoutsThreadMixin(ThreadFTPTestMixin, tf.TestTimeouts):
+    pass
 
 
-# class TestCallbacksThreadMixin(ThreadFTPTestMixin, TestCallbacks):
-#     pass
+class TestConfOptsThreadMixin(ThreadFTPTestMixin, tf.TestConfigurableOptions):
+    @pytest.mark.skip(reason="max_cons counts tasks, not sockets")
+    def test_max_connections(self):
+        pass
+
+
+class TestCallbacksThreadMixin(ThreadFTPTestMixin, tf.TestCallbacks):
+    pass
 
 
 class TestIPv4EnvironmentThreadMixin(
@@ -146,8 +150,8 @@ class TestCornerCasesThreadMixin(ThreadFTPTestMixin, tf.TestCornerCases):
     pass
 
 
-# class TestFTPServerThreadMixin(ThreadFTPTestMixin, TestFTPServer):
-#     pass
+class TestFTPServerThreadMixin(ThreadFTPTestMixin, TestFTPServer):
+    pass
 
 
 # =====================================================================
@@ -203,11 +207,18 @@ class TestFtpAbortMProcMixin(MProcFTPTestMixin, tf.TestFtpAbort):
     pass
 
 
-# class TestTimeoutsMProcMixin(MProcFTPTestMixin, TestTimeouts):
-#     def test_data_timeout_not_reached(self): pass
-# class TestConfiOptsMProcMixin(MProcFTPTestMixin, TestConfigurableOptions):
-#     pass
-# class TestCallbacksMProcMixin(MProcFTPTestMixin, TestCallbacks): pass
+class TestTimeoutsMProcMixin(MProcFTPTestMixin, tf.TestTimeouts):
+    pass
+
+
+class TestConfOptsMProcMixin(MProcFTPTestMixin, tf.TestConfigurableOptions):
+    @pytest.mark.skip(reason="max_cons counts tasks, not sockets")
+    def test_max_connections(self):
+        pass
+
+
+class TestCallbacksMProcMixin(MProcFTPTestMixin, tf.TestCallbacks):
+    pass
 
 
 class TestIPv4EnvironmentMProcMixin(MProcFTPTestMixin, tf.TestIPv4Environment):
@@ -222,5 +233,5 @@ class TestCornerCasesMProcMixin(MProcFTPTestMixin, tf.TestCornerCases):
     pass
 
 
-# class TestFTPServerMProcMixin(MProcFTPTestMixin, TestFTPServer):
-#     pass
+class TestFTPServerMProcMixin(MProcFTPTestMixin, TestFTPServer):
+    pass

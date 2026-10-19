@@ -43,6 +43,7 @@ import time
 import traceback
 
 from .ioloop import Acceptor
+from .ioloop import AsyncChat
 from .log import PREFIX
 from .log import PREFIX_MPROC
 from .log import config_logging
@@ -384,6 +385,8 @@ class _SpawnerBase(FTPServer):
                 for t in self._active_tasks:
                     if not t.is_alive():
                         self._join_task(t)
+                        if hasattr(t, "pid") and t.remote_ip in self.ip_map:
+                            self.ip_map.remove(t.remote_ip)
                     else:
                         new.append(t)
 
@@ -468,6 +471,11 @@ class _SpawnerBase(FTPServer):
                             soonest_timeout = poll_timeout
 
     def handle_accepted(self, sock, addr):
+        if (
+            self.max_cons_per_ip
+            and self.ip_map.count(addr[0]) >= self.max_cons_per_ip
+        ):
+            self._refresh_tasks()
         handler = FTPServer.handle_accepted(self, sock, addr)
         if handler is not None:
             # unregister the handler from the main IOLoop used by the
@@ -478,11 +486,14 @@ class _SpawnerBase(FTPServer):
                 target=self._loop, args=(handler,), name="ftpd"
             )
             t.name = repr(addr)
+            t.remote_ip = addr[0]
             t.start()
 
             # it is a different process so free resources here
             if hasattr(t, "pid"):
-                handler.close()
+                if handler._idler is not None:
+                    handler._idler.cancel()
+                AsyncChat.close(handler)
 
             with self._lock:
                 # add the new task

@@ -9,6 +9,11 @@ Version: 2.2.1 - (IN DEVELOPMENT)
 * 689: Fix file existence check for certificate files
 * Add a SECURITY.md mechanism to report critical vulnerabilities.
 
+**Bug fixes**
+
+* #411: [MultiprocessFTPServer] ``max_cons_per_ip`` had no effect, and
+  ``on_disconnect()`` was called right after a client connected.
+
 **Compatibility notes**
 
 * Python 3.6 and 3.7 are no longer supported.

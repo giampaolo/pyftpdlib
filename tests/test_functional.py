@@ -1991,6 +1991,7 @@ class TestCallbacks(PyftpdlibTestCase):
 
     def test_on_disconnect(self):
         self.client.login(USER, PASSWD)
+        self.client.sock.shutdown(socket.SHUT_RDWR)
         self.client.close()
         self.read_file(f"on_connect,on_login:{USER},on_disconnect,")
 
