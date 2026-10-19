@@ -75,13 +75,9 @@ class TestFtpFsOperationsTLSMixin(TLSTestMixin, tf.TestFtpFsOperations):
 
 class TestFtpStoreDataTLSMixin(TLSTestMixin, tf.TestFtpStoreData):
 
-    @pytest.mark.skip(reason="fails with SSL")
-    def test_stou(self):
-        pass
-
     @pytest.mark.skipif(WINDOWS, reason="unreliable on Windows + SSL")
     def test_stor_ascii_2(self):
-        pass
+        super().test_stor_ascii_2()
 
 
 class TestFtpRetrieveDataTLSMixin(TLSTestMixin, tf.TestFtpRetrieveData):
@@ -107,16 +103,13 @@ class TestFtpListingCmdsTLSMixin(TLSTestMixin, tf.TestFtpListingCmds):
 
 class TestFtpAbortTLSMixin(TLSTestMixin, tf.TestFtpAbort):
 
-    @pytest.mark.skip(reason="fails with SSL")
+    @pytest.mark.skip(reason="SSL sockets can't send OOB data")
     def test_oob_abor(self):
         pass
 
 
 class TestTimeoutsTLSMixin(TLSTestMixin, tf.TestTimeouts):
-
-    @pytest.mark.skip(reason="fails with SSL")
-    def test_data_timeout_not_reached(self):
-        pass
+    pass
 
 
 class TestConfigurableOptionsTLSMixin(

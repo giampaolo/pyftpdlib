@@ -849,13 +849,17 @@ class TestFtpStoreData(PyftpdlibTestCase):
                 conn, _ = sock.accept()
                 with contextlib.closing(conn):
                     conn.settimeout(GLOBAL_TIMEOUT)
-                    if hasattr(self.client_class, "ssl_version"):
-                        conn = ssl.wrap_socket(conn)
+                    if isinstance(self.client, ftplib.FTP_TLS):
+                        conn = self.client.context.wrap_socket(
+                            conn, server_hostname=self.client.host
+                        )
                     while True:
                         buf = self.dummy_sendfile.read(8192)
                         if not buf:
                             break
                         conn.sendall(buf)
+                    if isinstance(conn, ssl.SSLSocket):
+                        conn.unwrap()
             # transfer finished, a 226 response is expected
             assert self.client.voidresp()[:3] == "226"
             self.client.retrbinary(
@@ -1575,8 +1579,6 @@ class TestTimeouts(PyftpdlibTestCase):
         with contextlib.closing(
             self.client.transfercmd("stor " + self.testfn)
         ) as sock:
-            if hasattr(self.client_class, "ssl_version"):
-                sock = ssl.wrap_socket(sock)
             stop_at = time.time() + 0.2
             while time.time() < stop_at:
                 sock.send(b"x" * 1024)
