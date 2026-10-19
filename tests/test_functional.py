@@ -2209,6 +2209,14 @@ class _TestNetworkProtocols:
             except socket.timeout:
                 self.fail("Server didn't connect to passive socket")
 
+    def test_eprt_connect_refused(self):
+        # Bound but not listening, so the server's connect() is refused.
+        with contextlib.closing(socket.socket(self.client.af)) as sock:
+            sock.bind((self.HOST, 0))
+            port = sock.getsockname()[1]
+            resp = self.cmdresp(f"eprt |{self.proto}|{self.HOST}|{port}|")
+        assert resp == "425 Can't connect to specified address."
+
     def test_epsv(self):
         # test wrong proto
         with pytest.raises(ftplib.error_perm, match="522"):
@@ -2743,6 +2751,39 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         self.client.sendcmd("noop")
         s = self.client.makeport()
         s.close()
+
+    @disable_log_warning
+    def test_permit_foreign_address_false_pasv(self):
+        self.server = self.server_class()
+        self.server.handler.permit_foreign_addresses = False
+        self.server.start()
+        self.connect_client()
+        with self.server.lock:
+            handler = get_server_handler(self.server.server)
+            handler.remote_ip = "9.9.9.9"
+        host, port = self.client.makepasv()
+        sock = socket.create_connection((host, port), GLOBAL_TIMEOUT)
+        with contextlib.closing(sock):
+            with pytest.raises(ftplib.error_temp, match="foreign address"):
+                self.client.getresp()
+        assert handler.data_channel is None
+
+    @disable_log_warning
+    def test_permit_foreign_address_true_pasv(self):
+        self.server = self.server_class()
+        self.server.handler.permit_foreign_addresses = True
+        self.server.start()
+        self.connect_client()
+        with self.server.lock:
+            handler = get_server_handler(self.server.server)
+            handler.remote_ip = "9.9.9.9"
+        host, port = self.client.makepasv()
+        sock = socket.create_connection((host, port), GLOBAL_TIMEOUT)
+        with contextlib.closing(sock):
+            self.client.sendcmd("nlst")
+            while sock.recv(BUFSIZE):
+                pass
+        assert self.client.voidresp().startswith("226")
 
     @disable_log_warning
     def test_permit_privileged_ports(self):

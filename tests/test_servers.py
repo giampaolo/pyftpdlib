@@ -4,15 +4,23 @@
 
 import contextlib
 import ftplib
+import os
+import signal
 import socket
+import subprocess
+import sys
+import textwrap
+import time
 from unittest import mock
 
+import psutil
 import pytest
 
 from pyftpdlib import handlers
 from pyftpdlib import servers
 
 from . import GLOBAL_TIMEOUT
+from . import HOME
 from . import HOST
 from . import PASSWD
 from . import SUPPORTS_MULTIPROCESSING
@@ -78,6 +86,50 @@ class TestFTPServer(PyftpdlibTestCase):
                 server.serve_forever(timeout=0.01)
             msgs = [str(call.args[0]) for call in m.call_args_list]
             assert any(">>> starting FTP server on" in x for x in msgs)
+
+    @pytest.mark.skipif(WINDOWS, reason="POSIX only")
+    def test_worker_processes_non_blocking(self):
+        with servers.FTPServer((HOST, 0), handlers.FTPHandler) as server:
+            with pytest.raises(ValueError, match="mutually exclusive"):
+                server.serve_forever(worker_processes=2, blocking=False)
+
+    @pytest.mark.skipif(WINDOWS, reason="POSIX only")
+    def test_worker_processes(self):
+        code = textwrap.dedent(f"""
+            from pyftpdlib.authorizers import DummyAuthorizer
+            from pyftpdlib.handlers import FTPHandler
+            from pyftpdlib.servers import FTPServer
+
+            FTPHandler.authorizer = DummyAuthorizer()
+            FTPHandler.authorizer.add_user({USER!r}, {PASSWD!r}, {HOME!r})
+            server = FTPServer(({HOST!r}, 0), FTPHandler)
+            print(server.address[1], flush=True)
+            server.serve_forever(worker_processes=2)
+        """)
+        proc = subprocess.Popen(
+            [sys.executable, "-c", code],
+            stdout=subprocess.PIPE,
+            text=True,
+            start_new_session=True,
+        )
+        try:
+            port = int(proc.stdout.readline())
+            stop_at = time.monotonic() + GLOBAL_TIMEOUT
+            while len(psutil.Process(proc.pid).children()) != 2:
+                assert time.monotonic() < stop_at
+                time.sleep(0.01)
+            for _ in range(4):
+                self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
+                self.client.connect(HOST, port)
+                self.client.login(USER, PASSWD)
+                self.client.quit()
+                self.client = None
+        finally:
+            # Kill the parent and the workers at once, else the parent
+            # restarts the workers.
+            os.killpg(proc.pid, signal.SIGKILL)
+            proc.wait()
+            proc.stdout.close()
 
 
 # =====================================================================
