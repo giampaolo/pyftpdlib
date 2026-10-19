@@ -149,50 +149,50 @@ class TestCommandLineParser(PyftpdlibTestCase):
             main(["--username", "foo"])
 
     def test_concurrency(self):
-        ftpd = main(["--concurrency", "multi-thread"])
+        ftpd = main(["--concurrency", "multi-thread", "-p", "0"])
         assert isinstance(ftpd, DummyThreadedFTPServer)
 
     def test_timeout(self):
-        ftpd = main(["--timeout", "10"])
+        ftpd = main(["--timeout", "10", "-p", "0"])
         assert ftpd.handler.timeout == 10
 
     def test_banner(self):
-        ftpd = main(["--banner", "hello there"])
+        ftpd = main(["--banner", "hello there", "-p", "0"])
         assert ftpd.handler.banner == "hello there"
 
     def test_permit_foreign_addresses(self):
-        ftpd = main(["--permit-foreign-addresses"])
+        ftpd = main(["--permit-foreign-addresses", "-p", "0"])
         assert ftpd.handler.permit_foreign_addresses is True
 
     def test_permit_privileged_ports(self):
-        ftpd = main(["--permit-privileged-ports"])
+        ftpd = main(["--permit-privileged-ports", "-p", "0"])
         assert ftpd.handler.permit_privileged_ports is True
 
     def test_encoding(self):
-        ftpd = main(["--encoding", "ascii"])
+        ftpd = main(["--encoding", "ascii", "-p", "0"])
         assert ftpd.handler.encoding == "ascii"
 
     def test_use_localtime(self):
-        ftpd = main(["--use-localtime"])
+        ftpd = main(["--use-localtime", "-p", "0"])
         assert ftpd.handler.use_gmt_times is False
 
     @pytest.mark.skipif(
         not hasattr(os, "sendfile"), reason="sendfile() not supported"
     )
     def test_disable_sendfile(self):
-        ftpd = main(["--disable-sendfile"])
+        ftpd = main(["--disable-sendfile", "-p", "0"])
         assert ftpd.handler.use_sendfile is False
 
     def test_max_cons(self):
-        ftpd = main(["--max-cons", "10"])
+        ftpd = main(["--max-cons", "10", "-p", "0"])
         assert ftpd.max_cons == 10
 
     def test_max_cons_per_ip(self):
-        ftpd = main(["--max-cons-per-ip", "10"])
+        ftpd = main(["--max-cons-per-ip", "10", "-p", "0"])
         assert ftpd.max_cons_per_ip == 10
 
     def test_max_login_attempts(self):
-        ftpd = main(["--max-login-attempts", "10"])
+        ftpd = main(["--max-login-attempts", "10", "-p", "0"])
         assert ftpd.handler.max_login_attempts == 10
 
     def test_tls(self):
@@ -202,13 +202,17 @@ class TestCommandLineParser(PyftpdlibTestCase):
         assert cm.match("--keyfile")
         assert cm.match("--certfile")
 
-        ftpd = main(["--tls", "--keyfile", CERTFILE, "--certfile", CERTFILE])
+        ftpd = main(
+            ["--tls", "--keyfile", CERTFILE, "--certfile", CERTFILE, "-p", "0"]
+        )
         assert issubclass(ftpd.handler, TLS_FTPHandler)
         assert ftpd.handler.keyfile == CERTFILE
         assert ftpd.handler.certfile == CERTFILE
 
     def test_tls_required(self):
-        ftpd = main(["--tls", "--keyfile", CERTFILE, "--certfile", CERTFILE])
+        ftpd = main(
+            ["--tls", "--keyfile", CERTFILE, "--certfile", CERTFILE, "-p", "0"]
+        )
         assert ftpd.handler.tls_control_required is False
         assert ftpd.handler.tls_data_required is False
 
@@ -219,6 +223,8 @@ class TestCommandLineParser(PyftpdlibTestCase):
             "--certfile",
             CERTFILE,
             "--tls-control-required",
+            "-p",
+            "0",
         ])
         assert ftpd.handler.tls_control_required is True
         assert ftpd.handler.tls_data_required is False
@@ -232,6 +238,8 @@ class TestCommandLineParser(PyftpdlibTestCase):
             "--certfile",
             CERTFILE,
             "--tls-data-required",
+            "-p",
+            "0",
         ])
         assert ftpd.handler.tls_control_required is False
         assert ftpd.handler.tls_data_required is True
