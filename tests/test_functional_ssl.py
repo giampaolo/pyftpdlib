@@ -197,22 +197,35 @@ class TestTimeoutsTLSMixin(TLSTestMixin, tf.TestTimeouts):
             ), mock.patch.object(
                 TLS_DTPHandler, "handle_read_event", handle_read_event
             ):
-                self._setUp(data_timeout=0.5 if tf.CI_TESTING else 0.1)
-                dbg("transfercmd")
-                with contextlib.closing(
-                    self.client.transfercmd("stor " + self.testfn)
-                ) as sock:
-                    dbg("connected")
-                    sent = 0
-                    stop_at = time.time() + 0.2
-                    while time.time() < stop_at:
-                        sent += sock.send(b"x" * 1024)
-                    dbg(f"sent {sent} bytes")
-                    caddr = sock.getsockname()
-                    dbg(f"client before close {tcp_states(caddr)}")
-                    sock.close()
-                    dbg("closed")
-                    dbg(f"resp {self.client.voidresp()}")
+                failures = []
+                for i in range(15):
+                    dbg(f"=== iteration {i}")
+                    self._setUp(data_timeout=0.5 if tf.CI_TESTING else 0.1)
+                    try:
+                        with contextlib.closing(
+                            self.client.transfercmd("stor " + self.testfn)
+                        ) as sock:
+                            dbg("connected")
+                            sent = 0
+                            stop_at = time.time() + 0.2
+                            while time.time() < stop_at:
+                                sent += sock.send(b"x" * 1024)
+                            dbg(f"sent {sent} bytes")
+                            caddr = sock.getsockname()
+                            dbg(f"client before close {tcp_states(caddr)}")
+                            sock.close()
+                            dbg("closed")
+                            try:
+                                dbg(f"resp {self.client.voidresp()}")
+                            except ftplib.error_temp as err:
+                                dbg(f"FAIL {err}")
+                                failures.append(i)
+                    finally:
+                        close_client(self.client)
+                        self.server.stop()
+                        self.client = self.server = None
+                dbg(f"failures {failures}")
+                assert not failures
         finally:
             logger.removeHandler(handler)
             logger.setLevel(old_level)
