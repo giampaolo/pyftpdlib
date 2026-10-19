@@ -7,6 +7,7 @@ Version: 2.2.1 - (IN DEVELOPMENT)
 
 * 686: distribute wheel binaries, not only .tar.gz.
 * 689: Fix file existence check for certificate files
+* Add a SECURITY.md mechanism to report critical vulnerabilities.
 
 Version: 2.2.0 - 2026-02-08
 ===========================

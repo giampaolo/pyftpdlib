@@ -5,6 +5,7 @@ include LICENSE
 include MANIFEST.in
 include Makefile
 include README.rst
+include SECURITY.md
 include demo/anti_flood_ftpd.py
 include demo/basic_ftpd.py
 include demo/keycert.pem
