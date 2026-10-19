@@ -2066,12 +2066,12 @@ class TestCallbacks(PyftpdlibTestCase):
                 if bytes_sent >= INTERRUPTED_TRANSF_SIZE or not chunk:
                     self.client.putcmd("abor")
                     break
-        # If a data transfer is in progress server is supposed to send
-        # a 426 reply followed by a 226 reply.
-        resp = self.client.getmultiline()
-        assert resp == "426 Transfer aborted via ABOR."
-        resp = self.client.getmultiline()
-        assert resp.startswith("226")
+            # If a data transfer is in progress server is supposed to
+            # send a 426 reply followed by a 226 reply.
+            resp = self.client.getmultiline()
+            assert resp == "426 Transfer aborted via ABOR."
+            resp = self.client.getmultiline()
+            assert resp.startswith("226")
         self.read_file(
             f"on_connect,on_login:{USER},on_incomplete_file_received:{self.testfn2},"
         )
