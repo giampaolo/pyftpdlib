@@ -101,6 +101,7 @@ class TestTimeoutsTLSMixin(TLSTestMixin, tf.TestTimeouts):
     def test_data_timeout_not_reached(self):
         import logging  # noqa: PLC0415
         import select  # noqa: PLC0415
+        import subprocess  # noqa: PLC0415
         import sys  # noqa: PLC0415
 
         import psutil  # noqa: PLC0415
@@ -134,6 +135,21 @@ class TestTimeoutsTLSMixin(TLSTestMixin, tf.TestTimeouts):
             finally:
                 kq.close()
 
+        def netstat(port):
+            if not hasattr(select, "kqueue"):
+                return None
+            out = subprocess.run(
+                ["netstat", "-an", "-p", "tcp"],
+                capture_output=True,
+                text=True,
+                check=False,
+            ).stdout
+            return [
+                " ".join(x.split())
+                for x in out.splitlines()
+                if f".{port} " in x
+            ]
+
         reads = {"n": 0, "last": None}
         orig_read = TLS_DTPHandler.handle_read_event
 
@@ -154,6 +170,7 @@ class TestTimeoutsTLSMixin(TLSTestMixin, tf.TestTimeouts):
                 f" kq_probe={kq_probe(fd)}"
                 f" tcp={tcp_states(dtp.socket.getsockname())}"
             )
+            dbg(f"netstat {netstat(dtp.socket.getsockname()[1])}")
             dbg(
                 f"tick bytes={dtp.get_transmitted_bytes()}"
                 f" lastdata={dtp._lastdata} accepting={dtp._ssl_accepting}"
