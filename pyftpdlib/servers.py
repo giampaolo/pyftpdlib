@@ -435,7 +435,9 @@ class _SpawnerBase(FTPServer):
             poll = ioloop.poll
             sched_poll = ioloop.sched.poll
             poll_timeout = getattr(self, "poll_timeout", None)
-            soonest_timeout = poll_timeout
+            # Don't block on the first poll: the handler's idle timer is
+            # already scheduled, and we don't know yet when it's due.
+            soonest_timeout = 0
 
             while (
                 ioloop.socket_map or ioloop.sched._tasks

@@ -1542,8 +1542,13 @@ class TestTimeouts(PyftpdlibTestCase):
     def test_idle_timeout(self):
         # Test control channel timeout.  The client which does not send
         # any command within the time specified in FTPHandler.timeout is
-        # supposed to be kicked off.
-        self._setUp(idle_timeout=0.5 if CI_TESTING else 0.1)
+        # supposed to be kicked off. Don't log in: the timer starts on
+        # connect, and a slow client could be kicked off mid-login.
+        self.server = self.server_class()
+        self.server.handler.timeout = 0.5 if CI_TESTING else 0.1
+        self.server.start()
+        self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
+        self.client.connect(self.server.host, self.server.port)
         # fail if no msg is received within 1 second
         self.client.sock.settimeout(1)
         data = self.client.sock.recv(BUFSIZE)
@@ -2735,27 +2740,6 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         self.connect_client()
         with pytest.raises(ftplib.error_temp, match="No usable unique file"):
             self.client.sendcmd("stou")
-
-    @retry_on_failure
-    def test_idle_timeout(self):
-        # Test control channel timeout.  The client which does not send
-        # any command within the time specified in FTPHandler.timeout is
-        # supposed to be kicked off.
-        self.server = self.server_class()
-        self.server.handler.timeout = 0.1
-        self.server.start()
-        self.connect_client()
-
-        self.client.quit()
-        self.client.connect()
-        self.client.login(USER, PASSWD)
-        # fail if no msg is received within 1 second
-        self.client.sock.settimeout(1)
-        data = self.client.sock.recv(BUFSIZE)
-        assert data == b"421 Control connection timed out.\r\n"
-        # ensure client has been kicked off
-        with pytest.raises((OSError, EOFError)):
-            self.client.sendcmd("noop")
 
     @retry_on_failure
     def test_permit_foreign_address_false(self):
