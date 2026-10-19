@@ -97,6 +97,25 @@ class SpawnerConfOptsMixin:
             for c in (c1, c2, c3):
                 close_client(c)
 
+    def test_closed_handler_not_spawned(self):
+        # Simulate a client which disconnected before the 220 banner:
+        # the handler is closed before the server spawns a worker.
+        class Handler(handlers.FTPHandler):
+            def on_connect(self):
+                self.close()
+
+        self.server = self.server_class()
+        self.server.server.handler = Handler
+        self.server.start()
+        c = self.client_class(timeout=GLOBAL_TIMEOUT)
+        try:
+            with pytest.raises(EOFError):
+                c.connect(self.server.host, self.server.port)
+            with self.server.lock:
+                assert self.server.server._active_tasks == []
+        finally:
+            close_client(c)
+
 
 class _TFTPd(FtpdThreadWrapper):
     server_class = servers.ThreadedFTPServer

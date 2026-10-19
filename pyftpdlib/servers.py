@@ -499,7 +499,10 @@ class _SpawnerBase(FTPServer):
         ):
             self._refresh_tasks()
         handler = FTPServer.handle_accepted(self, sock, addr)
-        if handler is not None:
+        # The handler may have been closed already, e.g. if the client
+        # disconnected before we sent the 220 banner. Its fd may now
+        # belong to something else, so don't hand it to a new worker.
+        if handler is not None and not handler._closed:
             # unregister the handler from the main IOLoop used by the
             # main thread to accept connections
             self.ioloop.unregister(handler._fileno)
