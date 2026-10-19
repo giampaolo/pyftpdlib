@@ -27,7 +27,7 @@ from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
 
 HERE = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
-ROOT_DIR = os.path.realpath(os.path.join(HERE, "..", ".."))
+ROOT_DIR = os.path.realpath(os.path.join(HERE, ".."))
 
 PYPY = "__pypy__" in sys.builtin_module_names
 OSX = sys.platform.startswith("darwin")

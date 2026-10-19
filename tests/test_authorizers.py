@@ -2,6 +2,7 @@
 # Use of this source code is governed by MIT license that can be
 # found in the LICENSE file.
 
+import contextlib
 import os
 import random
 import string
@@ -54,6 +55,9 @@ class TestDummyAuthorizer(PyftpdlibTestCase):
         os.mkdir(self.subtempdir)
         touch(self.tempfile)
         touch(self.subtempfile)
+        stack = contextlib.ExitStack()
+        stack.enter_context(warnings.catch_warnings())
+        self.addCleanup(stack.close)
         warnings.filterwarnings("error")
 
     def tearDown(self):
@@ -61,7 +65,6 @@ class TestDummyAuthorizer(PyftpdlibTestCase):
         os.remove(self.subtempfile)
         os.rmdir(self.subtempdir)
         os.rmdir(self.tempdir)
-        warnings.resetwarnings()
         super().tearDown()
 
     def test_common_methods(self):
@@ -485,9 +488,9 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
         )
         assert "e" in auth.get_perms("anonymous")
         assert "w" not in auth.get_perms("anonymous")
-        warnings.filterwarnings("ignore")
-        auth.override_user("anonymous", perm="w")
-        warnings.resetwarnings()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            auth.override_user("anonymous", perm="w")
         assert "w" in auth.get_perms("anonymous")
 
     def test_has_perm_anonymous(self):
@@ -498,9 +501,9 @@ class TestUnixAuthorizer(_SharedAuthorizerTests, PyftpdlibTestCase):
         assert not auth.has_perm(self.get_current_user(), "w")
         assert auth.has_perm("anonymous", "e")
         assert not auth.has_perm("anonymous", "w")
-        warnings.filterwarnings("ignore")
-        auth.override_user("anonymous", perm="w")
-        warnings.resetwarnings()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            auth.override_user("anonymous", perm="w")
         assert auth.has_perm("anonymous", "w")
 
     def test_validate_authentication(self):
