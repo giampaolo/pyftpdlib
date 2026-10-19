@@ -1246,8 +1246,14 @@ class TestFtpListingCmds(PyftpdlibTestCase):
         # where TVFS is supported, a fully qualified pathname is expected
         assert mlstline("mlst " + self.testfn).endswith("/" + self.testfn)
         assert mlstline("mlst").endswith("/")
-        # assume that no argument has the same meaning of "/"
-        assert mlstline("mlst") == mlstline("mlst /")
+
+        # assume that no argument has the same meaning of "/". Ignore
+        # size and modify: other tests running in parallel create files
+        # in the same dir, so they may change in between.
+        def stable(line):
+            return re.sub(r"(size|modify)=[^;]*;", "", line)
+
+        assert stable(mlstline("mlst")) == stable(mlstline("mlst /"))
         # non-existent path
         bogus = self.get_testfn()
         with pytest.raises(ftplib.error_perm, match="No such file"):
