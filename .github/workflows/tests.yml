@@ -1,7 +1,10 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-on: [push]
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
 name: tests
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && github.sha || '' }}
@@ -10,6 +13,8 @@ jobs:
   # Run unit tests
   tests:
     name: "py-${{ matrix.python-version }}, ${{ matrix.os }}"
+    # Skip same-repo PR runs: the push event already covers them.
+    if: &skip_same_repo_pr github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     strategy:
@@ -19,10 +24,10 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -31,19 +36,21 @@ jobs:
 
   # Run linters
   linters:
+    if: *skip_same_repo_pr
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
-    - uses: actions/setup-python@v6
+    - uses: actions/checkout@v7
+    - uses: actions/setup-python@v7
     - name: 'Run linters'
       run: make ci-lint
 
   # Check source distribution
   check-sdist:
+    if: *skip_same_repo_pr
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: 3.x
       - name: Check source distribution
