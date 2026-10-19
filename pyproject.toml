@@ -82,6 +82,11 @@ dev = [
     { include-group = "lint" },
     { include-group = "test" },
 ]
+docs = [
+    "sphinx",
+    "sphinx_copybutton",
+    "sphinx_rtd_theme",
+]
 
 [project.urls]
 Homepage = "https://github.com/giampaolo/pyftpdlib/"

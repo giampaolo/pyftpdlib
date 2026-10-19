@@ -71,6 +71,11 @@ install-pydeps-lint:  ## Install python deps necessary to run linters.
 	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip
 	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) --group lint
 
+install-pydeps-docs:  ## Install python deps necessary to build the doc.
+	${MAKE} install-pip
+	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip
+	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) --group docs
+
 install-pydeps-dev:  ## Install python deps meant for local development.
 	${MAKE} install-git-hooks
 	${MAKE} install-pip
