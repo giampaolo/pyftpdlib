@@ -1599,6 +1599,8 @@ class TestTimeouts(PyftpdlibTestCase):
             stop_at = time.time() + 0.2
             while time.time() < stop_at:
                 sock.send(b"x" * 1024)
+            if isinstance(sock, ssl.SSLSocket):
+                sock.unwrap()
             sock.close()
             self.client.voidresp()
 
