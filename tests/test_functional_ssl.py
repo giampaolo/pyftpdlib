@@ -14,7 +14,6 @@ from pyftpdlib.handlers import TLS_FTPHandler
 from . import CERTFILE
 from . import CI_TESTING
 from . import GLOBAL_TIMEOUT
-from . import OSX
 from . import PASSWD
 from . import USER
 from . import WINDOWS
@@ -83,13 +82,6 @@ class TestFtpStoreDataTLSMixin(TLSTestMixin, tf.TestFtpStoreData):
     @pytest.mark.skipif(WINDOWS, reason="unreliable on Windows + SSL")
     def test_stor_ascii_2(self):
         pass
-
-
-# class TestSendFileTLSMixin(TLSTestMixin, TestSendfile):
-
-#     def test_fallback(self):
-#         self.client.prot_c()
-#         super().test_fallback()
 
 
 class TestFtpRetrieveDataTLSMixin(TLSTestMixin, tf.TestFtpRetrieveData):
@@ -182,20 +174,6 @@ class TestFTPS(PyftpdlibTestCase):
             self.server.handler.tls_data_required = False
             self.server.stop()
         super().tearDown()
-
-    def assertRaisesWithMsg(self, excClass, msg, callableObj, *args, **kwargs):
-        try:
-            callableObj(*args, **kwargs)
-        except excClass as err:
-            if str(err) == msg:
-                return
-            raise self.failureException(f"{err!s} != {msg}") from err
-        else:
-            if hasattr(excClass, "__name__"):
-                excName = excClass.__name__
-            else:
-                excName = str(excClass)
-            raise self.failureException(f"{excName} not raised")
 
     def test_auth(self):
         # unsecured
@@ -290,46 +268,3 @@ class TestFTPS(PyftpdlibTestCase):
             self.client.retrlines("list", lambda x: x)
         self.client.prot_p()
         self.client.retrlines("list", lambda x: x)
-
-    def try_protocol_combo(self, server_protocol, client_protocol):
-        self._setup(ssl_protocol=server_protocol)
-        self.client.ssl_version = client_protocol
-        close_client(self.client)
-        self.client.connect(self.server.host, self.server.port)
-        try:
-            self.client.login()
-        except (ssl.SSLError, OSError):
-            self.client.close()
-        else:
-            self.client.quit()
-
-    # def test_ssl_version(self):
-    #     protos = [ssl.PROTOCOL_SSLv3, ssl.PROTOCOL_SSLv23,
-    #               ssl.PROTOCOL_TLSv1]
-    #     if hasattr(ssl, "PROTOCOL_SSLv2"):
-    #         protos.append(ssl.PROTOCOL_SSLv2)
-    #         for proto in protos:
-    #             self.try_protocol_combo(ssl.PROTOCOL_SSLv2, proto)
-    #     for proto in protos:
-    #         self.try_protocol_combo(ssl.PROTOCOL_SSLv3, proto)
-    #     for proto in protos:
-    #         self.try_protocol_combo(ssl.PROTOCOL_SSLv23, proto)
-    #     for proto in protos:
-    #         self.try_protocol_combo(ssl.PROTOCOL_TLSv1, proto)
-
-    if hasattr(ssl, "PROTOCOL_SSLv2"):
-
-        def test_sslv2(self):
-            self.client.ssl_version = ssl.PROTOCOL_SSLv2
-            close_client(self.client)
-            if not OSX:
-                with self.server.lock:
-                    self.client.connect(self.server.host, self.server.port)
-                with pytest.raises(OSError):
-                    self.client.login()
-            else:
-                with self.server.lock, pytest.raises(OSError):
-                    self.client.connect(
-                        self.server.host, self.server.port, timeout=0.1
-                    )
-            self.client.ssl_version = ssl.PROTOCOL_SSLv2
