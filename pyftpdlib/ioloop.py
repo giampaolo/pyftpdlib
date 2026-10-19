@@ -743,6 +743,10 @@ if hasattr(select, "kqueue"):  # pragma: no cover
                 )
             except InterruptedError:
                 return
+            except OSError as err:
+                if err.errno == errno.EBADF and self._kqueue.closed:
+                    return
+                raise
             for kevent in kevents:
                 inst = self.socket_map.get(kevent.ident)
                 if inst is None:

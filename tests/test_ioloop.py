@@ -292,6 +292,53 @@ class DevPollIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
 class KqueueIOLoopTestCase(PyftpdlibTestCase, BaseIOLoopTestCase):
     ioloop_class = getattr(pyftpdlib.ioloop, "Kqueue", None)
 
+    def test_closed_kqueue_ebadf_on_poll(self):
+        s = self.ioloop_class()
+        self.addCleanup(s.close)
+        poller = Mock(wraps=s._kqueue)
+
+        def close_then_ebadf(*args):
+            s.close()
+            poller.closed = True
+            raise OSError(errno.EBADF, "closed during poll")
+
+        poller.control.side_effect = close_then_ebadf
+        s._kqueue = poller
+        s.poll(0)
+
+    def test_open_kqueue_ebadf_on_poll(self):
+        s = self.ioloop_class()
+        self.addCleanup(s.close)
+        poller = Mock(wraps=s._kqueue)
+        poller.closed = False
+        poller.control.side_effect = OSError(errno.EBADF, "active poller")
+        s._kqueue = poller
+        with pytest.raises(OSError):
+            s.poll(0)
+
+    def test_closed_kqueue_unrelated_error_on_poll(self):
+        s = self.ioloop_class()
+        self.addCleanup(s.close)
+        poller = Mock(wraps=s._kqueue)
+
+        def close_then_einval(*args):
+            s.close()
+            poller.closed = True
+            raise OSError(errno.EINVAL, "closed during poll")
+
+        poller.control.side_effect = close_then_einval
+        s._kqueue = poller
+        with pytest.raises(OSError):
+            s.poll(0)
+
+    def test_eintr_on_kqueue_poll(self):
+        s = self.ioloop_class()
+        self.addCleanup(s.close)
+        poller = Mock(wraps=s._kqueue)
+        poller.control.side_effect = InterruptedError
+        s._kqueue = poller
+        s.poll(0)
+
 
 class TestCallLater(PyftpdlibTestCase):
     """Tests for CallLater class."""
