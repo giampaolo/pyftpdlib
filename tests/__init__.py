@@ -69,6 +69,7 @@ class PyftpdlibTestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()
         reset_server_opts()
+        self.addCleanup(stop_leftover_servers)
 
     def get_testfn(self, suffix="", dir=None):
         fname = get_testfn(suffix=suffix, dir=dir)
@@ -178,6 +179,19 @@ def disable_log_warning(fun):
             logger.setLevel(level)
 
     return wrapper
+
+
+def stop_leftover_servers():
+    servers = FtpdThreadWrapper.unstopped[:]
+    for server in servers:
+        server.shutdown()
+    if servers:
+        reset_server_opts()
+        warnings.warn(
+            f"some servers weren't stopped {servers!r}",
+            UserWarning,
+            stacklevel=2,
+        )
 
 
 def get_server_handler(server):
@@ -306,6 +320,10 @@ class FtpdThreadWrapper(threading.Thread):
     poll_interval = 0.001 if CI_TESTING else 0.000001
     # Makes the thread stop on interpreter exit.
     daemon = True
+    # Servers not stop()ped yet. If a test fails before calling stop()
+    # (e.g. in tearDown()), stop_leftover_servers() shuts them down, so
+    # they don't interfere with the next tests.
+    unstopped = []
 
     def __init__(self, addr=None):
         self.parent_pid = os.getpid()
@@ -316,6 +334,7 @@ class FtpdThreadWrapper(threading.Thread):
         self.lock = threading.Lock()
         self._stop_flag = False
         self._event_stop = threading.Event()
+        FtpdThreadWrapper.unstopped.append(self)
 
     def run(self):
         try:
@@ -327,10 +346,17 @@ class FtpdThreadWrapper(threading.Thread):
         finally:
             self._event_stop.set()
 
-    def stop(self):
+    def shutdown(self):
+        if self in FtpdThreadWrapper.unstopped:
+            FtpdThreadWrapper.unstopped.remove(self)
         self._stop_flag = True  # signal the main loop to exit
-        self._event_stop.wait()
+        if self.ident is not None:  # start()ed
+            self._event_stop.wait()
         self.server.close_all()
-        self.join()
+        if self.ident is not None:
+            self.join()
+
+    def stop(self):
+        self.shutdown()
         reset_server_opts()
         assert_free_resources(self.parent_pid)
