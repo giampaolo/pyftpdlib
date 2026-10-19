@@ -34,7 +34,6 @@ from . import GLOBAL_TIMEOUT
 from . import HOME
 from . import HOST
 from . import INTERRUPTED_TRANSF_SIZE
-from . import OSX
 from . import PASSWD
 from . import POSIX
 from . import SUPPORTS_IPV4
@@ -1426,7 +1425,6 @@ class TestFtpAbort(PyftpdlibTestCase):
     @pytest.mark.skipif(
         not hasattr(socket, "MSG_OOB"), reason="MSG_OOB not available"
     )
-    @pytest.mark.skipif(OSX, reason="does not work on OSX")
     def test_oob_abor(self):
         # Send ABOR by following the RFC-959 directives of sending
         # Telnet IP/Synch sequence as OOB data.

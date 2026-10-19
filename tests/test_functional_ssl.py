@@ -15,10 +15,8 @@ from pyftpdlib.handlers import TLS_FTPHandler
 
 from . import CERTFILE
 from . import GLOBAL_TIMEOUT
-from . import OSX
 from . import PASSWD
 from . import USER
-from . import WINDOWS
 from . import FtpdThreadWrapper
 from . import PyftpdlibTestCase
 from . import close_client
@@ -77,17 +75,11 @@ class TestFtpFsOperationsTLSMixin(TLSTestMixin, tf.TestFtpFsOperations):
 
 
 class TestFtpStoreDataTLSMixin(TLSTestMixin, tf.TestFtpStoreData):
-
-    @pytest.mark.skipif(WINDOWS, reason="unreliable on Windows + SSL")
-    def test_stor_ascii_2(self):
-        super().test_stor_ascii_2()
+    pass
 
 
 class TestFtpRetrieveDataTLSMixin(TLSTestMixin, tf.TestFtpRetrieveData):
-
-    @pytest.mark.skipif(WINDOWS, reason="may fail on windows")
-    def test_restore_on_retr(self):
-        super().test_restore_on_retr()
+    pass
 
 
 class TestFtpListingCmdsTLSMixin(TLSTestMixin, tf.TestFtpListingCmds):
@@ -102,10 +94,7 @@ class TestFtpAbortTLSMixin(TLSTestMixin, tf.TestFtpAbort):
 
 
 class TestTimeoutsTLSMixin(TLSTestMixin, tf.TestTimeouts):
-
-    @pytest.mark.skipif(OSX or WINDOWS, reason="fails on macOS and Windows")
-    def test_data_timeout_not_reached(self):
-        super().test_data_timeout_not_reached()
+    pass
 
 
 class TestConfigurableOptionsTLSMixin(
