@@ -4,7 +4,9 @@
 
 import contextlib
 import ftplib
+import socket
 import ssl
+import time
 
 import OpenSSL  # requires "pip install pyopenssl"
 import pytest
@@ -20,6 +22,7 @@ from . import WINDOWS
 from . import FtpdThreadWrapper
 from . import PyftpdlibTestCase
 from . import close_client
+from . import get_server_handler
 from . import test_functional as tf
 
 del OpenSSL
@@ -235,6 +238,30 @@ class TestFTPS(PyftpdlibTestCase):
             pass
         else:
             assert chunk == b""
+
+    def test_send_empty_data(self):
+        # SSL_write() with no data raises a bogus "Unexpected EOF" once
+        # the handshake is done, and the server closed the connection.
+        self._setup()
+        self.client.login()
+        self.client.prot_p()
+        host, port = self.client.makepasv()
+        sock = socket.create_connection((host, port), GLOBAL_TIMEOUT)
+        conn = self.client.context.wrap_socket(
+            sock, server_hostname=self.client.host
+        )
+        with contextlib.closing(conn):
+            stop_at = time.monotonic() + GLOBAL_TIMEOUT
+            while True:
+                with self.server.lock:
+                    handler = get_server_handler(self.server.server)
+                    dtp = handler.data_channel
+                    if dtp is not None and dtp._ssl_established:
+                        assert dtp.send(b"") == 0
+                        assert not dtp._closed
+                        break
+                assert time.monotonic() < stop_at
+                time.sleep(0.001)
 
     def test_tls_control_required(self):
         self._setup(tls_control_required=True)
