@@ -14,30 +14,31 @@ INSTALL_PYDEPS = PYTHON=$(PYTHON) ./scripts/internal/install-pydeps.sh
 
 # if make is invoked with no arg, default to `make help`
 .DEFAULT_GOAL := help
+.PHONY: test
 
-# install git hook
-_ := $(shell mkdir -p .git/hooks/ && ln -sf ../../scripts/internal/git_pre_commit.py .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit)
+# install git hook (skipped in worktrees, where .git is a file)
+_ := $(shell test -d .git && mkdir -p .git/hooks/ && ln -sf ../../scripts/internal/git_pre_commit.py .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit)
 
 # ===================================================================
 # Install
 # ===================================================================
 
 clean:  ## Remove all build files.
-	@rm -rfv `find . \
+	@find . -name .git -prune -o \( \
 		-type d -name __pycache__ \
-		-o -type f -name \*.bak \
-		-o -type f -name \*.orig \
-		-o -type f -name \*.pyc \
-		-o -type f -name \*.pyd \
-		-o -type f -name \*.pyo \
-		-o -type f -name \*.rej \
-		-o -type f -name \*.so \
-		-o -type f -name \*.~ \
-		-o -type f -name \*\$testfn`
+		-o -type f -name '*.bak' \
+		-o -type f -name '*.orig' \
+		-o -type f -name '*.pyc' \
+		-o -type f -name '*.pyd' \
+		-o -type f -name '*.pyo' \
+		-o -type f -name '*.rej' \
+		-o -type f -name '*.so' \
+		-o -type f -name '*~' \
+		-o -name 'pyftpd-tmp-*' \
+	\) -prune -exec rm -rfv {} +
 	@rm -rfv \
 		*.core \
 		*.egg-info \
-		*\$testfile* \
 		.coverage \
 		.failed-tests.txt \
 		.pytest_cache \
@@ -46,7 +47,6 @@ clean:  ## Remove all build files.
 		dist/ \
 		docs/_build/ \
 		htmlcov/ \
-		pyftpd-tmp-* \
 		tmp/
 
 install:  ## Install this package.
@@ -107,10 +107,10 @@ test-ioloop:  ## Run IOLoop tests.
 test-cli:  ## Run miscellaneous tests.
 	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS) tests/test_cli.py
 
-test-lastfailed:  ## Run previously failed tests
+test-last-failed:  ## Run previously failed tests
 	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest --last-failed $(ARGS)
 
-test-coverage:  ## Run test coverage.
+coverage:  ## Run test coverage.
 	rm -rf .coverage htmlcov
 	$(PYTHON_ENV_VARS) $(PYTHON) -m coverage run -m pytest $(ARGS)
 	$(PYTHON) -m coverage report
@@ -132,7 +132,7 @@ black:  ## Python files linting (via black)
 ruff:  ## Run ruff linter.
 	@$(call _ls,'*.py') | xargs $(PYTHON) -m ruff check --output-format=concise
 
-_pylint:  ## Python pylint (not mandatory, just run it from time to time)
+pylint:  ## Python pylint (not mandatory, just run it from time to time)
 	@$(call _ls,'*.py') | xargs $(PYTHON) -m pylint --rcfile=pyproject.toml --jobs=0 $(ARGS)
 
 lint-rst:  ## Run RsT linter.
@@ -271,4 +271,4 @@ check-broken-links:  ## Look for broken links in source files.
 	git ls-files | xargs $(PYTHON) -Wa scripts/internal/check_broken_links.py
 
 help: ## Display callable targets.
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@awk -F':.*?## ' '/^[a-zA-Z0-9_.-]+:.*?## / {printf "\033[36m%-24s\033[0m %s\n", $$1, $$2}' Makefile | sort
