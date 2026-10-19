@@ -59,7 +59,7 @@ if CI_TESTING:
 SUPPORTS_IPV4 = None  # set later
 SUPPORTS_IPV6 = None  # set later
 SUPPORTS_MULTIPROCESSING = hasattr(pyftpdlib.servers, "MultiprocessFTPServer")
-if BSD or (OSX and GITHUB_ACTIONS):
+if BSD:
     SUPPORTS_MULTIPROCESSING = False  # XXX: it's broken!!
 
 
