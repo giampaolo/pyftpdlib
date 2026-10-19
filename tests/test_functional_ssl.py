@@ -100,7 +100,10 @@ class TestTimeoutsTLSMixin(TLSTestMixin, tf.TestTimeouts):
     # XXX: temporary, to debug a failure on macOS CI.
     def test_data_timeout_not_reached(self):
         import logging  # noqa: PLC0415
+        import select  # noqa: PLC0415
         import sys  # noqa: PLC0415
+
+        import psutil  # noqa: PLC0415
 
         from pyftpdlib.handlers import TLS_DTPHandler  # noqa: PLC0415
 
@@ -109,9 +112,48 @@ class TestTimeoutsTLSMixin(TLSTestMixin, tf.TestTimeouts):
         def dbg(msg):
             sys.stderr.write(f"DBG {time.monotonic() - t0:.3f} {msg}\n")
 
+        def tcp_states(laddr):
+            return [
+                (c.laddr, c.raddr, c.status)
+                for c in psutil.Process().net_connections("tcp")
+                if c.laddr and tuple(c.laddr)[:2] == tuple(laddr)[:2]
+            ]
+
+        def kq_probe(fd):
+            if not hasattr(select, "kqueue"):
+                return None
+            kq = select.kqueue()
+            try:
+                kev = select.kevent(
+                    fd, filter=select.KQ_FILTER_READ, flags=select.KQ_EV_ADD
+                )
+                evs = kq.control([kev], 1, 0)
+                return [(e.flags, e.fflags, e.data) for e in evs]
+            except OSError as err:
+                return repr(err)
+            finally:
+                kq.close()
+
+        reads = {"n": 0, "last": None}
+        orig_read = TLS_DTPHandler.handle_read_event
+
+        def handle_read_event(dtp):
+            reads["n"] += 1
+            reads["last"] = time.monotonic() - t0
+            return orig_read(dtp)
+
         orig_timeout = TLS_DTPHandler.handle_timeout
 
         def handle_timeout(dtp):
+            fd = dtp._fileno
+            dbg(
+                f"tick reads={reads['n']} last_read={reads['last']}"
+                f" select_r={bool(select.select([fd], [], [], 0)[0])}"
+                f" pending={dtp.socket.pending()}"
+                f" kq_active={getattr(dtp.ioloop, '_active', {}).get(fd)}"
+                f" kq_probe={kq_probe(fd)}"
+                f" tcp={tcp_states(dtp.socket.getsockname())}"
+            )
             dbg(
                 f"tick bytes={dtp.get_transmitted_bytes()}"
                 f" lastdata={dtp._lastdata} accepting={dtp._ssl_accepting}"
@@ -135,6 +177,8 @@ class TestTimeoutsTLSMixin(TLSTestMixin, tf.TestTimeouts):
         try:
             with mock.patch.object(
                 TLS_DTPHandler, "handle_timeout", handle_timeout
+            ), mock.patch.object(
+                TLS_DTPHandler, "handle_read_event", handle_read_event
             ):
                 self._setUp(data_timeout=0.5 if tf.CI_TESTING else 0.1)
                 dbg("transfercmd")
@@ -147,6 +191,8 @@ class TestTimeoutsTLSMixin(TLSTestMixin, tf.TestTimeouts):
                     while time.time() < stop_at:
                         sent += sock.send(b"x" * 1024)
                     dbg(f"sent {sent} bytes")
+                    caddr = sock.getsockname()
+                    dbg(f"client before close {tcp_states(caddr)}")
                     sock.close()
                     dbg("closed")
                     dbg(f"resp {self.client.voidresp()}")
