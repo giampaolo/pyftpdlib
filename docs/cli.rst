@@ -8,7 +8,7 @@ examples.
 
 Anonymous server, listening on port 2121, sharing the current directory:
 
-.. code-block::
+.. code-block:: sh
 
     $ python3 -m pyftpdlib
     [I 13-04-09 17:55:18] >>> starting FTP server on 0.0.0.0:2121, pid=6412 <<<
@@ -19,32 +19,32 @@ Anonymous server, listening on port 2121, sharing the current directory:
 
 Anonymous server with write permission:
 
-.. code-block::
+.. code-block:: sh
 
     $ python3 -m pyftpdlib --write
 
 Specify a user with write permissions:
 
-.. code-block::
+.. code-block:: sh
 
     $ python3 -m pyftpdlib --username=bob --password=mypassword
 
 Set a different address/port and home directory:
 
-.. code-block::
+.. code-block:: sh
 
     $ python3 -m pyftpdlib --interface=localhost --port=2121 --directory=/home/bob
 
 Start a FTPS (FTP over SSL) server:
 
-.. code-block::
+.. code-block:: sh
 
     $ openssl req -x509 -newkey rsa:2048 -keyout ftpd.key -out ftpd.crt -nodes
     $ python3 -m pyftpdlib --tls --keyfile=ftpd.key --certfile=ftpd.crt
 
 See ``python3 -m pyftpdlib -h`` for a complete list of options:
 
-.. code-block::
+.. code-block:: sh
 
     $ python3 -m pyftpdlib  -h
     usage: python3 -m pyftpdlib [options]
