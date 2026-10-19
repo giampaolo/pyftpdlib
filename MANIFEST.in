@@ -17,25 +17,6 @@ include demo/tls_ftpd.py
 include demo/unix_daemon.py
 include demo/unix_ftpd.py
 include demo/win_ftpd.py
-include docs/.readthedocs.yaml
-include docs/Makefile
-include docs/README
-include docs/_ext/availability.py
-include docs/_ext/check_python_syntax.py
-include docs/_static/images/freebsd.gif
-include docs/_static/images/google-pages.gif
-include docs/_static/images/peerscape.gif
-include docs/adoptions.rst
-include docs/api.rst
-include docs/benchmarks.rst
-include docs/cli.rst
-include docs/conf.py
-include docs/faqs.rst
-include docs/index.rst
-include docs/install.rst
-include docs/requirements.txt
-include docs/rfc-compliance.rst
-include docs/tutorial.rst
 include pyftpdlib/__init__.py
 include pyftpdlib/__main__.py
 include pyftpdlib/authorizers.py
@@ -75,4 +56,3 @@ include tests/test_functional.py
 include tests/test_functional_ssl.py
 include tests/test_ioloop.py
 include tests/test_servers.py
-recursive-exclude docs/images *

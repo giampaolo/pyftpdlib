@@ -13,7 +13,7 @@ import subprocess
 
 SKIP_EXTS = (".png", ".jpg", ".jpeg", ".svg")
 SKIP_FILES = tuple()
-SKIP_PREFIXES = (".ci/", ".github/")
+SKIP_PREFIXES = (".ci/", ".github/", "docs/")
 
 
 def sh(cmd):
@@ -30,8 +30,6 @@ def main():
         ):
             continue
         print("include " + file)
-
-    print("recursive-exclude docs/images *")
 
 
 if __name__ == "__main__":

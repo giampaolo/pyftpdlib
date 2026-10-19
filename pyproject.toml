@@ -70,11 +70,15 @@ dev = [
     "build",
     "check-manifest",
     "coverage",
+    "packaging",
     "pdbpp ; os_name == 'nt'",
     "pylint",
     "pyreadline3 ; os_name == 'nt'",
     "pytest-cov",
+    "requests",
     "twine",
+    "validate-pyproject[all]",
+    "virtualenv",
     { include-group = "lint" },
     { include-group = "test" },
 ]
@@ -97,6 +101,9 @@ line-length = 79
 # https://black.readthedocs.io/en/stable/the_black_code_style/future_style.html
 preview = true
 enable-unstable-feature = ["hug_parens_with_braces_and_square_brackets", "string_processing", "wrap_long_dict_values_in_parens"]
+
+[tool.check-manifest]
+ignore = ["docs", "docs/**"]
 
 [tool.ruff]
 # https://beta.ruff.rs/docs/settings/
