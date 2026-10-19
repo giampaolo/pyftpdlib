@@ -994,6 +994,8 @@ class TestFtpStoreData(PyftpdlibTestCase):
             conn.sendall(b"abcde12345" * 50000)
             self.client.sendcmd("quit")
             conn.sendall(b"abcde12345" * 50000)
+            if isinstance(conn, ssl.SSLSocket):
+                conn.unwrap()
         # expect the response (transfer ok)
         assert self.client.voidresp()[:3] == "226"
         # Make sure client has been disconnected.
