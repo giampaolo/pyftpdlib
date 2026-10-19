@@ -613,7 +613,7 @@ if os.name == "posix":
     try:
         import multiprocessing
 
-        multiprocessing.Lock()
+        multiprocessing.get_context(method="fork").Lock()
     except Exception:
         # see https://github.com/giampaolo/pyftpdlib/issues/496
         pass

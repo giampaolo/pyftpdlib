@@ -20,7 +20,9 @@ Version: 2.2.1 - (IN DEVELOPMENT)
   (``FTPHandler.timeout``).
 * [MultiprocessFTPServer] did not work on macOS, where the default
   multiprocessing start method is "spawn" since Python 3.8: every new
-  connection failed with "cannot pickle 'select.kqueue' object".
+  connection failed with "cannot pickle 'select.kqueue' object". Also,
+  importing ``pyftpdlib.servers`` started a multiprocessing resource
+  tracker process.
 * [ThreadedFTPServer, MultiprocessFTPServer] a worker was started for
   clients that disconnected right after connecting, possibly using a
   file descriptor that belonged to something else.
