@@ -1539,20 +1539,13 @@ class TestTimeouts(PyftpdlibTestCase):
             self.server.stop()
         super().tearDown()
 
-    # Note: moved later.
-
-    # def test_idle_timeout(self):
-    #     # Test control channel timeout.  The client which does not send
-    #     # any command within the time specified in FTPHandler.timeout is
-    #     # supposed to be kicked off.
-    #     self._setUp(idle_timeout=0.1)
-    #     # fail if no msg is received within 1 second
-    #     self.client.sock.settimeout(1)
-    #     data = self.client.sock.recv(BUFSIZE)
-    #     assert data == b"421 Control connection timed out.\r\n"
-    #     # ensure client has been kicked off
-    #     with pytest.raises((OSError, EOFError)):
-    #         self.client.sendcmd('noop')
+    def test_idle_timeout(self):
+        self._setUp(idle_timeout=0.5 if CI_TESTING else 0.1)
+        self.client.sock.settimeout(1)
+        data = self.client.sock.recv(BUFSIZE)
+        assert data == b"421 Control connection timed out.\r\n"
+        with pytest.raises((OSError, EOFError)):
+            self.client.sendcmd("noop")
 
     def test_data_timeout(self):
         # Test data channel timeout.  The client which does not send
