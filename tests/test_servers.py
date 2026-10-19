@@ -22,6 +22,7 @@ from pyftpdlib import servers
 from . import GLOBAL_TIMEOUT
 from . import HOME
 from . import HOST
+from . import OSX
 from . import PASSWD
 from . import SUPPORTS_MULTIPROCESSING
 from . import USER
@@ -94,6 +95,9 @@ class TestFTPServer(PyftpdlibTestCase):
                 server.serve_forever(worker_processes=2, blocking=False)
 
     @pytest.mark.skipif(WINDOWS, reason="POSIX only")
+    @pytest.mark.skipif(
+        OSX, reason="broken on macOS (kqueue is not inherited on fork)"
+    )
     def test_worker_processes(self):
         code = textwrap.dedent(f"""
             from pyftpdlib.authorizers import DummyAuthorizer
