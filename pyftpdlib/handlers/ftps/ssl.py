@@ -176,6 +176,11 @@ class SSLConnectionMixin:
     def send(self, data):
         if not isinstance(data, bytes):
             data = bytes(data)
+        if not data:
+            # SSL_write() fails with no data, e.g. it raises a bogus
+            # "Unexpected EOF" if the handshake is done. See:
+            # https://docs.openssl.org/3.0/man3/SSL_write/
+            return 0
         try:
             return super().send(data)
         except SSL.WantReadError:

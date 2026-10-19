@@ -21,6 +21,9 @@ Version: 2.2.1 - (IN DEVELOPMENT)
 * [ThreadedFTPServer, MultiprocessFTPServer] a worker was started for
   clients that disconnected right after connecting, possibly using a
   file descriptor that belonged to something else.
+* [TLS_FTPHandler] NLST of an empty directory over a secure data channel
+  could close the connection without a TLS shutdown, making the client
+  fail with "shutdown while in init".
 
 **Compatibility notes**
 
