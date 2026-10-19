@@ -2048,7 +2048,6 @@ class TestCallbacks(PyftpdlibTestCase):
             f"on_connect,on_login:{USER},on_file_sent:{self.testfn2},"
         )
 
-    @retry_on_failure
     def test_on_incomplete_file_received(self):
         self.client.login(USER, PASSWD)
         data = b"abcde12345" * 1000000
@@ -2065,8 +2064,16 @@ class TestCallbacks(PyftpdlibTestCase):
                 bytes_sent += len(chunk)
                 # stop transfer while it isn't finished yet
                 if bytes_sent >= INTERRUPTED_TRANSF_SIZE or not chunk:
-                    self.client.putcmd("abor")
                     break
+            # Wait for the server to receive some data, else it
+            # considers no transfer in progress and replies 225.
+            stop_at = time.monotonic() + GLOBAL_TIMEOUT
+            while (
+                not os.path.getsize(self.testfn2)
+                and time.monotonic() < stop_at
+            ):
+                time.sleep(0.001)
+            self.client.putcmd("abor")
             # If a data transfer is in progress server is supposed to
             # send a 426 reply followed by a 226 reply.
             resp = self.client.getmultiline()
