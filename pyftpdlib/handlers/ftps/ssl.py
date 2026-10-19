@@ -111,7 +111,7 @@ class SSLConnectionMixin:
                 # sock, _ = sock.accept()
                 # sock.close()
                 self.log("Unexpected SSL EOF.")
-                self.close()
+                self.handle_ssl_eof()
             else:
                 raise
         except SSL.Error as err:
@@ -129,6 +129,12 @@ class SSLConnectionMixin:
     def handle_ssl_shutdown(self):
         """Called when SSL shutdown() has completed."""
         super().close()
+
+    def handle_ssl_eof(self):
+        """Called when the other side closes the connection before
+        completing the SSL handshake.
+        """
+        self.close()
 
     def handle_failed_ssl_handshake(self):
         raise NotImplementedError("must be implemented in subclass")

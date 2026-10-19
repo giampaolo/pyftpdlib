@@ -283,6 +283,19 @@ class TestFTPS(PyftpdlibTestCase):
                 assert time.monotonic() < stop_at
                 time.sleep(0.001)
 
+    def test_data_conn_closed_during_handshake(self):
+        # The server closed the data channel without replying, and the
+        # client waited forever.
+        self._setup()
+        self.client.login(USER, PASSWD)
+        self.client.prot_p()
+        host, port = self.client.makepasv()
+        sock = socket.create_connection((host, port), GLOBAL_TIMEOUT)
+        with contextlib.closing(sock):
+            self.client.sendcmd("stor " + self.get_testfn())
+        with pytest.raises(ftplib.error_perm, match="522"):
+            self.client.voidresp()
+
     def test_tls_control_required(self):
         self._setup(tls_control_required=True)
         msg = "550 SSL/TLS required on the control channel."

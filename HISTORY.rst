@@ -27,6 +27,9 @@ Version: 2.2.1 - (IN DEVELOPMENT)
 * [TLS_FTPHandler] (Windows) if the client reset a secure data connection,
   the server never closed it: it used 100% CPU retrying the TLS shutdown,
   and never replied to the transfer command.
+* [TLS_FTPHandler] if the client closed the data connection during the TLS
+  handshake, the server never replied to the transfer command, and the
+  client waited forever.
 * [FTPServer] ``serve_forever(blocking=False)`` logged the server start
   (">>> starting FTP server <<<") on every call.
 * [ThreadedFTPServer, MultiprocessFTPServer] the server start

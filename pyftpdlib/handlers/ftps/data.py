@@ -28,6 +28,13 @@ class TLS_DTPHandler(SSLConnectionMixin, DTPHandler):
         else:
             return super().use_sendfile()
 
+    def handle_ssl_eof(self):
+        if self._initialized:
+            # A transfer command is waiting for a reply.
+            self.handle_failed_ssl_handshake()
+        else:
+            self.close()
+
     def handle_failed_ssl_handshake(self):
         # TLS/SSL handshake failure, probably client's fault which
         # used a SSL version different from server's.
