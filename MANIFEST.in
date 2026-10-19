@@ -45,6 +45,7 @@ include scripts/internal/git_pre_commit.py
 include scripts/internal/install_pip.py
 include scripts/internal/print_announce.py
 include scripts/internal/purge_installation.py
+include scripts/internal/rst_unused_targets.py
 include tests/README
 include tests/__init__.py
 include tests/conftest.py

@@ -124,6 +124,9 @@ def toml_sort(files):
 
 def lint_rst(files):
     print(f"running rst linter ({len(files)})")
+    cmd = [PYTHON, "scripts/internal/rst_unused_targets.py", *files]
+    if subprocess.call(cmd) != 0:
+        return sys.exit("RST code didn't pass style check")
     cmd = [
         "sphinx-lint",
         "--enable",

@@ -142,6 +142,7 @@ _pylint:  ## Python pylint (not mandatory, just run it from time to time)
 	@git ls-files '*.py' | xargs $(PYTHON) -m pylint --rcfile=pyproject.toml --jobs=0 $(ARGS)
 
 lint-rst:  ## Run RsT linter.
+	@git ls-files '*.rst' | xargs $(PYTHON) scripts/internal/rst_unused_targets.py
 	@git ls-files '*.rst' | xargs sphinx-lint --enable all --disable line-too-long
 
 lint-toml:  ## Linter for pyproject.toml
