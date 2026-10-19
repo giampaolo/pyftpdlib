@@ -253,6 +253,8 @@ class FTPServer(Acceptor):
             if log:
                 self._log_start(prefork=True)
             fork_processes(worker_processes)
+            # We're in a worker process now.
+            self.ioloop._after_fork()
         elif log:
             self._log_start()
 

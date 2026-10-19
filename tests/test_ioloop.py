@@ -100,6 +100,18 @@ class BaseIOLoopTestCase:
         s.close()
         assert s.socket_map == {}
 
+    def test_after_fork(self):
+        s = self.ioloop_class()
+        self.addCleanup(s.close)
+        rd, wr = self.make_socketpair()
+        handler = Mock()
+        handler.readable.return_value = True
+        s.register(rd.fileno(), handler, s.READ)
+        s._after_fork()
+        wr.send(b"x")
+        s.poll(0)
+        assert handler.handle_read_event.called
+
     def test_close_w_handler_exc(self):
         # Simulate an exception when close()ing a socket handler.
         # Exception should be logged and ignored.

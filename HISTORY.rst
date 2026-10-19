@@ -38,6 +38,11 @@ Version: 2.2.1 - (IN DEVELOPMENT)
 * [FTPHandler] if a data connection was closed (e.g. reset by the client)
   before a transfer command was sent, the server replied "226 Transfer
   complete." anyway, so the next command got the wrong reply.
+* [FTPServer] ``serve_forever(worker_processes=N)`` (prefork mode) did not
+  work on macOS, BSD and Solaris: the workers kept crashing and no client
+  could connect. The poller (kqueue, /dev/poll) is not inherited by, or
+  is shared with, the worker processes. On Linux the workers shared the
+  same epoll instance, so one worker could get the events of another.
 * [FTPServer] ``serve_forever(blocking=False)`` logged the server start
   (">>> starting FTP server <<<") on every call.
 * [ThreadedFTPServer, MultiprocessFTPServer] the server start

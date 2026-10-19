@@ -338,6 +338,9 @@ class _IOLoop:
         """Changes the events assigned for fd."""
         raise NotImplementedError("must be implemented in subclass")
 
+    def _after_fork(self):
+        """Called in a child process after fork()."""
+
     def poll(self, timeout):
         """Poll once.  The subclass overriding this method is supposed
         to poll over the registered handlers and the scheduled functions
@@ -503,6 +506,7 @@ class _BasePollEpoll(_IOLoop):
     def __init__(self):
         _IOLoop.__init__(self)
         self._poller = self._poller()
+        self._active = {}
 
     def register(self, fd, instance, events):
         try:
@@ -510,10 +514,12 @@ class _BasePollEpoll(_IOLoop):
         except FileExistsError:
             debug("call: register(); poller raised EEXIST; ignored", self)
         self.socket_map[fd] = instance
+        self._active[fd] = events
 
     def unregister(self, fd):
         try:
             del self.socket_map[fd]
+            self._active.pop(fd, None)
         except KeyError:
             debug("call: unregister(); fd was no longer in socket_map", self)
         else:
@@ -532,6 +538,7 @@ class _BasePollEpoll(_IOLoop):
     def modify(self, fd, events):
         try:
             self._poller.modify(fd, events)
+            self._active[fd] = events
         except FileNotFoundError:
             if fd in self.socket_map:
                 # XXX - see:
@@ -540,6 +547,15 @@ class _BasePollEpoll(_IOLoop):
                 self.register(fd, instance, events)
             else:
                 raise
+
+    def _after_fork(self):
+        # The epoll and /dev/poll fds are shared with the parent and
+        # the other children, so make a new one.
+        if hasattr(self._poller, "close"):
+            self._poller.close()
+        self._poller = self.__class__._poller()
+        for fd, events in self._active.items():
+            self._poller.register(fd, events)
 
     def poll(self, timeout):
         if timeout is None:
@@ -673,6 +689,16 @@ if hasattr(select, "kqueue"):  # pragma: no cover
         def close(self):
             _IOLoop.close(self)
             self._kqueue.close()
+
+        def _after_fork(self):
+            # The kqueue is not inherited by the child process. See:
+            # https://man.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
+            # Close the old one first. On Python < 3.13 it still holds
+            # the stale fd number, which the new kqueue may reuse.
+            self._kqueue.close()
+            self._kqueue = select.kqueue()
+            for fd, events in self._active.items():
+                self._control(fd, events, select.KQ_EV_ADD)
 
         def register(self, fd, instance, events):
             self.socket_map[fd] = instance
