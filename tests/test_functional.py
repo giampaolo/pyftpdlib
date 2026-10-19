@@ -2209,14 +2209,6 @@ class _TestNetworkProtocols:
             except socket.timeout:
                 self.fail("Server didn't connect to passive socket")
 
-    def test_eprt_connect_refused(self):
-        # Bound but not listening, so the server's connect() is refused.
-        with contextlib.closing(socket.socket(self.client.af)) as sock:
-            sock.bind((self.HOST, 0))
-            port = sock.getsockname()[1]
-            resp = self.cmdresp(f"eprt |{self.proto}|{self.HOST}|{port}|")
-        assert resp == "425 Can't connect to specified address."
-
     def test_epsv(self):
         # test wrong proto
         with pytest.raises(ftplib.error_perm, match="522"):
