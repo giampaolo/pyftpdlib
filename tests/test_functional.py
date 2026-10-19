@@ -2534,175 +2534,118 @@ class TestCornerCases(PyftpdlibTestCase):
             assert isinstance(fd, int), fd
 
 
-# # TODO: disabled as on certain platforms (OSX and Windows)
-# # produces failures with python3. Will have to get back to
-# # this and fix it.
-# @pytest.mark.skipif(OSX or WINDOWS, reason="fails on OSX or Windows")
-# class TestUnicodePathNames(PyftpdlibTestCase):
-#     """Test FTP commands and responses by using path names with non
-#     ASCII characters.
-#     """
-#     server_class = ThreadedTestFTPd
-#     client_class = ftplib.FTP
+class TestUnicodePathNames(PyftpdlibTestCase):
+    """Test FTP commands and responses by using path names with non
+    ASCII characters.
+    """
 
-#     def setUp(self):
-#         super().setUp()
-#         self.server = self.server_class()
-#         self.server.start()
-#         self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
-#         self.client.encoding = 'utf8'
-#         self.client.connect(self.server.host, self.server.port)
-#         self.client.login(USER, PASSWD)
-#         safe_mkdir(bytes(TESTFN_UNICODE, 'utf8'))
-#         touch(bytes(TESTFN_UNICODE_2, 'utf8'))
-#         self.utf8fs = TESTFN_UNICODE in os.listdir('.')
+    server_class = FtpdThreadWrapper
+    client_class = ftplib.FTP
 
-#     def tearDown(self):
-#         close_client(self.client)
-#         self.server.stop()
-#         super().tearDown()
+    def setUp(self):
+        super().setUp()
+        self.dirname = self.get_testfn(suffix="-unicode-☃")
+        self.fname = self.get_testfn(suffix="-unicode-☃-2")
+        os.mkdir(self.dirname)
+        touch(self.fname)
+        self.server = self.server_class()
+        self.server.start()
+        self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
+        self.client.encoding = "utf8"
+        self.client.connect(self.server.host, self.server.port)
+        self.client.login(USER, PASSWD)
 
-#     # --- fs operations
+    def tearDown(self):
+        close_client(self.client)
+        self.server.stop()
+        super().tearDown()
 
-#     def test_cwd(self):
-#         if self.utf8fs:
-#             resp = self.client.cwd(TESTFN_UNICODE)
-#             assert TESTFN_UNICODE in resp
-#         else:
-#             with pytest.raises(ftplib.error_perm):
-#                 self.client.cwd(TESTFN_UNICODE)
+    # --- fs operations
 
-#     def test_mkd(self):
-#         if self.utf8fs:
-#             os.rmdir(TESTFN_UNICODE)
-#             dirname = self.client.mkd(TESTFN_UNICODE)
-#             assert dirname == '/' + TESTFN_UNICODE
-#             assert os.path.isdir(TESTFN_UNICODE)
-#         else:
-#             with pytest.raises(ftplib.error_perm):
-#                 self.client.mkd(TESTFN_UNICODE)
+    def test_cwd(self):
+        resp = self.client.cwd(self.dirname)
+        assert self.dirname in resp
 
-#     def test_rmdir(self):
-#         if self.utf8fs:
-#             self.client.rmd(TESTFN_UNICODE)
-#         else:
-#             with pytest.raises(ftplib.error_perm):
-#                 self.client.rmd(TESTFN_UNICODE)
+    def test_mkd(self):
+        os.rmdir(self.dirname)
+        dirname = self.client.mkd(self.dirname)
+        assert dirname == "/" + self.dirname
+        assert os.path.isdir(self.dirname)
 
-#     def test_rnfr_rnto(self):
-#         if self.utf8fs:
-#             self.client.rename(TESTFN_UNICODE, TESTFN)
-#         else:
-#             with pytest.raises(ftplib.error_perm):
-#                 self.client.rename(TESTFN_UNICODE, TESTFN)
+    def test_rmdir(self):
+        self.client.rmd(self.dirname)
+        assert not os.path.exists(self.dirname)
 
-#     def test_size(self):
-#         self.client.sendcmd('type i')
-#         if self.utf8fs:
-#             self.client.sendcmd('size ' + TESTFN_UNICODE_2)
-#         else:
-#             with pytest.raises(ftplib.error_perm):
-#                 self.client.sendcmd('size ' + TESTFN_UNICODE_2)
+    def test_rnfr_rnto(self):
+        newname = self.get_testfn()
+        self.client.rename(self.dirname, newname)
+        assert os.path.isdir(newname)
 
-#     def test_mdtm(self):
-#         if self.utf8fs:
-#             self.client.sendcmd('mdtm ' + TESTFN_UNICODE_2)
-#         else:
-#             with pytest.raises(ftplib.error_perm):
-#                 self.client.sendcmd('mdtm ' + TESTFN_UNICODE_2)
+    def test_size(self):
+        self.client.sendcmd("type i")
+        self.client.sendcmd("size " + self.fname)
 
-#     def test_stou(self):
-#         if self.utf8fs:
-#             resp = self.client.sendcmd('stou ' + TESTFN_UNICODE)
-#             assert TESTFN_UNICODE in resp
-#         else:
-#             with pytest.raises(ftplib.error_perm):
-#                 self.client.sendcmd('stou ' + TESTFN_UNICODE)
+    def test_mdtm(self):
+        self.client.sendcmd("mdtm " + self.fname)
 
-#     if hasattr(os, 'chmod'):
-#         def test_site_chmod(self):
-#             if self.utf8fs:
-#                 self.client.sendcmd('site chmod 777 ' + TESTFN_UNICODE)
-#             else:
-#                 with pytest.raises(ftplib.error_perm):
-#                     self.client.sendcmd('site chmod 777 ' + TESTFN_UNICODE)
+    def test_stou(self):
+        self.client.storbinary("stou " + self.dirname, io.BytesIO(b"x"))
+        names = [
+            x
+            for x in os.listdir()
+            if x.startswith(self.dirname) and x != self.dirname
+        ]
+        assert len(names) == 1
+        self.addCleanup(safe_rmpath, names[0])
 
-#     # --- listing cmds
+    @pytest.mark.skipif(not POSIX, reason="POSIX only")
+    def test_site_chmod(self):
+        self.client.sendcmd("site chmod 777 " + self.dirname)
 
-#     def _test_listing_cmds(self, cmd):
-#         ls = []
-#         self.client.retrlines(cmd, ls.append)
-#         ls = '\n'.join(ls)
-#         if self.utf8fs:
-#             assert TESTFN_UNICODE in ls
-#         else:
-#             # Part of the filename which are not encodable are supposed
-#             # to have been replaced. The file should be something like
-#             # 'tmp-pyftpdlib-unicode-????'. In any case it is not
-#             # referenceable (e.g. DELE 'tmp-pyftpdlib-unicode-????'
-#             # won't work).
-#             assert 'tmp-pyftpdlib-unicode' in ls
+    # --- listing cmds
 
-#     def test_list(self):
-#         self._test_listing_cmds('list')
+    def _test_listing_cmds(self, cmd):
+        ls = []
+        self.client.retrlines(cmd, ls.append)
+        assert self.dirname in ls or any(
+            x.endswith(" " + self.dirname) for x in ls
+        )
 
-#     def test_nlst(self):
-#         self._test_listing_cmds('nlst')
+    def test_list(self):
+        self._test_listing_cmds("list")
 
-#     def test_mlsd(self):
-#         self._test_listing_cmds('mlsd')
+    def test_nlst(self):
+        self._test_listing_cmds("nlst")
 
-#     def test_mlst(self):
-#         # utility function for extracting the line of interest
-#         def mlstline(cmd):
-#             return self.client.voidcmd(cmd).split('\n')[1]
+    def test_mlsd(self):
+        self._test_listing_cmds("mlsd")
 
-#         if self.utf8fs:
-#             assert 'type=dir' in mlstline('mlst ' + TESTFN_UNICODE))
-#             assert '/' + TESTFN_UNICODE in mlstline(
-#                  'mlst ' + TESTFN_UNICODE))
-#             assert 'type=file' in mlstline('mlst ' + TESTFN_UNICODE_2))
-#             assert '/' + TESTFN_UNICODE_2 in mlstline(
-#                 'mlst ' + TESTFN_UNICODE_2))
-#         else:
-#             with pytest.raises(ftplib.error_perm):
-#                 mlstline('mlst ' + TESTFN_UNICODE)
+    def test_mlst(self):
+        def mlstline(cmd):
+            return self.client.voidcmd(cmd).split("\n")[1]
 
-#     # --- file transfer
+        assert "type=dir" in mlstline("mlst " + self.dirname)
+        assert "/" + self.dirname in mlstline("mlst " + self.dirname)
+        assert "type=file" in mlstline("mlst " + self.fname)
+        assert "/" + self.fname in mlstline("mlst " + self.fname)
 
-#     def test_stor(self):
-#         if self.utf8fs:
-#             data = b'abcde12345' * 500
-#             os.remove(TESTFN_UNICODE_2)
-#             dummy = io.BytesIO()
-#             dummy.write(data)
-#             dummy.seek(0)
-#             self.client.storbinary('stor ' + TESTFN_UNICODE_2, dummy)
-#             dummy_recv = io.BytesIO()
-#             self.client.retrbinary('retr ' + TESTFN_UNICODE_2,
-#                                    dummy_recv.write)
-#             dummy_recv.seek(0)
-#             assert dummy_recv.read() == data
-#         else:
-#             dummy = io.BytesIO()
-#             with pytest.raises(ftplib.error_perm):
-#                 self.client.storbinary('stor ' + TESTFN_UNICODE_2, dummy)
+    # --- file transfer
 
-#     def test_retr(self):
-#         if self.utf8fs:
-#             data = b'abcd1234' * 500
-#             with open(TESTFN_UNICODE_2, 'wb') as f:
-#                 f.write(data)
-#             dummy = io.BytesIO()
-#             self.client.retrbinary('retr ' + TESTFN_UNICODE_2, dummy.write)
-#             dummy.seek(0)
-#             assert dummy.read() == data
-#         else:
-#             dummy = io.BytesIO()
-#             with pytest.raises(ftplib.error_perm):
-#                 self.client.retrbinary(
-#                     'retr ' + TESTFN_UNICODE_2, dummy.write
-#                 )
+    def test_stor(self):
+        data = b"abcde12345" * 500
+        os.remove(self.fname)
+        self.client.storbinary("stor " + self.fname, io.BytesIO(data))
+        dummy_recv = io.BytesIO()
+        self.client.retrbinary("retr " + self.fname, dummy_recv.write)
+        assert dummy_recv.getvalue() == data
+
+    def test_retr(self):
+        data = b"abcd1234" * 500
+        with open(self.fname, "wb") as f:
+            f.write(data)
+        dummy = io.BytesIO()
+        self.client.retrbinary("retr " + self.fname, dummy.write)
+        assert dummy.getvalue() == data
 
 
 class ThreadedFTPTests(PyftpdlibTestCase):
