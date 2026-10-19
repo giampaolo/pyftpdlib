@@ -1189,11 +1189,24 @@ class TestFtpListingCmds(PyftpdlibTestCase):
 
     def _test_listing_cmds(self, cmd):
         """Tests common to LIST NLST and MLSD commands."""
-        # assume that no argument has the same meaning of "/"
-        l1 = l2 = []
+
+        # assume that no argument has the same meaning of "/". Ignore
+        # temp files and the dir itself: other tests running in parallel
+        # create files in the same dir.
+        def stable(lines):
+            return [
+                x
+                for x in lines
+                if not x.split()[-1].startswith(("pyftpd-tmp-", "ftpd."))
+                and "type=cdir" not in x
+            ]
+
+        l1 = []
+        l2 = []
         self.client.retrlines(cmd, l1.append)
         self.client.retrlines(cmd + " /", l2.append)
-        assert l1 == l2
+        assert l1
+        assert stable(l1) == stable(l2)
         if cmd.lower() != "mlsd":
             # if pathname is a file one line is expected
             x = []
