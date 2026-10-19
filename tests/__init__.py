@@ -37,7 +37,6 @@ CERTFILE = os.path.join(HERE, "keycert.pem")
 
 GITHUB_ACTIONS = "GITHUB_ACTIONS" in os.environ or "CIBUILDWHEEL" in os.environ
 CI_TESTING = GITHUB_ACTIONS
-PYTEST_PARALLEL = "PYTEST_XDIST_WORKER" in os.environ  # `make test-parallel`
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
 try:
@@ -53,11 +52,9 @@ TESTFN_PREFIX = f"pyftpd-tmp-{os.getpid()}-"
 GLOBAL_TIMEOUT = 2
 BUFSIZE = 1024
 INTERRUPTED_TRANSF_SIZE = 32768
-NO_RETRIES = 5
 
 if CI_TESTING:
     GLOBAL_TIMEOUT *= 3
-    NO_RETRIES *= 3
 
 SUPPORTS_IPV4 = None  # set later
 SUPPORTS_IPV6 = None  # set later
@@ -179,29 +176,6 @@ def disable_log_warning(fun):
             return fun(self, *args, **kwargs)
         finally:
             logger.setLevel(level)
-
-    return wrapper
-
-
-def retry_on_failure(fun):
-    """Decorator which runs a test function and retries N times before
-    actually failing.
-    """
-
-    @functools.wraps(fun)
-    def wrapper(self, *args, **kwargs):
-        for x in range(NO_RETRIES):
-            try:
-                return fun(self, *args, **kwargs)
-            except AssertionError as exc:
-                if x + 1 >= NO_RETRIES:
-                    raise
-                msg = f"{exc!r}, retrying"
-                print(msg, file=sys.stderr)  # noqa: T201
-                if PYTEST_PARALLEL:
-                    warnings.warn(msg, ResourceWarning, stacklevel=2)
-                self.tearDown()
-                self.setUp()
 
     return wrapper
 

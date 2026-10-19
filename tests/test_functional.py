@@ -46,7 +46,6 @@ from . import PyftpdlibTestCase
 from . import close_client
 from . import disable_log_warning
 from . import get_server_handler
-from . import retry_on_failure
 from . import safe_rmpath
 from . import touch
 
@@ -138,7 +137,6 @@ class TestFtpAuthentication(PyftpdlibTestCase):
         self.client.login(user=USER, passwd=PASSWD)
         self.client.sendcmd("pwd")
 
-    @retry_on_failure
     def test_rein_during_transfer(self):
         # Test REIN while already authenticated and a transfer is
         # in progress.
@@ -767,7 +765,6 @@ class TestFtpStoreData(PyftpdlibTestCase):
         self.client.set_pasv(False)
         self.test_stor()
 
-    @retry_on_failure
     def test_stor_ascii(self):
         # Test STOR in ASCII mode
 
@@ -798,7 +795,6 @@ class TestFtpStoreData(PyftpdlibTestCase):
         assert len(expected) == len(datafile)
         assert hash(expected) == hash(datafile)
 
-    @retry_on_failure
     def test_stor_ascii_2(self):
         # Test that no extra extra carriage returns are added to the
         # file in ASCII mode in case CRLF gets truncated in two chunks
@@ -1110,7 +1106,6 @@ class TestFtpRetrieveData(PyftpdlibTestCase):
         assert len(data) == len(datafile)
         assert hash(data) == hash(datafile)
 
-    @retry_on_failure
     def test_restore_on_retr(self):
         data = b"abcde12345" * 1000000
         with open(self.testfn, "wb") as f:
@@ -1879,7 +1874,6 @@ class TestConfigurableOptions(PyftpdlibTestCase):
             resulting_port = self.client.makepasv()[1]
             assert port != resulting_port
 
-    @retry_on_failure
     def test_use_gmt_times(self):
         testfn = self.get_testfn()
         touch(testfn)
@@ -2089,7 +2083,6 @@ class TestCallbacks(PyftpdlibTestCase):
             f"on_connect,on_login:{USER},on_incomplete_file_received:{self.testfn2},"
         )
 
-    @retry_on_failure
     def test_on_incomplete_file_sent(self):
         self.client.login(USER, PASSWD)
         data = b"abcde12345" * 1000000
@@ -2722,7 +2715,6 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         self.client.connect(self.server.host, self.server.port)
         self.client.login(USER, PASSWD)
 
-    @retry_on_failure
     def test_stou_max_tries(self):
         # Emulates case where the max number of tries to find out a
         # unique file name when processing STOU command gets hit.
@@ -2741,7 +2733,6 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         with pytest.raises(ftplib.error_temp, match="No usable unique file"):
             self.client.sendcmd("stou")
 
-    @retry_on_failure
     def test_permit_foreign_address_false(self):
         self.server = self.server_class()
         self.server.handler.permit_foreign_addresses = False
@@ -2756,7 +2747,6 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         with pytest.raises(ftplib.error_perm, match="foreign address"):
             self.client.sendport(host, port)
 
-    @retry_on_failure
     def test_permit_foreign_address_true(self):
         self.server = self.server_class()
         self.server.handler.permit_foreign_addresses = True
@@ -2769,7 +2759,6 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         s.close()
 
     @disable_log_warning
-    @retry_on_failure
     def test_permit_privileged_ports(self):
         # Test FTPHandler.permit_privileged_ports_active attribute
 
@@ -2830,7 +2819,6 @@ class ThreadedFTPTests(PyftpdlibTestCase):
     @pytest.mark.skipif(
         not hasattr(os, "sendfile"), reason="os.sendfile() not available"
     )
-    @retry_on_failure
     def test_sendfile_fails(self):
         # Makes sure that if sendfile() fails and no bytes were
         # transmitted yet the server falls back on using plain
