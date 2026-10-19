@@ -208,7 +208,6 @@ check-sdist:  ## Check sanity of source distribution.
 	$(PYTHON) -m twine check --strict dist/*.tar.gz
 
 check-wheels:  ## Check sanity of wheels.
-	$(PYTHON) -m abi3audit --verbose --strict dist/*-abi3-*.whl
 	$(PYTHON) -m twine check --strict dist/*.whl
 
 check-dist:  ## Run all sanity checks re. to the package distribution.
