@@ -90,7 +90,7 @@ class TestAbstractedFS(PyftpdlibTestCase):
             assert fs.ftp2fs("a/b/../..") == join(root, "sub")
             assert fs.ftp2fs("a/b/../../..") == root
             # UNC paths must be collapsed
-            assert fs.ftp2fs("//a"), join(root, "a")
+            assert fs.ftp2fs("//a") == join(root, "a")
 
         if os.sep == "\\":
             goforit(r"C:\dir")
@@ -142,7 +142,7 @@ class TestAbstractedFS(PyftpdlibTestCase):
         elif os.sep == "/":
             goforit("/")
             if os.path.realpath("/__home/user") != "/__home/user":
-                self.fail("Test skipped (symlinks not allowed).")
+                return self.skipTest("symlinks not allowed")
             goforit("/__home/user")
             fs._root = "/__home/user"
             assert fs.fs2ftp("/__home") == "/"
@@ -185,7 +185,7 @@ class TestAbstractedFS(PyftpdlibTestCase):
             with tempfile.NamedTemporaryFile() as file:
                 try:
                     if os.path.dirname(file.name) == HOME:
-                        return
+                        return self.skipTest("tempdir is inside HOME")
                     os.symlink(file.name, testfn)
                     assert not fs.validpath(testfn)
                 finally:
