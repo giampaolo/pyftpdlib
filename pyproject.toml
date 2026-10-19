@@ -43,7 +43,7 @@ keywords = [
 ]
 name = "pyftpdlib"
 readme = "README.rst"
-requires-python = ">=3.6"
+requires-python = ">=3.8"
 
 [project.optional-dependencies]
 ssl = ["PyOpenSSL"]
@@ -92,7 +92,7 @@ version = { attr = "pyftpdlib.__ver__" }
 include = ["pyftpdlib*"]
 
 [tool.black]
-target-version = ["py37"]
+target-version = ["py38"]
 line-length = 79
 # https://black.readthedocs.io/en/stable/the_black_code_style/future_style.html
 preview = true
@@ -100,7 +100,7 @@ enable-unstable-feature = ["hug_parens_with_braces_and_square_brackets", "string
 
 [tool.ruff]
 # https://beta.ruff.rs/docs/settings/
-target-version = "py37"
+target-version = "py38"
 line-length = 79
 output-prefer-rule-codes = true
 

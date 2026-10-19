@@ -1,6 +1,6 @@
 # Shortcuts for various tasks (UNIX only).
 # To use a specific Python version run:
-# 	$ make install PYTHON=python3.7
+# 	$ make install PYTHON=python3.13
 # To run a specific test:
 # 	$ make test ARGS="-v -s tests/test_functional.py::TestIPv6MixedEnvironment::test_port_v4"
 
