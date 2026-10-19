@@ -3,15 +3,15 @@ build-backend = "setuptools.build_meta"
 requires = ["setuptools"]
 
 [project]
-authors = [{name = "Giampaolo Rodola'", email = "g.rodola@gmail.com"}]
+authors = [{ name = "Giampaolo Rodola'", email = "g.rodola@gmail.com" }]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
     "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
     "Topic :: Internet :: File Transfer Protocol (FTP)",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: System :: Filesystems",
@@ -81,7 +81,7 @@ Homepage = "https://github.com/giampaolo/pyftpdlib/"
 script-files = ["scripts/ftpbench"]
 
 [tool.setuptools.dynamic]
-version = {attr = "pyftpdlib.__ver__"}
+version = { attr = "pyftpdlib.__ver__" }
 
 [tool.setuptools.packages.find]
 include = ["pyftpdlib*"]
@@ -97,6 +97,7 @@ enable-unstable-feature = ["hug_parens_with_braces_and_square_brackets", "string
 # https://beta.ruff.rs/docs/settings/
 target-version = "py37"
 line-length = 79
+output-prefer-rule-codes = true
 
 [tool.ruff.lint]
 preview = true
@@ -126,6 +127,7 @@ ignore = [
     "FIX",  # Line contains TODO / XXX / ..., consider resolving the issue
     "FURB101",  # `open` and `read` should be replaced by `Path(x).read_text()`
     "FURB103",  # `open` and `write` should be replaced by `Path(...).write_bytes(data)`
+    "ICN001",  # `datetime` should be imported as `dt
     "INP",  # `docs/conf.py` is part of an implicit namespace package. Add an `__init__.py`.
     "N801",  # Class name `async_chat` should use CapWords convention (ASYNCORE COMPAT)
     "N802",  # Function name X should be lowercase.
@@ -148,6 +150,7 @@ ignore = [
     "RUF031",  # [*] Avoid parentheses for tuples in subscripts
     "RUF043",  # Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
     "RUF067",  # `__init__` module should only contain docstrings and re-exports
+    "RUF105",  # `noqa` comment used instead of `ruff: ignore`
     "S",  # flake8-bandit
     "SIM102",  # Use a single `if` statement instead of nested `if` statements
     "SIM105",  # Use `contextlib.suppress(OSError)` instead of `try`-`except`-`pass`
@@ -166,6 +169,7 @@ ignore = [
 "demo/*" = ["T201"]
 "doc/*" = ["T201"]
 "scripts/*" = ["T201"]
+"tests/conftest.py" = ["pytest-fixture-autouse"]
 
 [tool.ruff.lint.isort]
 # https://beta.ruff.rs/docs/settings/#isort
@@ -235,10 +239,10 @@ testpaths = ["tests/"]
 
 [tool.rstcheck]
 ignore_messages = [
-    "Unexpected possible title overline or transition",
     'Hyperlink target "changing-the-concurrency-model" is not referenced.',
     'Hyperlink target "ftps-server" is not referenced.',
     'Hyperlink target "pre-fork-model" is not referenced.',
+    "Unexpected possible title overline or transition",
 ]
 
 [tool.tomlsort]
