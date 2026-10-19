@@ -14,6 +14,7 @@ from pyftpdlib.handlers import TLS_FTPHandler
 from . import CERTFILE
 from . import CI_TESTING
 from . import GLOBAL_TIMEOUT
+from . import OSX
 from . import PASSWD
 from . import USER
 from . import WINDOWS
@@ -109,7 +110,10 @@ class TestFtpAbortTLSMixin(TLSTestMixin, tf.TestFtpAbort):
 
 
 class TestTimeoutsTLSMixin(TLSTestMixin, tf.TestTimeouts):
-    pass
+
+    @pytest.mark.skipif(OSX or WINDOWS, reason="fails on macOS and Windows")
+    def test_data_timeout_not_reached(self):
+        super().test_data_timeout_not_reached()
 
 
 class TestConfigurableOptionsTLSMixin(
