@@ -12,7 +12,6 @@ import pytest
 from pyftpdlib.handlers import TLS_FTPHandler
 
 from . import CERTFILE
-from . import CI_TESTING
 from . import GLOBAL_TIMEOUT
 from . import OSX
 from . import PASSWD
@@ -89,17 +88,7 @@ class TestFtpRetrieveDataTLSMixin(TLSTestMixin, tf.TestFtpRetrieveData):
 
 
 class TestFtpListingCmdsTLSMixin(TLSTestMixin, tf.TestFtpListingCmds):
-
-    # TODO: see https://travis-ci.org/giampaolo/pyftpdlib/jobs/87318445
-    # Fails with:
-    # File "/opt/python/2.7.9/lib/python2.7/ftplib.py", line 735, in retrlines
-    #    conn.unwrap()
-    # File "/opt/python/2.7.9/lib/python2.7/ssl.py", line 771, in unwrap
-    #    s = self._sslobj.shutdown()
-    # error: [Errno 0] Error
-    @pytest.mark.skipif(CI_TESTING, reason="may fail on CI")
-    def test_nlst(self):
-        super().test_nlst()
+    pass
 
 
 class TestFtpAbortTLSMixin(TLSTestMixin, tf.TestFtpAbort):
