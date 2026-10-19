@@ -7,6 +7,7 @@
 # Configurable
 PYTHON = python3
 ARGS =
+FILES =
 
 # In not in a virtualenv, add --user options for install commands.
 SETUP_INSTALL_ARGS = `$(PYTHON) -c \
@@ -132,45 +133,50 @@ test-coverage:  ## Run test coverage.
 # Linters
 # ===================================================================
 
+# Return a shell pipeline that outputs one file per line. Uses
+# $(FILES) if set, else "git ls-files" with given pattern(s).
+_ls = $(if $(FILES), printf '%s\n' $(FILES), git ls-files $(1))
+
 black:  ## Python files linting (via black)
-	@git ls-files '*.py' | xargs $(PYTHON) -m black --check --safe
+	@$(call _ls,'*.py') | xargs $(PYTHON) -m black --check --safe
 
 ruff:  ## Run ruff linter.
-	@git ls-files '*.py' | xargs $(PYTHON) -m ruff check --output-format=concise
+	@$(call _ls,'*.py') | xargs $(PYTHON) -m ruff check --output-format=concise
 
 _pylint:  ## Python pylint (not mandatory, just run it from time to time)
-	@git ls-files '*.py' | xargs $(PYTHON) -m pylint --rcfile=pyproject.toml --jobs=0 $(ARGS)
+	@$(call _ls,'*.py') | xargs $(PYTHON) -m pylint --rcfile=pyproject.toml --jobs=0 $(ARGS)
 
 lint-rst:  ## Run RsT linter.
-	@git ls-files '*.rst' | xargs $(PYTHON) scripts/internal/rst_unused_targets.py
-	@git ls-files '*.rst' | xargs sphinx-lint --enable all --disable line-too-long
+	@$(call _ls,'*.rst') | xargs $(PYTHON) scripts/internal/rst_unused_targets.py
+	@$(call _ls,'*.rst') | xargs sphinx-lint --enable all --disable line-too-long
 
 lint-toml:  ## Linter for pyproject.toml
-	@git ls-files '*.toml' | xargs toml-sort --check
+	@$(call _ls,'*.toml') | xargs toml-sort --check
 
-lint-all:  ## Run all linters
-	${MAKE} black
-	${MAKE} ruff
-	${MAKE} lint-rst
-	${MAKE} lint-toml
+lint-all:  ## Run all linters in parallel
+	$(MAKE) -j \
+		black \
+		ruff \
+		lint-rst \
+		lint-toml
 
 # ===================================================================
 # Fixers
 # ===================================================================
 
-fix-black:
-	git ls-files '*.py' | xargs $(PYTHON) -m black
+fix-black:  ## Reformat python code with black.
+	@$(call _ls,'*.py') | xargs $(PYTHON) -m black
 
-fix-ruff:
-	@git ls-files '*.py' | xargs $(PYTHON) -m ruff check --fix --output-format=concise $(ARGS)
+fix-ruff:  ## Fix ruff errors.
+	@$(call _ls,'*.py') | xargs $(PYTHON) -m ruff check --fix --output-format=concise $(ARGS)
 
 fix-toml:  ## Fix pyproject.toml
-	@git ls-files '*.toml' | xargs toml-sort
+	@$(call _ls,'*.toml') | xargs toml-sort
 
 fix-all:  ## Run all code fixers.
-	${MAKE} fix-black
-	${MAKE} fix-ruff
-	${MAKE} fix-toml
+	$(MAKE) fix-ruff
+	$(MAKE) fix-black
+	$(MAKE) fix-toml
 
 # ===================================================================
 # Distribution
