@@ -70,6 +70,15 @@ class TestFTPServer(PyftpdlibTestCase):
                 server.serve_forever(timeout=0, blocking=False)
             assert not m.called
 
+    def test_serve_forever_logs_listen_address(self):
+        klass = self.server_class.server_class
+        with klass((HOST, 0), handlers.FTPHandler) as server:
+            server.ioloop.call_later(0, server.close_all)
+            with mock.patch("pyftpdlib.servers.logger.info") as m:
+                server.serve_forever(timeout=0.01)
+            msgs = [str(call.args[0]) for call in m.call_args_list]
+            assert any(">>> starting FTP server on" in x for x in msgs)
+
 
 # =====================================================================
 # --- threaded FTP server mixin tests

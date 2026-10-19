@@ -200,6 +200,19 @@ class FTPServer(Acceptor):
         if getattr(self.handler, "keyfile", None):
             logger.debug("SSL keyfile: %r", self.handler.keyfile)
 
+    def _log_listen_address(self):
+        # Not part of _log_start(): with pre-forking this is logged by
+        # each child process, after fork.
+        proto = (
+            "FTPS (FTP over SSL)"
+            if hasattr(self.handler, "ssl_protocol")
+            else "FTP"
+        )
+        logger.info(
+            ">>> starting %s server on %s:%s, pid=%i <<<"
+            % (proto, self.address[0], self.address[1], os.getpid())
+        )
+
     def serve_forever(
         self, timeout=None, blocking=True, handle_exit=True, worker_processes=1
     ):
@@ -244,15 +257,7 @@ class FTPServer(Acceptor):
             self._log_start()
 
         if log:
-            proto = (
-                "FTPS (FTP over SSL)"
-                if hasattr(self.handler, "ssl_protocol")
-                else "FTP"
-            )
-            logger.info(
-                ">>> starting %s server on %s:%s, pid=%i <<<"
-                % (proto, self.address[0], self.address[1], os.getpid())
-            )
+            self._log_listen_address()
 
         if handle_exit:
             try:
@@ -536,6 +541,7 @@ class _SpawnerBase(FTPServer):
             log = handle_exit and blocking
             if log:
                 self._log_start()
+                self._log_listen_address()
             try:
                 self.ioloop.loop(timeout, blocking)
             except (KeyboardInterrupt, SystemExit):
