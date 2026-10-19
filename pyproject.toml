@@ -62,8 +62,8 @@ test = [
 ]
 lint = [
     "black",
-    "rstcheck",
     "ruff",
+    "sphinx-lint",
     "toml-sort",
 ]
 dev = [
@@ -241,14 +241,6 @@ addopts = [
 strict_config = true
 strict_markers = true
 testpaths = ["tests/"]
-
-[tool.rstcheck]
-ignore_messages = [
-    'Hyperlink target "changing-the-concurrency-model" is not referenced.',
-    'Hyperlink target "ftps-server" is not referenced.',
-    'Hyperlink target "pre-fork-model" is not referenced.',
-    "Unexpected possible title overline or transition",
-]
 
 [tool.tomlsort]
 in_place = true

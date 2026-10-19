@@ -111,7 +111,7 @@ Version: 1.5.10 - 2024-06-23
 * #621: use black formatter.
 * #626: use argparse instead of deprecated optparse.
 * #628: use pytest instead of unittest.
-* #632: add ability to run tests in parallel with `make test-parallel`.
+* #632: add ability to run tests in parallel with ``make test-parallel``.
 
 **Bug fixes**
 
@@ -123,7 +123,7 @@ Version: 1.5.9 - 2023-10-25
 
 **Enhancements**
 
-- #611: use `ruff` code style checker instead of flake8 + isort (much faster +
+- #611: use ``ruff`` code style checker instead of flake8 + isort (much faster +
   makes many more code quality checks).
 
 **Bug fixes**
@@ -144,8 +144,8 @@ Version: 1.5.8 - 2023-10-02
 **Enhancements**
 
 - #586: removed Python 2.6 support.
-- #591: speedup logging by 28% by using `logging._srcfile = None` trick. This
-  avoids calling `calling sys._getframe()` for each log record.
+- #591: speedup logging by 28% by using ``logging._srcfile = None`` trick. This
+  avoids calling ``calling sys._getframe()`` for each log record.
 - #605: added support for Python 3.12.
 
 Version: 1.5.7 - 2022-10-04
@@ -191,7 +191,7 @@ Version: 1.5.4 - 2018-05-04
 
 **Bug fixes**
 
-- #431: Ctrl-C doesn't exit `python -m pyftpdlib` on Windows.
+- #431: Ctrl-C doesn't exit ``python -m pyftpdlib`` on Windows.
 - #436: ThreadedFTPServer.max_cons is evaluated threading.activeCount(). If
   the user uses threads of its own it will consume the number of max_cons.
 - #447: ThreadedFTPServer and MultiprocessFTPServer do not join() tasks which

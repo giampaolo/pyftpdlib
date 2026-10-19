@@ -144,7 +144,7 @@ can be noticed on connect/login benchmarks and memory benchmarks.
 The huge differences between 0.7.0 and 1.0.0 versions of pyftpdlib are due to
 fix of `issue 203`_ . On Linux we now use `epoll()`_ which scales considerably
 better than `select()`_. The fact that we're downloading a file with 300 idle
-clients doesn't make any difference for `epoll()`. We might as well had 5000
+clients doesn't make any difference for ``epoll()``. We might as well had 5000
 idle clients and the result would have been the same. On Windows, where we
 still use select(), 1.0.0 still wins hands down as the asyncore loop was
 reimplemented from scratch in order to support fd un/registration and

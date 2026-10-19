@@ -82,7 +82,7 @@ Users
   .. method:: add_anonymous(homedir, **kwargs)
 
     Add an anonymous user to the virtual users table.
-    The keyword arguments are the same expected by :meth:`add_user()` method.
+    The keyword arguments are the same expected by :meth:`add_user` method.
     The only difference is that if write permissions are passed as *perm*
     a ``RuntimeWarning`` will be raised.
 

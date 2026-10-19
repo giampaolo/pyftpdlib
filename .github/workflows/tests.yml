@@ -42,7 +42,7 @@ jobs:
     - uses: actions/setup-python@v6
     - name: 'Run linters'
       run: |
-        python3 -m pip install --upgrade black ruff rstcheck toml-sort sphinx-rtd-theme
+        python3 -m pip install --upgrade black ruff sphinx-lint toml-sort sphinx-rtd-theme
         python3 -m pip freeze
         make lint-all
 

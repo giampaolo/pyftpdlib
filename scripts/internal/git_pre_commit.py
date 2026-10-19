@@ -122,9 +122,16 @@ def toml_sort(files):
         return sys.exit(f"{' '.join(files)} didn't pass style check")
 
 
-def rstcheck(files):
+def lint_rst(files):
     print(f"running rst linter ({len(files)})")
-    cmd = ["rstcheck", "--config=pyproject.toml", *files]
+    cmd = [
+        "sphinx-lint",
+        "--enable",
+        "all",
+        "--disable",
+        "line-too-long",
+        *files,
+    ]
     if subprocess.call(cmd) != 0:
         return sys.exit("RST code didn't pass style check")
 
@@ -135,7 +142,7 @@ def main():
         black(py_files)
         ruff(py_files)
     if rst_files:
-        rstcheck(rst_files)
+        lint_rst(rst_files)
     if toml_files:
         toml_sort(toml_files)
     if new_rm_mv:
