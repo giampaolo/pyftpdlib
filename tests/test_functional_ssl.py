@@ -96,7 +96,63 @@ class TestFtpAbortTLSMixin(TLSTestMixin, tf.TestFtpAbort):
 
 
 class TestTimeoutsTLSMixin(TLSTestMixin, tf.TestTimeouts):
-    pass
+
+    # XXX: temporary, to debug a failure on macOS CI.
+    def test_data_timeout_not_reached(self):
+        import logging  # noqa: PLC0415
+        import sys  # noqa: PLC0415
+
+        from pyftpdlib.handlers import TLS_DTPHandler  # noqa: PLC0415
+
+        t0 = time.monotonic()
+
+        def dbg(msg):
+            sys.stderr.write(f"DBG {time.monotonic() - t0:.3f} {msg}\n")
+
+        orig_timeout = TLS_DTPHandler.handle_timeout
+
+        def handle_timeout(dtp):
+            dbg(
+                f"tick bytes={dtp.get_transmitted_bytes()}"
+                f" lastdata={dtp._lastdata} accepting={dtp._ssl_accepting}"
+                f" established={dtp._ssl_established}"
+                f" closing={dtp._ssl_closing}"
+                f" want_r={dtp._ssl_want_read} want_w={dtp._ssl_want_write}"
+                f" receive={dtp.receive} closed={dtp._closed}"
+                f" events={dtp._wanted_io_events}"
+                f" ioloop={type(dtp.ioloop).__name__}"
+            )
+            return orig_timeout(dtp)
+
+        logger = logging.getLogger("pyftpdlib")
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setFormatter(
+            logging.Formatter("DBG %(relativeCreated)d %(message)s")
+        )
+        old_level = logger.level
+        logger.addHandler(handler)
+        logger.setLevel(logging.DEBUG)
+        try:
+            with mock.patch.object(
+                TLS_DTPHandler, "handle_timeout", handle_timeout
+            ):
+                self._setUp(data_timeout=0.5 if tf.CI_TESTING else 0.1)
+                dbg("transfercmd")
+                with contextlib.closing(
+                    self.client.transfercmd("stor " + self.testfn)
+                ) as sock:
+                    dbg("connected")
+                    sent = 0
+                    stop_at = time.time() + 0.2
+                    while time.time() < stop_at:
+                        sent += sock.send(b"x" * 1024)
+                    dbg(f"sent {sent} bytes")
+                    sock.close()
+                    dbg("closed")
+                    dbg(f"resp {self.client.voidresp()}")
+        finally:
+            logger.removeHandler(handler)
+            logger.setLevel(old_level)
 
 
 class TestConfigurableOptionsTLSMixin(
