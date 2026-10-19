@@ -343,6 +343,10 @@ class FtpdThreadWrapper(threading.Thread):
                     self.server.serve_forever(
                         timeout=self.poll_interval, blocking=False
                     )
+                # Let other threads waiting for the lock get it. Else
+                # we take it back right away, and they may wait for
+                # seconds.
+                time.sleep(0)
         finally:
             self._event_stop.set()
 
