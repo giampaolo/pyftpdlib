@@ -355,7 +355,10 @@ class FtpdThreadWrapper(threading.Thread):
             FtpdThreadWrapper.unstopped.remove(self)
         self._stop_flag = True  # signal the main loop to exit
         if self.ident is not None:  # start()ed
-            self._event_stop.wait()
+            # If the main loop is stuck, fail instead of hanging the
+            # whole test run.
+            if not self._event_stop.wait(GLOBAL_TIMEOUT):
+                raise RuntimeError(f"{self!r} main loop didn't stop")
         self.server.close_all()
         if self.ident is not None:
             self.join()
