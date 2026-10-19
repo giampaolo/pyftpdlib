@@ -152,7 +152,6 @@ class TestFTPS(PyftpdlibTestCase):
 
     def tearDown(self):
         if self.client is not None:
-            self.client.ssl_version = ssl.PROTOCOL_SSLv23
             close_client(self.client)
         if self.server is not None:
             self.server.handler.ssl_protocol = ssl.PROTOCOL_SSLv23
