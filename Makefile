@@ -64,15 +64,18 @@ install-pip:  ## Install pip (no-op if already installed).
 install-pydeps-test:  ## Install python deps necessary to run unit tests.
 	${MAKE} install-pip
 	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip setuptools
-	$(PYTHON) -c \
-		"import tomllib, subprocess, sys; c = tomllib.load(open('pyproject.toml', 'rb')); d = c['project']['optional-dependencies']; subprocess.check_call([sys.executable, '-m', 'pip', 'install'] + '$(PIP_INSTALL_ARGS)'.split() + d['test'])"
+	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) --group test
+
+install-pydeps-lint:  ## Install python deps necessary to run linters.
+	${MAKE} install-pip
+	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip
+	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) --group lint
 
 install-pydeps-dev:  ## Install python deps meant for local development.
 	${MAKE} install-git-hooks
 	${MAKE} install-pip
 	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) pip setuptools
-	$(PYTHON) -c \
-		"import tomllib, subprocess, sys; c = tomllib.load(open('pyproject.toml', 'rb')); d = c['project']['optional-dependencies']; subprocess.check_call([sys.executable, '-m', 'pip', 'install'] + '$(PIP_INSTALL_ARGS)'.split() + d['test'] + d['dev'])"
+	$(PYTHON) -m pip install $(PIP_INSTALL_ARGS) --group dev
 
 install-git-hooks:  ## Install GIT pre-commit hook.
 	ln -sf ../../scripts/internal/git_pre_commit.py .git/hooks/pre-commit

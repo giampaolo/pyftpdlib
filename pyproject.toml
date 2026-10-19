@@ -46,32 +46,37 @@ readme = "README.rst"
 requires-python = ">=3.6"
 
 [project.optional-dependencies]
-dev = [
-    "black",
-    "build",
-    "check-manifest",
-    "coverage",
-    "pdbpp; os_name == 'nt'",
-    "pylint",
-    "pyreadline3; os_name == 'nt'",
-    "pytest-cov",
-    "pytest-xdist",
-    "rstcheck",
-    "ruff",
-    "toml-sort",
-    "twine",
-]
 ssl = ["PyOpenSSL"]
+
+[dependency-groups]
 test = [
     "psutil",
-    "pyasynchat; python_version >= '3.12'",
-    "pyasyncore; python_version >= '3.12'",
+    "pyasynchat ; python_version >= '3.12'",
+    "pyasyncore ; python_version >= '3.12'",
     "pyopenssl",
     "pytest",
     "pytest-instafail",
     "pytest-xdist",
-    "pywin32; os_name == 'nt'",
+    "pywin32 ; os_name == 'nt'",
     "setuptools",
+]
+lint = [
+    "black",
+    "rstcheck",
+    "ruff",
+    "toml-sort",
+]
+dev = [
+    "build",
+    "check-manifest",
+    "coverage",
+    "pdbpp ; os_name == 'nt'",
+    "pylint",
+    "pyreadline3 ; os_name == 'nt'",
+    "pytest-cov",
+    "twine",
+    { include-group = "lint" },
+    { include-group = "test" },
 ]
 
 [project.urls]
