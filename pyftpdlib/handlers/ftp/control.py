@@ -1974,7 +1974,7 @@ class FTPHandler(AsyncChat):
         timefunc = time.gmtime if self.use_gmt_times else time.localtime
         try:
             # convert timeval string to epoch seconds
-            epoch = datetime.utcfromtimestamp(0)
+            epoch = datetime(1970, 1, 1)
             timeval_datetime_obj = datetime.strptime(timeval, "%Y%m%d%H%M%S")
             timeval_secs = (timeval_datetime_obj - epoch).total_seconds()
         except ValueError:
