@@ -12,6 +12,7 @@ import pytest
 
 import pyftpdlib
 from pyftpdlib.__main__ import main
+from pyftpdlib.__main__ import parse_args
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import TLS_FTPHandler
 from pyftpdlib.servers import FTPServer
@@ -151,6 +152,33 @@ class TestCommandLineParser(PyftpdlibTestCase):
     def test_concurrency(self):
         ftpd = main(["--concurrency", "multi-thread", "-p", "0"])
         assert isinstance(ftpd, DummyThreadedFTPServer)
+
+    @pytest.mark.skipif(
+        os.name != "posix", reason="pre-fork concurrency is POSIX-only"
+    )
+    def test_concurrency_warning_only_for_single_cpu_prefork(self):
+        cases = [
+            ([], 1, 1, False),
+            (["--concurrency", "multi-thread"], 1, 1, False),
+            (["--concurrency", "pre-fork"], 1, 1, True),
+            ([], 2, 1, False),
+            (["--concurrency", "multi-thread"], 2, 1, False),
+            (["--concurrency", "pre-fork"], 2, 2, False),
+        ]
+        for args, cpu_count, worker_processes, warns in cases:
+            with patch("pyftpdlib.__main__.cpu_count", return_value=cpu_count):
+                with warnings.catch_warnings(record=True) as caught:
+                    warnings.simplefilter("always")
+                    opts = parse_args(args)
+
+            assert opts.concurrency[1] == worker_processes
+            assert bool(caught) is warns
+            if warns:
+                assert (
+                    str(caught[0].message)
+                    == "ignoring 'pre-fork' concurrency model: there's only"
+                    " 1 CPU"
+                )
 
     def test_timeout(self):
         ftpd = main(["--timeout", "10", "-p", "0"])

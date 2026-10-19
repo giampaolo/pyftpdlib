@@ -23,6 +23,10 @@ Version: 2.2.1 - (IN DEVELOPMENT)
 
 * Python 3.6 and 3.7 are no longer supported.
 
+**Bug fixes**
+
+* #688: Warn about a single CPU only when pre-fork concurrency is selected.
+
 Version: 2.2.0 - 2026-02-08
 ===========================
 
