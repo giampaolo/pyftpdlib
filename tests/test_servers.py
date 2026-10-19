@@ -20,17 +20,7 @@ from . import WINDOWS
 from . import FtpdThreadWrapper
 from . import PyftpdlibTestCase
 from . import close_client
-from .test_functional import TestCornerCases
-from .test_functional import TestFtpAbort
-from .test_functional import TestFtpAuthentication
-from .test_functional import TestFtpCmdsSemantic
-from .test_functional import TestFtpDummyCmds
-from .test_functional import TestFtpFsOperations
-from .test_functional import TestFtpListingCmds
-from .test_functional import TestFtpRetrieveData
-from .test_functional import TestFtpStoreData
-from .test_functional import TestIPv4Environment
-from .test_functional import TestIPv6Environment
+from . import test_functional
 
 
 class TestFTPServer(PyftpdlibTestCase):
@@ -91,36 +81,50 @@ class ThreadFTPTestMixin:
 
 
 class TestFtpAuthenticationThreadMixin(
-    ThreadFTPTestMixin, TestFtpAuthentication
+    ThreadFTPTestMixin, test_functional.TestFtpAuthentication
 ):
     pass
 
 
-class TestTFtpDummyCmdsThreadMixin(ThreadFTPTestMixin, TestFtpDummyCmds):
+class TestTFtpDummyCmdsThreadMixin(
+    ThreadFTPTestMixin, test_functional.TestFtpDummyCmds
+):
     pass
 
 
-class TestFtpCmdsSemanticThreadMixin(ThreadFTPTestMixin, TestFtpCmdsSemantic):
+class TestFtpCmdsSemanticThreadMixin(
+    ThreadFTPTestMixin, test_functional.TestFtpCmdsSemantic
+):
     pass
 
 
-class TestFtpFsOperationsThreadMixin(ThreadFTPTestMixin, TestFtpFsOperations):
+class TestFtpFsOperationsThreadMixin(
+    ThreadFTPTestMixin, test_functional.TestFtpFsOperations
+):
     pass
 
 
-class TestFtpStoreDataThreadMixin(ThreadFTPTestMixin, TestFtpStoreData):
+class TestFtpStoreDataThreadMixin(
+    ThreadFTPTestMixin, test_functional.TestFtpStoreData
+):
     pass
 
 
-class TestFtpRetrieveDataThreadMixin(ThreadFTPTestMixin, TestFtpRetrieveData):
+class TestFtpRetrieveDataThreadMixin(
+    ThreadFTPTestMixin, test_functional.TestFtpRetrieveData
+):
     pass
 
 
-class TestFtpListingCmdsThreadMixin(ThreadFTPTestMixin, TestFtpListingCmds):
+class TestFtpListingCmdsThreadMixin(
+    ThreadFTPTestMixin, test_functional.TestFtpListingCmds
+):
     pass
 
 
-class TestFtpAbortThreadMixin(ThreadFTPTestMixin, TestFtpAbort):
+class TestFtpAbortThreadMixin(
+    ThreadFTPTestMixin, test_functional.TestFtpAbort
+):
     pass
 
 
@@ -134,15 +138,21 @@ class TestFtpAbortThreadMixin(ThreadFTPTestMixin, TestFtpAbort):
 #     pass
 
 
-class TestIPv4EnvironmentThreadMixin(ThreadFTPTestMixin, TestIPv4Environment):
+class TestIPv4EnvironmentThreadMixin(
+    ThreadFTPTestMixin, test_functional.TestIPv4Environment
+):
     pass
 
 
-class TestIPv6EnvironmentThreadMixin(ThreadFTPTestMixin, TestIPv6Environment):
+class TestIPv6EnvironmentThreadMixin(
+    ThreadFTPTestMixin, test_functional.TestIPv6Environment
+):
     pass
 
 
-class TestCornerCasesThreadMixin(ThreadFTPTestMixin, TestCornerCases):
+class TestCornerCasesThreadMixin(
+    ThreadFTPTestMixin, test_functional.TestCornerCases
+):
     pass
 
 
@@ -170,38 +180,50 @@ else:
 
 
 class TestFtpAuthenticationMProcMixin(
-    MProcFTPTestMixin, TestFtpAuthentication
+    MProcFTPTestMixin, test_functional.TestFtpAuthentication
 ):
     pass
 
 
-class TestTFtpDummyCmdsMProcMixin(MProcFTPTestMixin, TestFtpDummyCmds):
+class TestTFtpDummyCmdsMProcMixin(
+    MProcFTPTestMixin, test_functional.TestFtpDummyCmds
+):
     pass
 
 
-class TestFtpCmdsSemanticMProcMixin(MProcFTPTestMixin, TestFtpCmdsSemantic):
+class TestFtpCmdsSemanticMProcMixin(
+    MProcFTPTestMixin, test_functional.TestFtpCmdsSemantic
+):
     pass
 
 
-class TestFtpFsOperationsMProcMixin(MProcFTPTestMixin, TestFtpFsOperations):
+class TestFtpFsOperationsMProcMixin(
+    MProcFTPTestMixin, test_functional.TestFtpFsOperations
+):
 
     def test_unforeseen_mdtm_event(self):
         pass
 
 
-class TestFtpStoreDataMProcMixin(MProcFTPTestMixin, TestFtpStoreData):
+class TestFtpStoreDataMProcMixin(
+    MProcFTPTestMixin, test_functional.TestFtpStoreData
+):
     pass
 
 
-class TestFtpRetrieveDataMProcMixin(MProcFTPTestMixin, TestFtpRetrieveData):
+class TestFtpRetrieveDataMProcMixin(
+    MProcFTPTestMixin, test_functional.TestFtpRetrieveData
+):
     pass
 
 
-class TestFtpListingCmdsMProcMixin(MProcFTPTestMixin, TestFtpListingCmds):
+class TestFtpListingCmdsMProcMixin(
+    MProcFTPTestMixin, test_functional.TestFtpListingCmds
+):
     pass
 
 
-class TestFtpAbortMProcMixin(MProcFTPTestMixin, TestFtpAbort):
+class TestFtpAbortMProcMixin(MProcFTPTestMixin, test_functional.TestFtpAbort):
     pass
 
 
@@ -212,15 +234,21 @@ class TestFtpAbortMProcMixin(MProcFTPTestMixin, TestFtpAbort):
 # class TestCallbacksMProcMixin(MProcFTPTestMixin, TestCallbacks): pass
 
 
-class TestIPv4EnvironmentMProcMixin(MProcFTPTestMixin, TestIPv4Environment):
+class TestIPv4EnvironmentMProcMixin(
+    MProcFTPTestMixin, test_functional.TestIPv4Environment
+):
     pass
 
 
-class TestIPv6EnvironmentMProcMixin(MProcFTPTestMixin, TestIPv6Environment):
+class TestIPv6EnvironmentMProcMixin(
+    MProcFTPTestMixin, test_functional.TestIPv6Environment
+):
     pass
 
 
-class TestCornerCasesMProcMixin(MProcFTPTestMixin, TestCornerCases):
+class TestCornerCasesMProcMixin(
+    MProcFTPTestMixin, test_functional.TestCornerCases
+):
     pass
 
 
