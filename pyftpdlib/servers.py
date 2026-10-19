@@ -243,15 +243,16 @@ class FTPServer(Acceptor):
         elif log:
             self._log_start()
 
-        proto = (
-            "FTPS (FTP over SSL)"
-            if hasattr(self.handler, "ssl_protocol")
-            else "FTP"
-        )
-        logger.info(
-            ">>> starting %s server on %s:%s, pid=%i <<<"
-            % (proto, self.address[0], self.address[1], os.getpid())
-        )
+        if log:
+            proto = (
+                "FTPS (FTP over SSL)"
+                if hasattr(self.handler, "ssl_protocol")
+                else "FTP"
+            )
+            logger.info(
+                ">>> starting %s server on %s:%s, pid=%i <<<"
+                % (proto, self.address[0], self.address[1], os.getpid())
+            )
 
         if handle_exit:
             try:

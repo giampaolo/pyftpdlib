@@ -24,6 +24,8 @@ Version: 2.2.1 - (IN DEVELOPMENT)
 * [TLS_FTPHandler] NLST of an empty directory over a secure data channel
   could close the connection without a TLS shutdown, making the client
   fail with "shutdown while in init".
+* [FTPServer] ``serve_forever(blocking=False)`` logged the server start
+  (">>> starting FTP server <<<") on every call.
 
 **Compatibility notes**
 

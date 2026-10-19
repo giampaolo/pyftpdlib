@@ -5,6 +5,7 @@
 import contextlib
 import ftplib
 import socket
+from unittest import mock
 
 import pytest
 
@@ -60,6 +61,14 @@ class TestFTPServer(PyftpdlibTestCase):
     def test_ctx_mgr(self):
         with servers.FTPServer((HOST, 0), handlers.FTPHandler) as server:
             assert server is not None
+
+    def test_serve_forever_non_blocking_no_log(self):
+        # With blocking=False serve_forever() is called in a loop, so it
+        # shouldn't log the server start every time.
+        with servers.FTPServer((HOST, 0), handlers.FTPHandler) as server:
+            with mock.patch("pyftpdlib.servers.logger.info") as m:
+                server.serve_forever(timeout=0, blocking=False)
+            assert not m.called
 
 
 # =====================================================================
