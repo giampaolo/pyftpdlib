@@ -80,7 +80,7 @@ install-git-hooks:  ## Install GIT pre-commit hook.
 # Tests
 # ===================================================================
 
-test:  ## Run all tests. To run a specific test: do "make test ARGS=pyftpdlib.test.test_functional.TestFtpStoreData"
+test:  ## Run all tests. To run a specific test: do "make test ARGS=tests/test_functional.py::TestFtpStoreData"
 	$(PYTHON_ENV_VARS) $(PYTHON) -m pytest $(ARGS)
 
 test-parallel:  ## Run all tests in parallel.

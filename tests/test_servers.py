@@ -184,9 +184,7 @@ class TestFtpCmdsSemanticMProcMixin(MProcFTPTestMixin, tf.TestFtpCmdsSemantic):
 
 
 class TestFtpFsOperationsMProcMixin(MProcFTPTestMixin, tf.TestFtpFsOperations):
-
-    def test_unforeseen_mdtm_event(self):
-        pass
+    pass
 
 
 class TestFtpStoreDataMProcMixin(MProcFTPTestMixin, tf.TestFtpStoreData):

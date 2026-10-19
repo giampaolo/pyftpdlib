@@ -6,7 +6,6 @@
 import contextlib
 import functools
 import logging
-import multiprocessing
 import os
 import shutil
 import socket
@@ -29,7 +28,6 @@ from pyftpdlib.servers import FTPServer
 HERE = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
 ROOT_DIR = os.path.realpath(os.path.join(HERE, ".."))
 
-PYPY = "__pypy__" in sys.builtin_module_names
 OSX = sys.platform.startswith("darwin")
 POSIX = os.name == "posix"
 BSD = "bsd" in sys.platform
@@ -39,7 +37,6 @@ CERTFILE = os.path.join(HERE, "keycert.pem")
 
 GITHUB_ACTIONS = "GITHUB_ACTIONS" in os.environ or "CIBUILDWHEEL" in os.environ
 CI_TESTING = GITHUB_ACTIONS
-COVERAGE = "COVERAGE_RUN" in os.environ
 PYTEST_PARALLEL = "PYTEST_XDIST_WORKER" in os.environ  # `make test-parallel`
 
 # Attempt to use IP rather than hostname (test suite will run a lot faster)
@@ -57,7 +54,6 @@ GLOBAL_TIMEOUT = 2
 BUFSIZE = 1024
 INTERRUPTED_TRANSF_SIZE = 32768
 NO_RETRIES = 5
-VERBOSITY = 1 if os.getenv("SILENT") else 2
 
 if CI_TESTING:
     GLOBAL_TIMEOUT *= 3
@@ -76,14 +72,6 @@ class PyftpdlibTestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()
         reset_server_opts()
-
-    def __str__(self):
-        # Print a full path representation of the single unit tests
-        # being run.
-        fqmod = self.__class__.__module__
-        if not fqmod.startswith("pyftpdlib."):
-            fqmod = "pyftpdlib.test." + fqmod
-        return f"{fqmod}.{self.__class__.__name__}.{self._testMethodName}"
 
     def get_testfn(self, suffix="", dir=None):
         fname = get_testfn(suffix=suffix, dir=dir)
@@ -195,66 +183,6 @@ def disable_log_warning(fun):
     return wrapper
 
 
-class retry:
-    """A retry decorator."""
-
-    def __init__(
-        self,
-        exception=Exception,
-        timeout=None,
-        retries=None,
-        interval=0.001,
-        logfun=None,
-    ):
-        if timeout and retries:
-            raise ValueError("timeout and retries args are mutually exclusive")
-        self.exception = exception
-        self.timeout = timeout
-        self.retries = retries
-        self.interval = interval
-        self.logfun = logfun
-
-    def __iter__(self):
-        if self.timeout:
-            stop_at = time.time() + self.timeout
-            while time.time() < stop_at:
-                yield
-        elif self.retries:
-            for _ in range(self.retries):
-                yield
-        else:
-            while True:
-                yield
-
-    def sleep(self):
-        if self.interval is not None:
-            time.sleep(self.interval)
-
-    def __call__(self, fun):
-        @functools.wraps(fun)
-        def wrapper(cls, *args, **kwargs):
-            exc = None
-            for _ in self:
-                try:
-                    return fun(cls, *args, **kwargs)
-                except self.exception as _:
-                    exc = _
-                    if self.logfun is not None:
-                        self.logfun(exc)
-                    self.sleep()
-                    if isinstance(cls, unittest.TestCase):
-                        cls.tearDown()
-                        cls.setUp()
-                    continue
-
-            raise exc
-
-        # This way the user of the decorated function can change config
-        # parameters.
-        wrapper.decorator = self
-        return wrapper
-
-
 def retry_on_failure(fun):
     """Decorator which runs a test function and retries N times before
     actually failing.
@@ -278,19 +206,6 @@ def retry_on_failure(fun):
     return wrapper
 
 
-def call_until(fun, expr, timeout=GLOBAL_TIMEOUT):
-    """Keep calling function for timeout secs and exit if eval()
-    expression is True.
-    """
-    stop_at = time.time() + timeout
-    while time.time() < stop_at:
-        ret = fun()
-        if eval(expr):
-            return ret
-        time.sleep(0.001)
-    raise RuntimeError(f"timed out (ret={ret!r})")
-
-
 def get_server_handler():
     """Return the first FTPHandler instance running in the IOLoop."""
     ioloop = IOLoop.instance()
@@ -299,10 +214,6 @@ def get_server_handler():
         if isinstance(instance, FTPHandler):
             return instance
     raise RuntimeError("can't find any FTPHandler instance")
-
-
-# commented out as per bug https://bugs.python.org/issue10354
-# tempfile.template = 'tmp-pyftpdlib'
 
 
 def setup_server(handler, server_class, addr=None):
@@ -450,37 +361,3 @@ class FtpdThreadWrapper(threading.Thread):
         self.join()
         reset_server_opts()
         assert_free_resources(self.parent_pid)
-
-
-if POSIX:
-
-    class FtpdMultiprocWrapper(multiprocessing.Process):
-        """Same as above but using a sub process instead."""
-
-        handler = FTPHandler
-        server_class = FTPServer
-
-        def __init__(self, addr=None):
-            super().__init__()
-            self.server = setup_server(
-                self.handler, self.server_class, addr=addr
-            )
-            self.host, self.port = self.server.socket.getsockname()[:2]
-            self._started = False
-
-        def run(self):
-            assert not self._started
-            self._started = True
-            self.name = f"{self.__class__.__name__}({self.pid})"
-            self.server.serve_forever()
-
-        def stop(self):
-            self.server.close_all()
-            self.terminate()
-            self.join()
-            reset_server_opts()
-            assert_free_resources()
-
-else:
-    # Windows
-    FtpdMultiprocWrapper = FtpdThreadWrapper

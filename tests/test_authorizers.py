@@ -227,20 +227,6 @@ class _SharedAuthorizerTests:
             if user not in users:
                 return user
 
-    def assertRaisesWithMsg(self, excClass, msg, callableObj, *args, **kwargs):
-        try:
-            callableObj(*args, **kwargs)
-        except excClass as err:
-            if str(err) == msg:
-                return
-            raise self.failureException(f"{err!s} != {msg}") from err
-        else:
-            if hasattr(excClass, "__name__"):
-                excName = excClass.__name__
-            else:
-                excName = str(excClass)
-            raise self.failureException(f"{excName} not raised")
-
     # --- /utils
 
     def test_get_home_dir(self):
