@@ -180,11 +180,10 @@ def disable_log_warning(fun):
     return wrapper
 
 
-def get_server_handler():
+def get_server_handler(server):
     """Return the first FTPHandler instance running in the IOLoop."""
-    ioloop = IOLoop.instance()
-    for fd in ioloop.socket_map:
-        instance = ioloop.socket_map[fd]
+    for fd in server.ioloop.socket_map:
+        instance = server.ioloop.socket_map[fd]
         if isinstance(instance, FTPHandler):
             return instance
     raise RuntimeError("can't find any FTPHandler instance")
@@ -202,7 +201,7 @@ def setup_server(handler, server_class, addr=None):
     # = less false positives
     handler.dtp_handler.ac_in_buffer_size = 4096
     handler.dtp_handler.ac_out_buffer_size = 4096
-    server = server_class(addr, handler)
+    server = server_class(addr, handler, ioloop=IOLoop.factory())
     return server
 
 

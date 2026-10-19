@@ -2501,7 +2501,7 @@ class TestCornerCases(PyftpdlibTestCase):
     def test_repr(self):
         # make sure the FTP/DTP handler classes have a sane repr()
         with contextlib.closing(self.client.makeport()):
-            for inst in IOLoop.instance().socket_map.values():
+            for inst in self.server.server.ioloop.socket_map.values():
                 repr(inst)
                 str(inst)
 
@@ -2738,7 +2738,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         self.server.handler.permit_foreign_addresses = False
         self.server.start()
         self.connect_client()
-        handler = get_server_handler()
+        handler = get_server_handler(self.server.server)
         handler.remote_ip = "9.9.9.9"
         # sync
         self.client.sendcmd("noop")
@@ -2752,7 +2752,7 @@ class ThreadedFTPTests(PyftpdlibTestCase):
         self.server.handler.permit_foreign_addresses = True
         self.server.start()
         self.connect_client()
-        handler = get_server_handler()
+        handler = get_server_handler(self.server.server)
         handler.remote_ip = "9.9.9.9"
         self.client.sendcmd("noop")
         s = self.client.makeport()
