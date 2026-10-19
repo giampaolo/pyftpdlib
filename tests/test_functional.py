@@ -843,12 +843,12 @@ class TestFtpStoreData(PyftpdlibTestCase):
         try:
             with contextlib.closing(self.client.makeport()) as sock:
                 conn, _ = sock.accept()
+                conn.settimeout(GLOBAL_TIMEOUT)
+                if isinstance(self.client, ftplib.FTP_TLS):
+                    conn = self.client.context.wrap_socket(
+                        conn, server_hostname=self.client.host
+                    )
                 with contextlib.closing(conn):
-                    conn.settimeout(GLOBAL_TIMEOUT)
-                    if isinstance(self.client, ftplib.FTP_TLS):
-                        conn = self.client.context.wrap_socket(
-                            conn, server_hostname=self.client.host
-                        )
                     while True:
                         buf = self.dummy_sendfile.read(8192)
                         if not buf:
