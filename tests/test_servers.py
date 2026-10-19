@@ -231,7 +231,9 @@ if SUPPORTS_MULTIPROCESSING:
 
 else:
 
-    @pytest.mark.skip(reason="multiprocessing module not installed")
+    @pytest.mark.skip(
+        reason="MultiprocessFTPServer not available or broken on this platform"
+    )
     class MProcFTPTestMixin:
         pass
 

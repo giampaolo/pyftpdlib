@@ -95,10 +95,10 @@ class BaseIOLoopTestCase:
         s.call_later(0, s.close)
         s.loop(timeout=0.001)
 
-    # def test_close(self):
-    #     s, rd, wr = self.register()
-    #     s.close()
-    #     assert s.socket_map == {}
+    def test_close(self):
+        s, _rd, _wr = self.register()
+        s.close()
+        assert s.socket_map == {}
 
     def test_close_w_handler_exc(self):
         # Simulate an exception when close()ing a socket handler.
