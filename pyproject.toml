@@ -225,21 +225,21 @@ disable = [
 ]
 
 [tool.pytest.ini_options]
-addopts = '''
-    --verbose
-    --capture=no
-    --no-header
-    --tb=short
-    --strict-config
-    --strict-markers
-    --instafail
-    -p no:junitxml
-    -p no:doctest
-    -p no:nose
-    -p no:pastebin
-    -p instafail
-    -p xdist
-    '''
+addopts = [
+    "--capture=no",
+    "--instafail",
+    "--no-header",
+    "--tb=short",
+    "--verbose",
+    "-p instafail",
+    "-p no:doctest",
+    "-p no:junitxml",
+    "-p no:nose",
+    "-p no:pastebin",
+    "-p xdist",
+]
+strict_config = true
+strict_markers = true
 testpaths = ["tests/"]
 
 [tool.rstcheck]
