@@ -20,6 +20,7 @@ from . import WINDOWS
 from . import FtpdThreadWrapper
 from . import PyftpdlibTestCase
 from . import close_client
+from . import disable_log_warning
 from . import test_functional as tf
 
 
@@ -70,6 +71,31 @@ class TestFTPServer(PyftpdlibTestCase):
 # modules (multi thread and multi process instead of async.
 # This is useful as we reuse the existent functional tests which are
 # supposed to work no matter what the concurrency model is.
+
+
+class SpawnerConfOptsMixin:
+
+    @disable_log_warning
+    def test_max_connections(self):
+        self.server = self.server_class()
+        self.server.server.max_cons = 2
+        self.server.start()
+
+        c1 = self.client_class(timeout=GLOBAL_TIMEOUT)
+        c2 = self.client_class(timeout=GLOBAL_TIMEOUT)
+        c3 = self.client_class(timeout=GLOBAL_TIMEOUT)
+        try:
+            c1.connect(self.server.host, self.server.port)
+            c2.connect(self.server.host, self.server.port)
+            with pytest.raises(
+                ftplib.error_temp, match="Too many connections"
+            ):
+                c3.connect(self.server.host, self.server.port)
+            c1.login(USER, PASSWD)
+            c1.makepasv()
+        finally:
+            for c in (c1, c2, c3):
+                close_client(c)
 
 
 class _TFTPd(FtpdThreadWrapper):
@@ -124,10 +150,10 @@ class TestTimeoutsThreadMixin(ThreadFTPTestMixin, tf.TestTimeouts):
     pass
 
 
-class TestConfOptsThreadMixin(ThreadFTPTestMixin, tf.TestConfigurableOptions):
-    @pytest.mark.skip(reason="max_cons counts tasks, not sockets")
-    def test_max_connections(self):
-        pass
+class TestConfOptsThreadMixin(
+    ThreadFTPTestMixin, SpawnerConfOptsMixin, tf.TestConfigurableOptions
+):
+    pass
 
 
 class TestCallbacksThreadMixin(ThreadFTPTestMixin, tf.TestCallbacks):
@@ -211,10 +237,10 @@ class TestTimeoutsMProcMixin(MProcFTPTestMixin, tf.TestTimeouts):
     pass
 
 
-class TestConfOptsMProcMixin(MProcFTPTestMixin, tf.TestConfigurableOptions):
-    @pytest.mark.skip(reason="max_cons counts tasks, not sockets")
-    def test_max_connections(self):
-        pass
+class TestConfOptsMProcMixin(
+    MProcFTPTestMixin, SpawnerConfOptsMixin, tf.TestConfigurableOptions
+):
+    pass
 
 
 class TestCallbacksMProcMixin(MProcFTPTestMixin, tf.TestCallbacks):

@@ -1226,7 +1226,7 @@ class FTPHandler(AsyncChat):
             self.data_channel = None
 
         # make sure we are not hitting the max connections limit
-        if not self.server._accept_new_cons():
+        if not self.server._accept_new_data_cons():
             msg = "425 Too many connections. Can't open data channel."
             self.respond_w_warning(msg)
             return
@@ -1249,7 +1249,7 @@ class FTPHandler(AsyncChat):
             self.data_channel = None
 
         # make sure we are not hitting the max connections limit
-        if not self.server._accept_new_cons():
+        if not self.server._accept_new_data_cons():
             msg = "425 Too many connections. Can't open data channel."
             self.respond_w_warning(msg)
             return

@@ -13,6 +13,9 @@ Version: 2.2.1 - (IN DEVELOPMENT)
 
 * #411: [MultiprocessFTPServer] ``max_cons_per_ip`` had no effect, and
   ``on_disconnect()`` was called right after a client connected.
+* #506: [MultiprocessFTPServer] crash with "can only test a child process"
+  on PASV / PORT once ``max_cons`` was reached. Also, Threaded and
+  Multiprocess servers accepted ``max_cons + 1`` clients.
 
 **Compatibility notes**
 

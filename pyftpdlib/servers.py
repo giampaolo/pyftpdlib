@@ -139,6 +139,9 @@ class FTPServer(Acceptor):
         else:
             return self._map_len() <= self.max_cons
 
+    def _accept_new_data_cons(self):
+        return self._accept_new_cons()
+
     def _log_start(self, prefork=False):
         def get_fqname(obj):
             try:
@@ -370,6 +373,15 @@ class _SpawnerBase(FTPServer):
             # seconds anyway.
             self._refresh_tasks()
         return len(self._active_tasks)
+
+    def _accept_new_cons(self):
+        if not self.max_cons:
+            return True
+        else:
+            return self._map_len() < self.max_cons
+
+    def _accept_new_data_cons(self):
+        return True
 
     def _refresh_tasks(self):
         """join() terminated tasks and update internal _tasks list.
