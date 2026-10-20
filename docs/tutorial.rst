@@ -55,6 +55,25 @@ for `incoming connections`_ and a range of `passive ports`_. See
     # start ftp server
     server.serve_forever()
 
+Use with context
+^^^^^^^^^^^^^^^^
+
+.. code-block:: python
+
+    authorizer = DummyAuthorizer()
+    authorizer.add_anonymous(".")
+    handler = FTPHandler
+    handler.authorizer = authorizer
+    server = FTPServer(("localhost", port), handler)
+    with FTPServerContext(server):
+        with FTP() as ftp:
+            ftp.connect(host='localhost', port=port)
+            ftp.login()
+            print(ftp.dir())
+            print("get the directory successfully first time")
+    print("now the ftpserver has been closed automatically")
+
+
 Logging management
 ==================
 
