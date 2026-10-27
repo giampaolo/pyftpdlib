@@ -127,7 +127,7 @@ class TLS_FTPHandler(SSLConnectionMixin, FTPHandler):
             if not cls.keyfile:
                 cls.keyfile = cls.certfile
             for file in (cls.certfile, cls.keyfile):
-                if not os.path.isfile(cls.certfile):
+                if not os.path.isfile(file):
                     msg = f"{file!r} does not exist"
                     raise FileNotFoundError(msg)
 
