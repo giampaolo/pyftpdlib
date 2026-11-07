@@ -91,8 +91,12 @@ docs = [
 [project.urls]
 Homepage = "https://github.com/giampaolo/pyftpdlib/"
 
-[tool.setuptools]
-script-files = ["scripts/ftpbench"]
+[project.scripts]
+pyftpdlib = "pyftpdlib.__main__:main"
+ftpbench = "project.scripts.ftpbench:main"
+
+# [tool.setuptools]
+# script-files = ["scripts/ftpbench"]
 
 [tool.setuptools.dynamic]
 version = { attr = "pyftpdlib.__ver__" }
