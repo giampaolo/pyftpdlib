@@ -93,7 +93,7 @@ Homepage = "https://github.com/giampaolo/pyftpdlib/"
 
 [project.scripts]
 pyftpdlib = "pyftpdlib.__main__:main"
-ftpbench = "scripts/ftpbench:main"
+ftpbench = "project.scripts.ftpbench"
 
 # [tool.setuptools]
 # script-files = ["scripts/ftpbench"]
