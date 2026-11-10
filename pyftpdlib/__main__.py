@@ -84,6 +84,20 @@ def parse_port_range(value):
     return list(range(start, stop + 1))
 
 
+def parse_port(value):
+    try:
+        port = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"invalid port: {value!r} (expected 0-65535; 0 picks a free port)"
+        ) from None
+    if not 0 <= port <= 65535:
+        raise argparse.ArgumentTypeError(
+            f"invalid port: {port} (expected 0-65535; 0 picks a free port)"
+        )
+    return port
+
+
 def parse_concurrency(value):
     mapping = {
         "async": (servers.FTPServer, 1),
@@ -142,7 +156,7 @@ def parse_args(args=None):
     group_main.add_argument(
         "-p",
         "--port",
-        type=int,
+        type=parse_port,
         default=DEFAULT_PORT,
         metavar="PORT",
         help=f"specify port number to run on (default: {DEFAULT_PORT})",
