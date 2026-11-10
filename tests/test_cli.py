@@ -75,6 +75,17 @@ class TestCommandLineParser(PyftpdlibTestCase):
         main(["-p", "0"])
         main(["--port", "0"])
 
+    def test_port_out_of_range(self):
+        # out-of-range ports are rejected with a clean CLI error
+        with pytest.raises(SystemExit):
+            main(["-p", "99999"])
+        with pytest.raises(SystemExit):
+            main(["-p", "65536"])
+        with pytest.raises(SystemExit):
+            main(["--port", "65536"])
+        # 0 (pick a free port) and valid ports still work
+        main(["-p", "0"])
+
     def test_write_opt(self):
         with warnings.catch_warnings():
             warnings.filterwarnings("error")
