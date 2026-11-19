@@ -124,7 +124,7 @@ coverage:  ## Run test coverage.
 
 # Return a shell pipeline that outputs one file per line. Uses
 # $(FILES) if set, else "git ls-files" with given pattern(s).
-_ls = $(if $(FILES), printf '%s\n' $(FILES), git ls-files $(1))
+_ls = $(if $(FILES), printf '%s\n' $(FILES), git ls-files $(1)) | sed 's/.*/"&"/'
 
 black:  ## Python files linting (via black)
 	@$(call _ls,'*.py') | xargs $(PYTHON) -m black --check --safe
