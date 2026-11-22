@@ -95,7 +95,7 @@ def parse_concurrency(value):
 
     if os.name == "posix":
         mapping["pre-fork"] = (servers.FTPServer, cpu_count())
-        if cpu_count() == 1:
+        if value == "pre-fork" and cpu_count() == 1:
             warnings.warn(
                 "ignoring 'pre-fork' concurrency model: there's only 1 CPU",
                 stacklevel=2,
