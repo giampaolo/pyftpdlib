@@ -11,6 +11,9 @@ Version: 2.2.1 - (IN DEVELOPMENT)
 
 **Bug fixes**
 
+* #593: [FTPHandler] MLSD and MLST read file metadata outside the logged-in
+  user context, breaking custom filesystems which require impersonation.
+
 * #411: [MultiprocessFTPServer] ``max_cons_per_ip`` had no effect, and
   ``on_disconnect()`` was called right after a client connected.
 * #506: [MultiprocessFTPServer] crash with "can only test a child process"
