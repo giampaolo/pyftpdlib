@@ -37,6 +37,7 @@ from .dispatchers import ActiveDTP
 from .dispatchers import PassiveDTP
 from .producers import BufferedIteratorProducer
 from .producers import FileProducer
+from .producers import _ImpersonatingBufferedIteratorProducer
 
 __all__ = ["FTPHandler"]
 
@@ -1481,7 +1482,7 @@ class FTPHandler(AsyncChat):
                 self._current_facts,
                 ignore_err=False,
             )
-            data = b"".join(iterator)
+            data = self.run_as_current_user(b"".join, iterator)
         except (OSError, FilesystemError) as err:
             self.respond(f"550 {strerror(err)}.")
         else:
@@ -1512,10 +1513,10 @@ class FTPHandler(AsyncChat):
             self.respond(f"550 {why}.")
         else:
             perms = self.authorizer.get_perms(self.username)
-            iterator = self.fs.format_mlsx(
-                path, listing, perms, self._current_facts
+            iterator = self.run_as_current_user(
+                self.fs.format_mlsx, path, listing, perms, self._current_facts
             )
-            producer = BufferedIteratorProducer(iterator)
+            producer = _ImpersonatingBufferedIteratorProducer(iterator, self)
             self.push_dtp_data(producer, isproducer=True, cmd="MLSD")
             return path
 

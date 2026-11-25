@@ -24,6 +24,9 @@ from pyftpdlib.filesystems import AbstractedFS
 from pyftpdlib.handlers import DTPHandler
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.handlers import ThrottledDTPHandler
+from pyftpdlib.handlers.ftp.producers import (
+    _ImpersonatingBufferedIteratorProducer,
+)
 from pyftpdlib.ioloop import IOLoop
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.utils import has_dualstack_ipv6
@@ -1352,6 +1355,157 @@ class TestFtpListingCmds(PyftpdlibTestCase):
             self.client.sendcmd("noop")
         finally:
             AbstractedFS.getmtime = getmtime
+
+
+class TestMlsxImpersonation(PyftpdlibTestCase):
+    server_class = FtpdThreadWrapper
+    client_class = ftplib.FTP
+
+    def setUp(self):
+        super().setUp()
+        self.server = self.server_class()
+        self.server.start()
+        self.client = self.client_class(timeout=GLOBAL_TIMEOUT)
+        self.client.connect(self.server.host, self.server.port)
+        self.client.login(USER, PASSWD)
+        self.client.voidcmd("NOOP")
+        self.testfn = self.get_testfn()
+        touch(self.testfn)
+
+    def tearDown(self):
+        close_client(self.client)
+        self.server.stop()
+        super().tearDown()
+
+    def _test_mlsx_impersonation(self, command):
+        handler = next(
+            instance
+            for instance in self.server.server.ioloop.socket_map.values()
+            if isinstance(instance, FTPHandler)
+            and instance.remote_port == self.client.sock.getsockname()[1]
+        )
+        active = []
+        calls = []
+        original_stat = handler.fs.stat
+        original_format = handler.fs.format_mlsx
+
+        def impersonate(username, password):
+            assert not active
+            assert (username, password) == (USER, PASSWD)
+            active.append(username)
+
+        def terminate(username):
+            assert active.pop() == username
+
+        def stat_as_user(path):
+            calls.append(active[:])
+            if not active:
+                raise PermissionError(
+                    errno.EACCES, "metadata requires the logged-in user"
+                )
+            return original_stat(path)
+
+        def format_as_user(*args, **kwargs):
+            assert active == [USER]
+            return original_format(*args, **kwargs)
+
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(
+                patch.object(
+                    handler.authorizer, "impersonate_user", impersonate
+                )
+            )
+            stack.enter_context(
+                patch.object(
+                    handler.authorizer, "terminate_impersonation", terminate
+                )
+            )
+            stack.enter_context(patch.object(handler.fs, "stat", stat_as_user))
+            stack.enter_context(
+                patch.object(handler.fs, "format_mlsx", format_as_user)
+            )
+            if command == "MLST":
+                response = self.client.sendcmd("MLST " + self.testfn)
+                assert "type=file;" in response
+            else:
+                dirname = self.get_testfn()
+                os.mkdir(dirname)
+                self.addCleanup(safe_rmpath, dirname)
+                names = [str(i) for i in range(45)]
+                for name in names:
+                    touch(os.path.join(dirname, name))
+                lines = []
+                self.client.retrlines("MLSD " + dirname, lines.append)
+                assert sorted(
+                    line.split(" ", 1)[1] for line in lines
+                ) == sorted(names)
+        assert calls
+        assert all(call == [USER] for call in calls)
+        assert not active
+
+    def test_mlst_impersonation(self):
+        self._test_mlsx_impersonation("MLST")
+
+    def test_mlsd_impersonation(self):
+        self._test_mlsx_impersonation("MLSD")
+
+    def test_listing_iterator_restores_user(self):
+        handler = next(
+            instance
+            for instance in self.server.server.ioloop.socket_map.values()
+            if isinstance(instance, FTPHandler)
+            and instance.remote_port == self.client.sock.getsockname()[1]
+        )
+        active = []
+
+        def impersonate(username, password):
+            assert not active
+            active.append(username)
+
+        def terminate(username):
+            assert active.pop() == username
+
+        def listing():
+            assert active == [USER]
+            yield b"entry"
+            assert active == [USER]
+            raise OSError(errno.EACCES, "denied")
+
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(
+                patch.object(
+                    handler.authorizer, "impersonate_user", impersonate
+                )
+            )
+            stack.enter_context(
+                patch.object(
+                    handler.authorizer, "terminate_impersonation", terminate
+                )
+            )
+            producer = _ImpersonatingBufferedIteratorProducer(
+                listing(), handler
+            )
+            producer.loops = 1
+            assert producer.more() == b"entry"
+            assert not active
+            with pytest.raises(OSError, match="denied"):
+                producer.more()
+            assert not active
+            producer = _ImpersonatingBufferedIteratorProducer(
+                iter([b"entry"]), handler
+            )
+            assert producer.more() == b"entry"
+            assert not active
+            assert producer.more() == b""
+            assert not active
+            iterator = listing()
+            producer = _ImpersonatingBufferedIteratorProducer(
+                iterator, handler
+            )
+            producer.loops = 1
+            assert producer.more() == b"entry"
+            iterator.close()
+            assert not active
 
 
 class TestFtpAbort(PyftpdlibTestCase):

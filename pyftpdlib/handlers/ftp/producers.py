@@ -83,3 +83,14 @@ class BufferedIteratorProducer:
             except StopIteration:
                 break
         return b"".join(buffer)
+
+
+class _ImpersonatingBufferedIteratorProducer(BufferedIteratorProducer):
+    """Read each listing chunk as the logged-in user, then restore context."""
+
+    def __init__(self, iterator, cmd_channel):
+        super().__init__(iterator)
+        self.cmd_channel = cmd_channel
+
+    def more(self):
+        return self.cmd_channel.run_as_current_user(super().more)
